@@ -1,0 +1,17 @@
+module Core {
+
+    type = none
+
+    sources = [ ]
+
+    public_includes = [
+        "Public"
+    ]
+
+    defines = [
+        "LUMEN_ENGINE"
+    ]
+
+    deps = [ ]
+
+}
