@@ -14,6 +14,6 @@ module ApplicationCore {
         "LUMEN_ENGINE"
     ]
 
-    deps = [ Core ]
+    deps = [ Core, MathCore ]
 
 }
