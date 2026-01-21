@@ -6,49 +6,23 @@
 #pragma once
 
 #include "CoreTypes.hpp"
+#include "Generic/GenericWindowDescription.hpp"
 
 namespace LumenEngine
 {
 
-namespace EWindowMode
-{
-
-    enum Type : Int32
-    {
-        /** True fullscreen window mode */
-        Fullscreen,
-        /** Borderless windowed fullscreen mode */
-        WindowedFullscreen,
-        /** Standard windowed mode */
-        Windowed,
-
-        /** Number of window modes */
-        NumWindowModes
-    };
-
-    static inline const char *ToString ( const Type InWindowMode )
-    {
-        switch ( InWindowMode )
-        {
-        case Fullscreen:
-            return "Fullscreen";
-        case WindowedFullscreen:
-            return "WindowedFullscreen";
-        case Windowed:
-            return "Windowed";
-        default:
-            return "Unknown";
-        }
-    }
-
-} // namespace EWindowMode
-
+/**
+ * @details This class provides a generic interface for creating and managing windows on different OS.
+ */
 class FGenericWindow
 {
 public:
 
-    FGenericWindow ();
-    virtual ~FGenericWindow ();
+    FGenericWindow () = default;
+    virtual ~FGenericWindow () = default;
+
+    /** Reshape the window to new position and size */
+    virtual void Reshape ( const Int32 InX, const Int32 InY, const Int32 InWidth, const Int32 InHeight );
 
     /** Ask the OS to destroy OS-specific resource associated with the window */
     virtual void Destroy ();
