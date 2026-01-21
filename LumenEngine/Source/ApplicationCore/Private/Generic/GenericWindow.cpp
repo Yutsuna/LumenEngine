@@ -62,7 +62,7 @@ LumenEngine::Bool LumenEngine::FGenericWindow::IsMinimized () const
 
 LumenEngine::Bool LumenEngine::FGenericWindow::IsVisible () const
 {
-    return false;
+    return Description->bIsVisible;
 }
 
 void LumenEngine::FGenericWindow::SetWindowFocus ()
@@ -82,7 +82,18 @@ void LumenEngine::FGenericWindow::EnableInput ( const Bool bEnable )
 
 LumenEngine::Bool LumenEngine::FGenericWindow::IsPointInWindow ( const Int32 InX, const Int32 InY ) const
 {
-    return false;
+    const Math::FVec2i &WindowPos  = GetWindowPosition();
+    const Math::FVec2i &WindowSize = GetWindowSize();
+
+    const Int32 Left   = WindowPos.x;
+    const Int32 Right  = WindowPos.x + WindowSize.width;
+    const Int32 Top    = WindowPos.y;
+    const Int32 Bottom = WindowPos.y + WindowSize.height;
+
+    const Bool bIsInsideX = ( InX >= Left ) && ( InX < Right );
+    const Bool bIsInsideY = ( InY >= Top ) && ( InY < Bottom );
+
+    return bIsInsideX && bIsInsideY;
 }
 
 LumenEngine::Int32 LumenEngine::FGenericWindow::GetOSWindowBorderSize () const
@@ -120,12 +131,12 @@ LumenEngine::Int32 LumenEngine::FGenericWindow::GetWindowHeight () const
     return Description->Size.height;
 }
 
-LumenEngine::Math::FVec2i LumenEngine::FGenericWindow::GetWindowSize () const
+const LumenEngine::Math::FVec2i &LumenEngine::FGenericWindow::GetWindowSize () const
 {
     return Description->Size;
 }
 
-LumenEngine::Math::FVec2i LumenEngine::FGenericWindow::GetWindowPosition () const
+const LumenEngine::Math::FVec2i &LumenEngine::FGenericWindow::GetWindowPosition () const
 {
     return Description->Position;
 }
