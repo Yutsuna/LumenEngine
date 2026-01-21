@@ -13,10 +13,10 @@ using Int16 = short;
 using Int32 = int;
 using Int64 = long long;
 
-using Uint8 = unsigned char;
-using Uint16 = unsigned short;
-using Uint32 = unsigned int;
-using Uint64 = unsigned long long;
+using UInt8 = unsigned char;
+using UInt16 = unsigned short;
+using UInt32 = unsigned int;
+using UInt64 = unsigned long long;
 
 using Float32 = float;
 using Float64 = double;
@@ -27,11 +27,11 @@ using Bool = bool;
 using Byte = unsigned char;
 
 /**
- * Usize: Unsigned integer type used for sizes and indexing
+ * USize: Unsigned integer type used for sizes and indexing
  *
  * @brief Calculated using compiler intrinsics
  */
-using Usize = decltype( sizeof( 0 ) );
+using USize = decltype( sizeof( 0 ) );
 
 /**
  * Isize: Signed integer type used for pointer arithmetic and offsets
