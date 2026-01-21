@@ -5,6 +5,9 @@ IndentWidth: 4
 UseTab: Never
 ColumnLimit: 0
 
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+
 BreakBeforeBraces: Allman
 
 SpacesInParens: Custom
