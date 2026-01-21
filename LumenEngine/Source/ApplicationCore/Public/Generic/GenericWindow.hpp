@@ -20,7 +20,7 @@ class FGenericWindow
 {
 public:
 
-    FGenericWindow () = default;
+    FGenericWindow ()          = default;
     virtual ~FGenericWindow () = default;
 
     /** Reshape the window to new position and size */
@@ -106,10 +106,10 @@ public:
     virtual Int32 GetWindowHeight () const;
 
     /** Gets the OS Window size */
-    virtual Math::FVec2i GetWindowSize () const;
+    virtual const Math::FVec2i &GetWindowSize () const;
 
     /** Gets the OS Window position */
-    virtual Math::FVec2i GetWindowPosition () const;
+    virtual const Math::FVec2i &GetWindowPosition () const;
 
 protected:
 

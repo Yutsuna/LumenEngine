@@ -57,7 +57,7 @@ namespace
 
     static constexpr const AnsiChar *const DefaultWindowTitle = "Lumen Engine";
 
-    static constexpr const Int32 DefaultWindowWidth = 1280;
+    static constexpr const Int32 DefaultWindowWidth  = 1280;
     static constexpr const Int32 DefaultWindowHeight = 720;
 
     static constexpr const Int32 DefaultWindowPosX = 100;
