@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Vector.hpp"
+#include "Maths/Vector.hpp"
 
 namespace LumenEngine
 {
