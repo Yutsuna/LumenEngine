@@ -109,3 +109,23 @@ void LumenEngine::FGenericWindow::SetWindowTitle ( const AnsiChar *const Text )
 {
     /* __empty__ */
 }
+
+LumenEngine::Int32 LumenEngine::FGenericWindow::GetWindowWidth () const
+{
+    return Description->Size.width;
+}
+
+LumenEngine::Int32 LumenEngine::FGenericWindow::GetWindowHeight () const
+{
+    return Description->Size.height;
+}
+
+LumenEngine::Math::FVec2i LumenEngine::FGenericWindow::GetWindowSize () const
+{
+    return Description->Size;
+}
+
+LumenEngine::Math::FVec2i LumenEngine::FGenericWindow::GetWindowPosition () const
+{
+    return Description->Position;
+}

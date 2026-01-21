@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include "Container/SmartPtr.hpp"
 #include "CoreTypes.hpp"
+
 #include "Generic/GenericWindowDescription.hpp"
 
 namespace LumenEngine
@@ -96,6 +98,22 @@ public:
      * @param Text the new text-title of the window
      */
     virtual void SetWindowTitle ( const AnsiChar *const Text );
+
+    /** Gets the OS Window width */
+    virtual Int32 GetWindowWidth () const;
+
+    /** Gets the OS Window height */
+    virtual Int32 GetWindowHeight () const;
+
+    /** Gets the OS Window size */
+    virtual Math::FVec2i GetWindowSize () const;
+
+    /** Gets the OS Window position */
+    virtual Math::FVec2i GetWindowPosition () const;
+
+protected:
+
+    TSharedPtr<FGenericWindowDescription> Description;
 };
 
 } // namespace LumenEngine
