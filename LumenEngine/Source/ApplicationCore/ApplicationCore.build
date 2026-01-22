@@ -1,9 +1,9 @@
 module ApplicationCore {
 
-    type = none
+    type = static_library
 
     sources = [
-        "Private/*.cpp"
+        "Private/**/*.cpp"
     ]
 
     public_includes = [
@@ -15,5 +15,7 @@ module ApplicationCore {
     ]
 
     deps = [ Core, MathCore ]
+
+    linux_libs = [ SDL3 ]
 
 }
