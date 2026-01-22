@@ -8,15 +8,15 @@
  */
 
 const PREFIX_MAP = {
-  bug: "fix",
-  feature: "feat",
-  documentation: "docs",
-  "ci/cd": "ci",
-  test: "test",
-  perf: "perf",
-  refactor: "refactor",
-  style: "style",
-  chore: "chore",
+  bug: "Fix",
+  feature: "Feat",
+  documentation: "Docs",
+  "ci/cd": "CI",
+  test: "Test",
+  perf: "Perf",
+  refactor: "Refactor",
+  style: "Style",
+  chore: "Chore",
 };
 
 async function getIssue({ github, context, isDispatch }) {
@@ -38,10 +38,10 @@ async function getIssue({ github, context, isDispatch }) {
   return context.payload.issue;
 }
 
-function generateTitle(body, labels, currentTitle) {
+function generateTitle(body, labels) {
   const prefix = labels.find((l) => PREFIX_MAP[l])
     ? PREFIX_MAP[labels.find((l) => PREFIX_MAP[l])]
-    : "chore";
+    : "Chore";
 
   const extract = (regex) => {
     const m = body.match(regex);
@@ -98,7 +98,7 @@ async function addContextLabelIfMissing({
  * entry-point
  */
 
-module.exports = async ({ github, context, core }) => {
+module.exports = async ({ github, context }) => {
   console.log("________________________________");
   console.log("Event name:", context.eventName);
 
@@ -120,7 +120,7 @@ module.exports = async ({ github, context, core }) => {
   const { title: currentTitle, body = "", labels = [] } = issue;
   const labelNames = labels.map((l) => (typeof l === "string" ? l : l.name));
 
-  const newTitle = generateTitle(body, labelNames, currentTitle);
+  const newTitle = generateTitle(body, labelNames);
 
   if (!newTitle) {
     console.log("Missing required context or summary in issue body");
