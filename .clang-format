@@ -1,0 +1,37 @@
+---
+BasedOnStyle: LLVM
+Language: Cpp
+IndentWidth: 4
+UseTab: Never
+ColumnLimit: 0
+
+AlignConsecutiveAssignments: true
+AlignConsecutiveDeclarations: true
+
+BreakBeforeBraces: Allman
+
+SpacesInParens: Custom
+SpacesInParensOptions:
+  InConditionalStatements: true
+  InCStyleCasts: true
+  InEmptyParentheses: false
+  Other: true
+
+SpaceBeforeParens: Custom
+SpaceBeforeParensOptions:
+  AfterControlStatements: true
+  AfterFunctionDefinitionName: true
+  AfterFunctionDeclarationName: true
+  AfterIfMacros: true
+  AfterOverloadedOperator: false
+  BeforeNonEmptyParentheses: false
+
+PointerAlignment: Right
+
+NamespaceIndentation: Inner
+AccessModifierOffset: -4
+
+EmptyLineBeforeAccessModifier: Always
+EmptyLineAfterAccessModifier: Always
+AllowShortFunctionsOnASingleLine: None
+KeepEmptyLinesAtTheStartOfBlocks: true

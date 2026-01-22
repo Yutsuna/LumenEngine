@@ -19,3 +19,4 @@ build.ninja
 !.clang-format
 !.gitignore
 !.gitattributes
+compile_commands.json

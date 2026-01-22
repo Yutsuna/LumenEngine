@@ -184,6 +184,36 @@ namespace LumenBuilder
                         }
                         Sb.AppendLine(")");
                     }
+
+                    /** Add platform-specific system libraries */
+                    var PlatformLibs = GetPlatformLibraries(Module);
+                    if (PlatformLibs.Count > 0)
+                    {
+                        Sb.Append("target_link_libraries(");
+                        Sb.Append(Module.Name);
+                        Sb.Append(" PUBLIC");
+
+                        for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
+                        {
+                            Sb.Append(' ');
+                            Sb.Append(PlatformLibs[LibIndex]);
+                        }
+                        Sb.AppendLine(")");
+                    }
+                }
+
+                /// <summary>
+                /// Gets platform-specific system libraries for current platform.
+                /// </summary>
+                private IReadOnlyList<string> GetPlatformLibraries(ModuleDescriptor Module)
+                {
+                    return Context.Platform.Type switch
+                    {
+                        PlatformType.Linux => Module.PlatformLibs.Linux,
+                        PlatformType.Windows => Module.PlatformLibs.Windows,
+                        PlatformType.MacOS => Module.PlatformLibs.MacOS,
+                        _ => Array.Empty<string>()
+                    };
                 }
 
                 /// <summary>
@@ -193,12 +223,40 @@ namespace LumenBuilder
                 {
                     var SourceFiles = new List<string>();
 
-                    for (int SrcIndex = 0; SrcIndex < Module.Sources.Count; ++SrcIndex)
+                    for (int PatternIndex = 0; PatternIndex < Module.Sources.Count; ++PatternIndex)
                     {
-                        string Pattern = Module.Sources[SrcIndex];
+                        string Pattern = Module.Sources[PatternIndex];
                         string FullPattern = Paths.Combine(Module.Directory, Pattern);
 
-                        if (Pattern.Contains('*'))
+                        /** Check for recursive pattern **/
+                        if (Pattern.Contains("**"))
+                        {
+                            string BaseDir = Module.Directory;
+                            string SearchPattern = Path.GetFileName(Pattern);
+                            
+                            /** Extract base directory from pattern before ** */
+                            int RecursiveIndex = Pattern.IndexOf("**");
+                            if (RecursiveIndex > 0)
+                            {
+                                string BasePath = Pattern.Substring(0, RecursiveIndex).TrimEnd('/', '\\');
+                                BaseDir = Paths.Combine(Module.Directory, BasePath);
+                                
+                                /** Extract search pattern after ** */
+                                string Remaining = Pattern.Substring(RecursiveIndex + 2).TrimStart('/', '\\');
+                                SearchPattern = Remaining;
+                            }
+
+                            if (Directory.Exists(BaseDir))
+                            {
+                                string[] Files = Directory.GetFiles(BaseDir, SearchPattern, SearchOption.AllDirectories);
+                                for (int FileIndex = 0; FileIndex < Files.Length; ++FileIndex)
+                                {
+                                    SourceFiles.Add(Paths.Normalize(Files[FileIndex]));
+                                }
+                            }
+                        }
+                        /** Single directory pattern with * */
+                        else if (Pattern.Contains('*'))
                         {
                             string Dir = Paths.GetDirectory(FullPattern);
                             string FilePattern = Path.GetFileName(FullPattern);
@@ -212,6 +270,7 @@ namespace LumenBuilder
                                 }
                             }
                         }
+                        /** Direct file path */
                         else
                         {
                             SourceFiles.Add(FullPattern);

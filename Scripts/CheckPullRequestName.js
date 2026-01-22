@@ -8,16 +8,16 @@
  */
 
 const TYPES = [
-  "feat",
-  "fix",
-  "chore",
-  "docs",
-  "style",
-  "refactor",
-  "perf",
-  "test",
-  "ci",
-  "build",
+  "Feat",
+  "Fix",
+  "Chore",
+  "Docs",
+  "Style",
+  "Refactor",
+  "Perf",
+  "Test",
+  "CI",
+  "Build",
 ];
 
 const PATTERN = new RegExp(`^(${TYPES.join("|")})(\\(.+\\))?: .+`);

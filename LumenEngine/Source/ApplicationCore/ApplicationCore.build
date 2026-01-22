@@ -1,6 +1,6 @@
-module Core {
+module ApplicationCore {
 
-    type = shared_library
+    type = static_library
 
     sources = [
         "Private/**/*.cpp"
@@ -14,6 +14,8 @@ module Core {
         "LUMEN_ENGINE"
     ]
 
-    deps = [ ]
+    deps = [ Core, MathCore ]
+
+    linux_libs = [ SDL3 ]
 
 }
