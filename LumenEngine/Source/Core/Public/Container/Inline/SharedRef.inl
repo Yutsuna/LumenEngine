@@ -28,8 +28,7 @@ template <typename Type>
 template <typename OtherType>
     requires Concepts::ConvertibleTo<OtherType *, Type *>
 TSharedRef<Type>::TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy )
-    : Object( Proxy.Object )
-    , Controller( new SharedPtrInternal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
+    : Object( Proxy.Object ), Controller( new SharedPtrInternal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
 {
     assert( Object != nullptr );
 }
@@ -111,6 +110,17 @@ template <typename ObjectType>
 static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController )
 {
     return TSharedRef<ObjectType>( InObject, InController );
+}
+
+/**
+ * StaticCast
+ */
+
+template <typename CastToType, typename CastFromType>
+static inline TSharedRef<CastToType> StaticCastSharedRef ( const TSharedRef<CastFromType> &InSharedRef )
+{
+    InSharedRef.Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
+    return MakeSharedRef<CastToType>( static_cast<CastToType *>( InSharedRef.Object ), InSharedRef.Controller );
 }
 
 } // namespace LumenEngine

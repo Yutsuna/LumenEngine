@@ -167,6 +167,9 @@ private:
 
     template <typename ObjectType>
     friend TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController );
+
+    template <typename CastToType, typename CastFromType>
+    friend TSharedRef<CastToType> StaticCastSharedRef ( const TSharedRef<CastFromType> &InSharedRef );
 };
 
 /**
@@ -230,6 +233,9 @@ private:
 
     template <typename ObjectType>
     friend class TSharedPtr;
+
+    template <typename CastToType, typename CastFromType>
+    friend TSharedPtr<CastToType> StaticCastSharedPtr ( const TSharedPtr<CastFromType> &InSharedPtr );
 };
 
 /**
@@ -256,6 +262,22 @@ static inline TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs );
  */
 template <typename ObjectType>
 static inline SharedPtrInternal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject );
+
+/**
+ * @brief Casts a TSharedRef to a different type (static_cast).
+ * @param InSharedRef The shared reference to cast.
+ * @return A new TSharedRef managing the same object but with the target type.
+ */
+template <typename CastToType, typename CastFromType>
+static inline TSharedRef<CastToType> StaticCastSharedRef ( const TSharedRef<CastFromType> &InSharedRef );
+
+/**
+ * @brief Casts a TSharedPtr to a different type (static_cast).
+ * @param InSharedPtr The shared pointer to cast.
+ * @return A new TSharedPtr managing the same object but with the target type.
+ */
+template <typename CastToType, typename CastFromType>
+static inline TSharedPtr<CastToType> StaticCastSharedPtr ( const TSharedPtr<CastFromType> &InSharedPtr );
 
 } // namespace LumenEngine
 
