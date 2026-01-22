@@ -16,14 +16,13 @@ static LumenEngine::Bool GInitializedSDL = false;
 
 LumenEngine::Bool LumenEngine::FLinuxBackend::InitializeSDL ()
 {
-    if ( not GInitializedSDL )
+    if ( GInitializedSDL )
     {
         return true;
     }
 
-    if ( not SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS ) )
+    if ( !SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS ) )
     {
-        // TODO: log error
         return false;
     }
 
