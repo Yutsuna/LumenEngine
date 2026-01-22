@@ -1,9 +1,9 @@
 module Core {
 
-    type = shared
+    type = shared_library
 
     sources = [
-        "Private"
+        "Private/**/*.cpp"
     ]
 
     public_includes = [
