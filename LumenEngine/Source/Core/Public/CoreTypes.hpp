@@ -5,15 +5,17 @@
 
 #pragma once
 
+#include <atomic>
+
 namespace LumenEngine
 {
 
-using Int8 = signed char;
+using Int8  = signed char;
 using Int16 = short;
 using Int32 = int;
 using Int64 = long long;
 
-using UInt8 = unsigned char;
+using UInt8  = unsigned char;
 using UInt16 = unsigned short;
 using UInt32 = unsigned int;
 using UInt64 = unsigned long long;
@@ -23,8 +25,12 @@ using Float64 = double;
 
 using AnsiChar = char;
 using WideChar = wchar_t;
-using Bool = bool;
-using Byte = unsigned char;
+using Bool     = bool;
+using Byte     = unsigned char;
+
+// TODO: Implement custom atomic type
+template <typename Type>
+using Atomic = std::atomic<Type>;
 
 /**
  * USize: Unsigned integer type used for sizes and indexing
