@@ -42,7 +42,8 @@ LumenEngine::TSharedRef<LumenEngine::FGenericApplication> LumenEngine::FLinuxApp
 
 void LumenEngine::FLinuxApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow, const TSharedRef<FGenericWindowDescription> &InDescription, const TSharedPtr<FGenericWindow> &InParentWindow, const bool bShowImmediately )
 {
-    TSharedRef<FLinuxWindow> LinuxWindow = MakeShareable<FLinuxWindow>( static_cast<FLinuxWindow *>( InWindow.Get() ) );
+    const TSharedRef<FLinuxWindow> LinuxWindow  = StaticCastSharedRef<FLinuxWindow>( InWindow );
+    const TSharedPtr<FLinuxWindow> ParentWindow = StaticCastSharedPtr<FLinuxWindow>( InParentWindow );
 
     LinuxWindow->Initialize( this, InDescription, InParentWindow, bShowImmediately );
     Windows.push_back( LinuxWindow );
