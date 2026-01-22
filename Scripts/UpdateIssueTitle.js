@@ -98,7 +98,7 @@ async function addContextLabelIfMissing({
  * entry-point
  */
 
-module.exports = async ({ github, context }) => {
+module.exports = async ({ github, context, core }) => {
   console.log("________________________________");
   console.log("Event name:", context.eventName);
 
