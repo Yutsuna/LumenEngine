@@ -12,6 +12,6 @@ namespace LumenEngine
 
 // TODO: Implement custom vector class
 template <typename Type>
-using Vector = std::vector<Type>;
+using FVector = std::vector<Type>;
 
 } // namespace LumenEngine
