@@ -27,10 +27,11 @@ SDL_Window *LumenEngine::FLinuxWindow::GetOSWindowHandle () const
     return WindowHandle;
 }
 
-void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Application, const TSharedRef<FGenericWindowDescription> &InDescription )
+void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Application, const TSharedRef<FGenericWindowDescription> &InDescription, const TSharedPtr<FGenericWindow> &InParentWindow, const bool bShowImmediately )
 {
     Description      = InDescription;
     LinuxApplication = Application;
+    ParentWindow     = InParentWindow;
 }
 
 /**
