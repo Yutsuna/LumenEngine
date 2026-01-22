@@ -150,7 +150,6 @@ template <typename ObjectType, typename... Arguments>
 static inline TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs )
 {
     SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *Controller = NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
-    // Note: Utilise MakeSharedRef pour éviter la récursion infinie et appeler le constructeur privé
     return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(), static_cast<SharedPtrInternal::FReferenceController *>( Controller ) );
 }
 
