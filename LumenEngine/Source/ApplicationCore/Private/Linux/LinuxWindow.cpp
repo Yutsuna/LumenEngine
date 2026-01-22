@@ -5,9 +5,9 @@
 
 #include "Linux/LinuxWindow.hpp"
 
-std::shared_ptr<LumenEngine::FLinuxWindow> LumenEngine::FLinuxWindow::Make ()
+LumenEngine::TSharedRef<LumenEngine::FLinuxWindow> LumenEngine::FLinuxWindow::Make ()
 {
-    return std::make_shared<FLinuxWindow>();
+    return MakeShareable<FLinuxWindow>( new FLinuxWindow() );
 }
 
 /**
@@ -15,7 +15,7 @@ std::shared_ptr<LumenEngine::FLinuxWindow> LumenEngine::FLinuxWindow::Make ()
  */
 
 LumenEngine::FLinuxWindow::FLinuxWindow ()
-    : WindowHandle( nullptr ), bIsVisible( false ), bIsFullScreen( false )
+    : WindowHandle( nullptr )
 {
     /* __ctor__ */
 }

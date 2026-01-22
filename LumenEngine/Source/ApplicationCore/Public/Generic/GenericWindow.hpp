@@ -5,9 +5,7 @@
 
 #pragma once
 
-#include "Container/SmartPtr.hpp"
-#include "CoreTypes.hpp"
-
+#include "Container/SharedPtr.hpp"
 #include "Generic/GenericWindowDescription.hpp"
 
 namespace LumenEngine

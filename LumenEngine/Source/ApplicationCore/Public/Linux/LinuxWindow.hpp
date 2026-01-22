@@ -6,9 +6,8 @@
 #pragma once
 
 #include "Generic/GenericWindow.hpp"
-#include <SDL3/SDL.h>
 
-#include <memory>
+#include <SDL3/SDL.h>
 
 namespace LumenEngine
 {
@@ -19,7 +18,7 @@ public:
 
     ~FLinuxWindow () override;
 
-    static std::shared_ptr<FLinuxWindow> Make ();
+    static TSharedRef<FLinuxWindow> Make ();
 
 private:
 
