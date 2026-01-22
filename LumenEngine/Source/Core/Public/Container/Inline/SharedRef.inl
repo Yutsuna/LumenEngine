@@ -27,6 +27,16 @@ TSharedRef<Type>::TSharedRef( TSharedRef &&Other )
 template <typename Type>
 template <typename OtherType>
     requires Concepts::ConvertibleTo<OtherType *, Type *>
+TSharedRef<Type>::TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy )
+    : Object( Proxy.Object )
+    , Controller( new SharedPtrInternal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
+{
+    assert( Object != nullptr );
+}
+
+template <typename Type>
+template <typename OtherType>
+    requires Concepts::ConvertibleTo<OtherType *, Type *>
 TSharedRef<Type>::TSharedRef( const TSharedRef<OtherType> &Other )
     : Object( Other.Object ), Controller( Other.Controller )
 {
