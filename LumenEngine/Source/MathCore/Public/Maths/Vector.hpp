@@ -31,19 +31,19 @@ namespace Math
             {
                 struct
                 {
-                    Type x, y;
+                    Type X, Y;
                 };
                 struct
                 {
-                    Type r, g;
+                    Type R, G;
                 };
                 struct
                 {
-                    Type s, t;
+                    Type S, T;
                 };
                 struct
                 {
-                    Type width, height;
+                    Type Width, Height;
                 };
                 Type Data[2] = {};
             };
@@ -56,15 +56,15 @@ namespace Math
             {
                 struct
                 {
-                    Type x, y, z;
+                    Type X, Y, Z;
                 };
                 struct
                 {
-                    Type r, g, b;
+                    Type R, G, B;
                 };
                 struct
                 {
-                    Type s, t, p;
+                    Type S, T, P;
                 };
                 Type Data[3] = {};
             };
@@ -77,15 +77,15 @@ namespace Math
             {
                 struct
                 {
-                    Type x, y, z, w;
+                    Type X, Y, Z, W;
                 };
                 struct
                 {
-                    Type r, g, b, a;
+                    Type R, G, B, A;
                 };
                 struct
                 {
-                    Type s, t, p, q;
+                    Type S, T, P, Q;
                 };
                 Type Data[4] = {};
             };
