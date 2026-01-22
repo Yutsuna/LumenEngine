@@ -35,7 +35,7 @@ namespace EWindowMode
     /**
      * @brief Convert a window mode enum value to its string representation.
      */
-    static inline const char *ToString ( const Type InWindowMode )
+    static inline const AnsiChar *const ToString ( const Type InWindowMode )
     {
         switch ( InWindowMode )
         {
