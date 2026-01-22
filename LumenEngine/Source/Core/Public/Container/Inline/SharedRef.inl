@@ -25,7 +25,8 @@ TSharedRef<Type>::TSharedRef( TSharedRef &&Other )
 }
 
 template <typename Type>
-template <typename OtherType, typename>
+template <typename OtherType>
+    requires Concepts::ConvertibleTo<OtherType *, Type *>
 TSharedRef<Type>::TSharedRef( const TSharedRef<OtherType> &Other )
     : Object( Other.Object ), Controller( Other.Controller )
 {
@@ -90,6 +91,16 @@ void TSharedRef<Type>::Release ()
         Controller->DestroyObject();
         Controller->Deallocate();
     }
+}
+
+/**
+ * SharedRef Builder
+ */
+
+template <typename ObjectType>
+static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController )
+{
+    return TSharedRef<ObjectType>( InObject, InController );
 }
 
 } // namespace LumenEngine

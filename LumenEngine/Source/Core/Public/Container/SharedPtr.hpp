@@ -5,7 +5,9 @@
 
 #pragma once
 
+#include "Concepts/ConvertibleTo.hpp"
 #include "CoreTypes.hpp"
+
 #include <cassert>
 #include <type_traits>
 
@@ -66,12 +68,48 @@ namespace SharedPtrInternal
         Type *GetObjectPtr ();
     };
 
+    /**
+     * @class TDefaultReferenceController
+     * @brief Controller for objects already allocated on the heap.
+     * @param Type The type of the managed object.
+     */
+    template <typename Type>
+    class TDefaultReferenceController final : public FReferenceController
+    {
+    public:
+
+        /** Constructs the controller with an existing pointer. */
+        explicit TDefaultReferenceController ( Type *InObject );
+
+        /** Destroys the managed object via delete. */
+        void DestroyObject () override;
+
+        /** Frees the memory block containing the controller. */
+        void Deallocate () override;
+
+    private:
+
+        Type *Object;
+    };
+
+    /**
+     * @struct TRawPtrProxy
+     * @brief Internal proxy used to allow implicit conversion from MakeShareable to Ref or Ptr.
+     */
+    template <typename Type>
+    struct TRawPtrProxy
+    {
+        explicit TRawPtrProxy ( Type *InObject );
+
+        Type *Object;
+    };
+
 } // namespace SharedPtrInternal
 
 /**
  * @class TSharedRef
  * @brief A non-nullable shared reference smart pointer.
- * @tparam Type The type of the managed object.
+ * @param Type The type of the managed object.
  */
 template <typename Type>
 class TSharedRef
@@ -86,8 +124,14 @@ public:
     /** Move Constructor */
     TSharedRef ( TSharedRef &&Other );
 
+    /** Proxy Constructor: Allows implicit conversion from MakeShareable to TSharedRef */
+    template <typename OtherType>
+        requires Concepts::ConvertibleTo<OtherType *, Type *>
+    TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy );
+
     /** Upcast Constructor: Allows conversion from derived to base types. */
-    template <typename OtherType, typename = std::enable_if_t<std::is_convertible_v<OtherType *, Type *>>>
+    template <typename OtherType>
+        requires Concepts::ConvertibleTo<OtherType *, Type *>
     TSharedRef( const TSharedRef<OtherType> &Other );
 
     /** Destructor */
@@ -128,7 +172,7 @@ private:
 /**
  * @class TSharedPtr
  * @brief A nullable shared pointer.
- * @tparam Type The type of the managed object.
+ * @param Type The type of the managed object.
  */
 template <typename Type>
 class TSharedPtr
@@ -139,7 +183,8 @@ public:
     TSharedPtr ();
 
     /** Constructor from TSharedRef (Implicit) */
-    template <typename OtherType, typename = std::enable_if_t<std::is_convertible_v<OtherType *, Type *>>>
+    template <typename OtherType>
+        requires Concepts::ConvertibleTo<OtherType *, Type *>
     TSharedPtr( const TSharedRef<OtherType> &Other );
 
     /** Copy Constructor */
@@ -147,6 +192,11 @@ public:
 
     /** Move Constructor */
     TSharedPtr ( TSharedPtr &&Other );
+
+    /** Proxy Constructor: Allows implicit conversion from MakeShareable to TSharedPtr */
+    template <typename OtherType>
+        requires Concepts::ConvertibleTo<OtherType *, Type *>
+    TSharedPtr( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy );
 
     /** Destructor */
     ~TSharedPtr ();
@@ -195,6 +245,14 @@ static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, Share
  */
 template <typename ObjectType, typename... Arguments>
 static inline TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs );
+
+/**
+ * @brief Creates a TRawPtrProxy for the given object pointer.
+ * @param InObject Pointer to the managed object.
+ * @return A TRawPtrProxy wrapping the given object pointer.
+ */
+template <typename ObjectType>
+static inline SharedPtrInternal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject );
 
 } // namespace LumenEngine
 

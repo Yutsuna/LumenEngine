@@ -14,10 +14,12 @@ template <typename Type>
 TSharedPtr<Type>::TSharedPtr()
     : Object( nullptr ), Controller( nullptr )
 {
+    /* __empty__ */
 }
 
 template <typename Type>
-template <typename OtherType, typename>
+template <typename OtherType>
+    requires Concepts::ConvertibleTo<OtherType *, Type *>
 TSharedPtr<Type>::TSharedPtr( const TSharedRef<OtherType> &Other )
     : Object( Other.Object ), Controller( Other.Controller )
 {
@@ -124,6 +126,10 @@ void TSharedPtr<Type>::Release ()
     }
 }
 
+/**
+ * SharedPtr Builders
+ */
+
 namespace
 {
 
@@ -138,19 +144,30 @@ namespace
         return new SharedPtrInternal::TIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
     }
 
-} // namespace
+    /**
+     * @brief Creates a new TDefaultReferenceController instance for the given object.
+     * @param InObject Pointer to the managed object.
+     * @return A pointer to the newly created TDefaultReferenceController.
+     */
+    template <typename ObjectType>
+    static inline SharedPtrInternal::TDefaultReferenceController<ObjectType> *NewDefaultReferenceController ( ObjectType *InObject )
+    {
+        return new SharedPtrInternal::TDefaultReferenceController<ObjectType>( InObject );
+    }
 
-template <typename ObjectType>
-static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController )
-{
-    return TSharedRef<ObjectType>( InObject, InController );
-}
+} // namespace
 
 template <typename ObjectType, typename... Arguments>
 static inline TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs )
 {
     SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *Controller = NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
     return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(), static_cast<SharedPtrInternal::FReferenceController *>( Controller ) );
+}
+
+template <typename ObjectType>
+static inline SharedPtrInternal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject )
+{
+    return SharedPtrInternal::TRawPtrProxy<ObjectType>( InObject );
 }
 
 } // namespace LumenEngine

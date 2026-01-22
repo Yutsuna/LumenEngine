@@ -13,6 +13,10 @@ namespace LumenEngine
 namespace SharedPtrInternal
 {
 
+    /**
+     * TIntrusiveReferenceController
+     */
+
     template <typename Type>
     template <typename... Arguments>
     TIntrusiveReferenceController<Type>::TIntrusiveReferenceController( Arguments &&...InArgs )
@@ -36,6 +40,39 @@ namespace SharedPtrInternal
     Type *TIntrusiveReferenceController<Type>::GetObjectPtr ()
     {
         return reinterpret_cast<Type *>( Storage );
+    }
+
+    /**
+     * TDefaultReferenceController
+     */
+
+    template <typename Type>
+    TDefaultReferenceController<Type>::TDefaultReferenceController( Type *InObject )
+        : Object( InObject )
+    {
+        /* __empty__ */
+    }
+
+    template <typename Type>
+    void TDefaultReferenceController<Type>::DestroyObject ()
+    {
+        delete Object;
+    }
+
+    template <typename Type>
+    void TDefaultReferenceController<Type>::Deallocate ()
+    {
+        delete this;
+    }
+
+    /**
+     * TRawPtrProxy
+     */
+    template <typename Type>
+    TRawPtrProxy<Type>::TRawPtrProxy( Type *InObject )
+        : Object( InObject )
+    {
+        /* __empty__ */
     }
 
 } // namespace SharedPtrInternal
