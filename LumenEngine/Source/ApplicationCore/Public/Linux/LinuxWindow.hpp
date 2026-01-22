@@ -20,6 +20,8 @@ public:
 
     static TSharedRef<FLinuxWindow> Make ();
 
+    SDL_Window *GetOSWindowHandle () const;
+
 private:
 
     FLinuxWindow ();

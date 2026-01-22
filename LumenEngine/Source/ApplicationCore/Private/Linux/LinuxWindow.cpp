@@ -5,9 +5,18 @@
 
 #include "Linux/LinuxWindow.hpp"
 
+/**
+ * public
+ */
+
 LumenEngine::TSharedRef<LumenEngine::FLinuxWindow> LumenEngine::FLinuxWindow::Make ()
 {
     return MakeShareable<FLinuxWindow>( new FLinuxWindow() );
+}
+
+SDL_Window *LumenEngine::FLinuxWindow::GetOSWindowHandle () const
+{
+    return WindowHandle;
 }
 
 /**
@@ -15,7 +24,7 @@ LumenEngine::TSharedRef<LumenEngine::FLinuxWindow> LumenEngine::FLinuxWindow::Ma
  */
 
 LumenEngine::FLinuxWindow::FLinuxWindow ()
-    : WindowHandle( nullptr )
+    : WindowHandle( nullptr ), FGenericWindow()
 {
     /* __ctor__ */
 }

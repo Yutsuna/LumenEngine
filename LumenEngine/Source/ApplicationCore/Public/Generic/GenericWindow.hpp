@@ -84,9 +84,6 @@ public:
     /** Gets the OS Window title bar size */
     virtual Int32 GetOSWindowTitleBarSize () const;
 
-    /** Gets the OS Window handle in the form of a void pointer for other API's to use */
-    virtual void *GetOSWindowHandle () const;
-
     /** @return true if the window is in forgeground */
     virtual Bool IsForegroundWindow () const;
 

@@ -106,11 +106,6 @@ LumenEngine::Int32 LumenEngine::FGenericWindow::GetOSWindowTitleBarSize () const
     return 0;
 }
 
-void *LumenEngine::FGenericWindow::GetOSWindowHandle () const
-{
-    return nullptr;
-}
-
 LumenEngine::Bool LumenEngine::FGenericWindow::IsForegroundWindow () const
 {
     return false;
