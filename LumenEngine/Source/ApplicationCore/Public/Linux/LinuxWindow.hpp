@@ -22,7 +22,7 @@ public:
 
     static TSharedRef<FLinuxWindow> Make ();
 
-    void Initialize ( FLinuxApplication *const Application, const TSharedRef<FGenericWindowDescription> &InDescription );
+    void Initialize ( FLinuxApplication *const Application, const TSharedRef<FGenericWindowDescription> &InDescription, const TSharedPtr<FGenericWindow> &InParentWindow, const bool bShowImmediately );
 
     SDL_Window *GetOSWindowHandle () const;
 
@@ -32,8 +32,9 @@ private:
 
 private:
 
-    FLinuxApplication *LinuxApplication;
-    SDL_Window        *WindowHandle;
+    FLinuxApplication         *LinuxApplication;
+    SDL_Window                *WindowHandle;
+    TSharedPtr<FGenericWindow> ParentWindow;
 };
 
 } // namespace LumenEngine
