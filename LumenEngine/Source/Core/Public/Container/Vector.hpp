@@ -11,13 +11,7 @@ namespace LumenEngine
 {
 
 // TODO: Implement custom vector class
-
 template <typename Type>
-class Vector final : public std::vector<Type>
-{
-public:
-
-private:
-};
+using Vector = std::vector<Type>;
 
 } // namespace LumenEngine
