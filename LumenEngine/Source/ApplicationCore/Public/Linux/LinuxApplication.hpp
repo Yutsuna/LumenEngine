@@ -34,7 +34,7 @@ public:
 
 private:
 
-    Vector<TSharedRef<FLinuxWindow>> Windows;
+    FVector<TSharedRef<FLinuxWindow>> Windows;
 };
 
 } // namespace LumenEngine
