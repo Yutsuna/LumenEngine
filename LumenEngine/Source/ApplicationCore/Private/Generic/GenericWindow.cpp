@@ -85,10 +85,10 @@ LumenEngine::Bool LumenEngine::FGenericWindow::IsPointInWindow ( const Int32 InX
     const Math::FVec2i &WindowPos  = GetWindowPosition();
     const Math::FVec2i &WindowSize = GetWindowSize();
 
-    const Int32 Left   = WindowPos.x;
-    const Int32 Right  = WindowPos.x + WindowSize.width;
-    const Int32 Top    = WindowPos.y;
-    const Int32 Bottom = WindowPos.y + WindowSize.height;
+    const Int32 Left   = WindowPos.X;
+    const Int32 Right  = WindowPos.X + WindowSize.Width;
+    const Int32 Top    = WindowPos.Y;
+    const Int32 Bottom = WindowPos.Y + WindowSize.Height;
 
     const Bool bIsInsideX = ( InX >= Left ) && ( InX < Right );
     const Bool bIsInsideY = ( InY >= Top ) && ( InY < Bottom );
@@ -118,12 +118,12 @@ void LumenEngine::FGenericWindow::SetWindowTitle ( const AnsiChar *const Text )
 
 LumenEngine::Int32 LumenEngine::FGenericWindow::GetWindowWidth () const
 {
-    return Description->Size.width;
+    return Description->Size.Width;
 }
 
 LumenEngine::Int32 LumenEngine::FGenericWindow::GetWindowHeight () const
 {
-    return Description->Size.height;
+    return Description->Size.Height;
 }
 
 const LumenEngine::Math::FVec2i &LumenEngine::FGenericWindow::GetWindowSize () const
