@@ -182,6 +182,9 @@ public:
     /** Default Constructor (Null) */
     TSharedPtr ();
 
+    /** NullptrType Constructor */
+    TSharedPtr ( NullptrType );
+
     /** Constructor from TSharedRef (Implicit) */
     template <typename OtherType>
         requires Concepts::ConvertibleTo<OtherType *, Type *>
