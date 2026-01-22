@@ -83,9 +83,14 @@ namespace LumenBuilder
         {
             string RootDir = GetArgValue(Args, "--root") ?? Directory.GetCurrentDirectory();
             string OutputDir = GetArgValue(Args, "--output") ?? RootDir;
-            string FormatStr = GetArgValue(Args, "--format") ?? "ninja";
             string ConfigStr = GetArgValue(Args, "--config") ?? "debug";
             string? Toolchain = GetArgValue(Args, "--toolchain");
+            string FormatStr = GetArgValue(Args, "--format") ?? "ninja";
+
+            if (Args.Length > 1 && !Args[1].StartsWith("--"))
+            {
+                FormatStr = Args[1];
+            }
 
             OutputFormat Format = FormatStr.ToLowerInvariant() switch
             {
