@@ -18,6 +18,13 @@ TSharedPtr<Type>::TSharedPtr()
 }
 
 template <typename Type>
+TSharedPtr<Type>::TSharedPtr( NullptrType )
+    : Object( nullptr ), Controller( nullptr )
+{
+    /* __empty__ */
+}
+
+template <typename Type>
 template <typename OtherType>
     requires Concepts::ConvertibleTo<OtherType *, Type *>
 TSharedPtr<Type>::TSharedPtr( const TSharedRef<OtherType> &Other )
