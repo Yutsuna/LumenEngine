@@ -1,8 +1,10 @@
 module Core {
 
-    type = none
+    type = shared
 
-    sources = [ ]
+    sources = [
+        "Private"
+    ]
 
     public_includes = [
         "Public"
