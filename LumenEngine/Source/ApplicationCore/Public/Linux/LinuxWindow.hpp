@@ -12,6 +12,8 @@
 namespace LumenEngine
 {
 
+class FLinuxApplication;
+
 class FLinuxWindow : public FGenericWindow
 {
 public:
@@ -19,6 +21,8 @@ public:
     ~FLinuxWindow () override;
 
     static TSharedRef<FLinuxWindow> Make ();
+
+    void Initialize ( FLinuxApplication *const Application, const TSharedRef<FGenericWindowDescription> &InDescription );
 
     SDL_Window *GetOSWindowHandle () const;
 
@@ -28,7 +32,8 @@ private:
 
 private:
 
-    SDL_Window *WindowHandle;
+    FLinuxApplication *LinuxApplication;
+    SDL_Window        *WindowHandle;
 };
 
 } // namespace LumenEngine

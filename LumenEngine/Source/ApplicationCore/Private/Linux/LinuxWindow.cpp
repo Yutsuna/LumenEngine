@@ -19,6 +19,12 @@ SDL_Window *LumenEngine::FLinuxWindow::GetOSWindowHandle () const
     return WindowHandle;
 }
 
+void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Application, const TSharedRef<FGenericWindowDescription> &InDescription )
+{
+    Description      = InDescription;
+    LinuxApplication = Application;
+}
+
 /**
  * private
  */
