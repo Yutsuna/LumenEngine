@@ -4,8 +4,10 @@
  */
 
 #include "Linux/LinuxApplication.hpp"
-#include "Generic/GenericApplicationMessageHandler.hpp"
+#include "Linux/LinuxBackend.hpp"
 #include "Linux/LinuxWindow.hpp"
+
+#include "Generic/GenericApplicationMessageHandler.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -16,7 +18,7 @@
 LumenEngine::FLinuxApplication::FLinuxApplication ()
     : FGenericApplication()
 {
-    if ( !SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS ) )
+    if ( not FLinuxBackend::InitializeSDL() )
     {
         /* TODO: log error */
         return;
@@ -25,7 +27,7 @@ LumenEngine::FLinuxApplication::FLinuxApplication ()
 
 LumenEngine::FLinuxApplication::~FLinuxApplication ()
 {
-    SDL_Quit();
+    FLinuxBackend::ShutdownSDL();
 }
 
 LumenEngine::TSharedRef<LumenEngine::FGenericWindow> LumenEngine::FLinuxApplication::MakeWindow ()
@@ -42,7 +44,7 @@ void LumenEngine::FLinuxApplication::InitializeWindow ( const TSharedRef<FGeneri
 {
     TSharedRef<FLinuxWindow> LinuxWindow = MakeShareable<FLinuxWindow>( static_cast<FLinuxWindow *>( InWindow.Get() ) );
 
-    LinuxWindow->Initialize( this, InDescription );
+    LinuxWindow->Initialize( this, InDescription, InParentWindow, bShowImmediately );
     Windows.push_back( LinuxWindow );
 }
 
