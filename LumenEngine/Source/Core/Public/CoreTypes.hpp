@@ -32,6 +32,8 @@ using Byte     = unsigned char;
 template <typename Type>
 using Atomic = std::atomic<Type>;
 
+using NullptrType = decltype( nullptr );
+
 /**
  * USize: Unsigned integer type used for sizes and indexing
  *
