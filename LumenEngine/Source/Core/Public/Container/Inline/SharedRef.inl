@@ -117,7 +117,7 @@ static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, Share
  */
 
 template <typename CastToType, typename CastFromType>
-static inline TSharedRef<CastToType> StaticCastSharedRef ( const TSharedRef<CastFromType> &InSharedRef )
+static inline TSharedRef<CastToType> StaticCastSharedRef ( TSharedRef<CastFromType> const &InSharedRef )
 {
     InSharedRef.Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
     return MakeSharedRef<CastToType>( static_cast<CastToType *>( InSharedRef.Object ), InSharedRef.Controller );

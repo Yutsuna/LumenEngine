@@ -184,8 +184,13 @@ static inline SharedPtrInternal::TRawPtrProxy<ObjectType> MakeShareable ( Object
 template <typename CastToType, typename CastFromType>
 static inline TSharedPtr<CastToType> StaticCastSharedPtr ( const TSharedPtr<CastFromType> &InSharedPtr )
 {
-    InSharedPtr.Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
-    return MakeSharedRef<CastToType>( static_cast<CastToType *>( InSharedPtr.Object ), InSharedPtr.Controller );
+    if ( InSharedPtr.IsValid() )
+    {
+        InSharedPtr.Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
+        return MakeSharedRef<CastToType>( static_cast<CastToType *>( InSharedPtr.Object ), InSharedPtr.Controller );
+    }
+
+    return TSharedPtr<CastToType>();
 }
 
 } // namespace LumenEngine

@@ -269,7 +269,7 @@ static inline SharedPtrInternal::TRawPtrProxy<ObjectType> MakeShareable ( Object
  * @return A new TSharedRef managing the same object but with the target type.
  */
 template <typename CastToType, typename CastFromType>
-static inline TSharedRef<CastToType> StaticCastSharedRef ( const TSharedRef<CastFromType> &InSharedRef );
+static inline TSharedRef<CastToType> StaticCastSharedRef ( TSharedRef<CastFromType> const &InSharedRef );
 
 /**
  * @brief Casts a TSharedPtr to a different type (static_cast).
@@ -277,7 +277,7 @@ static inline TSharedRef<CastToType> StaticCastSharedRef ( const TSharedRef<Cast
  * @return A new TSharedPtr managing the same object but with the target type.
  */
 template <typename CastToType, typename CastFromType>
-static inline TSharedPtr<CastToType> StaticCastSharedPtr ( const TSharedPtr<CastFromType> &InSharedPtr );
+static inline TSharedPtr<CastToType> StaticCastSharedPtr ( TSharedPtr<CastFromType> const &InSharedPtr );
 
 } // namespace LumenEngine
 
