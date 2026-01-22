@@ -39,6 +39,12 @@ namespace LumenBuilder
                 var PrivateIncludes = new List<string>();
                 var Defines = new List<string>();
                 var Dependencies = new List<string>();
+                var LinuxDeps = new List<string>();
+                var WindowsDeps = new List<string>();
+                var MacOSDeps = new List<string>();
+                var LinuxLibs = new List<string>();
+                var WindowsLibs = new List<string>();
+                var MacOSLibs = new List<string>();
 
                 for (int PropIndex = 0; PropIndex < Ast.Properties.Count; PropIndex++)
                 {
@@ -65,8 +71,29 @@ namespace LumenBuilder
                         case "deps":
                             ExtractIdentifiers(Prop.Value, Dependencies);
                             break;
+                        case "linux_deps":
+                            ExtractIdentifiers(Prop.Value, LinuxDeps);
+                            break;
+                        case "windows_deps":
+                            ExtractIdentifiers(Prop.Value, WindowsDeps);
+                            break;
+                        case "macos_deps":
+                            ExtractIdentifiers(Prop.Value, MacOSDeps);
+                            break;
+                        case "linux_libs":
+                            ExtractIdentifiers(Prop.Value, LinuxLibs);
+                            break;
+                        case "windows_libs":
+                            ExtractIdentifiers(Prop.Value, WindowsLibs);
+                            break;
+                        case "macos_libs":
+                            ExtractIdentifiers(Prop.Value, MacOSLibs);
+                            break;
                     }
                 }
+
+                var PlatformDeps = new PlatformDependencies(LinuxDeps, WindowsDeps, MacOSDeps);
+                var PlatformLibs = new PlatformLibraries(LinuxLibs, WindowsLibs, MacOSLibs);
 
                 return new ModuleDescriptor(
                     ModuleName,
@@ -76,7 +103,9 @@ namespace LumenBuilder
                     PublicIncludes,
                     PrivateIncludes,
                     Defines,
-                    Dependencies
+                    Dependencies,
+                    PlatformDeps,
+                    PlatformLibs
                 );
             }
 
