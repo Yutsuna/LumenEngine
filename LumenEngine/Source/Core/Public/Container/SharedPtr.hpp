@@ -1,11 +1,12 @@
 /**
- * @file SmartPtr.hpp
+ * @file SharedPtr.hpp
  * @brief Declaration of smart pointer classes for memory management.
  */
 
 #pragma once
 
 #include "CoreTypes.hpp"
+#include <cassert>
 #include <type_traits>
 
 namespace LumenEngine
@@ -14,11 +15,14 @@ namespace LumenEngine
 template <typename Type>
 class TSharedRef;
 
+template <typename Type>
+class TSharedPtr;
+
 namespace SharedPtrInternal
 {
 
     /**
-     * @struct FReference
+     * @struct FReferenceController
      * @brief Thread-Safe reference controller for shared pointers.
      * @details Manages the shared reference count and the lifetime of the managed object.
      */
@@ -111,11 +115,68 @@ private:
     Type                                    *Object;
     SharedPtrInternal::FReferenceController *Controller;
 
-    template <typename ObjectType, typename... Arguments>
-    friend TSharedRef<ObjectType> MakeSharedRef ( Arguments &&...InArgs );
-
     template <typename ObjectType>
     friend class TSharedRef;
+
+    template <typename ObjectType>
+    friend class TSharedPtr;
+
+    template <typename ObjectType>
+    friend TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController );
+};
+
+/**
+ * @class TSharedPtr
+ * @brief A nullable shared pointer.
+ * @tparam Type The type of the managed object.
+ */
+template <typename Type>
+class TSharedPtr
+{
+public:
+
+    /** Default Constructor (Null) */
+    TSharedPtr ();
+
+    /** Constructor from TSharedRef (Implicit) */
+    template <typename OtherType, typename = std::enable_if_t<std::is_convertible_v<OtherType *, Type *>>>
+    TSharedPtr( const TSharedRef<OtherType> &Other );
+
+    /** Copy Constructor */
+    TSharedPtr ( const TSharedPtr &Other );
+
+    /** Move Constructor */
+    TSharedPtr ( TSharedPtr &&Other );
+
+    /** Destructor */
+    ~TSharedPtr ();
+
+    /** Assignment Operators */
+    TSharedPtr &operator=( const TSharedPtr &Other );
+    TSharedPtr &operator=( const TSharedRef<Type> &Other );
+
+    /** Accessors */
+    Type &operator*() const;
+    Type *operator->() const;
+    Type *Get () const;
+
+    /** Validity checks */
+    bool     IsValid () const;
+    explicit operator bool () const;
+
+    /** Resets the pointer to null. */
+    void Reset ();
+
+private:
+
+    /** Releases the current reference. */
+    void Release ();
+
+    Type                                    *Object;
+    SharedPtrInternal::FReferenceController *Controller;
+
+    template <typename ObjectType>
+    friend class TSharedPtr;
 };
 
 /**
@@ -136,3 +197,7 @@ template <typename ObjectType, typename... Arguments>
 static inline TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs );
 
 } // namespace LumenEngine
+
+#include "Inline/SharedPtr.inl"
+#include "Inline/SharedPtrInternal.inl"
+#include "Inline/SharedRef.inl"
