@@ -9,6 +9,14 @@
  * public
  */
 
+LumenEngine::FLinuxWindow::~FLinuxWindow ()
+{
+    if ( WindowHandle )
+    {
+        SDL_DestroyWindow( WindowHandle );
+    }
+}
+
 LumenEngine::TSharedRef<LumenEngine::FLinuxWindow> LumenEngine::FLinuxWindow::Make ()
 {
     return MakeShareable<FLinuxWindow>( new FLinuxWindow() );
