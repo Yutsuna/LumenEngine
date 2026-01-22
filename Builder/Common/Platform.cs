@@ -39,7 +39,7 @@ namespace LumenBuilder
         /// Immutable platform context.
         /// </summary>
         public sealed record PlatformInfo(
-            PlatformType Platform,
+            PlatformType Type,
             Architecture Architecture,
             string ObjectExtension,
             string StaticLibExtension,
