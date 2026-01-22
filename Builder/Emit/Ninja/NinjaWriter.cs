@@ -152,14 +152,21 @@ namespace LumenBuilder
 
                         Sb.AppendLine();
 
-                        if (Target.Type != ModuleType.StaticLibrary && Target.DependencyPaths.Count > 0)
+                        if (Target.Type != ModuleType.StaticLibrary)
                         {
+                            /** Write module library dependencies and system libraries */
                             Sb.Append("  libs =");
                             for (int TargetDepPathsIndex = 0; TargetDepPathsIndex < Target.DependencyPaths.Count; ++TargetDepPathsIndex)
                             {
                                 Sb.Append(" \"");
                                 Sb.Append(Target.DependencyPaths[TargetDepPathsIndex]);
                                 Sb.Append('"');
+                            }
+                            /** Add system libraries with -l prefix */
+                            for (int SysLibIndex = 0; SysLibIndex < Target.SystemLibraries.Count; ++SysLibIndex)
+                            {
+                                Sb.Append(" -l");
+                                Sb.Append(Target.SystemLibraries[SysLibIndex]);
                             }
                             Sb.AppendLine();
                         }
