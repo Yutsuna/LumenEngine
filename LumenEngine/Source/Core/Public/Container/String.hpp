@@ -12,11 +12,6 @@ namespace LumenEngine
 {
 
 // TODO: own implementation of FString
-class FString : public std::string
-{
-public:
-
-private:
-};
+using FString = std::string;
 
 } // namespace LumenEngine
