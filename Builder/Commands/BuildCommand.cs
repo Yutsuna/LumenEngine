@@ -81,6 +81,17 @@ namespace LumenBuilder
 
                 Diagnostics.Info($"Loaded {Graph.Count} modules");
 
+                var ValidationResult = BuildFileValidator.ValidateAll(Graph.Modules.Values);
+                if (!ValidationResult.IsValid)
+                {
+                    for (int ErrorIndex = 0; ErrorIndex < ValidationResult.Errors.Count; ErrorIndex++)
+                    {
+                        var Error = ValidationResult.Errors[ErrorIndex];
+                        Diagnostics.Error($"[{Error.ModuleName}] {Error.Message}");
+                    }
+                    return BuildFailureCode;
+                }
+
                 var Platform = PlatformInfo.Detect();
                 var Resolver = new ToolchainResolver();
                 var Toolchain = Options.Toolchain != null
