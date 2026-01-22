@@ -1,8 +1,10 @@
 module MathCore {
 
-    type = none
+    type = shared
 
-    sources = [ ]
+    sources = [
+        "Private/**/*.cpp"
+    ]
 
     public_includes = [
         "Public"
