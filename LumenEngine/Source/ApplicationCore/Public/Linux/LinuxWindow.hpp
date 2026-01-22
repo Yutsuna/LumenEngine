@@ -26,6 +26,9 @@ public:
 
     SDL_Window *GetOSWindowHandle () const;
 
+    void Show () override;
+    void Hide () override;
+
 private:
 
     FLinuxWindow ();
