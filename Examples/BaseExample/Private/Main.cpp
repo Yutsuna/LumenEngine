@@ -1,5 +1,3 @@
-#include "Generic/GenericApplication.hpp"
-#include "Generic/GenericWindowDescription.hpp"
 #include "Linux/LinuxApplication.hpp"
 #include "Linux/LinuxWindow.hpp"
 #include "Maths/Vector.hpp"
