@@ -10,16 +10,12 @@
 namespace LumenEngine
 {
 
-template <typename Type>
-TSharedPtr<Type>::TSharedPtr()
-    : Object( nullptr ), Controller( nullptr )
+template <typename Type> TSharedPtr<Type>::TSharedPtr() : Object( nullptr ), Controller( nullptr )
 {
     /* __empty__ */
 }
 
-template <typename Type>
-TSharedPtr<Type>::TSharedPtr( NullptrType )
-    : Object( nullptr ), Controller( nullptr )
+template <typename Type> TSharedPtr<Type>::TSharedPtr( NullptrType ) : Object( nullptr ), Controller( nullptr )
 {
     /* __empty__ */
 }
@@ -34,8 +30,7 @@ TSharedPtr<Type>::TSharedPtr( const TSharedRef<OtherType> &Other )
 }
 
 template <typename Type>
-TSharedPtr<Type>::TSharedPtr( const TSharedPtr &Other )
-    : Object( Other.Object ), Controller( Other.Controller )
+TSharedPtr<Type>::TSharedPtr( const TSharedPtr &Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     if ( Controller )
     {
@@ -44,21 +39,18 @@ TSharedPtr<Type>::TSharedPtr( const TSharedPtr &Other )
 }
 
 template <typename Type>
-TSharedPtr<Type>::TSharedPtr( TSharedPtr &&Other )
-    : Object( Other.Object ), Controller( Other.Controller )
+TSharedPtr<Type>::TSharedPtr( TSharedPtr &&Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     Other.Object     = nullptr;
     Other.Controller = nullptr;
 }
 
-template <typename Type>
-TSharedPtr<Type>::~TSharedPtr()
+template <typename Type> TSharedPtr<Type>::~TSharedPtr()
 {
     Release();
 }
 
-template <typename Type>
-TSharedPtr<Type> &TSharedPtr<Type>::operator=( const TSharedPtr &Other )
+template <typename Type> TSharedPtr<Type> &TSharedPtr<Type>::operator=( const TSharedPtr &Other )
 {
     if ( this != &Other )
     {
@@ -73,8 +65,7 @@ TSharedPtr<Type> &TSharedPtr<Type>::operator=( const TSharedPtr &Other )
     return *this;
 }
 
-template <typename Type>
-TSharedPtr<Type> &TSharedPtr<Type>::operator=( const TSharedRef<Type> &Other )
+template <typename Type> TSharedPtr<Type> &TSharedPtr<Type>::operator=( const TSharedRef<Type> &Other )
 {
     Release();
     Object     = Other.Object;
@@ -83,48 +74,41 @@ TSharedPtr<Type> &TSharedPtr<Type>::operator=( const TSharedRef<Type> &Other )
     return *this;
 }
 
-template <typename Type>
-Type &TSharedPtr<Type>::operator*() const
+template <typename Type> Type &TSharedPtr<Type>::operator*() const
 {
     assert( IsValid() );
     return *Object;
 }
 
-template <typename Type>
-Type *TSharedPtr<Type>::operator->() const
+template <typename Type> Type *TSharedPtr<Type>::operator->() const
 {
     assert( IsValid() );
     return Object;
 }
 
-template <typename Type>
-Type *TSharedPtr<Type>::Get () const
+template <typename Type> Type *TSharedPtr<Type>::Get () const
 {
     return Object;
 }
 
-template <typename Type>
-bool TSharedPtr<Type>::IsValid () const
+template <typename Type> bool TSharedPtr<Type>::IsValid () const
 {
     return Object != nullptr;
 }
 
-template <typename Type>
-TSharedPtr<Type>::operator bool () const
+template <typename Type> TSharedPtr<Type>::operator bool () const
 {
     return IsValid();
 }
 
-template <typename Type>
-void TSharedPtr<Type>::Reset ()
+template <typename Type> void TSharedPtr<Type>::Reset ()
 {
     Release();
     Object     = nullptr;
     Controller = nullptr;
 }
 
-template <typename Type>
-void TSharedPtr<Type>::Release ()
+template <typename Type> void TSharedPtr<Type>::Release ()
 {
     if ( Controller && Controller->SharedCount.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
     {
@@ -146,7 +130,8 @@ namespace
      * @return A pointer to the newly created TIntrusiveReferenceController.
      */
     template <typename ObjectType, typename... Arguments>
-    static inline SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *NewIntrusiveReferenceController ( Arguments &&...InArgs )
+    static inline SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *
+    NewIntrusiveReferenceController ( Arguments &&...InArgs )
     {
         return new SharedPtrInternal::TIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
     }
@@ -157,7 +142,8 @@ namespace
      * @return A pointer to the newly created TDefaultReferenceController.
      */
     template <typename ObjectType>
-    static inline SharedPtrInternal::TDefaultReferenceController<ObjectType> *NewDefaultReferenceController ( ObjectType *InObject )
+    static inline SharedPtrInternal::TDefaultReferenceController<ObjectType> *
+    NewDefaultReferenceController ( ObjectType *InObject )
     {
         return new SharedPtrInternal::TDefaultReferenceController<ObjectType>( InObject );
     }
@@ -167,8 +153,10 @@ namespace
 template <typename ObjectType, typename... Arguments>
 static inline TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs )
 {
-    SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *Controller = NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
-    return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(), static_cast<SharedPtrInternal::FReferenceController *>( Controller ) );
+    SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *Controller =
+        NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
+    return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(),
+                                      static_cast<SharedPtrInternal::FReferenceController *>( Controller ) );
 }
 
 template <typename ObjectType>

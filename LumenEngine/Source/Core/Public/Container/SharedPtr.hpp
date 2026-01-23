@@ -14,11 +14,9 @@
 namespace LumenEngine
 {
 
-template <typename Type>
-class TSharedRef;
+template <typename Type> class TSharedRef;
 
-template <typename Type>
-class TSharedPtr;
+template <typename Type> class TSharedPtr;
 
 namespace SharedPtrInternal
 {
@@ -46,8 +44,7 @@ namespace SharedPtrInternal
      * @brief Stores the object and the reference count in a single memory block.
      * @param Type The type of the managed object.
      */
-    template <typename Type>
-    class TIntrusiveReferenceController final : public FReferenceController
+    template <typename Type> class TIntrusiveReferenceController final : public FReferenceController
     {
     public:
 
@@ -55,8 +52,7 @@ namespace SharedPtrInternal
         alignas( Type ) Byte Storage[sizeof( Type )];
 
         /** Constructs the managed object in place with forwarded arguments. */
-        template <typename... Arguments>
-        explicit TIntrusiveReferenceController( Arguments &&...InArgs );
+        template <typename... Arguments> explicit TIntrusiveReferenceController( Arguments &&...InArgs );
 
         /** Destroys the managed object. */
         void DestroyObject () override;
@@ -73,8 +69,7 @@ namespace SharedPtrInternal
      * @brief Controller for objects already allocated on the heap.
      * @param Type The type of the managed object.
      */
-    template <typename Type>
-    class TDefaultReferenceController final : public FReferenceController
+    template <typename Type> class TDefaultReferenceController final : public FReferenceController
     {
     public:
 
@@ -96,8 +91,7 @@ namespace SharedPtrInternal
      * @struct TRawPtrProxy
      * @brief Internal proxy used to allow implicit conversion from MakeShareable to Ref or Ptr.
      */
-    template <typename Type>
-    struct TRawPtrProxy
+    template <typename Type> struct TRawPtrProxy
     {
         explicit TRawPtrProxy ( Type *InObject );
 
@@ -111,8 +105,7 @@ namespace SharedPtrInternal
  * @brief A non-nullable shared reference smart pointer.
  * @param Type The type of the managed object.
  */
-template <typename Type>
-class TSharedRef
+template <typename Type> class TSharedRef
 {
     static_assert( !std::is_void_v<Type>, "TSharedRef<void> is not supported. Use a base class pointer." );
 
@@ -156,17 +149,16 @@ private:
     /** Releases the current reference. */
     void Release ();
 
-    Type                                    *Object;
+    Type *Object;
     SharedPtrInternal::FReferenceController *Controller;
 
-    template <typename ObjectType>
-    friend class TSharedRef;
+    template <typename ObjectType> friend class TSharedRef;
+
+    template <typename ObjectType> friend class TSharedPtr;
 
     template <typename ObjectType>
-    friend class TSharedPtr;
-
-    template <typename ObjectType>
-    friend TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController );
+    friend TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject,
+                                                  SharedPtrInternal::FReferenceController *InController );
 
     template <typename CastToType, typename CastFromType>
     friend TSharedRef<CastToType> StaticCastSharedRef ( const TSharedRef<CastFromType> &InSharedRef );
@@ -177,8 +169,7 @@ private:
  * @brief A nullable shared pointer.
  * @param Type The type of the managed object.
  */
-template <typename Type>
-class TSharedPtr
+template <typename Type> class TSharedPtr
 {
 public:
 
@@ -217,7 +208,7 @@ public:
     Type *Get () const;
 
     /** Validity checks */
-    bool     IsValid () const;
+    bool IsValid () const;
     explicit operator bool () const;
 
     /** Resets the pointer to null. */
@@ -228,11 +219,10 @@ private:
     /** Releases the current reference. */
     void Release ();
 
-    Type                                    *Object;
+    Type *Object;
     SharedPtrInternal::FReferenceController *Controller;
 
-    template <typename ObjectType>
-    friend class TSharedPtr;
+    template <typename ObjectType> friend class TSharedPtr;
 
     template <typename CastToType, typename CastFromType>
     friend TSharedPtr<CastToType> StaticCastSharedPtr ( const TSharedPtr<CastFromType> &InSharedPtr );
@@ -245,7 +235,8 @@ private:
  * @return A TSharedRef managing the given object.
  */
 template <typename ObjectType>
-static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController );
+static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject,
+                                                     SharedPtrInternal::FReferenceController *InController );
 
 /**
  * @brief Creates a new TSharedRef instance with the given arguments.
