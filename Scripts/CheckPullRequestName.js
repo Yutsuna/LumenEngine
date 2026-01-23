@@ -1,52 +1,105 @@
 /**
- * check pull request name
- * author: @leorevoir
+ * @file CheckPullRequestName.js
+ * @brief Validates pull request titles against Conventional Commits format
  */
 
 /**
- * constants
+ * @constant Config
+ * @brief Configuration for PR title validation
+ * @detail Contains allowed types and regex pattern
  */
-
-const TYPES = [
-  "Feat",
-  "Fix",
-  "Chore",
-  "Docs",
-  "Style",
-  "Refactor",
-  "Perf",
-  "Test",
-  "CI",
-  "Build",
-];
-
-const PATTERN = new RegExp(`^(${TYPES.join("|")})(\\(.+\\))?: .+`);
+const Config = {
+  Types: [
+    "Feat",
+    "Fix",
+    "Chore",
+    "Docs",
+    "Style",
+    "Refactor",
+    "Perf",
+    "Test",
+    "CI",
+    "Build",
+  ],
+  get Pattern() {
+    return new RegExp(`^(${this.Types.join("|")})(\\(.+\\))?: .+`);
+  },
+};
 
 /**
- * helper
+ * @class PullRequestValidator
+ * @brief Validates pull request titles
+ * @detail Provides methods to validate PR titles and generate error messages
  */
+class PullRequestValidator {
+  /**
+   * @function GetErrorMessage
+   * @brief Generates a detailed error message for invalid PR titles
+   * @param Title - The PR title to validate
+   * @returns Formatted error message
+   */
+  static GetErrorMessage(Title) {
+    const TypeList = Config.Types.map((Type) => `  • ${Type}`).join("\n");
 
-function getErrorMessage(title) {
-  const typesList = TYPES.map((type) => `- ${type}`).join("\n");
+    return [
+      `PR title does not follow Conventional Commits format`,
+      ``,
+      `Current title: "${Title}"`,
+      ``,
+      `Required format: <type>(<scope>): <message>`,
+      ``,
+      `Available types:`,
+      TypeList,
+      ``,
+      `Examples:`,
+      `  • Feat(ApplicationCore): Add MacOS window support`,
+      `  • Fix(Renderer): Resolve shadow rendering glitch`,
+      `  • Docs(Examples): Update BaseExample for new API changes`,
+    ].join("\n");
+  }
 
-  return (
-    `PR title "${title}" does not follow the Conventional Commits format.\n` +
-    `Format required: <type>(<scope>): message\n` +
-    `Where <type> is one of:\n${typesList}\n` +
-    `Example: feat(auth): add login functionality`
-  );
+  /**
+   * @function Validate
+   * @brief Validates PR title format
+   * @param Title - The PR title to validate
+   * @returns true if valid, false otherwise
+   */
+  static Validate(Title) {
+    return Config.Pattern.test(Title);
+  }
+
+  /**
+   * @function LogSuccess
+   * @brief Logs success message
+   * @param Title - The validated PR title
+   */
+  static LogSuccess(Title) {
+    console.log(`PR title follows Conventional Commits format: "${Title}"`);
+  }
 }
 
 /**
- * entry-point
+ * @function EntryPoint
+ * @param {Object} Github - GitHub API client
+ * @param {Object} Context - GitHub Actions context
+ * @param {Object} Core - GitHub Actions core utilities
  */
+export default module.exports = async ({ Github, Context, Core }) => {
+  try {
+    const Title = Context.payload.pull_request?.title;
 
-module.exports = async ({ github, context, core }) => {
-  const title = context.payload.pull_request.title;
+    if (!Title) {
+      throw new Error("Pull request title not found in context");
+    }
 
-  if (!PATTERN.test(title)) {
-    core.setFailed(getErrorMessage(title));
-  } else {
-    console.log(`PR title "${title}" follows the Conventional Commits format.`);
+    if (!PullRequestValidator.Validate(Title)) {
+      Core.setFailed(PullRequestValidator.GetErrorMessage(Title));
+      return;
+    }
+
+    PullRequestValidator.LogSuccess(Title);
+  } catch (error) {
+    Core.setFailed(`Script execution failed: ${error.message}`);
+    throw error;
   }
 };
