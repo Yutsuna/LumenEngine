@@ -69,7 +69,7 @@ class IssueService {
   /**
    * @function GetIssue
    * @brief Retrieves issue data based on event type
-   * @param isDispatch - Whether this is a workflow dispatch event
+   * @param bIsDispatch - Whether this is a workflow dispatch event
    * @return Issue data
    */
   async GetIssue(bIsDispatch) {
@@ -95,13 +95,13 @@ class IssueService {
 
     console.log(`Fetching issue #${IssueNumber} from workflow dispatch`);
 
-    const { Data } = await this.Github.rest.issues.get({
+    const { data } = await this.Github.rest.issues.get({
       owner: this.Owner,
       repo: this.Repo,
       issue_number: IssueNumber,
     });
 
-    return Data;
+    return data;
   }
 
   /**
@@ -150,9 +150,9 @@ class TitleGenerator {
    * @param Pattern - Regex pattern
    * @return Extracted value or empty string
    */
-  static ExtractField(Body, Oattern) {
-    const match = Body.match(Pattern);
-    return match?.[1]?.trim() || "";
+  static ExtractField(Body, Pattern) {
+    const Match = Body.match(Pattern);
+    return Match?.[1]?.trim() || "";
   }
 
   /**
@@ -160,11 +160,10 @@ class TitleGenerator {
    * @brief Determines the prefix based on issue labels
    * @param Labels - Issue labels
    * @return Prefix type
-   * @private
    */
   static GetPrefix(Labels) {
-    const matchedLabel = Labels.find((Label) => Config.PrefixMap[Label]);
-    return matchedLabel ? Config.PrefixMap[matchedLabel] : Config.DefaultPrefix;
+    const MatchedLabel = Labels.find((Label) => Config.PrefixMap[Label]);
+    return MatchedLabel ? Config.PrefixMap[MatchedLabel] : Config.DefaultPrefix;
   }
 
   /**
@@ -203,7 +202,6 @@ class IssueProcessor {
    * @brief Logs dry run information
    * @param Issue - Issue data
    * @param NewTitle - New title
-   * @private
    */
   LogDryRun(Issue, NewTitle) {
     console.log("\nDRY RUN MODE");
@@ -262,32 +260,32 @@ class IssueProcessor {
 
 /**
  * @function EntryPoint
- * @param Github - GitHub API client
- * @param Context - GitHub Actions context
- * @param Core - GitHub Actions core utilities
+ * @param github - GitHub API client
+ * @param context - GitHub Actions context
+ * @param core - GitHub Actions core utilities
  */
-export default module.exports = async ({ Github, Context, Core }) => {
+module.exports = async ({ github, context, core }) => {
   console.log("\n" + "=".repeat(50));
   console.log("Issue Title Update Workflow");
   console.log("=".repeat(50));
-  console.log(`Event: ${Context.eventName}`);
+  console.log(`Event: ${context.eventName}`);
 
   try {
-    const bIsDispatch = Context.eventName === "workflow_dispatch";
-    const bDryRun = bIsDispatch && Context.payload.inputs.dry_run === "true";
+    const bIsDispatch = context.eventName === "workflow_dispatch";
+    const bDryRun = bIsDispatch && context.payload.inputs.dry_run === "true";
 
-    const IssueService = new IssueService(Github, Context);
-    const RawIssue = await IssueService.GetIssue(bIsDispatch);
+    const IssueServiceInstance = new IssueService(github, context);
+    const RawIssue = await IssueServiceInstance.GetIssue(bIsDispatch);
     const Issue = new IssueData(RawIssue);
 
     console.log(`Issue: #${Issue.Number} - "${Issue.Title}"`);
     console.log("=".repeat(50) + "\n");
 
-    const Processor = new IssueProcessor(IssueService);
+    const Processor = new IssueProcessor(IssueServiceInstance);
     await Processor.Process(Issue, bDryRun);
   } catch (CatchedError) {
     console.error(`Error: ${CatchedError.message}`);
-    Core.setFailed(`Script execution failed: ${CatchedError.message}`);
+    core.setFailed(`Script execution failed: ${CatchedError.message}`);
     throw CatchedError;
   }
 };
