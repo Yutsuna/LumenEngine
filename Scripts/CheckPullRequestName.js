@@ -80,9 +80,9 @@ class PullRequestValidator {
 
 /**
  * @function EntryPoint
- * @param {Object} Github - GitHub API client
- * @param {Object} Context - GitHub Actions context
- * @param {Object} Core - GitHub Actions core utilities
+ * @param Github - GitHub API client
+ * @param Context - GitHub Actions context
+ * @param Core - GitHub Actions core utilities
  */
 export default module.exports = async ({ Github, Context, Core }) => {
   try {
@@ -98,8 +98,8 @@ export default module.exports = async ({ Github, Context, Core }) => {
     }
 
     PullRequestValidator.LogSuccess(Title);
-  } catch (error) {
-    Core.setFailed(`Script execution failed: ${error.message}`);
-    throw error;
+  } catch (CatchedError) {
+    Core.setFailed(`Script execution failed: ${CatchedError.message}`);
+    throw CatchedError;
   }
 };
