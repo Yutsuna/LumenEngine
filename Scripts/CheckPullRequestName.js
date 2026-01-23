@@ -84,22 +84,22 @@ class PullRequestValidator {
  * @param Context - GitHub Actions context
  * @param Core - GitHub Actions core utilities
  */
-export default module.exports = async ({ Github, Context, Core }) => {
+module.exports = async ({ github, context, core }) => {
   try {
-    const Title = Context.payload.pull_request?.title;
+    const Title = context.payload.pull_request?.title;
 
     if (!Title) {
       throw new Error("Pull request title not found in context");
     }
 
     if (!PullRequestValidator.Validate(Title)) {
-      Core.setFailed(PullRequestValidator.GetErrorMessage(Title));
+      core.setFailed(PullRequestValidator.GetErrorMessage(Title));
       return;
     }
 
     PullRequestValidator.LogSuccess(Title);
   } catch (CatchedError) {
-    Core.setFailed(`Script execution failed: ${CatchedError.message}`);
+    core.setFailed(`Script execution failed: ${CatchedError.message}`);
     throw CatchedError;
   }
 };
