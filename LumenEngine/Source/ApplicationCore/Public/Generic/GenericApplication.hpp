@@ -50,12 +50,15 @@ public:
     virtual TSharedRef<FGenericWindow> MakeWindow ();
 
     /** Initializes a window with the given parameters */
-    virtual void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow, const TSharedRef<FGenericWindowDescription> &InDescription, const TSharedPtr<FGenericWindow> &InParentWindow, const bool bShowImmediately );
+    virtual void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
+                                    const TSharedRef<FGenericWindowDescription> &InDescription,
+                                    const TSharedPtr<FGenericWindow> &InParentWindow,
+                                    const bool bShowImmediately );
 
 protected:
 
     TSharedPtr<FGenericApplicationMessageHandler> MessageHandler;
-    TSharedPtr<ICursor>                           Cursor;
+    TSharedPtr<ICursor> Cursor;
 };
 
 } // namespace LumenEngine
