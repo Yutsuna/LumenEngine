@@ -15,7 +15,8 @@ namespace LumenEngine
 namespace
 {
 
-    static inline UInt32 GetSDLWindowFlags ( const TSharedRef<FGenericWindowDescription> &InDescription, const Bool bShowImmediately )
+    static inline UInt32 GetSDLWindowFlags ( const TSharedRef<FGenericWindowDescription> &InDescription,
+                                             const Bool bShowImmediately )
     {
         UInt32 WindowFlags = 0;
 
@@ -73,7 +74,10 @@ SDL_Window *LumenEngine::FLinuxWindow::GetOSWindowHandle () const
     return WindowHandle;
 }
 
-void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Application, const TSharedRef<FGenericWindowDescription> &InDescription, const TSharedPtr<FGenericWindow> &InParentWindow, const bool bShowImmediately )
+void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Application,
+                                             const TSharedRef<FGenericWindowDescription> &InDescription,
+                                             const TSharedPtr<FGenericWindow> &InParentWindow,
+                                             const bool bShowImmediately )
 {
     Description      = InDescription;
     LinuxApplication = Application;
@@ -81,11 +85,8 @@ void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Applicatio
 
     const UInt32 WindowFlags = GetSDLWindowFlags( InDescription, bShowImmediately );
 
-    WindowHandle = SDL_CreateWindow(
-        InDescription->Title.c_str(),
-        InDescription->Size.Width,
-        InDescription->Size.Height,
-        WindowFlags );
+    WindowHandle = SDL_CreateWindow( InDescription->Title.c_str(), InDescription->Size.Width,
+                                     InDescription->Size.Height, WindowFlags );
 
     if ( not WindowHandle )
     {
@@ -118,8 +119,7 @@ void LumenEngine::FLinuxWindow::Hide ()
  * private
  */
 
-LumenEngine::FLinuxWindow::FLinuxWindow ()
-    : WindowHandle( nullptr ), FGenericWindow()
+LumenEngine::FLinuxWindow::FLinuxWindow () : WindowHandle( nullptr ), FGenericWindow()
 {
     /* __ctor__ */
 }

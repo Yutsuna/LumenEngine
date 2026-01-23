@@ -105,7 +105,7 @@ public:
 
 protected:
 
-    Math::FVec2d      CurrentPosition;
+    Math::FVec2d CurrentPosition;
     ECursorType::Type CurrentCursorType;
 
     bool bHidden;

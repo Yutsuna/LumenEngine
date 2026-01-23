@@ -18,14 +18,12 @@ namespace Math
     namespace Private
     {
 
-        template <typename Type, USize Dimension>
-        struct TVectorData
+        template <typename Type, USize Dimension> struct TVectorData
         {
             Type Data[Dimension] = {};
         };
 
-        template <typename Type>
-        struct TVectorData<Type, 2>
+        template <typename Type> struct TVectorData<Type, 2>
         {
             union
             {
@@ -49,8 +47,7 @@ namespace Math
             };
         };
 
-        template <typename Type>
-        struct TVectorData<Type, 3>
+        template <typename Type> struct TVectorData<Type, 3>
         {
             union
             {
@@ -70,8 +67,7 @@ namespace Math
             };
         };
 
-        template <typename Type>
-        struct TVectorData<Type, 4>
+        template <typename Type> struct TVectorData<Type, 4>
         {
             union
             {
@@ -94,8 +90,7 @@ namespace Math
     } // namespace Private
 
     template <typename Type, USize Dimension>
-    concept CVectorDimension =
-        Dimension > 0 && Dimension <= 4;
+    concept CVectorDimension = Dimension > 0 && Dimension <= 4;
 
     template <typename Type, USize Dimension>
         requires CVectorDimension<Type, Dimension>

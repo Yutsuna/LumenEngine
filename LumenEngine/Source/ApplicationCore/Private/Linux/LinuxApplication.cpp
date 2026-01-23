@@ -15,8 +15,7 @@
  * public
  */
 
-LumenEngine::FLinuxApplication::FLinuxApplication ()
-    : FGenericApplication()
+LumenEngine::FLinuxApplication::FLinuxApplication () : FGenericApplication()
 {
     if ( not FLinuxBackend::InitializeSDL() )
     {
@@ -40,7 +39,10 @@ LumenEngine::TSharedRef<LumenEngine::FGenericApplication> LumenEngine::FLinuxApp
     return MakeShared<FLinuxApplication>();
 }
 
-void LumenEngine::FLinuxApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow, const TSharedRef<FGenericWindowDescription> &InDescription, const TSharedPtr<FGenericWindow> &InParentWindow, const bool bShowImmediately )
+void LumenEngine::FLinuxApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
+                                                        const TSharedRef<FGenericWindowDescription> &InDescription,
+                                                        const TSharedPtr<FGenericWindow> &InParentWindow,
+                                                        const bool bShowImmediately )
 {
     const TSharedRef<FLinuxWindow> LinuxWindow  = StaticCastSharedRef<FLinuxWindow>( InWindow );
     const TSharedPtr<FLinuxWindow> ParentWindow = StaticCastSharedPtr<FLinuxWindow>( InParentWindow );

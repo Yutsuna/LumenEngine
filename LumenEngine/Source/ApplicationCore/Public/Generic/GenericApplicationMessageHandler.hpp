@@ -30,7 +30,8 @@ public:
     virtual void OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InX, const Int32 InY );
 
     /** Called when a window is resized */
-    virtual void OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InWidth, const Int32 InHeight );
+    virtual void
+    OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InWidth, const Int32 InHeight );
 
     /** Called when a window activation state changes */
     virtual void OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive );

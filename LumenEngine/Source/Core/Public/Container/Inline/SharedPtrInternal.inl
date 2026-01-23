@@ -24,20 +24,17 @@ namespace SharedPtrInternal
         new ( Storage ) Type( std::forward<Arguments>( InArgs )... );
     }
 
-    template <typename Type>
-    void TIntrusiveReferenceController<Type>::DestroyObject ()
+    template <typename Type> void TIntrusiveReferenceController<Type>::DestroyObject ()
     {
         reinterpret_cast<Type *>( Storage )->~Type();
     }
 
-    template <typename Type>
-    void TIntrusiveReferenceController<Type>::Deallocate ()
+    template <typename Type> void TIntrusiveReferenceController<Type>::Deallocate ()
     {
         delete this;
     }
 
-    template <typename Type>
-    Type *TIntrusiveReferenceController<Type>::GetObjectPtr ()
+    template <typename Type> Type *TIntrusiveReferenceController<Type>::GetObjectPtr ()
     {
         return reinterpret_cast<Type *>( Storage );
     }
@@ -47,20 +44,17 @@ namespace SharedPtrInternal
      */
 
     template <typename Type>
-    TDefaultReferenceController<Type>::TDefaultReferenceController( Type *InObject )
-        : Object( InObject )
+    TDefaultReferenceController<Type>::TDefaultReferenceController( Type *InObject ) : Object( InObject )
     {
         /* __empty__ */
     }
 
-    template <typename Type>
-    void TDefaultReferenceController<Type>::DestroyObject ()
+    template <typename Type> void TDefaultReferenceController<Type>::DestroyObject ()
     {
         delete Object;
     }
 
-    template <typename Type>
-    void TDefaultReferenceController<Type>::Deallocate ()
+    template <typename Type> void TDefaultReferenceController<Type>::Deallocate ()
     {
         delete this;
     }
@@ -68,9 +62,7 @@ namespace SharedPtrInternal
     /**
      * TRawPtrProxy
      */
-    template <typename Type>
-    TRawPtrProxy<Type>::TRawPtrProxy( Type *InObject )
-        : Object( InObject )
+    template <typename Type> TRawPtrProxy<Type>::TRawPtrProxy( Type *InObject ) : Object( InObject )
     {
         /* __empty__ */
     }

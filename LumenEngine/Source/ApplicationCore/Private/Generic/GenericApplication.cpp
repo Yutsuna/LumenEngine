@@ -18,12 +18,14 @@ LumenEngine::FGenericApplication::FGenericApplication ()
     /* __ctor__ */
 }
 
-void LumenEngine::FGenericApplication::SetMessageHandler ( const TSharedRef<FGenericApplicationMessageHandler> &InMessageHandler )
+void LumenEngine::FGenericApplication::SetMessageHandler (
+    const TSharedRef<FGenericApplicationMessageHandler> &InMessageHandler )
 {
     MessageHandler = InMessageHandler;
 }
 
-LumenEngine::TSharedPtr<LumenEngine::FGenericApplicationMessageHandler> LumenEngine::FGenericApplication::GetMessageHandler () const
+LumenEngine::TSharedPtr<LumenEngine::FGenericApplicationMessageHandler>
+LumenEngine::FGenericApplication::GetMessageHandler () const
 {
     return MessageHandler;
 }
@@ -48,7 +50,10 @@ LumenEngine::TSharedRef<LumenEngine::FGenericWindow> LumenEngine::FGenericApplic
     return MakeShareable( new FGenericWindow() );
 }
 
-void LumenEngine::FGenericApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow, const TSharedRef<FGenericWindowDescription> &InDescription, const TSharedPtr<FGenericWindow> &InParentWindow, const bool bShowImmediately )
+void LumenEngine::FGenericApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
+                                                          const TSharedRef<FGenericWindowDescription> &InDescription,
+                                                          const TSharedPtr<FGenericWindow> &InParentWindow,
+                                                          const bool bShowImmediately )
 {
     /* __empty__ */
 }

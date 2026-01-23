@@ -29,8 +29,7 @@ using Bool     = bool;
 using Byte     = unsigned char;
 
 // TODO: Implement custom atomic type
-template <typename Type>
-using Atomic = std::atomic<Type>;
+template <typename Type> using Atomic = std::atomic<Type>;
 
 using NullptrType = decltype( nullptr );
 

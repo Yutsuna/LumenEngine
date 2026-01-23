@@ -3,10 +3,13 @@ BasedOnStyle: LLVM
 Language: Cpp
 IndentWidth: 4
 UseTab: Never
-ColumnLimit: 0
+ColumnLimit: 120
 
 AlignConsecutiveAssignments: true
-AlignConsecutiveDeclarations: true
+AlignConsecutiveDeclarations: false
+
+AlignAfterOpenBracket: Align
+BinPackParameters: false
 
 BreakBeforeBraces: Allman
 

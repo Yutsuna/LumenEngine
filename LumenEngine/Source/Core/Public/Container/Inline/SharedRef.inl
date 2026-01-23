@@ -11,15 +11,13 @@ namespace LumenEngine
 {
 
 template <typename Type>
-TSharedRef<Type>::TSharedRef( const TSharedRef &Other )
-    : Object( Other.Object ), Controller( Other.Controller )
+TSharedRef<Type>::TSharedRef( const TSharedRef &Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
 }
 
 template <typename Type>
-TSharedRef<Type>::TSharedRef( TSharedRef &&Other )
-    : Object( Other.Object ), Controller( Other.Controller )
+TSharedRef<Type>::TSharedRef( TSharedRef &&Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     /* __empty__ */
 }
@@ -28,7 +26,8 @@ template <typename Type>
 template <typename OtherType>
     requires Concepts::ConvertibleTo<OtherType *, Type *>
 TSharedRef<Type>::TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy )
-    : Object( Proxy.Object ), Controller( new SharedPtrInternal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
+    : Object( Proxy.Object ),
+      Controller( new SharedPtrInternal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
 {
     assert( Object != nullptr );
 }
@@ -42,14 +41,12 @@ TSharedRef<Type>::TSharedRef( const TSharedRef<OtherType> &Other )
     Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
 }
 
-template <typename Type>
-TSharedRef<Type>::~TSharedRef()
+template <typename Type> TSharedRef<Type>::~TSharedRef()
 {
     Release();
 }
 
-template <typename Type>
-TSharedRef<Type> &TSharedRef<Type>::operator=( const TSharedRef &Other )
+template <typename Type> TSharedRef<Type> &TSharedRef<Type>::operator=( const TSharedRef &Other )
 {
     if ( this != &Other )
     {
@@ -61,26 +58,22 @@ TSharedRef<Type> &TSharedRef<Type>::operator=( const TSharedRef &Other )
     return *this;
 }
 
-template <typename Type>
-Type &TSharedRef<Type>::operator*() const
+template <typename Type> Type &TSharedRef<Type>::operator*() const
 {
     return *Object;
 }
 
-template <typename Type>
-Type *TSharedRef<Type>::operator->() const
+template <typename Type> Type *TSharedRef<Type>::operator->() const
 {
     return Object;
 }
 
-template <typename Type>
-Type *TSharedRef<Type>::Get () const
+template <typename Type> Type *TSharedRef<Type>::Get () const
 {
     return Object;
 }
 
-template <typename Type>
-Int32 TSharedRef<Type>::GetSharedReferenceCount () const
+template <typename Type> Int32 TSharedRef<Type>::GetSharedReferenceCount () const
 {
     return Controller->SharedCount.load( std::memory_order_relaxed );
 }
@@ -92,8 +85,7 @@ TSharedRef<Type>::TSharedRef( Type *InObject, SharedPtrInternal::FReferenceContr
     assert( InObject != nullptr );
 }
 
-template <typename Type>
-void TSharedRef<Type>::Release ()
+template <typename Type> void TSharedRef<Type>::Release ()
 {
     if ( Controller && Controller->SharedCount.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
     {
@@ -107,7 +99,8 @@ void TSharedRef<Type>::Release ()
  */
 
 template <typename ObjectType>
-static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController )
+static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject,
+                                                     SharedPtrInternal::FReferenceController *InController )
 {
     return TSharedRef<ObjectType>( InObject, InController );
 }
