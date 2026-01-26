@@ -48,7 +48,7 @@ jobs:
             nuget-${{ runner.os }}-
 
       - name: RunBuilder
-        run: dotnet run --project Builder/Builder.csproj -- build --format ninja
+        run: dotnet run --project Builder/Builder.csproj -- build --format ninja --config release
         shell: bash
 
       - name: InstallNinja
@@ -57,17 +57,16 @@ jobs:
         shell: pwsh
 
       - name: BuildProject
-        run: ninja -v
+        run: ninja
         shell: bash
 
-      - name: RunExecutable
+      - name: FindExecutable
         shell: bash
         run: |
-          if [ -f Binaries/BaseExample/BaseExample ]; then
-            ./Binaries/BaseExample/BaseExample || true
-          elif [ -f Binaries/BaseExample/BaseExample.exe ]; then
-            ./Binaries/BaseExample/BaseExample.exe || true
+          if [ -f Binaries/BaseExample/BaseExample || -f Binaries/BaseExample/BaseExample.exe ]; then
+            echo "Executable found"
+            exit 0
           else
             echo "Executable not found"
-            exit 1
+            exit 84
           fi

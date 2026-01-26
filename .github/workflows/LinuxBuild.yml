@@ -47,20 +47,21 @@ jobs:
             nuget-${{ runner.os }}-
 
       - name: RunBuilder
-        run: dotnet run --project Builder/Builder.csproj -- build --format ninja
+        run: dotnet run --project Builder/Builder.csproj -- build --format ninja --config release
 
       - name: InstallNinja
         run: sudo apt-get update && sudo apt-get install -y ninja-build
 
       - name: BuildProject
-        run: ninja -v
+        run: ninja
 
-      - name: RunExecutable
+      - name: FindExecutable
         shell: bash
         run: |
           if [ -f Binaries/BaseExample/BaseExample ]; then
-            ./Binaries/BaseExample/BaseExample || true
+            echo "Executable found"
+            exit 0
           else
             echo "Executable not found"
-            exit 1
+            exit 84
           fi
