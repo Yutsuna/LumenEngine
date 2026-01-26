@@ -173,11 +173,25 @@ namespace LumenBuilder
 
                         if (Target.Type == ModuleType.SharedLibrary)
                         {
-                            Sb.AppendLine("  ldflags = -shared");
+                            Sb.Append("  ldflags = -shared");
+                            for (int LibPathIndex = 0; LibPathIndex < Target.LibraryPaths.Count; ++LibPathIndex)
+                            {
+                                Sb.Append(" -L\"");
+                                Sb.Append(Target.LibraryPaths[LibPathIndex]);
+                                Sb.Append('"');
+                            }
+                            Sb.AppendLine();
                         }
                         else if (Target.Type == ModuleType.Executable)
                         {
-                            Sb.AppendLine("  ldflags =");
+                            Sb.Append("  ldflags =");
+                            for (int LibPathIndex = 0; LibPathIndex < Target.LibraryPaths.Count; ++LibPathIndex)
+                            {
+                                Sb.Append(" -L\"");
+                                Sb.Append(Target.LibraryPaths[LibPathIndex]);
+                                Sb.Append('"');
+                            }
+                            Sb.AppendLine();
                         }
                     }
 
