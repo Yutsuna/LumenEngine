@@ -46,10 +46,13 @@ module DependencyInstaller
       @downloader.download_all(@dependencies, @download_path)
 
       Logger.progress("Installing dependencies...")
-      @installer.install_all(@dependencies, @download_path)
+      unless @installer.install_all(@dependencies, @download_path)
+        Logger.error("Dependency installation failed.")
+        cleanup
+        exit 84
+      end
 
       cleanup
-
       Logger.success("All dependencies processed!")
     end
 
