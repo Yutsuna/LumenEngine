@@ -193,6 +193,23 @@ public sealed class BuildPlanner
             Includes.Add(Paths.Combine(Module.Directory, Module.PublicIncludes[IncludeIndex]));
         }
 
+        /** Collect includes from platform-specific external libraries (transitive) */
+        var PlatformLibs = GetPlatformLibraries(Module);
+        for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
+        {
+            string LibName = PlatformLibs[LibIndex];
+            if (ResolvedExternalDeps.TryGetValue(LibName, out var ExtDep))
+            {
+                for (int IncIndex = 0; IncIndex < ExtDep.IncludePaths.Count; ++IncIndex)
+                {
+                    if (!Includes.Contains(ExtDep.IncludePaths[IncIndex]))
+                    {
+                        Includes.Add(ExtDep.IncludePaths[IncIndex]);
+                    }
+                }
+            }
+        }
+
         /** Collect dependencies from common deps */
         for (int DepIndex = 0; DepIndex < Module.Dependencies.Count; DepIndex++)
         {
