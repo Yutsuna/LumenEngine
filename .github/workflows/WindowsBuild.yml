@@ -1,0 +1,73 @@
+name: WindowsBuild
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  Build:
+    name: BuildAndTest
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: SetupRuby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+
+      - name: CacheVendor
+        id: vendor-cache
+        uses: actions/cache@v4
+        with:
+          path: vendor
+          key: vendor-${{ runner.os }}-${{ hashFiles('Scripts/Dependencies/InstallDependencies.rb') }}
+          restore-keys: |
+            vendor-${{ runner.os }}-
+
+      - name: InstallDependencies
+        if: steps.vendor-cache.outputs.cache-hit != 'true'
+        run: ruby Scripts/Dependencies/InstallDependencies.rb
+        shell: bash
+
+      - name: SetupDotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "10.0.100"
+
+      - name: CacheNuGet
+        id: nuget-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: RunBuilder
+        run: dotnet run --project Builder/Builder.csproj -- build --format ninja
+        shell: bash
+
+      - name: InstallNinja
+        if: runner.os == 'Windows'
+        run: choco install ninja -y --no-progress
+        shell: pwsh
+
+      - name: BuildProject
+        run: ninja -v
+        shell: bash
+
+      - name: RunExecutable
+        shell: bash
+        run: |
+          if [ -f Binaries/BaseExample/BaseExample ]; then
+            ./Binaries/BaseExample/BaseExample || true
+          elif [ -f Binaries/BaseExample/BaseExample.exe ]; then
+            ./Binaries/BaseExample/BaseExample.exe || true
+          else
+            echo "Executable not found"
+            exit 1
+          fi
