@@ -1,9 +1,12 @@
 # frozen_string_literal: true
 
+require 'thread'
+
 
 module DependencyInstaller
 
   class Logger
+    @ui_mutex = Mutex.new
 
     COLORS = {
       red: "\e[31m",
@@ -33,6 +36,24 @@ module DependencyInstaller
 
     def self.progress(message)
       puts "#{COLORS[:cyan]}[PROGRESS]#{COLORS[:reset]} #{message}"
+    end
+
+    def self.render_progress_bar(filename, current, total)
+      return if total.to_i <= 0
+      
+      @ui_mutex.synchronize {
+        width = 30
+        percentage = (current.to_f / total * 100).to_i
+        filled = (width * current.to_f / total).to_i
+        bar = "=" * filled + " " * (width - filled)
+        
+        print "\r#{COLORS[:cyan]}[DOWNLOADING]#{COLORS[:reset]} #{filename}: [#{bar}] #{percentage}%"
+        $stdout.flush
+      }
+    end
+
+    def self.clear_line
+      print "\r\e[K"
     end
 
   end
