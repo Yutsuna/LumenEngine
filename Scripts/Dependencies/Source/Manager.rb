@@ -12,7 +12,9 @@ module DependencyInstaller
 
 
   class DependencyManager
+
     attr_reader :dependencies
+
 
     def initialize(dependencies:, install_path: 'Vendor', download_path: 'TempDownloads')
       @dependencies = dependencies.map { |dep| Dependency.new(**dep) }
@@ -25,7 +27,15 @@ module DependencyInstaller
       @installer = Installer.new(install_path: @install_path)
     end
 
+
     def execute
+      trap('INT') {
+        puts "\n"
+        Logger.warning("Installation interrupted by user. Cleaning up...")
+        cleanup
+        exit 84
+      }
+
       Logger.info("Starting dependency installation...")
       Logger.info("Platform: #{SystemDetector.detect_platform}")
       Logger.info("Dependencies: #{@dependencies.size}")
@@ -43,12 +53,17 @@ module DependencyInstaller
       Logger.success("All dependencies processed!")
     end
 
+
     private
 
+
     def cleanup
-      Logger.info("Cleaning up temporary files...")
-      FileUtils.rm_rf(@download_path)
+      if Dir.exist?(@download_path)
+        Logger.info("Cleaning up temporary files...")
+        FileUtils.rm_rf(@download_path)
+      end
     end
+
 
   end
 
