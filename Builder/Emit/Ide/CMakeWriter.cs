@@ -38,12 +38,19 @@ namespace LumenBuilder
                     Sb.AppendLine("cmake_minimum_required(VERSION 3.20)");
                     Sb.AppendLine($"project(LumenEngine CXX)");
                     Sb.AppendLine();
+                    
+                    WriteToolchainConfig(Sb);
+                    Sb.AppendLine();
+                    
                     Sb.AppendLine("set(CMAKE_CXX_STANDARD 23)");
                     Sb.AppendLine("set(CMAKE_CXX_STANDARD_REQUIRED ON)");
                     Sb.AppendLine("set(CMAKE_EXPORT_COMPILE_COMMANDS ON)");
                     Sb.AppendLine();
 
                     WriteBuildTypeConfig(Sb);
+                    Sb.AppendLine();
+                    
+                    WritePlatformConfig(Sb);
                     Sb.AppendLine();
 
                     WriteModuleTargets(Sb, Plan);
@@ -67,6 +74,27 @@ namespace LumenBuilder
                 }
 
                 /// <summary>
+                /// Writes the toolchain configuration to the StringBuilder.
+                /// </summary>
+                private void WriteToolchainConfig(StringBuilder Sb)
+                {
+                    bool IsMsvc = Context.Toolchain.Name == "msvc";
+                    bool IsWindows = Context.Platform.Type == PlatformType.Windows;
+                    
+                    if (IsWindows && IsMsvc)
+                    {
+                        Sb.AppendLine("# MSVC Toolchain Configuration");
+                        Sb.AppendLine("set(CMAKE_CXX_COMPILER \"cl.exe\")");
+                        Sb.AppendLine("set(CMAKE_C_COMPILER \"cl.exe\")");
+                    }
+                    else if (IsWindows && !IsMsvc)
+                    {
+                        Sb.AppendLine("# Clang/GCC Toolchain on Windows");
+                        Sb.AppendLine($"set(CMAKE_CXX_COMPILER \"{Context.Toolchain.CompilerPath}\")");
+                    }
+                }
+                
+                /// <summary>
                 /// Writes the build type configuration to the StringBuilder.
                 /// </summary>
                 private void WriteBuildTypeConfig(StringBuilder Sb)
@@ -80,6 +108,39 @@ namespace LumenBuilder
                     };
                     Sb.AppendLine($"  set(CMAKE_BUILD_TYPE {DefaultType})");
                     Sb.AppendLine("endif()");
+                }
+                
+                /// <summary>
+                /// Writes the platform-specific configuration to the StringBuilder.
+                /// </summary>
+                private void WritePlatformConfig(StringBuilder Sb)
+                {
+                    bool IsMsvc = Context.Toolchain.Name == "msvc";
+                    bool IsWindows = Context.Platform.Type == PlatformType.Windows;
+                    
+                    if (IsWindows)
+                    {
+                        Sb.AppendLine("# Windows Platform Configuration");
+                        if (IsMsvc)
+                        {
+                            Sb.AppendLine("add_compile_options(/EHsc /W3)");
+                            Sb.AppendLine("add_definitions(-DWIN32 -D_WINDOWS)");
+                        }
+                        else
+                        {
+                            Sb.AppendLine("add_definitions(-DWIN32 -D_WINDOWS)");
+                        }
+                    }
+                    else if (Context.Platform.Type == PlatformType.Linux)
+                    {
+                        Sb.AppendLine("# Linux Platform Configuration");
+                        Sb.AppendLine("add_definitions(-DLINUX)");
+                    }
+                    else if (Context.Platform.Type == PlatformType.MacOS)
+                    {
+                        Sb.AppendLine("# MacOS Platform Configuration");
+                        Sb.AppendLine("add_definitions(-DMACOS)");
+                    }
                 }
 
                 /// <summary>
