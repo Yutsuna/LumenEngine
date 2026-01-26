@@ -70,23 +70,51 @@ namespace LumenBuilder
                 private void WriteRules(StringBuilder Sb)
                 {
                     string CFlags = GetCompilerFlags();
+                    bool IsWindows = Context.Platform.Type == PlatformType.Windows;
+                    bool IsMsvc = Context.Toolchain.Name == "msvc";
 
                     Sb.AppendLine($"cxx = {Context.Toolchain.CompilerPath}");
                     Sb.AppendLine($"ar = {Context.Toolchain.ArchiverPath}");
+                    
+                    if (IsWindows)
+                    {
+                        Sb.AppendLine("mkdir_cmd = cmd /c if not exist $out_dir mkdir $out_dir");
+                    }
                     Sb.AppendLine();
 
                     Sb.AppendLine("rule compile");
-                    Sb.AppendLine("  command = $cxx $cflags -c -o $out $in");
+                    if (IsMsvc)
+                    {
+                        Sb.AppendLine("  command = $cxx $cflags /Fo$out $in");
+                    }
+                    else
+                    {
+                        Sb.AppendLine("  command = $cxx $cflags -c -o $out $in");
+                    }
                     Sb.AppendLine("  description = Compiling $in");
                     Sb.AppendLine();
 
                     Sb.AppendLine("rule link");
-                    Sb.AppendLine("  command = $cxx $ldflags -o $out $in $libs");
+                    if (IsMsvc)
+                    {
+                        Sb.AppendLine("  command = $cxx $ldflags /OUT:$out $in $libs");
+                    }
+                    else
+                    {
+                        Sb.AppendLine("  command = $cxx $ldflags -o $out $in $libs");
+                    }
                     Sb.AppendLine("  description = Linking $out");
                     Sb.AppendLine();
 
                     Sb.AppendLine("rule archive");
-                    Sb.AppendLine("  command = $ar rcs $out $in");
+                    if (IsMsvc)
+                    {
+                        Sb.AppendLine("  command = $ar /nologo /OUT:$out $in");
+                    }
+                    else
+                    {
+                        Sb.AppendLine("  command = $ar rcs $out $in");
+                    }
                     Sb.AppendLine("  description = Archiving $out");
                 }
 
@@ -96,12 +124,13 @@ namespace LumenBuilder
                 private void WriteCompileStatements(StringBuilder Sb, BuildPlan Plan)
                 {
                     Sb.AppendLine("# Compile statements");
+                    bool IsMsvc = Context.Toolchain.Name == "msvc";
 
                     for (int CompUnitsIndex = 0; CompUnitsIndex < Plan.CompileUnits.Count; ++CompUnitsIndex)
                     {
                         var Unit = Plan.CompileUnits[CompUnitsIndex];
-                        var IncludeFlags = BuildIncludeFlags(Unit.Includes);
-                        var DefineFlags = BuildDefineFlags(Unit.Defines);
+                        var IncludeFlags = BuildIncludeFlags(Unit.Includes, IsMsvc);
+                        var DefineFlags = BuildDefineFlags(Unit.Defines, IsMsvc);
 
                         Sb.Append("build ");
                         Sb.Append(EscapePath(Unit.ObjectFile));
@@ -123,6 +152,7 @@ namespace LumenBuilder
                 private void WriteLinkStatements(StringBuilder Sb, BuildPlan Plan)
                 {
                     Sb.AppendLine("# Link statements");
+                    bool IsMsvc = Context.Toolchain.Name == "msvc";
 
                     for (int LinkIndex = 0; LinkIndex < Plan.LinkTargets.Count; ++LinkIndex)
                     {
@@ -210,14 +240,14 @@ namespace LumenBuilder
                 {
                     return Context.Configuration switch
                     {
-                        BuildConfiguration.Debug => "-g -O0 -DDEBUG -std=c++20",
-                        BuildConfiguration.Development => "-g -O2 -DNDEBUG -std=c++20",
-                        BuildConfiguration.Release => "-O3 -DNDEBUG -std=c++20",
-                        _ => "-std=c++20"
+                        BuildConfiguration.Debug => "-g -O0 -DDEBUG -std=c++23",
+                        BuildConfiguration.Development => "-g -O2 -DNDEBUG -std=c++23",
+                        BuildConfiguration.Release => "-O3 -DNDEBUG -std=c++23",
+                        _ => "-std=c++23"
                     };
                 }
 
-                private static string BuildIncludeFlags(IReadOnlyList<string> Includes)
+                private static string BuildIncludeFlags(IReadOnlyList<string> Includes, bool IsMsvc)
                 {
                     if (Includes.Count == 0)
                     {
@@ -225,6 +255,7 @@ namespace LumenBuilder
                     }
 
                     var Sb = new StringBuilder();
+                    string IncludePrefix = IsMsvc ? "/I" : "-I";
 
                     for (int IncIndex = 0; IncIndex < Includes.Count; ++IncIndex)
                     {
@@ -232,14 +263,15 @@ namespace LumenBuilder
                         {
                             Sb.Append(' ');
                         }
-                        Sb.Append("-I\"");
+                        Sb.Append(IncludePrefix);
+                        Sb.Append('\"');
                         Sb.Append(Includes[IncIndex]);
-                        Sb.Append('"');
+                        Sb.Append('\"');
                     }
                     return Sb.ToString();
                 }
 
-                private static string BuildDefineFlags(IReadOnlyList<string> Defines)
+                private static string BuildDefineFlags(IReadOnlyList<string> Defines, bool IsMsvc)
                 {
                     if (Defines.Count == 0)
                     {
@@ -247,6 +279,7 @@ namespace LumenBuilder
                     }
 
                     var Sb = new StringBuilder();
+                    string DefinePrefix = IsMsvc ? "/D" : "-D";
 
                     for (int DefIndex = 0; DefIndex < Defines.Count; ++DefIndex)
                     {
@@ -254,7 +287,7 @@ namespace LumenBuilder
                         {
                             Sb.Append(' ');
                         }
-                        Sb.Append("-D");
+                        Sb.Append(DefinePrefix);
                         Sb.Append(Defines[DefIndex]);
                     }
                     return Sb.ToString();
