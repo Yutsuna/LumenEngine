@@ -3,6 +3,7 @@
 
 node_modules/
 Vendor/
+TempDownloads/
 
 bin/
 obj/
