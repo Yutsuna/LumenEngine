@@ -116,7 +116,6 @@ namespace LumenBuilder
                 var Libraries = new List<string>();
 
                 string IncludeDir = Paths.Combine(DepPath, "include");
-                Console.WriteLine($"[Debug] IncludeDir: {IncludeDir}, exists: {Directory.Exists(IncludeDir)}");
                 if (Directory.Exists(IncludeDir))
                 {
                     IncludePaths.Add(IncludeDir);
