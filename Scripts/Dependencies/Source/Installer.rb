@@ -32,6 +32,15 @@ module DependencyInstaller
     end
 
 
+    def installed_version(dependency)
+      dest_path = dest_for(dependency)
+      version_file = version_file_for(dest_path)
+
+      return nil unless File.exist?(version_file)
+      File.read(version_file).strip
+    end
+
+
     def install(dependency, download_path)
       filename = dependency.filename
       file_path = File.join(download_path, filename)
