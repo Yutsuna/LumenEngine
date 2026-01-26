@@ -60,7 +60,14 @@ module DependencyInstaller
 
 
     def install_all(dependencies, download_path)
-      dependencies.each { |dependency| install(dependency, download_path) }
+      dependencies.each do |dependency|
+        success = install(dependency, download_path)
+        unless success
+          Logger.error("Dependency installation failed: #{dependency.name}")
+          cleanup
+          exit 84
+        end
+      end
     end
 
 

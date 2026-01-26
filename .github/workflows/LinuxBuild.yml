@@ -28,7 +28,10 @@ jobs:
             libwayland-dev \
             libxkbcommon-dev \
             libegl1-mesa-dev \
-            libibus-1.0-dev
+            libibus-1.0-dev \
+            libxcursor-dev \
+            libxrandr-dev \
+            libxi-dev
 
       - name: CacheVendor
         id: vendor-cache
