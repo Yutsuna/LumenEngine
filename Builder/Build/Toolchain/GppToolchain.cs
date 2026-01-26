@@ -4,14 +4,14 @@ using LumenBuilder.Common;
 namespace LumenBuilder.Build.Toolchain;
 
 /// <summary>
-/// MSVC toolchain implementation.
+/// G++ toolchain implementation (uses g++ as compiler and linker).
 /// </summary>
-public sealed class MsvcToolchain : Compiler
+public sealed class GppToolchain : Compiler
 {
-    public override string Name => "msvc";
-    public override string CompilerPath => "cl.exe";
-    public override string LinkerPath => "link.exe";
-    public override string ArchiverPath => "lib.exe";
+    public override string Name => "g++";
+    public override string CompilerPath => "g++";
+    public override string LinkerPath => "g++";
+    public override string ArchiverPath => "ar";
 
     public override string GetCompileCommand(
         string SourceFile,
@@ -23,25 +23,25 @@ public sealed class MsvcToolchain : Compiler
         var Sb = new StringBuilder();
 
         Sb.Append(CompilerPath);
-        Sb.Append(" /c /EHsc /std:c++23 /nologo");
+        Sb.Append(" -c -std=c++23");
 
         switch (Config)
         {
             case BuildConfiguration.Debug:
-                Sb.Append(" /Zi /Od /MDd /DDEBUG");
+                Sb.Append(" -g -O0 -DDEBUG");
                 break;
             case BuildConfiguration.Development:
-                Sb.Append(" /Zi /O2 /MD /DNDEBUG");
+                Sb.Append(" -g -O2 -DNDEBUG");
                 break;
             case BuildConfiguration.Release:
-                Sb.Append(" /O2 /MD /DNDEBUG");
+                Sb.Append(" -O3 -DNDEBUG");
                 break;
         }
 
-        CompilerHelpers.AppendIncludes(Sb, Includes, "/I", true);
-        CompilerHelpers.AppendDefines(Sb, Defines, "/D");
+        CompilerHelpers.AppendIncludes(Sb, Includes, "-I", true);
+        CompilerHelpers.AppendDefines(Sb, Defines, "-D");
 
-        Sb.Append(" /Fo\"");
+        Sb.Append(" -o \"");
         Sb.Append(ObjectFile);
         Sb.Append("\" \"");
         Sb.Append(SourceFile);
@@ -57,21 +57,17 @@ public sealed class MsvcToolchain : Compiler
         bool IsShared)
     {
         var Sb = new StringBuilder();
-
         Sb.Append(LinkerPath);
-        Sb.Append(" /nologo");
 
         if (IsShared)
-        {
-            Sb.Append(" /DLL");
-        }
+            Sb.Append(" -shared");
 
-        Sb.Append(" /OUT:\"");
+        Sb.Append(" -o \"");
         Sb.Append(OutputFile);
         Sb.Append('"');
 
         CompilerHelpers.AppendQuotedPaths(Sb, ObjectFiles);
-        CompilerHelpers.AppendLibrariesWithExtension(Sb, Libraries, ".lib");
+        CompilerHelpers.AppendPrefixedValues(Sb, Libraries, "-l");
 
         return Sb.ToString();
     }
@@ -81,9 +77,8 @@ public sealed class MsvcToolchain : Compiler
         IReadOnlyList<string> ObjectFiles)
     {
         var Sb = new StringBuilder();
-
         Sb.Append(ArchiverPath);
-        Sb.Append(" /nologo /OUT:\"");
+        Sb.Append(" rcs \"");
         Sb.Append(OutputFile);
         Sb.Append('"');
 
