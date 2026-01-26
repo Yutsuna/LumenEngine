@@ -19,6 +19,17 @@ jobs:
         with:
           ruby-version: "3.4"
 
+      - name: InstallSystemDependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            libx11-dev \
+            libxext-dev \
+            libwayland-dev \
+            libxkbcommon-dev \
+            libegl1-mesa-dev \
+            libibus-1.0-dev
+
       - name: CacheVendor
         id: vendor-cache
         uses: actions/cache@v4
