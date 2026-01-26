@@ -2,6 +2,7 @@
 !.github/
 
 node_modules/
+Vendor/
 
 bin/
 obj/
