@@ -23,6 +23,7 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y \
+            clang \
             cmake \
             pkg-config \
             libx11-dev \
@@ -54,15 +55,6 @@ jobs:
         if: steps.vendor-cache.outputs.cache-hit != 'true'
         run: ruby Scripts/Dependencies/InstallDependencies.rb
 
-      - name: VerifyVendor
-        run: |
-          echo "Vendor directory contents:"
-          ls -la Vendor/ || echo "Vendor directory not found"
-          echo "SDL3 directory contents:"
-          ls -la Vendor/SDL3/ || echo "SDL3 directory not found"
-          echo "SDL3 include contents:"
-          ls -la Vendor/SDL3/include/ || echo "SDL3 include not found"
-
       - name: SetupDotnet
         uses: actions/setup-dotnet@v3
         with:
@@ -79,13 +71,6 @@ jobs:
 
       - name: RunBuilder
         run: dotnet run --project Builder/Builder.csproj -- build --format ninja --config release
-
-      - name: DebugBuildNinja
-        run: |
-          echo "=== Build.ninja SDL3 references ==="
-          grep -n "SDL3" build.ninja || echo "No SDL3 references found"
-          echo "=== LinuxBackend compile command ==="
-          grep -A1 "LinuxBackend.cpp" build.ninja || echo "LinuxBackend not found"
 
       - name: InstallNinja
         run: sudo apt-get update && sudo apt-get install -y ninja-build
