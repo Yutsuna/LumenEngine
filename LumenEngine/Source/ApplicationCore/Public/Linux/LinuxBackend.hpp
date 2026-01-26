@@ -5,12 +5,13 @@
 
 #pragma once
 
+#include "Definitions.hpp"
 #include "CoreTypes.hpp"
 
 namespace LumenEngine
 {
 
-struct FLinuxBackend
+struct LUMEN_ENGINE_API FLinuxBackend
 {
     /** @return true if SDL library initialized successfully */
     static Bool InitializeSDL ();
