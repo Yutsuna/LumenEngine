@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Definitions.hpp"
 #include "Container/SharedPtr.hpp"
 #include "CoreTypes.hpp"
 
@@ -17,7 +18,7 @@ class FGenericWindow;
  * @class FGenericApplicationMessageHandler
  * @brief Interface for handling platform-specific application messages.
  */
-class FGenericApplicationMessageHandler
+class LUMEN_ENGINE_API FGenericApplicationMessageHandler
 {
 public:
 
