@@ -303,7 +303,6 @@ namespace LumenBuilder
                     /** Add library paths and system libraries from LinkTarget */
                     if (LinkTarget != null && (LinkTarget.LibraryPaths.Count > 0 || LinkTarget.SystemLibraries.Count > 0))
                     {
-                        // Add link directories for external libraries
                         if (LinkTarget.LibraryPaths.Count > 0)
                         {
                             Sb.Append("target_link_directories(");
@@ -317,7 +316,6 @@ namespace LumenBuilder
                             Sb.AppendLine(")");
                         }
 
-                        // Add system libraries
                         if (LinkTarget.SystemLibraries.Count > 0)
                         {
                             Sb.Append("target_link_libraries(");
@@ -334,7 +332,6 @@ namespace LumenBuilder
                     }
                     else if (PlatformLibs.Count > 0)
                     {
-                        // Fallback: use module's platform libs directly
                         Sb.Append("target_link_libraries(");
                         Sb.Append(Module.Name);
                         Sb.Append(" PUBLIC");
