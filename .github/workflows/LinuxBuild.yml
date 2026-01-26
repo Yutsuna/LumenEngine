@@ -42,7 +42,8 @@ jobs:
             libwayland-dev \
             libxkbcommon-dev \
             libegl1-mesa-dev \
-            libibus-1.0-dev
+            libibus-1.0-dev \
+            ninja-build
 
       - name: CacheVendor
         id: vendor-cache
@@ -69,22 +70,55 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
 
-      - name: RunBuilder
+      - name: RunBuilder Ninja
         run: dotnet run --project Builder/Builder.csproj -- build --format ninja --config release
 
-      - name: InstallNinja
-        run: sudo apt-get update && sudo apt-get install -y ninja-build
+      - name: RunBuilder Makefile
+        run: dotnet run --project Builder/Builder.csproj -- build --format makefile --config release
 
-      - name: BuildProject
-        run: ninja
+      - name: RunBuilder CMake
+        run: dotnet run --project Builder/Builder.csproj -- build --format cmake --config release
 
-      - name: FindExecutable
-        shell: bash
+      - name: RunBuilder Ninja
+        run: dotnet run --project Builder/Builder.csproj -- build --format ninja --config release
+
+      - name: Build Ninja
+        run: ninja -j$(nproc)
+
+      - name: Check & Clean Ninja
         run: |
           if [ -f Binaries/BaseExample/BaseExample ]; then
-            echo "Executable found"
-            exit 0
+            echo "Ninja build successful"
+            ninja -t clean
           else
-            echo "Executable not found"
+            echo "Ninja build failed: Executable not found"
+            exit 84
+          fi
+
+      - name: Build Makefile
+        run: make -j$(nproc)
+
+      - name: Check & Clean Makefile
+        run: |
+          if [ -f Binaries/BaseExample/BaseExample ]; then
+            echo "Makefile build successful"
+            make clean
+          else
+            echo "Makefile build failed: Executable not found"
+            exit 84
+          fi
+
+      - name: Build CMake
+        run: |
+          cmake .
+          cmake --build .
+
+      - name: Check & Clean CMake
+        run: |
+          if [ -f Binaries/BaseExample/BaseExample ]; then
+            echo "CMake build successful"
+            cmake --build . --target clean
+          else
+            echo "CMake build failed: Executable not found"
             exit 84
           fi
