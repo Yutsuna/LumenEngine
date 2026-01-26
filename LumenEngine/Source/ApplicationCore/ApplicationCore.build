@@ -1,21 +1,15 @@
-module ApplicationCore {
+module ApplicationCore
+{
 
-    type = static_library
+    type            = static_library
 
-    sources = [
-        "Private/**/*.cpp"
-    ]
+    sources         = [ "Private/**/*.cpp" ]
+    public_includes = [ "Public" ]
+    defines         = [ "LUMEN_ENGINE" ]
+    deps            = [ Core, MathCore ]
 
-    public_includes = [
-        "Public"
-    ]
-
-    defines = [
-        "LUMEN_ENGINE"
-    ]
-
-    deps = [ Core, MathCore ]
-
-    linux_libs = [ SDL3 ]
+    linux_libs      = [ SDL3 ]
+    windows_libs    = [ SDL3 ]
+    macos_libs      = [ SDL3 ]
 
 }
