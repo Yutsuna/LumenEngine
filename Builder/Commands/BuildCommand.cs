@@ -1,6 +1,7 @@
 using LumenBuilder.Build;
 using LumenBuilder.Build.Toolchain;
 using LumenBuilder.Common;
+using LumenBuilder.Dependencies;
 
 using LumenBuilder.Emit.Ide;
 using LumenBuilder.Emit.Makefile;
@@ -98,6 +99,8 @@ namespace LumenBuilder
                     ? Resolver.Resolve(Options.Toolchain)
                     : Resolver.Resolve(Platform);
 
+                var ExternalDeps = new DependencyResolver(Options.RootDirectory, Platform);
+
                 var Context = new BuildContext(
                     Graph,
                     Platform,
@@ -105,7 +108,8 @@ namespace LumenBuilder
                     Toolchain,
                     Options.RootDirectory,
                     Options.OutputDirectory,
-                    Diagnostics
+                    Diagnostics,
+                    ExternalDeps
                 );
 
                 var Planner = new BuildPlanner(Context);
