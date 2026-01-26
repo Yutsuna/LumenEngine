@@ -64,7 +64,18 @@ public sealed class BuildPlanner
             }
         }
 
-        return Context.ExternalDeps.ResolveAll(AllExternalLibs);
+        var Requested = AllExternalLibs.Count > 0
+            ? string.Join(", ", AllExternalLibs)
+            : "none";
+        Context.Diagnostics.Info($"External dependencies requested: {Requested}");
+
+        var Resolved = Context.ExternalDeps.ResolveAll(AllExternalLibs);
+        var ResolvedKeys = Resolved.Count > 0
+            ? string.Join(", ", Resolved.Keys)
+            : "none";
+        Context.Diagnostics.Info($"Resolved external dependencies: {ResolvedKeys}");
+
+        return Resolved;
     }
 
     public BuildPlan CreatePlan()
