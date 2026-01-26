@@ -31,6 +31,8 @@ namespace LumenBuilder
             {
                 this.VendorPath = Paths.Combine(RootDirectory, "Vendor");
                 this.Platform = Platform;
+                Console.WriteLine($"[Debug] DependencyResolver VendorPath: {this.VendorPath}");
+                Console.WriteLine($"[Debug] VendorPath exists: {Directory.Exists(this.VendorPath)}");
             }
 
             /// <summary>
@@ -107,6 +109,8 @@ namespace LumenBuilder
             private ExternalDependency? TryResolveFromVendor(string Name)
             {
                 string DepPath = Paths.Combine(VendorPath, Name);
+                Console.WriteLine($"[Debug] TryResolveFromVendor: {Name} at {DepPath}");
+                Console.WriteLine($"[Debug] DepPath exists: {Directory.Exists(DepPath)}");
 
                 if (!Directory.Exists(DepPath))
                     return null;
@@ -116,6 +120,7 @@ namespace LumenBuilder
                 var Libraries = new List<string>();
 
                 string IncludeDir = Paths.Combine(DepPath, "include");
+                Console.WriteLine($"[Debug] IncludeDir: {IncludeDir}, exists: {Directory.Exists(IncludeDir)}");
                 if (Directory.Exists(IncludeDir))
                 {
                     IncludePaths.Add(IncludeDir);
