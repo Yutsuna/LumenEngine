@@ -1,19 +1,11 @@
-module MathCore {
+module MathCore
+{
 
-    type = shared
+    type            = shared
 
-    sources = [
-        "Private/**/*.cpp"
-    ]
-
-    public_includes = [
-        "Public"
-    ]
-
-    defines = [
-        "LUMEN_ENGINE"
-    ]
-
-    deps = [ Core ]
+    sources         = [ "Private/**/*.cpp" ]
+    public_includes = [ "Public" ]
+    defines         = [ "LUMEN_ENGINE" ]
+    deps            = [ Core ]
 
 }
