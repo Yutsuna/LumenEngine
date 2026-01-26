@@ -162,6 +162,13 @@ namespace LumenBuilder
                                 Sb.Append(Target.DependencyPaths[TargetDepPathsIndex]);
                                 Sb.Append('"');
                             }
+                            /** Add library paths with -L prefix */
+                            for (int LibPathIndex = 0; LibPathIndex < Target.LibraryPaths.Count; ++LibPathIndex)
+                            {
+                                Sb.Append(" -L\"");
+                                Sb.Append(Target.LibraryPaths[LibPathIndex]);
+                                Sb.Append('"');
+                            }
                             /** Add system libraries with -l prefix */
                             for (int SysLibIndex = 0; SysLibIndex < Target.SystemLibraries.Count; ++SysLibIndex)
                             {
