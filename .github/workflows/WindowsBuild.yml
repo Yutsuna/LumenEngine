@@ -24,14 +24,22 @@ jobs:
         uses: actions/cache@v4
         with:
           path: Vendor
-          key: Vendor-${{ runner.os }}-${{ hashFiles('Scripts/Dependencies/InstallDependencies.rb') }}
-          restore-keys: |
-            Vendor-${{ runner.os }}-
+          key: Vendor-${{ runner.os }}-${{ hashFiles('Scripts/Dependencies/**/*.rb') }}
 
       - name: InstallDependencies
         if: steps.vendor-cache.outputs.cache-hit != 'true'
         run: ruby Scripts/Dependencies/InstallDependencies.rb
         shell: bash
+
+      - name: VerifyVendor
+        shell: bash
+        run: |
+          echo "Vendor directory contents:"
+          ls -la Vendor/ || echo "Vendor directory not found"
+          echo "SDL3 directory contents:"
+          ls -la Vendor/SDL3/ || echo "SDL3 directory not found"
+          echo "SDL3 include contents:"
+          ls -la Vendor/SDL3/include/ || echo "SDL3 include not found"
 
       - name: SetupDotnet
         uses: actions/setup-dotnet@v3
