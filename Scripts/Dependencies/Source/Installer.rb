@@ -1,15 +1,19 @@
 require 'fileutils'
 require_relative 'Logger'
+require_relative 'SystemDetector'
 
 
 module DependencyInstaller
 
+
   class Installer
+
 
     def initialize(install_path: 'Vendor')
       @install_path = install_path
       FileUtils.mkdir_p(@install_path)
     end
+
 
     def install(dependency, download_path)
       filename = dependency.filename
@@ -28,13 +32,19 @@ module DependencyInstaller
       FileUtils.mkdir_p(destination)
 
       if extract_archive(file_path, destination)
-        Logger.success("Installed #{dependency.name} to #{destination}")
-        true
+        if run_build_commands(dependency, destination)
+          Logger.success("Installed #{dependency.name} to #{destination}")
+          true
+        else
+          Logger.error("Failed to build #{dependency.name}")
+          false
+        end
       else
         Logger.error("Failed to install #{dependency.name}")
         false
       end
     end
+
 
     def install_all(dependencies, download_path)
       dependencies.each { |dependency|
@@ -42,7 +52,28 @@ module DependencyInstaller
       }
     end
 
+
     private
+
+
+    def run_build_commands(dependency, directory)
+      commands = dependency.get_build_commands_for_platform(SystemDetector.detect_platform)
+      return true unless commands
+
+      Logger.progress("Building #{dependency.name}...")
+
+      Dir.chdir(directory) {
+        commands.each { |cmd|
+          Logger.info("Executing: #{cmd}")
+          unless system(cmd)
+            Logger.error("Command failed: #{cmd}")
+            return false
+          end
+          }
+        }
+      true
+    end
+
 
     def extract_archive(archive_path, destination)
       case File.extname(archive_path).downcase
@@ -58,6 +89,7 @@ module DependencyInstaller
       end
     end
 
+
     def extract_zip(archive_path, destination)
       temp_dir = "#{destination}_temp"
       FileUtils.mkdir_p(temp_dir)
@@ -70,6 +102,7 @@ module DependencyInstaller
         false
       end
     end
+
 
     def extract_tar_gz(archive_path, destination)
       temp_dir = "#{destination}_temp"
@@ -84,6 +117,7 @@ module DependencyInstaller
       end
     end
 
+
     def extract_tar(archive_path, destination)
       if system('tar', '-xf', archive_path, '-C', destination)
         true
@@ -92,6 +126,7 @@ module DependencyInstaller
         false
       end
     end
+
 
     def finalize_extraction(temp_dir, destination)
       contents = Dir.entries(temp_dir).reject { |e| e == '.' || e == '..' }
@@ -110,6 +145,7 @@ module DependencyInstaller
       FileUtils.rm_rf(temp_dir)
       true
     end
+
 
   end
 
