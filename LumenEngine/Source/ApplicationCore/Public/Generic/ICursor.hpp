@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Definitions.hpp"
 #include "Maths/Vector.hpp"
 
 namespace LumenEngine
@@ -48,7 +49,7 @@ namespace ECursorType
  * @class ICursor
  * @brief Interface for cursor management in the application.
  */
-class ICursor
+class LUMEN_ENGINE_API ICursor
 {
 public:
 
