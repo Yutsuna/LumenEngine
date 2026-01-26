@@ -19,6 +19,10 @@ jobs:
         with:
           ruby-version: "3.4"
 
+      - name: InstallSystemDependencies
+        run: |
+          choco install ninja cmake
+
       - name: CacheVendor
         id: vendor-cache
         uses: actions/cache@v4
@@ -28,18 +32,8 @@ jobs:
 
       - name: InstallDependencies
         if: steps.vendor-cache.outputs.cache-hit != 'true'
+        shell: bash
         run: ruby Scripts/Dependencies/InstallDependencies.rb
-        shell: bash
-
-      - name: VerifyVendor
-        shell: bash
-        run: |
-          echo "Vendor directory contents:"
-          ls -la Vendor/ || echo "Vendor directory not found"
-          echo "SDL3 directory contents:"
-          ls -la Vendor/SDL3/ || echo "SDL3 directory not found"
-          echo "SDL3 include contents:"
-          ls -la Vendor/SDL3/include/ || echo "SDL3 include not found"
 
       - name: SetupDotnet
         uses: actions/setup-dotnet@v3
@@ -55,26 +49,38 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
 
-      - name: RunBuilder
+      - name: RunBuilder Ninja
         run: dotnet run --project Builder/Builder.csproj -- build --format ninja --config release
-        shell: bash
 
-      - name: InstallNinja
-        if: runner.os == 'Windows'
-        run: choco install ninja -y --no-progress
-        shell: pwsh
+      - name: RunBuilder CMake
+        run: dotnet run --project Builder/Builder.csproj -- build --format cmake --config release
 
-      - name: BuildProject
+      - name: Build Ninja
         run: ninja
-        shell: bash
 
-      - name: FindExecutable
-        shell: bash
+      - name: Check & Clean Ninja
+        shell: pwsh
         run: |
-          if [ -f Binaries/BaseExample/BaseExample || -f Binaries/BaseExample/BaseExample.exe ]; then
-            echo "Executable found"
-            exit 0
-          else
-            echo "Executable not found"
+          if (Test-Path "Binaries/BaseExample/BaseExample.exe") {
+            Write-Host "Ninja build successful"
+            ninja -t clean
+          } else {
+            Write-Error "Ninja build failed: Executable not found"
             exit 84
-          fi
+          }
+
+      - name: Build CMake
+        run: |
+          cmake .
+          cmake --build . --config Release
+
+      - name: Check & Clean CMake
+        shell: pwsh
+        run: |
+          if (Test-Path "Binaries/BaseExample/BaseExample.exe") {
+            Write-Host "CMake build successful"
+            cmake --build . --target clean
+          } else {
+            Write-Error "CMake build failed: Executable not found"
+            exit 84
+          }

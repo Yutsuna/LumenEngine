@@ -19,6 +19,11 @@ jobs:
         with:
           ruby-version: "3.4"
 
+      - name: InstallSystemDependencies
+        run: |
+          brew update
+          brew install ninja cmake pkg-config
+
       - name: CacheVendor
         id: vendor-cache
         uses: actions/cache@v4
@@ -29,15 +34,6 @@ jobs:
       - name: InstallDependencies
         if: steps.vendor-cache.outputs.cache-hit != 'true'
         run: ruby Scripts/Dependencies/InstallDependencies.rb
-
-      - name: VerifyVendor
-        run: |
-          echo "Vendor directory contents:"
-          ls -la Vendor/ || echo "Vendor directory not found"
-          echo "SDL3 directory contents:"
-          ls -la Vendor/SDL3/ || echo "SDL3 directory not found"
-          echo "SDL3 include contents:"
-          ls -la Vendor/SDL3/include/ || echo "SDL3 include not found"
 
       - name: SetupDotnet
         uses: actions/setup-dotnet@v3
@@ -53,22 +49,52 @@ jobs:
           restore-keys: |
             nuget-${{ runner.os }}-
 
-      - name: RunBuilder
+      - name: RunBuilder Ninja
         run: dotnet run --project Builder/Builder.csproj -- build --format ninja --config release
 
-      - name: InstallNinja
-        run: brew install ninja || true
+      - name: RunBuilder Makefile
+        run: dotnet run --project Builder/Builder.csproj -- build --format makefile --config release
 
-      - name: BuildProject
-        run: ninja
+      - name: RunBuilder CMake
+        run: dotnet run --project Builder/Builder.csproj -- build --format cmake --config release
 
-      - name: FindExecutable
-        shell: bash
+      - name: Build Ninja
+        run: ninja -j$(sysctl -n hw.ncpu)
+
+      - name: Check & Clean Ninja
         run: |
           if [ -f Binaries/BaseExample/BaseExample ]; then
-            echo "Executable found"
-            exit 0
+            echo "Ninja build successful"
+            ninja -t clean
           else
-            echo "Executable not found"
+            echo "Ninja build failed"
+            exit 84
+          fi
+
+      - name: Build Makefile
+        run: make -j$(sysctl -n hw.ncpu)
+
+      - name: Check & Clean Makefile
+        run: |
+          if [ -f Binaries/BaseExample/BaseExample ]; then
+            echo "Makefile build successful"
+            make clean
+          else
+            echo "Makefile build failed"
+            exit 84
+          fi
+
+      - name: Build CMake
+        run: |
+          cmake .
+          cmake --build .
+
+      - name: Check & Clean CMake
+        run: |
+          if [ -f Binaries/BaseExample/BaseExample ]; then
+            echo "CMake build successful"
+            cmake --build . --target clean
+          else
+            echo "CMake build failed"
             exit 84
           fi
