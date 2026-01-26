@@ -14,9 +14,9 @@ Build/
 Intermediate/
 Binaries/
 
-Makefile
-CMakeLists.txt
-build.ninja
+/Makefile
+/CMakeLists.txt
+/build.ninja
 
 *.sh
 !.clang-format
