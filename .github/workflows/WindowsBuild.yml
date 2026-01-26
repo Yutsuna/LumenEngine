@@ -44,7 +44,7 @@ jobs:
       - name: SetupDotnet
         uses: actions/setup-dotnet@v3
         with:
-          dotnet-version: "10.0.100"
+          dotnet-version: "9.0.x"
 
       - name: CacheNuGet
         id: nuget-cache
