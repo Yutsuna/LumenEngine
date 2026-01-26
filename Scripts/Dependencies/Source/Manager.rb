@@ -40,13 +40,28 @@ module DependencyInstaller
       Logger.info("Platform: #{SystemDetector.detect_platform}")
       Logger.info("Dependencies: #{@dependencies.size}")
 
+      deps_to_install = @dependencies.select { |dep|
+        if @installer.needs_update?(dep)
+          Logger.info("#{dep.name} needs update (current: #{@installer.installed_version(dep) || 'none'}, required: #{dep.version})")
+          true
+        else
+          Logger.success("#{dep.name} is up to date (#{dep.version})")
+          false
+        end
+      }
+
+      if deps_to_install.empty?
+        Logger.success("All dependencies are up to date!")
+        return
+      end
+
       FileUtils.mkdir_p(@download_path)
 
-      Logger.progress("Downloading dependencies...")
-      @downloader.download_all(@dependencies, @download_path)
+      Logger.progress("Downloading #{deps_to_install.size} dependencies...")
+      @downloader.download_all(deps_to_install, @download_path)
 
       Logger.progress("Installing dependencies...")
-      unless @installer.install_all(@dependencies, @download_path)
+      unless @installer.install_all(deps_to_install, @download_path)
         Logger.error("Dependency installation failed.")
         cleanup
         exit 84
