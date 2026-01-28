@@ -9,50 +9,9 @@ namespace LumenBuilder.Build.Toolchain;
 public sealed class ClangToolchain : Compiler
 {
     public override string Name => "clang";
-    public override string CompilerPath => DetectCompiler();
-    public override string LinkerPath => DetectLinker();
+    public override string CompilerPath => "clang++";
+    public override string LinkerPath => "clang++";
     public override string ArchiverPath => "ar";
-
-    private static string DetectCompiler()
-    {
-        if (IsCommandAvailable("clang++"))
-        {
-            return "clang++";
-        }
-        if (IsCommandAvailable("g++"))
-        {
-            return "g++";
-        }
-        return "clang++";
-    }
-
-    private static string DetectLinker()
-    {
-        return DetectCompiler();
-    }
-
-    private static bool IsCommandAvailable(string command)
-    {
-        try
-        {
-            var psi = new System.Diagnostics.ProcessStartInfo("where", command)
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var p = System.Diagnostics.Process.Start(psi);
-            if (p == null) return false;
-            p.WaitForExit(2000);
-            return p.ExitCode == 0;
-        }
-        catch
-        {
-            return false;
-        }
-    }
 
     public override string GetCompileCommand(
         string SourceFile,
