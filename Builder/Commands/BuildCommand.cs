@@ -95,9 +95,7 @@ namespace LumenBuilder
 
                 var Platform = PlatformInfo.Detect();
                 var Resolver = new ToolchainResolver();
-                var Toolchain = Options.Toolchain != null
-                    ? Resolver.Resolve(Options.Toolchain)
-                    : Resolver.Resolve(Platform);
+                var Toolchain = Resolver.Resolve(Options.Toolchain, Platform);
 
                 var ExternalDeps = new DependencyResolver(Options.RootDirectory, Platform);
 

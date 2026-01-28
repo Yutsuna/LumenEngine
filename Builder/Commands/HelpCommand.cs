@@ -31,7 +31,7 @@ namespace LumenBuilder
             Build Options:
               --format <ninja|makefile|cmake>  Output format (default: ninja)
               --config <debug|dev|release>     Build configuration (default: debug)
-              --toolchain <clang|msvc>         Compiler toolchain (default: auto)
+              --toolchain <clang|g++>          Compiler toolchain (default: auto)
               --output <dir>                   Output directory (default: .)
               --root <dir>                     Root directory (default: .)
 
