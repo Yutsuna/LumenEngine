@@ -1,64 +1,34 @@
-using System.Diagnostics;
 using LumenBuilder.Common;
 
 namespace LumenBuilder.Build.Toolchain;
 
 /// <summary>
 /// Resolves the appropriate toolchain for the current platform.
-/// Falls back to the Clang/GCC toolchain on Windows when MSVC is not available.
+/// Falls back to the Clang toolchain if none is found.
 /// </summary>
 public sealed class ToolchainResolver
 {
-    public Compiler Resolve(PlatformInfo Platform)
+
+    public Compiler Resolve(string? ToolchainName, PlatformInfo Platform)
     {
-        if (Platform.Type == PlatformType.Windows)
+        if (string.IsNullOrEmpty(ToolchainName))
         {
-            if (IsCommandAvailable("cl.exe"))
+            return Platform.Type switch
             {
-                return new MsvcToolchain();
-            }
-
-            return new ClangToolchain();
+                PlatformType.Windows => new ClangToolchain(),
+                PlatformType.Linux => new GppToolchain(),
+                PlatformType.MacOS => new ClangToolchain(),
+                _ => new ClangToolchain()
+            };
         }
-
-        return new ClangToolchain();
-    }
-
-    public Compiler Resolve(string ToolchainName)
-    {
+        
         return ToolchainName.ToLowerInvariant() switch
         {
-            "msvc" or "cl" => new MsvcToolchain(),
             "clang++" => new ClangToolchain(),
             "g++" => new GppToolchain(),
+            "msvc" => throw new BuildException("MSVC is not supported. Please use Clang++ or G++."),
             _ => new ClangToolchain()
         };
     }
 
-    private static bool IsCommandAvailable(string command)
-    {
-        try
-        {
-            var psi = new ProcessStartInfo("where", command)
-            {
-                RedirectStandardOutput = true,
-                RedirectStandardError = true,
-                UseShellExecute = false,
-                CreateNoWindow = true
-            };
-
-            using var p = Process.Start(psi);
-
-            if (p == null)
-            {
-                return false;
-            }
-            p.WaitForExit(2000);
-            return p.ExitCode == 0;
-        }
-        catch
-        {
-            return false;
-        }
-    }
 }
