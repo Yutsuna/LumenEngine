@@ -24,11 +24,7 @@ namespace Math
         };
 
 
-#if defined (LUMEN_ENGINE_COMPILER_MSVC)
-    #pragma warning (push)
-    #pragma warning (disable : 4201)
-
-#elif defined (LUMEN_ENGINE_COMPILER_CLANG)
+#if defined (LUMEN_ENGINE_COMPILER_CLANG)
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wc11-extensions"
 
@@ -104,10 +100,7 @@ namespace Math
         };
 
 
-#if defined (LUMEN_ENGINE_COMPILER_MSVC)
-    #pragma warning (pop)
-
-#elif defined (LUMEN_ENGINE_COMPILER_CLANG)
+#if defined (LUMEN_ENGINE_COMPILER_CLANG)
     #pragma clang diagnostic pop
 
 #elif defined (LUMEN_ENGINE_COMPILER_GCC)

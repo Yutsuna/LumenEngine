@@ -53,10 +53,7 @@
 #endif
 
 
-#if defined( _MSC_VER )
-    #define LUMEN_ENGINE_COMPILER_MSVC
-
-#elif defined( __clang__ )
+#if defined( __clang__ )
     #define LUMEN_ENGINE_COMPILER_CLANG
 
 #elif defined( __GNUC__ )
