@@ -78,16 +78,9 @@ namespace LumenBuilder
                 /// </summary>
                 private void WriteToolchainConfig(StringBuilder Sb)
                 {
-                    bool IsMsvc = Context.Toolchain.Name == "msvc";
                     bool IsWindows = Context.Platform.Type == PlatformType.Windows;
                     
-                    if (IsWindows && IsMsvc)
-                    {
-                        Sb.AppendLine("# MSVC Toolchain Configuration");
-                        Sb.AppendLine("set(CMAKE_CXX_COMPILER \"cl.exe\")");
-                        Sb.AppendLine("set(CMAKE_C_COMPILER \"cl.exe\")");
-                    }
-                    else if (IsWindows && !IsMsvc)
+                    if (IsWindows)
                     {
                         Sb.AppendLine("# Clang/GCC Toolchain on Windows");
                         Sb.AppendLine($"set(CMAKE_CXX_COMPILER \"{Context.Toolchain.CompilerPath}\")");
@@ -115,21 +108,12 @@ namespace LumenBuilder
                 /// </summary>
                 private void WritePlatformConfig(StringBuilder Sb)
                 {
-                    bool IsMsvc = Context.Toolchain.Name == "msvc";
                     bool IsWindows = Context.Platform.Type == PlatformType.Windows;
                     
                     if (IsWindows)
                     {
                         Sb.AppendLine("# Windows Platform Configuration");
-                        if (IsMsvc)
-                        {
-                            Sb.AppendLine("add_compile_options(/EHsc /W3)");
-                            Sb.AppendLine("add_definitions(-DWIN32 -D_WINDOWS)");
-                        }
-                        else
-                        {
-                            Sb.AppendLine("add_definitions(-DWIN32 -D_WINDOWS)");
-                        }
+                        Sb.AppendLine("add_definitions(-DWIN32 -D_WINDOWS)");
                     }
                     else if (Context.Platform.Type == PlatformType.Linux)
                     {
@@ -150,10 +134,10 @@ namespace LumenBuilder
                 {
                     var LinkTargetLookup = new Dictionary<string, LinkTarget>();
 
-                    for (int i = 0; i < Plan.LinkTargets.Count && i < Plan.BuildOrder.Count; ++i)
+                    for (int LinkTargetIndex = 0; LinkTargetIndex < Plan.LinkTargets.Count && LinkTargetIndex < Plan.BuildOrder.Count; ++LinkTargetIndex)
                     {
-                        var Target = Plan.LinkTargets[i];
-                        string ModuleName = Plan.BuildOrder[i];
+                        var Target = Plan.LinkTargets[LinkTargetIndex];
+                        string ModuleName = Plan.BuildOrder[LinkTargetIndex];
                         LinkTargetLookup[ModuleName] = Target;
                     }
 
@@ -208,7 +192,6 @@ namespace LumenBuilder
                     }
                     Sb.AppendLine(")");
 
-                    // Set output directory to match Ninja/Makefile output structure
                     string OutputDir = Paths.GetBinaryPath(Context.OutputDirectory, Module.Name);
                     if (Module.Type == ModuleType.Executable)
                     {

@@ -71,7 +71,6 @@ namespace LumenBuilder
                 {
                     string CFlags = GetCompilerFlags();
                     bool IsWindows = Context.Platform.Type == PlatformType.Windows;
-                    bool IsMsvc = Context.Toolchain.Name == "msvc";
 
                     Sb.AppendLine($"cxx = {Context.Toolchain.CompilerPath}");
                     Sb.AppendLine($"ar = {Context.Toolchain.ArchiverPath}");
@@ -83,38 +82,17 @@ namespace LumenBuilder
                     Sb.AppendLine();
 
                     Sb.AppendLine("rule compile");
-                    if (IsMsvc)
-                    {
-                        Sb.AppendLine("  command = $cxx $cflags /Fo$out $in");
-                    }
-                    else
-                    {
-                        Sb.AppendLine("  command = $cxx $cflags -c -o $out $in");
-                    }
+                    Sb.AppendLine("  command = $cxx $cflags -c -o $out $in");
                     Sb.AppendLine("  description = Compiling $in");
                     Sb.AppendLine();
 
                     Sb.AppendLine("rule link");
-                    if (IsMsvc)
-                    {
-                        Sb.AppendLine("  command = $cxx $ldflags /OUT:$out $in $libs");
-                    }
-                    else
-                    {
-                        Sb.AppendLine("  command = $cxx $ldflags -o $out $in $libs");
-                    }
+                    Sb.AppendLine("  command = $cxx $ldflags -o $out $in $libs");
                     Sb.AppendLine("  description = Linking $out");
                     Sb.AppendLine();
 
                     Sb.AppendLine("rule archive");
-                    if (IsMsvc)
-                    {
-                        Sb.AppendLine("  command = $ar /nologo /OUT:$out $in");
-                    }
-                    else
-                    {
-                        Sb.AppendLine("  command = $ar rcs $out $in");
-                    }
+                    Sb.AppendLine("  command = $ar rcs $out $in");
                     Sb.AppendLine("  description = Archiving $out");
                 }
 
@@ -124,13 +102,12 @@ namespace LumenBuilder
                 private void WriteCompileStatements(StringBuilder Sb, BuildPlan Plan)
                 {
                     Sb.AppendLine("# Compile statements");
-                    bool IsMsvc = Context.Toolchain.Name == "msvc";
 
                     for (int CompUnitsIndex = 0; CompUnitsIndex < Plan.CompileUnits.Count; ++CompUnitsIndex)
                     {
                         var Unit = Plan.CompileUnits[CompUnitsIndex];
-                        var IncludeFlags = BuildIncludeFlags(Unit.Includes, IsMsvc);
-                        var DefineFlags = BuildDefineFlags(Unit.Defines, IsMsvc);
+                        var IncludeFlags = BuildIncludeFlags(Unit.Includes);
+                        var DefineFlags = BuildDefineFlags(Unit.Defines);
 
                         Sb.Append("build ");
                         Sb.Append(EscapePath(Unit.ObjectFile));
@@ -152,7 +129,6 @@ namespace LumenBuilder
                 private void WriteLinkStatements(StringBuilder Sb, BuildPlan Plan)
                 {
                     Sb.AppendLine("# Link statements");
-                    bool IsMsvc = Context.Toolchain.Name == "msvc";
 
                     for (int LinkIndex = 0; LinkIndex < Plan.LinkTargets.Count; ++LinkIndex)
                     {
@@ -247,7 +223,7 @@ namespace LumenBuilder
                     };
                 }
 
-                private static string BuildIncludeFlags(IReadOnlyList<string> Includes, bool IsMsvc)
+                private static string BuildIncludeFlags(IReadOnlyList<string> Includes)
                 {
                     if (Includes.Count == 0)
                     {
@@ -255,7 +231,6 @@ namespace LumenBuilder
                     }
 
                     var Sb = new StringBuilder();
-                    string IncludePrefix = IsMsvc ? "/I" : "-I";
 
                     for (int IncIndex = 0; IncIndex < Includes.Count; ++IncIndex)
                     {
@@ -263,7 +238,7 @@ namespace LumenBuilder
                         {
                             Sb.Append(' ');
                         }
-                        Sb.Append(IncludePrefix);
+                        Sb.Append("-I");
                         Sb.Append('\"');
                         Sb.Append(Includes[IncIndex]);
                         Sb.Append('\"');
@@ -271,7 +246,7 @@ namespace LumenBuilder
                     return Sb.ToString();
                 }
 
-                private static string BuildDefineFlags(IReadOnlyList<string> Defines, bool IsMsvc)
+                private static string BuildDefineFlags(IReadOnlyList<string> Defines)
                 {
                     if (Defines.Count == 0)
                     {
@@ -279,7 +254,6 @@ namespace LumenBuilder
                     }
 
                     var Sb = new StringBuilder();
-                    string DefinePrefix = IsMsvc ? "/D" : "-D";
 
                     for (int DefIndex = 0; DefIndex < Defines.Count; ++DefIndex)
                     {
@@ -287,7 +261,7 @@ namespace LumenBuilder
                         {
                             Sb.Append(' ');
                         }
-                        Sb.Append(DefinePrefix);
+                        Sb.Append("-D");
                         Sb.Append(Defines[DefIndex]);
                     }
                     return Sb.ToString();
