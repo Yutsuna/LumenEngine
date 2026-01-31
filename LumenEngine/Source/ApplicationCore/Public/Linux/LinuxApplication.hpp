@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Definitions.hpp"
 #include "Container/Vector.hpp"
 #include "Generic/GenericApplication.hpp"
 
@@ -13,7 +14,7 @@ namespace LumenEngine
 
 class FLinuxWindow;
 
-class FLinuxApplication : public FGenericApplication
+class LUMEN_ENGINE_API FLinuxApplication : public FGenericApplication
 {
 public:
 

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Definitions.hpp"
 #include "Container/SharedPtr.hpp"
 
 namespace LumenEngine
@@ -24,7 +25,7 @@ class ICursor;
  * @brief A base class for platform-independent application management.
  * @details Provides a common interface for handling application-level functionality
  */
-class FGenericApplication
+class LUMEN_ENGINE_API FGenericApplication
 {
 public:
 

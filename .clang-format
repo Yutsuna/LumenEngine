@@ -38,3 +38,5 @@ EmptyLineBeforeAccessModifier: Always
 EmptyLineAfterAccessModifier: Always
 AllowShortFunctionsOnASingleLine: None
 KeepEmptyLinesAtTheStartOfBlocks: true
+
+IndentPPDirectives: BeforeHash

@@ -74,10 +74,26 @@ namespace LumenBuilder
                 /// </summary>
                 private void WriteVariables(StringBuilder Sb)
                 {
+                    bool IsWindows = Context.Platform.Type == PlatformType.Windows;
+                    
                     Sb.AppendLine($"CXX := {Context.Toolchain.CompilerPath}");
                     Sb.AppendLine($"AR := {Context.Toolchain.ArchiverPath}");
                     Sb.AppendLine($"CXXFLAGS := {GetCompilerFlags()}");
                     Sb.AppendLine("LDFLAGS :=");
+                    Sb.AppendLine();
+                    
+                    if (IsWindows)
+                    {
+                        Sb.AppendLine("MKDIR = if not exist $(subst /,\\,$(dir $@)) mkdir $(subst /,\\,$(dir $@))");
+                        Sb.AppendLine("RM = del /F /Q");
+                        Sb.AppendLine("RMDIR = rmdir /S /Q");
+                    }
+                    else
+                    {
+                        Sb.AppendLine("MKDIR = @mkdir -p $(dir $@)");
+                        Sb.AppendLine("RM = rm -f");
+                        Sb.AppendLine("RMDIR = rm -rf");
+                    }
                 }
 
                 /// <summary>
@@ -130,7 +146,7 @@ namespace LumenBuilder
                         Sb.AppendLine();
 
                         Sb.Append('\t');
-                        Sb.Append("@mkdir -p $(dir $@)");
+                        Sb.Append("$(MKDIR)");
                         Sb.AppendLine();
 
                         Sb.Append('\t');
@@ -162,6 +178,13 @@ namespace LumenBuilder
                                 Sb.Append(Target.DependencyPaths[TargetDepPathsIndex]);
                                 Sb.Append('"');
                             }
+                            /** Add library paths with -L prefix */
+                            for (int LibPathIndex = 0; LibPathIndex < Target.LibraryPaths.Count; ++LibPathIndex)
+                            {
+                                Sb.Append(" -L\"");
+                                Sb.Append(Target.LibraryPaths[LibPathIndex]);
+                                Sb.Append('"');
+                            }
                             /** Add system libraries with -l prefix */
                             for (int SysLibIndex = 0; SysLibIndex < Target.SystemLibraries.Count; ++SysLibIndex)
                             {
@@ -188,7 +211,8 @@ namespace LumenBuilder
                         Sb.AppendLine(Unit.SourceFile);
 
                         Sb.Append('\t');
-                        Sb.AppendLine("@mkdir -p $(dir $@)");
+                        Sb.Append("$(MKDIR)");
+                        Sb.AppendLine();
 
                         Sb.Append('\t');
                         Sb.Append("$(CXX) $(CXXFLAGS)");
@@ -218,7 +242,17 @@ namespace LumenBuilder
                 private void WriteCleanTarget(StringBuilder Sb)
                 {
                     Sb.AppendLine("clean:");
-                    Sb.AppendLine($"\trm -rf {Paths.IntermediateDir} {Paths.BinariesDir}");
+                    bool IsWindows = Context.Platform.Type == PlatformType.Windows;
+                    
+                    if (IsWindows)
+                    {
+                        Sb.AppendLine($"\tif exist {Paths.IntermediateDir} $(RMDIR) {Paths.IntermediateDir.Replace("/", "\\")}");
+                        Sb.AppendLine($"\tif exist {Paths.BinariesDir} $(RMDIR) {Paths.BinariesDir.Replace("/", "\\")}");
+                    }
+                    else
+                    {
+                        Sb.AppendLine($"\t$(RMDIR) {Paths.IntermediateDir} {Paths.BinariesDir}");
+                    }
                 }
 
                 /// <summary>
@@ -228,10 +262,10 @@ namespace LumenBuilder
                 {
                     return Context.Configuration switch
                     {
-                        BuildConfiguration.Debug => "-g -O0 -DDEBUG -std=c++20",
-                        BuildConfiguration.Development => "-g -O2 -DNDEBUG -std=c++20",
-                        BuildConfiguration.Release => "-O3 -DNDEBUG -std=c++20",
-                        _ => "-std=c++20"
+                        BuildConfiguration.Debug => "-g -O0 -DDEBUG -std=c++23",
+                        BuildConfiguration.Development => "-g -O2 -DNDEBUG -std=c++23",
+                        BuildConfiguration.Release => "-O3 -DNDEBUG -std=c++23",
+                        _ => "-std=c++23"
                     };
                 }
 

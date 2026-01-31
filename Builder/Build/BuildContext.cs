@@ -1,5 +1,6 @@
 using LumenBuilder.Build.Toolchain;
 using LumenBuilder.Common;
+using LumenBuilder.Dependencies;
 using LumenBuilder.Model;
 
 namespace LumenBuilder.Build;
@@ -14,5 +15,6 @@ public sealed record BuildContext(
     Compiler Toolchain,
     string RootDirectory,
     string OutputDirectory,
-    DiagnosticBag Diagnostics
+    DiagnosticBag Diagnostics,
+    DependencyResolver ExternalDeps
 );

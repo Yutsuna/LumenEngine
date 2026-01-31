@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Definitions.hpp"
 #include "Container/SharedPtr.hpp"
 #include "Generic/GenericWindowDescription.hpp"
 
@@ -12,9 +13,11 @@ namespace LumenEngine
 {
 
 /**
+ * @class FGenericWindow
+ * @brief A generic window interface for cross-platform window management.
  * @details This class provides a generic interface for creating and managing windows on different OS.
  */
-class FGenericWindow
+class LUMEN_ENGINE_API FGenericWindow
 {
 public:
 

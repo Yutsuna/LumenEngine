@@ -37,18 +37,8 @@ public sealed class ClangToolchain : Compiler
                 break;
         }
 
-        for (int I = 0; I < Includes.Count; I++)
-        {
-            Sb.Append(" -I\"");
-            Sb.Append(Includes[I]);
-            Sb.Append('"');
-        }
-
-        for (int I = 0; I < Defines.Count; I++)
-        {
-            Sb.Append(" -D");
-            Sb.Append(Defines[I]);
-        }
+        CompilerHelpers.AppendIncludes(Sb, Includes, "-I", true);
+        CompilerHelpers.AppendDefines(Sb, Defines, "-D");
 
         Sb.Append(" -o \"");
         Sb.Append(ObjectFile);
@@ -66,27 +56,20 @@ public sealed class ClangToolchain : Compiler
         bool IsShared)
     {
         var Sb = new StringBuilder();
+
         Sb.Append(LinkerPath);
 
         if (IsShared)
+        {
             Sb.Append(" -shared");
+        }
 
         Sb.Append(" -o \"");
         Sb.Append(OutputFile);
         Sb.Append('"');
 
-        for (int I = 0; I < ObjectFiles.Count; I++)
-        {
-            Sb.Append(" \"");
-            Sb.Append(ObjectFiles[I]);
-            Sb.Append('"');
-        }
-
-        for (int I = 0; I < Libraries.Count; I++)
-        {
-            Sb.Append(" -l");
-            Sb.Append(Libraries[I]);
-        }
+        CompilerHelpers.AppendQuotedPaths(Sb, ObjectFiles);
+        CompilerHelpers.AppendPrefixedValues(Sb, Libraries, "-l");
 
         return Sb.ToString();
     }
@@ -96,17 +79,13 @@ public sealed class ClangToolchain : Compiler
         IReadOnlyList<string> ObjectFiles)
     {
         var Sb = new StringBuilder();
+
         Sb.Append(ArchiverPath);
         Sb.Append(" rcs \"");
         Sb.Append(OutputFile);
         Sb.Append('"');
 
-        for (int I = 0; I < ObjectFiles.Count; I++)
-        {
-            Sb.Append(" \"");
-            Sb.Append(ObjectFiles[I]);
-            Sb.Append('"');
-        }
+        CompilerHelpers.AppendQuotedPaths(Sb, ObjectFiles);
 
         return Sb.ToString();
     }

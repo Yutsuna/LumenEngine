@@ -1,0 +1,100 @@
+name: MacOSBuild
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+jobs:
+  Build:
+    name: BuildAndTest
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: SetupRuby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: "3.4"
+
+      - name: InstallSystemDependencies
+        run: |
+          brew update
+          brew install ninja cmake pkg-config
+
+      - name: CacheVendor
+        id: vendor-cache
+        uses: actions/cache@v4
+        with:
+          path: Vendor
+          key: Vendor-${{ runner.os }}-${{ hashFiles('Scripts/Dependencies/**/*.rb') }}
+
+      - name: InstallDependencies
+        if: steps.vendor-cache.outputs.cache-hit != 'true'
+        run: ruby Scripts/Dependencies/InstallDependencies.rb
+
+      - name: SetupDotnet
+        uses: actions/setup-dotnet@v3
+        with:
+          dotnet-version: "10.0.100"
+
+      - name: CacheNuGet
+        id: nuget-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: nuget-${{ runner.os }}-${{ hashFiles('**/*.csproj') }}
+          restore-keys: |
+            nuget-${{ runner.os }}-
+
+      - name: RunBuilder Ninja
+        run: dotnet run --project Builder/Builder.csproj -- build --format ninja --config release
+
+      - name: RunBuilder Makefile
+        run: dotnet run --project Builder/Builder.csproj -- build --format makefile --config release
+
+      - name: RunBuilder CMake
+        run: dotnet run --project Builder/Builder.csproj -- build --format cmake --config release
+
+      - name: Build Ninja
+        run: ninja -j$(sysctl -n hw.ncpu)
+
+      - name: Check & Clean Ninja
+        run: |
+          if [ -f Binaries/BaseExample/BaseExample ]; then
+            echo "Ninja build successful"
+            ninja -t clean
+          else
+            echo "Ninja build failed"
+            exit 84
+          fi
+
+      - name: Build Makefile
+        run: make -j$(sysctl -n hw.ncpu)
+
+      - name: Check & Clean Makefile
+        run: |
+          if [ -f Binaries/BaseExample/BaseExample ]; then
+            echo "Makefile build successful"
+            make clean
+          else
+            echo "Makefile build failed"
+            exit 84
+          fi
+
+      - name: Build CMake
+        run: |
+          cmake .
+          cmake --build .
+
+      - name: Check & Clean CMake
+        run: |
+          if [ -f Binaries/BaseExample/BaseExample ]; then
+            echo "CMake build successful"
+            cmake --build . --target clean
+          else
+            echo "CMake build failed"
+            exit 84
+          fi

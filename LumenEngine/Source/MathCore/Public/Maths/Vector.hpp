@@ -23,6 +23,18 @@ namespace Math
             Type Data[Dimension] = {};
         };
 
+
+#if defined (LUMEN_ENGINE_COMPILER_CLANG)
+    #pragma clang diagnostic push
+    #pragma clang diagnostic ignored "-Wc11-extensions"
+
+#elif defined (LUMEN_ENGINE_COMPILER_GCC)
+    #pragma GCC diagnostic push
+    #pragma GCC diagnostic ignored "-Wpedantic"
+
+#endif
+
+
         template <typename Type> struct TVectorData<Type, 2>
         {
             union
@@ -86,6 +98,16 @@ namespace Math
                 Type Data[4] = {};
             };
         };
+
+
+#if defined (LUMEN_ENGINE_COMPILER_CLANG)
+    #pragma clang diagnostic pop
+
+#elif defined (LUMEN_ENGINE_COMPILER_GCC)
+    #pragma GCC diagnostic pop
+
+#endif
+
 
     } // namespace Private
 

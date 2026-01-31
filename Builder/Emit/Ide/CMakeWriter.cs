@@ -38,12 +38,19 @@ namespace LumenBuilder
                     Sb.AppendLine("cmake_minimum_required(VERSION 3.20)");
                     Sb.AppendLine($"project(LumenEngine CXX)");
                     Sb.AppendLine();
+                    
+                    WriteToolchainConfig(Sb);
+                    Sb.AppendLine();
+                    
                     Sb.AppendLine("set(CMAKE_CXX_STANDARD 23)");
                     Sb.AppendLine("set(CMAKE_CXX_STANDARD_REQUIRED ON)");
                     Sb.AppendLine("set(CMAKE_EXPORT_COMPILE_COMMANDS ON)");
                     Sb.AppendLine();
 
                     WriteBuildTypeConfig(Sb);
+                    Sb.AppendLine();
+                    
+                    WritePlatformConfig(Sb);
                     Sb.AppendLine();
 
                     WriteModuleTargets(Sb, Plan);
@@ -67,6 +74,20 @@ namespace LumenBuilder
                 }
 
                 /// <summary>
+                /// Writes the toolchain configuration to the StringBuilder.
+                /// </summary>
+                private void WriteToolchainConfig(StringBuilder Sb)
+                {
+                    bool IsWindows = Context.Platform.Type == PlatformType.Windows;
+                    
+                    if (IsWindows)
+                    {
+                        Sb.AppendLine("# Clang/GCC Toolchain on Windows");
+                        Sb.AppendLine($"set(CMAKE_CXX_COMPILER \"{Context.Toolchain.CompilerPath}\")");
+                    }
+                }
+                
+                /// <summary>
                 /// Writes the build type configuration to the StringBuilder.
                 /// </summary>
                 private void WriteBuildTypeConfig(StringBuilder Sb)
@@ -81,12 +102,45 @@ namespace LumenBuilder
                     Sb.AppendLine($"  set(CMAKE_BUILD_TYPE {DefaultType})");
                     Sb.AppendLine("endif()");
                 }
+                
+                /// <summary>
+                /// Writes the platform-specific configuration to the StringBuilder.
+                /// </summary>
+                private void WritePlatformConfig(StringBuilder Sb)
+                {
+                    bool IsWindows = Context.Platform.Type == PlatformType.Windows;
+                    
+                    if (IsWindows)
+                    {
+                        Sb.AppendLine("# Windows Platform Configuration");
+                        Sb.AppendLine("add_definitions(-DWIN32 -D_WINDOWS)");
+                    }
+                    else if (Context.Platform.Type == PlatformType.Linux)
+                    {
+                        Sb.AppendLine("# Linux Platform Configuration");
+                        Sb.AppendLine("add_definitions(-DLINUX)");
+                    }
+                    else if (Context.Platform.Type == PlatformType.MacOS)
+                    {
+                        Sb.AppendLine("# MacOS Platform Configuration");
+                        Sb.AppendLine("add_definitions(-DMACOS)");
+                    }
+                }
 
                 /// <summary>
                 /// Writes the module targets to the StringBuilder.
                 /// </summary>
                 private void WriteModuleTargets(StringBuilder Sb, BuildPlan Plan)
                 {
+                    var LinkTargetLookup = new Dictionary<string, LinkTarget>();
+
+                    for (int LinkTargetIndex = 0; LinkTargetIndex < Plan.LinkTargets.Count && LinkTargetIndex < Plan.BuildOrder.Count; ++LinkTargetIndex)
+                    {
+                        var Target = Plan.LinkTargets[LinkTargetIndex];
+                        string ModuleName = Plan.BuildOrder[LinkTargetIndex];
+                        LinkTargetLookup[ModuleName] = Target;
+                    }
+
                     for (int BuildOrdIndex = 0; BuildOrdIndex < Plan.BuildOrder.Count; ++BuildOrdIndex)
                     {
                         string ModuleName = Plan.BuildOrder[BuildOrdIndex];
@@ -96,7 +150,8 @@ namespace LumenBuilder
                             continue;
                         }
 
-                        WriteModuleTarget(Sb, Module);
+                        LinkTargetLookup.TryGetValue(ModuleName, out var LinkTarget);
+                        WriteModuleTarget(Sb, Module, LinkTarget);
                         Sb.AppendLine();
                     }
                 }
@@ -104,7 +159,7 @@ namespace LumenBuilder
                 /// <summary>
                 /// Writes a single module target to the StringBuilder.
                 /// </summary>
-                private void WriteModuleTarget(StringBuilder Sb, ModuleDescriptor Module)
+                private void WriteModuleTarget(StringBuilder Sb, ModuleDescriptor Module, LinkTarget? LinkTarget)
                 {
                     var SourceFiles = GetSourceFiles(Module);
 
@@ -137,22 +192,65 @@ namespace LumenBuilder
                     }
                     Sb.AppendLine(")");
 
-                    if (Module.PublicIncludes.Count > 0 || Module.PrivateIncludes.Count > 0)
+                    string OutputDir = Paths.GetBinaryPath(Context.OutputDirectory, Module.Name);
+                    if (Module.Type == ModuleType.Executable)
+                    {
+                        Sb.Append("set_target_properties(");
+                        Sb.Append(Module.Name);
+                        Sb.Append(" PROPERTIES RUNTIME_OUTPUT_DIRECTORY ");
+                        Sb.Append(OutputDir);
+                        Sb.AppendLine(")");
+                    }
+                    else
+                    {
+                        Sb.Append("set_target_properties(");
+                        Sb.Append(Module.Name);
+                        Sb.Append(" PROPERTIES LIBRARY_OUTPUT_DIRECTORY ");
+                        Sb.Append(OutputDir);
+                        Sb.Append(" ARCHIVE_OUTPUT_DIRECTORY ");
+                        Sb.Append(OutputDir);
+                        Sb.AppendLine(")");
+                    }
+
+                    // Collect all include directories: module includes + external dependency includes
+                    var AllIncludes = new List<string>();
+                    for (int PubIncIndex = 0; PubIncIndex < Module.PublicIncludes.Count; ++PubIncIndex)
+                    {
+                        AllIncludes.Add(Paths.Combine(Module.Directory, Module.PublicIncludes[PubIncIndex]));
+                    }
+                    for (int PrivIncIndex = 0; PrivIncIndex < Module.PrivateIncludes.Count; ++PrivIncIndex)
+                    {
+                        AllIncludes.Add(Paths.Combine(Module.Directory, Module.PrivateIncludes[PrivIncIndex]));
+                    }
+
+                    // Add external dependency includes from LinkTarget (e.g., SDL3)
+                    var PlatformLibs = GetPlatformLibraries(Module);
+                    for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
+                    {
+                        string LibName = PlatformLibs[LibIndex];
+                        var ExtDep = Context.ExternalDeps.Resolve(LibName);
+                        if (ExtDep.HasValue)
+                        {
+                            for (int IncIndex = 0; IncIndex < ExtDep.Value.IncludePaths.Count; ++IncIndex)
+                            {
+                                if (!AllIncludes.Contains(ExtDep.Value.IncludePaths[IncIndex]))
+                                {
+                                    AllIncludes.Add(ExtDep.Value.IncludePaths[IncIndex]);
+                                }
+                            }
+                        }
+                    }
+
+                    if (AllIncludes.Count > 0)
                     {
                         Sb.Append("target_include_directories(");
                         Sb.Append(Module.Name);
-                        Sb.AppendLine();
+                        Sb.AppendLine(" PUBLIC");
 
-                        for (int PubIncIndex = 0; PubIncIndex < Module.PublicIncludes.Count; ++PubIncIndex)
+                        for (int IncIndex = 0; IncIndex < AllIncludes.Count; ++IncIndex)
                         {
-                            Sb.Append("  PUBLIC ");
-                            Sb.AppendLine(Paths.Combine(Module.Directory, Module.PublicIncludes[PubIncIndex]));
-                        }
-
-                        for (int PrivIncIndex = 0; PrivIncIndex < Module.PrivateIncludes.Count; ++PrivIncIndex)
-                        {
-                            Sb.Append("  PRIVATE ");
-                            Sb.AppendLine(Paths.Combine(Module.Directory, Module.PrivateIncludes[PrivIncIndex]));
+                            Sb.Append("  ");
+                            Sb.AppendLine(AllIncludes[IncIndex]);
                         }
                         Sb.AppendLine(")");
                     }
@@ -185,9 +283,37 @@ namespace LumenBuilder
                         Sb.AppendLine(")");
                     }
 
-                    /** Add platform-specific system libraries */
-                    var PlatformLibs = GetPlatformLibraries(Module);
-                    if (PlatformLibs.Count > 0)
+                    /** Add library paths and system libraries from LinkTarget */
+                    if (LinkTarget != null && (LinkTarget.LibraryPaths.Count > 0 || LinkTarget.SystemLibraries.Count > 0))
+                    {
+                        if (LinkTarget.LibraryPaths.Count > 0)
+                        {
+                            Sb.Append("target_link_directories(");
+                            Sb.Append(Module.Name);
+                            Sb.AppendLine(" PUBLIC");
+                            for (int LibPathIndex = 0; LibPathIndex < LinkTarget.LibraryPaths.Count; ++LibPathIndex)
+                            {
+                                Sb.Append("  ");
+                                Sb.AppendLine(LinkTarget.LibraryPaths[LibPathIndex]);
+                            }
+                            Sb.AppendLine(")");
+                        }
+
+                        if (LinkTarget.SystemLibraries.Count > 0)
+                        {
+                            Sb.Append("target_link_libraries(");
+                            Sb.Append(Module.Name);
+                            Sb.Append(" PUBLIC");
+
+                            for (int SysLibIndex = 0; SysLibIndex < LinkTarget.SystemLibraries.Count; ++SysLibIndex)
+                            {
+                                Sb.Append(' ');
+                                Sb.Append(LinkTarget.SystemLibraries[SysLibIndex]);
+                            }
+                            Sb.AppendLine(")");
+                        }
+                    }
+                    else if (PlatformLibs.Count > 0)
                     {
                         Sb.Append("target_link_libraries(");
                         Sb.Append(Module.Name);
@@ -233,14 +359,14 @@ namespace LumenBuilder
                         {
                             string BaseDir = Module.Directory;
                             string SearchPattern = Path.GetFileName(Pattern);
-                            
+
                             /** Extract base directory from pattern before ** */
                             int RecursiveIndex = Pattern.IndexOf("**");
                             if (RecursiveIndex > 0)
                             {
                                 string BasePath = Pattern.Substring(0, RecursiveIndex).TrimEnd('/', '\\');
                                 BaseDir = Paths.Combine(Module.Directory, BasePath);
-                                
+
                                 /** Extract search pattern after ** */
                                 string Remaining = Pattern.Substring(RecursiveIndex + 2).TrimStart('/', '\\');
                                 SearchPattern = Remaining;

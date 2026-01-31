@@ -1,19 +1,9 @@
-module Core {
+module Core
+{
 
-    type = shared_library
-
-    sources = [
-        "Private/**/*.cpp"
-    ]
-
-    public_includes = [
-        "Public"
-    ]
-
-    defines = [
-        "LUMEN_ENGINE"
-    ]
-
-    deps = [ ]
+    type            = shared_library
+    sources         = [ "Private/**/*.cpp" ]
+    public_includes = [ "Public" ]
+    defines         = [ "LUMEN_ENGINE" ]
 
 }

@@ -70,9 +70,15 @@ namespace LumenBuilder
                 private void WriteRules(StringBuilder Sb)
                 {
                     string CFlags = GetCompilerFlags();
+                    bool IsWindows = Context.Platform.Type == PlatformType.Windows;
 
                     Sb.AppendLine($"cxx = {Context.Toolchain.CompilerPath}");
                     Sb.AppendLine($"ar = {Context.Toolchain.ArchiverPath}");
+                    
+                    if (IsWindows)
+                    {
+                        Sb.AppendLine("mkdir_cmd = cmd /c if not exist $out_dir mkdir $out_dir");
+                    }
                     Sb.AppendLine();
 
                     Sb.AppendLine("rule compile");
@@ -173,11 +179,25 @@ namespace LumenBuilder
 
                         if (Target.Type == ModuleType.SharedLibrary)
                         {
-                            Sb.AppendLine("  ldflags = -shared");
+                            Sb.Append("  ldflags = -shared");
+                            for (int LibPathIndex = 0; LibPathIndex < Target.LibraryPaths.Count; ++LibPathIndex)
+                            {
+                                Sb.Append(" -L\"");
+                                Sb.Append(Target.LibraryPaths[LibPathIndex]);
+                                Sb.Append('"');
+                            }
+                            Sb.AppendLine();
                         }
                         else if (Target.Type == ModuleType.Executable)
                         {
-                            Sb.AppendLine("  ldflags =");
+                            Sb.Append("  ldflags =");
+                            for (int LibPathIndex = 0; LibPathIndex < Target.LibraryPaths.Count; ++LibPathIndex)
+                            {
+                                Sb.Append(" -L\"");
+                                Sb.Append(Target.LibraryPaths[LibPathIndex]);
+                                Sb.Append('"');
+                            }
+                            Sb.AppendLine();
                         }
                     }
 
@@ -196,10 +216,10 @@ namespace LumenBuilder
                 {
                     return Context.Configuration switch
                     {
-                        BuildConfiguration.Debug => "-g -O0 -DDEBUG -std=c++20",
-                        BuildConfiguration.Development => "-g -O2 -DNDEBUG -std=c++20",
-                        BuildConfiguration.Release => "-O3 -DNDEBUG -std=c++20",
-                        _ => "-std=c++20"
+                        BuildConfiguration.Debug => "-g -O0 -DDEBUG -std=c++23",
+                        BuildConfiguration.Development => "-g -O2 -DNDEBUG -std=c++23",
+                        BuildConfiguration.Release => "-O3 -DNDEBUG -std=c++23",
+                        _ => "-std=c++23"
                     };
                 }
 
@@ -218,9 +238,10 @@ namespace LumenBuilder
                         {
                             Sb.Append(' ');
                         }
-                        Sb.Append("-I\"");
+                        Sb.Append("-I");
+                        Sb.Append('\"');
                         Sb.Append(Includes[IncIndex]);
-                        Sb.Append('"');
+                        Sb.Append('\"');
                     }
                     return Sb.ToString();
                 }

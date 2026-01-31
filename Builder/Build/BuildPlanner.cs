@@ -1,4 +1,5 @@
 using LumenBuilder.Common;
+using LumenBuilder.Dependencies;
 using LumenBuilder.Graph;
 using LumenBuilder.Model;
 
@@ -42,10 +43,39 @@ public sealed record BuildPlan(
 public sealed class BuildPlanner
 {
     private readonly BuildContext Context;
+    private readonly IReadOnlyDictionary<string, ExternalDependency> ResolvedExternalDeps;
 
     public BuildPlanner(BuildContext Context)
     {
         this.Context = Context;
+        this.ResolvedExternalDeps = ResolveExternalDependencies();
+    }
+
+    private IReadOnlyDictionary<string, ExternalDependency> ResolveExternalDependencies()
+    {
+        var AllExternalLibs = new HashSet<string>();
+
+        foreach (var Module in Context.Graph.Modules.Values)
+        {
+            var PlatformLibs = GetPlatformLibraries(Module);
+            for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
+            {
+                AllExternalLibs.Add(PlatformLibs[LibIndex]);
+            }
+        }
+
+        var Requested = AllExternalLibs.Count > 0
+            ? string.Join(", ", AllExternalLibs)
+            : "none";
+        Context.Diagnostics.Info($"External dependencies requested: {Requested}");
+
+        var Resolved = Context.ExternalDeps.ResolveAll(AllExternalLibs);
+        var ResolvedKeys = Resolved.Count > 0
+            ? string.Join(", ", Resolved.Keys)
+            : "none";
+        Context.Diagnostics.Info($"Resolved external dependencies: {ResolvedKeys}");
+
+        return Resolved;
     }
 
     public BuildPlan CreatePlan()
@@ -133,6 +163,22 @@ public sealed class BuildPlanner
 
         CollectIncludesRecursive(Module, Includes, Visited, true);
 
+        var PlatformLibs = GetPlatformLibraries(Module);
+        for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
+        {
+            string LibName = PlatformLibs[LibIndex];
+            if (ResolvedExternalDeps.TryGetValue(LibName, out var ExtDep))
+            {
+                for (int IncIndex = 0; IncIndex < ExtDep.IncludePaths.Count; ++IncIndex)
+                {
+                    if (!Includes.Contains(ExtDep.IncludePaths[IncIndex]))
+                    {
+                        Includes.Add(ExtDep.IncludePaths[IncIndex]);
+                    }
+                }
+            }
+        }
+
         return Includes;
     }
 
@@ -156,6 +202,23 @@ public sealed class BuildPlanner
         for (int IncludeIndex = 0; IncludeIndex < Module.PublicIncludes.Count; IncludeIndex++)
         {
             Includes.Add(Paths.Combine(Module.Directory, Module.PublicIncludes[IncludeIndex]));
+        }
+
+        /** Collect includes from platform-specific external libraries (transitive) */
+        var PlatformLibs = GetPlatformLibraries(Module);
+        for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
+        {
+            string LibName = PlatformLibs[LibIndex];
+            if (ResolvedExternalDeps.TryGetValue(LibName, out var ExtDep))
+            {
+                for (int IncIndex = 0; IncIndex < ExtDep.IncludePaths.Count; ++IncIndex)
+                {
+                    if (!Includes.Contains(ExtDep.IncludePaths[IncIndex]))
+                    {
+                        Includes.Add(ExtDep.IncludePaths[IncIndex]);
+                    }
+                }
+            }
         }
 
         /** Collect dependencies from common deps */
@@ -364,6 +427,23 @@ public sealed class BuildPlanner
         var Result = new List<string>();
         var Visited = new HashSet<string>();
         CollectTransitiveLibraryPathsRecursive(Module, Result, Visited);
+
+        var PlatformLibs = GetPlatformLibraries(Module);
+        for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
+        {
+            string LibName = PlatformLibs[LibIndex];
+            if (ResolvedExternalDeps.TryGetValue(LibName, out var ExtDep))
+            {
+                for (int PathIndex = 0; PathIndex < ExtDep.LibraryPaths.Count; ++PathIndex)
+                {
+                    if (!Result.Contains(ExtDep.LibraryPaths[PathIndex]))
+                    {
+                        Result.Add(ExtDep.LibraryPaths[PathIndex]);
+                    }
+                }
+            }
+        }
+
         return Result;
     }
 
@@ -378,7 +458,21 @@ public sealed class BuildPlanner
         if (!Visited.Add(Module.Name))
             return;
 
-        /** LibraryPaths feature not yet implemented in ModuleDescriptor */
+        var PlatformLibs = GetPlatformLibraries(Module);
+        for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
+        {
+            string LibName = PlatformLibs[LibIndex];
+            if (ResolvedExternalDeps.TryGetValue(LibName, out var ExtDep))
+            {
+                for (int PathIndex = 0; PathIndex < ExtDep.LibraryPaths.Count; ++PathIndex)
+                {
+                    if (!Result.Contains(ExtDep.LibraryPaths[PathIndex]))
+                    {
+                        Result.Add(ExtDep.LibraryPaths[PathIndex]);
+                    }
+                }
+            }
+        }
 
         /** Recursively collect from dependencies */
         for (int DepIndex = 0; DepIndex < Module.Dependencies.Count; DepIndex++)
