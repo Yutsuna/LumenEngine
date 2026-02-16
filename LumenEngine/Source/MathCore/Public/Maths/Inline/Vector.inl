@@ -38,8 +38,7 @@ namespace Math
     template <typename... Arguments>
         requires( sizeof...( Arguments ) == Dimension && ( std::is_convertible_v<Arguments, Type> && ... ) )
 
-    constexpr TVector<Type, Dimension>::TVector( Arguments &&...Args )
-        : Private::TVectorData<Type, Dimension>{ { static_cast<Type>( Args )... } }
+    constexpr TVector<Type, Dimension>::TVector( Arguments &&...Args ) : Private::TVectorData<Type, Dimension>{ { static_cast<Type>( Args )... } }
     {
         /* __empty__ */
     }
