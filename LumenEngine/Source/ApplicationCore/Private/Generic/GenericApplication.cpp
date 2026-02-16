@@ -12,20 +12,17 @@
  * public
  */
 
-LumenEngine::FGenericApplication::FGenericApplication ()
-    : MessageHandler( MakeShared<FGenericApplicationMessageHandler>() ), Cursor( nullptr )
+LumenEngine::FGenericApplication::FGenericApplication () : MessageHandler( MakeShared<FGenericApplicationMessageHandler>() ), Cursor( nullptr )
 {
     /* __ctor__ */
 }
 
-void LumenEngine::FGenericApplication::SetMessageHandler (
-    const TSharedRef<FGenericApplicationMessageHandler> &InMessageHandler )
+void LumenEngine::FGenericApplication::SetMessageHandler ( const TSharedRef<FGenericApplicationMessageHandler> &InMessageHandler )
 {
     MessageHandler = InMessageHandler;
 }
 
-LumenEngine::TSharedPtr<LumenEngine::FGenericApplicationMessageHandler>
-LumenEngine::FGenericApplication::GetMessageHandler () const
+LumenEngine::TSharedPtr<LumenEngine::FGenericApplicationMessageHandler> LumenEngine::FGenericApplication::GetMessageHandler () const
 {
     return MessageHandler;
 }

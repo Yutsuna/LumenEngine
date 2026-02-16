@@ -10,28 +10,22 @@ void LumenEngine::FGenericApplicationMessageHandler::OnOSPaint ( const TSharedRe
     /* __empty__ */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow,
-                                                                     const Int32 InX,
-                                                                     const Int32 InY )
+void LumenEngine::FGenericApplicationMessageHandler::OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InX, const Int32 InY )
 {
     /* __empty__ */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow,
-                                                                       const Int32 InWidth,
-                                                                       const Int32 InHeight )
+void LumenEngine::FGenericApplicationMessageHandler::OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InWidth, const Int32 InHeight )
 {
     /* __empty__ */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnWindowActivationChanged (
-    const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive )
+void LumenEngine::FGenericApplicationMessageHandler::OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive )
 {
     /* __empty__ */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( const TSharedPtr<FGenericWindow> &InWindow,
-                                                                   const Int32 InButton )
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( const TSharedPtr<FGenericWindow> &InWindow, const Int32 InButton )
 {
     /* __empty__ */
 }

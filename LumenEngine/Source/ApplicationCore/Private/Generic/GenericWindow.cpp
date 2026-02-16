@@ -5,10 +5,7 @@
 
 #include "Generic/GenericWindow.hpp"
 
-void LumenEngine::FGenericWindow::Reshape ( const Int32 InX,
-                                            const Int32 InY,
-                                            const Int32 InWidth,
-                                            const Int32 InHeight )
+void LumenEngine::FGenericWindow::Reshape ( const Int32 InX, const Int32 InY, const Int32 InWidth, const Int32 InHeight )
 {
     /* __empty__ */
 }

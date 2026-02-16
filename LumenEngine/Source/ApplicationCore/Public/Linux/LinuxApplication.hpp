@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "Definitions.hpp"
 #include "Container/Vector.hpp"
+#include "Definitions.hpp"
 #include "Generic/GenericApplication.hpp"
 
 namespace LumenEngine
