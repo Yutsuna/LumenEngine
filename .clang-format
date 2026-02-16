@@ -3,7 +3,7 @@ BasedOnStyle: LLVM
 Language: Cpp
 IndentWidth: 4
 UseTab: Never
-ColumnLimit: 120
+ColumnLimit: 200
 
 AlignConsecutiveAssignments: true
 AlignConsecutiveDeclarations: false

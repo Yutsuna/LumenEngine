@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "Definitions.hpp"
 #include "CoreTypes.hpp"
+#include "Definitions.hpp"
 
 namespace LumenEngine
 {

@@ -5,7 +5,6 @@
 
 #pragma once
 
-
 #if defined( _WIN32 ) || defined( _WIN64 )
     #define LUMEN_ENGINE_PLATFORM_WINDOWS
 
@@ -20,7 +19,6 @@
     #define LUMEN_ENGINE_NEWLINE "\n"
     #define LUMEN_ENGINE_SHARED_LIB_EXTENSION ""
 #endif
-
 
 #if defined( LUMEN_ENGINE_PLATFORM_WINDOWS )
     #define LUMEN_ENGINE_PATH_SEPARATOR "\\"
@@ -47,11 +45,9 @@
 
 #endif
 
-
 #ifndef LUMEN_ENGINE_API
     #define LUMEN_ENGINE_API
 #endif
-
 
 #if defined( __clang__ )
     #define LUMEN_ENGINE_COMPILER_CLANG

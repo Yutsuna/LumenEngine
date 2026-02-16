@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include "Definitions.hpp"
 #include "Container/SharedPtr.hpp"
+#include "Definitions.hpp"
 #include "Generic/GenericWindowDescription.hpp"
 
 namespace LumenEngine

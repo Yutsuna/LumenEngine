@@ -15,8 +15,7 @@ namespace LumenEngine
 namespace
 {
 
-    static inline UInt32 GetSDLWindowFlags ( const TSharedRef<FGenericWindowDescription> &InDescription,
-                                             const Bool bShowImmediately )
+    static inline UInt32 GetSDLWindowFlags ( const TSharedRef<FGenericWindowDescription> &InDescription, const Bool bShowImmediately )
     {
         UInt32 WindowFlags = 0;
 
@@ -85,8 +84,7 @@ void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Applicatio
 
     const UInt32 WindowFlags = GetSDLWindowFlags( InDescription, bShowImmediately );
 
-    WindowHandle = SDL_CreateWindow( InDescription->Title.c_str(), InDescription->Size.Width,
-                                     InDescription->Size.Height, WindowFlags );
+    WindowHandle = SDL_CreateWindow( InDescription->Title.c_str(), InDescription->Size.Width, InDescription->Size.Height, WindowFlags );
 
     if ( not WindowHandle )
     {
