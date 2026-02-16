@@ -10,14 +10,12 @@
 namespace LumenEngine
 {
 
-template <typename Type>
-TSharedRef<Type>::TSharedRef( const TSharedRef &Other ) : Object( Other.Object ), Controller( Other.Controller )
+template <typename Type> TSharedRef<Type>::TSharedRef( const TSharedRef &Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
 }
 
-template <typename Type>
-TSharedRef<Type>::TSharedRef( TSharedRef &&Other ) : Object( Other.Object ), Controller( Other.Controller )
+template <typename Type> TSharedRef<Type>::TSharedRef( TSharedRef &&Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     /* __empty__ */
 }
@@ -26,8 +24,7 @@ template <typename Type>
 template <typename OtherType>
     requires Concepts::ConvertibleTo<OtherType *, Type *>
 TSharedRef<Type>::TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy )
-    : Object( Proxy.Object ),
-      Controller( new SharedPtrInternal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
+    : Object( Proxy.Object ), Controller( new SharedPtrInternal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
 {
     assert( Object != nullptr );
 }
@@ -35,8 +32,7 @@ TSharedRef<Type>::TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &
 template <typename Type>
 template <typename OtherType>
     requires Concepts::ConvertibleTo<OtherType *, Type *>
-TSharedRef<Type>::TSharedRef( const TSharedRef<OtherType> &Other )
-    : Object( Other.Object ), Controller( Other.Controller )
+TSharedRef<Type>::TSharedRef( const TSharedRef<OtherType> &Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
 }
@@ -78,9 +74,7 @@ template <typename Type> Int32 TSharedRef<Type>::GetSharedReferenceCount () cons
     return Controller->SharedCount.load( std::memory_order_relaxed );
 }
 
-template <typename Type>
-TSharedRef<Type>::TSharedRef( Type *InObject, SharedPtrInternal::FReferenceController *InController )
-    : Object( InObject ), Controller( InController )
+template <typename Type> TSharedRef<Type>::TSharedRef( Type *InObject, SharedPtrInternal::FReferenceController *InController ) : Object( InObject ), Controller( InController )
 {
     assert( InObject != nullptr );
 }
@@ -98,9 +92,7 @@ template <typename Type> void TSharedRef<Type>::Release ()
  * SharedRef Builder
  */
 
-template <typename ObjectType>
-static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject,
-                                                     SharedPtrInternal::FReferenceController *InController )
+template <typename ObjectType> static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController )
 {
     return TSharedRef<ObjectType>( InObject, InController );
 }
@@ -109,8 +101,7 @@ static inline TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject,
  * StaticCast
  */
 
-template <typename CastToType, typename CastFromType>
-static inline TSharedRef<CastToType> StaticCastSharedRef ( TSharedRef<CastFromType> const &InSharedRef )
+template <typename CastToType, typename CastFromType> static inline TSharedRef<CastToType> StaticCastSharedRef ( TSharedRef<CastFromType> const &InSharedRef )
 {
     InSharedRef.Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
     return MakeSharedRef<CastToType>( static_cast<CastToType *>( InSharedRef.Object ), InSharedRef.Controller );
