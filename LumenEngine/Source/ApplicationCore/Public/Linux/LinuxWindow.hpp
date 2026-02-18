@@ -23,7 +23,10 @@ public:
 
     static TSharedRef<FLinuxWindow> Make ();
 
-    void Initialize ( FLinuxApplication *const Application, const TSharedRef<FGenericWindowDescription> &InDescription, const TSharedPtr<FGenericWindow> &InParentWindow, const bool bShowImmediately );
+    void Initialize ( FLinuxApplication *const Application,
+                      const TSharedRef<FGenericWindowDescription> &InDescription,
+                      const TSharedPtr<FGenericWindow> &InParentWindow,
+                      const bool bShowImmediately );
 
     SDL_Window *GetOSWindowHandle () const;
 
