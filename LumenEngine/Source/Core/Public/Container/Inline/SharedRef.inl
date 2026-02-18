@@ -74,7 +74,8 @@ template <typename Type> Int32 TSharedRef<Type>::GetSharedReferenceCount () cons
     return Controller->SharedCount.load( std::memory_order_relaxed );
 }
 
-template <typename Type> TSharedRef<Type>::TSharedRef( Type *InObject, SharedPtrInternal::FReferenceController *InController ) : Object( InObject ), Controller( InController )
+template <typename Type>
+TSharedRef<Type>::TSharedRef( Type *InObject, SharedPtrInternal::FReferenceController *InController ) : Object( InObject ), Controller( InController )
 {
     assert( InObject != nullptr );
 }
