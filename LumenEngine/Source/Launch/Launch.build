@@ -6,6 +6,6 @@ module Core
     public_includes = [ "Public" ]
     defines         = [ "LUMEN_ENGINE" ]
 
-    deps            = [ ApplicationCore ]
+    deps            = [ Core, ApplicationCore ]
 
 }
