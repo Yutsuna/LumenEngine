@@ -1,5 +1,5 @@
 /**
- * @file IGameInstance.hpp
+ * @file GameInstance.hpp
  * @brief Declaration of the IGameInstance interface
  */
 
@@ -7,15 +7,15 @@ namespace LumenEngine
 {
 
 /**
- * @class IGameInstance
+ * @class FGameInstance
  * @brief Interface for the game instance
  */
-class IGameInstance
+class FGameInstance
 {
 public:
 
-    IGameInstance ()          = default;
-    virtual ~IGameInstance () = default;
+    FGameInstance ()          = default;
+    virtual ~FGameInstance () = default;
 
 public:
 
