@@ -1,12 +1,13 @@
 /**
- * @file LaunchEngineLoops.hpp
- * @brief Declaration of the main loops of the Engine
+ * @file LaunchEngineLoop.hpp
+ * @brief Declaration of the main loop of the Engine
  */
 
 #pragma once
 
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
+#include "Generic/GenericApplication.hpp"
 
 namespace LumenEngine
 {
@@ -16,8 +17,8 @@ class LUMEN_ENGINE_API FEngineLoop
 
 public:
 
-    FEngineLoop ()          = default;
-    virtual ~FEngineLoop () = default;
+    FEngineLoop ()  = default;
+    ~FEngineLoop () = default;
 
 public:
 
@@ -26,17 +27,26 @@ public:
      *
      * @return 0 if initialization succeeded, or an error code otherwise
      */
-    virtual Int32 PreInit ( Int32 Argc, const AnsiChar *Argv[] );
+    Int32 PreInit ( Int32 Argc, const AnsiChar *Argv[] );
 
     /**
      * @brief Initializes the engine loop, called after PreInit and before the main loop starts
      *
      * @return 0 if initialization succeeded, or an error code otherwise
      */
-    virtual Int32 Init ();
+    Int32 Init ();
 
     /** Advances the main loop */
-    virtual void Tick ();
+    void Tick ();
+
+    /** Shuts down the engine loop, called after the main loop ends */
+    void Exit ();
+
+    /** Check if the application should exit */
+    Bool ShouldExit () const;
+
+    /** Requests the application to exit */
+    void RequestExit ( const AnsiChar *Reason );
 
 public:
 
@@ -50,14 +60,19 @@ private:
 
     void CalculateDeltaTime () noexcept;
 
-protected:
+private:
 
     Float64 TotalTickTime;
     Float64 LastTickTime;
+    Float64 LastFrameSeconds;
+
+    Bool bRequestingExit;
 
 private:
 
-    Float64 LastFrameSeconds;
+    static TSharedPtr<FGenericApplication> GPlatformApplication;
 };
+
+extern LUMEN_ENGINE_API FEngineLoop GEngineLoop;
 
 } // namespace LumenEngine

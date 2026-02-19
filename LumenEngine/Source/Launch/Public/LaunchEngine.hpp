@@ -6,23 +6,15 @@
 #pragma once
 
 #include "CoreTypes.hpp"
-#include "LaunchEngineLoops.hpp"
 
 namespace LumenEngine
 {
 
-Int32 GuardedMain ( int Argc, const char *Argv[], FEngineLoop *GameInstance );
+namespace Launch
+{
+
+    Int32 GuardedMain ( const Int32 Argc, const AnsiChar *Argv[] );
+
+}
 
 } // namespace LumenEngine
-
-#define __LUMEN_ENGINE_GAME( GameClass )                                                                                                                                 \
-    LumenEngine::Int32 main( LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )                                                                              \
-    {                                                                                                                                                                    \
-        GameClass *GameInstance = new GameClass();                                                                                                                       \
-                                                                                                                                                                         \
-        const LumenEngine::Int32 Result = LumenEngine::GuardedMain( Argc, Argv, GameInstance );                                                                          \
-        delete GameInstance;                                                                                                                                             \
-        return Result;                                                                                                                                                   \
-    }
-
-#define LUMEN_ENGINE_GAME( GameClass ) __LUMEN_ENGINE_GAME( GameClass )
