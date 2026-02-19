@@ -1,19 +1,11 @@
-namespace LumenBuilder
+namespace LumenBuilder.Model;
+
+/// <summary>
+/// Type of module to build.
+/// </summary>
+public enum ModuleType
 {
-
-    namespace Model
-    {
-
-        /// <summary>
-        /// Type of module to build.
-        /// </summary>
-        public enum ModuleType
-        {
-            Executable,
-            StaticLibrary,
-            SharedLibrary
-        }
-
-    }
-
+    Executable,
+    StaticLibrary,
+    SharedLibrary
 }
