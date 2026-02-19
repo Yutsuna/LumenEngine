@@ -3,7 +3,7 @@
  * @brief Implementation of the main loops of the Engine.
  */
 
-#include "LaunchEngineLoops.hpp"
+#include "LaunchEngineLoop.hpp"
 
 #include "ErrorCodes.hpp"
 #include "HAL/PlatformTime.hpp"
@@ -17,16 +17,27 @@
     #include "Linux/LinuxApplication.hpp"
 #endif
 
-namespace
+namespace LumenEngine
 {
 
-/**
- * @brief The platform-specific application instance, responsible for window management and input handling.
- * @details This is initialized in PreInit and used throughout the engine's lifecycle. It abstracts away platform differences.
- */
-static LumenEngine::TSharedPtr<LumenEngine::FGenericApplication> GPlatformApplication = nullptr;
+FEngineLoop GEngineLoop;
+TSharedPtr<FGenericApplication> FEngineLoop::GPlatformApplication = nullptr;
+
+namespace
+{
+    static inline const FGenericWindowDescription GetDefaultWindowDescription ()
+    {
+        return ( const FGenericWindowDescription ){ .Title        = "Lumen Engine",
+                                                    .Position     = Math::FVec2i( 100, 100 ),
+                                                    .Size         = Math::FVec2i( 1280, 720 ),
+                                                    .WindowMode   = EWindowMode::Windowed,
+                                                    .bIsResizable = true,
+                                                    .bIsVisible   = true };
+    }
 
 } // namespace
+
+} // namespace LumenEngine
 
 LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiChar *Argv[] )
 {
@@ -52,10 +63,11 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiCha
 LumenEngine::Int32 LumenEngine::FEngineLoop::Init ()
 {
     TSharedRef<FGenericWindow> MainWindow            = GPlatformApplication->MakeWindow();
-    TSharedRef<FGenericWindowDescription> WindowDesc = MakeShared<FGenericWindowDescription>();
+    TSharedPtr<FGenericWindow> ParentWindow          = nullptr;
+    TSharedRef<FGenericWindowDescription> WindowDesc = MakeShared<FGenericWindowDescription>( GetDefaultWindowDescription() );
+    const Bool bShowImmediately                      = true;
 
-    WindowDesc->Title = "Lumen Engine - Launching...";
-    GPlatformApplication->InitializeWindow( MainWindow, WindowDesc, nullptr, true );
+    GPlatformApplication->InitializeWindow( MainWindow, WindowDesc, ParentWindow, bShowImmediately );
     return EErrorCode::Success;
 }
 
@@ -67,6 +79,21 @@ void LumenEngine::FEngineLoop::Tick ()
     {
         GPlatformApplication->PumpMessages( LastTickTime );
     }
+}
+
+void LumenEngine::FEngineLoop::Exit ()
+{
+    GPlatformApplication.Reset();
+}
+
+void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *Reason )
+{
+    bRequestingExit = true;
+}
+
+LumenEngine::Bool LumenEngine::FEngineLoop::ShouldExit () const
+{
+    return bRequestingExit;
 }
 
 LumenEngine::Bool LumenEngine::FEngineLoop::AppInit ()
