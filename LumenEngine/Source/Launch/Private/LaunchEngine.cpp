@@ -5,6 +5,6 @@
 
 #include "LaunchEngine.hpp"
 
-LumenEngine::Int32 LumenEngine::GuardedMain ( Int32 Argc, const AnsiChar *Argv[], IGameInstance *GameInstance )
+LumenEngine::Int32 LumenEngine::GuardedMain ( Int32 Argc, const AnsiChar *Argv[], FEngineLoop *GameInstance )
 {
 }

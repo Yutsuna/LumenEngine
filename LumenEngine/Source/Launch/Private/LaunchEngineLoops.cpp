@@ -28,7 +28,7 @@ static LumenEngine::TSharedPtr<LumenEngine::FGenericApplication> GPlatformApplic
 
 } // namespace
 
-LumenEngine::Int32 LumenEngine::Launch::FEngineLoop::PreInit ( Int32 Argc, const AnsiChar *Argv[] )
+LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiChar *Argv[] )
 {
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
     GPlatformApplication = FLinuxApplication::CreateLinuxApplication();
@@ -49,7 +49,7 @@ LumenEngine::Int32 LumenEngine::Launch::FEngineLoop::PreInit ( Int32 Argc, const
     return EErrorCode::Success;
 }
 
-LumenEngine::Int32 LumenEngine::Launch::FEngineLoop::Init ()
+LumenEngine::Int32 LumenEngine::FEngineLoop::Init ()
 {
     TSharedRef<FGenericWindow> MainWindow            = GPlatformApplication->MakeWindow();
     TSharedRef<FGenericWindowDescription> WindowDesc = MakeShared<FGenericWindowDescription>();
@@ -59,7 +59,7 @@ LumenEngine::Int32 LumenEngine::Launch::FEngineLoop::Init ()
     return EErrorCode::Success;
 }
 
-void LumenEngine::Launch::FEngineLoop::Tick ()
+void LumenEngine::FEngineLoop::Tick ()
 {
     CalculateDeltaTime();
 
@@ -69,17 +69,17 @@ void LumenEngine::Launch::FEngineLoop::Tick ()
     }
 }
 
-LumenEngine::Bool LumenEngine::Launch::FEngineLoop::AppInit ()
+LumenEngine::Bool LumenEngine::FEngineLoop::AppInit ()
 {
     return EErrorCode::Success;
 }
 
-void LumenEngine::Launch::FEngineLoop::AppShutdown ()
+void LumenEngine::FEngineLoop::AppShutdown ()
 {
     GPlatformApplication.Reset();
 }
 
-void LumenEngine::Launch::FEngineLoop::CalculateDeltaTime () noexcept
+void LumenEngine::FEngineLoop::CalculateDeltaTime () noexcept
 {
     const Float64 CurrentFrameSeconds = FPlatformTime::Seconds();
 

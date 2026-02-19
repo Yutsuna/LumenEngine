@@ -6,12 +6,12 @@
 #pragma once
 
 #include "CoreTypes.hpp"
-#include "GameInstance.hpp"
+#include "LaunchEngineLoops.hpp"
 
 namespace LumenEngine
 {
 
-Int32 GuardedMain ( int Argc, const char *Argv[], class FGameInstance *GameInstance );
+Int32 GuardedMain ( int Argc, const char *Argv[], FEngineLoop *GameInstance );
 
 #define __LUMEN_ENGINE_GAME( GameClass )                                                                                                                                 \
     Int32 Main( Int32 Argc, const AnsiChar *Argv[] )                                                                                                                     \

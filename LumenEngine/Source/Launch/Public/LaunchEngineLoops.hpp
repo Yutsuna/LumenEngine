@@ -11,58 +11,53 @@
 namespace LumenEngine
 {
 
-namespace Launch
+class LUMEN_ENGINE_API FEngineLoop
 {
 
-    class LUMEN_ENGINE_API FEngineLoop
-    {
+public:
 
-    public:
+    FEngineLoop ()          = default;
+    virtual ~FEngineLoop () = default;
 
-        FEngineLoop ()          = default;
-        virtual ~FEngineLoop () = default;
+public:
 
-    public:
+    /**
+     * @brief Initializes the engine loop, called before the main loop starts
+     *
+     * @return 0 if initialization succeeded, or an error code otherwise
+     */
+    virtual Int32 PreInit ( Int32 Argc, const AnsiChar *Argv[] );
 
-        /**
-         * @brief Initializes the engine loop, called before the main loop starts
-         *
-         * @return 0 if initialization succeeded, or an error code otherwise
-         */
-        virtual Int32 PreInit ( Int32 Argc, const AnsiChar *Argv[] );
+    /**
+     * @brief Initializes the engine loop, called after PreInit and before the main loop starts
+     *
+     * @return 0 if initialization succeeded, or an error code otherwise
+     */
+    virtual Int32 Init ();
 
-        /**
-         * @brief Initializes the engine loop, called after PreInit and before the main loop starts
-         *
-         * @return 0 if initialization succeeded, or an error code otherwise
-         */
-        virtual Int32 Init ();
+    /** Advances the main loop */
+    virtual void Tick ();
 
-        /** Advances the main loop */
-        virtual void Tick ();
+public:
 
-    public:
+    /** Initializes the application */
+    static bool AppInit ();
 
-        /** Initializes the application */
-        static bool AppInit ();
+    /** Shuts down the application */
+    static void AppShutdown ();
 
-        /** Shuts down the application */
-        static void AppShutdown ();
+private:
 
-    private:
+    void CalculateDeltaTime () noexcept;
 
-        void CalculateDeltaTime () noexcept;
+protected:
 
-    protected:
+    Float64 TotalTickTime;
+    Float64 LastTickTime;
 
-        Float64 TotalTickTime;
-        Float64 LastTickTime;
+private:
 
-    private:
-
-        Float64 LastFrameSeconds;
-    };
-
-} // namespace Launch
+    Float64 LastFrameSeconds;
+};
 
 } // namespace LumenEngine
