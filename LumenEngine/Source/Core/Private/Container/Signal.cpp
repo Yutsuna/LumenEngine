@@ -12,7 +12,6 @@ void LumenEngine::FSignal::Bind ( const ESystemSignal::Type InSignal, FSignalHan
 {
     const Int32 OSCode = static_cast<Int32>( InSignal );
 
-    // WARN: probably unsafe
     if ( SignalListeners[InSignal].empty() )
     {
         std::signal( OSCode, &FSignal::HandleOSSignal );
