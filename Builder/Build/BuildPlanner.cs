@@ -43,11 +43,13 @@ public sealed record BuildPlan(
 public sealed class BuildPlanner
 {
     private readonly BuildContext Context;
+    private readonly PlatformType PlatformType;
     private readonly IReadOnlyDictionary<string, ExternalDependency> ResolvedExternalDeps;
 
     public BuildPlanner(BuildContext Context)
     {
         this.Context = Context;
+        this.PlatformType = Context.Platform.Type;
         this.ResolvedExternalDeps = ResolveExternalDependencies();
     }
 
@@ -57,7 +59,7 @@ public sealed class BuildPlanner
 
         foreach (var Module in Context.Graph.Modules.Values)
         {
-            var PlatformLibs = GetPlatformLibraries(Module);
+            var PlatformLibs = Module.PlatformLibs.ForPlatform(PlatformType);
             for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
             {
                 AllExternalLibs.Add(PlatformLibs[LibIndex]);
@@ -115,7 +117,7 @@ public sealed class BuildPlanner
             var ModuleCompileUnits = CreateCompileUnits(Module);
             CompileUnits.AddRange(ModuleCompileUnits);
 
-            var ObjectFiles = new List<string>();
+            var ObjectFiles = new List<string>(ModuleCompileUnits.Count);
             for (int UnitIndex = 0; UnitIndex < ModuleCompileUnits.Count; UnitIndex++)
             {
                 ObjectFiles.Add(ModuleCompileUnits[UnitIndex].ObjectFile);
@@ -144,7 +146,7 @@ public sealed class BuildPlanner
     {
         var Units = new List<CompileUnit>();
         var Includes = CollectIncludes(Module);
-        var SourceFiles = ExpandSources(Module);
+        var SourceFiles = SourceExpander.Expand(Module);
 
         for (int FileIndex = 0; FileIndex < SourceFiles.Count; FileIndex++)
         {
@@ -162,22 +164,7 @@ public sealed class BuildPlanner
         var Visited = new HashSet<string>();
 
         CollectIncludesRecursive(Module, Includes, Visited, true);
-
-        var PlatformLibs = GetPlatformLibraries(Module);
-        for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
-        {
-            string LibName = PlatformLibs[LibIndex];
-            if (ResolvedExternalDeps.TryGetValue(LibName, out var ExtDep))
-            {
-                for (int IncIndex = 0; IncIndex < ExtDep.IncludePaths.Count; ++IncIndex)
-                {
-                    if (!Includes.Contains(ExtDep.IncludePaths[IncIndex]))
-                    {
-                        Includes.Add(ExtDep.IncludePaths[IncIndex]);
-                    }
-                }
-            }
-        }
+        AppendExternalIncludes(Module, Includes);
 
         return Includes;
     }
@@ -204,12 +191,23 @@ public sealed class BuildPlanner
             Includes.Add(Paths.Combine(Module.Directory, Module.PublicIncludes[IncludeIndex]));
         }
 
-        /** Collect includes from platform-specific external libraries (transitive) */
-        var PlatformLibs = GetPlatformLibraries(Module);
+        AppendExternalIncludes(Module, Includes);
+
+        foreach (var DepName in EnumerateAllDependencies(Module))
+        {
+            if (Context.Graph.TryGetModule(DepName, out var DepModule) && DepModule != null)
+            {
+                CollectIncludesRecursive(DepModule, Includes, Visited, false);
+            }
+        }
+    }
+
+    private void AppendExternalIncludes(ModuleDescriptor Module, List<string> Includes)
+    {
+        var PlatformLibs = Module.PlatformLibs.ForPlatform(PlatformType);
         for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
         {
-            string LibName = PlatformLibs[LibIndex];
-            if (ResolvedExternalDeps.TryGetValue(LibName, out var ExtDep))
+            if (ResolvedExternalDeps.TryGetValue(PlatformLibs[LibIndex], out var ExtDep))
             {
                 for (int IncIndex = 0; IncIndex < ExtDep.IncludePaths.Count; ++IncIndex)
                 {
@@ -220,105 +218,19 @@ public sealed class BuildPlanner
                 }
             }
         }
-
-        /** Collect dependencies from common deps */
-        for (int DepIndex = 0; DepIndex < Module.Dependencies.Count; DepIndex++)
-        {
-            string DepName = Module.Dependencies[DepIndex];
-            if (Context.Graph.TryGetModule(DepName, out var DepModule) && DepModule != null)
-            {
-                CollectIncludesRecursive(DepModule, Includes, Visited, false);
-            }
-        }
-
-        /** Collect dependencies from platform-specific deps */
-        var PlatformDeps = GetPlatformDependencies(Module);
-        for (int DepIndex = 0; DepIndex < PlatformDeps.Count; DepIndex++)
-        {
-            string DepName = PlatformDeps[DepIndex];
-            if (Context.Graph.TryGetModule(DepName, out var DepModule) && DepModule != null)
-            {
-                CollectIncludesRecursive(DepModule, Includes, Visited, false);
-            }
-        }
     }
 
     /// <summary>
-    /// Expands source file patterns into concrete file paths with recursive search support.
+    /// Enumerates common + platform-specific dependencies for a module.
     /// </summary>
-    private List<string> ExpandSources(ModuleDescriptor Module)
+    private IEnumerable<string> EnumerateAllDependencies(ModuleDescriptor Module)
     {
-        var SourceFiles = new List<string>();
+        for (int Index = 0; Index < Module.Dependencies.Count; ++Index)
+            yield return Module.Dependencies[Index];
 
-        for (int PatternIndex = 0; PatternIndex < Module.Sources.Count; PatternIndex++)
-        {
-            string Pattern = Module.Sources[PatternIndex];
-            string FullPattern = Paths.Combine(Module.Directory, Pattern);
-
-            /** Check for recursive pattern **/
-            if (Pattern.Contains("**"))
-            {
-                string BaseDir = Module.Directory;
-                string SearchPattern = Path.GetFileName(Pattern);
-                
-                /** Extract base directory from pattern before ** */
-                int RecursiveIndex = Pattern.IndexOf("**");
-                if (RecursiveIndex > 0)
-                {
-                    string BasePath = Pattern.Substring(0, RecursiveIndex).TrimEnd('/', '\\');
-                    BaseDir = Paths.Combine(Module.Directory, BasePath);
-                    
-                    /** Extract search pattern after ** */
-                    string Remaining = Pattern.Substring(RecursiveIndex + 2).TrimStart('/', '\\');
-                    SearchPattern = Remaining;
-                }
-
-                if (Directory.Exists(BaseDir))
-                {
-                    string[] Files = Directory.GetFiles(BaseDir, SearchPattern, SearchOption.AllDirectories);
-                    for (int FileIndex = 0; FileIndex < Files.Length; FileIndex++)
-                    {
-                        SourceFiles.Add(Paths.Normalize(Files[FileIndex]));
-                    }
-                }
-            }
-            /** Single directory pattern with * */
-            else if (Pattern.Contains('*'))
-            {
-                string Dir = Paths.GetDirectory(FullPattern);
-                string FilePattern = Path.GetFileName(FullPattern);
-
-                if (Directory.Exists(Dir))
-                {
-                    string[] Files = Directory.GetFiles(Dir, FilePattern);
-                    for (int FileIndex = 0; FileIndex < Files.Length; FileIndex++)
-                    {
-                        SourceFiles.Add(Paths.Normalize(Files[FileIndex]));
-                    }
-                }
-            }
-            /** Direct file path */
-            else
-            {
-                SourceFiles.Add(FullPattern);
-            }
-        }
-
-        return SourceFiles;
-    }
-
-    /// <summary>
-    /// Gets platform-specific dependencies for current platform.
-    /// </summary>
-    private IReadOnlyList<string> GetPlatformDependencies(ModuleDescriptor Module)
-    {
-        return Context.Platform.Type switch
-        {
-            PlatformType.Linux => Module.PlatformDeps.Linux,
-            PlatformType.Windows => Module.PlatformDeps.Windows,
-            PlatformType.MacOS => Module.PlatformDeps.MacOS,
-            _ => Array.Empty<string>()
-        };
+        var PlatformDeps = Module.PlatformDeps.ForPlatform(PlatformType);
+        for (int Index = 0; Index < PlatformDeps.Count; ++Index)
+            yield return PlatformDeps[Index];
     }
 
     private List<string> CollectTransitiveDependencies(ModuleDescriptor Module)
@@ -334,25 +246,8 @@ public sealed class BuildPlanner
         List<string> Result,
         HashSet<string> Visited)
     {
-        /** Process common dependencies */
-        for (int DepIndex = 0; DepIndex < Module.Dependencies.Count; DepIndex++)
+        foreach (var DepName in EnumerateAllDependencies(Module))
         {
-            string DepName = Module.Dependencies[DepIndex];
-            if (!Visited.Add(DepName))
-                continue;
-
-            if (Context.Graph.TryGetModule(DepName, out var DepModule) && DepModule != null)
-            {
-                Result.Add(GetOutputFile(DepModule));
-                CollectTransitiveDependenciesRecursive(DepModule, Result, Visited);
-            }
-        }
-
-        /** Process platform-specific dependencies */
-        var PlatformDeps = GetPlatformDependencies(Module);
-        for (int DepIndex = 0; DepIndex < PlatformDeps.Count; DepIndex++)
-        {
-            string DepName = PlatformDeps[DepIndex];
             if (!Visited.Add(DepName))
                 continue;
 
@@ -364,9 +259,6 @@ public sealed class BuildPlanner
         }
     }
 
-    /// <summary>
-    /// Collects all transitive system libraries for a module.
-    /// </summary>
     private List<string> CollectTransitiveSystemLibraries(ModuleDescriptor Module)
     {
         var Result = new List<string>();
@@ -375,9 +267,6 @@ public sealed class BuildPlanner
         return Result;
     }
 
-    /// <summary>
-    /// Recursively collects transitive system libraries.
-    /// </summary>
     private void CollectTransitiveSystemLibrariesRecursive(
         ModuleDescriptor Module,
         List<string> Result,
@@ -386,32 +275,17 @@ public sealed class BuildPlanner
         if (!Visited.Add(Module.Name))
             return;
 
-        /** Add platform-specific system libraries */
-        var PlatformLibs = GetPlatformLibraries(Module);
-        for (int LibIndex = 0; LibIndex < PlatformLibs.Count; LibIndex++)
+        var PlatformLibs = Module.PlatformLibs.ForPlatform(PlatformType);
+        for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
         {
-            string Lib = PlatformLibs[LibIndex];
-            if (!Result.Contains(Lib))
+            if (!Result.Contains(PlatformLibs[LibIndex]))
             {
-                Result.Add(Lib);
+                Result.Add(PlatformLibs[LibIndex]);
             }
         }
 
-        /** Recursively collect from dependencies */
-        for (int DepIndex = 0; DepIndex < Module.Dependencies.Count; DepIndex++)
+        foreach (var DepName in EnumerateAllDependencies(Module))
         {
-            string DepName = Module.Dependencies[DepIndex];
-            if (Context.Graph.TryGetModule(DepName, out var DepModule) && DepModule != null)
-            {
-                CollectTransitiveSystemLibrariesRecursive(DepModule, Result, Visited);
-            }
-        }
-
-        /** Recursively collect from platform-specific dependencies */
-        var PlatformDeps = GetPlatformDependencies(Module);
-        for (int DepIndex = 0; DepIndex < PlatformDeps.Count; DepIndex++)
-        {
-            string DepName = PlatformDeps[DepIndex];
             if (Context.Graph.TryGetModule(DepName, out var DepModule) && DepModule != null)
             {
                 CollectTransitiveSystemLibrariesRecursive(DepModule, Result, Visited);
@@ -419,37 +293,15 @@ public sealed class BuildPlanner
         }
     }
 
-    /// <summary>
-    /// Collects all transitive library paths for a module.
-    /// </summary>
     private List<string> CollectTransitiveLibraryPaths(ModuleDescriptor Module)
     {
         var Result = new List<string>();
         var Visited = new HashSet<string>();
         CollectTransitiveLibraryPathsRecursive(Module, Result, Visited);
-
-        var PlatformLibs = GetPlatformLibraries(Module);
-        for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
-        {
-            string LibName = PlatformLibs[LibIndex];
-            if (ResolvedExternalDeps.TryGetValue(LibName, out var ExtDep))
-            {
-                for (int PathIndex = 0; PathIndex < ExtDep.LibraryPaths.Count; ++PathIndex)
-                {
-                    if (!Result.Contains(ExtDep.LibraryPaths[PathIndex]))
-                    {
-                        Result.Add(ExtDep.LibraryPaths[PathIndex]);
-                    }
-                }
-            }
-        }
-
+        AppendExternalLibraryPaths(Module, Result);
         return Result;
     }
 
-    /// <summary>
-    /// Recursively collects transitive library paths.
-    /// </summary>
     private void CollectTransitiveLibraryPathsRecursive(
         ModuleDescriptor Module,
         List<string> Result,
@@ -458,11 +310,23 @@ public sealed class BuildPlanner
         if (!Visited.Add(Module.Name))
             return;
 
-        var PlatformLibs = GetPlatformLibraries(Module);
+        AppendExternalLibraryPaths(Module, Result);
+
+        foreach (var DepName in EnumerateAllDependencies(Module))
+        {
+            if (Context.Graph.TryGetModule(DepName, out var DepModule) && DepModule != null)
+            {
+                CollectTransitiveLibraryPathsRecursive(DepModule, Result, Visited);
+            }
+        }
+    }
+
+    private void AppendExternalLibraryPaths(ModuleDescriptor Module, List<string> Result)
+    {
+        var PlatformLibs = Module.PlatformLibs.ForPlatform(PlatformType);
         for (int LibIndex = 0; LibIndex < PlatformLibs.Count; ++LibIndex)
         {
-            string LibName = PlatformLibs[LibIndex];
-            if (ResolvedExternalDeps.TryGetValue(LibName, out var ExtDep))
+            if (ResolvedExternalDeps.TryGetValue(PlatformLibs[LibIndex], out var ExtDep))
             {
                 for (int PathIndex = 0; PathIndex < ExtDep.LibraryPaths.Count; ++PathIndex)
                 {
@@ -473,41 +337,6 @@ public sealed class BuildPlanner
                 }
             }
         }
-
-        /** Recursively collect from dependencies */
-        for (int DepIndex = 0; DepIndex < Module.Dependencies.Count; DepIndex++)
-        {
-            string DepName = Module.Dependencies[DepIndex];
-            if (Context.Graph.TryGetModule(DepName, out var DepModule) && DepModule != null)
-            {
-                CollectTransitiveLibraryPathsRecursive(DepModule, Result, Visited);
-            }
-        }
-
-        /** Recursively collect from platform-specific dependencies */
-        var PlatformDeps = GetPlatformDependencies(Module);
-        for (int DepIndex = 0; DepIndex < PlatformDeps.Count; DepIndex++)
-        {
-            string DepName = PlatformDeps[DepIndex];
-            if (Context.Graph.TryGetModule(DepName, out var DepModule) && DepModule != null)
-            {
-                CollectTransitiveLibraryPathsRecursive(DepModule, Result, Visited);
-            }
-        }
-    }
-
-    /// <summary>
-    /// Gets platform-specific system libraries for current platform.
-    /// </summary>
-    private IReadOnlyList<string> GetPlatformLibraries(ModuleDescriptor Module)
-    {
-        return Context.Platform.Type switch
-        {
-            PlatformType.Linux => Module.PlatformLibs.Linux,
-            PlatformType.Windows => Module.PlatformLibs.Windows,
-            PlatformType.MacOS => Module.PlatformLibs.MacOS,
-            _ => Array.Empty<string>()
-        };
     }
 
     private string GetObjectFile(ModuleDescriptor Module, string SourceFile)

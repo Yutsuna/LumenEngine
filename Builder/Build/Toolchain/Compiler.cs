@@ -1,9 +1,11 @@
+using System.Text;
 using LumenBuilder.Common;
 
 namespace LumenBuilder.Build.Toolchain;
 
 /// <summary>
-/// Abstract compiler interface.
+/// Abstract compiler interface with flag-generation API.
+/// Subclasses provide tool paths; common flag logic lives here.
 /// </summary>
 public abstract class Compiler
 {
@@ -12,83 +14,151 @@ public abstract class Compiler
     public abstract string LinkerPath { get; }
     public abstract string ArchiverPath { get; }
 
-    public abstract string GetCompileCommand(
+    public virtual string IncludePrefix => "-I";
+    public virtual string DefinePrefix => "-D";
+    public virtual string LibraryPathPrefix => "-L";
+    public virtual string LibraryPrefix => "-l";
+    public virtual string SharedFlag => "-shared";
+    public virtual string PositionIndependentFlag => "-fPIC";
+    public virtual string StandardFlag => "-std=c++23";
+    public virtual string ArchiveFlags => "rcs";
+
+    /// <summary>
+    /// Returns base compile flags shared across all configurations.
+    /// </summary>
+    public virtual string GetBaseCompileFlags()
+    {
+        return $"{StandardFlag} {PositionIndependentFlag}";
+    }
+
+    /// <summary>
+    /// Returns configuration-specific compiler flags.
+    /// </summary>
+    public virtual string GetConfigurationFlags(BuildConfiguration Config)
+    {
+        return Config switch
+        {
+            BuildConfiguration.Debug => $"-g -O0 {DefinePrefix}DEBUG",
+            BuildConfiguration.Development => $"-g -O2 {DefinePrefix}NDEBUG",
+            BuildConfiguration.Release => $"-O3 {DefinePrefix}NDEBUG",
+            _ => ""
+        };
+    }
+
+    /// <summary>
+    /// Returns the full set of compile flags for a given configuration.
+    /// </summary>
+    public string GetCompileFlags(BuildConfiguration Config)
+    {
+        string ConfigFlags = GetConfigurationFlags(Config);
+        string BaseFlags = GetBaseCompileFlags();
+        return string.IsNullOrEmpty(ConfigFlags)
+            ? BaseFlags
+            : $"{ConfigFlags} {BaseFlags}";
+    }
+
+    public virtual string GetCompileCommand(
         string SourceFile,
         string ObjectFile,
         IReadOnlyList<string> Includes,
         IReadOnlyList<string> Defines,
-        BuildConfiguration Config
-    );
+        BuildConfiguration Config)
+    {
+        var Sb = new StringBuilder();
 
-    public abstract string GetLinkCommand(
+        Sb.Append(CompilerPath);
+        Sb.Append(" -c ");
+        Sb.Append(GetCompileFlags(Config));
+
+        CompilerHelpers.AppendPrefixedQuoted(Sb, Includes, IncludePrefix);
+        CompilerHelpers.AppendPrefixed(Sb, Defines, DefinePrefix);
+
+        Sb.Append(" -o \"");
+        Sb.Append(ObjectFile);
+        Sb.Append("\" \"");
+        Sb.Append(SourceFile);
+        Sb.Append('"');
+
+        return Sb.ToString();
+    }
+
+    public virtual string GetLinkCommand(
         string OutputFile,
         IReadOnlyList<string> ObjectFiles,
         IReadOnlyList<string> Libraries,
-        bool IsShared
-    );
+        bool IsShared)
+    {
+        var Sb = new StringBuilder();
+        Sb.Append(LinkerPath);
 
-    public abstract string GetArchiveCommand(
+        if (IsShared)
+        {
+            Sb.Append(' ');
+            Sb.Append(SharedFlag);
+        }
+
+        Sb.Append(" -o \"");
+        Sb.Append(OutputFile);
+        Sb.Append('"');
+
+        CompilerHelpers.AppendQuotedPaths(Sb, ObjectFiles);
+        CompilerHelpers.AppendPrefixed(Sb, Libraries, LibraryPrefix);
+
+        return Sb.ToString();
+    }
+
+    public virtual string GetArchiveCommand(
         string OutputFile,
-        IReadOnlyList<string> ObjectFiles
-    );
+        IReadOnlyList<string> ObjectFiles)
+    {
+        var Sb = new StringBuilder();
+        Sb.Append(ArchiverPath);
+        Sb.Append(' ');
+        Sb.Append(ArchiveFlags);
+        Sb.Append(" \"");
+        Sb.Append(OutputFile);
+        Sb.Append('"');
+
+        CompilerHelpers.AppendQuotedPaths(Sb, ObjectFiles);
+
+        return Sb.ToString();
+    }
 }
 
 /// <summary>
-/// Helper methods for compiler command generation.
+/// Helper methods for building compiler command strings.
 /// </summary>
-public static partial class CompilerHelpers
+public static class CompilerHelpers
 {
-    public static void AppendIncludes(System.Text.StringBuilder sb, IReadOnlyList<string> includes, string prefix, bool quoted)
+    public static void AppendPrefixedQuoted(StringBuilder Sb, IReadOnlyList<string> Values, string Prefix)
     {
-        for (int IncludeIndex = 0; IncludeIndex < includes.Count; ++IncludeIndex)
+        for (int Index = 0; Index < Values.Count; ++Index)
         {
-            sb.Append(' ');
-            sb.Append(prefix);
-            if (quoted) sb.Append('"');
-            sb.Append(includes[IncludeIndex]);
-            if (quoted) sb.Append('"');
+            Sb.Append(' ');
+            Sb.Append(Prefix);
+            Sb.Append('"');
+            Sb.Append(Values[Index]);
+            Sb.Append('"');
         }
     }
 
-    public static void AppendDefines(System.Text.StringBuilder sb, IReadOnlyList<string> defines, string prefix)
+    public static void AppendPrefixed(StringBuilder Sb, IReadOnlyList<string> Values, string Prefix)
     {
-        for (int DefineIndex = 0; DefineIndex < defines.Count; ++DefineIndex)
+        for (int Index = 0; Index < Values.Count; ++Index)
         {
-            sb.Append(' ');
-            sb.Append(prefix);
-            sb.Append(defines[DefineIndex]);
+            Sb.Append(' ');
+            Sb.Append(Prefix);
+            Sb.Append(Values[Index]);
         }
     }
 
-    public static void AppendQuotedPaths(System.Text.StringBuilder sb, IReadOnlyList<string> paths)
+    public static void AppendQuotedPaths(StringBuilder Sb, IReadOnlyList<string> Paths)
     {
-        for (int PathIndex = 0; PathIndex < paths.Count; ++PathIndex)
+        for (int Index = 0; Index < Paths.Count; ++Index)
         {
-            sb.Append(' ');
-            sb.Append('"');
-            sb.Append(paths[PathIndex]);
-            sb.Append('"');
+            Sb.Append(" \"");
+            Sb.Append(Paths[Index]);
+            Sb.Append('"');
         }
     }
-
-    public static void AppendPrefixedValues(System.Text.StringBuilder sb, IReadOnlyList<string> values, string prefix)
-    {
-        for (int ValueIndex = 0; ValueIndex < values.Count; ++ValueIndex)
-        {
-            sb.Append(' ');
-            sb.Append(prefix);
-            sb.Append(values[ValueIndex]);
-        }
-    }
-
-    public static void AppendLibrariesWithExtension(System.Text.StringBuilder sb, IReadOnlyList<string> libs, string extension)
-    {
-        for (int LibIndex = 0; LibIndex < libs.Count; ++LibIndex)
-        {
-            sb.Append(' ');
-            sb.Append(libs[LibIndex]);
-            sb.Append(extension);
-        }
-    }
-
 }
