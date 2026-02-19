@@ -11,7 +11,7 @@
 namespace LumenEngine
 {
 
-Int32 GuardedMain ( int argc, const char *argv[], class FGameInstance *GameInstance );
+Int32 GuardedMain ( int Argc, const char *Argv[], class FGameInstance *GameInstance );
 
 #define __LUMEN_ENGINE_GAME( GameClass )                                                                                                                                 \
     Int32 Main( Int32 Argc, const AnsiChar *Argv[] )                                                                                                                     \
