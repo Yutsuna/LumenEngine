@@ -6,7 +6,7 @@
 #pragma once
 
 #include "CoreTypes.hpp"
-#include "IGameInstance.hpp"
+#include "GameInstance.hpp"
 
 namespace LumenEngine
 {
