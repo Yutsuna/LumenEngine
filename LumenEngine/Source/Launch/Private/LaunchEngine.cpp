@@ -4,23 +4,19 @@
  */
 
 #include "LaunchEngine.hpp"
+#include "Container/Signal.hpp"
 #include "ErrorCodes.hpp"
 #include "LaunchEngineLoop.hpp"
 
 namespace
 {
 
-static inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
-{
-    return LumenEngine::GEngineLoop.PreInit( Argc, Argv );
-}
-
 static inline void EngineTick ()
 {
     LumenEngine::GEngineLoop.Tick();
 }
 
-static inline bool EngineRequestingExit ()
+static inline bool bEngineRequestingExit ()
 {
     return LumenEngine::GEngineLoop.ShouldExit();
 }
@@ -28,6 +24,24 @@ static inline bool EngineRequestingExit ()
 static inline void EngineExit ()
 {
     LumenEngine::GEngineLoop.Exit();
+}
+
+static void EngineTrapInterrupt ( const LumenEngine::ESystemSignal::Type )
+{
+    LumenEngine::FSignal::Raise( LumenEngine::ESystemSignal::Terminate );
+}
+
+static void EngineTrapTerminate ( const LumenEngine::ESystemSignal::Type )
+{
+    LumenEngine::GEngineLoop.RequestExit( "Termination signal received" );
+}
+
+static inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
+{
+    LumenEngine::FSignal::Bind( LumenEngine::ESystemSignal::Interrupt, &EngineTrapInterrupt );
+    LumenEngine::FSignal::Bind( LumenEngine::ESystemSignal::Terminate, &EngineTrapTerminate );
+
+    return LumenEngine::GEngineLoop.PreInit( Argc, Argv );
 }
 
 } // namespace
@@ -48,7 +62,7 @@ LumenEngine::Int32 LumenEngine::Launch::GuardedMain ( const Int32 Argc, const An
         return ErrorCode;
     }
 
-    while ( not EngineRequestingExit() )
+    while ( not bEngineRequestingExit() )
     {
         EngineTick();
     }
