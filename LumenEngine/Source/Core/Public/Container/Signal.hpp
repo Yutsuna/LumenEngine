@@ -74,9 +74,6 @@ private:
 
 private:
 
-    /** Atomic flag for signal-safe exit requests */
-    static Atomic<Bool> bExitRequested;
-
     /** Map of registered signal handlers for each system signal */
     static FMap<ESystemSignal::Type, FVector<FSignalHandlerSignature>> SignalListeners;
 };

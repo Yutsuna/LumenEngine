@@ -5,7 +5,6 @@
 
 #include "Container/Signal.hpp"
 
-LumenEngine::Atomic<LumenEngine::Bool> LumenEngine::FSignal::bExitRequested{ false };
 LumenEngine::FMap<LumenEngine::ESystemSignal::Type, LumenEngine::FVector<LumenEngine::FSignalHandlerSignature>> LumenEngine::FSignal::SignalListeners;
 
 void LumenEngine::FSignal::Bind ( const ESystemSignal::Type InSignal, FSignalHandlerSignature inHandler )
