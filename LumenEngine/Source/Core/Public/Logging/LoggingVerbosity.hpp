@@ -67,7 +67,7 @@ namespace ELogVerbosity
         case Display:
             return "Display";
         case Info:
-            return "Log";
+            return "Info";
         case Verbose:
             return "Verbose";
         case VeryVerbose:
