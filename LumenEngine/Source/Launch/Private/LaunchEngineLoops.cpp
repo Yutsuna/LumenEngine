@@ -48,33 +48,44 @@ namespace
 
 LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiChar *Argv[] )
 {
+    LUMEN_LOG_INFO( LogLaunch, "Engine PreInit started with {} arguments", Argc );
+
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
     GPlatformApplication = FLinuxApplication::CreateLinuxApplication();
 #else
     // TODO: Add other platforms
+    LUMEN_LOG_ERROR( LogLaunch, "Platform Application layer not yet implemented for this OS." );
     return EErrorCode::Unsupported;
 #endif
 
     if ( !GPlatformApplication.IsValid() )
     {
+        LUMEN_LOG_ERROR( LogLaunch, "Failed to create Platform Application layer." );
         return EErrorCode::Failure;
     }
 
     LastFrameSeconds = FPlatformTime::Seconds();
     TotalTickTime    = 0.0;
     LastTickTime     = FPlatformTime::DEFAULT_TICK_RATE;
+    bRequestingExit  = false;
 
+    LUMEN_LOG_INFO( LogLaunch, "Engine PreInit completed successfully." );
     return EErrorCode::Success;
 }
 
 LumenEngine::Int32 LumenEngine::FEngineLoop::Init ()
 {
+    LUMEN_LOG_INFO( LogLaunch, "Engine Init started..." );
+
     TSharedRef<FGenericWindow> MainWindow            = GPlatformApplication->MakeWindow();
     TSharedPtr<FGenericWindow> ParentWindow          = nullptr;
     TSharedRef<FGenericWindowDescription> WindowDesc = MakeShared<FGenericWindowDescription>( GetDefaultWindowDescription() );
     const Bool bShowImmediately                      = true;
 
+    LUMEN_LOG_INFO( LogLaunch, "Creating main application window..." );
     GPlatformApplication->InitializeWindow( MainWindow, WindowDesc, ParentWindow, bShowImmediately );
+
+    LUMEN_LOG_INFO( LogLaunch, "Engine Init completed successfully." );
     return EErrorCode::Success;
 }
 
@@ -90,6 +101,7 @@ void LumenEngine::FEngineLoop::Tick ()
 
 void LumenEngine::FEngineLoop::Exit ()
 {
+    LUMEN_LOG_INFO( LogLaunch, "Engine Exit requested. Releasing platform application..." );
     GPlatformApplication.Reset();
 }
 
@@ -104,13 +116,22 @@ LumenEngine::Bool LumenEngine::FEngineLoop::ShouldExit () const
     return bRequestingExit;
 }
 
-LumenEngine::Bool LumenEngine::FEngineLoop::AppInit ()
+LumenEngine::EErrorCode::Type LumenEngine::FEngineLoop::AppInit ()
 {
+    LUMEN_LOG_INFO( LogLaunch, "Application Logic Init started..." );
+
+    if ( GEngineLoop.Init() != EErrorCode::Success )
+    {
+        LUMEN_LOG_ERROR( LogLaunch, "Failed to initialize Engine from AppInit. " );
+        return EErrorCode::Failure;
+    }
+
     return EErrorCode::Success;
 }
 
 void LumenEngine::FEngineLoop::AppShutdown ()
 {
+    LUMEN_LOG_INFO( LogLaunch, "Application Logic Shutdown started..." );
     GPlatformApplication.Reset();
 }
 

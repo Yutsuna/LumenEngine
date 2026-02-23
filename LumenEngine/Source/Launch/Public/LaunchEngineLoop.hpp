@@ -7,6 +7,7 @@
 
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
+#include "ErrorCodes.hpp"
 #include "Generic/GenericApplication.hpp"
 
 namespace LumenEngine
@@ -51,7 +52,7 @@ public:
 public:
 
     /** Initializes the application */
-    static bool AppInit ();
+    static EErrorCode::Type AppInit ();
 
     /** Shuts down the application */
     static void AppShutdown ();
