@@ -18,7 +18,7 @@ struct LUMEN_ENGINE_API FLogCategory
     FString CategoryName;
     ELogVerbosity::Type DefaultVerbosity;
 
-    FLogCategory ( const FString &InCategoryName, const ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Log );
+    FLogCategory ( const FString &InCategoryName, const ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info );
 };
 
 } // namespace LumenEngine

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "CoreTypes.hpp"
+
 namespace LumenEngine
 {
 
@@ -23,7 +24,7 @@ namespace ELogVerbosity
         /** White */
         Display,
         /** Grey */
-        Log,
+        Info,
         /** Blue */
         Verbose,
         /** Cyan */
@@ -42,7 +43,7 @@ namespace ELogVerbosity
             return "\033[33m";
         case Display:
             return "\033[37m";
-        case Log:
+        case Info:
             return "\033[90m";
         case Verbose:
             return "\033[34m";
@@ -65,7 +66,7 @@ namespace ELogVerbosity
             return "Warning";
         case Display:
             return "Display";
-        case Log:
+        case Info:
             return "Log";
         case Verbose:
             return "Verbose";

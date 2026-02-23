@@ -68,6 +68,6 @@ private:
 #define LUMEN_LOG_ERROR( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Error, Format, ##__VA_ARGS__ )
 #define LUMEN_LOG_WARNING( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Warning, Format, ##__VA_ARGS__ )
 #define LUMEN_LOG_DISPLAY( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Display, Format, ##__VA_ARGS__ )
-#define LUMEN_LOG_LOG( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Log, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_INFO( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Info, Format, ##__VA_ARGS__ )
 #define LUMEN_LOG_VERBOSE( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Verbose, Format, ##__VA_ARGS__ )
 #define LUMEN_LOG_VERY_VERBOSE( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::VeryVerbose, Format, ##__VA_ARGS__ )
