@@ -15,6 +15,11 @@ LumenEngine::FLogger &LumenEngine::FLogger::GetInstance ()
     return Instance;
 }
 
+void LumenEngine::FLogger::Flush ( const AnsiChar *const Character )
+{
+    std::cout << Character << std::flush;
+}
+
 LumenEngine::FLogger::FLogger () : bIsRunning( true )
 {
     WorkerThread = std::thread( [this] { FlushLogMessages(); } );
