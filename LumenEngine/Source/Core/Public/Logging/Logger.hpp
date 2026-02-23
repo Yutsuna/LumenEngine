@@ -29,6 +29,9 @@ public:
     /** Gets the singleton instance of the logger. */
     static FLogger &GetInstance ();
 
+    /** Flushes a message to the console immediately without enqueuing it. */
+    static void Flush ( const AnsiChar *const Character );
+
 private:
 
     void EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message );
@@ -64,10 +67,10 @@ private:
 
 #define LUMEN_LOG( Category, Verbosity, Format, ... ) LumenEngine::FLogger::GetInstance().TLog( Category, Verbosity, Format, ##__VA_ARGS__ )
 
-#define LUMEN_LOG_FATAL( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Fatal, Format, ##__VA_ARGS__ )
-#define LUMEN_LOG_ERROR( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Error, Format, ##__VA_ARGS__ )
-#define LUMEN_LOG_WARNING( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Warning, Format, ##__VA_ARGS__ )
-#define LUMEN_LOG_DISPLAY( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Display, Format, ##__VA_ARGS__ )
-#define LUMEN_LOG_INFO( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Info, Format, ##__VA_ARGS__ )
-#define LUMEN_LOG_VERBOSE( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Verbose, Format, ##__VA_ARGS__ )
-#define LUMEN_LOG_VERY_VERBOSE( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::VeryVerbose, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_FATAL( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Fatal, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_ERROR( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Error, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_WARNING( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Warning, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_DISPLAY( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Display, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_INFO( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Info, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_VERBOSE( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Verbose, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_VERY_VERBOSE( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::VeryVerbose, Format, ##__VA_ARGS__ )
