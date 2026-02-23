@@ -30,6 +30,29 @@ namespace ELogVerbosity
         VeryVerbose
     };
 
+    static inline constexpr const AnsiChar *const ToColor ( const Type InVerbosity ) noexcept
+    {
+        switch ( InVerbosity )
+        {
+        case Fatal:
+            return "\033[31m";
+        case Error:
+            return "\033[31m";
+        case Warning:
+            return "\033[33m";
+        case Display:
+            return "\033[37m";
+        case Log:
+            return "\033[90m";
+        case Verbose:
+            return "\033[34m";
+        case VeryVerbose:
+            return "\033[36m";
+        default:
+            return "\033[0m";
+        }
+    }
+
     static inline constexpr const AnsiChar *const ToString ( const Type InVerbosity ) noexcept
     {
         switch ( InVerbosity )

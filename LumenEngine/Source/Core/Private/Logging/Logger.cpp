@@ -50,10 +50,13 @@ namespace
 
 static inline void CoutMessage ( const LumenEngine::FLogger::FLogMessage &LogMessage ) noexcept
 {
-    static constexpr const LumenEngine::AnsiChar *const LogFormat = "[{:.4f}][{}][{}] {}\n";
-    const LumenEngine::AnsiChar *const VerbosityStr               = LumenEngine::ELogVerbosity::ToString( LogMessage.Verbosity );
+    static constexpr const LumenEngine::AnsiChar *const ResetColor = "\033[0m";
 
-    std::cout << std::format( LogFormat, LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityStr, LogMessage.Message );
+    const LumenEngine::AnsiChar *const VerbosityColor  = LumenEngine::ELogVerbosity::ToColor( LogMessage.Verbosity );
+    const LumenEngine::AnsiChar *const VerbosityString = LumenEngine::ELogVerbosity::ToString( LogMessage.Verbosity );
+
+    std::cout << std::format( "[{:.4f}][{}]{}{}{}{}\n", LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityColor, VerbosityString, LogMessage.Message,
+                              ResetColor );
 }
 
 } // namespace

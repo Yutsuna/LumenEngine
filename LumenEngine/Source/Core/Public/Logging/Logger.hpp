@@ -63,3 +63,11 @@ private:
 #include "Inline/Logger.inl"
 
 #define LUMEN_LOG( Category, Verbosity, Format, ... ) LumenEngine::FLogger::GetInstance().TLog( Category, Verbosity, Format, ##__VA_ARGS__ )
+
+#define LUMEN_LOG_FATAL( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Fatal, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_ERROR( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Error, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_WARNING( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Warning, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_DISPLAY( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Display, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_LOG( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Log, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_VERBOSE( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::Verbose, Format, ##__VA_ARGS__ )
+#define LUMEN_LOG_VERY_VERBOSE( Category, Format, ... ) LUMEN_LOG( Category, ELogVerbosity::VeryVerbose, Format, ##__VA_ARGS__ )
