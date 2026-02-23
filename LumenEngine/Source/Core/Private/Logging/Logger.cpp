@@ -50,13 +50,13 @@ namespace
 
 static inline void CoutMessage ( const LumenEngine::FLogger::FLogMessage &LogMessage ) noexcept
 {
-    static constexpr const LumenEngine::AnsiChar *const ResetColor = "\033[0m";
+    static constexpr const LumenEngine::AnsiChar *const ResetColor   = "\033[0m";
+    static constexpr const LumenEngine::AnsiChar *const FormatString = "[{:.4f}] {}: {}{}: {}{}\n";
 
     const LumenEngine::AnsiChar *const VerbosityColor  = LumenEngine::ELogVerbosity::ToColor( LogMessage.Verbosity );
     const LumenEngine::AnsiChar *const VerbosityString = LumenEngine::ELogVerbosity::ToString( LogMessage.Verbosity );
 
-    std::cout << std::format( "[{:.4f}][{}]{}{}{}{}\n", LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityColor, VerbosityString, LogMessage.Message,
-                              ResetColor );
+    std::cout << std::format( FormatString, LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityColor, VerbosityString, LogMessage.Message, ResetColor );
 }
 
 } // namespace
@@ -70,12 +70,12 @@ void LumenEngine::FLogger::FlushLogMessages ()
 
         while ( not LogMessageQueue.empty() )
         {
-            const FLogMessage &LogMessage = LogMessageQueue.front();
-
+            FLogMessage LogMessage = std::move( LogMessageQueue.front() );
             LogMessageQueue.pop();
             Lock.unlock();
 
             CoutMessage( LogMessage );
+            Lock.lock();
         }
     }
 }
