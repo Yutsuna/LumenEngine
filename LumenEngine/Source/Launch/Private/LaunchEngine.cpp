@@ -41,7 +41,14 @@ static inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, con
     LumenEngine::FSignal::Bind( LumenEngine::ESystemSignal::Interrupt, &EngineTrapInterrupt );
     LumenEngine::FSignal::Bind( LumenEngine::ESystemSignal::Terminate, &EngineTrapTerminate );
 
-    return LumenEngine::GEngineLoop.PreInit( Argc, Argv );
+    const LumenEngine::Int32 ErrorCode = LumenEngine::GEngineLoop.PreInit( Argc, Argv );
+
+    if ( ErrorCode != LumenEngine::EErrorCode::Success )
+    {
+        return ErrorCode;
+    }
+
+    return LumenEngine::GEngineLoop.AppInit();
 }
 
 } // namespace

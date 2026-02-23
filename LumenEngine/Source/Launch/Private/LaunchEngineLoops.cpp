@@ -13,12 +13,19 @@
 #include "Generic/GenericWindowDescription.hpp"
 #include "Maths/Macros.hpp"
 
+#include "Logging/Logger.hpp"
+
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
     #include "Linux/LinuxApplication.hpp"
 #endif
 
 namespace LumenEngine
 {
+
+namespace
+{
+    static FLogCategory LogLaunch( "LogLaunch" );
+}
 
 FEngineLoop GEngineLoop;
 TSharedPtr<FGenericApplication> FEngineLoop::GPlatformApplication = nullptr;
@@ -88,6 +95,7 @@ void LumenEngine::FEngineLoop::Exit ()
 
 void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *Reason )
 {
+    LUMEN_LOG_WARNING( LogLaunch, "Exit requested: %s", Reason );
     bRequestingExit = true;
 }
 
