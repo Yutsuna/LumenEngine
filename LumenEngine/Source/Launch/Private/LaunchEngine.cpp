@@ -8,8 +8,13 @@
 #include "ErrorCodes.hpp"
 #include "LaunchEngineLoop.hpp"
 
+#include "Logging/Logger.hpp"
+#include "Logging/LoggingCategory.hpp"
+
 namespace
 {
+
+static LumenEngine::FLogCategory LogLaunch( "LogLaunch" );
 
 static inline void EngineTick ()
 {
@@ -23,16 +28,22 @@ static inline bool bEngineRequestingExit ()
 
 static inline void EngineExit ()
 {
+    LumenEngine::GEngineLoop.AppShutdown();
     LumenEngine::GEngineLoop.Exit();
+    LumenEngine::FLogger::GetInstance().Shutdown();
 }
 
 static void EngineTrapInterrupt ( const LumenEngine::ESystemSignal::Type )
 {
+    LumenEngine::FLogger::Flush( "\r" );
+    LUMEN_LOG_INFO( LogLaunch, "Interrupt signal received. Requesting engine termination..." );
     LumenEngine::FSignal::Raise( LumenEngine::ESystemSignal::Terminate );
 }
 
 static void EngineTrapTerminate ( const LumenEngine::ESystemSignal::Type )
 {
+    LumenEngine::FLogger::Flush( "\r" );
+    LUMEN_LOG_INFO( LogLaunch, "Termination signal received. Requesting engine termination..." );
     LumenEngine::GEngineLoop.RequestExit( "Termination signal received" );
 }
 
