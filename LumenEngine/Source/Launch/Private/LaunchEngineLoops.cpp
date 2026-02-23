@@ -95,7 +95,7 @@ void LumenEngine::FEngineLoop::Exit ()
 
 void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *Reason )
 {
-    LUMEN_LOG_WARNING( LogLaunch, "Exit requested: %s", Reason );
+    LUMEN_LOG_WARNING( LogLaunch, "Exit requested: {}", Reason );
     bRequestingExit = true;
 }
 
