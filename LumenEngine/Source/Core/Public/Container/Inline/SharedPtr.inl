@@ -127,7 +127,8 @@ namespace
      * @param InArgs Arguments to forward to the constructor of ObjectType.
      * @return A pointer to the newly created TIntrusiveReferenceController.
      */
-    template <typename ObjectType, typename... Arguments> static inline SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *NewIntrusiveReferenceController ( Arguments &&...InArgs )
+    template <typename ObjectType, typename... Arguments>
+    static inline SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *NewIntrusiveReferenceController ( Arguments &&...InArgs )
     {
         return new SharedPtrInternal::TIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
     }

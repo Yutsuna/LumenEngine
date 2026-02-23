@@ -45,14 +45,14 @@ using USize = decltype( sizeof( 0 ) );
  *
  * @brief Calculated using compiler intrinsics
  */
-using Isize = decltype( ( AnsiChar * )0 - ( AnsiChar * )0 );
+using ISize = decltype( ( AnsiChar * )0 - ( AnsiChar * )0 );
 
 /**
  * Uptr / Iptr: Integers guaranteed to be the same size as a pointer
  */
 #if defined( __x86_64__ ) || defined( _M_X64 ) || defined( __aarch64__ ) || defined( __LP64__ )
-using Uptr = unsigned long long;
-using Iptr = long long;
+using UPtr = unsigned long long;
+using IPtr = long long;
 #else
 using Uptr = unsigned int;
 using Iptr = int;

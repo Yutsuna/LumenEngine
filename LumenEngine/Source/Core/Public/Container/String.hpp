@@ -12,6 +12,7 @@ namespace LumenEngine
 {
 
 // TODO: own implementation of FString
-using FString = std::string;
+using FString     = std::string;
+using FStringView = std::string_view;
 
 } // namespace LumenEngine
