@@ -1,7 +1,7 @@
 module ApplicationCore
 {
 
-    type            = static_library
+    type            = shared_library
 
     sources         = [ "Private/**/*.cpp" ]
     public_includes = [ "Public" ]
