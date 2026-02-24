@@ -46,10 +46,6 @@ private:
     /** Helper function to find a window by its SDL Window ID */
     TSharedPtr<FLinuxWindow> FindWindowByID ( const SDL_WindowID InWindowID ) const;
 
-    /** Translate SDL Events to LumenEngine's input system */
-    EKeys::Type TranslateSDLKeyToLumenKey ( const SDL_Keycode SDLKey ) const;
-    EMouseButton::Type TranslateSDLMouseButtonToLumenMouseButton ( const Uint8 SDLMouseButton ) const;
-
 private:
 
     FVector<TSharedRef<FLinuxWindow>> Windows;
