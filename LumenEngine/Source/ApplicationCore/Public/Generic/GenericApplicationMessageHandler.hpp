@@ -9,6 +9,8 @@
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
 
+#include "GenericApplicationInput.hpp"
+
 namespace LumenEngine
 {
 
@@ -24,26 +26,50 @@ public:
 
     virtual ~FGenericApplicationMessageHandler () = default;
 
+public:
+
+    /** Window message handler */
+
     /** Called when a window needs to be repainted */
-    virtual void OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow );
+    virtual Bool OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow );
 
     /** Called when a window is moved */
-    virtual void OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InX, const Int32 InY );
+    virtual Bool OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InX, const Int32 InY );
 
     /** Called when a window is resized */
-    virtual void OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InWidth, const Int32 InHeight );
+    virtual Bool OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InWidth, const Int32 InHeight );
 
     /** Called when a window activation state changes */
-    virtual void OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive );
+    virtual Bool OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive );
+
+    /** Called when a window is requested to close */
+    virtual Bool OnWindowCloseRequested ( const TSharedRef<FGenericWindow> &InWindow );
+
+public:
+
+    /** Mouse message handler */
 
     /** Called when a mouse button is pressed */
-    virtual void OnMouseDown ( const TSharedPtr<FGenericWindow> &InWindow, const Int32 InButton );
+    virtual Bool OnMouseDown ( const TSharedPtr<FGenericWindow> &InWindow, const Int32 InButton );
 
     /** Called when a mouse button is released */
-    virtual void OnMouseUp ( const Int32 InButton );
+    virtual Bool OnMouseUp ( const Int32 InButton );
 
     /** Called when the mouse is moved */
-    virtual void OnMouseMove ( const Int32 InX, const Int32 InY );
+    virtual Bool OnMouseMove ( const Int32 InX, const Int32 InY );
+
+    /** Called when the mouse wheel is scrolled */
+    virtual Bool OnMouseWheel ( const Int32 InDelta );
+
+public:
+
+    /** Keyboard message handler */
+
+    /** Called when a key is pressed */
+    virtual Bool OnKeyDown ( const EKeys::Type Inkey, const Bool bIsRepeat );
+
+    /** Called when a key is released */
+    virtual Bool OnKeyUp ( const EKeys::Type InKey, const Bool bIsRepeat );
 };
 
 } // namespace LumenEngine
