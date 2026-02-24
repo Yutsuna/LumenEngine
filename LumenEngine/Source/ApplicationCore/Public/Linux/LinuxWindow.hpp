@@ -29,6 +29,7 @@ public:
                       const bool bShowImmediately );
 
     SDL_Window *GetOSWindowHandle () const;
+    SDL_WindowID GetOSWindowID () const;
 
     void Show () override;
     void Hide () override;

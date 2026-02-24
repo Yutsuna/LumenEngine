@@ -73,6 +73,17 @@ SDL_Window *LumenEngine::FLinuxWindow::GetOSWindowHandle () const
     return WindowHandle;
 }
 
+SDL_WindowID LumenEngine::FLinuxWindow::GetOSWindowID () const
+{
+    static constexpr const SDL_WindowID InvalidWindowID = 0;
+
+    if ( WindowHandle )
+    {
+        return SDL_GetWindowID( WindowHandle );
+    }
+    return InvalidWindowID;
+}
+
 void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Application,
                                              const TSharedRef<FGenericWindowDescription> &InDescription,
                                              const TSharedPtr<FGenericWindow> &InParentWindow,
