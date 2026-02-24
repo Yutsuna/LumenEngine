@@ -31,45 +31,45 @@ public:
     /** Window message handler */
 
     /** Called when a window needs to be repainted */
-    virtual Bool OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow );
+    virtual void OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow );
 
     /** Called when a window is moved */
-    virtual Bool OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InX, const Int32 InY );
+    virtual void OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InX, const Int32 InY );
 
     /** Called when a window is resized */
-    virtual Bool OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InWidth, const Int32 InHeight );
+    virtual void OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InWidth, const Int32 InHeight );
 
     /** Called when a window activation state changes */
-    virtual Bool OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive );
+    virtual void OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive );
 
     /** Called when a window is requested to close */
-    virtual Bool OnWindowCloseRequested ( const TSharedRef<FGenericWindow> &InWindow );
+    virtual void OnWindowCloseRequested ( const TSharedRef<FGenericWindow> &InWindow );
 
 public:
 
     /** Mouse message handler */
 
     /** Called when a mouse button is pressed */
-    virtual Bool OnMouseDown ( const TSharedPtr<FGenericWindow> &InWindow, const Int32 InButton );
+    virtual void OnMouseDown ( const TSharedPtr<FGenericWindow> &InWindow, const Int32 InButton );
 
     /** Called when a mouse button is released */
-    virtual Bool OnMouseUp ( const Int32 InButton );
+    virtual void OnMouseUp ( const Int32 InButton );
 
     /** Called when the mouse is moved */
-    virtual Bool OnMouseMove ( const Int32 InX, const Int32 InY );
+    virtual void OnMouseMove ( const Int32 InX, const Int32 InY );
 
     /** Called when the mouse wheel is scrolled */
-    virtual Bool OnMouseWheel ( const Int32 InDelta );
+    virtual void OnMouseWheel ( const Int32 InDelta );
 
 public:
 
     /** Keyboard message handler */
 
     /** Called when a key is pressed */
-    virtual Bool OnKeyDown ( const EKeys::Type Inkey, const Bool bIsRepeat );
+    virtual void OnKeyDown ( const EKeys::Type Inkey );
 
     /** Called when a key is released */
-    virtual Bool OnKeyUp ( const EKeys::Type InKey, const Bool bIsRepeat );
+    virtual void OnKeyUp ( const EKeys::Type InKey );
 };
 
 } // namespace LumenEngine

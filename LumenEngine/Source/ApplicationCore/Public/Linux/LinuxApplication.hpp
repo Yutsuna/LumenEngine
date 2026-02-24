@@ -8,6 +8,9 @@
 #include "Container/Vector.hpp"
 #include "Definitions.hpp"
 #include "Generic/GenericApplication.hpp"
+#include "Generic/GenericApplicationInput.hpp"
+
+#include <SDL3/SDL.h>
 
 namespace LumenEngine
 {
@@ -33,8 +36,19 @@ public:
                             const TSharedPtr<FGenericWindow> &InParentWindow,
                             const bool bShowImmediately ) override;
 
+public:
+
     /** Factory to create the application instance */
     static TSharedRef<FGenericApplication> CreateLinuxApplication ();
+
+private:
+
+    /** Helper function to find a window by its SDL Window ID */
+    TSharedPtr<FLinuxWindow> FindWindowByID ( const SDL_WindowID InWindowID ) const;
+
+    /** Translate SDL Events to LumenEngine's input system */
+    EKeys::Type TranslateSDLKeyToLumenKey ( const SDL_Keycode SDLKey ) const;
+    EMouseButton::Type TranslateSDLMouseButtonToLumenMouseButton ( const Uint8 SDLMouseButton ) const;
 
 private:
 
