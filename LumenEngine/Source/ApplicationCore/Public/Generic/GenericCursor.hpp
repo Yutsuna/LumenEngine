@@ -1,6 +1,6 @@
 /**
- * @file ICursor.hpp
- * @brief Declaration of the ICursor interface for cursor management.
+ * @file GenericCursor.hpp
+ * @brief Declaration of the FGenericCursor interface for cursor management.
  */
 
 #pragma once
@@ -46,14 +46,14 @@ namespace ECursorType
 } // namespace ECursorType
 
 /**
- * @class ICursor
+ * @class GenericCursor
  * @brief Interface for cursor management in the application.
  */
-class LUMEN_ENGINE_API ICursor
+class LUMEN_ENGINE_API FGenericCursor
 {
 public:
 
-    virtual ~ICursor () = default;
+    virtual ~FGenericCursor () = default;
 
     /**
      * Sets the position of the cursor.
