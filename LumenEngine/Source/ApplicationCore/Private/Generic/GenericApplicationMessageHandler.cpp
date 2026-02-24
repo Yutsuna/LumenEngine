@@ -56,12 +56,12 @@ void LumenEngine::FGenericApplicationMessageHandler::OnMouseWheel ( const Int32 
 
 /** Keyboard */
 
-void LumenEngine::FGenericApplicationMessageHandler::OnKeyDown ( const Int32 InKey )
+void LumenEngine::FGenericApplicationMessageHandler::OnKeyDown ( const EKeys::Type InKey )
 {
     /* empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnKeyUp ( const Int32 InKey )
+void LumenEngine::FGenericApplicationMessageHandler::OnKeyUp ( const EKeys::Type InKey )
 {
     /* empty */
 }
