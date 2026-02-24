@@ -11,10 +11,6 @@
 
 #include <SDL3/SDL.h>
 
-/**
- * public
- */
-
 LumenEngine::FLinuxApplication::FLinuxApplication () : FGenericApplication()
 {
     if ( not FLinuxBackend::InitializeSDL() )
@@ -51,26 +47,33 @@ void LumenEngine::FLinuxApplication::InitializeWindow ( const TSharedRef<FGeneri
     Windows.push_back( LinuxWindow );
 }
 
+namespace
+{
+
+static inline void FlushEventQueue ( SDL_Event *Event ) noexcept
+{
+    while ( SDL_PollEvent( Event ) )
+    {
+        /* Discard all events */
+    }
+}
+
+} // namespace
+
 void LumenEngine::FLinuxApplication::PumpMessages ( const Float32 DeltaTime )
 {
     SDL_Event Event;
+
+    if ( not MessageHandler.IsValid() )
+    {
+        FlushEventQueue( &Event );
+        return;
+    }
 
     while ( SDL_PollEvent( &Event ) )
     {
         switch ( Event.type )
         {
-        case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
-            break;
-
-        case SDL_EVENT_MOUSE_MOTION:
-            break;
-
-        case SDL_EVENT_MOUSE_BUTTON_DOWN:
-            break;
-
-        case SDL_EVENT_QUIT:
-            break;
-
         default:
             break;
         }
