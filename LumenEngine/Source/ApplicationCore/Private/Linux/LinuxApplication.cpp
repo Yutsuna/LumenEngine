@@ -46,7 +46,7 @@ LumenEngine::TSharedPtr<LumenEngine::FGenericApplication> LumenEngine::FLinuxApp
     if ( not FLinuxBackend::InitializeSDL() )
     {
         LUMEN_LOG_FATAL( LogLinuxApplication, "Failed to initialize SDL library for Linux application: {}", SDL_GetError() );
-        // TODO: request program exit
+        /** INFO: unused as LUMEN LOG FATAL with raise a terminate signal after logging the message */
         return nullptr;
     }
 
