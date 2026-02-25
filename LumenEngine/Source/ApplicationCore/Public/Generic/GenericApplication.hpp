@@ -18,7 +18,7 @@ namespace LumenEngine
 class FGenericWindow;
 struct FGenericWindowDescription;
 class FGenericApplicationMessageHandler;
-class ICursor;
+class FGenericCursor;
 
 /**
  * @class FGenericApplication
@@ -42,10 +42,10 @@ public:
     virtual void PumpMessages ( const Float32 DeltaTime );
 
     /** Sets the cursor for the application */
-    virtual void SetCursor ( const TSharedPtr<ICursor> &InCursor );
+    virtual void SetCursor ( const TSharedPtr<FGenericCursor> &InCursor );
 
     /** Retrieves the current cursor of the application */
-    TSharedPtr<ICursor> GetCursor () const;
+    TSharedPtr<FGenericCursor> GetCursor () const;
 
     /** Creates a new window */
     virtual TSharedRef<FGenericWindow> MakeWindow ();
@@ -54,12 +54,12 @@ public:
     virtual void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
                                     const TSharedRef<FGenericWindowDescription> &InDescription,
                                     const TSharedPtr<FGenericWindow> &InParentWindow,
-                                    const bool bShowImmediately );
+                                    const Bool bShowImmediately );
 
 protected:
 
     TSharedPtr<FGenericApplicationMessageHandler> MessageHandler;
-    TSharedPtr<ICursor> Cursor;
+    TSharedPtr<FGenericCursor> Cursor;
 };
 
 } // namespace LumenEngine

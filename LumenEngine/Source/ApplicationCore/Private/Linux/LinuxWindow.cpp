@@ -5,6 +5,8 @@
 
 #include "Linux/LinuxWindow.hpp"
 
+#include "Logging/Logger.hpp"
+
 /**
  * helpers
  */
@@ -14,6 +16,8 @@ namespace LumenEngine
 
 namespace
 {
+
+    static LumenEngine::FLogCategory LogApplicationCore( "ApplicationCore" );
 
     static inline UInt32 GetSDLWindowFlags ( const TSharedRef<FGenericWindowDescription> &InDescription, const Bool bShowImmediately )
     {
@@ -73,6 +77,17 @@ SDL_Window *LumenEngine::FLinuxWindow::GetOSWindowHandle () const
     return WindowHandle;
 }
 
+SDL_WindowID LumenEngine::FLinuxWindow::GetOSWindowID () const
+{
+    static constexpr const SDL_WindowID InvalidWindowID = 0;
+
+    if ( WindowHandle )
+    {
+        return SDL_GetWindowID( WindowHandle );
+    }
+    return InvalidWindowID;
+}
+
 void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Application,
                                              const TSharedRef<FGenericWindowDescription> &InDescription,
                                              const TSharedPtr<FGenericWindow> &InParentWindow,
@@ -88,7 +103,7 @@ void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Applicatio
 
     if ( not WindowHandle )
     {
-        // TODO: log the error
+        LUMEN_LOG_ERROR( LogApplicationCore, "Failed to create SDL window: {}", SDL_GetError() );
         return;
     }
 

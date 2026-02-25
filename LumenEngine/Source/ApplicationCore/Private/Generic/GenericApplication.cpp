@@ -6,7 +6,6 @@
 #include "Generic/GenericApplication.hpp"
 #include "Generic/GenericApplicationMessageHandler.hpp"
 #include "Generic/GenericWindow.hpp"
-#include "Generic/ICursor.hpp"
 
 /**
  * public
@@ -32,12 +31,12 @@ void LumenEngine::FGenericApplication::PumpMessages ( const Float32 DeltaTime )
     /* __empty__ */
 }
 
-void LumenEngine::FGenericApplication::SetCursor ( const TSharedPtr<ICursor> &InCursor )
+void LumenEngine::FGenericApplication::SetCursor ( const TSharedPtr<FGenericCursor> &InCursor )
 {
     Cursor = InCursor;
 }
 
-LumenEngine::TSharedPtr<LumenEngine::ICursor> LumenEngine::FGenericApplication::GetCursor () const
+LumenEngine::TSharedPtr<LumenEngine::FGenericCursor> LumenEngine::FGenericApplication::GetCursor () const
 {
     return Cursor;
 }
@@ -50,7 +49,7 @@ LumenEngine::TSharedRef<LumenEngine::FGenericWindow> LumenEngine::FGenericApplic
 void LumenEngine::FGenericApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
                                                           const TSharedRef<FGenericWindowDescription> &InDescription,
                                                           const TSharedPtr<FGenericWindow> &InParentWindow,
-                                                          const bool bShowImmediately )
+                                                          const Bool bShowImmediately )
 {
     /* __empty__ */
 }

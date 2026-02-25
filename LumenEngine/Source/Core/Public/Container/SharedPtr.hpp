@@ -98,6 +98,23 @@ namespace SharedPtrInternal
         Type *Object;
     };
 
+    /**
+     * @brief Creates a new TIntrusiveReferenceController instance with the
+     * given arguments.
+     * @param InArgs Arguments to forward to the constructor of ObjectType.
+     * @return A pointer to the newly created TIntrusiveReferenceController.
+     */
+    template <typename ObjectType, typename... Arguments>
+    SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *NewIntrusiveReferenceController ( Arguments &&...InArgs );
+
+    /**
+     * @brief Creates a new TDefaultReferenceController instance for the given
+     * object.
+     * @param InObject Pointer to the managed object.
+     * @return A pointer to the newly created TDefaultReferenceController.
+     */
+    template <typename ObjectType> SharedPtrInternal::TDefaultReferenceController<ObjectType> *NewDefaultReferenceController ( ObjectType *InObject );
+
 } // namespace SharedPtrInternal
 
 /**

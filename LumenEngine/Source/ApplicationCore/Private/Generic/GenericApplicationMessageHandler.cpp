@@ -5,37 +5,63 @@
 
 #include "Generic/GenericApplicationMessageHandler.hpp"
 
+/** Window */
+
 void LumenEngine::FGenericApplicationMessageHandler::OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericApplicationMessageHandler::OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InX, const Int32 InY )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericApplicationMessageHandler::OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InWidth, const Int32 InHeight )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericApplicationMessageHandler::OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( const TSharedPtr<FGenericWindow> &InWindow, const Int32 InButton )
+void LumenEngine::FGenericApplicationMessageHandler::OnWindowCloseRequested ( const TSharedRef<FGenericWindow> &InWindow )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnMouseUp ( const Int32 InButton )
+/** Mouse */
+
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( const EMouseButton::Type InButton )
 {
-    /* __empty__ */
+    /* Empty */
+}
+
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseUp ( const EMouseButton::Type InButton )
+{
+    /* Empty */
 }
 
 void LumenEngine::FGenericApplicationMessageHandler::OnMouseMove ( const Int32 InX, const Int32 InY )
 {
-    /* __empty__ */
+    /* Empty */
+}
+
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseWheel ( const Int32 InDelta )
+{
+    /* Empty */
+}
+
+/** Keyboard */
+
+void LumenEngine::FGenericApplicationMessageHandler::OnKeyDown ( const EKeys::Type InKey, const Bool bIsRepeat )
+{
+    /* Empty */
+}
+
+void LumenEngine::FGenericApplicationMessageHandler::OnKeyUp ( const EKeys::Type InKey )
+{
+    /* Empty */
 }

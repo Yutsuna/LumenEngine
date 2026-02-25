@@ -9,7 +9,7 @@ module ApplicationCore
     deps            = [ Core, MathCore ]
 
     linux_libs      = [ SDL3 ]
-    windows_libs    = [ SDL3 ]
-    macos_libs      = [ SDL3 ]
+    windows_libs    = [ ]
+    macos_libs      = [ ]
 
 }

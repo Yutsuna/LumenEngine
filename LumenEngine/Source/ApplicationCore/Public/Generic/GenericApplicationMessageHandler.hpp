@@ -9,6 +9,8 @@
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
 
+#include "GenericApplicationInput.hpp"
+
 namespace LumenEngine
 {
 
@@ -24,6 +26,10 @@ public:
 
     virtual ~FGenericApplicationMessageHandler () = default;
 
+public:
+
+    /** Window message handler */
+
     /** Called when a window needs to be repainted */
     virtual void OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow );
 
@@ -36,14 +42,34 @@ public:
     /** Called when a window activation state changes */
     virtual void OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive );
 
+    /** Called when a window is requested to close */
+    virtual void OnWindowCloseRequested ( const TSharedRef<FGenericWindow> &InWindow );
+
+public:
+
+    /** Mouse message handler */
+
     /** Called when a mouse button is pressed */
-    virtual void OnMouseDown ( const TSharedPtr<FGenericWindow> &InWindow, const Int32 InButton );
+    virtual void OnMouseDown ( const EMouseButton::Type InButton );
 
     /** Called when a mouse button is released */
-    virtual void OnMouseUp ( const Int32 InButton );
+    virtual void OnMouseUp ( const EMouseButton::Type InButton );
 
     /** Called when the mouse is moved */
     virtual void OnMouseMove ( const Int32 InX, const Int32 InY );
+
+    /** Called when the mouse wheel is scrolled */
+    virtual void OnMouseWheel ( const Int32 InDelta );
+
+public:
+
+    /** Keyboard message handler */
+
+    /** Called when a key is pressed */
+    virtual void OnKeyDown ( const EKeys::Type Inkey, const Bool bIsRepeat );
+
+    /** Called when a key is released */
+    virtual void OnKeyUp ( const EKeys::Type InKey );
 };
 
 } // namespace LumenEngine

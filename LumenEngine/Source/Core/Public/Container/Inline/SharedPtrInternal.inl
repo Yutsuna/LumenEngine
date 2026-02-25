@@ -13,6 +13,17 @@ namespace LumenEngine
 namespace SharedPtrInternal
 {
 
+    template <typename ObjectType, typename... Arguments>
+    SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *NewIntrusiveReferenceController ( Arguments &&...InArgs )
+    {
+        return new SharedPtrInternal::TIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
+    }
+
+    template <typename ObjectType> SharedPtrInternal::TDefaultReferenceController<ObjectType> *NewDefaultReferenceController ( ObjectType *InObject )
+    {
+        return new SharedPtrInternal::TDefaultReferenceController<ObjectType>( InObject );
+    }
+
     /**
      * TIntrusiveReferenceController
      */

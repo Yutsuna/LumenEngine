@@ -9,6 +9,8 @@
 #include "Definitions.hpp"
 #include "Generic/GenericApplication.hpp"
 
+#include <SDL3/SDL.h>
+
 namespace LumenEngine
 {
 
@@ -31,14 +33,26 @@ public:
     void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
                             const TSharedRef<FGenericWindowDescription> &InDescription,
                             const TSharedPtr<FGenericWindow> &InParentWindow,
-                            const bool bShowImmediately ) override;
+                            const Bool bShowImmediately ) override;
+
+    /** Adds a pending SDL event to be processed in the next message pump */
+    void AddPendingEvent ( const SDL_Event &InEvent );
+
+public:
 
     /** Factory to create the application instance */
-    static TSharedRef<FGenericApplication> CreateLinuxApplication ();
+    static TSharedPtr<FGenericApplication> CreateLinuxApplication ();
+
+private:
+
+    /** Helper function to find a window by its SDL Window ID */
+    TSharedPtr<FLinuxWindow> FindWindowByID ( const SDL_WindowID InWindowID ) const;
 
 private:
 
     FVector<TSharedRef<FLinuxWindow>> Windows;
 };
+
+extern FLinuxApplication *GLinuxApplication;
 
 } // namespace LumenEngine
