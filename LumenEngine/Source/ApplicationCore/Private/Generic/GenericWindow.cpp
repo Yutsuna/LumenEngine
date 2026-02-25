@@ -40,6 +40,11 @@ void LumenEngine::FGenericWindow::Hide ()
     /* __empty__ */
 }
 
+void LumenEngine::FGenericWindow::Clear ()
+{
+    /* __empty__ */
+}
+
 void LumenEngine::FGenericWindow::SetWindowMode ( const EWindowMode::Type InWindowMode )
 {
     /* __empty__ */
