@@ -39,11 +39,6 @@ void LumenEngine::FGenericApplicationMessageHandler::OnWindowActivationChanged (
     /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnWindowCloseRequested ( const TSharedRef<FGenericWindow> &InWindow )
-{
-    /* Empty */
-}
-
 /** Mouse */
 
 void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( const EMouseButton::Type InButton )

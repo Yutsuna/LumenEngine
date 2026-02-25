@@ -112,9 +112,9 @@ namespace
         FSignal::Raise( ESystemSignal::Terminate );
     }
 
-    static inline void SendWindowCloseRequestedEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const TSharedRef<FLinuxWindow> &Window )
+    static inline void SendWindowCloseRequestedEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler )
     {
-        MessageHandler->OnWindowCloseRequested( Window );
+        MessageHandler->OnRequestExit();
     }
 
 } // namespace
@@ -139,9 +139,7 @@ void LumenEngine::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent 
     }
     case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
     {
-        if ( CurrentWindow.IsValid() )
-        {
-        }
+        SendWindowCloseRequestedEvent( MessageHandler );
         break;
     }
     case SDL_EVENT_KEY_DOWN:
