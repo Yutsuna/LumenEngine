@@ -18,6 +18,7 @@ public abstract class Compiler
     public virtual string DefinePrefix => "-D";
     public virtual string LibraryPathPrefix => "-L";
     public virtual string LibraryPrefix => "-l";
+    public virtual string LinkerFlag => "";
     public virtual string SharedFlag => "-shared";
     public virtual string PositionIndependentFlag => "-fPIC";
     public virtual string StandardFlag => "-std=c++23";

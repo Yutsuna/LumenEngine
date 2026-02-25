@@ -56,7 +56,8 @@ public sealed class MakefileWriter
         Sb.AppendLine($"CXX := {Toolchain.CompilerPath}");
         Sb.AppendLine($"AR := {Toolchain.ArchiverPath}");
         Sb.AppendLine($"CXXFLAGS := {Toolchain.GetCompileFlags(Context.Configuration)}");
-        Sb.AppendLine("LDFLAGS :=");
+        string LinkerFlag = Toolchain.LinkerFlag;
+        Sb.AppendLine(string.IsNullOrEmpty(LinkerFlag) ? "LDFLAGS :=" : $"LDFLAGS := {LinkerFlag}");
         Sb.AppendLine();
 
         if (IsWindows)
@@ -131,7 +132,7 @@ public sealed class MakefileWriter
             }
             else
             {
-                Sb.Append("$(CXX)");
+                Sb.Append("$(CXX) $(LDFLAGS)");
                 if (Target.Type == ModuleType.SharedLibrary)
                 {
                     Sb.Append(' ');

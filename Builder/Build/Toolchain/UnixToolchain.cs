@@ -11,6 +11,7 @@ public sealed class UnixToolchain : Compiler
     public override string Name { get; }
     public override string CompilerPath { get; }
     public override string LinkerPath { get; }
+    public override string LinkerFlag { get; }
     public override string ArchiverPath => "ar";
 
     public UnixToolchain(string Name, string CompilerPath)
@@ -18,6 +19,9 @@ public sealed class UnixToolchain : Compiler
         this.Name = Name;
         this.CompilerPath = CompilerPath;
         this.LinkerPath = CompilerPath;
+
+        string? Detected = LinkerDetector.Detect();
+        this.LinkerFlag = Detected != null ? $"-fuse-ld={Detected}" : "";
     }
 
     public static UnixToolchain Gpp() => new("g++", "g++");
