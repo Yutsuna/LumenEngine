@@ -4,12 +4,17 @@
  */
 
 #include "Linux/LinuxBackend.hpp"
+#include "Linux/LinuxApplication.hpp"
+
+#include "Logging/Logger.hpp"
+#include "Logging/LoggingCategory.hpp"
 
 #include <SDL3/SDL.h>
 
 namespace
 {
 
+static const LumenEngine::FLogCategory LogLinuxBackend( "LinuxBackend" );
 static LumenEngine::Bool GInitializedSDL = false;
 
 } // namespace
@@ -37,5 +42,42 @@ void LumenEngine::FLinuxBackend::ShutdownSDL ()
     {
         SDL_Quit();
         GInitializedSDL = false;
+    }
+}
+
+namespace
+{
+
+static inline void FlushEventQueue () noexcept
+{
+    SDL_Event Event;
+
+    while ( SDL_PollEvent( &Event ) )
+    {
+        /* Discard all events */
+    }
+}
+
+} // namespace
+
+void LumenEngine::FLinuxBackend::PumpMessages ()
+{
+    if ( not GInitializedSDL )
+    {
+        LUMEN_LOG_WARNING( LogLinuxBackend, "Attempted to pump messages without SDL being initialized." );
+        return;
+    }
+    if ( not GLinuxApplication )
+    {
+        FlushEventQueue();
+        LUMEN_LOG_WARNING( LogLinuxBackend, "Attempted to pump messages without a valid Linux application instance." );
+        return;
+    }
+
+    SDL_Event Event;
+
+    while ( SDL_PollEvent( &Event ) )
+    {
+        GLinuxApplication->AddPendingEvent( Event );
     }
 }
