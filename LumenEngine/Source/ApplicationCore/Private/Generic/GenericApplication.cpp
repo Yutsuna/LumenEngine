@@ -31,16 +31,6 @@ void LumenEngine::FGenericApplication::PumpMessages ( const Float32 DeltaTime )
     /* Empty */
 }
 
-void LumenEngine::FGenericApplication::SetCursor ( const TSharedPtr<FGenericCursor> &InCursor )
-{
-    Cursor = InCursor;
-}
-
-LumenEngine::TSharedPtr<LumenEngine::FGenericCursor> LumenEngine::FGenericApplication::GetCursor () const
-{
-    return Cursor;
-}
-
 LumenEngine::TSharedRef<LumenEngine::FGenericWindow> LumenEngine::FGenericApplication::MakeWindow ()
 {
     return MakeShareable( new FGenericWindow() );
