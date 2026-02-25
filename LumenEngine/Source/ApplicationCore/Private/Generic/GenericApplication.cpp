@@ -49,7 +49,7 @@ LumenEngine::TSharedRef<LumenEngine::FGenericWindow> LumenEngine::FGenericApplic
 void LumenEngine::FGenericApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
                                                           const TSharedRef<FGenericWindowDescription> &InDescription,
                                                           const TSharedPtr<FGenericWindow> &InParentWindow,
-                                                          const bool bShowImmediately )
+                                                          const Bool bShowImmediately )
 {
     /* __empty__ */
 }

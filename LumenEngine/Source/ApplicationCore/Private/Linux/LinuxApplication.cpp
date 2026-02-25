@@ -48,7 +48,11 @@ LumenEngine::TSharedPtr<LumenEngine::FGenericApplication> LumenEngine::FLinuxApp
         // TODO: request program exit
         return nullptr;
     }
-    return MakeShareable( new FLinuxApplication() );
+
+    FLinuxApplication *Application = new FLinuxApplication();
+    GLinuxApplication              = Application;
+
+    return MakeShareable( Application );
 }
 
 void LumenEngine::FLinuxApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
