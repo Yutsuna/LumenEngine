@@ -5,7 +5,6 @@
 
 #include "Generic/GenericApplication.hpp"
 #include "Generic/GenericApplicationMessageHandler.hpp"
-#include "Generic/GenericCursor.hpp"
 #include "Generic/GenericWindow.hpp"
 
 /**
