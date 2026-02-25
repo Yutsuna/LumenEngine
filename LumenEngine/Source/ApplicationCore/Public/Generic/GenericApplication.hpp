@@ -18,7 +18,6 @@ namespace LumenEngine
 class FGenericWindow;
 struct FGenericWindowDescription;
 class FGenericApplicationMessageHandler;
-class FGenericCursor;
 
 /**
  * @class FGenericApplication
