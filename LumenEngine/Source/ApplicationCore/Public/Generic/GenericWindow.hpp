@@ -45,6 +45,9 @@ public:
     /** Hide the window from the screen */
     virtual void Hide ();
 
+    /** Clear the window's content */
+    virtual void Clear ();
+
     /** Toogle native window between fullscreen and normal mode */
     virtual void SetWindowMode ( const EWindowMode::Type InWindowMode );
 
