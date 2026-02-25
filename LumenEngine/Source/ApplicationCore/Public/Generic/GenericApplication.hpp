@@ -54,7 +54,7 @@ public:
     virtual void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
                                     const TSharedRef<FGenericWindowDescription> &InDescription,
                                     const TSharedPtr<FGenericWindow> &InParentWindow,
-                                    const bool bShowImmediately );
+                                    const Bool bShowImmediately );
 
 protected:
 

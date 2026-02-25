@@ -33,7 +33,7 @@ public:
     void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
                             const TSharedRef<FGenericWindowDescription> &InDescription,
                             const TSharedPtr<FGenericWindow> &InParentWindow,
-                            const bool bShowImmediately ) override;
+                            const Bool bShowImmediately ) override;
 
     /** Adds a pending SDL event to be processed in the next message pump */
     void AddPendingEvent ( const SDL_Event &InEvent );
