@@ -5,6 +5,18 @@
 
 #include "Generic/GenericApplicationMessageHandler.hpp"
 
+/** Application */
+
+void LumenEngine::FGenericApplicationMessageHandler::OnRequestExit ()
+{
+    /* Empty */
+}
+
+void LumenEngine::FGenericApplicationMessageHandler::OnQuit ()
+{
+    /* Empty */
+}
+
 /** Window */
 
 void LumenEngine::FGenericApplicationMessageHandler::OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow )
