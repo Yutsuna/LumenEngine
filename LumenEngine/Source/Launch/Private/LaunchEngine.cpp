@@ -88,11 +88,7 @@ LumenEngine::Int32 LumenEngine::Launch::GuardedMain ( const Int32 Argc, const An
     return ErrorCode;
 }
 
-#define Main main
-
-LumenEngine::Int32 Main ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
+LumenEngine::Int32 main ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
 {
     return LumenEngine::Launch::GuardedMain( Argc, Argv );
 }
-
-#undef Main
