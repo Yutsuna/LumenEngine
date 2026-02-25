@@ -18,7 +18,6 @@ namespace LumenEngine
 class FGenericWindow;
 struct FGenericWindowDescription;
 class FGenericApplicationMessageHandler;
-class FGenericCursor;
 
 /**
  * @class FGenericApplication
@@ -41,12 +40,6 @@ public:
     /** Polls and processes messages for the application */
     virtual void PumpMessages ( const Float32 DeltaTime );
 
-    /** Sets the cursor for the application */
-    virtual void SetCursor ( const TSharedPtr<FGenericCursor> &InCursor );
-
-    /** Retrieves the current cursor of the application */
-    TSharedPtr<FGenericCursor> GetCursor () const;
-
     /** Creates a new window */
     virtual TSharedRef<FGenericWindow> MakeWindow ();
 
@@ -59,7 +52,8 @@ public:
 protected:
 
     TSharedPtr<FGenericApplicationMessageHandler> MessageHandler;
-    TSharedPtr<FGenericCursor> Cursor;
 };
+
+extern LUMEN_ENGINE_API TSharedPtr<FGenericApplication> GPlatformApplication;
 
 } // namespace LumenEngine

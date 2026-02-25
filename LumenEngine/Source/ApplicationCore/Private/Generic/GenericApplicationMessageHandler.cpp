@@ -5,6 +5,18 @@
 
 #include "Generic/GenericApplicationMessageHandler.hpp"
 
+/** Application */
+
+void LumenEngine::FGenericApplicationMessageHandler::OnRequestExit ()
+{
+    /* Empty */
+}
+
+void LumenEngine::FGenericApplicationMessageHandler::OnQuit ()
+{
+    /* Empty */
+}
+
 /** Window */
 
 void LumenEngine::FGenericApplicationMessageHandler::OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow )
@@ -23,11 +35,6 @@ void LumenEngine::FGenericApplicationMessageHandler::OnWindowResized ( const TSh
 }
 
 void LumenEngine::FGenericApplicationMessageHandler::OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive )
-{
-    /* Empty */
-}
-
-void LumenEngine::FGenericApplicationMessageHandler::OnWindowCloseRequested ( const TSharedRef<FGenericWindow> &InWindow )
 {
     /* Empty */
 }

@@ -33,6 +33,7 @@ public:
 
     void Show () override;
     void Hide () override;
+    void Clear () override;
 
 private:
 
@@ -42,6 +43,7 @@ private:
 
     FLinuxApplication *LinuxApplication;
     SDL_Window *WindowHandle;
+    SDL_Renderer *Renderer;
     TSharedPtr<FGenericWindow> ParentWindow;
 };
 

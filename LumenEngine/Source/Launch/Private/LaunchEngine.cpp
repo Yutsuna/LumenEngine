@@ -51,15 +51,20 @@ static inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, con
 {
     LumenEngine::FSignal::Bind( LumenEngine::ESystemSignal::Interrupt, &EngineTrapInterrupt );
     LumenEngine::FSignal::Bind( LumenEngine::ESystemSignal::Terminate, &EngineTrapTerminate );
-
-    const LumenEngine::Int32 ErrorCode = LumenEngine::GEngineLoop.PreInit( Argc, Argv );
+    LumenEngine::Int32 ErrorCode = LumenEngine::GEngineLoop.PreInit( Argc, Argv );
 
     if ( ErrorCode != LumenEngine::EErrorCode::Success )
     {
         return ErrorCode;
     }
 
-    return LumenEngine::GEngineLoop.AppInit();
+    ErrorCode = LumenEngine::GEngineLoop.AppInit();
+    if ( ErrorCode != LumenEngine::EErrorCode::Success )
+    {
+        return ErrorCode;
+    }
+
+    return LumenEngine::Launch::ClientInit( Argc, Argv );
 }
 
 } // namespace
@@ -88,11 +93,7 @@ LumenEngine::Int32 LumenEngine::Launch::GuardedMain ( const Int32 Argc, const An
     return ErrorCode;
 }
 
-#define Main main
-
-LumenEngine::Int32 Main ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
+LumenEngine::Int32 main ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
 {
     return LumenEngine::Launch::GuardedMain( Argc, Argv );
 }
-
-#undef Main

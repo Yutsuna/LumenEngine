@@ -59,6 +59,13 @@ public sealed class CMakeWriter
             Sb.AppendLine("# Clang/GCC Toolchain on Windows");
             Sb.AppendLine($"set(CMAKE_CXX_COMPILER \"{Context.Toolchain.CompilerPath}\")");
         }
+
+        string LinkerFlag = Context.Toolchain.LinkerFlag;
+        if (!string.IsNullOrEmpty(LinkerFlag))
+        {
+            Sb.AppendLine($"# Faster linker detected: {LinkerFlag}");
+            Sb.AppendLine($"add_link_options({LinkerFlag})");
+        }
     }
 
     private void WriteBuildTypeConfig(StringBuilder Sb)

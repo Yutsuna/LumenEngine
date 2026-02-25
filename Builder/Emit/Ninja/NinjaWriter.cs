@@ -130,6 +130,11 @@ public sealed class NinjaWriter
             if (Target.Type != ModuleType.StaticLibrary)
             {
                 Sb.Append("  ldflags =");
+                if (!string.IsNullOrEmpty(Toolchain.LinkerFlag))
+                {
+                    Sb.Append(' ');
+                    Sb.Append(Toolchain.LinkerFlag);
+                }
                 if (Target.Type == ModuleType.SharedLibrary)
                 {
                     Sb.Append(' ');

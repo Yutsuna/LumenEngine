@@ -4,6 +4,7 @@
  */
 
 #include "Linux/LinuxApplication.hpp"
+#include "Container/Signal.hpp"
 #include "Linux/LinuxBackend.hpp"
 #include "Linux/LinuxWindow.hpp"
 
@@ -46,7 +47,7 @@ LumenEngine::TSharedPtr<LumenEngine::FGenericApplication> LumenEngine::FLinuxApp
     if ( not FLinuxBackend::InitializeSDL() )
     {
         LUMEN_LOG_FATAL( LogLinuxApplication, "Failed to initialize SDL library for Linux application: {}", SDL_GetError() );
-        // TODO: request program exit
+        /** INFO: unused as LUMEN LOG FATAL with raise a terminate signal after logging the message */
         return nullptr;
     }
 
@@ -105,6 +106,17 @@ namespace
         MessageHandler->OnMouseUp( ButtonType );
     }
 
+    static inline void SendQuitEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler )
+    {
+        MessageHandler->OnQuit();
+        FSignal::Raise( ESystemSignal::Terminate );
+    }
+
+    static inline void SendWindowCloseRequestedEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler )
+    {
+        MessageHandler->OnRequestExit();
+    }
+
 } // namespace
 
 } // namespace LumenEngine
@@ -112,19 +124,24 @@ namespace
 void LumenEngine::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent )
 {
     TSharedPtr<FLinuxWindow> CurrentWindow = FindWindowByID( InEvent.window.windowID );
-    SDL_Window *WindowHandle               = nullptr;
 
-    if ( CurrentWindow.IsValid() )
-    {
-        WindowHandle = CurrentWindow->GetOSWindowHandle();
-    }
-    if ( not WindowHandle )
+    if ( not CurrentWindow.IsValid() )
     {
         return;
     }
 
     switch ( InEvent.type )
     {
+    case SDL_EVENT_QUIT:
+    {
+        SendQuitEvent( MessageHandler );
+        break;
+    }
+    case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+    {
+        SendWindowCloseRequestedEvent( MessageHandler );
+        break;
+    }
     case SDL_EVENT_KEY_DOWN:
     {
         SendKeyDownEvent( MessageHandler, InEvent.key );

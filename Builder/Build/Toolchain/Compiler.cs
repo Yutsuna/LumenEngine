@@ -18,10 +18,12 @@ public abstract class Compiler
     public virtual string DefinePrefix => "-D";
     public virtual string LibraryPathPrefix => "-L";
     public virtual string LibraryPrefix => "-l";
+    public virtual string LinkerFlag => "";
     public virtual string SharedFlag => "-shared";
     public virtual string PositionIndependentFlag => "-fPIC";
     public virtual string StandardFlag => "-std=c++23";
     public virtual string ArchiveFlags => "rcs";
+    public const string WarningFlags = "-Wall -Wextra -Werror -Wpedantic -Wconversion -Wsign-conversion -Wshadow -Wnull-dereference -Wundef -Wuninitialized -Wcast-align -Wcast-qual -Wswitch-default -Wdouble-promotion -Wformat=2 -Wwrite-strings";
 
     /// <summary>
     /// Returns base compile flags shared across all configurations.
@@ -38,7 +40,7 @@ public abstract class Compiler
     {
         return Config switch
         {
-            BuildConfiguration.Debug => $"-g -O0 {DefinePrefix}DEBUG",
+            BuildConfiguration.Debug => $"-g -O0 {DefinePrefix}DEBUG {WarningFlags}",
             BuildConfiguration.Development => $"-g -O2 {DefinePrefix}NDEBUG",
             BuildConfiguration.Release => $"-O3 {DefinePrefix}NDEBUG",
             _ => ""

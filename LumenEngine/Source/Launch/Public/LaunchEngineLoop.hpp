@@ -68,10 +68,6 @@ private:
     Float64 LastFrameSeconds;
 
     Bool bRequestingExit;
-
-private:
-
-    static TSharedPtr<FGenericApplication> GPlatformApplication;
 };
 
 extern LUMEN_ENGINE_API FEngineLoop GEngineLoop;

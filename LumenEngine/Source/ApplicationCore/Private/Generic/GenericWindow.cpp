@@ -7,42 +7,47 @@
 
 void LumenEngine::FGenericWindow::Reshape ( const Int32 InX, const Int32 InY, const Int32 InWidth, const Int32 InHeight )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericWindow::Destroy ()
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericWindow::Minimize ()
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericWindow::Maximize ()
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericWindow::Restore ()
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericWindow::Show ()
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericWindow::Hide ()
 {
-    /* __empty__ */
+    /* Empty */
+}
+
+void LumenEngine::FGenericWindow::Clear ()
+{
+    /* Empty */
 }
 
 void LumenEngine::FGenericWindow::SetWindowMode ( const EWindowMode::Type InWindowMode )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 LumenEngine::EWindowMode::Type LumenEngine::FGenericWindow::GetWindowMode () const
@@ -67,17 +72,17 @@ LumenEngine::Bool LumenEngine::FGenericWindow::IsVisible () const
 
 void LumenEngine::FGenericWindow::SetWindowFocus ()
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericWindow::SetOpacity ( const Float32 InOpacity )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericWindow::EnableInput ( const Bool bEnable )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 LumenEngine::Bool LumenEngine::FGenericWindow::IsPointInWindow ( const Int32 InX, const Int32 InY ) const
@@ -113,7 +118,7 @@ LumenEngine::Bool LumenEngine::FGenericWindow::IsForegroundWindow () const
 
 void LumenEngine::FGenericWindow::SetWindowTitle ( const AnsiChar *const Text )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 LumenEngine::Int32 LumenEngine::FGenericWindow::GetWindowWidth () const

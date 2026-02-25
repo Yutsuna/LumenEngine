@@ -4,8 +4,10 @@
  */
 
 #include "Logging/Logger.hpp"
+#include "Container/Signal.hpp"
 #include "CoreTypes.hpp"
 #include "HAL/PlatformTime.hpp"
+
 #include <iostream>
 
 LumenEngine::FLogger &LumenEngine::FLogger::GetInstance ()
@@ -62,6 +64,11 @@ static inline void CoutMessage ( const LumenEngine::FLogger::FLogMessage &LogMes
     const LumenEngine::AnsiChar *const VerbosityString = LumenEngine::ELogVerbosity::ToString( LogMessage.Verbosity );
 
     std::cout << std::format( FormatString, LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityColor, VerbosityString, LogMessage.Message, ResetColor );
+
+    if ( LogMessage.Verbosity == LumenEngine::ELogVerbosity::Fatal )
+    {
+        LumenEngine::FSignal::Raise( LumenEngine::ESystemSignal::Terminate );
+    }
 }
 
 } // namespace

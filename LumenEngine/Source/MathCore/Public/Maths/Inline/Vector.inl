@@ -40,7 +40,7 @@ namespace Math
 
     constexpr TVector<Type, Dimension>::TVector( Arguments &&...Args ) : Private::TVectorData<Type, Dimension>{ { static_cast<Type>( Args )... } }
     {
-        /* __empty__ */
+        /* Empty */
     }
 
 } // namespace Math

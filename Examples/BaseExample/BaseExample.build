@@ -14,6 +14,6 @@ module BaseExample {
         "LUMEN_ENGINE"
     ]
 
-    deps = [ Launch ]
+    deps = [ Launch, ApplicationCore ]
 
 }

@@ -28,6 +28,16 @@ public:
 
 public:
 
+    /** Application message handler */
+
+    /** Called when the application is requested to exit */
+    virtual void OnRequestExit ();
+
+    /** Called when the application is quitting */
+    virtual void OnQuit ();
+
+public:
+
     /** Window message handler */
 
     /** Called when a window needs to be repainted */
@@ -41,9 +51,6 @@ public:
 
     /** Called when a window activation state changes */
     virtual void OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive );
-
-    /** Called when a window is requested to close */
-    virtual void OnWindowCloseRequested ( const TSharedRef<FGenericWindow> &InWindow );
 
 public:
 

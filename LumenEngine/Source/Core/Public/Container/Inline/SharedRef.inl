@@ -17,7 +17,7 @@ template <typename Type> TSharedRef<Type>::TSharedRef( const TSharedRef &Other )
 
 template <typename Type> TSharedRef<Type>::TSharedRef( TSharedRef &&Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 template <typename Type>

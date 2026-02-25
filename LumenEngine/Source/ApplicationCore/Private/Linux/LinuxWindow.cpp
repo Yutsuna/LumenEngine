@@ -61,6 +61,10 @@ namespace
 
 LumenEngine::FLinuxWindow::~FLinuxWindow ()
 {
+    if ( Renderer )
+    {
+        SDL_DestroyRenderer( Renderer );
+    }
     if ( WindowHandle )
     {
         SDL_DestroyWindow( WindowHandle );
@@ -108,6 +112,14 @@ void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Applicatio
     }
 
     SDL_SetWindowPosition( WindowHandle, InDescription->Position.X, InDescription->Position.Y );
+
+    Renderer = SDL_CreateRenderer( WindowHandle, nullptr );
+    if ( not Renderer )
+    {
+        LUMEN_LOG_ERROR( LogApplicationCore, "Failed to create SDL renderer: {}", SDL_GetError() );
+    }
+    /** INFO: Force a Clear() because some platforms (e.g., Linux) may not properly initialize the window's content until it's cleared at least once. */
+    Clear();
 }
 
 void LumenEngine::FLinuxWindow::Show ()
@@ -128,11 +140,20 @@ void LumenEngine::FLinuxWindow::Hide ()
     }
 }
 
+void LumenEngine::FLinuxWindow::Clear ()
+{
+    if ( Renderer )
+    {
+        SDL_RenderClear( Renderer );
+        SDL_RenderPresent( Renderer );
+    }
+}
+
 /**
  * private
  */
 
-LumenEngine::FLinuxWindow::FLinuxWindow () : WindowHandle( nullptr ), FGenericWindow()
+LumenEngine::FLinuxWindow::FLinuxWindow () : WindowHandle( nullptr ), Renderer( nullptr ), FGenericWindow()
 {
-    /* __ctor__ */
+    /* Ctor */
 }
