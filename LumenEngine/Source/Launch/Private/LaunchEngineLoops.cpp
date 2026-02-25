@@ -28,7 +28,7 @@ namespace
 }
 
 FEngineLoop GEngineLoop;
-TSharedPtr<FGenericApplication> FEngineLoop::GPlatformApplication = nullptr;
+TSharedPtr<FGenericApplication> GPlatformApplication = nullptr;
 
 namespace
 {

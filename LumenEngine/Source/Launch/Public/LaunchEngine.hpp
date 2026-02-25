@@ -13,8 +13,9 @@ namespace LumenEngine
 namespace Launch
 {
 
+    Int32 ClientInit ( const Int32 Argc, const AnsiChar *Argv[] );
     Int32 GuardedMain ( const Int32 Argc, const AnsiChar *Argv[] );
 
-}
+} // namespace Launch
 
 } // namespace LumenEngine
