@@ -7,11 +7,6 @@
 
 #include "LaunchEngineLoop.hpp"
 
-void LumenEngine::FBaseExampleMessageHandler::OnWindowCloseRequested ( const TSharedRef<FGenericWindow> &InWindow )
-{
-    GEngineLoop.RequestExit( "Event: Window close requested" );
-}
-
 void LumenEngine::FBaseExampleMessageHandler::OnRequestExit ()
 {
     GEngineLoop.RequestExit( "Event: Application exit requested" );

@@ -14,7 +14,6 @@ class FBaseExampleMessageHandler final : public FGenericApplicationMessageHandle
 {
 public:
 
-    void OnWindowCloseRequested ( const TSharedRef<FGenericWindow> &InWindow ) override;
     void OnRequestExit () override;
 };
 
