@@ -50,10 +50,10 @@ public:
     /** Mouse message handler */
 
     /** Called when a mouse button is pressed */
-    virtual void OnMouseDown ( const TSharedPtr<FGenericWindow> &InWindow, const Int32 InButton );
+    virtual void OnMouseDown ( TSharedPtr<FGenericWindow> &InWindow, const Int32 InButton, const Bool bIsRepeat );
 
     /** Called when a mouse button is released */
-    virtual void OnMouseUp ( const Int32 InButton );
+    virtual void OnMouseUp ( const Int32 InButton, const Bool bIsRepeat );
 
     /** Called when the mouse is moved */
     virtual void OnMouseMove ( const Int32 InX, const Int32 InY );
@@ -66,10 +66,10 @@ public:
     /** Keyboard message handler */
 
     /** Called when a key is pressed */
-    virtual void OnKeyDown ( const EKeys::Type Inkey );
+    virtual void OnKeyDown ( const EKeys::Type Inkey, const Bool bIsRepeat );
 
     /** Called when a key is released */
-    virtual void OnKeyUp ( const EKeys::Type InKey );
+    virtual void OnKeyUp ( const EKeys::Type InKey, const Bool bIsRepeat );
 };
 
 } // namespace LumenEngine
