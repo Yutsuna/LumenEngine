@@ -54,4 +54,6 @@ protected:
     TSharedPtr<FGenericApplicationMessageHandler> MessageHandler;
 };
 
+extern LUMEN_ENGINE_API TSharedPtr<FGenericApplication> GPlatformApplication;
+
 } // namespace LumenEngine

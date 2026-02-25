@@ -11,7 +11,7 @@
  * public
  */
 
-LumenEngine::FGenericApplication::FGenericApplication () : MessageHandler( MakeShared<FGenericApplicationMessageHandler>() ), Cursor( nullptr )
+LumenEngine::FGenericApplication::FGenericApplication () : MessageHandler( MakeShared<FGenericApplicationMessageHandler>() )
 {
     /* Ctor */
 }
