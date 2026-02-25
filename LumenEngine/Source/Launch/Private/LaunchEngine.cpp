@@ -21,7 +21,7 @@ static inline void EngineTick ()
     LumenEngine::GEngineLoop.Tick();
 }
 
-static inline bool bEngineRequestingExit ()
+static inline LumenEngine::Bool bEngineRequestingExit ()
 {
     return LumenEngine::GEngineLoop.ShouldExit();
 }
