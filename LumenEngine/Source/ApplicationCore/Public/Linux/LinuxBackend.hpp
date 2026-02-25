@@ -17,6 +17,8 @@ struct LUMEN_ENGINE_API FLinuxBackend
     static Bool InitializeSDL ();
     /** Shuts down the SDL library */
     static void ShutdownSDL ();
+    /** Pumps the SDL event queue, processing all pending events. */
+    static void PumpMessages ();
 };
 
 } // namespace LumenEngine

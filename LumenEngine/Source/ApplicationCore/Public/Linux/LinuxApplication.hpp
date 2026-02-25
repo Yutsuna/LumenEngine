@@ -8,7 +8,6 @@
 #include "Container/Vector.hpp"
 #include "Definitions.hpp"
 #include "Generic/GenericApplication.hpp"
-#include "Generic/GenericApplicationInput.hpp"
 
 #include <SDL3/SDL.h>
 
@@ -36,10 +35,13 @@ public:
                             const TSharedPtr<FGenericWindow> &InParentWindow,
                             const bool bShowImmediately ) override;
 
+    /** Adds a pending SDL event to be processed in the next message pump */
+    void AddPendingEvent ( const SDL_Event &InEvent );
+
 public:
 
     /** Factory to create the application instance */
-    static TSharedRef<FGenericApplication> CreateLinuxApplication ();
+    static TSharedPtr<FGenericApplication> CreateLinuxApplication ();
 
 private:
 
@@ -50,5 +52,7 @@ private:
 
     FVector<TSharedRef<FLinuxWindow>> Windows;
 };
+
+extern FLinuxApplication *GLinuxApplication;
 
 } // namespace LumenEngine
