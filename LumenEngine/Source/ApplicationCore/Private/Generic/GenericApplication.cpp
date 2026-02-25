@@ -13,7 +13,7 @@
 
 LumenEngine::FGenericApplication::FGenericApplication () : MessageHandler( MakeShared<FGenericApplicationMessageHandler>() ), Cursor( nullptr )
 {
-    /* __ctor__ */
+    /* Ctor */
 }
 
 void LumenEngine::FGenericApplication::SetMessageHandler ( const TSharedRef<FGenericApplicationMessageHandler> &InMessageHandler )
@@ -28,7 +28,7 @@ LumenEngine::TSharedPtr<LumenEngine::FGenericApplicationMessageHandler> LumenEng
 
 void LumenEngine::FGenericApplication::PumpMessages ( const Float32 DeltaTime )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 void LumenEngine::FGenericApplication::SetCursor ( const TSharedPtr<FGenericCursor> &InCursor )
@@ -51,5 +51,5 @@ void LumenEngine::FGenericApplication::InitializeWindow ( const TSharedRef<FGene
                                                           const TSharedPtr<FGenericWindow> &InParentWindow,
                                                           const Bool bShowImmediately )
 {
-    /* __empty__ */
+    /* Empty */
 }
