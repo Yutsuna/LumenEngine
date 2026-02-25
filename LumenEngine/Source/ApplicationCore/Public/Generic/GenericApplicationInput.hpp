@@ -105,10 +105,223 @@ namespace EKeys
         F9,
         F10,
         F11,
-        F12
+        F12,
+
+        /** Punctuation & Symbols */
+        Exclamation,
+        DoubleApostrophe,
+        Hash,
+        Dollar,
+        Percent,
+        Ampersand,
+        Apostrophe,
+        LeftParenthesis,
+        RightParenthesis,
+        Asterisk,
+        Plus,
+        Comma,
+        Minus,
+        Period,
+        Slash,
+        Colon,
+        Semicolon,
+        Less,
+        Equals,
+        Greater,
+        Question,
+        At,
+        LeftBracket,
+        Backslash,
+        RightBracket,
+        Caret,
+        Underscore,
+        GraveAccent,
+        LeftBrace,
+        Pipe,
+        RightBrace,
+        Tilde,
+
+        /** Editing & Navigation */
+        Delete,
+        PlusMinus,
+        CapsLock,
+        PrintScreen,
+        ScrollLock,
+        Pause,
+        Insert,
+        Home,
+        PageUp,
+        End,
+        PageDown,
+        NumLock,
+
+        /** Numpad */
+        NumPadDivide,
+        NumPadMultiply,
+        NumPadMinus,
+        NumPadPlus,
+        NumPadEnter,
+        NumPad1,
+        NumPad2,
+        NumPad3,
+        NumPad4,
+        NumPad5,
+        NumPad6,
+        NumPad7,
+        NumPad8,
+        NumPad9,
+        NumPad0,
+        NumPadPeriod,
+        NumPadEquals,
+        NumPadComma,
+        NumPadEqualsAs400,
+        NumPad00,
+        NumPad000,
+        NumPadLeftParenthesis,
+        NumPadRightParenthesis,
+        NumPadLeftBrace,
+        NumPadRightBrace,
+        NumPadTab,
+        NumPadBackspace,
+        NumPadA,
+        NumPadB,
+        NumPadC,
+        NumPadD,
+        NumPadE,
+        NumPadF,
+        NumPadXor,
+        NumPadPower,
+        NumPadPercent,
+        NumPadLess,
+        NumPadGreater,
+        NumPadAmpersand,
+        NumPadDoubleAmpersand,
+        NumPadVerticalBar,
+        NumPadDoubleVerticalBar,
+        NumPadColon,
+        NumPadHash,
+        NumPadSpace,
+        NumPadAt,
+        NumPadExclamation,
+        NumPadMemStore,
+        NumPadMemRecall,
+        NumPadMemClear,
+        NumPadMemAdd,
+        NumPadMemSubtract,
+        NumPadMemMultiply,
+        NumPadMemDivide,
+        NumPadPlusMinus,
+        NumPadClear,
+        NumPadClearEntry,
+        NumPadBinary,
+        NumPadOctal,
+        NumPadDecimal,
+        NumPadHexadecimal,
+
+        /** Function Keys 13-24 */
+        F13,
+        F14,
+        F15,
+        F16,
+        F17,
+        F18,
+        F19,
+        F20,
+        F21,
+        F22,
+        F23,
+        F24,
+
+        /** Modifiers */
+        LeftControl,
+        LeftShift,
+        LeftAlt,
+        LeftGui,
+        RightControl,
+        RightShift,
+        RightAlt,
+        RightGui,
+        LeftMeta,
+        RightMeta,
+        LeftHyper,
+        RightHyper,
+        Level5Shift,
+
+        /** Application / Multimedia / System */
+        Application,
+        Power,
+        Execute,
+        Help,
+        Menu,
+        Select,
+        Stop,
+        Again,
+        Undo,
+        Cut,
+        Copy,
+        Paste,
+        Find,
+        Mute,
+        VolumeUp,
+        VolumeDown,
+        AltErase,
+        SysReq,
+        Cancel,
+        Clear,
+        Prior,
+        Return2,
+        Separator,
+        Out,
+        Oper,
+        ClearAgain,
+        CrSel,
+        ExSel,
+        ThousandsSeparator,
+        DecimalSeparator,
+        CurrencyUnit,
+        CurrencySubUnit,
+
+        Mode,
+        Sleep,
+        Wake,
+        ChannelIncrement,
+        ChannelDecrement,
+        MediaPlay,
+        MediaPause,
+        MediaRecord,
+        MediaFastForward,
+        MediaRewind,
+        MediaNextTrack,
+        MediaPreviousTrack,
+        MediaStop,
+        MediaEject,
+        MediaPlayPause,
+        MediaSelect,
+
+        AcNew,
+        AcOpen,
+        AcClose,
+        AcExit,
+        AcSave,
+        AcPrint,
+        AcProperties,
+        AcSearch,
+        AcHome,
+        AcBack,
+        AcForward,
+        AcStop,
+        AcRefresh,
+        AcBookmarks,
+
+        SoftLeft,
+        SoftRight,
+        Call,
+        EndCall,
+        LeftTab,
+        MultiKeyCompose
     };
 
-}
+} // namespace EKeys
 
 } // namespace LumenEngine
 
@@ -121,517 +334,520 @@ static inline LumenEngine::EKeys::Type TranslateSDLKeyCodeToEKeys ( const SDL_Ke
     switch ( KeyCode )
     {
     case SDLK_UNKNOWN:
-        break;
+        return LumenEngine::EKeys::Unknown;
     case SDLK_RETURN:
-        break;
+        return LumenEngine::EKeys::Enter;
     case SDLK_ESCAPE:
-        break;
+        return LumenEngine::EKeys::Escape;
     case SDLK_BACKSPACE:
-        break;
+        return LumenEngine::EKeys::Backspace;
     case SDLK_TAB:
-        break;
+        return LumenEngine::EKeys::Tab;
     case SDLK_SPACE:
-        break;
+        return LumenEngine::EKeys::Spacebar;
     case SDLK_EXCLAIM:
-        break;
+        return LumenEngine::EKeys::Exclamation;
     case SDLK_DBLAPOSTROPHE:
-        break;
+        return LumenEngine::EKeys::DoubleApostrophe;
     case SDLK_HASH:
-        break;
+        return LumenEngine::EKeys::Hash;
     case SDLK_DOLLAR:
-        break;
+        return LumenEngine::EKeys::Dollar;
     case SDLK_PERCENT:
-        break;
+        return LumenEngine::EKeys::Percent;
     case SDLK_AMPERSAND:
-        break;
+        return LumenEngine::EKeys::Ampersand;
     case SDLK_APOSTROPHE:
-        break;
+        return LumenEngine::EKeys::Apostrophe;
     case SDLK_LEFTPAREN:
-        break;
+        return LumenEngine::EKeys::LeftParenthesis;
     case SDLK_RIGHTPAREN:
-        break;
+        return LumenEngine::EKeys::RightParenthesis;
     case SDLK_ASTERISK:
-        break;
+        return LumenEngine::EKeys::Asterisk;
     case SDLK_PLUS:
-        break;
+        return LumenEngine::EKeys::Plus;
     case SDLK_COMMA:
-        break;
+        return LumenEngine::EKeys::Comma;
     case SDLK_MINUS:
-        break;
+        return LumenEngine::EKeys::Minus;
     case SDLK_PERIOD:
-        break;
+        return LumenEngine::EKeys::Period;
     case SDLK_SLASH:
-        break;
+        return LumenEngine::EKeys::Slash;
     case SDLK_0:
-        break;
+        return LumenEngine::EKeys::Num0;
     case SDLK_1:
-        break;
+        return LumenEngine::EKeys::Num1;
     case SDLK_2:
-        break;
+        return LumenEngine::EKeys::Num2;
     case SDLK_3:
-        break;
+        return LumenEngine::EKeys::Num3;
     case SDLK_4:
-        break;
+        return LumenEngine::EKeys::Num4;
     case SDLK_5:
-        break;
+        return LumenEngine::EKeys::Num5;
     case SDLK_6:
-        break;
+        return LumenEngine::EKeys::Num6;
     case SDLK_7:
-        break;
+        return LumenEngine::EKeys::Num7;
     case SDLK_8:
-        break;
+        return LumenEngine::EKeys::Num8;
     case SDLK_9:
-        break;
+        return LumenEngine::EKeys::Num9;
     case SDLK_COLON:
-        break;
+        return LumenEngine::EKeys::Colon;
     case SDLK_SEMICOLON:
-        break;
+        return LumenEngine::EKeys::Semicolon;
     case SDLK_LESS:
-        break;
+        return LumenEngine::EKeys::Less;
     case SDLK_EQUALS:
-        break;
+        return LumenEngine::EKeys::Equals;
     case SDLK_GREATER:
-        break;
+        return LumenEngine::EKeys::Greater;
     case SDLK_QUESTION:
-        break;
+        return LumenEngine::EKeys::Question;
     case SDLK_AT:
-        break;
+        return LumenEngine::EKeys::At;
     case SDLK_LEFTBRACKET:
-        break;
+        return LumenEngine::EKeys::LeftBracket;
     case SDLK_BACKSLASH:
-        break;
+        return LumenEngine::EKeys::Backslash;
     case SDLK_RIGHTBRACKET:
-        break;
+        return LumenEngine::EKeys::RightBracket;
     case SDLK_CARET:
-        break;
+        return LumenEngine::EKeys::Caret;
     case SDLK_UNDERSCORE:
-        break;
+        return LumenEngine::EKeys::Underscore;
     case SDLK_GRAVE:
-        break;
+        return LumenEngine::EKeys::GraveAccent;
     case SDLK_A:
-        break;
+        return LumenEngine::EKeys::A;
     case SDLK_B:
-        break;
+        return LumenEngine::EKeys::B;
     case SDLK_C:
-        break;
+        return LumenEngine::EKeys::C;
     case SDLK_D:
-        break;
+        return LumenEngine::EKeys::D;
     case SDLK_E:
-        break;
+        return LumenEngine::EKeys::E;
     case SDLK_F:
-        break;
+        return LumenEngine::EKeys::F;
     case SDLK_G:
-        break;
+        return LumenEngine::EKeys::G;
     case SDLK_H:
-        break;
+        return LumenEngine::EKeys::H;
     case SDLK_I:
-        break;
+        return LumenEngine::EKeys::I;
     case SDLK_J:
-        break;
+        return LumenEngine::EKeys::J;
     case SDLK_K:
-        break;
+        return LumenEngine::EKeys::K;
     case SDLK_L:
-        break;
+        return LumenEngine::EKeys::L;
     case SDLK_M:
-        break;
+        return LumenEngine::EKeys::M;
     case SDLK_N:
-        break;
+        return LumenEngine::EKeys::N;
     case SDLK_O:
-        break;
+        return LumenEngine::EKeys::O;
     case SDLK_P:
-        break;
+        return LumenEngine::EKeys::P;
+    case SDLK_Q:
+        return LumenEngine::EKeys::Q;
+    case SDLK_R:
+        return LumenEngine::EKeys::R;
     case SDLK_S:
-        break;
+        return LumenEngine::EKeys::S;
     case SDLK_T:
-        break;
+        return LumenEngine::EKeys::T;
     case SDLK_U:
-        break;
+        return LumenEngine::EKeys::U;
     case SDLK_V:
-        break;
+        return LumenEngine::EKeys::V;
     case SDLK_W:
-        break;
+        return LumenEngine::EKeys::W;
     case SDLK_X:
-        break;
+        return LumenEngine::EKeys::X;
     case SDLK_Y:
-        break;
+        return LumenEngine::EKeys::Y;
     case SDLK_Z:
-        break;
+        return LumenEngine::EKeys::Z;
     case SDLK_LEFTBRACE:
-        break;
+        return LumenEngine::EKeys::LeftBrace;
     case SDLK_PIPE:
-        break;
+        return LumenEngine::EKeys::Pipe;
     case SDLK_RIGHTBRACE:
-        break;
+        return LumenEngine::EKeys::RightBrace;
     case SDLK_TILDE:
-        break;
+        return LumenEngine::EKeys::Tilde;
     case SDLK_DELETE:
-        break;
+        return LumenEngine::EKeys::Delete;
     case SDLK_PLUSMINUS:
-        break;
+        return LumenEngine::EKeys::PlusMinus;
     case SDLK_CAPSLOCK:
-        break;
+        return LumenEngine::EKeys::CapsLock;
     case SDLK_F1:
-        break;
+        return LumenEngine::EKeys::F1;
     case SDLK_F2:
-        break;
+        return LumenEngine::EKeys::F2;
     case SDLK_F3:
-        break;
+        return LumenEngine::EKeys::F3;
     case SDLK_F4:
-        break;
+        return LumenEngine::EKeys::F4;
     case SDLK_F5:
-        break;
+        return LumenEngine::EKeys::F5;
     case SDLK_F6:
-        break;
+        return LumenEngine::EKeys::F6;
     case SDLK_F7:
-        break;
+        return LumenEngine::EKeys::F7;
     case SDLK_F8:
-        break;
+        return LumenEngine::EKeys::F8;
     case SDLK_F9:
-        break;
+        return LumenEngine::EKeys::F9;
     case SDLK_F10:
-        break;
+        return LumenEngine::EKeys::F10;
     case SDLK_F11:
-        break;
+        return LumenEngine::EKeys::F11;
     case SDLK_F12:
-        break;
+        return LumenEngine::EKeys::F12;
     case SDLK_PRINTSCREEN:
-        break;
+        return LumenEngine::EKeys::PrintScreen;
     case SDLK_SCROLLLOCK:
-        break;
+        return LumenEngine::EKeys::ScrollLock;
     case SDLK_PAUSE:
-        break;
+        return LumenEngine::EKeys::Pause;
     case SDLK_INSERT:
-        break;
+        return LumenEngine::EKeys::Insert;
     case SDLK_HOME:
-        break;
+        return LumenEngine::EKeys::Home;
     case SDLK_PAGEUP:
-        break;
+        return LumenEngine::EKeys::PageUp;
     case SDLK_END:
-        break;
+        return LumenEngine::EKeys::End;
     case SDLK_PAGEDOWN:
-        break;
+        return LumenEngine::EKeys::PageDown;
     case SDLK_RIGHT:
-        break;
+        return LumenEngine::EKeys::Right;
     case SDLK_LEFT:
-        break;
+        return LumenEngine::EKeys::Left;
     case SDLK_DOWN:
-        break;
+        return LumenEngine::EKeys::Down;
     case SDLK_UP:
-        break;
+        return LumenEngine::EKeys::Up;
     case SDLK_NUMLOCKCLEAR:
-        break;
+        return LumenEngine::EKeys::NumLock;
     case SDLK_KP_DIVIDE:
-        break;
+        return LumenEngine::EKeys::NumPadDivide;
     case SDLK_KP_MULTIPLY:
-        break;
+        return LumenEngine::EKeys::NumPadMultiply;
     case SDLK_KP_MINUS:
-        break;
+        return LumenEngine::EKeys::NumPadMinus;
     case SDLK_KP_PLUS:
-        break;
+        return LumenEngine::EKeys::NumPadPlus;
     case SDLK_KP_ENTER:
-        break;
+        return LumenEngine::EKeys::NumPadEnter;
     case SDLK_KP_1:
-        break;
+        return LumenEngine::EKeys::NumPad1;
     case SDLK_KP_2:
-        break;
+        return LumenEngine::EKeys::NumPad2;
     case SDLK_KP_3:
-        break;
+        return LumenEngine::EKeys::NumPad3;
     case SDLK_KP_4:
-        break;
+        return LumenEngine::EKeys::NumPad4;
     case SDLK_KP_5:
-        break;
+        return LumenEngine::EKeys::NumPad5;
     case SDLK_KP_6:
-        break;
+        return LumenEngine::EKeys::NumPad6;
     case SDLK_KP_7:
-        break;
+        return LumenEngine::EKeys::NumPad7;
     case SDLK_KP_8:
-        break;
+        return LumenEngine::EKeys::NumPad8;
     case SDLK_KP_9:
-        break;
+        return LumenEngine::EKeys::NumPad9;
     case SDLK_KP_0:
-        break;
+        return LumenEngine::EKeys::NumPad0;
     case SDLK_KP_PERIOD:
-        break;
+        return LumenEngine::EKeys::NumPadPeriod;
     case SDLK_APPLICATION:
-        break;
+        return LumenEngine::EKeys::Application;
     case SDLK_POWER:
-        break;
+        return LumenEngine::EKeys::Power;
     case SDLK_KP_EQUALS:
-        break;
+        return LumenEngine::EKeys::NumPadEquals;
     case SDLK_F13:
-        break;
+        return LumenEngine::EKeys::F13;
     case SDLK_F14:
-        break;
+        return LumenEngine::EKeys::F14;
     case SDLK_F15:
-        break;
+        return LumenEngine::EKeys::F15;
     case SDLK_F16:
-        break;
+        return LumenEngine::EKeys::F16;
     case SDLK_F17:
-        break;
+        return LumenEngine::EKeys::F17;
     case SDLK_F18:
-        break;
+        return LumenEngine::EKeys::F18;
     case SDLK_F19:
-        break;
+        return LumenEngine::EKeys::F19;
     case SDLK_F20:
-        break;
+        return LumenEngine::EKeys::F20;
     case SDLK_F21:
-        break;
+        return LumenEngine::EKeys::F21;
     case SDLK_F22:
-        break;
+        return LumenEngine::EKeys::F22;
     case SDLK_F23:
-        break;
+        return LumenEngine::EKeys::F23;
     case SDLK_F24:
-        break;
+        return LumenEngine::EKeys::F24;
     case SDLK_EXECUTE:
-        break;
+        return LumenEngine::EKeys::Execute;
     case SDLK_HELP:
-        break;
+        return LumenEngine::EKeys::Help;
     case SDLK_MENU:
-        break;
+        return LumenEngine::EKeys::Menu;
     case SDLK_SELECT:
-        break;
+        return LumenEngine::EKeys::Select;
     case SDLK_STOP:
-        break;
+        return LumenEngine::EKeys::Stop;
     case SDLK_AGAIN:
-        break;
+        return LumenEngine::EKeys::Again;
     case SDLK_UNDO:
-        break;
+        return LumenEngine::EKeys::Undo;
     case SDLK_CUT:
-        break;
+        return LumenEngine::EKeys::Cut;
     case SDLK_COPY:
-        break;
+        return LumenEngine::EKeys::Copy;
     case SDLK_PASTE:
-        break;
+        return LumenEngine::EKeys::Paste;
     case SDLK_FIND:
-        break;
+        return LumenEngine::EKeys::Find;
     case SDLK_MUTE:
-        break;
+        return LumenEngine::EKeys::Mute;
     case SDLK_VOLUMEUP:
-        break;
+        return LumenEngine::EKeys::VolumeUp;
     case SDLK_VOLUMEDOWN:
-        break;
+        return LumenEngine::EKeys::VolumeDown;
     case SDLK_KP_COMMA:
-        break;
+        return LumenEngine::EKeys::NumPadComma;
     case SDLK_KP_EQUALSAS400:
-        break;
+        return LumenEngine::EKeys::NumPadEqualsAs400;
     case SDLK_ALTERASE:
-        break;
+        return LumenEngine::EKeys::AltErase;
     case SDLK_SYSREQ:
-        break;
+        return LumenEngine::EKeys::SysReq;
     case SDLK_CANCEL:
-        break;
+        return LumenEngine::EKeys::Cancel;
     case SDLK_CLEAR:
-        break;
+        return LumenEngine::EKeys::Clear;
     case SDLK_PRIOR:
-        break;
+        return LumenEngine::EKeys::Prior;
     case SDLK_RETURN2:
-        break;
+        return LumenEngine::EKeys::Return2;
     case SDLK_SEPARATOR:
-        break;
+        return LumenEngine::EKeys::Separator;
     case SDLK_OUT:
-        break;
+        return LumenEngine::EKeys::Out;
     case SDLK_OPER:
-        break;
+        return LumenEngine::EKeys::Oper;
     case SDLK_CLEARAGAIN:
-        break;
+        return LumenEngine::EKeys::ClearAgain;
     case SDLK_CRSEL:
-        break;
+        return LumenEngine::EKeys::CrSel;
     case SDLK_EXSEL:
-        break;
+        return LumenEngine::EKeys::ExSel;
     case SDLK_KP_00:
-        break;
+        return LumenEngine::EKeys::NumPad00;
     case SDLK_KP_000:
-        break;
+        return LumenEngine::EKeys::NumPad000;
     case SDLK_THOUSANDSSEPARATOR:
-        break;
+        return LumenEngine::EKeys::ThousandsSeparator;
     case SDLK_DECIMALSEPARATOR:
-        break;
+        return LumenEngine::EKeys::DecimalSeparator;
     case SDLK_CURRENCYUNIT:
-        break;
+        return LumenEngine::EKeys::CurrencyUnit;
     case SDLK_CURRENCYSUBUNIT:
-        break;
+        return LumenEngine::EKeys::CurrencySubUnit;
     case SDLK_KP_LEFTPAREN:
-        break;
+        return LumenEngine::EKeys::NumPadLeftParenthesis;
     case SDLK_KP_RIGHTPAREN:
-        break;
+        return LumenEngine::EKeys::NumPadRightParenthesis;
     case SDLK_KP_LEFTBRACE:
-        break;
+        return LumenEngine::EKeys::NumPadLeftBrace;
     case SDLK_KP_RIGHTBRACE:
-        break;
+        return LumenEngine::EKeys::NumPadRightBrace;
     case SDLK_KP_TAB:
-        break;
+        return LumenEngine::EKeys::NumPadTab;
     case SDLK_KP_BACKSPACE:
-        break;
+        return LumenEngine::EKeys::NumPadBackspace;
     case SDLK_KP_A:
-        break;
+        return LumenEngine::EKeys::NumPadA;
     case SDLK_KP_B:
-        break;
+        return LumenEngine::EKeys::NumPadB;
     case SDLK_KP_C:
-        break;
+        return LumenEngine::EKeys::NumPadC;
     case SDLK_KP_D:
-        break;
+        return LumenEngine::EKeys::NumPadD;
     case SDLK_KP_E:
-        break;
+        return LumenEngine::EKeys::NumPadE;
     case SDLK_KP_F:
-        break;
+        return LumenEngine::EKeys::NumPadF;
     case SDLK_KP_XOR:
-        break;
+        return LumenEngine::EKeys::NumPadXor;
     case SDLK_KP_POWER:
-        break;
+        return LumenEngine::EKeys::NumPadPower;
     case SDLK_KP_PERCENT:
-        break;
+        return LumenEngine::EKeys::NumPadPercent;
     case SDLK_KP_LESS:
-        break;
+        return LumenEngine::EKeys::NumPadLess;
     case SDLK_KP_GREATER:
-        break;
+        return LumenEngine::EKeys::NumPadGreater;
     case SDLK_KP_AMPERSAND:
-        break;
+        return LumenEngine::EKeys::NumPadAmpersand;
     case SDLK_KP_DBLAMPERSAND:
-        break;
+        return LumenEngine::EKeys::NumPadDoubleAmpersand;
     case SDLK_KP_VERTICALBAR:
-        break;
+        return LumenEngine::EKeys::NumPadVerticalBar;
     case SDLK_KP_DBLVERTICALBAR:
-        break;
+        return LumenEngine::EKeys::NumPadDoubleVerticalBar;
     case SDLK_KP_COLON:
-        break;
+        return LumenEngine::EKeys::NumPadColon;
     case SDLK_KP_HASH:
-        break;
+        return LumenEngine::EKeys::NumPadHash;
     case SDLK_KP_SPACE:
-        break;
+        return LumenEngine::EKeys::NumPadSpace;
     case SDLK_KP_AT:
-        break;
+        return LumenEngine::EKeys::NumPadAt;
     case SDLK_KP_EXCLAM:
-        break;
+        return LumenEngine::EKeys::NumPadExclamation;
     case SDLK_KP_MEMSTORE:
-        break;
+        return LumenEngine::EKeys::NumPadMemStore;
     case SDLK_KP_MEMRECALL:
-        break;
+        return LumenEngine::EKeys::NumPadMemRecall;
     case SDLK_KP_MEMCLEAR:
-        break;
+        return LumenEngine::EKeys::NumPadMemClear;
     case SDLK_KP_MEMADD:
-        break;
+        return LumenEngine::EKeys::NumPadMemAdd;
     case SDLK_KP_MEMSUBTRACT:
-        break;
+        return LumenEngine::EKeys::NumPadMemSubtract;
     case SDLK_KP_MEMMULTIPLY:
-        break;
+        return LumenEngine::EKeys::NumPadMemMultiply;
     case SDLK_KP_MEMDIVIDE:
-        break;
+        return LumenEngine::EKeys::NumPadMemDivide;
     case SDLK_KP_PLUSMINUS:
-        break;
+        return LumenEngine::EKeys::NumPadPlusMinus;
     case SDLK_KP_CLEAR:
-        break;
+        return LumenEngine::EKeys::NumPadClear;
     case SDLK_KP_CLEARENTRY:
-        break;
+        return LumenEngine::EKeys::NumPadClearEntry;
     case SDLK_KP_BINARY:
-        break;
+        return LumenEngine::EKeys::NumPadBinary;
     case SDLK_KP_OCTAL:
-        break;
+        return LumenEngine::EKeys::NumPadOctal;
     case SDLK_KP_DECIMAL:
-        break;
+        return LumenEngine::EKeys::NumPadDecimal;
     case SDLK_KP_HEXADECIMAL:
-        break;
+        return LumenEngine::EKeys::NumPadHexadecimal;
     case SDLK_LCTRL:
-        break;
+        return LumenEngine::EKeys::LeftControl;
     case SDLK_LSHIFT:
-        break;
+        return LumenEngine::EKeys::LeftShift;
     case SDLK_LALT:
-        break;
+        return LumenEngine::EKeys::LeftAlt;
     case SDLK_LGUI:
-        break;
+        return LumenEngine::EKeys::LeftGui;
     case SDLK_RCTRL:
-        break;
+        return LumenEngine::EKeys::RightControl;
     case SDLK_RSHIFT:
-        break;
+        return LumenEngine::EKeys::RightShift;
     case SDLK_RALT:
-        break;
+        return LumenEngine::EKeys::RightAlt;
     case SDLK_RGUI:
-        break;
+        return LumenEngine::EKeys::RightGui;
     case SDLK_MODE:
-        break;
+        return LumenEngine::EKeys::Mode;
     case SDLK_SLEEP:
-        break;
+        return LumenEngine::EKeys::Sleep;
     case SDLK_WAKE:
-        break;
+        return LumenEngine::EKeys::Wake;
     case SDLK_CHANNEL_INCREMENT:
-        break;
+        return LumenEngine::EKeys::ChannelIncrement;
     case SDLK_CHANNEL_DECREMENT:
-        break;
+        return LumenEngine::EKeys::ChannelDecrement;
     case SDLK_MEDIA_PLAY:
-        break;
+        return LumenEngine::EKeys::MediaPlay;
     case SDLK_MEDIA_PAUSE:
-        break;
+        return LumenEngine::EKeys::MediaPause;
     case SDLK_MEDIA_RECORD:
-        break;
+        return LumenEngine::EKeys::MediaRecord;
     case SDLK_MEDIA_FAST_FORWARD:
-        break;
+        return LumenEngine::EKeys::MediaFastForward;
     case SDLK_MEDIA_REWIND:
-        break;
+        return LumenEngine::EKeys::MediaRewind;
     case SDLK_MEDIA_NEXT_TRACK:
-        break;
+        return LumenEngine::EKeys::MediaNextTrack;
     case SDLK_MEDIA_PREVIOUS_TRACK:
-        break;
+        return LumenEngine::EKeys::MediaPreviousTrack;
     case SDLK_MEDIA_STOP:
-        break;
+        return LumenEngine::EKeys::MediaStop;
     case SDLK_MEDIA_EJECT:
-        break;
+        return LumenEngine::EKeys::MediaEject;
     case SDLK_MEDIA_PLAY_PAUSE:
-        break;
+        return LumenEngine::EKeys::MediaPlayPause;
     case SDLK_MEDIA_SELECT:
-        break;
+        return LumenEngine::EKeys::MediaSelect;
     case SDLK_AC_NEW:
-        break;
+        return LumenEngine::EKeys::AcNew;
     case SDLK_AC_OPEN:
-        break;
+        return LumenEngine::EKeys::AcOpen;
     case SDLK_AC_CLOSE:
-        break;
+        return LumenEngine::EKeys::AcClose;
     case SDLK_AC_EXIT:
-        break;
+        return LumenEngine::EKeys::AcExit;
     case SDLK_AC_SAVE:
-        break;
+        return LumenEngine::EKeys::AcSave;
     case SDLK_AC_PRINT:
-        break;
+        return LumenEngine::EKeys::AcPrint;
     case SDLK_AC_PROPERTIES:
-        break;
+        return LumenEngine::EKeys::AcProperties;
     case SDLK_AC_SEARCH:
-        break;
+        return LumenEngine::EKeys::AcSearch;
     case SDLK_AC_HOME:
-        break;
+        return LumenEngine::EKeys::AcHome;
     case SDLK_AC_BACK:
-        break;
+        return LumenEngine::EKeys::AcBack;
     case SDLK_AC_FORWARD:
-        break;
+        return LumenEngine::EKeys::AcForward;
     case SDLK_AC_STOP:
-        break;
+        return LumenEngine::EKeys::AcStop;
     case SDLK_AC_REFRESH:
-        break;
+        return LumenEngine::EKeys::AcRefresh;
     case SDLK_AC_BOOKMARKS:
-        break;
+        return LumenEngine::EKeys::AcBookmarks;
     case SDLK_SOFTLEFT:
-        break;
+        return LumenEngine::EKeys::SoftLeft;
     case SDLK_SOFTRIGHT:
-        break;
+        return LumenEngine::EKeys::SoftRight;
     case SDLK_CALL:
-        break;
+        return LumenEngine::EKeys::Call;
     case SDLK_ENDCALL:
-        break;
+        return LumenEngine::EKeys::EndCall;
     case SDLK_LEFT_TAB:
-        break;
+        return LumenEngine::EKeys::LeftTab;
     case SDLK_LEVEL5_SHIFT:
-        break;
+        return LumenEngine::EKeys::Level5Shift;
     case SDLK_MULTI_KEY_COMPOSE:
-        break;
+        return LumenEngine::EKeys::MultiKeyCompose;
     case SDLK_LMETA:
-        break;
+        return LumenEngine::EKeys::LeftMeta;
     case SDLK_RMETA:
-        break;
+        return LumenEngine::EKeys::RightMeta;
     case SDLK_LHYPER:
-        break;
+        return LumenEngine::EKeys::LeftHyper;
     case SDLK_RHYPER:
-        break;
+        return LumenEngine::EKeys::RightHyper;
     default:
         return LumenEngine::EKeys::Unknown;
     }
-    return LumenEngine::EKeys::Unknown;
 }
 
 #endif
