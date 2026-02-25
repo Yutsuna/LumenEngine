@@ -34,12 +34,12 @@ void LumenEngine::FGenericApplicationMessageHandler::OnWindowCloseRequested ( co
 
 /** Mouse */
 
-void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( TSharedPtr<FGenericWindow> &InWindow, const Int32 InButton, const Bool bIsRepeat )
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( TSharedPtr<FGenericWindow> &InWindow, const EMouseButton::Type InButton )
 {
     /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnMouseUp ( const Int32 InButton, const Bool bIsRepeat )
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseUp ( const EMouseButton::Type InButton )
 {
     /* Empty */
 }
@@ -61,7 +61,7 @@ void LumenEngine::FGenericApplicationMessageHandler::OnKeyDown ( const EKeys::Ty
     /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnKeyUp ( const EKeys::Type InKey, const Bool bIsRepeat )
+void LumenEngine::FGenericApplicationMessageHandler::OnKeyUp ( const EKeys::Type InKey )
 {
     /* Empty */
 }
