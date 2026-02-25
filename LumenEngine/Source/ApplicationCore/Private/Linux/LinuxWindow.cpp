@@ -118,6 +118,7 @@ void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Applicatio
     {
         LUMEN_LOG_ERROR( LogApplicationCore, "Failed to create SDL renderer: {}", SDL_GetError() );
     }
+    /** INFO: Force a Clear() because some platforms (e.g., Linux) may not properly initialize the window's content until it's cleared at least once. */
     Clear();
 }
 
