@@ -54,7 +54,7 @@ namespace SharedPtrInternal
 
     template <typename Type> TDefaultReferenceController<Type>::TDefaultReferenceController( Type *InObject ) : Object( InObject )
     {
-        /* __empty__ */
+        /* Empty */
     }
 
     template <typename Type> void TDefaultReferenceController<Type>::DestroyObject ()
@@ -72,7 +72,7 @@ namespace SharedPtrInternal
      */
     template <typename Type> TRawPtrProxy<Type>::TRawPtrProxy( Type *InObject ) : Object( InObject )
     {
-        /* __empty__ */
+        /* Empty */
     }
 
 } // namespace SharedPtrInternal

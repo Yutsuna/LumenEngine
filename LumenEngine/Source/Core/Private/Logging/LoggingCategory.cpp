@@ -8,5 +8,5 @@
 LumenEngine::FLogCategory::FLogCategory ( const FString &InCategoryName, const ELogVerbosity::Type InDefaultVerbosity )
     : CategoryName( InCategoryName ), DefaultVerbosity( InDefaultVerbosity )
 {
-    /* __empty__ */
+    /* Empty */
 }

@@ -14,12 +14,12 @@ namespace LumenEngine
 
 template <typename Type> TSharedPtr<Type>::TSharedPtr() : Object( nullptr ), Controller( nullptr )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 template <typename Type> TSharedPtr<Type>::TSharedPtr( NullptrType ) : Object( nullptr ), Controller( nullptr )
 {
-    /* __empty__ */
+    /* Empty */
 }
 
 template <typename Type>
