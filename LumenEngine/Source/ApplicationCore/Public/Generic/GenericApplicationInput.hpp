@@ -850,4 +850,23 @@ static inline LumenEngine::EKeys::Type TranslateSDLKeyCodeToEKeys ( const SDL_Ke
     }
 }
 
+static inline LumenEngine::EMouseButton::Type TranslateSDLMouseButtonToEMouseButton ( const LumenEngine::UInt8 Button )
+{
+    switch ( Button )
+    {
+    case SDL_BUTTON_LEFT:
+        return LumenEngine::EMouseButton::Left;
+    case SDL_BUTTON_MIDDLE:
+        return LumenEngine::EMouseButton::Middle;
+    case SDL_BUTTON_RIGHT:
+        return LumenEngine::EMouseButton::Right;
+    case SDL_BUTTON_X1:
+        return LumenEngine::EMouseButton::Button4;
+    case SDL_BUTTON_X2:
+        return LumenEngine::EMouseButton::Button5;
+    default:
+        return LumenEngine::EMouseButton::Invalid;
+    }
+}
+
 #endif
