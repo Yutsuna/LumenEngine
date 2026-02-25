@@ -50,7 +50,7 @@ public:
     /** Mouse message handler */
 
     /** Called when a mouse button is pressed */
-    virtual void OnMouseDown ( TSharedPtr<FGenericWindow> &InWindow, const EMouseButton::Type InButton );
+    virtual void OnMouseDown ( const EMouseButton::Type InButton );
 
     /** Called when a mouse button is released */
     virtual void OnMouseUp ( const EMouseButton::Type InButton );

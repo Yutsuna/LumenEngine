@@ -34,7 +34,7 @@ void LumenEngine::FGenericApplicationMessageHandler::OnWindowCloseRequested ( co
 
 /** Mouse */
 
-void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( TSharedPtr<FGenericWindow> &InWindow, const EMouseButton::Type InButton )
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( const EMouseButton::Type InButton )
 {
     /* Empty */
 }

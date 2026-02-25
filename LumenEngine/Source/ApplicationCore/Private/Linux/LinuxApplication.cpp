@@ -11,6 +11,7 @@
 #include "Generic/GenericApplicationMessageHandler.hpp"
 
 #include "Logging/LoggingCategory.hpp"
+#include "SDL3/SDL_events.h"
 
 #include <Logging/Logger.hpp>
 
@@ -87,7 +88,21 @@ namespace
         const SDL_Keycode KeyCode = KeyboardEvent.key;
         const EKeys::Type KeyType = TranslateSDLKeyCodeToEKeys( KeyCode );
 
-        MessageHandler->OnKeyUp( KeyType, false );
+        MessageHandler->OnKeyUp( KeyType );
+    }
+
+    static inline void SendMouseButtonDownEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
+    {
+        const EMouseButton::Type ButtonType = TranslateSDLMouseButtonToEMouseButton( MouseButtonEvent.button );
+
+        MessageHandler->OnMouseDown( ButtonType );
+    }
+
+    static inline void SendMouseButtonUpEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
+    {
+        const EMouseButton::Type ButtonType = TranslateSDLMouseButtonToEMouseButton( MouseButtonEvent.button );
+
+        MessageHandler->OnMouseUp( ButtonType );
     }
 
 } // namespace
@@ -118,6 +133,16 @@ void LumenEngine::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent 
     case SDL_EVENT_KEY_UP:
     {
         SendKeyUpEvent( MessageHandler, InEvent.key );
+        break;
+    }
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+    {
+        SendMouseButtonDownEvent( MessageHandler, InEvent.button );
+        break;
+    }
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+    {
+        SendMouseButtonUpEvent( MessageHandler, InEvent.button );
         break;
     }
     default:
