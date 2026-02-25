@@ -7,6 +7,8 @@
 
 #include "Container/SharedPtr.hpp"
 
+#include "Container/Inline/SharedPtrInternal.inl"
+
 namespace LumenEngine
 {
 
@@ -18,6 +20,23 @@ template <typename Type> TSharedPtr<Type>::TSharedPtr() : Object( nullptr ), Con
 template <typename Type> TSharedPtr<Type>::TSharedPtr( NullptrType ) : Object( nullptr ), Controller( nullptr )
 {
     /* __empty__ */
+}
+
+template <typename Type>
+template <typename OtherType>
+    requires Concepts::ConvertibleTo<OtherType *, Type *>
+TSharedPtr<Type>::TSharedPtr( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy )
+{
+    Object = Proxy.Object;
+
+    if ( Proxy.Object )
+    {
+        Controller = SharedPtrInternal::NewDefaultReferenceController<OtherType>( Proxy.Object );
+    }
+    else
+    {
+        Controller = nullptr;
+    }
 }
 
 template <typename Type>
@@ -118,37 +137,10 @@ template <typename Type> void TSharedPtr<Type>::Release ()
  * SharedPtr Builders
  */
 
-namespace
-{
-
-    /**
-     * @brief Creates a new TIntrusiveReferenceController instance with the
-     * given arguments.
-     * @param InArgs Arguments to forward to the constructor of ObjectType.
-     * @return A pointer to the newly created TIntrusiveReferenceController.
-     */
-    template <typename ObjectType, typename... Arguments>
-    static inline SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *NewIntrusiveReferenceController ( Arguments &&...InArgs )
-    {
-        return new SharedPtrInternal::TIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
-    }
-
-    /**
-     * @brief Creates a new TDefaultReferenceController instance for the given
-     * object.
-     * @param InObject Pointer to the managed object.
-     * @return A pointer to the newly created TDefaultReferenceController.
-     */
-    template <typename ObjectType> static inline SharedPtrInternal::TDefaultReferenceController<ObjectType> *NewDefaultReferenceController ( ObjectType *InObject )
-    {
-        return new SharedPtrInternal::TDefaultReferenceController<ObjectType>( InObject );
-    }
-
-} // namespace
-
 template <typename ObjectType, typename... Arguments> static inline TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs )
 {
-    SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *Controller = NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
+    SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *Controller =
+        SharedPtrInternal::NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
     return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(), static_cast<SharedPtrInternal::FReferenceController *>( Controller ) );
 }
 
