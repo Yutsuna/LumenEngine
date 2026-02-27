@@ -3,6 +3,6 @@
  * @brief Implementation of the dynamic RHI interface
  */
 
-#include "RHIDynamic.hpp"
+#include "Generic/RHIDynamic.hpp"
 
 LumenEngine::RHI::IFRHIDynamic *LumenEngine::RHI::GDynamicRHI = nullptr;
