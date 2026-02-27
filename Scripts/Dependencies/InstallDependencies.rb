@@ -23,7 +23,7 @@ DEPENDENCIES =[
     }
   },
   {
-    name: 'Vulkan',
+    name: 'vulkan',
     version: '1.4.344',
     sources: {
       'linux-x64': 'https://github.com/KhronosGroup/Vulkan-Headers/archive/refs/tags/v1.4.344.tar.gz'
