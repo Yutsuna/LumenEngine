@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <vulkan/vulkan.h>
+
 #include "Generic/RHIDynamic.hpp"
 #include "Generic/RHIViewport.hpp"
 
@@ -28,8 +30,8 @@ namespace RHI
         void Init () override;
         void Shutdown () override;
 
-        TSharedPtr<IFRHIViewport> CreateViewport ( void *InWindowHandle, const LumenEngine::Math::FVec2u &InSize ) override;
-        VKInstance GetVulkanInstance () const;
+        TSharedRef<IFRHIViewport> RHICreateViewport ( void *InWindowHandle, const Maths::FVec2u &InSize ) override;
+        VkInstance GetVulkanInstance () const;
 
     private:
 
@@ -37,7 +39,7 @@ namespace RHI
 
     private:
 
-        VKInstance VulkanInstance;
+        VkInstance VulkanInstance;
     };
 
 } // namespace RHI

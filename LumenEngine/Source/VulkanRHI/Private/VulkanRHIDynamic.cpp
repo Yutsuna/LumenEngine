@@ -4,6 +4,7 @@
  */
 
 #include "VulkanRHIDynamic.hpp"
+#include "VulkanRHIViewport.hpp"
 
 #include "Logging/Logger.hpp"
 #include "Logging/LoggingCategory.hpp"
@@ -40,12 +41,12 @@ void LumenEngine::RHI::FVulkanRHIDynamic::Shutdown ()
     }
 }
 
-LumenEngine::TSharedPtr<LumenEngine::RHI::IFRHIViewport> LumenEngine::RHI::FVulkanRHIDynamic::CreateViewport ( void *InWindowHandle, const Math::FVec2u &InSize )
+LumenEngine::TSharedRef<LumenEngine::RHI::IFRHIViewport> LumenEngine::RHI::FVulkanRHIDynamic::RHICreateViewport ( void *InWindowHandle, const Maths::FVec2u &InSize )
 {
     return MakeShared<FVulkanRHIViewport>();
 }
 
-VKInstance LumenEngine::RHI::FVulkanRHIDynamic::GetVulkanInstance () const
+VkInstance LumenEngine::RHI::FVulkanRHIDynamic::GetVulkanInstance () const
 {
     return VulkanInstance;
 }
