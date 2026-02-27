@@ -12,7 +12,7 @@
 namespace LumenEngine
 {
 
-namespace Math
+namespace Maths
 {
 
     namespace Private
@@ -139,7 +139,7 @@ namespace Math
     using FVec3u = TVector<UInt32, 3>;
     using FVec4u = TVector<UInt32, 4>;
 
-} // namespace Math
+} // namespace Maths
 
 } // namespace LumenEngine
 

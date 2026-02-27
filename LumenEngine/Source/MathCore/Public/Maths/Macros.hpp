@@ -1,6 +1,6 @@
 /**
  * @file Macros.hpp
- * @brief Common macros for LumenEngine MathCore module
+ * @brief Common macros for LumenEngine MathsCore module
  */
 
 #pragma once
@@ -10,7 +10,7 @@
 namespace LumenEngine
 {
 
-namespace Math
+namespace Maths
 {
 
     static constexpr Float64 PI      = 3.14159265358979323846;
@@ -22,6 +22,6 @@ namespace Math
 
     static constexpr Float64 EPSILON = 1e-6;
 
-} // namespace Math
+} // namespace Maths
 
 } // namespace LumenEngine

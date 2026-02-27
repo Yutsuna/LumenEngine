@@ -5,7 +5,7 @@
 namespace LumenEngine
 {
 
-namespace Math
+namespace Maths
 {
 
     /**
@@ -43,6 +43,6 @@ namespace Math
         /* Empty */
     }
 
-} // namespace Math
+} // namespace Maths
 
 } // namespace LumenEngine
