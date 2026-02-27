@@ -6,6 +6,6 @@ module RHI
     sources         = [ "Private/**/*.cpp" ]
     public_includes = [ "Public" ]
     defines         = [ "LUMEN_ENGINE" ]
-    deps            = [ Core ]
+    deps            = [ MathCore, Core ]
 
 }
