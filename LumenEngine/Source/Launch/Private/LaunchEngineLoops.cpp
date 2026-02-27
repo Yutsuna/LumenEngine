@@ -35,8 +35,8 @@ namespace
     static inline const FGenericWindowDescription GetDefaultWindowDescription ()
     {
         return ( const FGenericWindowDescription ){ .Title        = "Lumen Engine",
-                                                    .Position     = Math::FVec2i( 100, 100 ),
-                                                    .Size         = Math::FVec2i( 1280, 720 ),
+                                                    .Position     = Maths::FVec2i( 100, 100 ),
+                                                    .Size         = Maths::FVec2i( 1280, 720 ),
                                                     .WindowMode   = EWindowMode::Windowed,
                                                     .bIsResizable = true,
                                                     .bIsVisible   = true };
@@ -146,7 +146,7 @@ void LumenEngine::FEngineLoop::CalculateDeltaTime () noexcept
         LastTickTime = FPlatformTime::MAX_TICK_RATE;
     }
 
-    if ( LastTickTime < Math::EPSILON )
+    if ( LastTickTime < Maths::EPSILON )
     {
         LastTickTime = 0.0;
     }
