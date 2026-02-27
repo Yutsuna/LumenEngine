@@ -8,6 +8,7 @@
 #include "RHIViewport.hpp"
 
 #include "Container/SharedPtr.hpp"
+#include "Maths/Vector.hpp"
 
 namespace LumenEngine
 {
@@ -30,7 +31,7 @@ namespace RHI
         virtual void Shutdown () = 0;
 
         /** Creates a viewport linked to an OS-specific window handle */
-        virtual TSharedRef<IFRHIViewport> RHICreateViewport ( void *InWindowHandle, const UInt32 InWidth, const UInt32 InHeight ) = 0;
+        virtual TSharedRef<IFRHIViewport> RHICreateViewport ( void *InWindowHandle, const Maths::FVec2u &InSize ) = 0;
     };
 
     extern LUMEN_ENGINE_API IFRHIDynamic *GDynamicRHI;
