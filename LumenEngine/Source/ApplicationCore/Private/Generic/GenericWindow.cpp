@@ -87,8 +87,8 @@ void LumenEngine::FGenericWindow::EnableInput ( const Bool bEnable )
 
 LumenEngine::Bool LumenEngine::FGenericWindow::IsPointInWindow ( const Int32 InX, const Int32 InY ) const
 {
-    const Math::FVec2i &WindowPos  = GetWindowPosition();
-    const Math::FVec2i &WindowSize = GetWindowSize();
+    const Maths::FVec2i &WindowPos  = GetWindowPosition();
+    const Maths::FVec2i &WindowSize = GetWindowSize();
 
     const Int32 Left   = WindowPos.X;
     const Int32 Right  = WindowPos.X + WindowSize.Width;
@@ -131,12 +131,12 @@ LumenEngine::Int32 LumenEngine::FGenericWindow::GetWindowHeight () const
     return Description->Size.Height;
 }
 
-const LumenEngine::Math::FVec2i &LumenEngine::FGenericWindow::GetWindowSize () const
+const LumenEngine::Maths::FVec2i &LumenEngine::FGenericWindow::GetWindowSize () const
 {
     return Description->Size;
 }
 
-const LumenEngine::Math::FVec2i &LumenEngine::FGenericWindow::GetWindowPosition () const
+const LumenEngine::Maths::FVec2i &LumenEngine::FGenericWindow::GetWindowPosition () const
 {
     return Description->Position;
 }
