@@ -34,19 +34,19 @@ namespace
 {
     static inline const FGenericWindowDescription GetDefaultWindowDescription ()
     {
-        return ( const FGenericWindowDescription ){ .Title        = "Lumen Engine",
-                                                    .Position     = Maths::FVec2i( 100, 100 ),
-                                                    .Size         = Maths::FVec2i( 1280, 720 ),
-                                                    .WindowMode   = EWindowMode::Windowed,
-                                                    .bIsResizable = true,
-                                                    .bIsVisible   = true };
+        return { .Title        = "Lumen Engine",
+                 .Position     = Maths::FVec2i( 100, 100 ),
+                 .Size         = Maths::FVec2i( 1280, 720 ),
+                 .WindowMode   = EWindowMode::Windowed,
+                 .bIsResizable = true,
+                 .bIsVisible   = true };
     }
 
 } // namespace
 
 } // namespace LumenEngine
 
-LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiChar *Argv[] )
+LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiChar *[] )
 {
     LUMEN_LOG_INFO( LogLaunch, "Engine PreInit started with {} arguments", Argc );
 
