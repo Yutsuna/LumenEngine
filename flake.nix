@@ -16,18 +16,25 @@
       system:
       let
         pkgs = import nixpkgs { inherit system; };
-
         version = pkgs.lib.strings.trim (builtins.readFile ./VERSION.md);
 
         lumenPackage = pkgs.callPackage ./Nix/Package.nix {
           inherit version;
         };
+        lumenCli = pkgs.writeShellScriptBin "lumen" ''
+          exec ${./Scripts/LumenBuild.bash} "$@"
+        '';
       in
       {
         packages.default = lumenPackage;
-
+        apps = {
+          lumen = {
+            type = "app";
+            program = "${lumenCli}/bin/lumen";
+          };
+        };
         devShells.default = import ./Nix/Shell.nix {
-          inherit pkgs lumenPackage;
+          inherit pkgs lumenPackage lumenCli;
         };
       }
     );

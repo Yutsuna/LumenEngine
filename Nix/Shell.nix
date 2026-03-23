@@ -1,10 +1,16 @@
-{ pkgs, lumenPackage }:
+{
+  pkgs,
+  lumenPackage,
+  lumenCli,
+}:
 
 pkgs.mkShell {
   inputsFrom = [ lumenPackage ];
 
-  buildInputs = with pkgs; [
-    vulkan-tools
+  packages = [
+    lumenCli
+    pkgs.vulkan-tools
+    pkgs.vulkan-validation-layers
   ];
 
   shellHook = ''
@@ -14,5 +20,7 @@ pkgs.mkShell {
         pkgs.sdl3
       ]
     }:$LD_LIBRARY_PATH
+
+    export VK_LAYER_PATH="${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d"
   '';
 }
