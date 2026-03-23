@@ -29,6 +29,7 @@ target_compile_options(LumenCompiler INTERFACE
         -Wdouble-promotion
         -Wformat=2
         -Wimplicit-fallthrough
+        -Werror
     >
     $<${IS_MSVC}:
         /W4
