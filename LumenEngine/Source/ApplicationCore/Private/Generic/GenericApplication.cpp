@@ -26,7 +26,7 @@ LumenEngine::TSharedPtr<LumenEngine::FGenericApplicationMessageHandler> LumenEng
     return MessageHandler;
 }
 
-void LumenEngine::FGenericApplication::PumpMessages ( const Float32 )
+void LumenEngine::FGenericApplication::PumpMessages ( const Float64 )
 {
     /* Empty */
 }

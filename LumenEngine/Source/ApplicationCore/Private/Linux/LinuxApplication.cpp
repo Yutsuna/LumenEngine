@@ -167,7 +167,7 @@ void LumenEngine::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent 
     }
 }
 
-void LumenEngine::FLinuxApplication::PumpMessages ( const Float32 __attribute__( ( unused ) ) DeltaTime )
+void LumenEngine::FLinuxApplication::PumpMessages ( const Float64 )
 {
     FLinuxBackend::PumpMessages();
 }

@@ -8,7 +8,7 @@
 #include "RHIViewport.hpp"
 
 #include "Container/SharedPtr.hpp"
-#include "Maths/Vector.hpp"
+#include "Maths/Vec.hpp"
 
 namespace LumenEngine
 {

@@ -1,6 +1,6 @@
 /**
- * @file Vector.hpp
- * @brief Declaration of the Vector struct for mathematical vector operations.
+ * @file Vec.hpp
+ * @brief Declaration of the Vec struct for mathematical vector operations.
  */
 
 #pragma once
@@ -19,7 +19,7 @@ namespace Maths
     namespace Private
     {
 
-        template <typename Type, USize Dimension> struct TVectorData
+        template <typename Type, USize Dimension> struct TVecData
         {
             Type Data[Dimension] = {};
         };
@@ -34,7 +34,7 @@ namespace Maths
 
 #endif
 
-        template <typename Type> struct TVectorData<Type, 2>
+        template <typename Type> struct TVecData<Type, 2>
         {
             union
             {
@@ -58,7 +58,7 @@ namespace Maths
             };
         };
 
-        template <typename Type> struct TVectorData<Type, 3>
+        template <typename Type> struct TVecData<Type, 3>
         {
             union
             {
@@ -78,7 +78,7 @@ namespace Maths
             };
         };
 
-        template <typename Type> struct TVectorData<Type, 4>
+        template <typename Type> struct TVecData<Type, 4>
         {
             union
             {
@@ -109,39 +109,39 @@ namespace Maths
     } // namespace Private
 
     template <typename Type, USize Dimension>
-    concept CVectorDimension = Dimension > 0 && Dimension <= 4;
+    concept CVecDimension = Dimension > 0 && Dimension <= 4;
 
     template <typename Type, USize Dimension>
-        requires CVectorDimension<Type, Dimension>
-    struct TVector : public Private::TVectorData<Type, Dimension>
+        requires CVecDimension<Type, Dimension>
+    struct TVec : public Private::TVecData<Type, Dimension>
     {
-        constexpr TVector () = default;
-        constexpr TVector ( const Type &Value );
-        constexpr TVector ( const TVector<Type, Dimension> &Other ) = default;
+        constexpr TVec () = default;
+        constexpr TVec ( const Type &Value );
+        constexpr TVec ( const TVec<Type, Dimension> &Other ) = default;
 
         template <typename... Arguments>
             requires( sizeof...( Arguments ) == Dimension && ( std::is_convertible_v<Arguments, Type> && ... ) )
-        constexpr TVector( Arguments &&...Args );
+        constexpr TVec( Arguments &&...Args );
     };
 
-    using FVec2f = TVector<Float32, 2>;
-    using FVec3f = TVector<Float32, 3>;
-    using FVec4f = TVector<Float32, 4>;
+    using FVec2f = TVec<Float32, 2>;
+    using FVec3f = TVec<Float32, 3>;
+    using FVec4f = TVec<Float32, 4>;
 
-    using FVec2d = TVector<Float64, 2>;
-    using FVec3d = TVector<Float64, 3>;
-    using FVec4d = TVector<Float64, 4>;
+    using FVec2d = TVec<Float64, 2>;
+    using FVec3d = TVec<Float64, 3>;
+    using FVec4d = TVec<Float64, 4>;
 
-    using FVec2i = TVector<Int32, 2>;
-    using FVec3i = TVector<Int32, 3>;
-    using FVec4i = TVector<Int32, 4>;
+    using FVec2i = TVec<Int32, 2>;
+    using FVec3i = TVec<Int32, 3>;
+    using FVec4i = TVec<Int32, 4>;
 
-    using FVec2u = TVector<UInt32, 2>;
-    using FVec3u = TVector<UInt32, 3>;
-    using FVec4u = TVector<UInt32, 4>;
+    using FVec2u = TVec<UInt32, 2>;
+    using FVec3u = TVec<UInt32, 3>;
+    using FVec4u = TVec<UInt32, 4>;
 
 } // namespace Maths
 
 } // namespace LumenEngine
 
-#include "Inline/Vector.inl"
+#include "Inline/Vec.inl"

@@ -24,7 +24,7 @@ public:
     ~FLinuxApplication () override;
 
     /** Polls SDL messages */
-    void PumpMessages ( const Float32 DeltaTime ) override;
+    void PumpMessages ( const Float64 DeltaTime ) override;
 
     /** Creates a new Linux window */
     TSharedRef<FGenericWindow> MakeWindow () override;

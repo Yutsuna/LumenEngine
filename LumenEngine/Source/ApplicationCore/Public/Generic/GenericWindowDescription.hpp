@@ -8,7 +8,7 @@
 #include "Container/String.hpp"
 #include "CoreTypes.hpp"
 
-#include "Maths/Vector.hpp"
+#include "Maths/Vec.hpp"
 
 namespace LumenEngine
 {
