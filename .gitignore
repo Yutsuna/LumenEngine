@@ -7,3 +7,5 @@ Build/
 !.gitignore
 !.gitattributes
 compile_commands.json
+
+result

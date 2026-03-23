@@ -1,4 +1,4 @@
-[*.{ts, yml, yaml, lua}]
+[*.{ts, yml, yaml, lua, nix}]
 end_of_line = lf
 insert_final_newline = true
 indent_size = 2
