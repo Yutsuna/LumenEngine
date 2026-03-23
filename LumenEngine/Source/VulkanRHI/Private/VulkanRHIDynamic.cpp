@@ -12,7 +12,7 @@
 namespace
 {
 
-LumenEngine::FLogCategory LogVulkanRHI( "VulkanRHI" );
+static const LumenEngine::FLogCategory LogVulkanRHI( "VulkanRHI" );
 
 }
 
@@ -34,6 +34,7 @@ void LumenEngine::RHI::FVulkanRHIDynamic::Init ()
 
 void LumenEngine::RHI::FVulkanRHIDynamic::Shutdown ()
 {
+    LUMEN_LOG_INFO( LogVulkanRHI, "Shutting down Vulkan RHI dynamic resources..." );
     if ( VulkanInstance != VK_NULL_HANDLE )
     {
         vkDestroyInstance( VulkanInstance, nullptr );
@@ -56,15 +57,16 @@ void LumenEngine::RHI::FVulkanRHIDynamic::CreateVulkanInstance ()
     VkApplicationInfo AppInfo       = {};
     AppInfo.sType                   = VK_STRUCTURE_TYPE_APPLICATION_INFO;
     AppInfo.pApplicationName        = "Lumen Engine";
-    AppInfo.applicationVersion      = VK_MAKE_VERSION( 1, 0, 0 );
+    AppInfo.applicationVersion      = VK_MAKE_VERSION( 0, 0, 0 );
     AppInfo.pEngineName             = "Lumen Engine";
-    AppInfo.engineVersion           = VK_MAKE_VERSION( 1, 0, 0 );
+    AppInfo.engineVersion           = VK_MAKE_VERSION( 0, 0, 0 );
     AppInfo.apiVersion              = VK_API_VERSION_1_0;
     VkInstanceCreateInfo CreateInfo = {};
     CreateInfo.sType                = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO;
     CreateInfo.pApplicationInfo     = &AppInfo;
+
     if ( vkCreateInstance( &CreateInfo, nullptr, &VulkanInstance ) != VK_SUCCESS )
     {
-        throw std::runtime_error( "Failed to create Vulkan instance!" );
+        LUMEN_LOG_FATAL( LogVulkanRHI, "Failed to create Vulkan instance!" );
     }
 }

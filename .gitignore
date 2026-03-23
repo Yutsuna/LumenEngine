@@ -1,24 +1,8 @@
 .*
 !.github/
 
-node_modules/
-Vendor/
-TempDownloads/
-
-bin/
-obj/
-out/
 Build/
-!Builder/Build
 
-Intermediate/
-Binaries/
-
-/Makefile
-/CMakeLists.txt
-/build.ninja
-
-*.sh
 !.clang-format
 !.gitignore
 !.gitattributes
