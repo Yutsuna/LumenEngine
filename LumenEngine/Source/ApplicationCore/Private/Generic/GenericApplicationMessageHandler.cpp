@@ -19,56 +19,56 @@ void LumenEngine::FGenericApplicationMessageHandler::OnQuit ()
 
 /** Window */
 
-void LumenEngine::FGenericApplicationMessageHandler::OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow )
+void LumenEngine::FGenericApplicationMessageHandler::OnOSPaint ( const TSharedRef<FGenericWindow> & )
 {
     /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InX, const Int32 InY )
+void LumenEngine::FGenericApplicationMessageHandler::OnWindowMoved ( const TSharedRef<FGenericWindow> &, const Int32, const Int32 )
 {
     /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow, const Int32 InWidth, const Int32 InHeight )
+void LumenEngine::FGenericApplicationMessageHandler::OnWindowResized ( const TSharedRef<FGenericWindow> &, const Int32, const Int32 )
 {
     /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow, const Bool bIsActive )
+void LumenEngine::FGenericApplicationMessageHandler::OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &, const Bool )
 {
     /* Empty */
 }
 
 /** Mouse */
 
-void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( const EMouseButton::Type InButton )
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseDown ( const EMouseButton::Type )
 {
     /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnMouseUp ( const EMouseButton::Type InButton )
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseUp ( const EMouseButton::Type )
 {
     /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnMouseMove ( const Int32 InX, const Int32 InY )
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseMove ( const Int32, const Int32 )
 {
     /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnMouseWheel ( const Int32 InDelta )
+void LumenEngine::FGenericApplicationMessageHandler::OnMouseWheel ( const Int32 )
 {
     /* Empty */
 }
 
 /** Keyboard */
 
-void LumenEngine::FGenericApplicationMessageHandler::OnKeyDown ( const EKeys::Type InKey, const Bool bIsRepeat )
+void LumenEngine::FGenericApplicationMessageHandler::OnKeyDown ( const EKeys::Type, const Bool )
 {
     /* Empty */
 }
 
-void LumenEngine::FGenericApplicationMessageHandler::OnKeyUp ( const EKeys::Type InKey )
+void LumenEngine::FGenericApplicationMessageHandler::OnKeyUp ( const EKeys::Type )
 {
     /* Empty */
 }

@@ -153,7 +153,7 @@ void LumenEngine::FLinuxWindow::Clear ()
  * private
  */
 
-LumenEngine::FLinuxWindow::FLinuxWindow () : WindowHandle( nullptr ), Renderer( nullptr ), FGenericWindow()
+LumenEngine::FLinuxWindow::FLinuxWindow () : FGenericWindow(), LinuxApplication( nullptr ), WindowHandle( nullptr ), Renderer( nullptr ), ParentWindow( nullptr )
 {
     /* Ctor */
 }

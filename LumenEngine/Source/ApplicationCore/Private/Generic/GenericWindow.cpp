@@ -5,7 +5,7 @@
 
 #include "Generic/GenericWindow.hpp"
 
-void LumenEngine::FGenericWindow::Reshape ( const Int32 InX, const Int32 InY, const Int32 InWidth, const Int32 InHeight )
+void LumenEngine::FGenericWindow::Reshape ( const Int32, const Int32, const Int32, const Int32 )
 {
     /* Empty */
 }
@@ -45,7 +45,7 @@ void LumenEngine::FGenericWindow::Clear ()
     /* Empty */
 }
 
-void LumenEngine::FGenericWindow::SetWindowMode ( const EWindowMode::Type InWindowMode )
+void LumenEngine::FGenericWindow::SetWindowMode ( const EWindowMode::Type )
 {
     /* Empty */
 }
@@ -75,12 +75,12 @@ void LumenEngine::FGenericWindow::SetWindowFocus ()
     /* Empty */
 }
 
-void LumenEngine::FGenericWindow::SetOpacity ( const Float32 InOpacity )
+void LumenEngine::FGenericWindow::SetOpacity ( const Float32 )
 {
     /* Empty */
 }
 
-void LumenEngine::FGenericWindow::EnableInput ( const Bool bEnable )
+void LumenEngine::FGenericWindow::EnableInput ( const Bool )
 {
     /* Empty */
 }
@@ -116,7 +116,7 @@ LumenEngine::Bool LumenEngine::FGenericWindow::IsForegroundWindow () const
     return false;
 }
 
-void LumenEngine::FGenericWindow::SetWindowTitle ( const AnsiChar *const Text )
+void LumenEngine::FGenericWindow::SetWindowTitle ( const AnsiChar *const )
 {
     /* Empty */
 }

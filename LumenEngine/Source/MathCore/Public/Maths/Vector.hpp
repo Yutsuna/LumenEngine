@@ -6,6 +6,7 @@
 #pragma once
 
 #include "CoreTypes.hpp"
+#include "Definitions.hpp"
 
 #include <type_traits>
 

@@ -26,7 +26,7 @@ LumenEngine::TSharedPtr<LumenEngine::FGenericApplicationMessageHandler> LumenEng
     return MessageHandler;
 }
 
-void LumenEngine::FGenericApplication::PumpMessages ( const Float32 DeltaTime )
+void LumenEngine::FGenericApplication::PumpMessages ( const Float32 )
 {
     /* Empty */
 }
@@ -36,10 +36,10 @@ LumenEngine::TSharedRef<LumenEngine::FGenericWindow> LumenEngine::FGenericApplic
     return MakeShareable( new FGenericWindow() );
 }
 
-void LumenEngine::FGenericApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
-                                                          const TSharedRef<FGenericWindowDescription> &InDescription,
-                                                          const TSharedPtr<FGenericWindow> &InParentWindow,
-                                                          const Bool bShowImmediately )
+void LumenEngine::FGenericApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &,
+                                                          const TSharedRef<FGenericWindowDescription> &,
+                                                          const TSharedPtr<FGenericWindow> &,
+                                                          const Bool )
 {
     /* Empty */
 }

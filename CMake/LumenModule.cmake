@@ -44,7 +44,7 @@ function(LumenModule)
     endforeach()
 
     if(NOT ALL_SOURCES)
-        message(WARNING "[LumenModule] ${M_NAME}: no sources matched — skipping")
+        message(WARNING "[LumenModule] ${M_NAME}: no sources matched, skipping")
         return()
     endif()
 
