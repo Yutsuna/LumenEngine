@@ -107,10 +107,10 @@ public:
     virtual Int32 GetWindowHeight () const;
 
     /** Gets the OS Window size */
-    virtual const Math::FVec2i &GetWindowSize () const;
+    virtual const Maths::FVec2i &GetWindowSize () const;
 
     /** Gets the OS Window position */
-    virtual const Math::FVec2i &GetWindowPosition () const;
+    virtual const Maths::FVec2i &GetWindowPosition () const;
 
 protected:
 

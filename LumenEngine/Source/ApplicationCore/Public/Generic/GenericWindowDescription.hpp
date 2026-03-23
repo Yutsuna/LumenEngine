@@ -8,7 +8,7 @@
 #include "Container/String.hpp"
 #include "CoreTypes.hpp"
 
-#include "Maths/Vector.hpp"
+#include "Maths/Vec.hpp"
 
 namespace LumenEngine
 {
@@ -35,7 +35,7 @@ namespace EWindowMode
     /**
      * @brief Convert a window mode enum value to its string representation.
      */
-    static inline constexpr const AnsiChar *const ToString ( const Type InWindowMode )
+    static inline constexpr const AnsiChar *ToString ( const Type InWindowMode )
     {
         switch ( InWindowMode )
         {
@@ -73,9 +73,9 @@ struct FGenericWindowDescription
     /** Title of the window */
     FString Title = FString{ DefaultWindowTitle };
     /** Initial position of the window on screen */
-    Math::FVec2i Position = Math::FVec2i( DefaultWindowPosX, DefaultWindowPosY );
+    Maths::FVec2i Position = Maths::FVec2i( DefaultWindowPosX, DefaultWindowPosY );
     /** Initial size of the window */
-    Math::FVec2i Size = Math::FVec2i( DefaultWindowWidth, DefaultWindowHeight );
+    Maths::FVec2i Size = Maths::FVec2i( DefaultWindowWidth, DefaultWindowHeight );
     /** Initial window mode */
     EWindowMode::Type WindowMode = EWindowMode::Windowed;
     /** Is the window resizable by the user */

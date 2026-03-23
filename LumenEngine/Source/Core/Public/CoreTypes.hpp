@@ -45,7 +45,7 @@ using USize = decltype( sizeof( 0 ) );
  *
  * @brief Calculated using compiler intrinsics
  */
-using ISize = decltype( ( AnsiChar * )0 - ( AnsiChar * )0 );
+using ISize = decltype( static_cast<AnsiChar *>( nullptr ) - static_cast<AnsiChar *>( nullptr ) );
 
 /**
  * Uptr / Iptr: Integers guaranteed to be the same size as a pointer

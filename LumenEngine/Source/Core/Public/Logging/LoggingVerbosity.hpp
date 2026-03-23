@@ -31,7 +31,7 @@ namespace ELogVerbosity
         VeryVerbose
     };
 
-    static inline constexpr const AnsiChar *const ToColor ( const Type InVerbosity ) noexcept
+    static inline constexpr const AnsiChar *ToColor ( const Type InVerbosity ) noexcept
     {
         switch ( InVerbosity )
         {
@@ -54,7 +54,7 @@ namespace ELogVerbosity
         }
     }
 
-    static inline constexpr const AnsiChar *const ToString ( const Type InVerbosity ) noexcept
+    static inline constexpr const AnsiChar *ToString ( const Type InVerbosity ) noexcept
     {
         switch ( InVerbosity )
         {

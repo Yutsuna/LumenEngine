@@ -38,7 +38,7 @@ public:
     TSharedPtr<FGenericApplicationMessageHandler> GetMessageHandler () const;
 
     /** Polls and processes messages for the application */
-    virtual void PumpMessages ( const Float32 DeltaTime );
+    virtual void PumpMessages ( const Float64 DeltaTime );
 
     /** Creates a new window */
     virtual TSharedRef<FGenericWindow> MakeWindow ();
