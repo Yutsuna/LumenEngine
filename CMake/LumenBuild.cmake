@@ -13,7 +13,6 @@ LumenAddModules(
     Core
     MathCore
     ApplicationCore
-    RHI
     VulkanRHI
     Launch
 )

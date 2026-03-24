@@ -10,6 +10,6 @@ LumenModule(
     SOURCES         "Private/**/*.cpp"
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
-    DEPS            Core MathCore RHI
+    DEPS            Core MathCore
     LINUX_LIBS      Vulkan
 )
