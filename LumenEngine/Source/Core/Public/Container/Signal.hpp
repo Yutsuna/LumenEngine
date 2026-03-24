@@ -75,7 +75,7 @@ private:
 private:
 
     /** Map of registered signal handlers for each system signal */
-    static FMap<ESystemSignal::Type, FVector<FSignalHandlerSignature>> SignalListeners;
+    static FMap<ESystemSignal::Type, TVector<FSignalHandlerSignature>> SignalListeners;
 };
 
 } // namespace LumenEngine

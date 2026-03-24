@@ -50,7 +50,7 @@ private:
 
 private:
 
-    FVector<TSharedRef<FLinuxWindow>> Windows;
+    TVector<TSharedRef<FLinuxWindow>> Windows;
 };
 
 extern FLinuxApplication *GLinuxApplication;

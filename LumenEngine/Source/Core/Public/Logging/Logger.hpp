@@ -58,7 +58,7 @@ private:
     std::mutex QueueMutex;
     std::condition_variable Condition;
     std::thread WorkerThread;
-    Atomic<Bool> bIsRunning;
+    TAtomic<Bool> bIsRunning;
 };
 
 } // namespace LumenEngine

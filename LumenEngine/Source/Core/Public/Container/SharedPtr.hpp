@@ -28,7 +28,7 @@ namespace SharedPtrInternal
      */
     struct FReferenceController
     {
-        Atomic<Int32> SharedCount{ 1 };
+        TAtomic<Int32> SharedCount{ 1 };
 
         virtual ~FReferenceController () = default;
 
@@ -52,7 +52,7 @@ namespace SharedPtrInternal
         alignas( Type ) Byte Storage[sizeof( Type )];
 
         /** Constructs the managed object in place with forwarded arguments. */
-        template <typename... Arguments> explicit TIntrusiveReferenceController( Arguments &&...InArgs );
+        template <typename... Arguments> explicit TIntrusiveReferenceController ( Arguments &&...InArgs );
 
         /** Destroys the managed object. */
         void DestroyObject () override;
@@ -136,12 +136,12 @@ public:
 
     /** Proxy Constructor: Allows implicit conversion from MakeShareable to TSharedRef */
     template <typename OtherType>
-        requires Concepts::ConvertibleTo<OtherType *, Type *>
+        requires Concepts::CConvertibleTo<OtherType *, Type *>
     TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy );
 
     /** Upcast Constructor: Allows conversion from derived to base types. */
     template <typename OtherType>
-        requires Concepts::ConvertibleTo<OtherType *, Type *>
+        requires Concepts::CConvertibleTo<OtherType *, Type *>
     TSharedRef( const TSharedRef<OtherType> &Other );
 
     /** Destructor */
@@ -195,7 +195,7 @@ public:
 
     /** Constructor from TSharedRef (Implicit) */
     template <typename OtherType>
-        requires Concepts::ConvertibleTo<OtherType *, Type *>
+        requires Concepts::CConvertibleTo<OtherType *, Type *>
     TSharedPtr( const TSharedRef<OtherType> &Other );
 
     /** Copy Constructor */
@@ -206,7 +206,7 @@ public:
 
     /** Proxy Constructor: Allows implicit conversion from MakeShareable to TSharedPtr */
     template <typename OtherType>
-        requires Concepts::ConvertibleTo<OtherType *, Type *>
+        requires Concepts::CConvertibleTo<OtherType *, Type *>
     TSharedPtr( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy );
 
     /** Destructor */

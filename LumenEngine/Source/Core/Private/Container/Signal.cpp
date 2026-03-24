@@ -5,7 +5,7 @@
 
 #include "Container/Signal.hpp"
 
-LumenEngine::FMap<LumenEngine::ESystemSignal::Type, LumenEngine::FVector<LumenEngine::FSignalHandlerSignature>> LumenEngine::FSignal::SignalListeners;
+LumenEngine::FMap<LumenEngine::ESystemSignal::Type, LumenEngine::TVector<LumenEngine::FSignalHandlerSignature>> LumenEngine::FSignal::SignalListeners;
 
 void LumenEngine::FSignal::Bind ( const ESystemSignal::Type InSignal, FSignalHandlerSignature inHandler )
 {
