@@ -67,6 +67,8 @@ private:
 
 #define LUMEN_LOG( Category, Verbosity, Format, ... ) LumenEngine::FLogger::GetInstance().TLog( Category, Verbosity, Format, ##__VA_ARGS__ )
 
+#define LUMEN_LOG_DEFINE_CATEGORY( CategoryVar, CategoryName ) static const ::LumenEngine::FLogCategory CategoryVar( CategoryName );
+
 #define LUMEN_LOG_FATAL( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Fatal, Format, ##__VA_ARGS__ )
 #define LUMEN_LOG_ERROR( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Error, Format, ##__VA_ARGS__ )
 #define LUMEN_LOG_WARNING( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Warning, Format, ##__VA_ARGS__ )
