@@ -64,9 +64,9 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiCha
         return EErrorCode::Failure;
     }
 
-    LastFrameSeconds = FPlatformTime::Seconds();
+    LastFrameSeconds = HAL::FPlatformTime::Seconds();
     TotalTickTime    = 0.0;
-    LastTickTime     = FPlatformTime::DEFAULT_TICK_RATE;
+    LastTickTime     = HAL::FPlatformTime::DEFAULT_TICK_RATE;
     bRequestingExit  = false;
 
     LUMEN_LOG_INFO( LogLaunch, "Engine PreInit completed successfully." );
@@ -97,6 +97,8 @@ void LumenEngine::FEngineLoop::Tick ()
     {
         GPlatformApplication->PumpMessages( LastTickTime );
     }
+
+    ++FrameIndex;
 }
 
 void LumenEngine::FEngineLoop::Exit ()
@@ -137,13 +139,13 @@ void LumenEngine::FEngineLoop::AppShutdown ()
 
 void LumenEngine::FEngineLoop::CalculateDeltaTime () noexcept
 {
-    const Float64 CurrentFrameSeconds = FPlatformTime::Seconds();
+    const Float64 CurrentFrameSeconds = HAL::FPlatformTime::Seconds();
 
     LastTickTime = CurrentFrameSeconds - LastFrameSeconds;
 
-    if ( LastTickTime > FPlatformTime::MAX_TICK_RATE )
+    if ( LastTickTime > HAL::FPlatformTime::MAX_TICK_RATE )
     {
-        LastTickTime = FPlatformTime::MAX_TICK_RATE;
+        LastTickTime = HAL::FPlatformTime::MAX_TICK_RATE;
     }
 
     if ( LastTickTime < Maths::EPSILON )

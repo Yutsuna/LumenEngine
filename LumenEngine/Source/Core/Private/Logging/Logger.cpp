@@ -47,7 +47,7 @@ void LumenEngine::FLogger::EnqueueLogMessage ( const FLogCategory &Category, con
 {
     {
         std::lock_guard<std::mutex> Lock( QueueMutex );
-        LogMessageQueue.push( { Category, Verbosity, std::move( Message ), FPlatformTime::Seconds() } );
+        LogMessageQueue.push( { Category, Verbosity, std::move( Message ), HAL::FPlatformTime::Seconds() } );
     }
     Condition.notify_one();
 }

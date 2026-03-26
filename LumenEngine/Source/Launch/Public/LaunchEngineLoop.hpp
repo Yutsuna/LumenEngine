@@ -46,8 +46,11 @@ public:
     /** Check if the application should exit */
     Bool ShouldExit () const;
 
-    /** Requests the application to exit */
+    /** Request the application to exit */
     void RequestExit ( const AnsiChar *Reason );
+
+    /** @return The current frame index since the engine started */
+    [[nodiscard]] UInt64 GetFrameIndex () const noexcept { return FrameIndex; }
 
 public:
 
@@ -66,6 +69,8 @@ private:
     Float64 TotalTickTime;
     Float64 LastTickTime;
     Float64 LastFrameSeconds;
+
+    UInt64 FrameIndex = 0;
 
     Bool bRequestingExit;
 };
