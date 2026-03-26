@@ -10,6 +10,8 @@ set(IS_CLANG  $<CXX_COMPILER_ID:Clang>)
 set(IS_MSVC   $<CXX_COMPILER_ID:MSVC>)
 set(IS_GNULIKE $<OR:${IS_GCC},${IS_CLANG}>)
 
+set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
+
 ###########################################################
 
 target_compile_options(LumenCompiler INTERFACE
