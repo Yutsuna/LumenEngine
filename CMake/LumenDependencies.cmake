@@ -6,7 +6,8 @@ function(LumenRegisterPackage NAME TARGET PKGCONF)
 endfunction()
 
 LumenRegisterPackage(Vulkan Vulkan::Vulkan "")
-LumenRegisterPackage(SDL3   SDL3::SDL3     sdl3)
+LumenRegisterPackage(SDL3   SDL3::SDL3      sdl3)
+LumenRegisterPackage(VulkanMemoryAllocator VulkanMemoryAllocator::VMA "") 
 
 ###########################################################
 
@@ -49,6 +50,8 @@ function(LumenFindPackage NAME)
     else()
         message(STATUS "[Lumen] ${NAME}: not found")
     endif()
+
+    set(${NAME}_FOUND ${${NAME}_FOUND} PARENT_SCOPE)
 endfunction()
 
 ###########################################################
@@ -64,5 +67,3 @@ function(LumenResolveLib RAW_NAME OUT_TARGET)
         set(${OUT_TARGET} "${RAW_NAME}" PARENT_SCOPE)
     endif()
 endfunction()
-
-###########################################################
