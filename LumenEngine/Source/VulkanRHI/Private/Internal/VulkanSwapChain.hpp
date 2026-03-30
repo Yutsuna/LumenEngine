@@ -8,6 +8,7 @@
 #include "Container/Vector.hpp"
 #include "CoreTypes.hpp"
 #include "Maths/Vec.hpp"
+#include "VulkanCore.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -20,23 +21,6 @@ namespace RHI
     class FVulkanQueue;
     class FVulkanDevice;
     class FVulkanSemaphore;
-    class FVulkanPlatformWindowContext;
-
-    /**
-     * @enum ESwapChainMode
-     * @brief Enumeration for different SwapChain presentation modes
-     */
-    enum class ESwapChainMode
-    {
-        /** No VSync, may cause tearing */
-        Immediate,
-        /** VSync enabled, synchronizes with the display's refresh rate */
-        Mailbox,
-        /** VSync enabled, but may allow for some tearing if the display can't keep up */
-        Fifo,
-        /** VSync enabled, but may allow for some tearing if the display can't keep up, and may allow for lower latency than Fifo */
-        FifoRelaxed
-    };
 
     /**
      * @enum ESwapChainStatus
@@ -44,7 +28,7 @@ namespace RHI
      */
     enum class ESwapChainStatus
     {
-        Heatlhy     = 0,
+        Healthy     = 0,
         OutOfDate   = 1,
         SurfaceLost = 2,
     };
@@ -61,86 +45,86 @@ namespace RHI
                            FVulkanDevice &InDevice,
                            VkSurfaceKHR InSurface,
                            VkSwapchainKHR InSwapChain,
-                           const VkSurfaceTransformFlagBitsKHR PreTransform,
                            const Maths::FVec2u &InSize,
-                           const Bool InIsFullscreen,
-                           const UInt32 NumSwapChainImages,
-                           const Int8 InLockToVsync,
-                           FVulkanPlatformWindowContext &WindowContext );
+                           const UInt32 NumSwapChainImages ) noexcept;
 
-        ~FVulkanSwapChain () noexcept = default;
+        ~FVulkanSwapChain () noexcept;
 
     public:
 
         /**
+         * @brief Acquires the next available image from the swap chain for rendering
+         * @return The index of the acquired image in the swap chain
+         */
+        [[nodiscard]] UInt32 AcquireNextImage ();
+
+        /**
          * @brief Presents the current image to the screen
-         * @param PresentQueue to submit the present operation to
-         * @param BackBufferRenderingDoneSemaphore signals when the back buffer rendering is done
          * @return ESwapChainStatus indicating the result of the present operation
          */
-        ESwapChainStatus Present ( FVulkanQueue *PresentQueue, FVulkanSemaphore *BakBufferRenderingDoneSemaphore );
+        [[nodiscard]] ESwapChainStatus Present ();
+
+    public:
+
+        /** @return The semaphore signaled when the current frame's image is acquired */
+        [[nodiscard]] VkSemaphore GetImageAvailableSemaphore () const noexcept;
+
+        /** @return The semaphore to be signaled when rendering is complete */
+        [[nodiscard]] VkSemaphore GetRenderFinishedSemaphore () const noexcept;
+
+        /** @return The fence to be signaled when the GPU finishes the current frame's commands */
+        [[nodiscard]] VkFence GetInFlightFence () const noexcept;
+
+        /** @return The handle to the underlying Vulkan swapchain */
+        [[nodiscard]] VkSwapchainKHR GetHandle () const noexcept;
+
+        /** @return The index of the currently acquired image */
+        [[nodiscard]] UInt32 GetCurrentImageIndex () const noexcept;
 
     private:
 
-        /**
-         * @brief Acquires the next available image from the swap chain for rendering
-         * @param InSemaphore to signal when the image is acquired
-         * @param InFence to signal when the image is acquired (optional)
-         * @return The index of the acquired image in the swap chain
-         */
-        UInt32 AcquireNextImage ( VkSemaphore InSemaphore, VkFence InFence = VK_NULL_HANDLE );
-
+        /** Validates the current swapchain state */
         void SwapChainValidation ();
+
+        /** Destroys the swapchain and its associated resources */
+        void Destroy () noexcept;
 
     private:
 
         static constexpr UInt32 InvalidSwapChainImageIndex = static_cast<UInt32>( -1 );
 
-        struct FCoreContext
-        {
-            const VkInstance Instance;
-            FVulkanDevice &Device;
-            VkSurfaceKHR Surface = VK_NULL_HANDLE;
-            void *WindowHandle   = nullptr;
+        /** Vulkan instance */
+        VkInstance Instance{ VK_NULL_HANDLE };
 
-            inline FCoreContext ( const VkInstance InInst, FVulkanDevice &InDev ) : Instance( InInst ), Device( InDev )
-            {
-                /* Ctor */
-            }
-        } Core;
+        /** Vulkan device reference */
+        FVulkanDevice &Device;
 
-        struct FGeometry final
-        {
-            Maths::FVec2u Size = { .Width = 0, .Height = 0 };
-            VkSurfaceTransformFlagBitsKHR PreTransform;
-            bool bIsFullScreen = false;
-            Int8 LockToVsync   = 0;
-        } Geometry;
+        /** Vulkan surface handle */
+        VkSurfaceKHR Surface{ VK_NULL_HANDLE };
 
-        struct FState final
-        {
-            VkSwapchainKHR Handle    = VK_NULL_HANDLE;
-            UInt32 CurrentImageIndex = InvalidSwapChainImageIndex;
-            Int32 SemaphoreIndex     = 0;
-            UInt32 NumPresentCalls   = 0;
-            UInt32 NumAcquireCalls   = 0;
-            UInt32 PresentID         = 0;
-        } State;
+        /** Swapchain handle */
+        VkSwapchainKHR Handle{ VK_NULL_HANDLE };
 
-        struct FPacingData final
-        {
-            UInt32 SampleCount            = 0;
-            Float64 PreviousFrameCPUTime  = 0;
-            Float64 SampledDeltaTimeMS    = 0;
-            Float64 NextPresentTargetTime = 0;
-        } Pacing;
+        /** Current image index */
+        UInt32 CurrentImageIndex{ InvalidSwapChainImageIndex };
 
-        struct FSyncResources final
+        /** Current frame in flight index (0 to MAX_FRAMES_IN_FLIGHT - 1) */
+        UInt32 CurrentFrame{ 0 };
+
+        /** Swapchain images */
+        TVector<VkImage> Images;
+
+        /** Synchronization resources for each frame in flight */
+        struct FFrameSync
         {
-            TVector<FVulkanSemaphore *> ImageAcquiredSemaphore;
-        } Sync;
+            VkSemaphore ImageAvailableSemaphore{ VK_NULL_HANDLE };
+            VkSemaphore RenderFinishedSemaphore{ VK_NULL_HANDLE };
+            VkFence InFlightFence{ VK_NULL_HANDLE };
+        } FrameSync[MAX_FRAMES_IN_FLIGHT];
     };
 
 } // namespace RHI
 
 } // namespace LumenEngine
+
+#include "Inline/VulkanSwapChain.inl"
