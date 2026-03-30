@@ -12,6 +12,7 @@ LumenAddModules(
     ${CMAKE_CURRENT_SOURCE_DIR}/LumenEngine/Source
     Core
     MathCore
+    Parallel
     ApplicationCore
     VulkanRHI
     Launch
