@@ -7,8 +7,9 @@
 
 #include "Container/String.hpp"
 #include "Container/UniquePtr.hpp"
-
+#include "Container/Vector.hpp"
 #include "CoreTypes.hpp"
+#include "VulkanCore.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -19,6 +20,7 @@ namespace RHI
 {
 
     class FVulkanDevice;
+    class FVulkanResource;
 
     /**
      * @class FVulkanRHI
@@ -33,6 +35,9 @@ namespace RHI
 
     public:
 
+        /** @return Singleton instance of the RHI */
+        static FVulkanRHI &Get ();
+
         /**
          * @brief Initializes the Vulkan RHI with the provided window handle
          * @param InWindowHandle A pointer to the window handle (platform-specific)
@@ -43,7 +48,6 @@ namespace RHI
         /**
          * @brief Performs post-initialization tasks after the Vulkan context has been created
          */
-
         void PostInitialize () noexcept;
 
         /**
@@ -52,7 +56,7 @@ namespace RHI
         void Shutdown () noexcept;
 
         /**
-         * @brief Begins a new frame for rendering, preparing the Vulkan command buffers and synchronization primitives
+         * @brief Begins a new frame for rendering
          */
         void RHIBeginFrame ();
 
@@ -61,19 +65,41 @@ namespace RHI
          */
         void RHIEndFrame ();
 
+    public:
+
+        /** @return The underlying Vulkan device wrapper */
+        FVulkanDevice &GetDevice () noexcept;
+
+        /**
+         * @brief Enqueues a resource for deferred deletion
+         * @param Resource The resource to be deleted after MAX_FRAMES_IN_FLIGHT
+         */
+        void DeferredDeletion ( FVulkanResource *Resource );
+
     private:
+
+        /** Processes the deferred deletion queue and releases resources that are safe to destroy */
+        void TickDeferredDeletion ();
 
         TExpected<void, FString> CreateInstance ();
         TExpected<void, FString> CreateSurface ( void *InWindowHandle );
 
     private:
 
+        /** Vulkan instance */
         VkInstance Instance{ VK_NULL_HANDLE };
+
+        /** Vulkan surface */
         VkSurfaceKHR Surface{ VK_NULL_HANDLE };
 
+        /** Logical and physical device wrapper */
         TUniquePtr<FVulkanDevice> Device;
 
+        /** Queue of resources pending deletion, grouped by frame index */
+        TVector<FVulkanResource *> PendingDeletionQueue;
+
 #if !defined( NDEBUG )
+        /** Debug messenger for validation layers */
         VkDebugUtilsMessengerEXT DebugMessenger{ VK_NULL_HANDLE };
 #endif
     };
