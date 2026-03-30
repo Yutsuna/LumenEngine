@@ -14,6 +14,7 @@
 #include "Maths/Macros.hpp"
 
 #include "Logging/Logger.hpp"
+#include "Maths/Vec.hpp"
 
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
     #include "Linux/LinuxApplication.hpp"
@@ -66,7 +67,7 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiCha
 
     LastFrameSeconds = HAL::FPlatformTime::Seconds();
     TotalTickTime    = 0.0;
-    LastTickTime     = HAL::FPlatformTime::DEFAULT_TICK_RATE;
+    LastTickTime     = HAL::FPlatformTime::DefaultTickRate;
     bRequestingExit  = false;
 
     LUMEN_LOG_INFO( LogLaunch, "Engine PreInit completed successfully." );
@@ -143,12 +144,12 @@ void LumenEngine::FEngineLoop::CalculateDeltaTime () noexcept
 
     LastTickTime = CurrentFrameSeconds - LastFrameSeconds;
 
-    if ( LastTickTime > HAL::FPlatformTime::MAX_TICK_RATE )
+    if ( LastTickTime > HAL::FPlatformTime::MaxTickRate )
     {
-        LastTickTime = HAL::FPlatformTime::MAX_TICK_RATE;
+        LastTickTime = HAL::FPlatformTime::MaxTickRate;
     }
 
-    if ( LastTickTime < Maths::EPSILON )
+    if ( LastTickTime < Maths::Epsilon )
     {
         LastTickTime = 0.0;
     }
