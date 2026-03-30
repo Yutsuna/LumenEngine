@@ -1,103 +1,58 @@
 ###########################################################
 
 function(LumenModule)
-
-    set(MODULE_OPTIONS "")
-    set(MODULE_ONE_VALUE NAME TYPE)
-    set(MODULE_MULTI_VALUE
-        SOURCES
-        PUBLIC_INCLUDES
-        PRIVATE_INCLUDES
-        DEFINES
-        PRIVATE_DEFINES
-        DEPS
-        LINUX_LIBS
-        WINDOWS_LIBS
-        MACOS_LIBS
-    )
-    cmake_parse_arguments(M
-        "${MODULE_OPTIONS}"
-        "${MODULE_ONE_VALUE}"
-        "${MODULE_MULTI_VALUE}"
-        ${ARGN}
-    )
-
-###########################################################
-
-    if(NOT M_NAME)
-        message(FATAL_ERROR "[LumenModule] NAME is required")
-    endif()
-
-    if(NOT M_TYPE)
-        set(M_TYPE "shared_library")
-    endif()
+    set(MULTI SOURCES PUBLIC_INCLUDES PRIVATE_INCLUDES DEFINES PRIVATE_DEFINES DEPS LINUX_LIBS WINDOWS_LIBS MACOS_LIBS)
+    cmake_parse_arguments(M "" "NAME;TYPE" "${MULTI}" ${ARGN})
 
 ###########################################################
 
     set(ALL_SOURCES "")
     foreach(PATTERN IN LISTS M_SOURCES)
-        file(GLOB_RECURSE MATCHED
-            CONFIGURE_DEPENDS
-            "${CMAKE_CURRENT_SOURCE_DIR}/${PATTERN}"
-        )
+        file(GLOB_RECURSE MATCHED CONFIGURE_DEPENDS "${CMAKE_CURRENT_SOURCE_DIR}/${PATTERN}")
         list(APPEND ALL_SOURCES ${MATCHED})
     endforeach()
 
     if(NOT ALL_SOURCES)
-        message(WARNING "[LumenModule] ${M_NAME}: no sources matched, skipping")
         return()
     endif()
 
 ###########################################################
 
-    string(TOLOWER "${M_TYPE}" TYPE_LOWER)
+    string(TOLOWER "${M_TYPE}" TYPE)
 
-    if(TYPE_LOWER STREQUAL "executable")
+    if(TYPE STREQUAL "executable")
         add_executable(${M_NAME} ${ALL_SOURCES})
-    elseif(TYPE_LOWER MATCHES "^shared")
-        add_library(${M_NAME} SHARED ${ALL_SOURCES})
-        add_library(Lumen::${M_NAME} ALIAS ${M_NAME})
-        set_target_properties(${M_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
-    elseif(TYPE_LOWER MATCHES "^static")
+        add_executable(Lumen::${M_NAME} ALIAS ${M_NAME})
+    elseif(TYPE MATCHES "^static")
         add_library(${M_NAME} STATIC ${ALL_SOURCES})
         add_library(Lumen::${M_NAME} ALIAS ${M_NAME})
     else()
-        message(FATAL_ERROR "[LumenModule] ${M_NAME}: unknown type '${M_TYPE}'")
+        add_library(${M_NAME} SHARED ${ALL_SOURCES})
+        set_target_properties(${M_NAME} PROPERTIES POSITION_INDEPENDENT_CODE ON)
+        add_library(Lumen::${M_NAME} ALIAS ${M_NAME})
     endif()
-
-    set_target_properties(${M_NAME} PROPERTIES
-        OUTPUT_NAME  "${M_NAME}"
-        DEBUG_POSTFIX "_d"
-    )
 
 ###########################################################
 
     target_link_libraries(${M_NAME} PRIVATE Lumen::Compiler)
 
+    set_target_properties(${M_NAME} PROPERTIES 
+        OUTPUT_NAME "${M_NAME}" 
+        DEBUG_POSTFIX "_d"
+    )
+
 ###########################################################
 
-    foreach(DIR IN LISTS M_PUBLIC_INCLUDES)
-        target_include_directories(${M_NAME} PUBLIC
-            "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/${DIR}>"
-            "$<INSTALL_INTERFACE:include/${M_NAME}>"
-        )
-    endforeach()
-
+    target_include_directories(${M_NAME} PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/Public>")
+    
     foreach(DIR IN LISTS M_PRIVATE_INCLUDES)
-        target_include_directories(${M_NAME} PRIVATE
-            "${CMAKE_CURRENT_SOURCE_DIR}/${DIR}"
-        )
+        target_include_directories(${M_NAME} PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/${DIR}")
     endforeach()
 
 ###########################################################
 
-    foreach(DEF IN LISTS M_DEFINES)
-        target_compile_definitions(${M_NAME} PUBLIC ${DEF})
-    endforeach()
-
-    foreach(DEF IN LISTS M_PRIVATE_DEFINES)
-        target_compile_definitions(${M_NAME} PRIVATE ${DEF})
-    endforeach()
+    target_compile_definitions(${M_NAME} PUBLIC ${M_DEFINES})
+    target_compile_definitions(${M_NAME} PRIVATE ${M_PRIVATE_DEFINES})
 
 ###########################################################
 
@@ -111,28 +66,22 @@ function(LumenModule)
 
 ###########################################################
 
-    if(CMAKE_SYSTEM_NAME STREQUAL "Linux")
-        set(PLATFORM_LIBS ${M_LINUX_LIBS})
-    elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
-        set(PLATFORM_LIBS ${M_WINDOWS_LIBS})
-    elseif(CMAKE_SYSTEM_NAME STREQUAL "Darwin")
-        set(PLATFORM_LIBS ${M_MACOS_LIBS})
+    set(PLAT_LIBS "")
+    if(APPLE)
+        set(PLAT_LIBS ${M_MACOS_LIBS})
+    elseif(WIN32)
+        set(PLAT_LIBS ${M_WINDOWS_LIBS})
     else()
-        set(PLATFORM_LIBS "")
+        set(PLAT_LIBS ${M_LINUX_LIBS})
     endif()
 
-    foreach(LIB IN LISTS PLATFORM_LIBS)
-        LumenResolveLib(${LIB} RESOLVED_TARGET)
-        if(RESOLVED_TARGET)
-            target_link_libraries(${M_NAME} PRIVATE ${RESOLVED_TARGET})
-        else()
-            message(WARNING "[LumenModule] ${M_NAME}: '${LIB}' not found, skipping")
-        endif()
+    foreach(LIB IN LISTS PLAT_LIBS)
+        target_link_libraries(${M_NAME} PRIVATE ${LIB})
     endforeach()
 
 ###########################################################
 
-    message(STATUS "[Lumen] Module: ${M_NAME} (${M_TYPE})")
+    message(STATUS "[Lumen] Module: ${M_NAME}")
 
 endfunction()
 

@@ -7,5 +7,5 @@ LumenModule(
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
     DEPS            Core MathCore
-    LINUX_LIBS      SDL3
+    LINUX_LIBS      SDL3::SDL3
 )
