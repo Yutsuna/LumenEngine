@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "../VulkanQueue.hpp"
+
 inline LumenEngine::RHI::FVulkanQueue::FVulkanQueue () noexcept = default;
 
 inline LumenEngine::RHI::FVulkanQueue::FVulkanQueue ( VkQueue InQueue, UInt32 InFamilyIndex, UInt32 InQueueIndex ) noexcept

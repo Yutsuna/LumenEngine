@@ -5,10 +5,11 @@
 
 #pragma once
 
-template <LumenEngine::RHI::Concepts::CVulkanExtension... TExtensions>
-void LumenEngine::RHI::FVulkanDevice::EnableExtensions ( TExtensions... InExtensions )
+#include "../VulkanDevice.hpp"
+
+template <LumenEngine::RHI::Concepts::CVulkanExtension... TExtensions> void LumenEngine::RHI::FVulkanDevice::EnableExtensions ( TExtensions... InExtensions )
 {
-    ( EnabledExtensions.PushBack( InExtensions ), ... );
+    ( EnabledExtensions.push_back( InExtensions ), ... );
 }
 
 inline VkDevice LumenEngine::RHI::FVulkanDevice::GetLogicalDevice () const noexcept
