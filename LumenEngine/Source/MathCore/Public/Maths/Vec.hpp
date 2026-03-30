@@ -27,6 +27,8 @@ namespace Maths
 #if defined( LUMEN_ENGINE_COMPILER_CLANG )
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wc11-extensions"
+    #pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+    #pragma clang diagnostic ignored "-Wnested-anon-types"
 
 #elif defined( LUMEN_ENGINE_COMPILER_GCC )
     #pragma GCC diagnostic push
