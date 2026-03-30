@@ -11,6 +11,6 @@ namespace LumenEngine
 {
 
 // TODO: Implement custom map class
-template <typename KeyType, typename ValueType> using FMap = std::unordered_map<KeyType, ValueType>;
+template <typename KeyType, typename ValueType> using TMap = std::unordered_map<KeyType, ValueType>;
 
 } // namespace LumenEngine
