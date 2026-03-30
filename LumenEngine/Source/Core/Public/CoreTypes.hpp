@@ -31,6 +31,7 @@ using Byte     = unsigned char;
 
 // TODO: Implement custom atomic type
 template <typename Type> using TAtomic                   = std::atomic<Type>;
+using FAtomicFlag                                        = std::atomic_flag;
 template <typename Type, typename Error> using TExpected = std::expected<Type, Error>;
 
 using NullptrType = decltype( nullptr );
