@@ -1,0 +1,88 @@
+Checks: >
+  -*,
+  bugprone-*,
+  -bugprone-easily-swappable-parameters,
+  cert-*,
+  -cert-err58-cpp,
+  clang-analyzer-*,
+  cppcoreguidelines-*,
+  -cppcoreguidelines-missing-std-forward,
+  -cppcoreguidelines-avoid-magic-numbers,
+  -cppcoreguidelines-pro-bounds-array-to-pointer-decay,
+  -cppcoreguidelines-pro-bounds-pointer-arithmetic,
+  -cppcoreguidelines-pro-type-reinterpret-cast,
+  -cppcoreguidelines-special-member-functions,
+  -cppcoreguidelines-macro-usage,
+  -cppcoreguidelines-avoid-c-arrays,
+  -cppcoreguidelines-owning-memory,
+  -cppcoreguidelines-avoid-do-while,
+  -cppcoreguidelines-avoid-const-or-ref-data-members,
+  -cppcoreguidelines-non-private-member-variables-in-classes,
+  hicpp-*,
+  -hicpp-explicit-conversions,
+  -hicpp-no-array-decay,
+  -hicpp-special-member-functions,
+  -hicpp-use-auto,
+  -hicpp-avoid-c-arrays,
+  -hicpp-signed-bitwise,
+  misc-*,
+  -misc-non-private-member-variables-in-classes,
+  -misc-include-cleaner,
+  -misc-header-include-cycle,
+  modernize-*,
+  -modernize-use-trailing-return-type,
+  -modernize-use-auto,
+  -modernize-avoid-c-arrays,
+  -modernize-concat-nested-namespaces,
+  performance-*,
+  readability-*,
+  -readability-magic-numbers,
+  -readability-identifier-length,
+  -readability-function-cognitive-complexity,
+  -readability-use-concise-preprocessor-directives,
+  -readability-avoid-const-params-in-decls,
+  -readability-redundant-access-specifiers,
+  -cert-err33-c
+
+WarningsAsErrors: "*"
+HeaderFilterRegex: "^(Include|Source)/.*"
+SystemHeaders: false
+
+CheckOptions:
+  # PascalCase naming convention
+  - key: readability-identifier-naming.ClassCase
+    value: CamelCase
+  - key: readability-identifier-naming.StructCase
+    value: CamelCase
+  - key: readability-identifier-naming.FunctionCase
+    value: CamelCase
+  - key: readability-identifier-naming.VariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.LocalVariableCase
+    value: CamelCase
+  - key: readability-identifier-naming.ParameterCase
+    value: CamelCase
+  - key: readability-identifier-naming.MemberCase
+    value: CamelCase
+
+  # Booleans (bPrefix)
+  - key: readability-identifier-naming.VariableIgnoredRegexp
+    value: "^b[A-Z].*"
+  - key: readability-identifier-naming.LocalVariableIgnoredRegexp
+    value: "^b[A-Z].*"
+  - key: readability-identifier-naming.ParameterIgnoredRegexp
+    value: "^b[A-Z].*"
+  - key: readability-identifier-naming.MemberIgnoredRegexp
+    value: "^b[A-Z].*"
+
+  # Enums
+  - key: readability-identifier-naming.EnumCase
+    value: CamelCase
+  - key: readability-identifier-naming.EnumPrefix
+    value: E
+  - key: readability-identifier-naming.EnumIgnoredRegexp
+    value: "^Type$"
+
+  # Macros
+  - key: readability-identifier-naming.MacroDefinitionCase
+    value: UPPER_CASE
