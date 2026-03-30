@@ -5,9 +5,9 @@
 
 #include "Container/Signal.hpp"
 
-LumenEngine::FMap<LumenEngine::ESystemSignal::Type, LumenEngine::TVector<LumenEngine::FSignalHandlerSignature>> LumenEngine::FSignal::SignalListeners;
+LumenEngine::TMap<LumenEngine::ESystemSignal::Type, LumenEngine::TVector<LumenEngine::FSignalHandlerSignature>> LumenEngine::FSignal::SignalListeners;
 
-void LumenEngine::FSignal::Bind ( const ESystemSignal::Type InSignal, FSignalHandlerSignature inHandler )
+void LumenEngine::FSignal::Bind ( const ESystemSignal::Type InSignal, FSignalHandlerSignature InHandler )
 {
     const Int32 OSCode = static_cast<Int32>( InSignal );
 
@@ -15,7 +15,7 @@ void LumenEngine::FSignal::Bind ( const ESystemSignal::Type InSignal, FSignalHan
     {
         std::signal( OSCode, &FSignal::HandleOSSignal );
     }
-    SignalListeners[InSignal].push_back( inHandler );
+    SignalListeners[InSignal].push_back( InHandler );
 }
 
 void LumenEngine::FSignal::Raise ( const ESystemSignal::Type InSignal )
