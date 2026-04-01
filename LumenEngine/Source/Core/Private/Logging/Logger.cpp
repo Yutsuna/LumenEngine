@@ -7,8 +7,7 @@
 #include "Container/Signal.hpp"
 #include "CoreTypes.hpp"
 #include "HAL/PlatformTime.hpp"
-
-#include <iostream>
+#include <print>
 
 LumenEngine::FLogger &LumenEngine::FLogger::GetInstance ()
 {
@@ -17,14 +16,18 @@ LumenEngine::FLogger &LumenEngine::FLogger::GetInstance ()
     return Instance;
 }
 
-void LumenEngine::FLogger::Flush ( const AnsiChar *const Character )
+void LumenEngine::FLogger::Initialize ()
 {
-    std::cout << Character << std::flush;
+    if ( not WorkerThread.joinable() )
+    {
+        WorkerThread = std::jthread( [this] ( std::stop_token Token ) { FlushLogMessages( Token ); } );
+    }
 }
 
-LumenEngine::FLogger::FLogger () : bIsRunning( true )
+void LumenEngine::FLogger::Flush ( const AnsiChar *const String )
 {
-    WorkerThread = std::thread( [this] { FlushLogMessages(); } );
+    std::println( "{}", String );
+    std::fflush( stdout );
 }
 
 LumenEngine::FLogger::~FLogger ()
@@ -34,13 +37,8 @@ LumenEngine::FLogger::~FLogger ()
 
 void LumenEngine::FLogger::Shutdown ()
 {
-    bIsRunning = false;
+    WorkerThread.request_stop();
     Condition.notify_all();
-
-    if ( WorkerThread.joinable() )
-    {
-        WorkerThread.join();
-    }
 }
 
 void LumenEngine::FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message )
@@ -55,15 +53,15 @@ void LumenEngine::FLogger::EnqueueLogMessage ( const FLogCategory &Category, con
 namespace
 {
 
-static inline void CoutMessage ( const LumenEngine::FLogger::FLogMessage &LogMessage ) noexcept
+inline void CoutMessage ( const LumenEngine::FLogger::FLogMessage &LogMessage ) noexcept
 {
     static constexpr const LumenEngine::AnsiChar *const ResetColor   = "\033[0m";
-    static constexpr const LumenEngine::AnsiChar *const FormatString = "[{:.4f}] {}: {}{}: {}{}\n";
+    static constexpr const LumenEngine::AnsiChar *const FormatString = "[{:.4f}] {}: {}{}: {}{}";
 
     const LumenEngine::AnsiChar *const VerbosityColor  = LumenEngine::ELogVerbosity::ToColor( LogMessage.Verbosity );
     const LumenEngine::AnsiChar *const VerbosityString = LumenEngine::ELogVerbosity::ToString( LogMessage.Verbosity );
 
-    std::cout << std::format( FormatString, LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityColor, VerbosityString, LogMessage.Message, ResetColor );
+    std::println( FormatString, LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityColor, VerbosityString, LogMessage.Message, ResetColor );
 
     if ( LogMessage.Verbosity == LumenEngine::ELogVerbosity::Fatal )
     {
@@ -73,20 +71,21 @@ static inline void CoutMessage ( const LumenEngine::FLogger::FLogMessage &LogMes
 
 } // namespace
 
-void LumenEngine::FLogger::FlushLogMessages ()
+void LumenEngine::FLogger::FlushLogMessages ( std::stop_token &StopToken )
 {
-    while ( bIsRunning || not LogMessageQueue.empty() )
+    while ( not StopToken.stop_requested() or not LogMessageQueue.empty() )
     {
-        std::unique_lock<std::mutex> Lock( QueueMutex );
-        Condition.wait( Lock, [this] { return not LogMessageQueue.empty() || not bIsRunning; } );
+        std::unique_lock Lock( QueueMutex );
+
+        Condition.wait( Lock, StopToken, [this] { return !LogMessageQueue.empty(); } );
 
         while ( not LogMessageQueue.empty() )
         {
-            FLogMessage LogMessage = std::move( LogMessageQueue.front() );
+            FLogMessage Msg = std::move( LogMessageQueue.front() );
             LogMessageQueue.pop();
-            Lock.unlock();
 
-            CoutMessage( LogMessage );
+            Lock.unlock();
+            CoutMessage( Msg );
             Lock.lock();
         }
     }

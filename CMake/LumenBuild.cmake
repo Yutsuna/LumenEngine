@@ -15,6 +15,7 @@ LumenAddModules(
     Parallel
     ApplicationCore
     VulkanRHI
+    Renderer
     Launch
 )
 

@@ -55,13 +55,13 @@ namespace EWindowMode
 namespace
 {
 
-    static constexpr const AnsiChar *const DefaultWindowTitle = "Lumen Engine";
+    constexpr const AnsiChar *const DefaultWindowTitle = "Lumen Engine";
 
-    static constexpr const Int32 DefaultWindowWidth  = 1280;
-    static constexpr const Int32 DefaultWindowHeight = 720;
+    constexpr const Int32 DefaultWindowWidth  = 1280;
+    constexpr const Int32 DefaultWindowHeight = 720;
 
-    static constexpr const Int32 DefaultWindowPosX = 100;
-    static constexpr const Int32 DefaultWindowPosY = 100;
+    constexpr const Int32 DefaultWindowPosX = 100;
+    constexpr const Int32 DefaultWindowPosY = 100;
 
 } // namespace
 

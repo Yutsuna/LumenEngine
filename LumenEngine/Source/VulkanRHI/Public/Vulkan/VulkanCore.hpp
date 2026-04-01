@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include "CoreTypes.hpp"
-
 #include "Logging/Logger.hpp"
 #include "Logging/LoggingCategory.hpp"
 
@@ -20,7 +18,10 @@ namespace VulkanRHI
 
     extern LUMEN_ENGINE_API const FLogCategory LogVulkanRHI;
 
-}
+    static constexpr UInt32 MaxFramesInFlight = 2;
+    static constexpr UInt32 NullBindlessID    = 0xFFFFFFFF;
+
+} // namespace VulkanRHI
 
 } // namespace LumenEngine
 
@@ -28,13 +29,13 @@ namespace VulkanRHI
  * @def LUMEN_VK_CHECK(result)
  * @brief Checks a Vulkan result and logs a fatal error if it fails.
  */
-#define LUMEN_VK_CHECK( result )                                                                                                                                         \
+#define LUMEN_VK_CHECK( InCall )                                                                                                                                         \
                                                                                                                                                                          \
     do                                                                                                                                                                   \
     {                                                                                                                                                                    \
         const VkResult Result = ( InCall );                                                                                                                              \
         if ( Result != VK_SUCCESS )                                                                                                                                      \
         {                                                                                                                                                                \
-            LUMEN_LOG_FATAL( ::LumenEngine::RHI::LogVulkanRHI, "Vulkan Error {} at {}:{}", static_cast<::LumenEngine::Int32>( Result ), __FILE__, __LINE__ );            \
+            LUMEN_LOG_FATAL( ::LumenEngine::VulkanRHI::LogVulkanRHI, "Vulkan Error {} at {}:{}", static_cast<::LumenEngine::Int32>( Result ), __FILE__, __LINE__ );      \
         }                                                                                                                                                                \
     } while ( 0 )

@@ -45,7 +45,7 @@ target_compile_options(LumenCompiler INTERFACE
 )
 
 target_compile_options(LumenCompiler INTERFACE
-    $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>:        -O0 -g3 -fno-omit-frame-pointer>
+    $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>:        -Og -g3 -fno-omit-frame-pointer>
     $<$<AND:${IS_GNULIKE},$<CONFIG:Release>>:      -O3 -DNDEBUG>
     $<$<AND:${IS_GNULIKE},$<CONFIG:RelWithDebInfo>>: -O2 -g -DNDEBUG>
 )

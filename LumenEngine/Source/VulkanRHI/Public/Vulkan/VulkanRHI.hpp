@@ -1,0 +1,81 @@
+/**
+ * @file VulkanRHI.hpp
+ * @brief Main Render Hardware Interface for Vulkan backend.
+ */
+
+#pragma once
+
+#include "Container/SharedPtr.hpp"
+#include "CoreTypes.hpp"
+
+#include "Vulkan/VulkanSwapChain.hpp"
+
+#include <VkBootstrap.h>
+#include <vk_mem_alloc.h>
+
+namespace LumenEngine
+{
+
+class FGenericWindow;
+
+namespace VulkanRHI
+{
+
+    /**
+     * @class FVulkanRHI
+     * @brief The main entry point and context manager for Vulkan rendering.
+     */
+    class LUMEN_ENGINE_API FVulkanRHI
+    {
+    public:
+
+        FVulkanRHI ()  = default;
+        ~FVulkanRHI () = default;
+
+        /**
+         * @brief Initializes the Vulkan instance, device, and swapchain.
+         * @param InWindow The main application window to render to.
+         */
+        void Initialize ( const TSharedPtr<FGenericWindow> &InWindow );
+
+        /**
+         * @brief Cleans up all Vulkan resources.
+         */
+        void Shutdown ();
+
+    public:
+
+        [[nodiscard]] VkDevice GetDevice () const noexcept;
+        [[nodiscard]] VkPhysicalDevice GetPhysicalDevice () const noexcept;
+        [[nodiscard]] VkInstance GetInstance () const noexcept;
+        [[nodiscard]] VmaAllocator GetAllocator () const noexcept;
+        [[nodiscard]] VkQueue GetGraphicsQueue () const noexcept;
+        [[nodiscard]] UInt32 GetGraphicsQueueFamily () const noexcept;
+        [[nodiscard]] FVulkanSwapChain &GetSwapChain () noexcept;
+
+    private:
+
+        void InitializeVulkanInstance ( const TSharedPtr<FGenericWindow> &InWindow );
+        void InitializeVulkanDevice ();
+        void InitializeVMA ();
+
+    private:
+
+        vkb::Instance Instance;
+        vkb::PhysicalDevice PhysicalDevice;
+        vkb::Device Device;
+
+        VkSurfaceKHR Surface   = VK_NULL_HANDLE;
+        VmaAllocator Allocator = VK_NULL_HANDLE;
+
+        VkQueue GraphicsQueue      = VK_NULL_HANDLE;
+        UInt32 GraphicsQueueFamily = 0;
+
+        FVulkanSwapChain Swapchain;
+
+        Bool bIsInitialized = false;
+    };
+
+} // namespace VulkanRHI
+
+} // namespace LumenEngine

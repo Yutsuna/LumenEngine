@@ -22,11 +22,11 @@ endif()
 ###########################################################
 
 LumenModule(
-    NAME            VulkanRHI
+    NAME            Renderer
     TYPE            shared_library
     SOURCES         "Private/**/*.cpp"
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
-    DEPS            Core ApplicationCore MathCore
+    DEPS            Core ApplicationCore MathCore VulkanRHI
     LINUX_LIBS      Vulkan::Vulkan GPUOpen::VulkanMemoryAllocator vk-bootstrap::vk-bootstrap
 )

@@ -8,9 +8,10 @@ endfunction()
 
 ###########################################################
 
-LumenRegisterPackage(Vulkan                Vulkan::Vulkan             "vulkan")
-LumenRegisterPackage(SDL3                  SDL3::SDL3                 "sdl3")
-LumenRegisterPackage(VulkanMemoryAllocator GPUOpen::VulkanMemoryAllocator "")
+LumenRegisterPackage(Vulkan                 Vulkan::Vulkan                  "vulkan")
+LumenRegisterPackage(SDL3                   SDL3::SDL3                      "sdl3")
+LumenRegisterPackage(VulkanMemoryAllocator  GPUOpen::VulkanMemoryAllocator  "")
+LumenRegisterPackage(vk-bootstrap           vk-bootstrap::vk-bootstrap      "")
 
 ###########################################################
 

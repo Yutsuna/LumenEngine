@@ -4,6 +4,7 @@
  */
 
 #include "LaunchEngineLoop.hpp"
+#include "LaunchEngine.hpp"
 
 #include "ErrorCodes.hpp"
 #include "HAL/PlatformTime.hpp"
@@ -16,6 +17,8 @@
 #include "Logging/Logger.hpp"
 #include "Maths/Vec.hpp"
 
+#include "Graphics/Renderer.hpp"
+
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
     #include "Linux/LinuxApplication.hpp"
 #endif
@@ -25,7 +28,7 @@ namespace LumenEngine
 
 namespace
 {
-    static FLogCategory LogLaunch( "LogLaunch" );
+    const FLogCategory LogLaunch( "LogLaunch" );
 }
 
 FEngineLoop GEngineLoop;
@@ -33,7 +36,7 @@ TSharedPtr<FGenericApplication> GPlatformApplication = nullptr;
 
 namespace
 {
-    static inline const FGenericWindowDescription GetDefaultWindowDescription ()
+    inline const FGenericWindowDescription GetDefaultWindowDescription ()
     {
         return { .Title        = "Lumen Engine",
                  .Position     = Maths::FVec2i( 100, 100 ),
@@ -49,6 +52,7 @@ namespace
 
 LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiChar *[] )
 {
+    LumenEngine::FLogger::GetInstance().Initialize();
     LUMEN_LOG_INFO( LogLaunch, "Engine PreInit started with {} arguments", Argc );
 
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
@@ -86,20 +90,32 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::Init ()
     LUMEN_LOG_INFO( LogLaunch, "Creating main application window..." );
     GPlatformApplication->InitializeWindow( MainWindow, WindowDesc, ParentWindow, bShowImmediately );
 
+    GRenderer = MakeUnique<FRenderer>();
+    GRenderer->Initialize( MainWindow );
+
     LUMEN_LOG_INFO( LogLaunch, "Engine Init completed successfully." );
     return EErrorCode::Success;
 }
 
 void LumenEngine::FEngineLoop::Tick ()
 {
+    LUMEN_LOG_VERBOSE( LogLaunch, "Engine Tick started for frame {}", FrameIndex );
     CalculateDeltaTime();
 
     if ( GPlatformApplication.IsValid() )
     {
+        LUMEN_LOG_VERBOSE( LogLaunch, "Pumping platform messages..." );
         GPlatformApplication->PumpMessages( LastTickTime );
     }
 
+    if ( GRenderer.IsValid() )
+    {
+        LUMEN_LOG_VERBOSE( LogLaunch, "Rendering frame..." );
+        GRenderer->RenderFrame();
+    }
     ++FrameIndex;
+    LUMEN_LOG_VERBOSE( LogLaunch, "Engine Tick completed for frame {}. DeltaTime: {:.4f} seconds", FrameIndex, LastTickTime );
+    Launch::ClientTick( LastTickTime );
 }
 
 void LumenEngine::FEngineLoop::Exit ()
@@ -112,6 +128,11 @@ void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *Reason )
 {
     LUMEN_LOG_WARNING( LogLaunch, "Exit requested: {}", Reason );
     bRequestingExit = true;
+}
+
+LumenEngine::UInt64 LumenEngine::FEngineLoop::GetFrameIndex () const noexcept
+{
+    return FrameIndex;
 }
 
 LumenEngine::Bool LumenEngine::FEngineLoop::ShouldExit () const

@@ -75,7 +75,7 @@ namespace LumenEngine
 namespace
 {
 
-    static inline void SendKeyDownEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const SDL_KeyboardEvent &KeyboardEvent )
+    inline void SendKeyDownEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_KeyboardEvent &KeyboardEvent )
     {
         const SDL_Keycode KeyCode = KeyboardEvent.key;
         const EKeys::Type KeyType = TranslateSDLKeyCodeToEKeys( KeyCode );
@@ -84,7 +84,7 @@ namespace
         MessageHandler->OnKeyDown( KeyType, bIsRepeated );
     }
 
-    static inline void SendKeyUpEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const SDL_KeyboardEvent &KeyboardEvent )
+    inline void SendKeyUpEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_KeyboardEvent &KeyboardEvent )
     {
         const SDL_Keycode KeyCode = KeyboardEvent.key;
         const EKeys::Type KeyType = TranslateSDLKeyCodeToEKeys( KeyCode );
@@ -92,27 +92,27 @@ namespace
         MessageHandler->OnKeyUp( KeyType );
     }
 
-    static inline void SendMouseButtonDownEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
+    inline void SendMouseButtonDownEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
     {
         const EMouseButton::Type ButtonType = TranslateSDLMouseButtonToEMouseButton( MouseButtonEvent.button );
 
         MessageHandler->OnMouseDown( ButtonType );
     }
 
-    static inline void SendMouseButtonUpEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
+    inline void SendMouseButtonUpEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
     {
         const EMouseButton::Type ButtonType = TranslateSDLMouseButtonToEMouseButton( MouseButtonEvent.button );
 
         MessageHandler->OnMouseUp( ButtonType );
     }
 
-    static inline void SendQuitEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler )
+    inline void SendQuitEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler )
     {
         MessageHandler->OnQuit();
         FSignal::Raise( ESystemSignal::Terminate );
     }
 
-    static inline void SendWindowCloseRequestedEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler )
+    inline void SendWindowCloseRequestedEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler )
     {
         MessageHandler->OnRequestExit();
     }
@@ -167,7 +167,7 @@ void LumenEngine::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent 
     }
 }
 
-void LumenEngine::FLinuxApplication::PumpMessages ( const Float64 )
+void LumenEngine::FLinuxApplication::PumpMessages ( const Float64 __attribute__( ( unused ) ) DeltaTime )
 {
     FLinuxBackend::PumpMessages();
 }
