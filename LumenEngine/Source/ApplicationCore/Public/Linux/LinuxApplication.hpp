@@ -5,11 +5,14 @@
 
 #pragma once
 
-#include "Container/Vector.hpp"
 #include "Definitions.hpp"
-#include "Generic/GenericApplication.hpp"
 
-#include <SDL3/SDL.h>
+#if defined( LUMEN_ENGINE_PLATFORM_LINUX )
+
+    #include "Container/Vector.hpp"
+    #include "Generic/GenericApplication.hpp"
+
+    #include <SDL3/SDL.h>
 
 namespace LumenEngine
 {
@@ -20,7 +23,7 @@ class LUMEN_ENGINE_API FLinuxApplication : public FGenericApplication
 {
 public:
 
-    FLinuxApplication ();
+    FLinuxApplication () noexcept = default;
     ~FLinuxApplication () override;
 
     /** Polls SDL messages */
@@ -56,3 +59,5 @@ private:
 extern FLinuxApplication *GLinuxApplication;
 
 } // namespace LumenEngine
+
+#endif

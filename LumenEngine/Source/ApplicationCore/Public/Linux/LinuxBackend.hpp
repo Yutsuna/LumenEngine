@@ -5,8 +5,11 @@
 
 #pragma once
 
-#include "CoreTypes.hpp"
 #include "Definitions.hpp"
+
+#if defined( LUMEN_ENGINE_PLATFORM_LINUX )
+
+    #include "CoreTypes.hpp"
 
 namespace LumenEngine
 {
@@ -22,3 +25,5 @@ struct LUMEN_ENGINE_API FLinuxBackend
 };
 
 } // namespace LumenEngine
+
+#endif

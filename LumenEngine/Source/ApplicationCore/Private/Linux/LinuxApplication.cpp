@@ -4,33 +4,25 @@
  */
 
 #include "Linux/LinuxApplication.hpp"
-#include "Container/Signal.hpp"
-#include "Linux/LinuxBackend.hpp"
-#include "Linux/LinuxWindow.hpp"
 
-#include "Generic/GenericApplicationInput.hpp"
-#include "Generic/GenericApplicationMessageHandler.hpp"
+#if defined( LUMEN_ENGINE_PLATFORM_LINUX )
 
-#include "Logging/LoggingCategory.hpp"
-#include "SDL3/SDL_events.h"
+    #include "Container/Signal.hpp"
+    #include "Linux/LinuxBackend.hpp"
+    #include "Linux/LinuxWindow.hpp"
 
-#include <Logging/Logger.hpp>
+    #include "Generic/GenericApplicationInput.hpp"
+    #include "Generic/GenericApplicationMessageHandler.hpp"
 
-#include <SDL3/SDL.h>
+    #include "Logging/LoggingCategory.hpp"
+    #include "SDL3/SDL_events.h"
+
+    #include <Logging/Logger.hpp>
+
+    #include <SDL3/SDL.h>
 
 LumenEngine::FLinuxApplication *LumenEngine::GLinuxApplication = nullptr;
-
-namespace
-{
-
-LumenEngine::FLogCategory LogLinuxApplication( "LinuxApplication" );
-
-}
-
-LumenEngine::FLinuxApplication::FLinuxApplication () : FGenericApplication()
-{
-    /* Empty */
-}
+const LumenEngine::FLogCategory LogLinuxApplication( "LinuxApplication" );
 
 LumenEngine::FLinuxApplication::~FLinuxApplication ()
 {
@@ -183,3 +175,5 @@ LumenEngine::TSharedPtr<LumenEngine::FLinuxWindow> LumenEngine::FLinuxApplicatio
     }
     return nullptr;
 }
+
+#endif
