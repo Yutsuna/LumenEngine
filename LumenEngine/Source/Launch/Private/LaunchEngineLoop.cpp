@@ -117,10 +117,12 @@ void LumenEngine::FEngineLoop::Tick ()
 void LumenEngine::FEngineLoop::Exit ()
 {
     LUMEN_LOG_INFO( LogLaunch, "Engine Exit requested. Releasing platform application..." );
+
+    GRenderer.Reset();
     GPlatformApplication.Reset();
 }
 
-void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *Reason )
+void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *Reason ) noexcept
 {
     LUMEN_LOG_WARNING( LogLaunch, "Exit requested: {}", Reason );
     bRequestingExit = true;
@@ -131,7 +133,7 @@ LumenEngine::UInt64 LumenEngine::FEngineLoop::GetFrameIndex () const noexcept
     return FrameIndex;
 }
 
-LumenEngine::Bool LumenEngine::FEngineLoop::ShouldExit () const
+LumenEngine::Bool LumenEngine::FEngineLoop::ShouldExit () const noexcept
 {
     return bRequestingExit;
 }

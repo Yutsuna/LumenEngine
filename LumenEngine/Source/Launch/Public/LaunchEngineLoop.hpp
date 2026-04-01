@@ -45,10 +45,10 @@ public:
     void Exit ();
 
     /** Check if the application should exit */
-    [[nodiscard]] Bool ShouldExit () const;
+    [[nodiscard]] Bool ShouldExit () const noexcept;
 
     /** Request the application to exit */
-    void RequestExit ( const AnsiChar *Reason );
+    void RequestExit ( const AnsiChar *Reason ) noexcept;
 
     /** @return The current frame index since the engine started */
     [[nodiscard]] UInt64 GetFrameIndex () const noexcept;
