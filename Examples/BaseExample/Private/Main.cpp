@@ -29,4 +29,5 @@ LumenEngine::Int32 LumenEngine::Launch::ClientInit ( const Int32 LUMEN_UNUSED Ar
 
 void LumenEngine::Launch::ClientTick ( const Float64 LUMEN_UNUSED DeltaTime )
 {
+    //
 }
