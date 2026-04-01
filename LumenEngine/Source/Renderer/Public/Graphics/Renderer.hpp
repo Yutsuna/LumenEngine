@@ -27,8 +27,8 @@ class LUMEN_ENGINE_API FRenderer
 {
 public:
 
-    FRenderer () noexcept  = default;
-    ~FRenderer () noexcept = default;
+    FRenderer () noexcept = default;
+    ~FRenderer () noexcept;
 
 public:
 
@@ -41,7 +41,7 @@ public:
     /**
      * @brief Shuts down the renderer and releases all resources. This should be called when the application is closing.
      */
-    void Shutdown ();
+    void Shutdown () noexcept;
 
     /**
      * @brief Renders a single frame. This should be called every frame to update the display.

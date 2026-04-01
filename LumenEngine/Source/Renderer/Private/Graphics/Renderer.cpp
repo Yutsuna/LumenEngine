@@ -20,6 +20,11 @@ const LumenEngine::FLogCategory LogRenderer( "Renderer" );
 
 LumenEngine::TUniquePtr<LumenEngine::FRenderer> LumenEngine::GRenderer = nullptr;
 
+LumenEngine::FRenderer::~FRenderer () noexcept
+{
+    Shutdown();
+}
+
 void LumenEngine::FRenderer::Initialize ( const TSharedRef<FGenericWindow> &InWindow )
 {
     RHI = MakeUnique<VulkanRHI::FVulkanRHI>();
@@ -29,7 +34,7 @@ void LumenEngine::FRenderer::Initialize ( const TSharedRef<FGenericWindow> &InWi
     LUMEN_LOG_INFO( LogRenderer, "Renderer initialized successfully." );
 }
 
-void LumenEngine::FRenderer::Shutdown ()
+void LumenEngine::FRenderer::Shutdown () noexcept
 {
     if ( not RHI )
     {
