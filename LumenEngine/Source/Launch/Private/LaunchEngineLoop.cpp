@@ -99,22 +99,18 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::Init ()
 
 void LumenEngine::FEngineLoop::Tick ()
 {
-    LUMEN_LOG_VERBOSE( LogLaunch, "Engine Tick started for frame {}", FrameIndex );
     CalculateDeltaTime();
 
     if ( GPlatformApplication.IsValid() )
     {
-        LUMEN_LOG_VERBOSE( LogLaunch, "Pumping platform messages..." );
         GPlatformApplication->PumpMessages( LastTickTime );
     }
 
     if ( GRenderer.IsValid() )
     {
-        LUMEN_LOG_VERBOSE( LogLaunch, "Rendering frame..." );
         GRenderer->RenderFrame();
     }
     ++FrameIndex;
-    LUMEN_LOG_VERBOSE( LogLaunch, "Engine Tick completed for frame {}. DeltaTime: {:.4f} seconds", FrameIndex, LastTickTime );
     Launch::ClientTick( LastTickTime );
 }
 
