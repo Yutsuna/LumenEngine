@@ -7,6 +7,7 @@
 #include "Container/Signal.hpp"
 #include "CoreTypes.hpp"
 #include "HAL/PlatformTime.hpp"
+
 #include <print>
 
 LumenEngine::FLogger &LumenEngine::FLogger::GetInstance ()
