@@ -29,7 +29,6 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::InitializeSynStructures ( VkDevic
     {
         LUMEN_VK_CHECK( vkCreateFence( InDevice, &FenceCreateInfo, nullptr, &Frame.RenderFence ) );
         LUMEN_VK_CHECK( vkCreateSemaphore( InDevice, &SemaphoreCreateInfo, nullptr, &Frame.SwapChainSemaphore ) );
-        LUMEN_VK_CHECK( vkCreateSemaphore( InDevice, &SemaphoreCreateInfo, nullptr, &Frame.RenderSemaphore ) );
     }
 }
 
@@ -52,6 +51,13 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::Create ( const vkb::Device &InDev
     SwapChain  = BuildResult.value();
     Images     = SwapChain.get_images().value();
     ImageViews = SwapChain.get_image_views().value();
+
+    const VkSemaphoreCreateInfo SemaphoreCreateInfo = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, .pNext = nullptr, .flags = 0 };
+    RenderSemaphores.resize( Images.size() );
+    for ( VkSemaphore &Semaphore : RenderSemaphores )
+    {
+        LUMEN_VK_CHECK( vkCreateSemaphore( InDevice.device, &SemaphoreCreateInfo, nullptr, &Semaphore ) );
+    }
 }
 
 void LumenEngine::VulkanRHI::FVulkanSwapChain::Recreate ( const vkb::Device &InDevice, VkFormat InSwapChainFormat, const Maths::FVec2u &InSize, bool bInVSync )
@@ -78,10 +84,23 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::Recreate ( const vkb::Device &InD
         vkDestroyImageView( InDevice.device, View, nullptr );
     }
 
+    for ( VkSemaphore Semaphore : RenderSemaphores )
+    {
+        vkDestroySemaphore( InDevice.device, Semaphore, nullptr );
+    }
+
     SwapChain  = BuildResult.value();
     Images     = SwapChain.get_images().value();
     ImageViews = SwapChain.get_image_views().value();
-    bIsDirty   = false;
+
+    const VkSemaphoreCreateInfo SemaphoreCreateInfo = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, .pNext = nullptr, .flags = 0 };
+    RenderSemaphores.resize( Images.size() );
+    for ( VkSemaphore &Semaphore : RenderSemaphores )
+    {
+        LUMEN_VK_CHECK( vkCreateSemaphore( InDevice.device, &SemaphoreCreateInfo, nullptr, &Semaphore ) );
+    }
+
+    bIsDirty = false;
 }
 
 void LumenEngine::VulkanRHI::FVulkanSwapChain::Cleanup ( VkDevice InDevice ) noexcept
@@ -90,8 +109,13 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::Cleanup ( VkDevice InDevice ) noe
     {
         vkDestroyFence( InDevice, Frames[FrameIndex].RenderFence, nullptr );
         vkDestroySemaphore( InDevice, Frames[FrameIndex].SwapChainSemaphore, nullptr );
-        vkDestroySemaphore( InDevice, Frames[FrameIndex].RenderSemaphore, nullptr );
     }
+
+    for ( VkSemaphore Semaphore : RenderSemaphores )
+    {
+        vkDestroySemaphore( InDevice, Semaphore, nullptr );
+    }
+    RenderSemaphores.clear();
 
     for ( VkImageView View : ImageViews )
     {
@@ -160,6 +184,7 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::SubmitAndPresent ( VkCommandBuffe
                                                                   UInt32 InSwapChainImageIndex ) noexcept
 {
     const FFrameData &Frame                                 = Frames[InFrameIndex];
+    const VkSemaphore RenderSemaphore                       = RenderSemaphores[InSwapChainImageIndex];
     const VkCommandBufferSubmitInfo CommandBufferSubmitInfo = {
         .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, .pNext = nullptr, .commandBuffer = InCmd, .deviceMask = 0 };
     const VkSemaphoreSubmitInfo WaitSemaphoreSubmitInfo   = { .sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
@@ -170,7 +195,7 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::SubmitAndPresent ( VkCommandBuffe
                                                               .deviceIndex = 0 };
     const VkSemaphoreSubmitInfo SignalSemaphoreSubmitInfo = { .sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
                                                               .pNext       = nullptr,
-                                                              .semaphore   = Frame.RenderSemaphore,
+                                                              .semaphore   = RenderSemaphore,
                                                               .value       = 1,
                                                               .stageMask   = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
                                                               .deviceIndex = 0 };
@@ -189,7 +214,7 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::SubmitAndPresent ( VkCommandBuffe
     const VkPresentInfoKHR PresentInfo = { .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
                                            .pNext              = nullptr,
                                            .waitSemaphoreCount = 1,
-                                           .pWaitSemaphores    = &Frame.RenderSemaphore,
+                                           .pWaitSemaphores    = &RenderSemaphore,
                                            .swapchainCount     = 1,
                                            .pSwapchains        = &SwapChain.swapchain,
                                            .pImageIndices      = &InSwapChainImageIndex,

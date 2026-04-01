@@ -27,7 +27,6 @@ namespace VulkanRHI
     struct FFrameData final
     {
         VkSemaphore SwapChainSemaphore;
-        VkSemaphore RenderSemaphore;
         VkFence RenderFence;
     };
 
@@ -121,6 +120,8 @@ namespace VulkanRHI
 
         TVector<VkImage> Images;
         TVector<VkImageView> ImageViews;
+
+        TVector<VkSemaphore> RenderSemaphores;
 
         FFrameData Frames[MaxFramesInFlight] = {};
         Bool bIsDirty                        = false;
