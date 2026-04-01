@@ -87,27 +87,20 @@ void LumenEngine::FRenderer::RenderFrame ()
     Swapchain.BeginFrame( Device, CurrentFrame );
     const auto &[Image, ImageIndex] = Swapchain.AcquireNextImage( Device, CurrentFrame );
 
-    LUMEN_LOG_VERBOSE( LogRenderer, "Acquired swapchain image {} for frame {}", ImageIndex, FrameIndex );
-
     if ( Image == VK_NULL_HANDLE )
     {
-        LUMEN_LOG_ERROR( LogRenderer, "Failed to acquire swapchain image for frame {}. Skipping rendering.", FrameIndex );
         return;
     }
 
     Swapchain.ResetFences( Device, CurrentFrame );
-    LUMEN_LOG_VERBOSE( LogRenderer, "Reset fences for frame {}", CurrentFrame );
 
     VkCommandBuffer CommandBuffer = CommandBuffers[CurrentFrame].Handle;
     LUMEN_VK_CHECK( vkResetCommandBuffer( CommandBuffer, 0 ) );
-
-    LUMEN_LOG_VERBOSE( LogRenderer, "Recording command buffer for frame {}...", FrameIndex );
 
     VkCommandBufferBeginInfo BeginInfo{};
     BeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
     BeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     LUMEN_VK_CHECK( vkBeginCommandBuffer( CommandBuffer, &BeginInfo ) );
-    LUMEN_LOG_VERBOSE( LogRenderer, "Began recording command buffer for frame {}.", FrameIndex );
 
     VkImageMemoryBarrier2 TransitionToGeneral{};
     TransitionToGeneral.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
@@ -130,7 +123,6 @@ void LumenEngine::FRenderer::RenderFrame ()
     DepInfo1.pImageMemoryBarriers    = &TransitionToGeneral;
 
     vkCmdPipelineBarrier2( CommandBuffer, &DepInfo1 );
-    LUMEN_LOG_VERBOSE( LogRenderer, "Recorded image layout transition to GENERAL for frame {}.", FrameIndex );
 
     const Float32 Time = static_cast<Float32>( HAL::FPlatformTime::Seconds() );
 
@@ -142,10 +134,8 @@ void LumenEngine::FRenderer::RenderFrame ()
     const VkImageSubresourceRange ClearRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
 
     vkCmdClearColorImage( CommandBuffer, Image, VK_IMAGE_LAYOUT_GENERAL, &ClearColor, 1, &ClearRange );
-    LUMEN_LOG_VERBOSE( LogRenderer, "Recorded clear color command for frame {}. Clear color: ({:.2f}, {:.2f}, {:.2f}, {:.2f})", FrameIndex, ClearColor.float32[0],
-                       ClearColor.float32[1], ClearColor.float32[2], ClearColor.float32[3] );
 
-    VkImageMemoryBarrier2 TransitionToPresent;
+    VkImageMemoryBarrier2 TransitionToPresent{};
     TransitionToPresent.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
     TransitionToPresent.srcStageMask                    = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
     TransitionToPresent.srcAccessMask                   = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
@@ -160,19 +150,14 @@ void LumenEngine::FRenderer::RenderFrame ()
     TransitionToPresent.subresourceRange.baseArrayLayer = 0;
     TransitionToPresent.subresourceRange.layerCount     = 1;
 
-    LUMEN_LOG_VERBOSE( LogRenderer, "Recorded image layout transition to PRESENT_SRC_KHR for frame {}.", FrameIndex );
-
-    VkDependencyInfo DepInfo2;
+    VkDependencyInfo DepInfo2{};
     DepInfo2.sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
     DepInfo2.imageMemoryBarrierCount = 1;
     DepInfo2.pImageMemoryBarriers    = &TransitionToPresent;
     vkCmdPipelineBarrier2( CommandBuffer, &DepInfo2 );
-    LUMEN_LOG_VERBOSE( LogRenderer, "Recorded pipeline barrier for image layout transition to PRESENT_SRC_KHR for frame {}.", FrameIndex );
 
     LUMEN_VK_CHECK( vkEndCommandBuffer( CommandBuffer ) );
 
-    LUMEN_LOG_VERBOSE( LogRenderer, "Recorded command buffer for frame {}. Submitting to graphics queue...", FrameIndex );
     Swapchain.SubmitAndPresent( CommandBuffer, RHI->GetGraphicsQueue(), CurrentFrame, ImageIndex );
     ++FrameIndex;
-    LUMEN_LOG_VERBOSE( LogRenderer, "Submitted command buffer and presented frame {}. Image index: {}", FrameIndex, ImageIndex );
 }
