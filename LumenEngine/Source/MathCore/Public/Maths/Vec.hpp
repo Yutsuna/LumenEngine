@@ -27,6 +27,8 @@ namespace Maths
 #if defined( LUMEN_ENGINE_COMPILER_CLANG )
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wc11-extensions"
+    #pragma clang diagnostic ignored "-Wgnu-anonymous-struct"
+    #pragma clang diagnostic ignored "-Wnested-anon-types"
 
 #elif defined( LUMEN_ENGINE_COMPILER_GCC )
     #pragma GCC diagnostic push
@@ -115,13 +117,32 @@ namespace Maths
         requires CVecDimension<Type, Dimension>
     struct TVec : public Private::TVecData<Type, Dimension>
     {
-        constexpr TVec () = default;
-        constexpr TVec ( const Type &Value );
-        constexpr TVec ( const TVec<Type, Dimension> &Other ) = default;
+        constexpr TVec () noexcept = default;
+
+        /**
+         * @brief Construct a Vec with all components set to the same value
+         * @param Value The value to set all components to
+         * @return A vector with all components set to Value
+         */
+        constexpr TVec ( const Type &Value ) noexcept;
+
+        /**
+         * @brief Construct a Vec by copying from another Vec of the same type and dimension
+         * @param Other The Vec to copy from
+         * @return A new Vec with the same component values as Other
+         */
+        constexpr TVec ( const TVec<Type, Dimension> &Other ) noexcept = default;
+
+        /**
+         * @brief Construct a Vec by converting from another Vec of a different type but the same dimension
+         * @param Other The Vec to convert from
+         * @return A new Vec with component values converted from Other
+         */
+        template <typename OtherType> constexpr explicit TVec ( const TVec<OtherType, Dimension> &Other ) noexcept;
 
         template <typename... Arguments>
             requires( sizeof...( Arguments ) == Dimension && ( std::is_convertible_v<Arguments, Type> && ... ) )
-        constexpr TVec( Arguments &&...Args );
+        constexpr TVec( Arguments &&...Args ) noexcept;
     };
 
     using FVec2f = TVec<Float32, 2>;

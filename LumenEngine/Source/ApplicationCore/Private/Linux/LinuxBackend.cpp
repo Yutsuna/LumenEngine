@@ -4,20 +4,18 @@
  */
 
 #include "Linux/LinuxBackend.hpp"
-#include "Linux/LinuxApplication.hpp"
 
-#include "Logging/Logger.hpp"
-#include "Logging/LoggingCategory.hpp"
+#if defined( LUMEN_ENGINE_PLATFORM_LINUX )
 
-#include <SDL3/SDL.h>
+    #include "Linux/LinuxApplication.hpp"
 
-namespace
-{
+    #include "Logging/Logger.hpp"
+    #include "Logging/LoggingCategory.hpp"
 
-static const LumenEngine::FLogCategory LogLinuxBackend( "LinuxBackend" );
-static LumenEngine::Bool GInitializedSDL = false;
+    #include <SDL3/SDL.h>
 
-} // namespace
+const LumenEngine::FLogCategory LogLinuxBackend( "LinuxBackend" );
+LumenEngine::Bool GInitializedSDL = false;
 
 LumenEngine::Bool LumenEngine::FLinuxBackend::InitializeSDL ()
 {
@@ -81,3 +79,5 @@ void LumenEngine::FLinuxBackend::PumpMessages ()
         GLinuxApplication->AddPendingEvent( Event );
     }
 }
+
+#endif

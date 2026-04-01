@@ -21,7 +21,7 @@ namespace LumenEngine
 namespace ESystemSignal
 {
 
-    enum Type : Int32
+    enum Type : UInt8
     {
         None      = 0,
         Interrupt = SIGINT,
@@ -53,7 +53,7 @@ public:
      * @param InSignal The system signal to bind the handler to.
      * @param inHandler The function pointer to the signal handler to be called when the signal
      */
-    static void Bind ( const ESystemSignal::Type InSignal, FSignalHandlerSignature inHandler );
+    static void Bind ( const ESystemSignal::Type InSignal, FSignalHandlerSignature InHandler );
 
     /**
      * @brief Raises a system signal, invoking any registered handlers for that signal.
@@ -75,7 +75,7 @@ private:
 private:
 
     /** Map of registered signal handlers for each system signal */
-    static FMap<ESystemSignal::Type, FVector<FSignalHandlerSignature>> SignalListeners;
+    static TMap<ESystemSignal::Type, TVector<FSignalHandlerSignature>> SignalListeners;
 };
 
 } // namespace LumenEngine

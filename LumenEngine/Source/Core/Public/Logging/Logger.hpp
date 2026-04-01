@@ -8,8 +8,9 @@
 #include "Container/Queue.hpp"
 #include "LoggingCategory.hpp"
 #include "LoggingVerbosity.hpp"
+
 #include <condition_variable>
-#include <mutex>
+#include <thread>
 
 namespace LumenEngine
 {
@@ -21,6 +22,9 @@ public:
     /** Logs a message to the console */
     template <typename... Args> void TLog ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, const FStringView Format, Args &&...InArgs );
 
+    /** Initializes the logger and starts the worker thread. */
+    void Initialize ();
+
     /** Shuts down the logger and flushes all pending log messages. */
     void Shutdown ();
 
@@ -30,16 +34,16 @@ public:
     static FLogger &GetInstance ();
 
     /** Flushes a message to the console immediately without enqueuing it. */
-    static void Flush ( const AnsiChar *const Character );
+    static void Flush ( const AnsiChar *const String );
 
 private:
 
     void EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message );
-    void FlushLogMessages ();
+    void FlushLogMessages ( std::stop_token &StopToken );
 
 private:
 
-    FLogger ();
+    FLogger () noexcept = default;
     ~FLogger ();
 
 public:
@@ -54,11 +58,11 @@ public:
 
 private:
 
-    FQueue<FLogMessage> LogMessageQueue;
     std::mutex QueueMutex;
-    std::condition_variable Condition;
-    std::thread WorkerThread;
-    Atomic<Bool> bIsRunning;
+    std::condition_variable_any Condition;
+    FQueue<FLogMessage> LogMessageQueue;
+
+    std::jthread WorkerThread;
 };
 
 } // namespace LumenEngine
@@ -66,6 +70,8 @@ private:
 #include "Inline/Logger.inl"
 
 #define LUMEN_LOG( Category, Verbosity, Format, ... ) LumenEngine::FLogger::GetInstance().TLog( Category, Verbosity, Format, ##__VA_ARGS__ )
+
+#define LUMEN_LOG_DEFINE_CATEGORY( CategoryVar, CategoryName ) static const ::LumenEngine::FLogCategory CategoryVar( CategoryName );
 
 #define LUMEN_LOG_FATAL( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Fatal, Format, ##__VA_ARGS__ )
 #define LUMEN_LOG_ERROR( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Error, Format, ##__VA_ARGS__ )

@@ -48,6 +48,7 @@ function ShowHelp()
 LumenEngine Build System
 
 Usage: lumen [Command] [Mode]
+       lumen [Mode]
 
 Commands:
   build   <Mode>  Configure and compile the project (Default)
@@ -56,8 +57,20 @@ Commands:
   rebuild <Mode>  Full cleanup followed by a fresh build
 
 Modes:
-  debug (Default), release, relwithdebinfo
+  debug, release, relwithdebinfo
+  - Default mode: debug
+  - Inside nix shell (IN_NIX_SHELL): default mode is release
+  - Shorthand: 'lumen release' is equivalent to 'lumen build release'
 EOF
+}
+
+function GetDefaultBuildMode()
+{
+    if [[ -n "${IN_NIX_SHELL:-}" ]]; then
+        echo "release"
+    else
+        echo "debug"
+    fi
 }
 
 function GetBuildMode()
@@ -71,6 +84,15 @@ function GetBuildMode()
             PrintLog "${LogWarn}" "Unknown mode '${RawInput}', falling back to Debug"
             echo "Debug"
             ;;
+    esac
+}
+
+function IsModeToken()
+{
+    local -r RawInput="${1:-}"
+    case "${RawInput,,}" in
+        release|relwithdebinfo|relwithdeb|debug) return 0 ;;
+        *) return 1 ;;
     esac
 }
 
@@ -118,8 +140,33 @@ function ExecuteBinary()
     fi
 }
 
-readonly InputCmd="${1:-build}"
-readonly InputMode="$(GetBuildMode "${2:-debug}")"
+ResolvedCmd="build"
+ResolvedMode="$(GetDefaultBuildMode)"
+
+if [[ -n "${1:-}" ]]; then
+    case "${1,,}" in
+        build|run|clean|rebuild|help|--help|-h)
+            ResolvedCmd="$1"
+            if [[ -n "${2:-}" ]]; then
+                ResolvedMode="$2"
+            fi
+            ;;
+        *)
+            if IsModeToken "$1"; then
+                ResolvedCmd="build"
+                ResolvedMode="$1"
+            else
+                ResolvedCmd="$1"
+                if [[ -n "${2:-}" ]]; then
+                    ResolvedMode="$2"
+                fi
+            fi
+            ;;
+    esac
+fi
+
+readonly InputCmd="${ResolvedCmd}"
+readonly InputMode="$(GetBuildMode "${ResolvedMode}")"
 
 case "${InputCmd,,}" in
     build)

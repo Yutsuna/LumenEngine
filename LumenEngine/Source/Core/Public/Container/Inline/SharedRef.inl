@@ -10,19 +10,19 @@
 namespace LumenEngine
 {
 
-template <typename Type> TSharedRef<Type>::TSharedRef( const TSharedRef &Other ) : Object( Other.Object ), Controller( Other.Controller )
+template <typename Type> TSharedRef<Type>::TSharedRef ( const TSharedRef &Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
 }
 
-template <typename Type> TSharedRef<Type>::TSharedRef( TSharedRef &&Other ) : Object( Other.Object ), Controller( Other.Controller )
+template <typename Type> TSharedRef<Type>::TSharedRef ( TSharedRef &&Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     /* Empty */
 }
 
 template <typename Type>
 template <typename OtherType>
-    requires Concepts::ConvertibleTo<OtherType *, Type *>
+    requires Concepts::CConvertibleTo<OtherType *, Type *>
 TSharedRef<Type>::TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy )
     : Object( Proxy.Object ), Controller( new SharedPtrInternal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
 {
@@ -31,13 +31,13 @@ TSharedRef<Type>::TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &
 
 template <typename Type>
 template <typename OtherType>
-    requires Concepts::ConvertibleTo<OtherType *, Type *>
+    requires Concepts::CConvertibleTo<OtherType *, Type *>
 TSharedRef<Type>::TSharedRef( const TSharedRef<OtherType> &Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
 }
 
-template <typename Type> TSharedRef<Type>::~TSharedRef()
+template <typename Type> TSharedRef<Type>::~TSharedRef ()
 {
     Release();
 }
@@ -75,7 +75,7 @@ template <typename Type> Int32 TSharedRef<Type>::GetSharedReferenceCount () cons
 }
 
 template <typename Type>
-TSharedRef<Type>::TSharedRef( Type *InObject, SharedPtrInternal::FReferenceController *InController ) : Object( InObject ), Controller( InController )
+TSharedRef<Type>::TSharedRef ( Type *InObject, SharedPtrInternal::FReferenceController *InController ) : Object( InObject ), Controller( InController )
 {
     assert( InObject != nullptr );
 }

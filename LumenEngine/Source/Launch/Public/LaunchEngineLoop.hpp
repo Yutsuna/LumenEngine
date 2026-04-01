@@ -8,10 +8,11 @@
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
 #include "ErrorCodes.hpp"
-#include "Generic/GenericApplication.hpp"
 
 namespace LumenEngine
 {
+
+class FRenderer;
 
 class LUMEN_ENGINE_API FEngineLoop
 {
@@ -28,14 +29,14 @@ public:
      *
      * @return 0 if initialization succeeded, or an error code otherwise
      */
-    Int32 PreInit ( Int32 Argc, const AnsiChar *Argv[] );
+    [[nodiscard]] Int32 PreInit ( Int32 Argc, const AnsiChar *Argv[] );
 
     /**
      * @brief Initializes the engine loop, called after PreInit and before the main loop starts
      *
      * @return 0 if initialization succeeded, or an error code otherwise
      */
-    Int32 Init ();
+    [[nodiscard]] Int32 Init ();
 
     /** Advances the main loop */
     void Tick ();
@@ -44,15 +45,18 @@ public:
     void Exit ();
 
     /** Check if the application should exit */
-    Bool ShouldExit () const;
+    [[nodiscard]] Bool ShouldExit () const noexcept;
 
-    /** Requests the application to exit */
-    void RequestExit ( const AnsiChar *Reason );
+    /** Request the application to exit */
+    void RequestExit ( const AnsiChar *Reason ) noexcept;
+
+    /** @return The current frame index since the engine started */
+    [[nodiscard]] UInt64 GetFrameIndex () const noexcept;
 
 public:
 
     /** Initializes the application */
-    static EErrorCode::Type AppInit ();
+    [[nodiscard]] static EErrorCode::Type AppInit ();
 
     /** Shuts down the application */
     static void AppShutdown ();
@@ -63,13 +67,19 @@ private:
 
 private:
 
-    Float64 TotalTickTime;
-    Float64 LastTickTime;
-    Float64 LastFrameSeconds;
+    Float64 TotalTickTime    = 0.0;
+    Float64 LastTickTime     = 0.0;
+    Float64 LastFrameSeconds = 0.0;
 
-    Bool bRequestingExit;
+    UInt64 FrameIndex = 0;
+
+    Bool bRequestingExit = false;
 };
 
+/**
+ * Global engine loop instance.
+ * NOTE: Non-const as it maintains the state of the running application.
+ */
 extern LUMEN_ENGINE_API FEngineLoop GEngineLoop;
 
 } // namespace LumenEngine

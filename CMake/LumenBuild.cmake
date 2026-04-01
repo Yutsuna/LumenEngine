@@ -12,14 +12,16 @@ LumenAddModules(
     ${CMAKE_CURRENT_SOURCE_DIR}/LumenEngine/Source
     Core
     MathCore
+    Parallel
     ApplicationCore
-    RHI
     VulkanRHI
+    Renderer
     Launch
 )
 
 LumenAddModules(
-    ${CMAKE_CURRENT_SOURCE_DIR}/Examples/BaseExample
+    ${CMAKE_CURRENT_SOURCE_DIR}/Examples
+    BaseExample
 )
 
 ###########################################################

@@ -6,6 +6,7 @@
 #pragma once
 
 #include <atomic>
+#include <expected>
 
 namespace LumenEngine
 {
@@ -29,7 +30,9 @@ using Bool     = bool;
 using Byte     = unsigned char;
 
 // TODO: Implement custom atomic type
-template <typename Type> using Atomic = std::atomic<Type>;
+template <typename Type> using TAtomic                   = std::atomic<Type>;
+using FAtomicFlag                                        = std::atomic_flag;
+template <typename Type, typename Error> using TExpected = std::expected<Type, Error>;
 
 using NullptrType = decltype( nullptr );
 

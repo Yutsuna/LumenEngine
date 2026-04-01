@@ -35,13 +35,13 @@ public:
     virtual void SetMessageHandler ( const TSharedRef<FGenericApplicationMessageHandler> &InMessageHandler );
 
     /** Retrieves the current message handler of the application */
-    TSharedPtr<FGenericApplicationMessageHandler> GetMessageHandler () const;
+    [[nodiscard]] TSharedPtr<FGenericApplicationMessageHandler> GetMessageHandler () const;
 
     /** Polls and processes messages for the application */
     virtual void PumpMessages ( const Float64 DeltaTime );
 
     /** Creates a new window */
-    virtual TSharedRef<FGenericWindow> MakeWindow ();
+    [[nodiscard]] virtual TSharedRef<FGenericWindow> MakeWindow ();
 
     /** Initializes a window with the given parameters */
     virtual void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
@@ -49,9 +49,12 @@ public:
                                     const TSharedPtr<FGenericWindow> &InParentWindow,
                                     const Bool bShowImmediately );
 
+    [[nodiscard]] virtual TSharedPtr<FGenericWindow> GetMainWindow () const noexcept;
+
 protected:
 
     TSharedPtr<FGenericApplicationMessageHandler> MessageHandler;
+    TSharedPtr<FGenericWindow> MainWindow;
 };
 
 extern LUMEN_ENGINE_API TSharedPtr<FGenericApplication> GPlatformApplication;

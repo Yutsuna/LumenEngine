@@ -8,7 +8,7 @@
 #include <chrono>
 #include <thread>
 
-LumenEngine::Float64 LumenEngine::FPlatformTime::Seconds ()
+LumenEngine::Float64 LumenEngine::HAL::FPlatformTime::Seconds ()
 {
     static const auto StartTime                  = std::chrono::steady_clock::now();
     const auto CurrentTime                       = std::chrono::steady_clock::now();
@@ -17,7 +17,7 @@ LumenEngine::Float64 LumenEngine::FPlatformTime::Seconds ()
     return Elapsed.count();
 }
 
-void LumenEngine::FPlatformTime::Sleep ( const Float64 Seconds )
+void LumenEngine::HAL::FPlatformTime::Sleep ( const Float64 Seconds )
 {
     std::this_thread::sleep_for( std::chrono::duration<Float64>( Seconds ) );
 }

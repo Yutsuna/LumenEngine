@@ -40,6 +40,7 @@
     #define LUMEN_ENGINE_NEWLINE "\n"
     #define LUMEN_ENGINE_SHARED_LIB_EXTENSION ".so"
     #define LUMEN_ENGINE_API __attribute__( ( visibility( "default" ) ) )
+    #define LUMEN_UNUSED __attribute__( ( unused ) )
 
 #else
 

@@ -26,7 +26,7 @@ LumenEngine::TSharedPtr<LumenEngine::FGenericApplicationMessageHandler> LumenEng
     return MessageHandler;
 }
 
-void LumenEngine::FGenericApplication::PumpMessages ( const Float64 )
+void LumenEngine::FGenericApplication::PumpMessages ( const Float64 __attribute__( ( unused ) ) DeltaTime )
 {
     /* Empty */
 }
@@ -36,10 +36,19 @@ LumenEngine::TSharedRef<LumenEngine::FGenericWindow> LumenEngine::FGenericApplic
     return MakeShareable( new FGenericWindow() );
 }
 
-void LumenEngine::FGenericApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &,
-                                                          const TSharedRef<FGenericWindowDescription> &,
-                                                          const TSharedPtr<FGenericWindow> &,
-                                                          const Bool )
+void LumenEngine::FGenericApplication::InitializeWindow ( const TSharedRef<FGenericWindow> __attribute__( ( unused ) ) & InWindow,
+                                                          const TSharedRef<FGenericWindowDescription> __attribute__( ( unused ) ) & InDescription,
+                                                          const TSharedPtr<FGenericWindow> __attribute__( ( unused ) ) & InParentWindow,
+                                                          const Bool __attribute__( ( unused ) ) bShowImmediately )
+
 {
-    /* Empty */
+    if ( not MainWindow.IsValid() )
+    {
+        MainWindow = InWindow;
+    }
+}
+
+LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> LumenEngine::FGenericApplication::GetMainWindow () const noexcept
+{
+    return MainWindow;
 }

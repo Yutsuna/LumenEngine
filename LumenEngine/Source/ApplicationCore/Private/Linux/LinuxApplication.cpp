@@ -4,33 +4,25 @@
  */
 
 #include "Linux/LinuxApplication.hpp"
-#include "Container/Signal.hpp"
-#include "Linux/LinuxBackend.hpp"
-#include "Linux/LinuxWindow.hpp"
 
-#include "Generic/GenericApplicationInput.hpp"
-#include "Generic/GenericApplicationMessageHandler.hpp"
+#if defined( LUMEN_ENGINE_PLATFORM_LINUX )
 
-#include "Logging/LoggingCategory.hpp"
-#include "SDL3/SDL_events.h"
+    #include "Container/Signal.hpp"
+    #include "Linux/LinuxBackend.hpp"
+    #include "Linux/LinuxWindow.hpp"
 
-#include <Logging/Logger.hpp>
+    #include "Generic/GenericApplicationInput.hpp"
+    #include "Generic/GenericApplicationMessageHandler.hpp"
 
-#include <SDL3/SDL.h>
+    #include "Logging/LoggingCategory.hpp"
+    #include "SDL3/SDL_events.h"
+
+    #include <Logging/Logger.hpp>
+
+    #include <SDL3/SDL.h>
 
 LumenEngine::FLinuxApplication *LumenEngine::GLinuxApplication = nullptr;
-
-namespace
-{
-
-LumenEngine::FLogCategory LogLinuxApplication( "LinuxApplication" );
-
-}
-
-LumenEngine::FLinuxApplication::FLinuxApplication () : FGenericApplication()
-{
-    /* Empty */
-}
+const LumenEngine::FLogCategory LogLinuxApplication( "LinuxApplication" );
 
 LumenEngine::FLinuxApplication::~FLinuxApplication ()
 {
@@ -75,7 +67,7 @@ namespace LumenEngine
 namespace
 {
 
-    static inline void SendKeyDownEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const SDL_KeyboardEvent &KeyboardEvent )
+    inline void SendKeyDownEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_KeyboardEvent &KeyboardEvent )
     {
         const SDL_Keycode KeyCode = KeyboardEvent.key;
         const EKeys::Type KeyType = TranslateSDLKeyCodeToEKeys( KeyCode );
@@ -84,7 +76,7 @@ namespace
         MessageHandler->OnKeyDown( KeyType, bIsRepeated );
     }
 
-    static inline void SendKeyUpEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const SDL_KeyboardEvent &KeyboardEvent )
+    inline void SendKeyUpEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_KeyboardEvent &KeyboardEvent )
     {
         const SDL_Keycode KeyCode = KeyboardEvent.key;
         const EKeys::Type KeyType = TranslateSDLKeyCodeToEKeys( KeyCode );
@@ -92,27 +84,27 @@ namespace
         MessageHandler->OnKeyUp( KeyType );
     }
 
-    static inline void SendMouseButtonDownEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
+    inline void SendMouseButtonDownEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
     {
         const EMouseButton::Type ButtonType = TranslateSDLMouseButtonToEMouseButton( MouseButtonEvent.button );
 
         MessageHandler->OnMouseDown( ButtonType );
     }
 
-    static inline void SendMouseButtonUpEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
+    inline void SendMouseButtonUpEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
     {
         const EMouseButton::Type ButtonType = TranslateSDLMouseButtonToEMouseButton( MouseButtonEvent.button );
 
         MessageHandler->OnMouseUp( ButtonType );
     }
 
-    static inline void SendQuitEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler )
+    inline void SendQuitEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler )
     {
         MessageHandler->OnQuit();
         FSignal::Raise( ESystemSignal::Terminate );
     }
 
-    static inline void SendWindowCloseRequestedEvent ( TSharedPtr<FGenericApplicationMessageHandler> MessageHandler )
+    inline void SendWindowCloseRequestedEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler )
     {
         MessageHandler->OnRequestExit();
     }
@@ -167,7 +159,7 @@ void LumenEngine::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent 
     }
 }
 
-void LumenEngine::FLinuxApplication::PumpMessages ( const Float64 )
+void LumenEngine::FLinuxApplication::PumpMessages ( const Float64 __attribute__( ( unused ) ) DeltaTime )
 {
     FLinuxBackend::PumpMessages();
 }
@@ -183,3 +175,5 @@ LumenEngine::TSharedPtr<LumenEngine::FLinuxWindow> LumenEngine::FLinuxApplicatio
     }
     return nullptr;
 }
+
+#endif

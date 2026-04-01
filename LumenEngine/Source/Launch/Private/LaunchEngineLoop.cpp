@@ -4,6 +4,7 @@
  */
 
 #include "LaunchEngineLoop.hpp"
+#include "LaunchEngine.hpp"
 
 #include "ErrorCodes.hpp"
 #include "HAL/PlatformTime.hpp"
@@ -14,6 +15,9 @@
 #include "Maths/Macros.hpp"
 
 #include "Logging/Logger.hpp"
+#include "Maths/Vec.hpp"
+
+#include "Graphics/Renderer.hpp"
 
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
     #include "Linux/LinuxApplication.hpp"
@@ -24,7 +28,7 @@ namespace LumenEngine
 
 namespace
 {
-    static FLogCategory LogLaunch( "LogLaunch" );
+    const FLogCategory LogLaunch( "LogLaunch" );
 }
 
 FEngineLoop GEngineLoop;
@@ -32,7 +36,7 @@ TSharedPtr<FGenericApplication> GPlatformApplication = nullptr;
 
 namespace
 {
-    static inline const FGenericWindowDescription GetDefaultWindowDescription ()
+    inline const FGenericWindowDescription GetDefaultWindowDescription ()
     {
         return { .Title        = "Lumen Engine",
                  .Position     = Maths::FVec2i( 100, 100 ),
@@ -48,6 +52,7 @@ namespace
 
 LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiChar *[] )
 {
+    LumenEngine::FLogger::GetInstance().Initialize();
     LUMEN_LOG_INFO( LogLaunch, "Engine PreInit started with {} arguments", Argc );
 
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
@@ -64,9 +69,9 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiCha
         return EErrorCode::Failure;
     }
 
-    LastFrameSeconds = FPlatformTime::Seconds();
+    LastFrameSeconds = HAL::FPlatformTime::Seconds();
     TotalTickTime    = 0.0;
-    LastTickTime     = FPlatformTime::DEFAULT_TICK_RATE;
+    LastTickTime     = HAL::FPlatformTime::DefaultTickRate;
     bRequestingExit  = false;
 
     LUMEN_LOG_INFO( LogLaunch, "Engine PreInit completed successfully." );
@@ -85,6 +90,9 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::Init ()
     LUMEN_LOG_INFO( LogLaunch, "Creating main application window..." );
     GPlatformApplication->InitializeWindow( MainWindow, WindowDesc, ParentWindow, bShowImmediately );
 
+    GRenderer = MakeUnique<FRenderer>();
+    GRenderer->Initialize( MainWindow );
+
     LUMEN_LOG_INFO( LogLaunch, "Engine Init completed successfully." );
     return EErrorCode::Success;
 }
@@ -97,21 +105,35 @@ void LumenEngine::FEngineLoop::Tick ()
     {
         GPlatformApplication->PumpMessages( LastTickTime );
     }
+
+    if ( GRenderer.IsValid() )
+    {
+        GRenderer->RenderFrame();
+    }
+    ++FrameIndex;
+    Launch::ClientTick( LastTickTime );
 }
 
 void LumenEngine::FEngineLoop::Exit ()
 {
     LUMEN_LOG_INFO( LogLaunch, "Engine Exit requested. Releasing platform application..." );
+
+    GRenderer.Reset();
     GPlatformApplication.Reset();
 }
 
-void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *Reason )
+void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *Reason ) noexcept
 {
     LUMEN_LOG_WARNING( LogLaunch, "Exit requested: {}", Reason );
     bRequestingExit = true;
 }
 
-LumenEngine::Bool LumenEngine::FEngineLoop::ShouldExit () const
+LumenEngine::UInt64 LumenEngine::FEngineLoop::GetFrameIndex () const noexcept
+{
+    return FrameIndex;
+}
+
+LumenEngine::Bool LumenEngine::FEngineLoop::ShouldExit () const noexcept
 {
     return bRequestingExit;
 }
@@ -137,16 +159,16 @@ void LumenEngine::FEngineLoop::AppShutdown ()
 
 void LumenEngine::FEngineLoop::CalculateDeltaTime () noexcept
 {
-    const Float64 CurrentFrameSeconds = FPlatformTime::Seconds();
+    const Float64 CurrentFrameSeconds = HAL::FPlatformTime::Seconds();
 
     LastTickTime = CurrentFrameSeconds - LastFrameSeconds;
 
-    if ( LastTickTime > FPlatformTime::MAX_TICK_RATE )
+    if ( LastTickTime > HAL::FPlatformTime::MaxTickRate )
     {
-        LastTickTime = FPlatformTime::MAX_TICK_RATE;
+        LastTickTime = HAL::FPlatformTime::MaxTickRate;
     }
 
-    if ( LastTickTime < Maths::EPSILON )
+    if ( LastTickTime < Maths::Epsilon )
     {
         LastTickTime = 0.0;
     }

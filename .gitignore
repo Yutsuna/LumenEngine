@@ -4,6 +4,7 @@
 Build/
 
 !.clang-format
+!.clang-tidy
 !.gitignore
 !.gitattributes
 compile_commands.json

@@ -8,6 +8,8 @@
   sdl3,
   vulkan-headers,
   vulkan-loader,
+  vulkan-memory-allocator,
+  vk-bootstrap,
   version,
 }:
 
@@ -32,6 +34,8 @@ stdenv.mkDerivation {
     sdl3
     vulkan-headers
     vulkan-loader
+    vulkan-memory-allocator 
+    vk-bootstrap
   ];
 
   cmakeFlags = [

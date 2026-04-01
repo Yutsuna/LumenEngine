@@ -14,40 +14,39 @@
 namespace
 {
 
-static LumenEngine::FLogCategory LogLaunch( "LogLaunch" );
+const LumenEngine::FLogCategory LogLaunch( "LogLaunch" );
 
-static inline void EngineTick ()
+inline void EngineTick ()
 {
     LumenEngine::GEngineLoop.Tick();
 }
 
-static inline LumenEngine::Bool bEngineRequestingExit ()
+inline LumenEngine::Bool EngineRequestingExit ()
 {
     return LumenEngine::GEngineLoop.ShouldExit();
 }
 
-static inline void EngineExit ()
+inline void EngineExit ()
 {
-    LumenEngine::GEngineLoop.AppShutdown();
     LumenEngine::GEngineLoop.Exit();
     LumenEngine::FLogger::GetInstance().Shutdown();
 }
 
-static void EngineTrapInterrupt ( const LumenEngine::ESystemSignal::Type )
+void EngineTrapInterrupt ( const LumenEngine::ESystemSignal::Type __attribute__( ( unused ) ) SignalType )
 {
     LumenEngine::FLogger::Flush( "\r" );
     LUMEN_LOG_INFO( LogLaunch, "Interrupt signal received. Requesting engine termination..." );
     LumenEngine::FSignal::Raise( LumenEngine::ESystemSignal::Terminate );
 }
 
-static void EngineTrapTerminate ( const LumenEngine::ESystemSignal::Type )
+void EngineTrapTerminate ( const LumenEngine::ESystemSignal::Type __attribute__( ( unused ) ) SignalType )
 {
     LumenEngine::FLogger::Flush( "\r" );
     LUMEN_LOG_INFO( LogLaunch, "Termination signal received. Requesting engine termination..." );
     LumenEngine::GEngineLoop.RequestExit( "Termination signal received" );
 }
 
-static inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
+inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
 {
     LumenEngine::FSignal::Bind( LumenEngine::ESystemSignal::Interrupt, &EngineTrapInterrupt );
     LumenEngine::FSignal::Bind( LumenEngine::ESystemSignal::Terminate, &EngineTrapTerminate );
@@ -58,7 +57,7 @@ static inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, con
         return ErrorCode;
     }
 
-    ErrorCode = LumenEngine::GEngineLoop.AppInit();
+    ErrorCode = LumenEngine::GEngineLoop.Init();
     if ( ErrorCode != LumenEngine::EErrorCode::Success )
     {
         return ErrorCode;
@@ -69,9 +68,9 @@ static inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, con
 
 } // namespace
 
-LumenEngine::Int32 LumenEngine::Launch::GuardedMain ( const Int32 Argc, const AnsiChar *Argv[] )
+LumenEngine::Int32 main ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
 {
-    const Int32 ErrorCode = EngineInit( Argc, Argv );
+    const LumenEngine::Int32 ErrorCode = EngineInit( Argc, Argv );
     struct FScopeCleanupGuard
     {
         ~FScopeCleanupGuard ()
@@ -80,20 +79,15 @@ LumenEngine::Int32 LumenEngine::Launch::GuardedMain ( const Int32 Argc, const An
         }
     } ScopeCleanupGuard;
 
-    if ( ErrorCode != EErrorCode::Success )
+    if ( ErrorCode != LumenEngine::EErrorCode::Success )
     {
         return ErrorCode;
     }
 
-    while ( not bEngineRequestingExit() )
+    while ( not EngineRequestingExit() )
     {
         EngineTick();
     }
 
     return ErrorCode;
-}
-
-LumenEngine::Int32 main ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
-{
-    return LumenEngine::Launch::GuardedMain( Argc, Argv );
 }

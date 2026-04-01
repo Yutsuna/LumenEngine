@@ -7,20 +7,22 @@
 
 #include "CoreTypes.hpp"
 
+#include <numbers>
+
 namespace LumenEngine
 {
 
 namespace Maths
 {
 
-    static constexpr Float64 PI      = 3.14159265358979323846;
-    static constexpr Float64 TWO_PI  = 2.0 * PI;
-    static constexpr Float64 HALF_PI = PI / 2.0;
+    static constexpr Float64 Pi     = std::numbers::pi;
+    static constexpr Float64 TwoPi  = 2.0 * Pi;
+    static constexpr Float64 HalfPi = Pi / 2.0;
 
-    static constexpr Float64 DEG_TO_RAD = PI / 180.0;
-    static constexpr Float64 RAD_TO_DEG = 180.0 / PI;
+    static constexpr Float64 DegToRad = Pi / 180.0;
+    static constexpr Float64 RadToDeg = 180.0 / Pi;
 
-    static constexpr Float64 EPSILON = 1e-6;
+    static constexpr Float64 Epsilon = 1e-6;
 
 } // namespace Maths
 
