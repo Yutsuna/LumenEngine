@@ -9,6 +9,7 @@
 #include "CoreTypes.hpp"
 
 #include <cassert>
+#include <type_traits>
 
 namespace LumenEngine
 {
@@ -26,16 +27,33 @@ template <typename Type> struct TDefaultDelete
     /** Converting Constructor: Allows upcasting deleters from derived to base. */
     template <typename OtherType>
         requires Concepts::CConvertibleTo<OtherType *, Type *>
-    TDefaultDelete( const TDefaultDelete<OtherType> & ) noexcept
+    TDefaultDelete ( const TDefaultDelete<OtherType> & ) noexcept
     {
         /* Empty */
     }
 
     /** Deletes the provided pointer. */
-    void operator()( Type *Ptr ) const
+    void operator() ( Type *Ptr ) const
     {
         static_assert( sizeof( Type ) > 0, "Cannot delete an incomplete type." );
         delete Ptr;
+    }
+};
+
+/**
+ * @struct TDefaultDelete<Type[]>
+ * @brief Specialization of TDefaultDelete for array types.
+ */
+template <typename Type> struct TDefaultDelete<Type[]>
+{
+    /** Default Constructor */
+    constexpr TDefaultDelete () noexcept = default;
+
+    /** Deletes the provided array pointer. */
+    void operator() ( Type *Ptr ) const
+    {
+        static_assert( sizeof( Type ) > 0, "Cannot delete an incomplete type." );
+        delete[] Ptr;
     }
 };
 
@@ -63,7 +81,7 @@ public:
 
     /** Copying is explicitly disabled to enforce unique ownership */
     TUniquePtr ( const TUniquePtr & )           = delete;
-    TUniquePtr &operator=( const TUniquePtr & ) = delete;
+    TUniquePtr &operator= ( const TUniquePtr & ) = delete;
 
     /** Move Constructor */
     TUniquePtr ( TUniquePtr &&Other ) noexcept;
@@ -71,25 +89,25 @@ public:
     /** Converting Move Constructor: Allows upcasting from derived unique pointers. */
     template <typename OtherType, typename OtherDeleter>
         requires Concepts::CConvertibleTo<OtherType *, Type *>
-    TUniquePtr( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept;
+    TUniquePtr ( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept;
 
     /** Destructor */
     ~TUniquePtr ();
 
     /** Move Assignment Operator */
-    TUniquePtr &operator=( TUniquePtr &&Other ) noexcept;
+    TUniquePtr &operator= ( TUniquePtr &&Other ) noexcept;
 
     /** Converting Move Assignment Operator */
     template <typename OtherType, typename OtherDeleter>
         requires Concepts::CConvertibleTo<OtherType *, Type *>
-    TUniquePtr &operator=( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept;
+    TUniquePtr &operator= ( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept;
 
     /** Nullptr Assignment */
-    TUniquePtr &operator=( NullptrType ) noexcept;
+    TUniquePtr &operator= ( NullptrType ) noexcept;
 
     /** Accessors */
-    Type &operator*() const;
-    Type *operator->() const;
+    Type &operator* () const;
+    Type *operator-> () const;
     Type *Get () const;
 
     /** Deleter Accessors */
@@ -123,11 +141,83 @@ private:
 };
 
 /**
- * @brief Creates a new TUniquePtr instance with the given arguments.
- * @param InArgs Arguments to forward to the constructor of ObjectType.
- * @return A TUniquePtr managing the newly created object.
+ * @class TUniquePtr<Type[]>
+ * @brief Specialization of TUniquePtr for array types.
  */
-template <typename ObjectType, typename... Arguments> static inline TUniquePtr<ObjectType> MakeUnique ( Arguments &&...InArgs );
+template <typename Type, typename Deleter> class TUniquePtr<Type[], Deleter>
+{
+public:
+
+    /** Default Constructor (Null) */
+    TUniquePtr ();
+
+    /** NullptrType Constructor */
+    TUniquePtr ( NullptrType );
+
+    /** Explicit Constructor from a raw pointer */
+    explicit TUniquePtr ( Type *InObject );
+
+    /** Copying is explicitly disabled to enforce unique ownership */
+    TUniquePtr ( const TUniquePtr & )           = delete;
+    TUniquePtr &operator= ( const TUniquePtr & ) = delete;
+
+    /** Move Constructor */
+    TUniquePtr ( TUniquePtr &&Other ) noexcept;
+
+    /** Destructor */
+    ~TUniquePtr ();
+
+    /** Move Assignment Operator */
+    TUniquePtr &operator= ( TUniquePtr &&Other ) noexcept;
+
+    /** Nullptr Assignment */
+    TUniquePtr &operator= ( NullptrType ) noexcept;
+
+    /** Accessors */
+    Type &operator[] ( USize Index ) const;
+    Type *Get () const;
+
+    /** Deleter Accessors */
+    Deleter &GetDeleter ();
+    const Deleter &GetDeleter () const;
+
+    /** Validity checks */
+    bool IsValid () const;
+    explicit operator bool () const;
+
+    /**
+     * @brief Relinquishes ownership of the managed object and returns the pointer.
+     * @return The raw pointer to the previously managed object.
+     */
+    Type *Release ();
+
+    /**
+     * @brief Replaces the managed object with a new one, destroying the old one if it exists.
+     * @param InObject The new object pointer to manage (can be null).
+     */
+    void Reset ( Type *InObject = nullptr );
+
+private:
+
+    Type *Object;
+
+    /** C++20 attribute to ensure the deleter occupies no space if it is stateless */
+    [[no_unique_address]] Deleter DeleterInstance;
+};
+
+/**
+ * @brief Creates a new TUniquePtr instance for a single object.
+ */
+template <typename ObjectType, typename... Arguments>
+    requires( !std::is_array_v<ObjectType> )
+static inline TUniquePtr<ObjectType> MakeUnique ( Arguments &&...InArgs );
+
+/**
+ * @brief Creates a new TUniquePtr instance for an array.
+ */
+template <typename ObjectType>
+    requires std::is_array_v<ObjectType>
+static inline TUniquePtr<ObjectType> MakeUnique ( USize Size );
 
 } // namespace LumenEngine
 
