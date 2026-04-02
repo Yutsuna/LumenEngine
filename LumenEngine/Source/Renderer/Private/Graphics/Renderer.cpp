@@ -13,14 +13,14 @@ const LumenEngine::FLogCategory LogRenderer( "Renderer" );
 
 }
 
-LumenEngine::TUniquePtr<LumenEngine::FRenderer> LumenEngine::GRenderer = nullptr;
+LumenEngine::TUniquePtr<LumenEngine::Renderer::FRenderer> LumenEngine::Renderer::GRenderer = nullptr;
 
-LumenEngine::FRenderer::~FRenderer () noexcept
+LumenEngine::Renderer::FRenderer::~FRenderer () noexcept
 {
     Shutdown();
 }
 
-void LumenEngine::FRenderer::Initialize ( const TSharedRef<FGenericWindow> &InWindow )
+void LumenEngine::Renderer::FRenderer::Initialize ( const TSharedRef<FGenericWindow> &InWindow )
 {
     RHI = MakeUnique<VulkanRHI::FVulkanRHI>();
     RHI->Initialize( InWindow );
@@ -28,7 +28,7 @@ void LumenEngine::FRenderer::Initialize ( const TSharedRef<FGenericWindow> &InWi
     LUMEN_LOG_INFO( LogRenderer, "Renderer initialized successfully." );
 }
 
-void LumenEngine::FRenderer::Shutdown () noexcept
+void LumenEngine::Renderer::FRenderer::Shutdown () noexcept
 {
     if ( not RHI )
     {
@@ -40,12 +40,12 @@ void LumenEngine::FRenderer::Shutdown () noexcept
     RHI.Reset();
 }
 
-void LumenEngine::FRenderer::SubmitRenderPacket ( const FRenderPacket &InPacket )
+void LumenEngine::Renderer::FRenderer::SubmitRenderPacket ( const FRenderPacket &InPacket )
 {
     RenderBuffer.WriteBuffer( InPacket );
 }
 
-void LumenEngine::FRenderer::RenderFrame ()
+void LumenEngine::Renderer::FRenderer::RenderFrame ()
 {
     if ( not RHI )
     {

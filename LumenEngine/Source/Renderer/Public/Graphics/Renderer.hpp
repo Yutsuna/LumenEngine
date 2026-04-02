@@ -20,49 +20,54 @@
 namespace LumenEngine
 {
 
-class FGenericWindow;
-
-/**
- * @class FRenderer
- * @brief Renderer class responsible for managing the Vulkan context and rendering frames.
- */
-class LUMEN_ENGINE_API FRenderer
+namespace Renderer
 {
-public:
 
-    FRenderer () noexcept = default;
-    ~FRenderer () noexcept;
-
-public:
+    class FGenericWindow;
 
     /**
-     * @brief Initializes the renderer with the given window. This sets up the Vulkan context and prepares for rendering.
-     * @param InWindow The window to render to.
+     * @class FRenderer
+     * @brief Renderer class responsible for managing the Vulkan context and rendering frames.
      */
-    void Initialize ( const TSharedRef<FGenericWindow> &InWindow );
+    class LUMEN_ENGINE_API FRenderer
+    {
+    public:
 
-    /** @brief Shuts down the renderer and releases all resources. */
-    void Shutdown () noexcept;
+        FRenderer () noexcept = default;
+        ~FRenderer () noexcept;
 
-    /** @brief Submits a render packet from the Game Thread to the Render Thread. */
-    void SubmitRenderPacket ( const FRenderPacket &InPacket );
+    public:
 
-    /** @brief Renders a single frame. */
-    void RenderFrame ();
+        /**
+         * @brief Initializes the renderer with the given window. This sets up the Vulkan context and prepares for rendering.
+         * @param InWindow The window to render to.
+         */
+        void Initialize ( const TSharedRef<FGenericWindow> &InWindow );
 
-private:
+        /** @brief Shuts down the renderer and releases all resources. */
+        void Shutdown () noexcept;
 
-    /**
-     * @brief Creates command buffers for each frame in flight. This is necessary for recording rendering commands.
-     */
-    void CreateCommandBuffers ();
+        /** @brief Submits a render packet from the Game Thread to the Render Thread. */
+        void SubmitRenderPacket ( const FRenderPacket &InPacket );
 
-private:
+        /** @brief Renders a single frame. */
+        void RenderFrame ();
 
-    TUniquePtr<VulkanRHI::FVulkanRHI> RHI = nullptr;
-    Parallel::TTripleBuffer<FRenderPacket> RenderBuffer;
-};
+    private:
 
-extern LUMEN_ENGINE_API TUniquePtr<FRenderer> GRenderer;
+        /**
+         * @brief Creates command buffers for each frame in flight. This is necessary for recording rendering commands.
+         */
+        void CreateCommandBuffers ();
+
+    private:
+
+        TUniquePtr<VulkanRHI::FVulkanRHI> RHI = nullptr;
+        Parallel::TTripleBuffer<FRenderPacket> RenderBuffer;
+    };
+
+    extern LUMEN_ENGINE_API TUniquePtr<FRenderer> GRenderer;
+
+} // namespace Renderer
 
 } // namespace LumenEngine

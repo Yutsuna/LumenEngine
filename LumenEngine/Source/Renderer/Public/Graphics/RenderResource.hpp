@@ -5,18 +5,30 @@
 
 #pragma once
 
-#include "CoreTypes.hpp"
+#include "Graphics/Resources/RenderMesh.hpp"
+#include "Graphics/Resources/RenderShader.hpp"
+
+#include "Maths/Matrix.hpp"
 
 namespace LumenEngine
 {
 
-/**
- * @struct FRenderPacket
- * @brief Data packet sent from the Game Thread to the Render Thread every frame.
- */
-struct FRenderPacket
+namespace Renderer
 {
-    Float32 ClearColor[4] = { 0.F, 0.F, 0.F, 1.F };
-};
+
+    struct LUMEN_ENGINE_API FDrawCommand
+    {
+        FRenderMesh *Mesh           = nullptr;
+        FRenderShader *Shader       = nullptr;
+        Maths::FMatrix4x4 Transform = FMatrix4x4::Identity();
+    };
+
+    struct LUMEN_ENGINE_API FRenderPacket
+    {
+        Float32 ClearColor[4] = { 0.F, 0.F, 0.F, 1.F };
+        TVector<FDrawCommand> DrawCommands;
+    };
+
+} // namespace Renderer
 
 } // namespace LumenEngine
