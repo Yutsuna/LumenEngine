@@ -90,8 +90,8 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::Init ()
     LUMEN_LOG_INFO( LogLaunch, "Creating main application window..." );
     GPlatformApplication->InitializeWindow( MainWindow, WindowDesc, ParentWindow, bShowImmediately );
 
-    GRenderer = MakeUnique<FRenderer>();
-    GRenderer->Initialize( MainWindow );
+    Renderer::GRenderer = MakeUnique<FRenderer>();
+    Renderer::GRenderer->Initialize( MainWindow );
 
     LUMEN_LOG_INFO( LogLaunch, "Engine Init completed successfully." );
     return EErrorCode::Success;
@@ -106,9 +106,9 @@ void LumenEngine::FEngineLoop::Tick ()
         GPlatformApplication->PumpMessages( LastTickTime );
     }
 
-    if ( GRenderer.IsValid() )
+    if ( Renderer::GRenderer.IsValid() )
     {
-        GRenderer->RenderFrame();
+        Renderer::GRenderer->RenderFrame();
     }
     ++FrameIndex;
     Launch::ClientTick( LastTickTime );
@@ -118,7 +118,7 @@ void LumenEngine::FEngineLoop::Exit ()
 {
     LUMEN_LOG_INFO( LogLaunch, "Engine Exit requested. Releasing platform application..." );
 
-    GRenderer.Reset();
+    Renderer::GRenderer.Reset();
     GPlatformApplication.Reset();
 }
 
