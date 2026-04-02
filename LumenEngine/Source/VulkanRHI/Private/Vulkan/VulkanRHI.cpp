@@ -22,9 +22,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const TSharedPtr<FGenericW
     InitializeVulkanInstance( InWindow );
     InitializeVulkanDevice();
     InitializeVMA();
+    InitializeSwapChain( InWindow );
 
-    Swapchain.InitializeSynStructures( Device.device );
-    Swapchain.Create( Device, VK_FORMAT_B8G8R8A8_SRGB, static_cast<Maths::FVec2u>( InWindow->GetWindowSize() ), true );
     bIsInitialized = true;
 
     LUMEN_LOG_INFO( LogVulkanRHI, "Vulkan RHI initialized successfully." );
@@ -37,8 +36,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
         return;
     }
 
-    vkDeviceWaitIdle( Device.device );
-    Swapchain.Cleanup( Device.device );
+    LogicalDevice.WaitIdle();
+    SwapChain.Cleanup( LogicalDevice.GetHandle() );
 
     if ( Allocator != VK_NULL_HANDLE )
     {
@@ -46,10 +45,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
         Allocator = VK_NULL_HANDLE;
     }
 
-    if ( Device.device != VK_NULL_HANDLE )
-    {
-        vkb::destroy_device( Device );
-    }
+    LogicalDevice.Cleanup();
 
     if ( Surface != VK_NULL_HANDLE )
     {
@@ -113,17 +109,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanDevice ()
 
     PhysicalDevice = PhysDeviceResult.value();
 
-    vkb::DeviceBuilder DeviceBuilder{ PhysicalDevice };
-    vkb::Result<vkb::Device> DeviceResult = DeviceBuilder.build();
-
-    if ( not DeviceResult )
-    {
-        LUMEN_LOG_FATAL( LogVulkanRHI, "Failed to create Vulkan Device: {}", DeviceResult.error().message() );
-    }
-
-    Device              = DeviceResult.value();
-    GraphicsQueue       = Device.get_queue( vkb::QueueType::graphics ).value();
-    GraphicsQueueFamily = Device.get_queue_index( vkb::QueueType::graphics ).value();
+    TVector<const AnsiChar *> DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    LogicalDevice.Initialize( PhysicalDevice.physical_device, Surface, DeviceExtensions );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVMA ()
@@ -134,7 +121,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVMA ()
 
     VmaAllocatorCreateInfo AllocatorInfo = {};
     AllocatorInfo.physicalDevice         = PhysicalDevice.physical_device;
-    AllocatorInfo.device                 = Device.device;
+    AllocatorInfo.device                 = LogicalDevice.GetHandle();
     AllocatorInfo.instance               = Instance.instance;
     AllocatorInfo.vulkanApiVersion       = VK_API_VERSION_1_3;
     AllocatorInfo.pVulkanFunctions       = &VulkanFunctions;
@@ -143,9 +130,15 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVMA ()
     LUMEN_VK_CHECK( vmaCreateAllocator( &AllocatorInfo, &Allocator ) );
 }
 
-VkDevice LumenEngine::VulkanRHI::FVulkanRHI::GetDevice () const noexcept
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow )
 {
-    return Device.device;
+    SwapChain.InitializeSynStructures( LogicalDevice.GetHandle() );
+    SwapChain.Create( LogicalDevice, VK_FORMAT_B8G8R8A8_SRGB, static_cast<Maths::FVec2u>( InWindow->GetWindowSize() ), true );
+}
+
+LumenEngine::VulkanRHI::FVulkanDevice LumenEngine::VulkanRHI::FVulkanRHI::GetDevice () const noexcept
+{
+    return LogicalDevice;
 }
 
 VkPhysicalDevice LumenEngine::VulkanRHI::FVulkanRHI::GetPhysicalDevice () const noexcept
@@ -163,17 +156,7 @@ VmaAllocator LumenEngine::VulkanRHI::FVulkanRHI::GetAllocator () const noexcept
     return Allocator;
 }
 
-VkQueue LumenEngine::VulkanRHI::FVulkanRHI::GetGraphicsQueue () const noexcept
-{
-    return GraphicsQueue;
-}
-
-LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanRHI::GetGraphicsQueueFamily () const noexcept
-{
-    return GraphicsQueueFamily;
-}
-
 LumenEngine::VulkanRHI::FVulkanSwapChain &LumenEngine::VulkanRHI::FVulkanRHI::GetSwapChain () noexcept
 {
-    return Swapchain;
+    return SwapChain;
 }

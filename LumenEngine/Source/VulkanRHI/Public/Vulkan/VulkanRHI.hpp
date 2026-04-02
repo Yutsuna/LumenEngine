@@ -8,6 +8,7 @@
 #include "Container/SharedPtr.hpp"
 #include "CoreTypes.hpp"
 
+#include "Vulkan/VulkanDevice.hpp"
 #include "Vulkan/VulkanSwapChain.hpp"
 
 #include <VkBootstrap.h>
@@ -45,12 +46,10 @@ namespace VulkanRHI
 
     public:
 
-        [[nodiscard]] VkDevice GetDevice () const noexcept;
+        [[nodiscard]] FVulkanDevice GetDevice () const noexcept;
         [[nodiscard]] VkPhysicalDevice GetPhysicalDevice () const noexcept;
         [[nodiscard]] VkInstance GetInstance () const noexcept;
         [[nodiscard]] VmaAllocator GetAllocator () const noexcept;
-        [[nodiscard]] VkQueue GetGraphicsQueue () const noexcept;
-        [[nodiscard]] UInt32 GetGraphicsQueueFamily () const noexcept;
         [[nodiscard]] FVulkanSwapChain &GetSwapChain () noexcept;
 
     private:
@@ -58,20 +57,18 @@ namespace VulkanRHI
         void InitializeVulkanInstance ( const TSharedPtr<FGenericWindow> &InWindow );
         void InitializeVulkanDevice ();
         void InitializeVMA ();
+        void InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow );
 
     private:
 
         vkb::Instance Instance;
         vkb::PhysicalDevice PhysicalDevice;
-        vkb::Device Device;
+        FVulkanDevice LogicalDevice;
 
         VkSurfaceKHR Surface   = VK_NULL_HANDLE;
         VmaAllocator Allocator = VK_NULL_HANDLE;
 
-        VkQueue GraphicsQueue      = VK_NULL_HANDLE;
-        UInt32 GraphicsQueueFamily = 0;
-
-        FVulkanSwapChain Swapchain;
+        FVulkanSwapChain SwapChain;
 
         Bool bIsInitialized = false;
     };
