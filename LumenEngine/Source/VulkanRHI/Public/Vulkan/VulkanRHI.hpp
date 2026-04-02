@@ -10,6 +10,7 @@
 #include "Container/SharedPtr.hpp"
 #include "CoreTypes.hpp"
 
+#include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanCommandBuffer.hpp"
 #include "Vulkan/VulkanCommandPool.hpp"
 #include "Vulkan/VulkanInstance.hpp"
@@ -53,8 +54,27 @@ namespace VulkanRHI
 
         void WaitIdle () const noexcept;
         bool BeginFrame ();
-        void ClearScreen ( const Float32 ClearColor[4] );
+
+        /** @brief Begins a dynamic rendering pass for the current frame */
+        void BeginRendering ( const Float32 ClearColor[4] );
+
+        /** @brief Ends the dynamic rendering pass */
+        void EndRendering ();
+
         void EndFrame ();
+
+    public:
+
+        /** Resource Management Abstractions for the Renderer */
+
+        [[nodiscard]] FVulkanBuffer CreateBuffer ( USize Size, VkBufferUsageFlags Usage, VmaMemoryUsage MemoryUsage );
+        void DestroyBuffer ( FVulkanBuffer &Buffer );
+
+        /** @brief Wrapper for binding vertex and index buffers without exposing raw Vulkan calls to Renderer */
+        void BindMeshBuffers ( const FVulkanBuffer &VertexBuffer, const FVulkanBuffer &IndexBuffer );
+
+        /** @brief Wrapper for draw call */
+        void DrawIndexed ( UInt32 IndexCount );
 
     public:
 

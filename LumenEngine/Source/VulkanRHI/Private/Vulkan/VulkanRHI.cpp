@@ -172,25 +172,48 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
     LUMEN_VK_CHECK( vkResetCommandBuffer( CommandBuffers[CurrentFrame].GetHandle(), 0 ) );
 
     CommandBuffers[CurrentFrame].Begin( VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT );
-    CommandBuffers[CurrentFrame].TransitionImageLayout( Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT );
 
     return true;
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::ClearScreen ( const Float32 ClearColor[4] )
+void LumenEngine::VulkanRHI::FVulkanRHI::BeginRendering ( const Float32 ClearColor[4] )
 {
     const UInt32 CurrentFrame  = FrameIndex % MaxFramesInFlight;
     const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
     const VkImage &Image       = SwapChain.GetImages()[CurrentImageIndex];
 
-    VkClearColorValue ClearValue{};
-    ClearValue.float32[0] = ClearColor[0];
-    ClearValue.float32[1] = ClearColor[1];
-    ClearValue.float32[2] = ClearColor[2];
-    ClearValue.float32[3] = ClearColor[3];
+    /** Transition swapchain image to color attachment layout for dynamic rendering */
+    CommandBuffers[CurrentFrame].TransitionImageLayout( Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT );
 
-    const VkImageSubresourceRange ClearRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-    vkCmdClearColorImage( Cmd, Image, VK_IMAGE_LAYOUT_GENERAL, &ClearValue, 1, &ClearRange );
+    VkRenderingAttachmentInfo ColorAttachment{};
+    ColorAttachment.sType            = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
+    ColorAttachment.imageView        = SwapChain.GetImageView( CurrentImageIndex );
+    ColorAttachment.imageLayout      = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    ColorAttachment.loadOp           = VK_ATTACHMENT_LOAD_OP_CLEAR;
+    ColorAttachment.storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
+    ColorAttachment.clearValue.color = { { ClearColor[0], ClearColor[1], ClearColor[2], ClearColor[3] } };
+
+    VkRenderingInfo RenderInfo{};
+    RenderInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
+    RenderInfo.renderArea.extent    = SwapChain.GetExtent();
+    RenderInfo.layerCount           = 1;
+    RenderInfo.colorAttachmentCount = 1;
+    RenderInfo.pColorAttachments    = &ColorAttachment;
+
+    vkCmdBeginRendering( Cmd, &RenderInfo );
+
+    /** Set dynamic viewport and scissor */
+    VkViewport Viewport{ 0.F, 0.F, static_cast<Float32>( RenderInfo.renderArea.extent.width ), static_cast<Float32>( RenderInfo.renderArea.extent.height ), 0.F, 1.F };
+    VkRect2D Scissor{ { 0, 0 }, RenderInfo.renderArea.extent };
+
+    vkCmdSetViewport( Cmd, 0, 1, &Viewport );
+    vkCmdSetScissor( Cmd, 0, 1, &Scissor );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::EndRendering ()
+{
+    const UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
+    vkCmdEndRendering( CommandBuffers[CurrentFrame].GetHandle() );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
@@ -198,9 +221,56 @@ void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
     const UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
     const VkImage &Image      = SwapChain.GetImages()[CurrentImageIndex];
 
-    CommandBuffers[CurrentFrame].TransitionImageLayout( Image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_ASPECT_COLOR_BIT );
+    /** Transition to present layout */
+    CommandBuffers[CurrentFrame].TransitionImageLayout( Image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_ASPECT_COLOR_BIT );
     CommandBuffers[CurrentFrame].End();
 
     SwapChain.SubmitAndPresent( CommandBuffers[CurrentFrame].GetHandle(), LogicalDevice.GetGraphicsQueue(), CurrentFrame, CurrentImageIndex );
     ++FrameIndex;
+}
+
+LumenEngine::VulkanRHI::FVulkanBuffer LumenEngine::VulkanRHI::FVulkanRHI::CreateBuffer ( USize Size, VkBufferUsageFlags Usage, VmaMemoryUsage MemoryUsage )
+{
+    FVulkanBuffer Buffer;
+
+    VkBufferCreateInfo BufferInfo{};
+    BufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    BufferInfo.size        = Size;
+    BufferInfo.usage       = Usage;
+    BufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo AllocInfo{};
+    AllocInfo.usage = MemoryUsage;
+    AllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    LUMEN_VK_CHECK( vmaCreateBuffer( Allocator, &BufferInfo, &AllocInfo, &Buffer.Buffer, &Buffer.Allocation, &Buffer.AllocationInfo ) );
+
+    return Buffer;
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyBuffer ( FVulkanBuffer &Buffer )
+{
+    if ( Buffer.Buffer != VK_NULL_HANDLE )
+    {
+        vmaDestroyBuffer( Allocator, Buffer.Buffer, Buffer.Allocation );
+        Buffer.Buffer = VK_NULL_HANDLE;
+    }
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::BindMeshBuffers ( const FVulkanBuffer &VertexBuffer, const FVulkanBuffer &IndexBuffer )
+{
+    const UInt32 CurrentFrame  = FrameIndex % MaxFramesInFlight;
+    const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
+
+    VkDeviceSize Offset = 0;
+    vkCmdBindVertexBuffers( Cmd, 0, 1, &VertexBuffer.Buffer, &Offset );
+    vkCmdBindIndexBuffer( Cmd, IndexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32 );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DrawIndexed ( UInt32 IndexCount )
+{
+    const UInt32 CurrentFrame  = FrameIndex % MaxFramesInFlight;
+    const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
+
+    vkCmdDrawIndexed( Cmd, IndexCount, 1, 0, 0, 0 );
 }

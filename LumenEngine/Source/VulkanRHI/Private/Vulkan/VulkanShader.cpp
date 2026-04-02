@@ -4,18 +4,41 @@
  */
 
 #include "Vulkan/VulkanShader.hpp"
+#include "Vulkan/VulkanCore.hpp"
 
-namespace
+#include "Container/File.hpp"
+
+LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanShader::CompileFromFile ( VkDevice Device, const FString &FilePath, VkShaderStageFlagBits InStage ) noexcept
 {
+    Stage = InStage;
 
-}
+    TOptional<TVector<UInt8>> ShaderCode = FIOFile::ReadAllBytes<LumenEngine::UInt8>( FilePath );
 
-LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanShader::CompileFromFile ( VkDevice Device, const FString &FilePath, VkShaderStageFlagBits Stage ) noexcept
-{
+    if ( not ShaderCode.has_value() )
+    {
+        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to read shader file: {}", FilePath.c_str() );
+        return false;
+    }
+
+    VkShaderModuleCreateInfo CreateInfo{};
+    CreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+    CreateInfo.codeSize = ShaderCode->size();
+    CreateInfo.pCode    = reinterpret_cast<const UInt32 *>( ShaderCode->data() );
+
+    /** Create the Vulkan shader module */
+    LUMEN_VK_CHECK( vkCreateShaderModule( Device, &CreateInfo, nullptr, &ShaderModule ) );
+
+    LUMEN_LOG_INFO( LogVulkanRHI, "Vulkan Shader Module created: {}", FilePath.c_str() );
+    return true;
 }
 
 void LumenEngine::VulkanRHI::FVulkanShader::Cleanup ( VkDevice Device ) noexcept
 {
+    if ( ShaderModule != VK_NULL_HANDLE )
+    {
+        vkDestroyShaderModule( Device, ShaderModule, nullptr );
+        ShaderModule = VK_NULL_HANDLE;
+    }
 }
 
 VkShaderModule LumenEngine::VulkanRHI::FVulkanShader::GetModule () const noexcept
