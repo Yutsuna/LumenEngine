@@ -15,19 +15,12 @@
 #include <Vulkan/VulkanCommandPool.hpp>
 #include <Vulkan/VulkanRHI.hpp>
 
+#include "Graphics/RenderResource.hpp"
+
 namespace LumenEngine
 {
 
 class FGenericWindow;
-
-/**
- * @struct FRenderPacket
- * @brief Data packet sent from the Game Thread to the Render Thread every frame.
- */
-struct FRenderPacket
-{
-    Float32 ClearColor[4] = { 0.F, 0.F, 0.F, 1.F };
-};
 
 /**
  * @class FRenderer
