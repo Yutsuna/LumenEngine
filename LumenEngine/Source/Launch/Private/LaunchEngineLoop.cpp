@@ -90,7 +90,7 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::Init ()
     LUMEN_LOG_INFO( LogLaunch, "Creating main application window..." );
     GPlatformApplication->InitializeWindow( MainWindow, WindowDesc, ParentWindow, bShowImmediately );
 
-    Renderer::GRenderer = MakeUnique<FRenderer>();
+    Renderer::GRenderer = MakeUnique<Renderer::FRenderer>();
     Renderer::GRenderer->Initialize( MainWindow );
 
     LUMEN_LOG_INFO( LogLaunch, "Engine Init completed successfully." );

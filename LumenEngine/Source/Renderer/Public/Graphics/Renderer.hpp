@@ -20,10 +20,10 @@
 namespace LumenEngine
 {
 
+class FGenericWindow;
+
 namespace Renderer
 {
-
-    class FGenericWindow;
 
     /**
      * @class FRenderer
