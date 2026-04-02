@@ -132,8 +132,12 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVMA ()
 
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow )
 {
-    SwapChain.InitializeSynStructures( LogicalDevice.GetHandle() );
-    SwapChain.Create( LogicalDevice, VK_FORMAT_B8G8R8A8_SRGB, static_cast<Maths::FVec2u>( InWindow->GetWindowSize() ), true );
+    const VkPhysicalDevice &PhysicalDeviceHandle = PhysicalDevice.physical_device;
+    const VkDevice &LogicalDeviceHandle          = LogicalDevice.GetHandle();
+    const Maths::FVec2u &WindowSize              = static_cast<Maths::FVec2u>( InWindow->GetWindowSize() );
+
+    SwapChain.InitializeSynStructures( LogicalDeviceHandle );
+    SwapChain.Create( PhysicalDeviceHandle, LogicalDeviceHandle, Surface, VK_FORMAT_B8G8R8A8_SRGB, WindowSize, true );
 }
 
 LumenEngine::VulkanRHI::FVulkanDevice LumenEngine::VulkanRHI::FVulkanRHI::GetDevice () const noexcept
