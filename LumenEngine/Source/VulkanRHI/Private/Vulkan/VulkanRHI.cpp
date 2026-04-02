@@ -24,6 +24,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const TSharedPtr<FGenericW
     InitializeVMA();
     InitializeSwapChain( InWindow );
 
+    CreateCommandBuffers();
+
     bIsInitialized = true;
 
     LUMEN_LOG_INFO( LogVulkanRHI, "Vulkan RHI initialized successfully." );
@@ -37,6 +39,13 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
     }
 
     LogicalDevice.WaitIdle();
+
+    if ( CommandPool != VK_NULL_HANDLE )
+    {
+        vkDestroyCommandPool( LogicalDevice.GetHandle(), CommandPool, nullptr );
+        CommandPool = VK_NULL_HANDLE;
+    }
+
     SwapChain.Cleanup( LogicalDevice.GetHandle() );
 
     if ( Allocator != VK_NULL_HANDLE )
