@@ -6,11 +6,6 @@
 #include "Vulkan/VulkanRHI.hpp"
 #include "Generic/GenericWindow.hpp"
 
-#if defined( LUMEN_ENGINE_PLATFORM_LINUX )
-    #include "Linux/LinuxWindow.hpp"
-    #include <SDL3/SDL_vulkan.h>
-#endif
-
 void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const TSharedPtr<FGenericWindow> &InWindow )
 {
 
@@ -158,7 +153,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::WaitIdle () const noexcept
     LogicalDevice.WaitIdle();
 }
 
-bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
+LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
 {
     const UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
     VkDevice Device           = LogicalDevice.GetHandle();
@@ -174,15 +169,9 @@ bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
     CurrentImageIndex = ImageIndex;
     SwapChain.ResetFences( Device, CurrentFrame );
 
-    const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
-    LUMEN_VK_CHECK( vkResetCommandBuffer( Cmd, 0 ) );
+    LUMEN_VK_CHECK( vkResetCommandBuffer( CommandBuffers[CurrentFrame].GetHandle(), 0 ) );
 
-    VkCommandBufferBeginInfo BeginInfo{};
-    BeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    BeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    LUMEN_VK_CHECK( vkBeginCommandBuffer( Cmd, &BeginInfo ) );
-
-    CommandBuffers[CurrentFrame].Begin();
+    CommandBuffers[CurrentFrame].Begin( VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT );
     CommandBuffers[CurrentFrame].TransitionImageLayout( Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT );
 
     return true;
@@ -206,33 +195,12 @@ void LumenEngine::VulkanRHI::FVulkanRHI::ClearScreen ( const Float32 ClearColor[
 
 void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
 {
-    const UInt32 CurrentFrame  = FrameIndex % MaxFramesInFlight;
-    const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
-    const VkImage &Image       = SwapChain.GetImages()[CurrentImageIndex];
+    const UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
+    const VkImage &Image      = SwapChain.GetImages()[CurrentImageIndex];
 
-    VkImageMemoryBarrier2 TransitionToPresent{};
-    TransitionToPresent.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    TransitionToPresent.srcStageMask                    = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    TransitionToPresent.srcAccessMask                   = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-    TransitionToPresent.dstStageMask                    = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
-    TransitionToPresent.dstAccessMask                   = 0;
-    TransitionToPresent.oldLayout                       = VK_IMAGE_LAYOUT_GENERAL;
-    TransitionToPresent.newLayout                       = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    TransitionToPresent.image                           = Image;
-    TransitionToPresent.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    TransitionToPresent.subresourceRange.baseMipLevel   = 0;
-    TransitionToPresent.subresourceRange.levelCount     = 1;
-    TransitionToPresent.subresourceRange.baseArrayLayer = 0;
-    TransitionToPresent.subresourceRange.layerCount     = 1;
+    CommandBuffers[CurrentFrame].TransitionImageLayout( Image, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_ASPECT_COLOR_BIT );
+    CommandBuffers[CurrentFrame].End();
 
-    VkDependencyInfo DepInfo{};
-    DepInfo.sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    DepInfo.imageMemoryBarrierCount = 1;
-    DepInfo.pImageMemoryBarriers    = &TransitionToPresent;
-    vkCmdPipelineBarrier2( Cmd, &DepInfo );
-
-    LUMEN_VK_CHECK( vkEndCommandBuffer( Cmd ) );
-
-    SwapChain.SubmitAndPresent( Cmd, LogicalDevice.GetGraphicsQueue(), CurrentFrame, CurrentImageIndex );
+    SwapChain.SubmitAndPresent( CommandBuffers[CurrentFrame].GetHandle(), LogicalDevice.GetGraphicsQueue(), CurrentFrame, CurrentImageIndex );
     ++FrameIndex;
 }
