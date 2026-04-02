@@ -75,12 +75,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroySwapChain ()
 
 void LumenEngine::VulkanRHI::FVulkanRHI::DestroyCommandBuffers ()
 {
-    if ( CommandPool != VK_NULL_HANDLE )
-    {
-        vkFreeCommandBuffers( LogicalDevice.GetHandle(), CommandPool, MaxFramesInFlight, CommandBuffers );
-        vkDestroyCommandPool( LogicalDevice.GetHandle(), CommandPool, nullptr );
-        CommandPool = VK_NULL_HANDLE;
-    }
+    CommandPool.Cleanup( LogicalDevice.GetHandle() );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanInstance ( const TSharedPtr<FGenericWindow> &InWindow )
@@ -150,20 +145,12 @@ LumenEngine::VulkanRHI::FVulkanSwapChain &LumenEngine::VulkanRHI::FVulkanRHI::Ge
 
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeCommandBuffers ()
 {
-    VkCommandPoolCreateInfo PoolInfo{};
-    PoolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    PoolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    PoolInfo.queueFamilyIndex = LogicalDevice.GetGraphicsQueueFamily();
+    CommandPool.Initialize( LogicalDevice.GetHandle(), LogicalDevice.GetGraphicsQueueFamily() );
 
-    LUMEN_VK_CHECK( vkCreateCommandPool( LogicalDevice.GetHandle(), &PoolInfo, nullptr, &CommandPool ) );
-
-    VkCommandBufferAllocateInfo AllocInfo{};
-    AllocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    AllocInfo.commandPool        = CommandPool;
-    AllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    AllocInfo.commandBufferCount = MaxFramesInFlight;
-
-    LUMEN_VK_CHECK( vkAllocateCommandBuffers( LogicalDevice.GetHandle(), &AllocInfo, CommandBuffers ) );
+    for ( UInt32 Index = 0; Index < MaxFramesInFlight; ++Index )
+    {
+        CommandBuffers[Index] = CommandPool.AllocateBuffer( LogicalDevice.GetHandle() );
+    }
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::WaitIdle () const noexcept
@@ -187,7 +174,7 @@ bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
     CurrentImageIndex = ImageIndex;
     SwapChain.ResetFences( Device, CurrentFrame );
 
-    VkCommandBuffer Cmd = CommandBuffers[CurrentFrame];
+    const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
     LUMEN_VK_CHECK( vkResetCommandBuffer( Cmd, 0 ) );
 
     VkCommandBufferBeginInfo BeginInfo{};
@@ -195,35 +182,17 @@ bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
     BeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
     LUMEN_VK_CHECK( vkBeginCommandBuffer( Cmd, &BeginInfo ) );
 
-    VkImageMemoryBarrier2 TransitionToGeneral{};
-    TransitionToGeneral.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    TransitionToGeneral.srcStageMask                    = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    TransitionToGeneral.srcAccessMask                   = 0;
-    TransitionToGeneral.dstStageMask                    = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    TransitionToGeneral.dstAccessMask                   = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-    TransitionToGeneral.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
-    TransitionToGeneral.newLayout                       = VK_IMAGE_LAYOUT_GENERAL;
-    TransitionToGeneral.image                           = Image;
-    TransitionToGeneral.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    TransitionToGeneral.subresourceRange.baseMipLevel   = 0;
-    TransitionToGeneral.subresourceRange.levelCount     = 1;
-    TransitionToGeneral.subresourceRange.baseArrayLayer = 0;
-    TransitionToGeneral.subresourceRange.layerCount     = 1;
-
-    VkDependencyInfo DepInfo{};
-    DepInfo.sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    DepInfo.imageMemoryBarrierCount = 1;
-    DepInfo.pImageMemoryBarriers    = &TransitionToGeneral;
-    vkCmdPipelineBarrier2( Cmd, &DepInfo );
+    CommandBuffers[CurrentFrame].Begin();
+    CommandBuffers[CurrentFrame].TransitionImageLayout( Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_GENERAL, VK_IMAGE_ASPECT_COLOR_BIT );
 
     return true;
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::ClearScreen ( const Float32 ClearColor[4] )
 {
-    const UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
-    VkCommandBuffer Cmd       = CommandBuffers[CurrentFrame];
-    VkImage Image             = SwapChain.GetImages()[CurrentImageIndex];
+    const UInt32 CurrentFrame  = FrameIndex % MaxFramesInFlight;
+    const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
+    const VkImage &Image       = SwapChain.GetImages()[CurrentImageIndex];
 
     VkClearColorValue ClearValue{};
     ClearValue.float32[0] = ClearColor[0];
@@ -237,9 +206,9 @@ void LumenEngine::VulkanRHI::FVulkanRHI::ClearScreen ( const Float32 ClearColor[
 
 void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
 {
-    const UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
-    VkCommandBuffer Cmd       = CommandBuffers[CurrentFrame];
-    VkImage Image             = SwapChain.GetImages()[CurrentImageIndex];
+    const UInt32 CurrentFrame  = FrameIndex % MaxFramesInFlight;
+    const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
+    const VkImage &Image       = SwapChain.GetImages()[CurrentImageIndex];
 
     VkImageMemoryBarrier2 TransitionToPresent{};
     TransitionToPresent.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;

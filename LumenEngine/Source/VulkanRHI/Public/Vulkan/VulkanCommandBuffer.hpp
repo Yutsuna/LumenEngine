@@ -24,7 +24,8 @@ namespace VulkanRHI
     {
     public:
 
-        explicit FVulkanCommandBuffer ( VkCommandBuffer InHandle ) noexcept;
+        FVulkanCommandBuffer ( VkCommandBuffer InHandle ) noexcept;
+        ~FVulkanCommandBuffer () = default;
 
     public:
 

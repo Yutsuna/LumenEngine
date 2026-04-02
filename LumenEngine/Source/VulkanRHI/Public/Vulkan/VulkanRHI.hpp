@@ -10,6 +10,8 @@
 #include "Container/SharedPtr.hpp"
 #include "CoreTypes.hpp"
 
+#include "Vulkan/VulkanCommandBuffer.hpp"
+#include "Vulkan/VulkanCommandPool.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanLogicalDevice.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
@@ -83,12 +85,12 @@ namespace VulkanRHI
         FVulkanLogicalDevice LogicalDevice;
         FVulkanSwapChain SwapChain;
 
+        FVulkanCommandPool CommandPool;
+        FVulkanCommandBuffer CommandBuffers[MaxFramesInFlight];
+
         VmaAllocator Allocator = VK_NULL_HANDLE;
 
         Bool bIsInitialized = false;
-
-        VkCommandPool CommandPool                         = VK_NULL_HANDLE;
-        VkCommandBuffer CommandBuffers[MaxFramesInFlight] = {};
 
         UInt64 FrameIndex        = 0;
         UInt32 CurrentImageIndex = 0;
