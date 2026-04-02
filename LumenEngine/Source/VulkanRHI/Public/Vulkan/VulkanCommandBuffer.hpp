@@ -1,5 +1,5 @@
 /**
- * @file VulkanCommandBuffer
+ * @file VulkanCommandBuffer.hpp
  * @brief Vulkan command buffer wrapper for recording rendering commands
  */
 

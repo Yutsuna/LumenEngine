@@ -1,5 +1,5 @@
 /**
- * @file VulkanCommandPool
+ * @file VulkanCommandPool.hpp
  * @brief Vulkan command pool wrapper for managing command buffers
  */
 
