@@ -18,9 +18,9 @@ namespace Renderer
 
     struct LUMEN_ENGINE_API FDrawCommand
     {
-        FRenderMesh *Mesh           = nullptr;
-        FRenderShader *Shader       = nullptr;
-        Maths::FMatrix4x4 Transform = FMatrix4x4::Identity();
+        FRenderMesh *Mesh            = nullptr;
+        FRenderShader *Shader        = nullptr;
+        Maths::FMatrix4x4f Transform = Maths::FMatrix4x4f::Identity();
     };
 
     struct LUMEN_ENGINE_API FRenderPacket
