@@ -1,6 +1,6 @@
 /**
- * @file VulkanDevice.hpp
- * @brief Declaration of the VulkanDevice class, which encapsulates Vulkan device management.
+ * @file VulkanLogicalDevice.hpp
+ * @brief Declaration of the VulkanLogicalDevice class, which encapsulates Vulkan device management.
  */
 
 #pragma once
@@ -18,15 +18,15 @@ namespace VulkanRHI
 {
 
     /**
-     * @class FVulkanDevice
+     * @class FVulkanLogicalDevice
      * @brief Encapsulates the Vulkan logical device and its associated resources.
      */
-    class LUMEN_ENGINE_API FVulkanDevice final
+    class LUMEN_ENGINE_API FVulkanLogicalDevice final
     {
     public:
 
-        FVulkanDevice () noexcept  = default;
-        ~FVulkanDevice () noexcept = default;
+        FVulkanLogicalDevice () noexcept  = default;
+        ~FVulkanLogicalDevice () noexcept = default;
 
     public:
 

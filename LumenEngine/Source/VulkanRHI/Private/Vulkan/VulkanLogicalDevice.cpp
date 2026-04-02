@@ -1,13 +1,13 @@
 /**
- * @file VulkanDevice.cpp
- * @brief Implementation of the VulkanDevice class.
+ * @file VulkanLogicalDevice.cpp
+ * @brief Implementation of the VulkanLogicalDevice class.
  */
 
-#include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/VulkanLogicalDevice.hpp"
 
-void LumenEngine::VulkanRHI::FVulkanDevice::Initialize ( VkPhysicalDevice InPhysicalDevice,
-                                                         VkSurfaceKHR InSurface,
-                                                         const TVector<const AnsiChar *> &InRequiredExtensions )
+void LumenEngine::VulkanRHI::FVulkanLogicalDevice::Initialize ( VkPhysicalDevice InPhysicalDevice,
+                                                                VkSurfaceKHR InSurface,
+                                                                const TVector<const AnsiChar *> &InRequiredExtensions )
 {
     PhysicalDevice = InPhysicalDevice;
 
@@ -19,7 +19,7 @@ void LumenEngine::VulkanRHI::FVulkanDevice::Initialize ( VkPhysicalDevice InPhys
     LUMEN_LOG_INFO( LogVulkanRHI, "Vulkan Logical Device created successfully." );
 }
 
-void LumenEngine::VulkanRHI::FVulkanDevice::Cleanup () noexcept
+void LumenEngine::VulkanRHI::FVulkanLogicalDevice::Cleanup () noexcept
 {
     if ( Device != VK_NULL_HANDLE )
     {
@@ -28,7 +28,7 @@ void LumenEngine::VulkanRHI::FVulkanDevice::Cleanup () noexcept
     }
 }
 
-void LumenEngine::VulkanRHI::FVulkanDevice::WaitIdle () const noexcept
+void LumenEngine::VulkanRHI::FVulkanLogicalDevice::WaitIdle () const noexcept
 {
     if ( Device != VK_NULL_HANDLE )
     {
@@ -36,27 +36,27 @@ void LumenEngine::VulkanRHI::FVulkanDevice::WaitIdle () const noexcept
     }
 }
 
-VkDevice LumenEngine::VulkanRHI::FVulkanDevice::GetHandle () const noexcept
+VkDevice LumenEngine::VulkanRHI::FVulkanLogicalDevice::GetHandle () const noexcept
 {
     return Device;
 }
 
-VkPhysicalDevice LumenEngine::VulkanRHI::FVulkanDevice::GetPhysicalDevice () const noexcept
+VkPhysicalDevice LumenEngine::VulkanRHI::FVulkanLogicalDevice::GetPhysicalDevice () const noexcept
 {
     return PhysicalDevice;
 }
 
-VkQueue LumenEngine::VulkanRHI::FVulkanDevice::GetGraphicsQueue () const noexcept
+VkQueue LumenEngine::VulkanRHI::FVulkanLogicalDevice::GetGraphicsQueue () const noexcept
 {
     return GraphicsQueue;
 }
 
-LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanDevice::GetGraphicsQueueFamily () const noexcept
+LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanLogicalDevice::GetGraphicsQueueFamily () const noexcept
 {
     return GraphicsQueueFamily;
 }
 
-void LumenEngine::VulkanRHI::FVulkanDevice::SelectQueueFamilies ( VkSurfaceKHR InSurface )
+void LumenEngine::VulkanRHI::FVulkanLogicalDevice::SelectQueueFamilies ( VkSurfaceKHR InSurface )
 {
     UInt32 QueueFamilyCount = 0;
     vkGetPhysicalDeviceQueueFamilyProperties( PhysicalDevice, &QueueFamilyCount, nullptr );
@@ -85,7 +85,7 @@ void LumenEngine::VulkanRHI::FVulkanDevice::SelectQueueFamilies ( VkSurfaceKHR I
     }
 }
 
-void LumenEngine::VulkanRHI::FVulkanDevice::CreateLogicalDevice ( const TVector<const AnsiChar *> &InRequiredExtensions )
+void LumenEngine::VulkanRHI::FVulkanLogicalDevice::CreateLogicalDevice ( const TVector<const AnsiChar *> &InRequiredExtensions )
 {
     Float32 QueuePriority = 1.0F;
 

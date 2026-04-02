@@ -5,13 +5,16 @@
 
 #pragma once
 
+#include "Definitions.hpp"
+
 #include "Container/SharedPtr.hpp"
 #include "CoreTypes.hpp"
 
-#include "Vulkan/VulkanDevice.hpp"
+#include "Vulkan/VulkanInstance.hpp"
+#include "Vulkan/VulkanLogicalDevice.hpp"
+#include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanSwapChain.hpp"
 
-#include <VkBootstrap.h>
 #include <vk_mem_alloc.h>
 
 namespace LumenEngine
@@ -53,9 +56,9 @@ namespace VulkanRHI
 
     public:
 
-        [[nodiscard]] FVulkanDevice GetDevice () const noexcept;
-        [[nodiscard]] VkPhysicalDevice GetPhysicalDevice () const noexcept;
-        [[nodiscard]] VkInstance GetInstance () const noexcept;
+        [[nodiscard]] FVulkanLogicalDevice GetLogicalDevice () const noexcept;
+        [[nodiscard]] FVulkanPhysicalDevice GetPhysicalDevice () const noexcept;
+        [[nodiscard]] FVulkanInstance GetInstance () const noexcept;
         [[nodiscard]] VmaAllocator GetAllocator () const noexcept;
         [[nodiscard]] FVulkanSwapChain &GetSwapChain () noexcept;
 
@@ -65,18 +68,22 @@ namespace VulkanRHI
         void InitializeVulkanDevice ();
         void InitializeVMA ();
         void InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow );
-        void CreateCommandBuffers ();
+        void InitializeCommandBuffers ();
+
+        void DestroyVulkanInstance ();
+        void DestroyVulkanDevice ();
+        void DestroyVMA ();
+        void DestroySwapChain ();
+        void DestroyCommandBuffers ();
 
     private:
 
-        vkb::Instance Instance;
-        vkb::PhysicalDevice PhysicalDevice;
-        FVulkanDevice LogicalDevice;
-
-        VkSurfaceKHR Surface   = VK_NULL_HANDLE;
-        VmaAllocator Allocator = VK_NULL_HANDLE;
-
+        FVulkanInstance Instance;
+        FVulkanPhysicalDevice PhysicalDevice;
+        FVulkanLogicalDevice LogicalDevice;
         FVulkanSwapChain SwapChain;
+
+        VmaAllocator Allocator = VK_NULL_HANDLE;
 
         Bool bIsInitialized = false;
 
