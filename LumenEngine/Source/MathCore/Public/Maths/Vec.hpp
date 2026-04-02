@@ -115,7 +115,7 @@ namespace Maths
 
     template <typename Type, USize Dimension>
         requires CVecDimension<Type, Dimension>
-    struct TVec : public Private::TVecData<Type, Dimension>
+    struct LUMEN_ENGINE_API TVec final : public Private::TVecData<Type, Dimension>
     {
         constexpr TVec () noexcept = default;
 
@@ -143,6 +143,9 @@ namespace Maths
         template <typename... Arguments>
             requires( sizeof...( Arguments ) == Dimension && ( std::is_convertible_v<Arguments, Type> && ... ) )
         constexpr TVec( Arguments &&...Args ) noexcept;
+
+        constexpr Bool operator==( const TVec<Type, Dimension> &Other ) const noexcept;
+        constexpr Bool operator!=( const TVec<Type, Dimension> &Other ) const noexcept;
     };
 
     using FVec2f = TVec<Float32, 2>;

@@ -62,6 +62,29 @@ namespace Maths
         /* Empty */
     }
 
+    template <typename Type, USize Dimension>
+        requires CVecDimension<Type, Dimension>
+
+    constexpr Bool TVec<Type, Dimension>::operator==( const TVec<Type, Dimension> &Other ) const noexcept
+    {
+        for ( USize Index = 0; Index < Dimension; ++Index )
+        {
+            if ( this->Data[Index] != Other.Data[Index] )
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    template <typename Type, USize Dimension>
+        requires CVecDimension<Type, Dimension>
+
+    constexpr Bool TVec<Type, Dimension>::operator!=( const TVec<Type, Dimension> &Other ) const noexcept
+    {
+        return not( *this == Other );
+    }
+
 } // namespace Maths
 
 } // namespace LumenEngine
