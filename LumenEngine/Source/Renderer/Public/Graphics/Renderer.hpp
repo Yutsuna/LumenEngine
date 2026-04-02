@@ -55,9 +55,7 @@ namespace Renderer
 
     private:
 
-        /**
-         * @brief Creates command buffers for each frame in flight. This is necessary for recording rendering commands.
-         */
+        /** @brief Creates command buffers for each frame in flight. */
         void CreateCommandBuffers ();
 
     private:
