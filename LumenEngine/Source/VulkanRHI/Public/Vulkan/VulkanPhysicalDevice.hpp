@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Container/Vector.hpp"
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
 
@@ -35,10 +36,6 @@ namespace VulkanRHI
     public:
 
         [[nodiscard]] VkPhysicalDevice GetHandle () const noexcept;
-
-    private:
-
-        Bool IsDeviceSuitable ( VkPhysicalDevice InDevice, VkSurfaceKHR InSurface ) const;
 
     private:
 
