@@ -46,6 +46,13 @@ namespace VulkanRHI
 
     public:
 
+        void WaitIdle () const noexcept;
+        bool BeginFrame ();
+        void ClearScreen ( const Float32 ClearColor[4] );
+        void EndFrame ();
+
+    public:
+
         [[nodiscard]] FVulkanDevice GetDevice () const noexcept;
         [[nodiscard]] VkPhysicalDevice GetPhysicalDevice () const noexcept;
         [[nodiscard]] VkInstance GetInstance () const noexcept;
@@ -58,6 +65,7 @@ namespace VulkanRHI
         void InitializeVulkanDevice ();
         void InitializeVMA ();
         void InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow );
+        void CreateCommandBuffers ();
 
     private:
 
@@ -71,6 +79,12 @@ namespace VulkanRHI
         FVulkanSwapChain SwapChain;
 
         Bool bIsInitialized = false;
+
+        VkCommandPool CommandPool                         = VK_NULL_HANDLE;
+        VkCommandBuffer CommandBuffers[MaxFramesInFlight] = {};
+
+        UInt64 FrameIndex        = 0;
+        UInt32 CurrentImageIndex = 0;
     };
 
 } // namespace VulkanRHI

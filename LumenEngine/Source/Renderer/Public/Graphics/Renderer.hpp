@@ -9,6 +9,7 @@
 
 #include "Container/SharedPtr.hpp"
 #include "Container/UniquePtr.hpp"
+#include "Thread/TripleBuffer.hpp"
 
 #include <Vulkan/VulkanCommandBuffer.hpp>
 #include <Vulkan/VulkanCommandPool.hpp>
@@ -18,6 +19,15 @@ namespace LumenEngine
 {
 
 class FGenericWindow;
+
+/**
+ * @struct FRenderPacket
+ * @brief Data packet sent from the Game Thread to the Render Thread every frame.
+ */
+struct FRenderPacket
+{
+    Float32 ClearColor[4] = { 0.F, 0.F, 0.F, 1.F };
+};
 
 /**
  * @class FRenderer
@@ -38,14 +48,13 @@ public:
      */
     void Initialize ( const TSharedRef<FGenericWindow> &InWindow );
 
-    /**
-     * @brief Shuts down the renderer and releases all resources. This should be called when the application is closing.
-     */
+    /** @brief Shuts down the renderer and releases all resources. */
     void Shutdown () noexcept;
 
-    /**
-     * @brief Renders a single frame. This should be called every frame to update the display.
-     */
+    /** @brief Submits a render packet from the Game Thread to the Render Thread. */
+    void SubmitRenderPacket ( const FRenderPacket &InPacket );
+
+    /** @brief Renders a single frame. */
     void RenderFrame ();
 
 private:
@@ -58,11 +67,7 @@ private:
 private:
 
     TUniquePtr<VulkanRHI::FVulkanRHI> RHI = nullptr;
-
-    VulkanRHI::FVulkanCommandPool CommandPools[VulkanRHI::MaxFramesInFlight]     = {};
-    VulkanRHI::FVulkanCommandBuffer CommandBuffers[VulkanRHI::MaxFramesInFlight] = {};
-
-    UInt64 FrameIndex = 0;
+    Parallel::TTripleBuffer<FRenderPacket> RenderBuffer;
 };
 
 extern LUMEN_ENGINE_API TUniquePtr<FRenderer> GRenderer;
