@@ -1,33 +1,30 @@
-#include "CoreTypes.hpp"
-#include "LaunchEngine.hpp"
-#include "MessageHandler.hpp"
+#include "Application.hpp"
 
-#include "Generic/GenericApplication.hpp"
-
-#include "Logging/Logger.hpp"
-#include "Logging/LoggingCategory.hpp"
-
+#include "Container/Inline/UniquePtr.inl"
 #include "ErrorCodes.hpp"
+#include "LaunchEngine.hpp"
+
+namespace
+{
+LumenEngine::TUniquePtr<LumenEngine::FBaseApplication> GAppInstance;
+}
 
 LumenEngine::Int32 LumenEngine::Launch::ClientInit ( const Int32 LUMEN_UNUSED Argc, const AnsiChar LUMEN_UNUSED **Argv )
 {
-    FLogCategory LogBaseExample( "BaseExample" );
+    GAppInstance = MakeUnique<FBaseApplication>();
 
-    LUMEN_LOG_INFO( LogBaseExample, "Client initialization started." );
-
-    if ( !GPlatformApplication.IsValid() )
+    if ( not GAppInstance.IsValid() )
     {
-        LUMEN_LOG_FATAL( LogBaseExample, "Platform Application is not valid during ClientInit." );
         return EErrorCode::Type::Failure;
     }
 
-    GPlatformApplication->SetMessageHandler( MakeShared<FBaseExampleMessageHandler>() );
-
-    LUMEN_LOG_INFO( LogBaseExample, "Client initialization completed successfully." );
-    return EErrorCode::Type::Success;
+    return GAppInstance->Initialize();
 }
 
-void LumenEngine::Launch::ClientTick ( const Float64 LUMEN_UNUSED DeltaTime )
+void LumenEngine::Launch::ClientTick ( const Float64 DeltaTime )
 {
-    //
+    if ( GAppInstance.IsValid() )
+    {
+        GAppInstance->Tick( DeltaTime );
+    }
 }
