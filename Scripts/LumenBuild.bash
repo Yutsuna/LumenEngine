@@ -53,6 +53,7 @@ Usage: lumen [Command] [Mode]
 Commands:
   build   <Mode>  Configure and compile the project (Default)
   run     <Mode>  Execute the BaseExample (build if needed)
+  format          Run clang-format on LumenEngine/Source/**/*.{hpp,inl,cpp}
   clean           Remove all build artifacts
   rebuild <Mode>  Full cleanup followed by a fresh build
 
@@ -140,12 +141,35 @@ function ExecuteBinary()
     fi
 }
 
+function FormatSources()
+{
+    local -r SourceDir="${ProjectRoot}/LumenEngine/Source"
+    local -r Jobs="$(GetProcessorCount)"
+
+    command -v clang-format >/dev/null 2>&1 || {
+        PrintLog "${LogError}" "clang-format not found."
+        exit $ErrorCode
+    }
+
+    if [[ ! -d "${SourceDir}" ]]; then
+        PrintLog "${LogError}" "Source directory not found: ${SourceDir}"
+        exit $ErrorCode
+    fi
+
+    PrintLog "${LogInfo}" "Formatting C++ files in ${SourceDir} (${Jobs} workers)..."
+
+    find "${SourceDir}" -type f \( -name "*.hpp" -o -name "*.inl" -o -name "*.cpp" \) -print0 | \
+        xargs -0r -n 1 -P "${Jobs}" clang-format -i
+
+    PrintLog "${LogSuccess}" "Formatting completed."
+}
+
 ResolvedCmd="build"
 ResolvedMode="$(GetDefaultBuildMode)"
 
 if [[ -n "${1:-}" ]]; then
     case "${1,,}" in
-        build|run|clean|rebuild|help|--help|-h)
+        build|run|format|clean|rebuild|help|--help|-h)
             ResolvedCmd="$1"
             if [[ -n "${2:-}" ]]; then
                 ResolvedMode="$2"
@@ -177,6 +201,9 @@ case "${InputCmd,,}" in
     run)
         InvokeCmake "${InputMode}"
         ExecuteBinary "${InputMode}"
+        ;;
+    format)
+        FormatSources
         ;;
 
     clean)
