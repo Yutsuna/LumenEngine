@@ -162,7 +162,7 @@ template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::~TUnique
     Reset();
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter> &TUniquePtr<Type[], Deleter>::operator= ( TUniquePtr &&Other ) noexcept
+template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter> &TUniquePtr<Type[], Deleter>::operator=( TUniquePtr &&Other ) noexcept
 {
     if ( this != &Other )
     {
@@ -172,13 +172,13 @@ template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter> &TUniqueP
     return *this;
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter> &TUniquePtr<Type[], Deleter>::operator= ( NullptrType ) noexcept
+template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter> &TUniquePtr<Type[], Deleter>::operator=( NullptrType ) noexcept
 {
     Reset();
     return *this;
 }
 
-template <typename Type, typename Deleter> Type &TUniquePtr<Type[], Deleter>::operator[] ( USize Index ) const
+template <typename Type, typename Deleter> Type &TUniquePtr<Type[], Deleter>::operator[]( USize Index ) const
 {
     assert( IsValid() );
     return Object[Index];

@@ -27,13 +27,13 @@ template <typename Type> struct TDefaultDelete
     /** Converting Constructor: Allows upcasting deleters from derived to base. */
     template <typename OtherType>
         requires Concepts::CConvertibleTo<OtherType *, Type *>
-    TDefaultDelete ( const TDefaultDelete<OtherType> & ) noexcept
+    TDefaultDelete( const TDefaultDelete<OtherType> & ) noexcept
     {
         /* Empty */
     }
 
     /** Deletes the provided pointer. */
-    void operator() ( Type *Ptr ) const
+    void operator()( Type *Ptr ) const
     {
         static_assert( sizeof( Type ) > 0, "Cannot delete an incomplete type." );
         delete Ptr;
@@ -50,7 +50,7 @@ template <typename Type> struct TDefaultDelete<Type[]>
     constexpr TDefaultDelete () noexcept = default;
 
     /** Deletes the provided array pointer. */
-    void operator() ( Type *Ptr ) const
+    void operator()( Type *Ptr ) const
     {
         static_assert( sizeof( Type ) > 0, "Cannot delete an incomplete type." );
         delete[] Ptr;
@@ -81,7 +81,7 @@ public:
 
     /** Copying is explicitly disabled to enforce unique ownership */
     TUniquePtr ( const TUniquePtr & )           = delete;
-    TUniquePtr &operator= ( const TUniquePtr & ) = delete;
+    TUniquePtr &operator=( const TUniquePtr & ) = delete;
 
     /** Move Constructor */
     TUniquePtr ( TUniquePtr &&Other ) noexcept;
@@ -89,25 +89,25 @@ public:
     /** Converting Move Constructor: Allows upcasting from derived unique pointers. */
     template <typename OtherType, typename OtherDeleter>
         requires Concepts::CConvertibleTo<OtherType *, Type *>
-    TUniquePtr ( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept;
+    TUniquePtr( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept;
 
     /** Destructor */
     ~TUniquePtr ();
 
     /** Move Assignment Operator */
-    TUniquePtr &operator= ( TUniquePtr &&Other ) noexcept;
+    TUniquePtr &operator=( TUniquePtr &&Other ) noexcept;
 
     /** Converting Move Assignment Operator */
     template <typename OtherType, typename OtherDeleter>
         requires Concepts::CConvertibleTo<OtherType *, Type *>
-    TUniquePtr &operator= ( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept;
+    TUniquePtr &operator=( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept;
 
     /** Nullptr Assignment */
-    TUniquePtr &operator= ( NullptrType ) noexcept;
+    TUniquePtr &operator=( NullptrType ) noexcept;
 
     /** Accessors */
-    Type &operator* () const;
-    Type *operator-> () const;
+    Type &operator*() const;
+    Type *operator->() const;
     Type *Get () const;
 
     /** Deleter Accessors */
@@ -159,7 +159,7 @@ public:
 
     /** Copying is explicitly disabled to enforce unique ownership */
     TUniquePtr ( const TUniquePtr & )           = delete;
-    TUniquePtr &operator= ( const TUniquePtr & ) = delete;
+    TUniquePtr &operator=( const TUniquePtr & ) = delete;
 
     /** Move Constructor */
     TUniquePtr ( TUniquePtr &&Other ) noexcept;
@@ -168,13 +168,13 @@ public:
     ~TUniquePtr ();
 
     /** Move Assignment Operator */
-    TUniquePtr &operator= ( TUniquePtr &&Other ) noexcept;
+    TUniquePtr &operator=( TUniquePtr &&Other ) noexcept;
 
     /** Nullptr Assignment */
-    TUniquePtr &operator= ( NullptrType ) noexcept;
+    TUniquePtr &operator=( NullptrType ) noexcept;
 
     /** Accessors */
-    Type &operator[] ( USize Index ) const;
+    Type &operator[]( USize Index ) const;
     Type *Get () const;
 
     /** Deleter Accessors */
