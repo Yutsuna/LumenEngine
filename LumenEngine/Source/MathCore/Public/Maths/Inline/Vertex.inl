@@ -13,6 +13,11 @@ constexpr LumenEngine::Maths::FVertex::FVertex ( const FVec3f &InPosition, const
     //
 }
 
+constexpr LumenEngine::Maths::FVertex::FVertex ( const FVec3f &InPosition ) noexcept : Position( InPosition )
+{
+    //
+}
+
 constexpr LumenEngine::Bool LumenEngine::Maths::FVertex::operator==( const FVertex &Other ) const noexcept
 {
     return Position == Other.Position && Normal == Other.Normal && UV == Other.UV && Tangent == Other.Tangent;

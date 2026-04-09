@@ -27,6 +27,7 @@ namespace Maths
 
         constexpr FVertex () noexcept = default;
         constexpr FVertex ( const Maths::FVec3f &InPosition, const Maths::FVec3f &InNormal, const Maths::FVec2f &InUV, const Maths::FVec3f &InTangent ) noexcept;
+        constexpr FVertex ( const Maths::FVec3f &InPosition ) noexcept;
 
         constexpr LumenEngine::Bool operator==( const FVertex &Other ) const noexcept;
         constexpr LumenEngine::Bool operator!=( const FVertex &Other ) const noexcept;
