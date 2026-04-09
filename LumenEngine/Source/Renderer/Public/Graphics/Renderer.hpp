@@ -1,6 +1,6 @@
 /**
  * @file Renderer.hpp
- * @brief High-level Renderer module managing the VulkanRHI context and frame logic.
+ * @brief High-level Renderer module managing the RHI context and frame logic.
  */
 
 #pragma once
@@ -9,37 +9,38 @@
 
 #include "Container/SharedPtr.hpp"
 #include "Container/UniquePtr.hpp"
-#include "Thread/TripleBuffer.hpp"
-
-#include <Vulkan/VulkanCommandBuffer.hpp>
-#include <Vulkan/VulkanCommandPool.hpp>
-#include <Vulkan/VulkanRHI.hpp>
-
 #include "Graphics/RenderResource.hpp"
+#include "Thread/TripleBuffer.hpp"
 
 namespace LumenEngine
 {
 
 class FGenericWindow;
 
+namespace VulkanRHI
+{
+    class FVulkanRHI;
+}
+
 namespace Renderer
 {
 
     /**
      * @class FRenderer
-     * @brief Renderer class responsible for managing the Vulkan context and rendering frames.
+     * @brief Renderer class responsible for managing the RHI context and rendering frames.
      */
     class LUMEN_ENGINE_API FRenderer
     {
     public:
 
-        FRenderer () noexcept = default;
+        /** Constructor declared here, defined in .cpp to avoid incomplete type errors with TUniquePtr */
+        FRenderer () noexcept;
         ~FRenderer () noexcept;
 
     public:
 
         /**
-         * @brief Initializes the renderer with the given window. This sets up the Vulkan context and prepares for rendering.
+         * @brief Initializes the renderer with the given window.
          * @param InWindow The window to render to.
          */
         void Initialize ( const TSharedRef<FGenericWindow> &InWindow );
@@ -55,12 +56,7 @@ namespace Renderer
 
     private:
 
-        /** @brief Creates command buffers for each frame in flight. */
-        void CreateCommandBuffers ();
-
-    private:
-
-        TUniquePtr<VulkanRHI::FVulkanRHI> RHI = nullptr;
+        TUniquePtr<VulkanRHI::FVulkanRHI> RHI;
         Parallel::TTripleBuffer<FRenderPacket> RenderBuffer;
     };
 
