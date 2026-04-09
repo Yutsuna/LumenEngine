@@ -69,6 +69,7 @@ namespace VulkanRHI
         [[nodiscard]] VkExtent2D GetExtent () const noexcept;
         [[nodiscard]] const TVector<VkImage> &GetImages () const noexcept;
         [[nodiscard]] VkImageView GetImageView ( const USize InImageIndex ) const noexcept;
+        [[nodiscard]] VkFormat GetImageFormat () const noexcept;
 
         [[nodiscard]] Bool NeedsRecreation () const noexcept;
 

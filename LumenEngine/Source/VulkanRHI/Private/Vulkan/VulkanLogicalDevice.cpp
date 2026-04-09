@@ -66,9 +66,9 @@ void LumenEngine::VulkanRHI::FVulkanLogicalDevice::SelectQueueFamilies ( VkSurfa
 
     for ( UInt32 Index = 0; Index < QueueFamilyCount; ++Index )
     {
-        if ( QueueFamilies[Index].queueFlags & VK_QUEUE_GRAPHICS_BIT )
+        if ( ( QueueFamilies[Index].queueFlags & VK_QUEUE_GRAPHICS_BIT ) != VK_FALSE )
         {
-            VkBool32 bPresentSupport = false;
+            VkBool32 bPresentSupport = VK_FALSE;
             vkGetPhysicalDeviceSurfaceSupportKHR( PhysicalDevice, Index, InSurface, &bPresentSupport );
 
             if ( bPresentSupport == VK_TRUE )
@@ -95,19 +95,23 @@ void LumenEngine::VulkanRHI::FVulkanLogicalDevice::CreateLogicalDevice ( const T
     QueueCreateInfo.queueCount       = 1;
     QueueCreateInfo.pQueuePriorities = &QueuePriority;
 
-    // Features standard (Anisotropy, etc.)
     VkPhysicalDeviceFeatures DeviceFeatures{};
     DeviceFeatures.samplerAnisotropy = VK_TRUE;
 
-    // Features Vulkan 1.3 (Dynamic Rendering, Synchronization2)
+    VkPhysicalDeviceVulkan12Features Features12{};
+    Features12.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    Features12.bufferDeviceAddress = VK_TRUE;
+    Features12.pNext               = nullptr;
+
     VkPhysicalDeviceVulkan13Features Features13{};
     Features13.sType            = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_3_FEATURES;
+    Features13.pNext            = &Features12;
     Features13.dynamicRendering = VK_TRUE;
     Features13.synchronization2 = VK_TRUE;
 
     VkDeviceCreateInfo CreateInfo{};
     CreateInfo.sType                = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
-    CreateInfo.pNext                = &Features13; // Chainage des features Vulkan 1.3
+    CreateInfo.pNext                = &Features13;
     CreateInfo.queueCreateInfoCount = 1;
     CreateInfo.pQueueCreateInfos    = &QueueCreateInfo;
     CreateInfo.pEnabledFeatures     = &DeviceFeatures;
@@ -115,7 +119,6 @@ void LumenEngine::VulkanRHI::FVulkanLogicalDevice::CreateLogicalDevice ( const T
     CreateInfo.enabledExtensionCount   = static_cast<UInt32>( InRequiredExtensions.size() );
     CreateInfo.ppEnabledExtensionNames = InRequiredExtensions.data();
 
-    // Layers (Gérés par l'instance dans les drivers récents, mais on peut les laisser à 0)
     CreateInfo.enabledLayerCount = 0;
 
     LUMEN_VK_CHECK( vkCreateDevice( PhysicalDevice, &CreateInfo, nullptr, &Device ) );

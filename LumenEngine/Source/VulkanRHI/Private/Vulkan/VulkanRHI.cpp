@@ -5,8 +5,9 @@
 
 #include "Vulkan/VulkanRHI.hpp"
 #include "Generic/GenericWindow.hpp"
+#include "Vulkan/VulkanCore.hpp"
 
-void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const TSharedPtr<FGenericWindow> &InWindow )
+void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
 {
 
     if ( bIsInitialized )
@@ -33,6 +34,18 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
     }
 
     LogicalDevice.WaitIdle();
+
+    for ( std::pair<const LumenEngine::UInt32, LumenEngine::VulkanRHI::FVulkanPipeline> &Pair : PipelineRegistry )
+    {
+        Pair.second.Cleanup( LogicalDevice.GetHandle() );
+    }
+    PipelineRegistry.clear();
+
+    for ( std::pair<const LumenEngine::UInt32, LumenEngine::VulkanRHI::FVulkanMesh> &Pair : MeshRegistry )
+    {
+        Pair.second.Cleanup( Allocator );
+    }
+    MeshRegistry.clear();
 
     DestroyCommandBuffers();
     DestroySwapChain();
@@ -73,14 +86,14 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroyCommandBuffers ()
     CommandPool.Cleanup( LogicalDevice.GetHandle() );
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanInstance ( const TSharedPtr<FGenericWindow> &InWindow )
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanInstance ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
 {
     Instance.Initialize( InWindow );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanDevice ()
 {
-    const TVector<const AnsiChar *> DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+    const LumenEngine::TVector<const LumenEngine::AnsiChar *> DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
 
     PhysicalDevice.Initialize( Instance.GetHandle(), Instance.GetSurface() );
     LogicalDevice.Initialize( PhysicalDevice.GetHandle(), Instance.GetSurface(), DeviceExtensions );
@@ -103,11 +116,11 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVMA ()
     LUMEN_VK_CHECK( vmaCreateAllocator( &AllocatorInfo, &Allocator ) );
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow )
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeSwapChain ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
 {
     const VkPhysicalDevice &PhysicalDeviceHandle = PhysicalDevice.GetHandle();
     const VkDevice &LogicalDeviceHandle          = LogicalDevice.GetHandle();
-    const Maths::FVec2u &WindowSize              = static_cast<Maths::FVec2u>( InWindow->GetWindowSize() );
+    const LumenEngine::Maths::FVec2u WindowSize  = static_cast<LumenEngine::Maths::FVec2u>( InWindow->GetWindowSize() );
 
     SwapChain.InitializeSynStructures( LogicalDeviceHandle );
     SwapChain.Create( PhysicalDeviceHandle, LogicalDeviceHandle, Instance.GetSurface(), VK_FORMAT_B8G8R8A8_SRGB, WindowSize, true );
@@ -142,7 +155,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeCommandBuffers ()
 {
     CommandPool.Initialize( LogicalDevice.GetHandle(), LogicalDevice.GetGraphicsQueueFamily() );
 
-    for ( UInt32 Index = 0; Index < MaxFramesInFlight; ++Index )
+    for ( LumenEngine::UInt32 Index = 0; Index < MaxFramesInFlight; ++Index )
     {
         CommandBuffers[Index] = CommandPool.AllocateBuffer( LogicalDevice.GetHandle() );
     }
@@ -155,18 +168,18 @@ void LumenEngine::VulkanRHI::FVulkanRHI::WaitIdle () const noexcept
 
 LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
 {
-    const UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
-    VkDevice Device           = LogicalDevice.GetHandle();
+    const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
+    VkDevice Device                        = LogicalDevice.GetHandle();
 
     SwapChain.BeginFrame( Device, CurrentFrame );
 
-    auto [Image, ImageIndex] = SwapChain.AcquireNextImage( Device, CurrentFrame );
-    if ( Image == VK_NULL_HANDLE )
+    std::pair<VkImage, LumenEngine::UInt32> NextImagePair = SwapChain.AcquireNextImage( Device, CurrentFrame );
+    if ( NextImagePair.first == VK_NULL_HANDLE )
     {
         return false;
     }
 
-    CurrentImageIndex = ImageIndex;
+    CurrentImageIndex = NextImagePair.second;
     SwapChain.ResetFences( Device, CurrentFrame );
 
     LUMEN_VK_CHECK( vkResetCommandBuffer( CommandBuffers[CurrentFrame].GetHandle(), 0 ) );
@@ -176,11 +189,11 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
     return true;
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::BeginRendering ( const Float32 ClearColor[4] )
+void LumenEngine::VulkanRHI::FVulkanRHI::BeginRendering ( const LumenEngine::Float32 ClearColor[4] )
 {
-    const UInt32 CurrentFrame  = FrameIndex % MaxFramesInFlight;
-    const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
-    const VkImage &Image       = SwapChain.GetImages()[CurrentImageIndex];
+    const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
+    const VkCommandBuffer &Cmd             = CommandBuffers[CurrentFrame].GetHandle();
+    const VkImage &Image                   = SwapChain.GetImages()[CurrentImageIndex];
 
     /** Transition swapchain image to color attachment layout for dynamic rendering */
     CommandBuffers[CurrentFrame].TransitionImageLayout( Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT );
@@ -203,7 +216,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRendering ( const Float32 ClearCol
     vkCmdBeginRendering( Cmd, &RenderInfo );
 
     /** Set dynamic viewport and scissor */
-    VkViewport Viewport{ 0.F, 0.F, static_cast<Float32>( RenderInfo.renderArea.extent.width ), static_cast<Float32>( RenderInfo.renderArea.extent.height ), 0.F, 1.F };
+    VkViewport Viewport{ 0.F, 0.F, static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.width ), static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.height ), 0.F, 1.F };
     VkRect2D Scissor{ { 0, 0 }, RenderInfo.renderArea.extent };
 
     vkCmdSetViewport( Cmd, 0, 1, &Viewport );
@@ -212,16 +225,15 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRendering ( const Float32 ClearCol
 
 void LumenEngine::VulkanRHI::FVulkanRHI::EndRendering ()
 {
-    const UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
+    const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
     vkCmdEndRendering( CommandBuffers[CurrentFrame].GetHandle() );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
 {
-    const UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
-    const VkImage &Image      = SwapChain.GetImages()[CurrentImageIndex];
+    const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
+    const VkImage &Image                   = SwapChain.GetImages()[CurrentImageIndex];
 
-    /** Transition to present layout */
     CommandBuffers[CurrentFrame].TransitionImageLayout( Image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_ASPECT_COLOR_BIT );
     CommandBuffers[CurrentFrame].End();
 
@@ -229,48 +241,51 @@ void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
     ++FrameIndex;
 }
 
-LumenEngine::VulkanRHI::FVulkanBuffer LumenEngine::VulkanRHI::FVulkanRHI::CreateBuffer ( USize Size, VkBufferUsageFlags Usage, VmaMemoryUsage MemoryUsage )
+LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( const LumenEngine::TVector<LumenEngine::Maths::FVertex> &InVertices, const LumenEngine::TVector<LumenEngine::UInt32> &InIndices )
 {
-    FVulkanBuffer Buffer;
+    LumenEngine::VulkanRHI::FVulkanMesh NewMesh;
+    NewMesh.Initialize( Allocator, InVertices, InIndices );
 
-    VkBufferCreateInfo BufferInfo{};
-    BufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    BufferInfo.size        = Size;
-    BufferInfo.usage       = Usage;
-    BufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    const LumenEngine::UInt32 Handle = NextMeshID++;
+    MeshRegistry[Handle]             = NewMesh;
 
-    VmaAllocationCreateInfo AllocInfo{};
-    AllocInfo.usage = MemoryUsage;
-    AllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-    LUMEN_VK_CHECK( vmaCreateBuffer( Allocator, &BufferInfo, &AllocInfo, &Buffer.Buffer, &Buffer.Allocation, &Buffer.AllocationInfo ) );
-
-    return Buffer;
+    return Handle;
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::DestroyBuffer ( FVulkanBuffer &Buffer )
+LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath, const LumenEngine::FString &InFragmentPath )
 {
-    if ( Buffer.Buffer != VK_NULL_HANDLE )
+    LumenEngine::VulkanRHI::FVulkanPipeline NewPipeline;
+    const VkFormat ColorFormat = SwapChain.GetImageFormat();
+
+    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), ColorFormat, InVertexPath, InFragmentPath ) )
     {
-        vmaDestroyBuffer( Allocator, Buffer.Buffer, Buffer.Allocation );
-        Buffer.Buffer = VK_NULL_HANDLE;
+        return LumenEngine::VulkanRHI::NullBindlessID;
     }
+
+    const LumenEngine::UInt32 Handle = NextPipelineID++;
+    PipelineRegistry[Handle]         = NewPipeline;
+
+    return Handle;
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::BindMeshBuffers ( const FVulkanBuffer &VertexBuffer, const FVulkanBuffer &IndexBuffer )
+void LumenEngine::VulkanRHI::FVulkanRHI::BindPipeline ( const LumenEngine::UInt32 InPipelineID )
 {
-    const UInt32 CurrentFrame  = FrameIndex % MaxFramesInFlight;
-    const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
+    if ( not PipelineRegistry.contains( InPipelineID ) )
+    {
+        return;
+    }
 
-    VkDeviceSize Offset = 0;
-    vkCmdBindVertexBuffers( Cmd, 0, 1, &VertexBuffer.Buffer, &Offset );
-    vkCmdBindIndexBuffer( Cmd, IndexBuffer.Buffer, 0, VK_INDEX_TYPE_UINT32 );
+    const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
+    PipelineRegistry[InPipelineID].Bind( CommandBuffers[CurrentFrame].GetHandle() );
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::DrawIndexed ( UInt32 IndexCount )
+void LumenEngine::VulkanRHI::FVulkanRHI::DrawMesh ( const LumenEngine::UInt32 InMeshID )
 {
-    const UInt32 CurrentFrame  = FrameIndex % MaxFramesInFlight;
-    const VkCommandBuffer &Cmd = CommandBuffers[CurrentFrame].GetHandle();
+    if ( not MeshRegistry.contains( InMeshID ) )
+    {
+        return;
+    }
 
-    vkCmdDrawIndexed( Cmd, IndexCount, 1, 0, 0, 0 );
+    const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
+    MeshRegistry[InMeshID].BindAndDraw( CommandBuffers[CurrentFrame].GetHandle() );
 }

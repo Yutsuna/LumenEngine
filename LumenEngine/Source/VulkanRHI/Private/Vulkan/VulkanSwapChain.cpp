@@ -12,6 +12,7 @@
 #include <algorithm>
 #include <limits>
 
+
 const LumenEngine::FLogCategory LumenEngine::VulkanRHI::LogVulkanRHI( "VulkanRHI" );
 
 namespace
@@ -165,11 +166,11 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::CreateInternal ( VkPhysicalDevice
     vkGetSwapchainImagesKHR( InDevice, SwapChainHandle, &ImageCount, Images.data() );
 
     ImageViews.resize( Images.size() );
-    for ( USize i = 0; i < Images.size(); ++i )
+    for ( USize Index = 0; Index < Images.size(); ++Index )
     {
         VkImageViewCreateInfo ViewInfo{};
         ViewInfo.sType                           = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-        ViewInfo.image                           = Images[i];
+        ViewInfo.image                           = Images[Index];
         ViewInfo.viewType                        = VK_IMAGE_VIEW_TYPE_2D;
         ViewInfo.format                          = ImageFormat;
         ViewInfo.components.r                    = VK_COMPONENT_SWIZZLE_IDENTITY;
@@ -182,7 +183,7 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::CreateInternal ( VkPhysicalDevice
         ViewInfo.subresourceRange.baseArrayLayer = 0;
         ViewInfo.subresourceRange.layerCount     = 1;
 
-        LUMEN_VK_CHECK( vkCreateImageView( InDevice, &ViewInfo, nullptr, &ImageViews[i] ) );
+        LUMEN_VK_CHECK( vkCreateImageView( InDevice, &ViewInfo, nullptr, &ImageViews[Index] ) );
     }
 
     const VkSemaphoreCreateInfo SemaphoreCreateInfo = { .sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO, .pNext = nullptr, .flags = 0 };
@@ -237,6 +238,11 @@ VkImageView LumenEngine::VulkanRHI::FVulkanSwapChain::GetImageView ( const USize
     return ImageViews[InImageIndex];
 }
 
+VkFormat LumenEngine::VulkanRHI::FVulkanSwapChain::GetImageFormat () const noexcept
+{
+    return ImageFormat;
+}
+
 LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanSwapChain::NeedsRecreation () const noexcept
 {
     return bIsDirty;
@@ -277,47 +283,45 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::SubmitAndPresent ( VkCommandBuffe
                                                                   USize InFrameIndex,
                                                                   UInt32 InSwapChainImageIndex ) noexcept
 {
-    const FFrameData &Frame                                 = Frames[InFrameIndex];
-    const VkSemaphore RenderSemaphore                       = RenderSemaphores[InSwapChainImageIndex];
-    const VkCommandBufferSubmitInfo CommandBufferSubmitInfo = {
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO, .pNext = nullptr, .commandBuffer = InCmd, .deviceMask = 0 };
+    const FFrameData &Frame           = Frames[InFrameIndex];
+    const VkSemaphore RenderSemaphore = RenderSemaphores[InSwapChainImageIndex];
 
-    const VkSemaphoreSubmitInfo WaitSemaphoreSubmitInfo   = { .sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-                                                              .pNext       = nullptr,
-                                                              .semaphore   = Frame.SwapChainSemaphore,
-                                                              .value       = 1,
-                                                              .stageMask   = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT_KHR,
-                                                              .deviceIndex = 0 };
-    const VkSemaphoreSubmitInfo SignalSemaphoreSubmitInfo = { .sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-                                                              .pNext       = nullptr,
-                                                              .semaphore   = RenderSemaphore,
-                                                              .value       = 1,
-                                                              .stageMask   = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT,
-                                                              .deviceIndex = 0 };
+    VkCommandBufferSubmitInfo CommandBufferSubmitInfo{};
+    CommandBufferSubmitInfo.sType         = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO;
+    CommandBufferSubmitInfo.commandBuffer = InCmd;
 
-    const VkSubmitInfo2 SubmitInfo = { .sType                    = VK_STRUCTURE_TYPE_SUBMIT_INFO_2,
-                                       .pNext                    = nullptr,
-                                       .flags                    = 0,
-                                       .waitSemaphoreInfoCount   = 1,
-                                       .pWaitSemaphoreInfos      = &WaitSemaphoreSubmitInfo,
-                                       .commandBufferInfoCount   = 1,
-                                       .pCommandBufferInfos      = &CommandBufferSubmitInfo,
-                                       .signalSemaphoreInfoCount = 1,
-                                       .pSignalSemaphoreInfos    = &SignalSemaphoreSubmitInfo };
+    VkSemaphoreSubmitInfo WaitSemaphoreSubmitInfo{};
+    WaitSemaphoreSubmitInfo.sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    WaitSemaphoreSubmitInfo.semaphore = Frame.SwapChainSemaphore;
+    WaitSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+    WaitSemaphoreSubmitInfo.value     = 0;
+
+    VkSemaphoreSubmitInfo SignalSemaphoreSubmitInfo{};
+    SignalSemaphoreSubmitInfo.sType     = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO;
+    SignalSemaphoreSubmitInfo.semaphore = RenderSemaphore;
+    SignalSemaphoreSubmitInfo.stageMask = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT;
+    SignalSemaphoreSubmitInfo.value     = 0;
+
+    VkSubmitInfo2 SubmitInfo{};
+    SubmitInfo.sType                    = VK_STRUCTURE_TYPE_SUBMIT_INFO_2;
+    SubmitInfo.waitSemaphoreInfoCount   = 1;
+    SubmitInfo.pWaitSemaphoreInfos      = &WaitSemaphoreSubmitInfo;
+    SubmitInfo.commandBufferInfoCount   = 1;
+    SubmitInfo.pCommandBufferInfos      = &CommandBufferSubmitInfo;
+    SubmitInfo.signalSemaphoreInfoCount = 1;
+    SubmitInfo.pSignalSemaphoreInfos    = &SignalSemaphoreSubmitInfo;
 
     LUMEN_VK_CHECK( vkQueueSubmit2( InGraphicsQueue, 1, &SubmitInfo, Frame.RenderFence ) );
 
-    const VkPresentInfoKHR PresentInfo = { .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-                                           .pNext              = nullptr,
-                                           .waitSemaphoreCount = 1,
-                                           .pWaitSemaphores    = &RenderSemaphore,
-                                           .swapchainCount     = 1,
-                                           .pSwapchains        = &SwapChainHandle,
-                                           .pImageIndices      = &InSwapChainImageIndex,
-                                           .pResults           = nullptr };
+    VkPresentInfoKHR PresentInfo{};
+    PresentInfo.sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+    PresentInfo.waitSemaphoreCount = 1;
+    PresentInfo.pWaitSemaphores    = &RenderSemaphore;
+    PresentInfo.swapchainCount     = 1;
+    PresentInfo.pSwapchains        = &SwapChainHandle;
+    PresentInfo.pImageIndices      = &InSwapChainImageIndex;
 
     const VkResult PresentResult = vkQueuePresentKHR( InGraphicsQueue, &PresentInfo );
-
     if ( PresentResult != VK_SUCCESS )
     {
         if ( PresentResult != VK_SUBOPTIMAL_KHR )
