@@ -216,7 +216,9 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRendering ( const LumenEngine::Flo
     vkCmdBeginRendering( Cmd, &RenderInfo );
 
     /** Set dynamic viewport and scissor */
-    VkViewport Viewport{ 0.F, 0.F, static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.width ), static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.height ), 0.F, 1.F };
+    VkViewport Viewport{
+        0.F, 0.F, static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.width ), static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.height ),
+        0.F, 1.F };
     VkRect2D Scissor{ { 0, 0 }, RenderInfo.renderArea.extent };
 
     vkCmdSetViewport( Cmd, 0, 1, &Viewport );
@@ -241,7 +243,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
     ++FrameIndex;
 }
 
-LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( const LumenEngine::TVector<LumenEngine::Maths::FVertex> &InVertices, const LumenEngine::TVector<LumenEngine::UInt32> &InIndices )
+LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( const LumenEngine::TVector<LumenEngine::Maths::FVertex> &InVertices,
+                                                                     const LumenEngine::TVector<LumenEngine::UInt32> &InIndices )
 {
     LumenEngine::VulkanRHI::FVulkanMesh NewMesh;
     NewMesh.Initialize( Allocator, InVertices, InIndices );

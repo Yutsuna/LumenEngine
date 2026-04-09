@@ -7,8 +7,8 @@
 
 #include "Definitions.hpp"
 
-#include "Container/SharedPtr.hpp"
 #include "Container/Map.hpp"
+#include "Container/SharedPtr.hpp"
 #include "CoreTypes.hpp"
 
 #include "Maths/Vertex.hpp"

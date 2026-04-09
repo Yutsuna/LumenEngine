@@ -41,7 +41,7 @@ namespace VulkanRHI
          * @param InIndices The index data for the mesh.
          */
         void Initialize ( VmaAllocator InAllocator, const TVector<Maths::FVertex> &InVertices, const TVector<UInt32> &InIndices );
-        
+
         /**
          * @brief Cleans up the mesh by destroying vertex and index buffers.
          * @param InAllocator The VMA allocator used for buffer destruction.

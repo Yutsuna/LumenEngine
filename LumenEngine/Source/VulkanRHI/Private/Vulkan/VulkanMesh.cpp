@@ -11,7 +11,8 @@
 namespace
 {
 
-LumenEngine::VulkanRHI::FVulkanBuffer CreateBufferInternal ( VmaAllocator InAllocator, LumenEngine::USize InSize, VkBufferUsageFlags InUsage, VmaMemoryUsage InMemoryUsage ) 
+LumenEngine::VulkanRHI::FVulkanBuffer
+CreateBufferInternal ( VmaAllocator InAllocator, LumenEngine::USize InSize, VkBufferUsageFlags InUsage, VmaMemoryUsage InMemoryUsage )
 {
     LumenEngine::VulkanRHI::FVulkanBuffer Buffer;
 
@@ -30,7 +31,7 @@ LumenEngine::VulkanRHI::FVulkanBuffer CreateBufferInternal ( VmaAllocator InAllo
     return Buffer;
 }
 
-}
+} // namespace
 
 void LumenEngine::VulkanRHI::FVulkanMesh::Initialize ( VmaAllocator InAllocator,
                                                        const LumenEngine::TVector<LumenEngine::Maths::FVertex> &InVertices,

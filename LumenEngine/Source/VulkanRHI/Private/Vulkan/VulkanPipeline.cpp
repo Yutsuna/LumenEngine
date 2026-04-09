@@ -101,11 +101,11 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanPipeline::Initialize ( VkDevice
     ColorBlendAttachment.blendEnable    = VK_FALSE;
 
     VkPipelineColorBlendStateCreateInfo ColorBlending{};
-    ColorBlending.sType             = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-    ColorBlending.logicOpEnable     = VK_FALSE;
-    ColorBlending.logicOp           = VK_LOGIC_OP_COPY;
-    ColorBlending.attachmentCount   = 1;
-    ColorBlending.pAttachments      = &ColorBlendAttachment;
+    ColorBlending.sType           = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+    ColorBlending.logicOpEnable   = VK_FALSE;
+    ColorBlending.logicOp         = VK_LOGIC_OP_COPY;
+    ColorBlending.attachmentCount = 1;
+    ColorBlending.pAttachments    = &ColorBlendAttachment;
 
     const VkDynamicState DynamicStates[] = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
     VkPipelineDynamicStateCreateInfo DynamicState{};

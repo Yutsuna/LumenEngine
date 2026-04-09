@@ -12,7 +12,6 @@
 #include <algorithm>
 #include <limits>
 
-
 const LumenEngine::FLogCategory LumenEngine::VulkanRHI::LogVulkanRHI( "VulkanRHI" );
 
 namespace

@@ -12,7 +12,7 @@ namespace
 {
 std::filesystem::path GetExecutableDirectory () noexcept
 {
-#if defined(__linux__)
+#if defined( __linux__ )
     std::error_code ErrorCode;
     const std::filesystem::path ExecutablePath = std::filesystem::read_symlink( "/proc/self/exe", ErrorCode );
 
