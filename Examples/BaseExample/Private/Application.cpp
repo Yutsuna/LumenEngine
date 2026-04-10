@@ -10,6 +10,7 @@
 #include "Graphics/Renderer.hpp"
 #include "Logging/Logger.hpp"
 #include "MessageHandler.hpp"
+#include "RHI/RHITypes.hpp"
 
 namespace
 {
@@ -52,10 +53,19 @@ LumenEngine::Int32 LumenEngine::FBaseApplication::Initialize ()
     return EErrorCode::Type::Success;
 }
 
-void LumenEngine::FBaseApplication::Tick ( const Float64 /*DeltaTime*/ )
+void LumenEngine::FBaseApplication::Tick ( const Float64 DeltaTime )
 {
-    if ( Renderer::GRenderer.IsValid() )
+    if ( not Renderer::GRenderer.IsValid() )
     {
-        Renderer::GRenderer->SubmitRenderPacket( RenderPacket );
+        return;
     }
+
+    Renderer::GRenderer->SubmitRenderPacket( RenderPacket );
+
+    RHI::FGlobalUniformData Uniforms;
+    Uniforms.TimeSeconds = static_cast<Float32>(HAL::FPlatformTime::Seconds());
+    Uniforms.DeltaTime   = static_cast<Float32>(DeltaTime);
+    Uniforms.ViewProjectionMatrix = Maths::FMatrix4x4f::Identity(); // Replace with real camera
+
+    Renderer::GRenderer->SubmitGlobalUniforms( Uniforms );
 }
