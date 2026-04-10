@@ -1,13 +1,13 @@
 /**
  * @file Renderer.cpp
- * @brief Main Renderer class that manages the rendering pipeline and resources.
+ * @brief Implementation of the orchestrator FRenderer.
  */
 
 #include "Graphics/Renderer.hpp"
-#include "Graphics/RenderResource.hpp"
+#include "Graphics/Features/BasePassFeature.hpp"
+
 #include "Logging/Logger.hpp"
-#include "Logging/LoggingCategory.hpp"
-#include "Vulkan/VulkanRHI.hpp"
+#include "RHI/RHI.hpp"
 
 namespace
 {
@@ -15,19 +15,31 @@ const LumenEngine::FLogCategory LogRenderer( "Renderer" );
 }
 
 LumenEngine::TUniquePtr<LumenEngine::Renderer::FRenderer> LumenEngine::Renderer::GRenderer = nullptr;
-LumenEngine::Renderer::FRenderer::FRenderer () noexcept                                    = default;
+
+LumenEngine::Renderer::FRenderer::FRenderer () noexcept = default;
 
 LumenEngine::Renderer::FRenderer::~FRenderer () noexcept
 {
     Shutdown();
 }
 
-void LumenEngine::Renderer::FRenderer::Initialize ( const LumenEngine::TSharedRef<LumenEngine::FGenericWindow> &InWindow )
+void LumenEngine::Renderer::FRenderer::Initialize ( TUniquePtr<RHI::IRHI> InRHI, const TSharedRef<FGenericWindow> &InWindow )
 {
-    RHI = LumenEngine::MakeUnique<LumenEngine::VulkanRHI::FVulkanRHI>();
+    RHI = std::move( InRHI );
+
+    if ( not RHI )
+    {
+        LUMEN_LOG_FATAL( LogRenderer, "Renderer initialized with a null RHI!" );
+        return;
+    }
+
     RHI->Initialize( InWindow );
 
-    LUMEN_LOG_INFO( LogRenderer, "Renderer initialized successfully." );
+    TUniquePtr<FBasePassFeature> BasePass = MakeUnique<FBasePassFeature>();
+    BasePass->Initialize( RHI.Get() );
+    Features.emplace_back( std::move( BasePass ) );
+
+    LUMEN_LOG_INFO( LogRenderer, "Renderer initialized successfully with Modular Features." );
 }
 
 void LumenEngine::Renderer::FRenderer::Shutdown () noexcept
@@ -38,13 +50,19 @@ void LumenEngine::Renderer::FRenderer::Shutdown () noexcept
     }
 
     RHI->WaitIdle();
+    Features.clear();
     RHI->Shutdown();
     RHI.Reset();
 }
 
-void LumenEngine::Renderer::FRenderer::SubmitRenderPacket ( const LumenEngine::Renderer::FRenderPacket &InPacket )
+void LumenEngine::Renderer::FRenderer::SubmitRenderPacket ( const FRenderPacket &InPacket )
 {
     RenderBuffer.WriteBuffer( InPacket );
+}
+
+void LumenEngine::Renderer::FRenderer::SubmitGlobalUniforms ( const RHI::FGlobalUniformData &InUniforms )
+{
+    GlobalUniformBuffer.WriteBuffer( InUniforms );
 }
 
 void LumenEngine::Renderer::FRenderer::RenderFrame ()
@@ -59,44 +77,25 @@ void LumenEngine::Renderer::FRenderer::RenderFrame ()
         RenderBuffer.SwapReadBuffers();
     }
 
-    const LumenEngine::Renderer::FRenderPacket &Packet = RenderBuffer.ReadBuffer();
+    if ( GlobalUniformBuffer.IsDirty() )
+    {
+        GlobalUniformBuffer.SwapReadBuffers();
+    }
+
+    const FRenderPacket &Packet             = RenderBuffer.ReadBuffer();
+    const RHI::FGlobalUniformData &Uniforms = GlobalUniformBuffer.ReadBuffer();
 
     if ( not RHI->BeginFrame() )
     {
         return;
     }
 
-    for ( const LumenEngine::Renderer::FDrawCommand &Command : Packet.DrawCommands )
-    {
-        if ( Command.Mesh != nullptr && Command.Mesh->RenderHandle == LumenEngine::Renderer::InvalidHandle )
-        {
-            Command.Mesh->RenderHandle = RHI->CreateMesh( Command.Mesh->Vertices, Command.Mesh->Indices );
-        }
+    RHI::IRHICommandList &CmdList = RHI->GetCommandList();
 
-        if ( Command.Shader != nullptr && Command.Shader->RenderHandle == LumenEngine::Renderer::InvalidHandle )
-        {
-            Command.Shader->RenderHandle = RHI->CreatePipeline( Command.Shader->VertexPath, Command.Shader->FragmentPath );
-        }
+    for ( const TUniquePtr<IRenderFeature> &Feature : Features )
+    {
+        Feature->Execute( CmdList, Packet, Uniforms );
     }
 
-    RHI->BeginRendering( Packet.ClearColor );
-
-    for ( const LumenEngine::Renderer::FDrawCommand &Command : Packet.DrawCommands )
-    {
-        if ( Command.Mesh == nullptr || Command.Shader == nullptr )
-        {
-            continue;
-        }
-
-        if ( Command.Shader->RenderHandle == LumenEngine::Renderer::InvalidHandle || Command.Mesh->RenderHandle == LumenEngine::Renderer::InvalidHandle )
-        {
-            continue;
-        }
-
-        RHI->BindPipeline( Command.Shader->RenderHandle );
-        RHI->DrawMesh( Command.Mesh->RenderHandle );
-    }
-
-    RHI->EndRendering();
     RHI->EndFrame();
 }

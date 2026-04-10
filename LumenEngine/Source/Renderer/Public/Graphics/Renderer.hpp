@@ -1,6 +1,6 @@
 /**
  * @file Renderer.hpp
- * @brief High-level Renderer module managing the RHI context and frame logic.
+ * @brief High-level Renderer module orchestrating the Render Graph and Features.
  */
 
 #pragma once
@@ -9,6 +9,9 @@
 
 #include "Container/SharedPtr.hpp"
 #include "Container/UniquePtr.hpp"
+#include "Container/Vector.hpp"
+
+#include "Graphics/RenderFeature.hpp"
 #include "Graphics/RenderResource.hpp"
 #include "Thread/TripleBuffer.hpp"
 
@@ -17,47 +20,48 @@ namespace LumenEngine
 
 class FGenericWindow;
 
-namespace VulkanRHI
+namespace RHI
 {
-    class FVulkanRHI;
+    class IRHI;
 }
 
 namespace Renderer
 {
 
-    /**
-     * @class FRenderer
-     * @brief Renderer class responsible for managing the RHI context and rendering frames.
-     */
-    class LUMEN_ENGINE_API FRenderer
+    class LUMEN_ENGINE_API FRenderer final
     {
     public:
 
-        /** Constructor declared here, defined in .cpp to avoid incomplete type errors with TUniquePtr */
         FRenderer () noexcept;
         ~FRenderer () noexcept;
 
     public:
 
         /**
-         * @brief Initializes the renderer with the given window.
-         * @param InWindow The window to render to.
+         * @brief Initializes the renderer.
+         * @param InRHI The injected Render Hardware Interface.
+         * @param InWindow The main window.
          */
-        void Initialize ( const TSharedRef<FGenericWindow> &InWindow );
+        void Initialize ( TUniquePtr<RHI::IRHI> InRHI, const TSharedRef<FGenericWindow> &InWindow );
 
-        /** @brief Shuts down the renderer and releases all resources. */
         void Shutdown () noexcept;
 
-        /** @brief Submits a render packet from the Game Thread to the Render Thread. */
+        /** @brief Submits a render packet from the Game Thread. */
         void SubmitRenderPacket ( const FRenderPacket &InPacket );
 
-        /** @brief Renders a single frame. */
+        /** @brief Submits global data from the Game Thread (Camera, Time). */
+        void SubmitGlobalUniforms ( const RHI::FGlobalUniformData &InUniforms );
+
+        /** @brief Executes the render graph for the frame. */
         void RenderFrame ();
 
     private:
 
-        TUniquePtr<VulkanRHI::FVulkanRHI> RHI;
+        TUniquePtr<RHI::IRHI> RHI;
+        TVector<TUniquePtr<IRenderFeature>> Features;
+
         Parallel::TTripleBuffer<FRenderPacket> RenderBuffer;
+        Parallel::TTripleBuffer<RHI::FGlobalUniformData> GlobalUniformBuffer;
     };
 
     extern LUMEN_ENGINE_API TUniquePtr<FRenderer> GRenderer;
