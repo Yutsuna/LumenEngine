@@ -6,8 +6,8 @@
 #pragma once
 
 #include "Container/Vector.hpp"
-#include "Graphics/RenderTypes.hpp"
 #include "Maths/Vertex.hpp"
+#include "RHI/RHITypes.hpp"
 
 namespace LumenEngine
 {
@@ -19,7 +19,7 @@ namespace Renderer
     {
         TVector<Maths::FVertex> Vertices;
         TVector<UInt32> Indices;
-        FMeshHandle RenderHandle = InvalidHandle;
+        RHI::FMeshHandle RenderHandle;
     };
 
 } // namespace Renderer

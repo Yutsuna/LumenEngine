@@ -8,7 +8,7 @@
 #include "Definitions.hpp"
 
 #include "Container/String.hpp"
-#include "Graphics/RenderTypes.hpp"
+#include "RHI/RHITypes.hpp"
 
 namespace LumenEngine
 {
@@ -20,7 +20,7 @@ namespace Renderer
     {
         FString VertexPath;
         FString FragmentPath;
-        FShaderHandle RenderHandle = InvalidHandle;
+        RHI::FPipelineHandle RenderHandle;
     };
 
 } // namespace Renderer
