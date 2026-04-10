@@ -21,6 +21,6 @@ LumenModule(
     SOURCES         "Private/**/*.cpp"
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
-    DEPS            Core ApplicationCore MathCore
+    DEPS            Core ApplicationCore MathCore RHI
     LINUX_LIBS      Vulkan::Vulkan GPUOpen::VulkanMemoryAllocator
 )
