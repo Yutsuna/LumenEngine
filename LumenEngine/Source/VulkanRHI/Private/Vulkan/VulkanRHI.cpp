@@ -7,9 +7,13 @@
 #include "Generic/GenericWindow.hpp"
 #include "Vulkan/VulkanCore.hpp"
 
+LumenEngine::VulkanRHI::FVulkanRHI::FVulkanRHI () noexcept : CommandListImpl( this )
+{
+    /* Empty */
+}
+
 void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
 {
-
     if ( bIsInitialized )
     {
         return;
@@ -57,17 +61,17 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
     LUMEN_LOG_INFO( LogVulkanRHI, "Vulkan RHI shut down." );
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVulkanInstance ()
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVulkanInstance () noexcept
 {
     Instance.Cleanup();
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVulkanDevice ()
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVulkanDevice () noexcept
 {
     LogicalDevice.Cleanup();
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVMA ()
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVMA () noexcept
 {
     if ( Allocator != VK_NULL_HANDLE )
     {
@@ -76,12 +80,12 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVMA ()
     }
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::DestroySwapChain ()
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroySwapChain () noexcept
 {
     SwapChain.Cleanup( LogicalDevice.GetHandle() );
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::DestroyCommandBuffers ()
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyCommandBuffers () noexcept
 {
     CommandPool.Cleanup( LogicalDevice.GetHandle() );
 }
@@ -151,6 +155,11 @@ LumenEngine::VulkanRHI::FVulkanSwapChain &LumenEngine::VulkanRHI::FVulkanRHI::Ge
     return SwapChain;
 }
 
+LumenEngine::RHI::IRHICommandList &LumenEngine::VulkanRHI::FVulkanRHI::GetCommandList () noexcept
+{
+    return CommandListImpl;
+}
+
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeCommandBuffers ()
 {
     CommandPool.Initialize( LogicalDevice.GetHandle(), LogicalDevice.GetGraphicsQueueFamily() );
@@ -186,13 +195,15 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
 
     CommandBuffers[CurrentFrame].Begin( VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT );
 
+    /** Inform the CommandList which command buffer to use for this frame */
+    CommandListImpl.SetActiveCommandBuffer( CommandBuffers[CurrentFrame].GetHandle() );
+
     return true;
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::BeginRendering ( const LumenEngine::Float32 ClearColor[4] )
+void LumenEngine::VulkanRHI::FVulkanRHI::BeginRenderingInternal ( VkCommandBuffer InCmd, const LumenEngine::Float32 InClearColor[4] ) noexcept
 {
     const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
-    const VkCommandBuffer &Cmd             = CommandBuffers[CurrentFrame].GetHandle();
     const VkImage &Image                   = SwapChain.GetImages()[CurrentImageIndex];
 
     /** Transition swapchain image to color attachment layout for dynamic rendering */
@@ -204,7 +215,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRendering ( const LumenEngine::Flo
     ColorAttachment.imageLayout      = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
     ColorAttachment.loadOp           = VK_ATTACHMENT_LOAD_OP_CLEAR;
     ColorAttachment.storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
-    ColorAttachment.clearValue.color = { { ClearColor[0], ClearColor[1], ClearColor[2], ClearColor[3] } };
+    ColorAttachment.clearValue.color = { { InClearColor[0], InClearColor[1], InClearColor[2], InClearColor[3] } };
 
     VkRenderingInfo RenderInfo{};
     RenderInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
@@ -213,7 +224,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRendering ( const LumenEngine::Flo
     RenderInfo.colorAttachmentCount = 1;
     RenderInfo.pColorAttachments    = &ColorAttachment;
 
-    vkCmdBeginRendering( Cmd, &RenderInfo );
+    vkCmdBeginRendering( InCmd, &RenderInfo );
 
     /** Set dynamic viewport and scissor */
     VkViewport Viewport{
@@ -221,14 +232,28 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRendering ( const LumenEngine::Flo
         0.F, 1.F };
     VkRect2D Scissor{ { 0, 0 }, RenderInfo.renderArea.extent };
 
-    vkCmdSetViewport( Cmd, 0, 1, &Viewport );
-    vkCmdSetScissor( Cmd, 0, 1, &Scissor );
+    vkCmdSetViewport( InCmd, 0, 1, &Viewport );
+    vkCmdSetScissor( InCmd, 0, 1, &Scissor );
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::EndRendering ()
+void LumenEngine::VulkanRHI::FVulkanRHI::BindPipelineInternal ( VkCommandBuffer InCmd, const LumenEngine::RHI::FPipelineHandle InPipeline ) noexcept
 {
-    const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
-    vkCmdEndRendering( CommandBuffers[CurrentFrame].GetHandle() );
+    if ( not InPipeline.IsValid() || not PipelineRegistry.contains( InPipeline.ID ) )
+    {
+        return;
+    }
+
+    PipelineRegistry[InPipeline.ID].Bind( InCmd );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DrawMeshInternal ( VkCommandBuffer InCmd, const LumenEngine::RHI::FMeshHandle InMesh ) noexcept
+{
+    if ( not InMesh.IsValid() || not MeshRegistry.contains( InMesh.ID ) )
+    {
+        return;
+    }
+
+    MeshRegistry[InMesh.ID].BindAndDraw( InCmd );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
@@ -243,8 +268,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
     ++FrameIndex;
 }
 
-LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( const LumenEngine::TVector<LumenEngine::Maths::FVertex> &InVertices,
-                                                                     const LumenEngine::TVector<LumenEngine::UInt32> &InIndices )
+LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( const LumenEngine::TVector<LumenEngine::Maths::FVertex> &InVertices,
+                                                                               const LumenEngine::TVector<LumenEngine::UInt32> &InIndices )
 {
     LumenEngine::VulkanRHI::FVulkanMesh NewMesh;
     NewMesh.Initialize( Allocator, InVertices, InIndices );
@@ -252,43 +277,22 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( const Lumen
     const LumenEngine::UInt32 Handle = NextMeshID++;
     MeshRegistry[Handle]             = NewMesh;
 
-    return Handle;
+    return LumenEngine::RHI::FMeshHandle( Handle );
 }
 
-LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath, const LumenEngine::FString &InFragmentPath )
+LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath,
+                                                                                       const LumenEngine::FString &InFragmentPath )
 {
     LumenEngine::VulkanRHI::FVulkanPipeline NewPipeline;
     const VkFormat ColorFormat = SwapChain.GetImageFormat();
 
     if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), ColorFormat, InVertexPath, InFragmentPath ) )
     {
-        return LumenEngine::VulkanRHI::NullBindlessID;
+        return LumenEngine::RHI::FPipelineHandle();
     }
 
     const LumenEngine::UInt32 Handle = NextPipelineID++;
     PipelineRegistry[Handle]         = NewPipeline;
 
-    return Handle;
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::BindPipeline ( const LumenEngine::UInt32 InPipelineID )
-{
-    if ( not PipelineRegistry.contains( InPipelineID ) )
-    {
-        return;
-    }
-
-    const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
-    PipelineRegistry[InPipelineID].Bind( CommandBuffers[CurrentFrame].GetHandle() );
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::DrawMesh ( const LumenEngine::UInt32 InMeshID )
-{
-    if ( not MeshRegistry.contains( InMeshID ) )
-    {
-        return;
-    }
-
-    const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
-    MeshRegistry[InMeshID].BindAndDraw( CommandBuffers[CurrentFrame].GetHandle() );
+    return LumenEngine::RHI::FPipelineHandle( Handle );
 }
