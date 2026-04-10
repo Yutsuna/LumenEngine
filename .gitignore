@@ -8,5 +8,7 @@ Build/
 !.gitignore
 !.gitattributes
 compile_commands.json
+*.spv
+*.log
 
 result

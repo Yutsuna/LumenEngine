@@ -1,168 +1,101 @@
 /**
- * @file Renderer.hpp
- * @brief Main Renderer class that manages the rendering pipeline and resources.
+ * @file Renderer.cpp
+ * @brief Implementation of the orchestrator FRenderer.
  */
 
 #include "Graphics/Renderer.hpp"
+#include "Graphics/Features/BasePassFeature.hpp"
 
-#include "HAL/PlatformTime.hpp"
-#include "Logging/LoggingCategory.hpp"
-#include <cmath>
-#include <cstdlib>
-#include <vulkan/vulkan_core.h>
+#include "Logging/Logger.hpp"
+#include "RHI/RHI.hpp"
 
 namespace
 {
-
 const LumenEngine::FLogCategory LogRenderer( "Renderer" );
-
 }
 
-LumenEngine::TUniquePtr<LumenEngine::FRenderer> LumenEngine::GRenderer = nullptr;
+LumenEngine::TUniquePtr<LumenEngine::Renderer::FRenderer> LumenEngine::Renderer::GRenderer = nullptr;
 
-LumenEngine::FRenderer::~FRenderer () noexcept
+LumenEngine::Renderer::FRenderer::FRenderer () noexcept = default;
+
+LumenEngine::Renderer::FRenderer::~FRenderer () noexcept
 {
     Shutdown();
 }
 
-void LumenEngine::FRenderer::Initialize ( const TSharedRef<FGenericWindow> &InWindow )
+void LumenEngine::Renderer::FRenderer::Initialize ( TUniquePtr<RHI::IRHI> InRHI, const TSharedRef<FGenericWindow> &InWindow )
 {
-    RHI = MakeUnique<VulkanRHI::FVulkanRHI>();
-    RHI->Initialize( InWindow );
-    CreateCommandBuffers();
+    RHI = std::move( InRHI );
 
-    LUMEN_LOG_INFO( LogRenderer, "Renderer initialized successfully." );
-}
-
-void LumenEngine::FRenderer::Shutdown () noexcept
-{
     if ( not RHI )
     {
-        LUMEN_LOG_WARNING( LogRenderer, "Renderer shutdown called without initialization." );
+        LUMEN_LOG_FATAL( LogRenderer, "Renderer initialized with a null RHI!" );
         return;
     }
 
-    vkDeviceWaitIdle( RHI->GetDevice() );
+    RHI->Initialize( InWindow );
 
-    for ( UInt32 Index = 0; Index < VulkanRHI::MaxFramesInFlight; ++Index )
+    TUniquePtr<FBasePassFeature> BasePass = MakeUnique<FBasePassFeature>();
+    BasePass->Initialize( RHI.Get() );
+    Features.emplace_back( std::move( BasePass ) );
+
+    LUMEN_LOG_INFO( LogRenderer, "Renderer initialized successfully with Modular Features." );
+}
+
+void LumenEngine::Renderer::FRenderer::Shutdown () noexcept
+{
+    if ( not RHI )
     {
-        if ( CommandPools[Index].Handle != VK_NULL_HANDLE )
-        {
-            vkDestroyCommandPool( RHI->GetDevice(), CommandPools[Index].Handle, nullptr );
-        }
+        return;
     }
 
+    RHI->WaitIdle();
+    Features.clear();
     RHI->Shutdown();
     RHI.Reset();
 }
 
-void LumenEngine::FRenderer::CreateCommandBuffers ()
+void LumenEngine::Renderer::FRenderer::SubmitRenderPacket ( const FRenderPacket &InPacket )
 {
-    VkCommandPoolCreateInfo PoolInfo{};
-    PoolInfo.sType            = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    PoolInfo.flags            = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-    PoolInfo.queueFamilyIndex = RHI->GetGraphicsQueueFamily();
-
-    VkCommandBufferAllocateInfo AllocInfo{};
-    AllocInfo.sType              = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    AllocInfo.level              = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    AllocInfo.commandBufferCount = 1;
-
-    for ( UInt32 Index = 0; Index < VulkanRHI::MaxFramesInFlight; ++Index )
-    {
-        LUMEN_VK_CHECK( vkCreateCommandPool( RHI->GetDevice(), &PoolInfo, nullptr, &CommandPools[Index].Handle ) );
-
-        AllocInfo.commandPool = CommandPools[Index].Handle;
-        LUMEN_VK_CHECK( vkAllocateCommandBuffers( RHI->GetDevice(), &AllocInfo, &CommandBuffers[Index].Handle ) );
-    }
+    RenderBuffer.WriteBuffer( InPacket );
 }
 
-void LumenEngine::FRenderer::RenderFrame ()
+void LumenEngine::Renderer::FRenderer::SubmitGlobalUniforms ( const RHI::FGlobalUniformData &InUniforms )
+{
+    GlobalUniformBuffer.WriteBuffer( InUniforms );
+}
+
+void LumenEngine::Renderer::FRenderer::RenderFrame ()
 {
     if ( not RHI )
     {
-        LUMEN_LOG_WARNING( LogRenderer, "RenderFrame called without initialization." );
         return;
     }
 
-    VulkanRHI::FVulkanSwapChain &Swapchain = RHI->GetSwapChain();
-    VkDevice Device                        = RHI->GetDevice();
-    const UInt32 CurrentFrame              = FrameIndex % VulkanRHI::MaxFramesInFlight;
+    if ( RenderBuffer.IsDirty() )
+    {
+        RenderBuffer.SwapReadBuffers();
+    }
 
-    Swapchain.BeginFrame( Device, CurrentFrame );
-    const auto &[Image, ImageIndex] = Swapchain.AcquireNextImage( Device, CurrentFrame );
+    if ( GlobalUniformBuffer.IsDirty() )
+    {
+        GlobalUniformBuffer.SwapReadBuffers();
+    }
 
-    if ( Image == VK_NULL_HANDLE )
+    const FRenderPacket &Packet             = RenderBuffer.ReadBuffer();
+    const RHI::FGlobalUniformData &Uniforms = GlobalUniformBuffer.ReadBuffer();
+
+    if ( not RHI->BeginFrame() )
     {
         return;
     }
 
-    Swapchain.ResetFences( Device, CurrentFrame );
+    RHI::IRHICommandList &CmdList = RHI->GetCommandList();
 
-    VkCommandBuffer CommandBuffer = CommandBuffers[CurrentFrame].Handle;
-    LUMEN_VK_CHECK( vkResetCommandBuffer( CommandBuffer, 0 ) );
+    for ( const TUniquePtr<IRenderFeature> &Feature : Features )
+    {
+        Feature->Execute( CmdList, Packet, Uniforms );
+    }
 
-    VkCommandBufferBeginInfo BeginInfo{};
-    BeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-    BeginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-    LUMEN_VK_CHECK( vkBeginCommandBuffer( CommandBuffer, &BeginInfo ) );
-
-    VkImageMemoryBarrier2 TransitionToGeneral{};
-    TransitionToGeneral.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    TransitionToGeneral.srcStageMask                    = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    TransitionToGeneral.srcAccessMask                   = 0;
-    TransitionToGeneral.dstStageMask                    = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    TransitionToGeneral.dstAccessMask                   = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-    TransitionToGeneral.oldLayout                       = VK_IMAGE_LAYOUT_UNDEFINED;
-    TransitionToGeneral.newLayout                       = VK_IMAGE_LAYOUT_GENERAL;
-    TransitionToGeneral.image                           = Image;
-    TransitionToGeneral.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    TransitionToGeneral.subresourceRange.baseMipLevel   = 0;
-    TransitionToGeneral.subresourceRange.levelCount     = 1;
-    TransitionToGeneral.subresourceRange.baseArrayLayer = 0;
-    TransitionToGeneral.subresourceRange.layerCount     = 1;
-
-    VkDependencyInfo DepInfo1{};
-    DepInfo1.sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    DepInfo1.imageMemoryBarrierCount = 1;
-    DepInfo1.pImageMemoryBarriers    = &TransitionToGeneral;
-
-    vkCmdPipelineBarrier2( CommandBuffer, &DepInfo1 );
-
-    const Float32 Time = static_cast<Float32>( HAL::FPlatformTime::Seconds() );
-
-    VkClearColorValue ClearColor{};
-    ClearColor.float32[0]                    = std::abs( std::sin( Time * 0.5F ) );
-    ClearColor.float32[1]                    = 0.2F;
-    ClearColor.float32[2]                    = std::abs( std::cos( Time * 0.3F ) );
-    ClearColor.float32[3]                    = 1.0F;
-    const VkImageSubresourceRange ClearRange = { VK_IMAGE_ASPECT_COLOR_BIT, 0, 1, 0, 1 };
-
-    vkCmdClearColorImage( CommandBuffer, Image, VK_IMAGE_LAYOUT_GENERAL, &ClearColor, 1, &ClearRange );
-
-    VkImageMemoryBarrier2 TransitionToPresent{};
-    TransitionToPresent.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    TransitionToPresent.srcStageMask                    = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-    TransitionToPresent.srcAccessMask                   = VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-    TransitionToPresent.dstStageMask                    = VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT;
-    TransitionToPresent.dstAccessMask                   = 0;
-    TransitionToPresent.oldLayout                       = VK_IMAGE_LAYOUT_GENERAL;
-    TransitionToPresent.newLayout                       = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-    TransitionToPresent.image                           = Image;
-    TransitionToPresent.subresourceRange.aspectMask     = VK_IMAGE_ASPECT_COLOR_BIT;
-    TransitionToPresent.subresourceRange.baseMipLevel   = 0;
-    TransitionToPresent.subresourceRange.levelCount     = 1;
-    TransitionToPresent.subresourceRange.baseArrayLayer = 0;
-    TransitionToPresent.subresourceRange.layerCount     = 1;
-
-    VkDependencyInfo DepInfo2{};
-    DepInfo2.sType                   = VK_STRUCTURE_TYPE_DEPENDENCY_INFO;
-    DepInfo2.imageMemoryBarrierCount = 1;
-    DepInfo2.pImageMemoryBarriers    = &TransitionToPresent;
-    vkCmdPipelineBarrier2( CommandBuffer, &DepInfo2 );
-
-    LUMEN_VK_CHECK( vkEndCommandBuffer( CommandBuffer ) );
-
-    Swapchain.SubmitAndPresent( CommandBuffer, RHI->GetGraphicsQueue(), CurrentFrame, ImageIndex );
-    ++FrameIndex;
+    RHI->EndFrame();
 }

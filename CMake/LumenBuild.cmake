@@ -14,6 +14,7 @@ LumenAddModules(
     MathCore
     Parallel
     ApplicationCore
+    RHI
     VulkanRHI
     Renderer
     Launch

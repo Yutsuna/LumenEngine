@@ -9,6 +9,7 @@
 #include "HAL/PlatformTime.hpp"
 
 #include <print>
+#include <system_error>
 
 LumenEngine::FLogger &LumenEngine::FLogger::GetInstance ()
 {
@@ -21,7 +22,16 @@ void LumenEngine::FLogger::Initialize ()
 {
     if ( not WorkerThread.joinable() )
     {
-        WorkerThread = std::jthread( [this] ( std::stop_token Token ) { FlushLogMessages( Token ); } );
+        try
+        {
+            WorkerThread = std::jthread( [this] ( std::stop_token Token ) { FlushLogMessages( Token ); } );
+            bIsAsync     = true;
+        }
+        catch ( const std::system_error & /*SystemError*/ )
+        {
+            bIsAsync = false;
+            Flush( "Failed to start logger worker thread, falling back to synchronous logging." );
+        }
     }
 }
 
@@ -38,8 +48,13 @@ LumenEngine::FLogger::~FLogger ()
 
 void LumenEngine::FLogger::Shutdown ()
 {
+    if ( not bIsAsync or not WorkerThread.joinable() )
+    {
+        return;
+    }
     WorkerThread.request_stop();
     Condition.notify_all();
+    WorkerThread.join();
 }
 
 void LumenEngine::FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message )
@@ -50,27 +65,6 @@ void LumenEngine::FLogger::EnqueueLogMessage ( const FLogCategory &Category, con
     }
     Condition.notify_one();
 }
-
-namespace
-{
-
-inline void CoutMessage ( const LumenEngine::FLogger::FLogMessage &LogMessage ) noexcept
-{
-    static constexpr const LumenEngine::AnsiChar *const ResetColor   = "\033[0m";
-    static constexpr const LumenEngine::AnsiChar *const FormatString = "[{:.4f}] {}: {}{}: {}{}";
-
-    const LumenEngine::AnsiChar *const VerbosityColor  = LumenEngine::ELogVerbosity::ToColor( LogMessage.Verbosity );
-    const LumenEngine::AnsiChar *const VerbosityString = LumenEngine::ELogVerbosity::ToString( LogMessage.Verbosity );
-
-    std::println( FormatString, LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityColor, VerbosityString, LogMessage.Message, ResetColor );
-
-    if ( LogMessage.Verbosity == LumenEngine::ELogVerbosity::Fatal )
-    {
-        LumenEngine::FSignal::Raise( LumenEngine::ESystemSignal::Terminate );
-    }
-}
-
-} // namespace
 
 void LumenEngine::FLogger::FlushLogMessages ( std::stop_token &StopToken )
 {
@@ -89,5 +83,21 @@ void LumenEngine::FLogger::FlushLogMessages ( std::stop_token &StopToken )
             CoutMessage( Msg );
             Lock.lock();
         }
+    }
+}
+
+void LumenEngine::FLogger::CoutMessage ( const FLogMessage &LogMessage ) const noexcept
+{
+    static constexpr const LumenEngine::AnsiChar *const ResetColor   = "\033[0m";
+    static constexpr const LumenEngine::AnsiChar *const FormatString = "[{:.4f}] {}: {}{}: {}{}";
+
+    const LumenEngine::AnsiChar *const VerbosityColor  = LumenEngine::ELogVerbosity::ToColor( LogMessage.Verbosity );
+    const LumenEngine::AnsiChar *const VerbosityString = LumenEngine::ELogVerbosity::ToString( LogMessage.Verbosity );
+
+    std::println( FormatString, LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityColor, VerbosityString, LogMessage.Message, ResetColor );
+
+    if ( LogMessage.Verbosity == LumenEngine::ELogVerbosity::Fatal )
+    {
+        LumenEngine::FSignal::Raise( LumenEngine::ESystemSignal::Terminate );
     }
 }

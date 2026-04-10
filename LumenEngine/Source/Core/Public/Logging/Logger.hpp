@@ -36,16 +36,6 @@ public:
     /** Flushes a message to the console immediately without enqueuing it. */
     static void Flush ( const AnsiChar *const String );
 
-private:
-
-    void EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message );
-    void FlushLogMessages ( std::stop_token &StopToken );
-
-private:
-
-    FLogger () noexcept = default;
-    ~FLogger ();
-
 public:
 
     struct FLogMessage
@@ -58,11 +48,23 @@ public:
 
 private:
 
+    void EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message );
+    void FlushLogMessages ( std::stop_token &StopToken );
+    void CoutMessage ( const FLogMessage &LogMessage ) const noexcept;
+
+private:
+
+    FLogger () noexcept = default;
+    ~FLogger ();
+
+private:
+
     std::mutex QueueMutex;
     std::condition_variable_any Condition;
     FQueue<FLogMessage> LogMessageQueue;
 
     std::jthread WorkerThread;
+    TAtomic<Bool> bIsAsync;
 };
 
 } // namespace LumenEngine

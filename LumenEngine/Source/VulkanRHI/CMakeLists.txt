@@ -1,6 +1,5 @@
 LumenFindPackage(Vulkan)
 LumenFindPackage(VulkanMemoryAllocator)
-LumenFindPackage(vk-bootstrap)
 
 ###########################################################
 
@@ -14,11 +13,6 @@ if(NOT VulkanMemoryAllocator_FOUND)
     return()
 endif()
 
-if(NOT vk-bootstrap_FOUND)
-    message(STATUS "[Lumen] VulkanRHI: skipped (Missing vk-bootstrap)")
-    return()
-endif()
-
 ###########################################################
 
 LumenModule(
@@ -27,6 +21,6 @@ LumenModule(
     SOURCES         "Private/**/*.cpp"
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
-    DEPS            Core ApplicationCore MathCore
-    LINUX_LIBS      Vulkan::Vulkan GPUOpen::VulkanMemoryAllocator vk-bootstrap::vk-bootstrap
+    DEPS            Core ApplicationCore MathCore RHI
+    LINUX_LIBS      Vulkan::Vulkan GPUOpen::VulkanMemoryAllocator
 )

@@ -18,6 +18,7 @@
 #include "Maths/Vec.hpp"
 
 #include "Graphics/Renderer.hpp"
+#include "Vulkan/VulkanRHI.hpp"
 
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
     #include "Linux/LinuxApplication.hpp"
@@ -83,15 +84,13 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::Init ()
     LUMEN_LOG_INFO( LogLaunch, "Engine Init started..." );
 
     TSharedRef<FGenericWindow> MainWindow            = GPlatformApplication->MakeWindow();
-    TSharedPtr<FGenericWindow> ParentWindow          = nullptr;
     TSharedRef<FGenericWindowDescription> WindowDesc = MakeShared<FGenericWindowDescription>( GetDefaultWindowDescription() );
-    const Bool bShowImmediately                      = true;
 
-    LUMEN_LOG_INFO( LogLaunch, "Creating main application window..." );
-    GPlatformApplication->InitializeWindow( MainWindow, WindowDesc, ParentWindow, bShowImmediately );
+    GPlatformApplication->InitializeWindow( MainWindow, WindowDesc, nullptr, true );
 
-    GRenderer = MakeUnique<FRenderer>();
-    GRenderer->Initialize( MainWindow );
+    TUniquePtr<RHI::IRHI> VulkanBackend = MakeUnique<VulkanRHI::FVulkanRHI>();
+    Renderer::GRenderer                 = MakeUnique<Renderer::FRenderer>();
+    Renderer::GRenderer->Initialize( std::move( VulkanBackend ), MainWindow );
 
     LUMEN_LOG_INFO( LogLaunch, "Engine Init completed successfully." );
     return EErrorCode::Success;
@@ -106,9 +105,9 @@ void LumenEngine::FEngineLoop::Tick ()
         GPlatformApplication->PumpMessages( LastTickTime );
     }
 
-    if ( GRenderer.IsValid() )
+    if ( Renderer::GRenderer.IsValid() )
     {
-        GRenderer->RenderFrame();
+        Renderer::GRenderer->RenderFrame();
     }
     ++FrameIndex;
     Launch::ClientTick( LastTickTime );
@@ -118,7 +117,7 @@ void LumenEngine::FEngineLoop::Exit ()
 {
     LUMEN_LOG_INFO( LogLaunch, "Engine Exit requested. Releasing platform application..." );
 
-    GRenderer.Reset();
+    Renderer::GRenderer.Reset();
     GPlatformApplication.Reset();
 }
 

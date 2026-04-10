@@ -1,6 +1,6 @@
 /**
  * @file Renderer.hpp
- * @brief High-level Renderer module managing the VulkanRHI context and frame logic.
+ * @brief High-level Renderer module orchestrating the Render Graph and Features.
  */
 
 #pragma once
@@ -9,62 +9,63 @@
 
 #include "Container/SharedPtr.hpp"
 #include "Container/UniquePtr.hpp"
+#include "Container/Vector.hpp"
 
-#include <Vulkan/VulkanCommandBuffer.hpp>
-#include <Vulkan/VulkanCommandPool.hpp>
-#include <Vulkan/VulkanRHI.hpp>
+#include "Graphics/RenderFeature.hpp"
+#include "Graphics/RenderResource.hpp"
+#include "Thread/TripleBuffer.hpp"
 
 namespace LumenEngine
 {
 
 class FGenericWindow;
 
-/**
- * @class FRenderer
- * @brief Renderer class responsible for managing the Vulkan context and rendering frames.
- */
-class LUMEN_ENGINE_API FRenderer
+namespace RHI
 {
-public:
+    class IRHI;
+}
 
-    FRenderer () noexcept = default;
-    ~FRenderer () noexcept;
+namespace Renderer
+{
 
-public:
+    class LUMEN_ENGINE_API FRenderer final
+    {
+    public:
 
-    /**
-     * @brief Initializes the renderer with the given window. This sets up the Vulkan context and prepares for rendering.
-     * @param InWindow The window to render to.
-     */
-    void Initialize ( const TSharedRef<FGenericWindow> &InWindow );
+        FRenderer () noexcept;
+        ~FRenderer () noexcept;
 
-    /**
-     * @brief Shuts down the renderer and releases all resources. This should be called when the application is closing.
-     */
-    void Shutdown () noexcept;
+    public:
 
-    /**
-     * @brief Renders a single frame. This should be called every frame to update the display.
-     */
-    void RenderFrame ();
+        /**
+         * @brief Initializes the renderer.
+         * @param InRHI The injected Render Hardware Interface.
+         * @param InWindow The main window.
+         */
+        void Initialize ( TUniquePtr<RHI::IRHI> InRHI, const TSharedRef<FGenericWindow> &InWindow );
 
-private:
+        void Shutdown () noexcept;
 
-    /**
-     * @brief Creates command buffers for each frame in flight. This is necessary for recording rendering commands.
-     */
-    void CreateCommandBuffers ();
+        /** @brief Submits a render packet from the Game Thread. */
+        void SubmitRenderPacket ( const FRenderPacket &InPacket );
 
-private:
+        /** @brief Submits global data from the Game Thread (Camera, Time). */
+        void SubmitGlobalUniforms ( const RHI::FGlobalUniformData &InUniforms );
 
-    TUniquePtr<VulkanRHI::FVulkanRHI> RHI = nullptr;
+        /** @brief Executes the render graph for the frame. */
+        void RenderFrame ();
 
-    VulkanRHI::FVulkanCommandPool CommandPools[VulkanRHI::MaxFramesInFlight]     = {};
-    VulkanRHI::FVulkanCommandBuffer CommandBuffers[VulkanRHI::MaxFramesInFlight] = {};
+    private:
 
-    UInt64 FrameIndex = 0;
-};
+        TUniquePtr<RHI::IRHI> RHI;
+        TVector<TUniquePtr<IRenderFeature>> Features;
 
-extern LUMEN_ENGINE_API TUniquePtr<FRenderer> GRenderer;
+        Parallel::TTripleBuffer<FRenderPacket> RenderBuffer;
+        Parallel::TTripleBuffer<RHI::FGlobalUniformData> GlobalUniformBuffer;
+    };
+
+    extern LUMEN_ENGINE_API TUniquePtr<FRenderer> GRenderer;
+
+} // namespace Renderer
 
 } // namespace LumenEngine

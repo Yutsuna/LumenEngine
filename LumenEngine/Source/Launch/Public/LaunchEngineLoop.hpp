@@ -12,7 +12,10 @@
 namespace LumenEngine
 {
 
-class FRenderer;
+namespace Renderer
+{
+    class FRenderer;
+}
 
 class LUMEN_ENGINE_API FEngineLoop
 {
