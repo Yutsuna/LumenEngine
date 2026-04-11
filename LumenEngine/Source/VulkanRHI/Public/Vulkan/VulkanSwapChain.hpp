@@ -23,8 +23,20 @@ namespace VulkanRHI
      */
     struct FFrameData final
     {
-        VkSemaphore SwapChainSemaphore;
-        VkFence RenderFence;
+        VkSemaphore SwapChainSemaphore = VK_NULL_HANDLE;
+        VkFence RenderFence            = VK_NULL_HANDLE;
+    };
+
+    /**
+     * @struct FSwapChainDescription
+     * @brief Logical parameters describing swapchain creation.
+     */
+    struct FSwapChainDescription final
+    {
+        VkSurfaceKHR Surface = VK_NULL_HANDLE;
+        VkFormat Format      = VK_FORMAT_B8G8R8A8_SRGB;
+        Maths::FVec2u Size;
+        Bool bVSyncEnabled = true;
     };
 
     /**
@@ -82,13 +94,7 @@ namespace VulkanRHI
 
     private:
 
-        void CreateInternal ( VkPhysicalDevice InPhysicalDevice,
-                              VkDevice InDevice,
-                              VkSurfaceKHR InSurface,
-                              VkFormat InSwapChainFormat,
-                              const Maths::FVec2u &InSize,
-                              bool bInVSyncEnabled,
-                              VkSwapchainKHR InOldSwapchainHandle );
+        void CreateInternal ( VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, const FSwapChainDescription &InDescription, VkSwapchainKHR InOldSwapchainHandle );
 
     private:
 
