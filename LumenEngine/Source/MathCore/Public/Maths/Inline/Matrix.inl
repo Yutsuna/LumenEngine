@@ -95,9 +95,9 @@ namespace Maths
     {
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
-        Result[3][0] = InTranslation.X;
-        Result[3][1] = InTranslation.Y;
-        Result[3][2] = InTranslation.Z;
+        Result[3].Data[0] = InTranslation.X;
+        Result[3].Data[1] = InTranslation.Y;
+        Result[3].Data[2] = InTranslation.Z;
 
         return Result;
     }
@@ -109,10 +109,10 @@ namespace Maths
     {
         TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
 
-        Result[0][0] = InScale.X;
-        Result[1][1] = InScale.Y;
-        Result[2][2] = InScale.Z;
-        Result[3][3] = static_cast<Type>( 1 );
+        Result[0].Data[0] = InScale.X;
+        Result[1].Data[1] = InScale.Y;
+        Result[2].Data[2] = InScale.Z;
+        Result[3].Data[3] = static_cast<Type>( 1 );
 
         return Result;
     }
@@ -127,10 +127,10 @@ namespace Maths
 
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
-        Result[1][1] = CosAngle;
-        Result[1][2] = SinAngle;
-        Result[2][1] = -SinAngle;
-        Result[2][2] = CosAngle;
+    Result[1].Data[1] = CosAngle;
+    Result[1].Data[2] = SinAngle;
+    Result[2].Data[1] = -SinAngle;
+    Result[2].Data[2] = CosAngle;
 
         return Result;
     }
@@ -145,10 +145,10 @@ namespace Maths
 
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
-        Result[0][0] = CosAngle;
-        Result[0][2] = -SinAngle;
-        Result[2][0] = SinAngle;
-        Result[2][2] = CosAngle;
+    Result[0].Data[0] = CosAngle;
+    Result[0].Data[2] = -SinAngle;
+    Result[2].Data[0] = SinAngle;
+    Result[2].Data[2] = CosAngle;
 
         return Result;
     }
@@ -163,10 +163,10 @@ namespace Maths
 
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
-        Result[0][0] = CosAngle;
-        Result[0][1] = SinAngle;
-        Result[1][0] = -SinAngle;
-        Result[1][1] = CosAngle;
+    Result[0].Data[0] = CosAngle;
+    Result[0].Data[1] = SinAngle;
+    Result[1].Data[0] = -SinAngle;
+    Result[1].Data[1] = CosAngle;
 
         return Result;
     }
@@ -180,11 +180,11 @@ namespace Maths
 
         TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
 
-        Result[0][0] = static_cast<Type>( 1 ) / ( InAspectRatio * TanHalfFov );
-        Result[1][1] = static_cast<Type>( -1 ) / TanHalfFov;
-        Result[2][2] = InFarPlane / ( InFarPlane - InNearPlane );
-        Result[2][3] = static_cast<Type>( 1 );
-        Result[3][2] = -( InFarPlane * InNearPlane ) / ( InFarPlane - InNearPlane );
+    Result[0].Data[0] = static_cast<Type>( 1 ) / ( InAspectRatio * TanHalfFov );
+    Result[1].Data[1] = static_cast<Type>( -1 ) / TanHalfFov;
+    Result[2].Data[2] = InFarPlane / ( InFarPlane - InNearPlane );
+    Result[2].Data[3] = static_cast<Type>( 1 );
+    Result[3].Data[2] = -( InFarPlane * InNearPlane ) / ( InFarPlane - InNearPlane );
 
         return Result;
     }
@@ -200,21 +200,21 @@ namespace Maths
 
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
-        Result[0][0] = R.X;
-        Result[1][0] = R.Y;
-        Result[2][0] = R.Z;
+        Result[0].Data[0] = R.X;
+        Result[1].Data[0] = R.Y;
+        Result[2].Data[0] = R.Z;
 
-        Result[0][1] = U.X;
-        Result[1][1] = U.Y;
-        Result[2][1] = U.Z;
+        Result[0].Data[1] = U.X;
+        Result[1].Data[1] = U.Y;
+        Result[2].Data[1] = U.Z;
 
-        Result[0][2] = F.X;
-        Result[1][2] = F.Y;
-        Result[2][2] = F.Z;
+        Result[0].Data[2] = F.X;
+        Result[1].Data[2] = F.Y;
+        Result[2].Data[2] = F.Z;
 
-        Result[3][0] = -R.Dot( InEye );
-        Result[3][1] = -U.Dot( InEye );
-        Result[3][2] = -F.Dot( InEye );
+        Result[3].Data[0] = -R.Dot( InEye );
+        Result[3].Data[1] = -U.Dot( InEye );
+        Result[3].Data[2] = -F.Dot( InEye );
 
         return Result;
     }
