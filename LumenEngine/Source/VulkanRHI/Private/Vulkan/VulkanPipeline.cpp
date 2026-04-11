@@ -11,7 +11,8 @@
 LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanPipeline::Initialize ( VkDevice InDevice,
                                                                         VkFormat InColorFormat,
                                                                         const LumenEngine::FString &InVertexPath,
-                                                                        const LumenEngine::FString &InFragmentPath )
+                                                                        const LumenEngine::FString &InFragmentPath,
+                                                                        VkDescriptorSetLayout InGlobalSetLayout )
 {
     LumenEngine::VulkanRHI::FVulkanShader VertexShader;
 
@@ -87,7 +88,7 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanPipeline::Initialize ( VkDevice
     Rasterizer.rasterizerDiscardEnable = VK_FALSE;
     Rasterizer.polygonMode             = VK_POLYGON_MODE_FILL;
     Rasterizer.lineWidth               = 1.0f;
-    Rasterizer.cullMode                = VK_CULL_MODE_BACK_BIT;
+    Rasterizer.cullMode                = VK_CULL_MODE_NONE; // We disable culling for the example presentation to easily see all sides.
     Rasterizer.frontFace               = VK_FRONT_FACE_CLOCKWISE;
     Rasterizer.depthBiasEnable         = VK_FALSE;
 
@@ -115,7 +116,8 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanPipeline::Initialize ( VkDevice
 
     VkPipelineLayoutCreateInfo PipelineLayoutInfo{};
     PipelineLayoutInfo.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-    PipelineLayoutInfo.setLayoutCount         = 0;
+    PipelineLayoutInfo.setLayoutCount         = 1;
+    PipelineLayoutInfo.pSetLayouts            = &InGlobalSetLayout;
     PipelineLayoutInfo.pushConstantRangeCount = 0;
 
     LUMEN_VK_CHECK( vkCreatePipelineLayout( InDevice, &PipelineLayoutInfo, nullptr, &PipelineLayout ) );
@@ -167,4 +169,9 @@ void LumenEngine::VulkanRHI::FVulkanPipeline::Cleanup ( VkDevice InDevice ) noex
 void LumenEngine::VulkanRHI::FVulkanPipeline::Bind ( VkCommandBuffer InCommandBuffer ) const noexcept
 {
     vkCmdBindPipeline( InCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline );
+}
+
+VkPipelineLayout LumenEngine::VulkanRHI::FVulkanPipeline::GetLayout () const noexcept
+{
+    return PipelineLayout;
 }
