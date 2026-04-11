@@ -202,9 +202,9 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BindPipelineInternal ( VkCommandBuffer 
 
     PipelineRegistry[InPipeline.ID].Bind( InCmd );
 
-    // Bind Global Descriptor Set associated with the current frame
     const UInt32 CurrentFrame           = FrameContext.GetCurrentFrameIndex();
     VkDescriptorSet GlobalDescriptorSet = Memory.GetGlobalDescriptorSet( CurrentFrame );
+
     vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineRegistry[InPipeline.ID].GetLayout(), 0, 1, &GlobalDescriptorSet, 0, nullptr );
 }
 
