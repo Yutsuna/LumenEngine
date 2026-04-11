@@ -18,10 +18,15 @@ namespace
     constexpr Maths::FVec3f VecV1 = { 0.0F, -0.5F, 0.0F };
     constexpr Maths::FVec3f VecV2 = { 0.5F, 0.5F, 0.0F };
     constexpr Maths::FVec3f VecV3 = { -0.5F, 0.5F, 0.0F };
+    constexpr Maths::FVec3f NormalV1 = { 1.0F, 0.0F, 0.0F };
+    constexpr Maths::FVec3f NormalV2 = { 0.0F, 1.0F, 0.0F };
+    constexpr Maths::FVec3f NormalV3 = { 0.0F, 0.0F, 1.0F };
+    constexpr Maths::FVec2f DefaultUV = { 0.0F, 0.0F };
+    constexpr Maths::FVec3f DefaultTangent = { 1.0F, 0.0F, 0.0F };
 
-    constexpr Maths::FVertex V1 = { VecV1 };
-    constexpr Maths::FVertex V2 = { VecV2 };
-    constexpr Maths::FVertex V3 = { VecV3 };
+    constexpr Maths::FVertex V1 = { VecV1, NormalV1, DefaultUV, DefaultTangent };
+    constexpr Maths::FVertex V2 = { VecV2, NormalV2, DefaultUV, DefaultTangent };
+    constexpr Maths::FVertex V3 = { VecV3, NormalV3, DefaultUV, DefaultTangent };
 
 } // namespace
 
