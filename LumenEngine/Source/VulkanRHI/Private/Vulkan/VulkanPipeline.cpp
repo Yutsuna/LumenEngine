@@ -4,21 +4,24 @@
  */
 
 #include "Vulkan/VulkanPipeline.hpp"
-#include "Maths/Vertex.hpp"
 #include "Vulkan/VulkanCore.hpp"
 #include "Vulkan/VulkanShader.hpp"
 
-#include <array>
+#include "Container/Array.hpp"
+
+#include "Maths/Vertex.hpp"
+
 #include <cstddef>
 #include <span>
 
 namespace
 {
+
 struct FPipelineBuildState final
 {
-    std::array<VkPipelineShaderStageCreateInfo, 2> ShaderStages            = {};
-    VkVertexInputBindingDescription BindingDescription                     = {};
-    std::array<VkVertexInputAttributeDescription, 4> AttributeDescriptions = {};
+    LumenEngine::TArray<VkPipelineShaderStageCreateInfo, 2> ShaderStages            = {};
+    VkVertexInputBindingDescription BindingDescription                              = {};
+    LumenEngine::TArray<VkVertexInputAttributeDescription, 4> AttributeDescriptions = {};
     LumenEngine::TVector<VkPushConstantRange> PushConstantRanges;
     VkPipelineVertexInputStateCreateInfo VertexInputState     = {};
     VkPipelineInputAssemblyStateCreateInfo InputAssembly      = {};
@@ -42,9 +45,9 @@ struct FPipelineBuildState final
     };
 }
 
-[[nodiscard]] std::array<VkVertexInputAttributeDescription, 4> CreateVertexAttributeDescriptions ()
+[[nodiscard]] LumenEngine::TArray<VkVertexInputAttributeDescription, 4> CreateVertexAttributeDescriptions ()
 {
-    return std::array<VkVertexInputAttributeDescription, 4>{
+    return LumenEngine::TArray<VkVertexInputAttributeDescription, 4>{
         VkVertexInputAttributeDescription{
             .location = 0,
             .binding  = 0,
