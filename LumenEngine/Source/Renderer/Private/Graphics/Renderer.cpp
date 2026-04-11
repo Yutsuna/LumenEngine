@@ -85,7 +85,7 @@ void LumenEngine::Renderer::FRenderer::RenderFrame ()
     const FRenderPacket &Packet             = RenderBuffer.ReadBuffer();
     const RHI::FGlobalUniformData &Uniforms = GlobalUniformBuffer.ReadBuffer();
 
-    if ( not RHI->BeginFrame() )
+    if ( not RHI->BeginFrame( Uniforms ) )
     {
         return;
     }
