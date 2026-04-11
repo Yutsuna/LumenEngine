@@ -17,142 +17,123 @@
 
 #include "Maths/Vertex.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
-#include "Vulkan/VulkanCommandBuffer.hpp"
-#include "Vulkan/VulkanCommandPool.hpp"
+k #include "Vulkan/VulkanFrameContext.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanLogicalDevice.hpp"
+#include "Vulkan/VulkanMemory.hpp"
 #include "Vulkan/VulkanMesh.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanPipeline.hpp"
 #include "Vulkan/VulkanSwapChain.hpp"
 
-#include <vk_mem_alloc.h>
-
-namespace LumenEngine
+    namespace LumenEngine
 {
 
-class FGenericWindow;
+    class FGenericWindow;
 
-namespace VulkanRHI
-{
-
-    /**
-     * @class FVulkanRHI
-     * @brief The main entry point and context manager for Vulkan rendering.
-     */
-    class LUMEN_ENGINE_API FVulkanRHI final : public RHI::IRHI
+    namespace VulkanRHI
     {
-    public:
-
-        FVulkanRHI () noexcept;
-        ~FVulkanRHI () noexcept override = default;
-
-    public:
 
         /**
-         * @brief Initializes the Vulkan instance, device, and swapchain.
-         * @param InWindow The main application window to render to.
+         * @class FVulkanRHI
+         * @brief The main entry point and context manager for Vulkan rendering.
          */
-        void Initialize ( const TSharedPtr<FGenericWindow> &InWindow ) override;
+        class LUMEN_ENGINE_API FVulkanRHI final : public RHI::IRHI
+        {
+        public:
 
-        /** @brief Cleans up all Vulkan resources. */
-        void Shutdown () override;
+            FVulkanRHI () noexcept;
+            ~FVulkanRHI () noexcept override = default;
 
-        /** @brief Waits until the logical device is idle. */
-        void WaitIdle () const noexcept override;
+        public:
 
-        /** @brief Prepares the frame for rendering and updates global uniform buffers. */
-        [[nodiscard]] Bool BeginFrame ( const RHI::FGlobalUniformData &InUniforms ) override;
+            /**
+             * @brief Initializes the Vulkan instance, device, and swapchain.
+             * @param InWindow The main application window to render to.
+             */
+            void Initialize ( const TSharedPtr<FGenericWindow> &InWindow ) override;
 
-        /** @brief Submits the frame and presents it. */
-        void EndFrame () override;
+            /** @brief Cleans up all Vulkan resources. */
+            void Shutdown () override;
 
-    public:
+            /** @brief Waits until the logical device is idle. */
+            void WaitIdle () const noexcept override;
 
-        /** @brief Retrieves the command list for recording agnostic RHI commands. */
-        [[nodiscard]] RHI::IRHICommandList &GetCommandList () noexcept override;
+            /** @brief Prepares the frame for rendering and updates global uniform buffers. */
+            [[nodiscard]] Bool BeginFrame ( const RHI::FGlobalUniformData &InUniforms ) override;
 
-        /**
-         * @brief Creates a new mesh with the given vertices and indices.
-         * @param InVertices The vertices of the mesh.
-         * @param InIndices The indices of the mesh.
-         * @return A strongly typed handle to the created mesh.
-         */
-        [[nodiscard]] RHI::FMeshHandle CreateMesh ( const TVector<Maths::FVertex> &InVertices, const TVector<UInt32> &InIndices ) override;
+            /** @brief Submits the frame and presents it. */
+            void EndFrame () override;
 
-        /**
-         * @brief Creates a new graphics pipeline with the given vertex and fragment shaders.
-         * @param InVertexPath The path to the vertex shader file.
-         * @param InFragmentPath The path to the fragment shader file.
-         * @return A strongly typed handle to the created pipeline.
-         */
-        [[nodiscard]] RHI::FPipelineHandle CreatePipeline ( const FString &InVertexPath, const FString &InFragmentPath ) override;
+        public:
 
-    public:
+            /** @brief Retrieves the command list for recording agnostic RHI commands. */
+            [[nodiscard]] RHI::IRHICommandList &GetCommandList () noexcept override;
 
-        /**
-         * Internal functions used by FVulkanCommandList to translate RHI calls into Vulkan calls.
-         */
-        void BeginRenderingInternal ( VkCommandBuffer InCmd, const Float32 InClearColor[4] ) noexcept;
-        void BindPipelineInternal ( VkCommandBuffer InCmd, const RHI::FPipelineHandle InPipeline ) noexcept;
-        void DrawMeshInternal ( VkCommandBuffer InCmd, const RHI::FMeshHandle InMesh ) noexcept;
+            /**
+             * @brief Creates a new mesh with the given vertices and indices.
+             * @param InVertices The vertices of the mesh.
+             * @param InIndices The indices of the mesh.
+             * @return A strongly typed handle to the created mesh.
+             */
+            [[nodiscard]] RHI::FMeshHandle CreateMesh ( const TVector<Maths::FVertex> &InVertices, const TVector<UInt32> &InIndices ) override;
 
-    public:
+            /**
+             * @brief Creates a new graphics pipeline with the given vertex and fragment shaders.
+             * @param InVertexPath The path to the vertex shader file.
+             * @param InFragmentPath The path to the fragment shader file.
+             * @return A strongly typed handle to the created pipeline.
+             */
+            [[nodiscard]] RHI::FPipelineHandle CreatePipeline ( const FString &InVertexPath, const FString &InFragmentPath ) override;
 
-        [[nodiscard]] FVulkanLogicalDevice GetLogicalDevice () const noexcept;
-        [[nodiscard]] FVulkanPhysicalDevice GetPhysicalDevice () const noexcept;
-        [[nodiscard]] FVulkanInstance GetInstance () const noexcept;
-        [[nodiscard]] VmaAllocator GetAllocator () const noexcept;
-        [[nodiscard]] FVulkanSwapChain &GetSwapChain () noexcept;
+        public:
 
-    private:
+            /**
+             * Internal functions used by FVulkanCommandList to translate RHI calls into Vulkan calls.
+             */
+            void BeginRenderingInternal ( VkCommandBuffer InCmd, const Float32 InClearColor[4] ) noexcept;
+            void BindPipelineInternal ( VkCommandBuffer InCmd, const RHI::FPipelineHandle InPipeline ) noexcept;
+            void DrawMeshInternal ( VkCommandBuffer InCmd, const RHI::FMeshHandle InMesh ) noexcept;
 
-        void InitializeVulkanInstance ( const TSharedPtr<FGenericWindow> &InWindow );
-        void InitializeVulkanDevice ();
-        void InitializeVMA ();
-        void InitializeDescriptors ();
-        void InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow );
-        void InitializeCommandBuffers ();
+        public:
 
-        void DestroyVulkanInstance () noexcept;
-        void DestroyVulkanDevice () noexcept;
-        void DestroyVMA () noexcept;
-        void DestroyDescriptors () noexcept;
-        void DestroySwapChain () noexcept;
-        void DestroyCommandBuffers () noexcept;
+            [[nodiscard]] FVulkanLogicalDevice GetLogicalDevice () const noexcept;
+            [[nodiscard]] FVulkanPhysicalDevice GetPhysicalDevice () const noexcept;
+            [[nodiscard]] FVulkanInstance GetInstance () const noexcept;
+            [[nodiscard]] VmaAllocator GetAllocator () const noexcept;
+            [[nodiscard]] FVulkanSwapChain &GetSwapChain () noexcept;
 
-    private:
+        private:
 
-        TMap<UInt32, FVulkanMesh> MeshRegistry;
-        TMap<UInt32, FVulkanPipeline> PipelineRegistry;
-        FVulkanCommandList CommandListImpl;
+            void InitializeVulkanInstance ( const TSharedPtr<FGenericWindow> &InWindow );
+            void InitializeVulkanDevice ();
+            void InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow );
 
-        UInt32 NextMeshID     = 1;
-        UInt32 NextPipelineID = 1;
+            void DestroyVulkanInstance () noexcept;
+            void DestroyVulkanDevice () noexcept;
+            void DestroySwapChain () noexcept;
 
-    private:
+        private:
 
-        FVulkanInstance Instance;
-        FVulkanPhysicalDevice PhysicalDevice;
-        FVulkanLogicalDevice LogicalDevice;
-        FVulkanSwapChain SwapChain;
+            TMap<UInt32, FVulkanMesh> MeshRegistry;
+            TMap<UInt32, FVulkanPipeline> PipelineRegistry;
+            FVulkanCommandList CommandListImpl;
 
-        FVulkanCommandPool CommandPool;
-        FVulkanCommandBuffer CommandBuffers[MaxFramesInFlight];
+            UInt32 NextMeshID     = 1;
+            UInt32 NextPipelineID = 1;
 
-        VkDescriptorSetLayout GlobalSetLayout                   = VK_NULL_HANDLE;
-        VkDescriptorPool DescriptorPool                         = VK_NULL_HANDLE;
-        FVulkanBuffer GlobalUniformBuffers[MaxFramesInFlight]   = {};
-        VkDescriptorSet GlobalDescriptorSets[MaxFramesInFlight] = {};
+        private:
 
-        VmaAllocator Allocator = VK_NULL_HANDLE;
+            FVulkanInstance Instance;
+            FVulkanPhysicalDevice PhysicalDevice;
+            FVulkanLogicalDevice LogicalDevice;
+            FVulkanSwapChain SwapChain;
+            FVulkanMemory Memory;
+            FVulkanFrameContext FrameContext;
 
-        Bool bIsInitialized = false;
+            Bool bIsInitialized = false;
+        };
 
-        UInt64 FrameIndex        = 0;
-        UInt32 CurrentImageIndex = 0;
-    };
-
-} // namespace VulkanRHI
+    } // namespace VulkanRHI
 
 } // namespace LumenEngine
