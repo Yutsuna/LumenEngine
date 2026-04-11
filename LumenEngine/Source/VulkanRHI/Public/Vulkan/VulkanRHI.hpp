@@ -61,8 +61,8 @@ namespace VulkanRHI
         /** @brief Waits until the logical device is idle. */
         void WaitIdle () const noexcept override;
 
-        /** @brief Prepares the frame for rendering. */
-        [[nodiscard]] Bool BeginFrame () override;
+        /** @brief Prepares the frame for rendering and updates global uniform buffers. */
+        [[nodiscard]] Bool BeginFrame ( const RHI::FGlobalUniformData &InUniforms ) override;
 
         /** @brief Submits the frame and presents it. */
         void EndFrame () override;
@@ -110,12 +110,14 @@ namespace VulkanRHI
         void InitializeVulkanInstance ( const TSharedPtr<FGenericWindow> &InWindow );
         void InitializeVulkanDevice ();
         void InitializeVMA ();
+        void InitializeDescriptors ();
         void InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow );
         void InitializeCommandBuffers ();
 
         void DestroyVulkanInstance () noexcept;
         void DestroyVulkanDevice () noexcept;
         void DestroyVMA () noexcept;
+        void DestroyDescriptors () noexcept;
         void DestroySwapChain () noexcept;
         void DestroyCommandBuffers () noexcept;
 
@@ -137,6 +139,11 @@ namespace VulkanRHI
 
         FVulkanCommandPool CommandPool;
         FVulkanCommandBuffer CommandBuffers[MaxFramesInFlight];
+
+        VkDescriptorSetLayout GlobalSetLayout                   = VK_NULL_HANDLE;
+        VkDescriptorPool DescriptorPool                         = VK_NULL_HANDLE;
+        FVulkanBuffer GlobalUniformBuffers[MaxFramesInFlight]   = {};
+        VkDescriptorSet GlobalDescriptorSets[MaxFramesInFlight] = {};
 
         VmaAllocator Allocator = VK_NULL_HANDLE;
 

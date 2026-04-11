@@ -6,6 +6,9 @@
 #include "Vulkan/VulkanRHI.hpp"
 #include "Generic/GenericWindow.hpp"
 #include "Vulkan/VulkanCore.hpp"
+#include "Vulkan/VulkanDescriptorWriter.hpp"
+
+#include <cstring>
 
 LumenEngine::VulkanRHI::FVulkanRHI::FVulkanRHI () noexcept : CommandListImpl( this )
 {
@@ -22,6 +25,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TShared
     InitializeVulkanInstance( InWindow );
     InitializeVulkanDevice();
     InitializeVMA();
+    InitializeDescriptors();
     InitializeSwapChain( InWindow );
     InitializeCommandBuffers();
 
@@ -53,6 +57,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
 
     DestroyCommandBuffers();
     DestroySwapChain();
+    DestroyDescriptors();
     DestroyVMA();
     DestroyVulkanDevice();
     DestroyVulkanInstance();
@@ -77,6 +82,30 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVMA () noexcept
     {
         vmaDestroyAllocator( Allocator );
         Allocator = VK_NULL_HANDLE;
+    }
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyDescriptors () noexcept
+{
+    if ( DescriptorPool != VK_NULL_HANDLE )
+    {
+        vkDestroyDescriptorPool( LogicalDevice.GetHandle(), DescriptorPool, nullptr );
+        DescriptorPool = VK_NULL_HANDLE;
+    }
+
+    if ( GlobalSetLayout != VK_NULL_HANDLE )
+    {
+        vkDestroyDescriptorSetLayout( LogicalDevice.GetHandle(), GlobalSetLayout, nullptr );
+        GlobalSetLayout = VK_NULL_HANDLE;
+    }
+
+    for ( UInt32 Index = 0; Index < MaxFramesInFlight; ++Index )
+    {
+        if ( GlobalUniformBuffers[Index].Buffer != VK_NULL_HANDLE )
+        {
+            vmaDestroyBuffer( Allocator, GlobalUniformBuffers[Index].Buffer, GlobalUniformBuffers[Index].Allocation );
+            GlobalUniformBuffers[Index].Buffer = VK_NULL_HANDLE;
+        }
     }
 }
 
@@ -118,6 +147,66 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVMA ()
     AllocatorInfo.flags                  = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
 
     LUMEN_VK_CHECK( vmaCreateAllocator( &AllocatorInfo, &Allocator ) );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeDescriptors ()
+{
+    VkDescriptorSetLayoutBinding UboBinding{};
+    UboBinding.binding         = 0;
+    UboBinding.descriptorType  = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    UboBinding.descriptorCount = 1;
+    UboBinding.stageFlags      = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+    VkDescriptorSetLayoutCreateInfo LayoutInfo{};
+    LayoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+    LayoutInfo.bindingCount = 1;
+    LayoutInfo.pBindings    = &UboBinding;
+
+    LUMEN_VK_CHECK( vkCreateDescriptorSetLayout( LogicalDevice.GetHandle(), &LayoutInfo, nullptr, &GlobalSetLayout ) );
+
+    VkDescriptorPoolSize PoolSize{};
+    PoolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+    PoolSize.descriptorCount = static_cast<UInt32>( MaxFramesInFlight );
+
+    VkDescriptorPoolCreateInfo PoolInfo{};
+    PoolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+    PoolInfo.poolSizeCount = 1;
+    PoolInfo.pPoolSizes    = &PoolSize;
+    PoolInfo.maxSets       = static_cast<UInt32>( MaxFramesInFlight );
+
+    LUMEN_VK_CHECK( vkCreateDescriptorPool( LogicalDevice.GetHandle(), &PoolInfo, nullptr, &DescriptorPool ) );
+
+    VkBufferCreateInfo BufferInfo{};
+    BufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    BufferInfo.size        = sizeof( RHI::FGlobalUniformData );
+    BufferInfo.usage       = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
+    BufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VmaAllocationCreateInfo AllocInfo{};
+    AllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    AllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
+
+    for ( UInt32 Index = 0; Index < MaxFramesInFlight; ++Index )
+    {
+        LUMEN_VK_CHECK( vmaCreateBuffer( Allocator, &BufferInfo, &AllocInfo, &GlobalUniformBuffers[Index].Buffer, &GlobalUniformBuffers[Index].Allocation,
+                                         &GlobalUniformBuffers[Index].AllocationInfo ) );
+    }
+
+    TVector<VkDescriptorSetLayout> Layouts( MaxFramesInFlight, GlobalSetLayout );
+    VkDescriptorSetAllocateInfo AllocSetInfo{};
+    AllocSetInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+    AllocSetInfo.descriptorPool     = DescriptorPool;
+    AllocSetInfo.descriptorSetCount = static_cast<UInt32>( MaxFramesInFlight );
+    AllocSetInfo.pSetLayouts        = Layouts.data();
+
+    LUMEN_VK_CHECK( vkAllocateDescriptorSets( LogicalDevice.GetHandle(), &AllocSetInfo, GlobalDescriptorSets ) );
+
+    for ( UInt32 Index = 0; Index < MaxFramesInFlight; ++Index )
+    {
+        FVulkanDescriptorWriter Writer;
+        Writer.WriteBuffer( 0, GlobalUniformBuffers[Index].Buffer, sizeof( RHI::FGlobalUniformData ), 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER );
+        Writer.UpdateSet( LogicalDevice.GetHandle(), GlobalDescriptorSets[Index] );
+    }
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeSwapChain ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
@@ -175,7 +264,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::WaitIdle () const noexcept
     LogicalDevice.WaitIdle();
 }
 
-LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
+LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ( const RHI::FGlobalUniformData &InUniforms )
 {
     const LumenEngine::UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
     VkDevice Device                        = LogicalDevice.GetHandle();
@@ -190,6 +279,9 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ()
 
     CurrentImageIndex = NextImagePair.second;
     SwapChain.ResetFences( Device, CurrentFrame );
+
+    // Synchronize global uniform data mapping for the current frame in flight
+    std::memcpy( GlobalUniformBuffers[CurrentFrame].AllocationInfo.pMappedData, &InUniforms, sizeof( RHI::FGlobalUniformData ) );
 
     LUMEN_VK_CHECK( vkResetCommandBuffer( CommandBuffers[CurrentFrame].GetHandle(), 0 ) );
 
@@ -244,6 +336,10 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BindPipelineInternal ( VkCommandBuffer 
     }
 
     PipelineRegistry[InPipeline.ID].Bind( InCmd );
+
+    // Bind Global Descriptor Set associated with the current frame
+    const UInt32 CurrentFrame = FrameIndex % MaxFramesInFlight;
+    vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineRegistry[InPipeline.ID].GetLayout(), 0, 1, &GlobalDescriptorSets[CurrentFrame], 0, nullptr );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::DrawMeshInternal ( VkCommandBuffer InCmd, const LumenEngine::RHI::FMeshHandle InMesh ) noexcept
@@ -286,7 +382,7 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
     LumenEngine::VulkanRHI::FVulkanPipeline NewPipeline;
     const VkFormat ColorFormat = SwapChain.GetImageFormat();
 
-    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), ColorFormat, InVertexPath, InFragmentPath ) )
+    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), ColorFormat, InVertexPath, InFragmentPath, GlobalSetLayout ) )
     {
         return LumenEngine::RHI::FPipelineHandle();
     }

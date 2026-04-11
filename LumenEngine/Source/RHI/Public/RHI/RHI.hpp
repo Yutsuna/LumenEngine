@@ -36,8 +36,9 @@ namespace RHI
         virtual void Shutdown ()                                               = 0;
         virtual void WaitIdle () const noexcept                                = 0;
 
-        virtual Bool BeginFrame () = 0;
-        virtual void EndFrame ()   = 0;
+        /** @brief Prepares the frame and binds uniform data */
+        virtual Bool BeginFrame ( const FGlobalUniformData &InUniforms ) = 0;
+        virtual void EndFrame ()                                         = 0;
 
     public:
 
