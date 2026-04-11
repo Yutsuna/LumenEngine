@@ -43,7 +43,7 @@ private:
         Renderer::FRenderMesh Mesh;
         Renderer::FRenderShader Shader;
     } Triangle;
-    
+
     struct FCamera final
     {
         const Maths::FVec3f Eye    = { 0.0F, 1.0F, -3.0F };

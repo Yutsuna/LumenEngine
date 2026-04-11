@@ -15,13 +15,13 @@ namespace
 
     LUMEN_LOG_DEFINE_CATEGORY( LogBaseExample, "BaseExample" );
 
-    constexpr Maths::FVec3f VecV1 = { 0.0F, -0.5F, 0.0F };
-    constexpr Maths::FVec3f VecV2 = { 0.5F, 0.5F, 0.0F };
-    constexpr Maths::FVec3f VecV3 = { -0.5F, 0.5F, 0.0F };
-    constexpr Maths::FVec3f NormalV1 = { 1.0F, 0.0F, 0.0F };
-    constexpr Maths::FVec3f NormalV2 = { 0.0F, 1.0F, 0.0F };
-    constexpr Maths::FVec3f NormalV3 = { 0.0F, 0.0F, 1.0F };
-    constexpr Maths::FVec2f DefaultUV = { 0.0F, 0.0F };
+    constexpr Maths::FVec3f VecV1          = { 0.0F, -0.5F, 0.0F };
+    constexpr Maths::FVec3f VecV2          = { 0.5F, 0.5F, 0.0F };
+    constexpr Maths::FVec3f VecV3          = { -0.5F, 0.5F, 0.0F };
+    constexpr Maths::FVec3f NormalV1       = { 1.0F, 0.0F, 0.0F };
+    constexpr Maths::FVec3f NormalV2       = { 0.0F, 1.0F, 0.0F };
+    constexpr Maths::FVec3f NormalV3       = { 0.0F, 0.0F, 1.0F };
+    constexpr Maths::FVec2f DefaultUV      = { 0.0F, 0.0F };
     constexpr Maths::FVec3f DefaultTangent = { 1.0F, 0.0F, 0.0F };
 
     constexpr Maths::FVertex V1 = { VecV1, NormalV1, DefaultUV, DefaultTangent };
@@ -70,12 +70,7 @@ void FTriangleExampleApplication::CreateTriangle () noexcept
 
 void FTriangleExampleApplication::CreatePacket () noexcept
 {
-    const Renderer::FDrawCommand DrawCommand = 
-    {
-        .Mesh     = &Triangle.Mesh,
-        .Shader   = &Triangle.Shader,
-        .Transform = Maths::FMatrix4x4f::Identity()
-    };
+    const Renderer::FDrawCommand DrawCommand = { .Mesh = &Triangle.Mesh, .Shader = &Triangle.Shader, .Transform = Maths::FMatrix4x4f::Identity() };
 
     RenderPacket.ClearColor[0] = 0.02F;
     RenderPacket.ClearColor[1] = 0.02F;
