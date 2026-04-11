@@ -134,6 +134,12 @@ namespace Maths
         constexpr TVec ( const TVec<Type, Dimension> &Other ) noexcept = default;
 
         /**
+         * @brief Fixed: Explicitly defaulted assignment operators to satisfy Clang-Tidy / C++20 standards.
+         */
+        constexpr TVec &operator=( const TVec &Other ) noexcept = default;
+        constexpr TVec &operator=( TVec &&Other ) noexcept      = default;
+
+        /**
          * @brief Construct a Vec by converting from another Vec of a different type but the same dimension
          * @param Other The Vec to convert from
          * @return A new Vec with component values converted from Other
