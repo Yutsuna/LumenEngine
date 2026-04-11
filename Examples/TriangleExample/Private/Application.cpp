@@ -2,6 +2,7 @@
 
 #include "ErrorCodes.hpp"
 #include "Generic/GenericApplication.hpp"
+#include "Graphics/RenderResource.hpp"
 #include "Graphics/Renderer.hpp"
 #include "Logging/Logger.hpp"
 #include "MessageHandler.hpp"
@@ -39,35 +40,43 @@ Int32 FTriangleExampleApplication::Initialize ()
     return EErrorCode::Success;
 }
 
-void FTriangleExampleApplication::Tick ( const Float64 InDeltaTime )
+void FTriangleExampleApplication::Tick ( const Float64 DeltaTime )
 {
-    if ( not Renderer::GRenderer.IsValid() )
+    if ( not Renderer::GRenderer.IsValid() ) [[unlikely]]
     {
         return;
     }
 
-    Renderer::GRenderer->SubmitRenderPacket( PersistentPacket );
-    RHI::FGlobalUniformData GlobalData{ .ViewProjectionMatrix = Maths::FMatrix4x4f::Identity(),
-                                        .TimeSeconds          = static_cast<Float32>( HAL::FPlatformTime::Seconds() ),
-                                        .DeltaTime            = static_cast<Float32>( InDeltaTime ) };
-    Renderer::GRenderer->SubmitGlobalUniforms( GlobalData );
+    const RHI::FGlobalUniformData Uniforms = { .ViewProjectionMatrix = Maths::FMatrix4x4f::Identity(),
+                                               .TimeSeconds          = static_cast<Float32>( HAL::FPlatformTime::Seconds() ),
+                                               .DeltaTime            = static_cast<Float32>( DeltaTime ) };
+
+    Renderer::GRenderer->SubmitGlobalUniforms( Uniforms );
+    Renderer::GRenderer->SubmitRenderPacket( RenderPacket );
 }
 
 void FTriangleExampleApplication::CreateTriangle () noexcept
 {
-    TriangleMesh.Vertices       = { V1, V2, V3 };
-    TriangleMesh.Indices        = { 0, 1, 2 };
-    TriangleShader.VertexPath   = "Shaders/Triangle.vert.spv";
-    TriangleShader.FragmentPath = "Shaders/Triangle.frag.spv";
+    Triangle.Mesh.Vertices       = { V1, V2, V3 };
+    Triangle.Mesh.Indices        = { 0, 1, 2 };
+    Triangle.Shader.VertexPath   = "Shaders/Triangle.vert.spv";
+    Triangle.Shader.FragmentPath = "Shaders/Triangle.frag.spv";
 }
 
 void FTriangleExampleApplication::CreatePacket () noexcept
 {
-    PersistentPacket.ClearColor[0] = 0.02F;
-    PersistentPacket.ClearColor[1] = 0.02F;
-    PersistentPacket.ClearColor[2] = 0.05F;
-    PersistentPacket.ClearColor[3] = 1.00F;
-    PersistentPacket.DrawCommands.emplace_back( &TriangleMesh, &TriangleShader, Maths::FMatrix4x4f::Identity() );
+    const Renderer::FDrawCommand DrawCommand = 
+    {
+        .Mesh     = &Triangle.Mesh,
+        .Shader   = &Triangle.Shader,
+        .Transform = Maths::FMatrix4x4f::Identity()
+    };
+
+    RenderPacket.ClearColor[0] = 0.02F;
+    RenderPacket.ClearColor[1] = 0.02F;
+    RenderPacket.ClearColor[2] = 0.05F;
+    RenderPacket.ClearColor[3] = 1.00F;
+    RenderPacket.DrawCommands.emplace_back( DrawCommand );
 }
 
 } // namespace LumenEngine
