@@ -9,6 +9,10 @@
 #include "Graphics/Resources/RenderMesh.hpp"
 #include "Graphics/Resources/RenderShader.hpp"
 
+#include "Maths/Macros.hpp"
+#include "Maths/Matrix.hpp"
+#include "Maths/Vec.hpp"
+
 namespace LumenEngine
 {
 
@@ -34,9 +38,23 @@ private:
 
 private:
 
-    Renderer::FRenderMesh TriangleMesh;
-    Renderer::FRenderShader TriangleShader;
-    Renderer::FRenderPacket PersistentPacket;
+    struct FTriangle final
+    {
+        Renderer::FRenderMesh Mesh;
+        Renderer::FRenderShader Shader;
+    } Triangle;
+    
+    struct FCamera final
+    {
+        const Maths::FVec3f Eye    = { 0.0F, 1.0F, -3.0F };
+        const Maths::FVec3f Target = { 0.0F, 0.0F, 0.0F };
+        const Maths::FVec3f Up     = { 0.0F, -1.0F, 0.0F };
+
+        const Maths::FMatrix4x4f View       = Maths::FMatrix4x4f::LookAt( Eye, Target, Up );
+        const Maths::FMatrix4x4f Projection = Maths::FMatrix4x4f::Perspective( static_cast<Float32>( Maths::HalfPi ), 1280.0f / 720.0f, 0.1f, 100.0f );
+    } Camera;
+
+    Renderer::FRenderPacket RenderPacket;
 };
 
 } // namespace LumenEngine
