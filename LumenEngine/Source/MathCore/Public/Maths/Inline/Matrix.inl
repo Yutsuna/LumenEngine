@@ -127,10 +127,10 @@ namespace Maths
 
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
-    Result[1].Data[1] = CosAngle;
-    Result[1].Data[2] = SinAngle;
-    Result[2].Data[1] = -SinAngle;
-    Result[2].Data[2] = CosAngle;
+        Result[1].Data[1] = CosAngle;
+        Result[1].Data[2] = SinAngle;
+        Result[2].Data[1] = -SinAngle;
+        Result[2].Data[2] = CosAngle;
 
         return Result;
     }
@@ -145,10 +145,10 @@ namespace Maths
 
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
-    Result[0].Data[0] = CosAngle;
-    Result[0].Data[2] = -SinAngle;
-    Result[2].Data[0] = SinAngle;
-    Result[2].Data[2] = CosAngle;
+        Result[0].Data[0] = CosAngle;
+        Result[0].Data[2] = -SinAngle;
+        Result[2].Data[0] = SinAngle;
+        Result[2].Data[2] = CosAngle;
 
         return Result;
     }
@@ -163,10 +163,10 @@ namespace Maths
 
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
-    Result[0].Data[0] = CosAngle;
-    Result[0].Data[1] = SinAngle;
-    Result[1].Data[0] = -SinAngle;
-    Result[1].Data[1] = CosAngle;
+        Result[0].Data[0] = CosAngle;
+        Result[0].Data[1] = SinAngle;
+        Result[1].Data[0] = -SinAngle;
+        Result[1].Data[1] = CosAngle;
 
         return Result;
     }
@@ -180,11 +180,11 @@ namespace Maths
 
         TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
 
-    Result[0].Data[0] = static_cast<Type>( 1 ) / ( InAspectRatio * TanHalfFov );
-    Result[1].Data[1] = static_cast<Type>( -1 ) / TanHalfFov;
-    Result[2].Data[2] = InFarPlane / ( InFarPlane - InNearPlane );
-    Result[2].Data[3] = static_cast<Type>( 1 );
-    Result[3].Data[2] = -( InFarPlane * InNearPlane ) / ( InFarPlane - InNearPlane );
+        Result[0].Data[0] = static_cast<Type>( 1 ) / ( InAspectRatio * TanHalfFov );
+        Result[1].Data[1] = static_cast<Type>( -1 ) / TanHalfFov;
+        Result[2].Data[2] = InFarPlane / ( InFarPlane - InNearPlane );
+        Result[2].Data[3] = static_cast<Type>( 1 );
+        Result[3].Data[2] = -( InFarPlane * InNearPlane ) / ( InFarPlane - InNearPlane );
 
         return Result;
     }
