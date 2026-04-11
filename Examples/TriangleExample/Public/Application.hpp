@@ -29,9 +29,14 @@ public:
 
 private:
 
-    Renderer::FRenderPacket RenderPacket;
-    Renderer::FRenderMesh RenderTriangle;
-    Renderer::FRenderShader RenderTriangleShader;
+    void CreateTriangle () noexcept;
+    void CreatePacket () noexcept;
+
+private:
+
+    Renderer::FRenderMesh TriangleMesh;
+    Renderer::FRenderShader TriangleShader;
+    Renderer::FRenderPacket PersistentPacket;
 };
 
 } // namespace LumenEngine

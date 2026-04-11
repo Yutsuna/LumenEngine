@@ -1,8 +1,3 @@
-/**
- * @file Application.cpp
- * @brief Application class implementation for the TriangleExample.
- */
-
 #include "Application.hpp"
 
 #include "ErrorCodes.hpp"
@@ -10,62 +5,69 @@
 #include "Graphics/Renderer.hpp"
 #include "Logging/Logger.hpp"
 #include "MessageHandler.hpp"
-#include "RHI/RHITypes.hpp"
+
+namespace LumenEngine
+{
 
 namespace
 {
 
-constexpr LumenEngine::Maths::FVertex V1{ { 0.0F, -0.5F, 0.0F } };
-constexpr LumenEngine::Maths::FVertex V2{ { 0.5F, 0.5F, 0.0F } };
-constexpr LumenEngine::Maths::FVertex V3{ { -0.5F, 0.5F, 0.0F } };
+    LUMEN_LOG_DEFINE_CATEGORY( LogBaseExample, "BaseExample" );
+
+    constexpr Maths::FVec3f VecV1 = { 0.0F, -0.5F, 0.0F };
+    constexpr Maths::FVec3f VecV2 = { 0.5F, 0.5F, 0.0F };
+    constexpr Maths::FVec3f VecV3 = { -0.5F, 0.5F, 0.0F };
+
+    constexpr Maths::FVertex V1 = { VecV1 };
+    constexpr Maths::FVertex V2 = { VecV2 };
+    constexpr Maths::FVertex V3 = { VecV3 };
 
 } // namespace
 
-LumenEngine::Int32 LumenEngine::FTriangleExampleApplication::Initialize ()
+Int32 FTriangleExampleApplication::Initialize ()
 {
-
-    const FLogCategory LogTriangleExample( "TriangleExample" );
-    LUMEN_LOG_INFO( LogTriangleExample, "Triangle Example initializing." );
-
-    if ( !GPlatformApplication.IsValid() )
+    if ( not GPlatformApplication.IsValid() )
     {
-        return EErrorCode::Type::Failure;
+        return EErrorCode::Failure;
     }
 
     GPlatformApplication->SetMessageHandler( MakeShared<FTriangleExampleMessageHandler>() );
+    CreateTriangle();
+    CreatePacket();
 
-    RenderTriangle.Vertices = { V1, V2, V3 };
-    RenderTriangle.Indices  = { 0, 1, 2 };
-
-    RenderTriangleShader.VertexPath   = "Shaders/Triangle.vert.spv";
-    RenderTriangleShader.FragmentPath = "Shaders/Triangle.frag.spv";
-
-    RenderPacket.ClearColor[0] = 0.05F;
-    RenderPacket.ClearColor[1] = 0.05F;
-    RenderPacket.ClearColor[2] = 0.15F;
-    RenderPacket.ClearColor[3] = 1.00F;
-
-    Renderer::FDrawCommand DrawTriangle;
-    DrawTriangle.Mesh   = &RenderTriangle;
-    DrawTriangle.Shader = &RenderTriangleShader;
-    RenderPacket.DrawCommands.push_back( DrawTriangle );
-
-    return EErrorCode::Type::Success;
+    LUMEN_LOG_INFO( LogBaseExample, "BaseExample Initialized with MathCore abstractions." );
+    return EErrorCode::Success;
 }
 
-void LumenEngine::FTriangleExampleApplication::Tick ( const Float64 DeltaTime )
+void FTriangleExampleApplication::Tick ( const Float64 InDeltaTime )
 {
     if ( not Renderer::GRenderer.IsValid() )
     {
         return;
     }
 
-    Renderer::GRenderer->SubmitRenderPacket( RenderPacket );
-
-    RHI::FGlobalUniformData Uniforms;
-    Uniforms.TimeSeconds          = static_cast<Float32>( HAL::FPlatformTime::Seconds() );
-    Uniforms.DeltaTime            = static_cast<Float32>( DeltaTime );
-    Uniforms.ViewProjectionMatrix = Maths::FMatrix4x4f::Identity();
-
-    Renderer::GRenderer->SubmitGlobalUniforms( Uniforms );
+    Renderer::GRenderer->SubmitRenderPacket( PersistentPacket );
+    RHI::FGlobalUniformData GlobalData{ .ViewProjectionMatrix = Maths::FMatrix4x4f::Identity(),
+                                        .TimeSeconds          = static_cast<Float32>( HAL::FPlatformTime::Seconds() ),
+                                        .DeltaTime            = static_cast<Float32>( InDeltaTime ) };
+    Renderer::GRenderer->SubmitGlobalUniforms( GlobalData );
 }
+
+void FTriangleExampleApplication::CreateTriangle () noexcept
+{
+    TriangleMesh.Vertices       = { V1, V2, V3 };
+    TriangleMesh.Indices        = { 0, 1, 2 };
+    TriangleShader.VertexPath   = "Shaders/Triangle.vert.spv";
+    TriangleShader.FragmentPath = "Shaders/Triangle.frag.spv";
+}
+
+void FTriangleExampleApplication::CreatePacket () noexcept
+{
+    PersistentPacket.ClearColor[0] = 0.02F;
+    PersistentPacket.ClearColor[1] = 0.02F;
+    PersistentPacket.ClearColor[2] = 0.05F;
+    PersistentPacket.ClearColor[3] = 1.00F;
+    PersistentPacket.DrawCommands.emplace_back( &TriangleMesh, &TriangleShader, Maths::FMatrix4x4f::Identity() );
+}
+
+} // namespace LumenEngine
