@@ -151,27 +151,27 @@ VkExtent2D ChooseSwapExtent ( const VkSurfaceCapabilitiesKHR &Capabilities, cons
 void BuildSubmitInfo2 ( FSubmitInfoBundle &OutSubmitBundle, const VkCommandBuffer InCmd, const VkSemaphore InWaitSemaphore, const VkSemaphore InRenderSemaphore ) noexcept
 {
     OutSubmitBundle.CommandBufferSubmitInfo = VkCommandBufferSubmitInfo{
-        .sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
-        .pNext = nullptr,
+        .sType         = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
+        .pNext         = nullptr,
         .commandBuffer = InCmd,
-        .deviceMask = 0,
+        .deviceMask    = 0,
     };
 
     OutSubmitBundle.WaitSemaphoreSubmitInfo = VkSemaphoreSubmitInfo{
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .pNext = nullptr,
-        .semaphore = InWaitSemaphore,
-        .value = 0,
-        .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+        .pNext       = nullptr,
+        .semaphore   = InWaitSemaphore,
+        .value       = 0,
+        .stageMask   = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
         .deviceIndex = 0,
     };
 
     OutSubmitBundle.SignalSemaphoreSubmitInfo = VkSemaphoreSubmitInfo{
-        .sType = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
-        .pNext = nullptr,
-        .semaphore = InRenderSemaphore,
-        .value = 0,
-        .stageMask = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
+        .sType       = VK_STRUCTURE_TYPE_SEMAPHORE_SUBMIT_INFO,
+        .pNext       = nullptr,
+        .semaphore   = InRenderSemaphore,
+        .value       = 0,
+        .stageMask   = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT,
         .deviceIndex = 0,
     };
 
@@ -380,23 +380,23 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::SubmitAndPresent ( VkCommandBuffe
                                                                   USize InFrameIndex,
                                                                   UInt32 InSwapChainImageIndex ) noexcept
 {
-    const FFrameData &Frame = Frames[InFrameIndex];
+    const FFrameData &Frame            = Frames[InFrameIndex];
     const VkSemaphore &RenderSemaphore = RenderSemaphores[InSwapChainImageIndex];
-    const VkSemaphore &WaitSemaphore = Frame.SwapChainSemaphore;
+    const VkSemaphore &WaitSemaphore   = Frame.SwapChainSemaphore;
     FSubmitInfoBundle SubmitBundle;
     BuildSubmitInfo2( SubmitBundle, InCmd, WaitSemaphore, RenderSemaphore );
 
     LUMEN_VK_CHECK( vkQueueSubmit2( InGraphicsQueue, 1, &SubmitBundle.SubmitInfo, Frame.RenderFence ) );
 
     const VkPresentInfoKHR PresentInfo{
-        .sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
-        .pNext = nullptr,
+        .sType              = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR,
+        .pNext              = nullptr,
         .waitSemaphoreCount = 1,
-        .pWaitSemaphores = &RenderSemaphore,
-        .swapchainCount = 1,
-        .pSwapchains = &SwapChainHandle,
-        .pImageIndices = &InSwapChainImageIndex,
-        .pResults = nullptr,
+        .pWaitSemaphores    = &RenderSemaphore,
+        .swapchainCount     = 1,
+        .pSwapchains        = &SwapChainHandle,
+        .pImageIndices      = &InSwapChainImageIndex,
+        .pResults           = nullptr,
     };
 
     const VkResult PresentResult = vkQueuePresentKHR( InGraphicsQueue, &PresentInfo );
