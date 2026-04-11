@@ -59,6 +59,34 @@ namespace Maths
         /** @brief Returns an identity matrix. Only valid for square matrices. */
         static constexpr TMatrix<Type, Rows, Columns> Identity () noexcept
             requires( Rows == Columns );
+
+        /** @brief Create a translation matrix */
+        static constexpr TMatrix<Type, 4, 4> Translate ( const TVec<Type, 3> &InTranslation ) noexcept
+            requires( Rows == 4 && Columns == 4 );
+
+        /** @brief Create a scaling matrix */
+        static constexpr TMatrix<Type, 4, 4> Scale ( const TVec<Type, 3> &InScale ) noexcept
+            requires( Rows == 4 && Columns == 4 );
+
+        /** @brief Create a rotation matrix around X axis (radians) */
+        static constexpr TMatrix<Type, 4, 4> RotateX ( Type InAngleRadians ) noexcept
+            requires( Rows == 4 && Columns == 4 );
+
+        /** @brief Create a rotation matrix around Y axis (radians) */
+        static constexpr TMatrix<Type, 4, 4> RotateY ( Type InAngleRadians ) noexcept
+            requires( Rows == 4 && Columns == 4 );
+
+        /** @brief Create a rotation matrix around Z axis (radians) */
+        static constexpr TMatrix<Type, 4, 4> RotateZ ( Type InAngleRadians ) noexcept
+            requires( Rows == 4 && Columns == 4 );
+
+        /** @brief Create a perspective projection matrix */
+        static constexpr TMatrix<Type, 4, 4> Perspective ( Type InFieldOfViewRadians, Type InAspectRatio, Type InNearPlane, Type InFarPlane ) noexcept
+            requires( Rows == 4 && Columns == 4 );
+
+        /** @brief Create a look-at view matrix */
+        static constexpr TMatrix<Type, 4, 4> LookAt ( const TVec<Type, 3> &InEye, const TVec<Type, 3> &InTarget, const TVec<Type, 3> &InUp ) noexcept
+            requires( Rows == 4 && Columns == 4 );
     };
 
     using FMatrix2x2f = TMatrix<Float32, 2, 2>;
