@@ -52,7 +52,6 @@ Usage: lumen [Command] [Mode]
 
 Commands:
   build   <Mode>  Configure and compile the project (Default)
-  run     <Mode>  Execute the BaseExample (build if needed)
   format          Run clang-format on LumenEngine/Source/**/*.{hpp,inl,cpp}
   clean           Remove all build artifacts
   rebuild <Mode>  Full cleanup followed by a fresh build
@@ -127,20 +126,6 @@ function InvokeCmake()
     fi
 }
 
-function ExecuteBinary()
-{
-    local -r TargetMode="$1"
-    local -r BinaryPath="${BuildBaseDir}/${TargetMode}/${ExampleRelativePath}"
-
-    if [[ -x "${BinaryPath}" ]]; then
-        PrintLog "${LogInfo}" "Executing: ${BinaryPath}"
-        (cd "$(dirname "${BinaryPath}")" && "./$(basename "${BinaryPath}")")
-    else
-        PrintLog "${LogError}" "Executable not found or not runnable: ${BinaryPath}"
-        exit $ErrorCode
-    fi
-}
-
 function FormatSources()
 {
     local -ra SourceDirs=(
@@ -180,7 +165,7 @@ ResolvedMode="$(GetDefaultBuildMode)"
 
 if [[ -n "${1:-}" ]]; then
     case "${1,,}" in
-        build|run|format|clean|rebuild|help|--help|-h)
+        build|format|clean|rebuild|help|--help|-h)
             ResolvedCmd="$1"
             if [[ -n "${2:-}" ]]; then
                 ResolvedMode="$2"
@@ -209,10 +194,6 @@ case "${InputCmd,,}" in
         PrintLog "${LogSuccess}" "Build completed."
         ;;
 
-    run)
-        InvokeCmake "${InputMode}"
-        ExecuteBinary "${InputMode}"
-        ;;
     format)
         FormatSources
         ;;
