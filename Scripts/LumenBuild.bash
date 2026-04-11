@@ -143,7 +143,12 @@ function ExecuteBinary()
 
 function FormatSources()
 {
-    local -r SourceDir="${ProjectRoot}/LumenEngine/Source"
+    local -ra SourceDirs=(
+        "${ProjectRoot}/LumenEngine/Source"
+        "${ProjectRoot}/Examples"
+    )
+    local -a ExistingDirs=()
+    local Dir=""
     local -r Jobs="$(GetProcessorCount)"
 
     command -v clang-format >/dev/null 2>&1 || {
@@ -151,14 +156,20 @@ function FormatSources()
         exit $ErrorCode
     }
 
-    if [[ ! -d "${SourceDir}" ]]; then
-        PrintLog "${LogError}" "Source directory not found: ${SourceDir}"
+    for Dir in "${SourceDirs[@]}"; do
+        if [[ -d "${Dir}" ]]; then
+            ExistingDirs+=("${Dir}")
+        fi
+    done
+
+    if [[ "${#ExistingDirs[@]}" -eq 0 ]]; then
+        PrintLog "${LogError}" "Source directories not found: ${SourceDirs[*]}"
         exit $ErrorCode
     fi
 
-    PrintLog "${LogInfo}" "Formatting C++ files in ${SourceDir} (${Jobs} workers)..."
+    PrintLog "${LogInfo}" "Formatting C++ files in ${ExistingDirs[*]} (${Jobs} workers)..."
 
-    find "${SourceDir}" -type f \( -name "*.hpp" -o -name "*.inl" -o -name "*.cpp" \) -print0 | \
+    find "${ExistingDirs[@]}" -type f \( -name "*.hpp" -o -name "*.inl" -o -name "*.cpp" \) -print0 | \
         xargs -0r -n 1 -P "${Jobs}" clang-format -i
 
     PrintLog "${LogSuccess}" "Formatting completed."
