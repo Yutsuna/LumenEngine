@@ -319,10 +319,18 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRenderingInternal ( VkCommandBuffe
     vkCmdBeginRendering( InCmd, &RenderInfo );
 
     /** Set dynamic viewport and scissor */
-    VkViewport Viewport{
-        0.F, 0.F, static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.width ), static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.height ),
-        0.F, 1.F };
-    VkRect2D Scissor{ { 0, 0 }, RenderInfo.renderArea.extent };
+    const VkViewport Viewport{
+        .x        = 0.F,
+        .y        = 0.F,
+        .width    = static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.width ),
+        .height   = static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.height ),
+        .minDepth = 0.F,
+        .maxDepth = 1.F,
+    };
+    const VkRect2D Scissor{
+        .offset = VkOffset2D{ .x = 0, .y = 0 },
+        .extent = RenderInfo.renderArea.extent,
+    };
 
     vkCmdSetViewport( InCmd, 0, 1, &Viewport );
     vkCmdSetScissor( InCmd, 0, 1, &Scissor );
@@ -380,11 +388,12 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
                                                                                        const LumenEngine::FString &InFragmentPath )
 {
     LumenEngine::VulkanRHI::FVulkanPipeline NewPipeline;
-    const VkFormat ColorFormat = SwapChain.GetImageFormat();
+    const LumenEngine::VulkanRHI::FPipelineDescription PipelineDescription =
+        LumenEngine::VulkanRHI::FVulkanPipeline::CreateDefaultDescription( InVertexPath, InFragmentPath, SwapChain.GetImageFormat(), GlobalSetLayout );
 
-    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), ColorFormat, InVertexPath, InFragmentPath, GlobalSetLayout ) )
+    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), PipelineDescription ).has_value() )
     {
-        return LumenEngine::RHI::FPipelineHandle();
+        return {};
     }
 
     const LumenEngine::UInt32 Handle = NextPipelineID++;
