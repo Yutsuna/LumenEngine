@@ -6,12 +6,12 @@
 
 namespace
 {
-LumenEngine::TUniquePtr<LumenEngine::FBaseApplication> GAppInstance;
+LumenEngine::TUniquePtr<LumenEngine::FTriangleExampleApplication> GAppInstance;
 }
 
 LumenEngine::Int32 LumenEngine::Launch::ClientInit ( const Int32 LUMEN_UNUSED Argc, const AnsiChar LUMEN_UNUSED **Argv )
 {
-    GAppInstance = MakeUnique<FBaseApplication>();
+    GAppInstance = MakeUnique<FTriangleExampleApplication>();
 
     if ( not GAppInstance.IsValid() )
     {

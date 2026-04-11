@@ -1,6 +1,6 @@
 /**
  * @file Application.cpp
- * @brief Application class implementation for the BaseExample.
+ * @brief Application class implementation for the TriangleExample.
  */
 
 #include "Application.hpp"
@@ -21,18 +21,18 @@ constexpr LumenEngine::Maths::FVertex V3{ { -0.5F, 0.5F, 0.0F } };
 
 } // namespace
 
-LumenEngine::Int32 LumenEngine::FBaseApplication::Initialize ()
+LumenEngine::Int32 LumenEngine::FTriangleExampleApplication::Initialize ()
 {
 
-    const FLogCategory LogBaseExample( "BaseExample" );
-    LUMEN_LOG_INFO( LogBaseExample, "Triangle Example initializing." );
+    const FLogCategory LogTriangleExample( "TriangleExample" );
+    LUMEN_LOG_INFO( LogTriangleExample, "Triangle Example initializing." );
 
     if ( !GPlatformApplication.IsValid() )
     {
         return EErrorCode::Type::Failure;
     }
 
-    GPlatformApplication->SetMessageHandler( MakeShared<FBaseExampleMessageHandler>() );
+    GPlatformApplication->SetMessageHandler( MakeShared<FTriangleExampleMessageHandler>() );
 
     RenderTriangle.Vertices = { V1, V2, V3 };
     RenderTriangle.Indices  = { 0, 1, 2 };
@@ -53,7 +53,7 @@ LumenEngine::Int32 LumenEngine::FBaseApplication::Initialize ()
     return EErrorCode::Type::Success;
 }
 
-void LumenEngine::FBaseApplication::Tick ( const Float64 DeltaTime )
+void LumenEngine::FTriangleExampleApplication::Tick ( const Float64 DeltaTime )
 {
     if ( not Renderer::GRenderer.IsValid() )
     {
@@ -63,9 +63,9 @@ void LumenEngine::FBaseApplication::Tick ( const Float64 DeltaTime )
     Renderer::GRenderer->SubmitRenderPacket( RenderPacket );
 
     RHI::FGlobalUniformData Uniforms;
-    Uniforms.TimeSeconds = static_cast<Float32>(HAL::FPlatformTime::Seconds());
-    Uniforms.DeltaTime   = static_cast<Float32>(DeltaTime);
-    Uniforms.ViewProjectionMatrix = Maths::FMatrix4x4f::Identity(); // Replace with real camera
+    Uniforms.TimeSeconds          = static_cast<Float32>( HAL::FPlatformTime::Seconds() );
+    Uniforms.DeltaTime            = static_cast<Float32>( DeltaTime );
+    Uniforms.ViewProjectionMatrix = Maths::FMatrix4x4f::Identity();
 
     Renderer::GRenderer->SubmitGlobalUniforms( Uniforms );
 }

@@ -1,6 +1,6 @@
 /**
  * @file Application.hpp
- * @brief Application class declaration for the BaseExample.
+ * @brief Application class declaration for the TriangleExample.
  */
 
 #pragma once
@@ -12,12 +12,12 @@
 namespace LumenEngine
 {
 
-class FBaseApplication final
+class FTriangleExampleApplication final
 {
 public:
 
-    FBaseApplication () noexcept  = default;
-    ~FBaseApplication () noexcept = default;
+    FTriangleExampleApplication () noexcept  = default;
+    ~FTriangleExampleApplication () noexcept = default;
 
 public:
 
