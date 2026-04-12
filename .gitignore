@@ -14,3 +14,5 @@ compile_commands.json
 *.md
 
 result
+
+__pycache__/

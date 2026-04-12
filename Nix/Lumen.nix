@@ -9,13 +9,20 @@ let
   pythonScript = ''
     import sys
     import os
+    import importlib.util
     from pathlib import Path
     workspace = Path(os.environ.get('WORKSPACE_ROOT', '.')).resolve()
     sys.path.insert(0, str(workspace / 'Scripts'))
     sys.argv[0] = 'lumen'
     try:
-        from LumenBuild.Tasks import program
-        program.run()
+      entrypoint = workspace / 'Scripts' / 'LumenBuild' / 'Tasks.py'
+      spec = importlib.util.spec_from_file_location('lumen_tasks_entrypoint', entrypoint)
+      if spec is None or spec.loader is None:
+        raise ImportError(f'Cannot load build entrypoint at {entrypoint}')
+      module = importlib.util.module_from_spec(spec)
+      spec.loader.exec_module(module)
+      program = module.program
+      program.run()
     except ImportError as e:
         print(f'\033[91m[ERR] LumenBuild initialization failed: {e}\033[0m')
         sys.exit(84)
@@ -30,6 +37,7 @@ pkgs.writeShellScriptBin "lumen" ''
   export WORKSPACE_ROOT
   export IN_NIX_SHELL="1"
 
-  exec ${pythonEnv}/bin/python3 -c "$pythonScript
-  " "$@"
+  exec ${pythonEnv}/bin/python3 - "$@" <<'PY'
+${pythonScript}
+PY
 ''
