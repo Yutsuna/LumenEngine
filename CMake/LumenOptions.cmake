@@ -28,3 +28,8 @@ else()
 endif()
 
 ###########################################################
+
+option(LUMEN_ENABLE_TESTING "Enable LumenEngine test targets" OFF)
+option(LUMEN_ENABLE_ASAN "Enable AddressSanitizer (Debug only)" OFF)
+option(LUMEN_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer (Debug only)" OFF)
+option(LUMEN_ENABLE_TSAN "Enable ThreadSanitizer (Debug only)" OFF)

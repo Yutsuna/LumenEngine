@@ -21,18 +21,19 @@
         lumenPackage = pkgs.callPackage ./Nix/Package.nix {
           inherit version;
         };
-        lumenCli = pkgs.writeShellScriptBin "lumen" ''
-          exec ${./Scripts/LumenBuild.bash} "$@"
-        '';
+        lumenCli = import ./Nix/Lumen.nix { inherit pkgs; };
+
       in
       {
         packages.default = lumenPackage;
+
         apps = {
           lumen = {
             type = "app";
             program = "${lumenCli}/bin/lumen";
           };
         };
+
         devShells.default = import ./Nix/Shell.nix {
           inherit pkgs lumenPackage lumenCli;
         };

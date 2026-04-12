@@ -52,7 +52,7 @@ namespace SharedPtrInternal
         alignas( Type ) Byte Storage[sizeof( Type )];
 
         /** Constructs the managed object in place with forwarded arguments. */
-        template <typename... Arguments> explicit TIntrusiveReferenceController ( Arguments &&...InArgs );
+        template <typename... Arguments> explicit TIntrusiveReferenceController( Arguments &&...InArgs );
 
         /** Destroys the managed object. */
         void DestroyObject () override;

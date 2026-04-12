@@ -18,5 +18,5 @@ jobs:
 
         with:
           script: |
-            const script = require('./Scripts/CheckPullRequestName.js');
+            const script = require('./Scripts/CI/CheckPullRequestName.js');
             await script({ github, context, core });

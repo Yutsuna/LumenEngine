@@ -75,32 +75,9 @@ Alternatively, ensure you have the following installed:
 
 We recommand to use the [**Lumen Building Script**](./Scripts/LumenBuild.bash).
 
-input:
-
+Usage:
 ```bash
 lumen help
-```
-
-output:
-
-```console
-LumenEngine Build System
-
-Usage: lumen [Command] [Mode]
-       lumen [Mode]
-
-Commands:
-  build   <Mode>  Configure and compile the project (Default)
-  run     <Mode>  Execute the BaseExample (build if needed)
-  format          Run clang-format on LumenEngine/Source/**/*.{hpp,inl,cpp}
-  clean           Remove all build artifacts
-  rebuild <Mode>  Full cleanup followed by a fresh build
-
-Modes:
-  debug, release, relwithdebinfo
-  - Default mode: debug
-  - Inside nix shell (IN_NIX_SHELL): default mode is release
-  - Shorthand: 'lumen release' is equivalent to 'lumen build release'
 ```
 
 ## License

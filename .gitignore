@@ -11,5 +11,10 @@ Build/
 compile_commands.json
 *.spv
 *.log
+*.md
+
+!README.md
 
 result
+
+__pycache__/

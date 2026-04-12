@@ -53,9 +53,6 @@ target_compile_options(LumenCompiler INTERFACE
 
 ###########################################################
 
-option(LUMEN_ENABLE_ASAN  "Enable AddressSanitizer (Debug only)"           OFF)
-option(LUMEN_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer (Debug only)" OFF)
-
 if(LUMEN_ENABLE_ASAN)
     target_compile_options(LumenCompiler INTERFACE
         $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>: -fsanitize=address -fno-omit-frame-pointer>
@@ -74,6 +71,16 @@ if(LUMEN_ENABLE_UBSAN)
         $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>: -fsanitize=undefined>
     )
     message(STATUS "[Lumen] UBSan: enabled")
+endif()
+
+if(LUMEN_ENABLE_TSAN)
+    target_compile_options(LumenCompiler INTERFACE
+        $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>: -fsanitize=thread -fno-omit-frame-pointer>
+    )
+    target_link_options(LumenCompiler INTERFACE
+        $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>: -fsanitize=thread>
+    )
+    message(STATUS "[Lumen] TSan: enabled")
 endif()
 
 ###########################################################
