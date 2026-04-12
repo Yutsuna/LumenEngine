@@ -7,6 +7,8 @@
 
 #include "Maths/Matrix.hpp"
 
+#include <cmath>
+
 namespace LumenEngine
 {
 
@@ -84,6 +86,154 @@ namespace Maths
         requires( Rows == Columns )
     {
         return TMatrix<Type, Rows, Columns>( static_cast<Type>( 1 ) );
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+        requires CMatrixDimension<Rows, Columns>
+    constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Translate ( const TVec<Type, 3> &InTranslation ) noexcept
+        requires( Rows == 4 && Columns == 4 )
+    {
+        TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
+
+        Result[3].Data[0] = InTranslation.X;
+        Result[3].Data[1] = InTranslation.Y;
+        Result[3].Data[2] = InTranslation.Z;
+
+        return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+        requires CMatrixDimension<Rows, Columns>
+    constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Scale ( const TVec<Type, 3> &InScale ) noexcept
+        requires( Rows == 4 && Columns == 4 )
+    {
+        TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
+
+        Result[0].Data[0] = InScale.X;
+        Result[1].Data[1] = InScale.Y;
+        Result[2].Data[2] = InScale.Z;
+        Result[3].Data[3] = static_cast<Type>( 1 );
+
+        return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+        requires CMatrixDimension<Rows, Columns>
+    constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::RotateX ( Type InAngleRadians ) noexcept
+        requires( Rows == 4 && Columns == 4 )
+    {
+        const Type CosAngle = std::cos( InAngleRadians );
+        const Type SinAngle = std::sin( InAngleRadians );
+
+        TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
+
+        Result[1].Data[1] = CosAngle;
+        Result[1].Data[2] = SinAngle;
+        Result[2].Data[1] = -SinAngle;
+        Result[2].Data[2] = CosAngle;
+
+        return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+        requires CMatrixDimension<Rows, Columns>
+    constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::RotateY ( Type InAngleRadians ) noexcept
+        requires( Rows == 4 && Columns == 4 )
+    {
+        const Type CosAngle = std::cos( InAngleRadians );
+        const Type SinAngle = std::sin( InAngleRadians );
+
+        TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
+
+        Result[0].Data[0] = CosAngle;
+        Result[0].Data[2] = -SinAngle;
+        Result[2].Data[0] = SinAngle;
+        Result[2].Data[2] = CosAngle;
+
+        return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+        requires CMatrixDimension<Rows, Columns>
+    constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::RotateZ ( Type InAngleRadians ) noexcept
+        requires( Rows == 4 && Columns == 4 )
+    {
+        const Type CosAngle = std::cos( InAngleRadians );
+        const Type SinAngle = std::sin( InAngleRadians );
+
+        TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
+
+        Result[0].Data[0] = CosAngle;
+        Result[0].Data[1] = SinAngle;
+        Result[1].Data[0] = -SinAngle;
+        Result[1].Data[1] = CosAngle;
+
+        return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+        requires CMatrixDimension<Rows, Columns>
+    constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Perspective ( Type InFieldOfViewRadians, Type InAspectRatio, Type InNearPlane, Type InFarPlane ) noexcept
+        requires( Rows == 4 && Columns == 4 )
+    {
+        const Type TanHalfFov = std::tan( InFieldOfViewRadians / static_cast<Type>( 2 ) );
+
+        TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
+
+        Result[0].Data[0] = static_cast<Type>( 1 ) / ( InAspectRatio * TanHalfFov );
+        Result[1].Data[1] = static_cast<Type>( -1 ) / TanHalfFov;
+        Result[2].Data[2] = InFarPlane / ( InFarPlane - InNearPlane );
+        Result[2].Data[3] = static_cast<Type>( 1 );
+        Result[3].Data[2] = -( InFarPlane * InNearPlane ) / ( InFarPlane - InNearPlane );
+
+        return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+        requires CMatrixDimension<Rows, Columns>
+    constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Orthographic ( Type InWidth, Type InHeight, Type InNearPlane, Type InFarPlane ) noexcept
+        requires( Rows == 4 && Columns == 4 )
+    {
+        TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
+
+        Result[0].Data[0] = static_cast<Type>( 2 ) / InWidth;
+        Result[1].Data[1] = static_cast<Type>( -2 ) / InHeight;
+        Result[2].Data[2] = static_cast<Type>( 1 ) / ( InFarPlane - InNearPlane );
+        Result[3].Data[3] = static_cast<Type>( 1 );
+
+        Result[3].Data[2] = -InNearPlane / ( InFarPlane - InNearPlane );
+
+        return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+        requires CMatrixDimension<Rows, Columns>
+    constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::LookAt ( const TVec<Type, 3> &InEye, const TVec<Type, 3> &InTarget, const TVec<Type, 3> &InUp ) noexcept
+        requires( Rows == 4 && Columns == 4 )
+    {
+        const TVec<Type, 3> F = ( InTarget - InEye ).Normalize();
+        const TVec<Type, 3> R = InUp.Cross( F ).Normalize();
+        const TVec<Type, 3> U = F.Cross( R );
+
+        TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
+
+        Result[0].Data[0] = R.X;
+        Result[1].Data[0] = R.Y;
+        Result[2].Data[0] = R.Z;
+
+        Result[0].Data[1] = U.X;
+        Result[1].Data[1] = U.Y;
+        Result[2].Data[1] = U.Z;
+
+        Result[0].Data[2] = F.X;
+        Result[1].Data[2] = F.Y;
+        Result[2].Data[2] = F.Z;
+
+        Result[3].Data[0] = -R.Dot( InEye );
+        Result[3].Data[1] = -U.Dot( InEye );
+        Result[3].Data[2] = -F.Dot( InEye );
+
+        return Result;
     }
 
     template <typename Type, USize Rows, USize Inner, USize Columns>

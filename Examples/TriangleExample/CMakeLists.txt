@@ -1,5 +1,5 @@
 LumenModule(
-    NAME            BaseExample
+    NAME            TriangleExample
     TYPE            executable
     SOURCES         "Private/*.cpp"
     PUBLIC_INCLUDES "Public"
@@ -7,7 +7,7 @@ LumenModule(
     DEPS            Launch ApplicationCore Renderer MathCore RHI
 )
 
-LumenCompileShaders(BaseExample "Shaders"
+LumenCompileShaders(TriangleExample "Shaders"
     SOURCES
     "Private/Shaders/Triangle.vert"
     "Private/Shaders/Triangle.frag"

@@ -6,8 +6,10 @@
 #pragma once
 
 #include "Container/String.hpp"
+#include "Container/Vector.hpp"
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
+#include "ErrorCodes.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -16,6 +18,88 @@ namespace LumenEngine
 
 namespace VulkanRHI
 {
+
+    struct FPipelineShaderDescription final
+    {
+        FString VertexPath;
+        FString FragmentPath;
+    };
+
+    struct FPipelineVertexInputDescription final
+    {
+        VkVertexInputRate InputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+    };
+
+    struct FPipelineInputAssemblyDescription final
+    {
+        VkPrimitiveTopology Topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        Bool bEnablePrimitiveRestart = false;
+    };
+
+    struct FPipelineRasterizationDescription final
+    {
+        VkPolygonMode PolygonMode     = VK_POLYGON_MODE_FILL;
+        VkCullModeFlags CullMode      = VK_CULL_MODE_NONE;
+        VkFrontFace FrontFace         = VK_FRONT_FACE_CLOCKWISE;
+        Float32 LineWidth             = 1.0F;
+        Bool bEnableDepthClamp        = false;
+        Bool bEnableRasterizerDiscard = false;
+        Bool bEnableDepthBias         = false;
+    };
+
+    struct FPipelineMultisampleDescription final
+    {
+        VkSampleCountFlagBits RasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        Bool bEnableSampleShading                  = false;
+    };
+
+    struct FPipelineColorBlendDescription final
+    {
+        Bool bEnableBlend               = false;
+        Bool bEnableLogicOp             = false;
+        VkLogicOp LogicOp               = VK_LOGIC_OP_COPY;
+        VkColorComponentFlags WriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+    };
+
+    struct FPipelineDynamicStateDescription final
+    {
+        TVector<VkDynamicState> States = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+    };
+
+    struct FPipelineDepthStencilDescription final
+    {
+        Bool bEnableDepthTest            = false;
+        Bool bEnableDepthWrite           = false;
+        Bool bEnableDepthBoundsTest      = false;
+        Bool bEnableStencilTest          = false;
+        VkCompareOp DepthCompareOp       = VK_COMPARE_OP_LESS;
+        Float32 MinDepthBounds           = 0.0F;
+        Float32 MaxDepthBounds           = 1.0F;
+        VkFormat DepthAttachmentFormat   = VK_FORMAT_UNDEFINED;
+        VkFormat StencilAttachmentFormat = VK_FORMAT_UNDEFINED;
+    };
+
+    struct FPipelinePushConstantRangeDescription final
+    {
+        VkShaderStageFlags StageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+        UInt32 Offset                 = 0;
+        UInt32 Size                   = 0;
+    };
+
+    struct FPipelineDescription final
+    {
+        VkFormat ColorFormat                  = VK_FORMAT_B8G8R8A8_SRGB;
+        VkDescriptorSetLayout GlobalSetLayout = VK_NULL_HANDLE;
+        FPipelineShaderDescription Shader;
+        FPipelineVertexInputDescription VertexInput;
+        FPipelineInputAssemblyDescription InputAssembly;
+        FPipelineRasterizationDescription Rasterization;
+        FPipelineMultisampleDescription Multisample;
+        FPipelineColorBlendDescription ColorBlend;
+        FPipelineDynamicStateDescription DynamicState;
+        FPipelineDepthStencilDescription DepthStencil;
+        TVector<FPipelinePushConstantRangeDescription> PushConstantRanges;
+    };
 
     /**
      * @class FVulkanPipeline
@@ -34,12 +118,14 @@ namespace VulkanRHI
         /**
          * @brief Initializes the Vulkan pipeline.
          * @param InDevice The Vulkan device.
-         * @param InColorFormat The color format.
-         * @param InVertexPath The path to the vertex shader file.
-         * @param InFragmentPath The path to the fragment shader file.
-         * @return True if initialization was successful, false otherwise.
+         * @param InDescription Logical state description used to build the graphics pipeline.
+         * @return Success or a detailed initialization error code.
          */
-        Bool Initialize ( VkDevice InDevice, VkFormat InColorFormat, const FString &InVertexPath, const FString &InFragmentPath );
+        [[nodiscard]] TExpected<void, EErrorCode::Type> Initialize ( VkDevice InDevice, const FPipelineDescription &InDescription );
+
+        /** @brief Convenience factory for a default pipeline description. */
+        [[nodiscard]] static FPipelineDescription
+        CreateDefaultDescription ( const FString &InVertexPath, const FString &InFragmentPath, VkFormat InColorFormat, VkDescriptorSetLayout InGlobalSetLayout );
 
         /**
          * @brief Cleans up the Vulkan pipeline.
@@ -52,6 +138,11 @@ namespace VulkanRHI
          * @param InCommandBuffer The command buffer.
          */
         void Bind ( VkCommandBuffer InCommandBuffer ) const noexcept;
+
+    public:
+
+        /** @brief Retrieve the layout to bind descriptor sets. */
+        [[nodiscard]] VkPipelineLayout GetLayout () const noexcept;
 
     private:
 

@@ -5,7 +5,6 @@ Checks: >
   cert-*,
   -base_must_be_class,
   -cert-err58-cpp,
-  -Wmissing-braces,
   clang-analyzer-*,
   cppcoreguidelines-*,
   -cppcoreguidelines-missing-std-forward,

@@ -22,7 +22,7 @@ LumenAddModules(
 
 LumenAddModules(
     ${CMAKE_CURRENT_SOURCE_DIR}/Examples
-    BaseExample
+    TriangleExample
 )
 
 ###########################################################

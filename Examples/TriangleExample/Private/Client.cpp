@@ -4,15 +4,16 @@
 #include "ErrorCodes.hpp"
 #include "LaunchEngine.hpp"
 
+namespace LumenEngine
+{
+
 namespace
 {
-LumenEngine::TUniquePtr<LumenEngine::FBaseApplication> GAppInstance;
+    const TUniquePtr<FTriangleExampleApplication> GAppInstance = MakeUnique<FTriangleExampleApplication>();
 }
 
-LumenEngine::Int32 LumenEngine::Launch::ClientInit ( const Int32 LUMEN_UNUSED Argc, const AnsiChar LUMEN_UNUSED **Argv )
+Int32 Launch::ClientInit ( const Int32 LUMEN_UNUSED Argc, const AnsiChar LUMEN_UNUSED **Argv )
 {
-    GAppInstance = MakeUnique<FBaseApplication>();
-
     if ( not GAppInstance.IsValid() )
     {
         return EErrorCode::Type::Failure;
@@ -21,10 +22,12 @@ LumenEngine::Int32 LumenEngine::Launch::ClientInit ( const Int32 LUMEN_UNUSED Ar
     return GAppInstance->Initialize();
 }
 
-void LumenEngine::Launch::ClientTick ( const Float64 DeltaTime )
+void Launch::ClientTick ( const Float64 DeltaTime )
 {
     if ( GAppInstance.IsValid() )
     {
         GAppInstance->Tick( DeltaTime );
     }
 }
+
+} // namespace LumenEngine

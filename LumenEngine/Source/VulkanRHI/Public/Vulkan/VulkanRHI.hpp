@@ -17,16 +17,14 @@
 
 #include "Maths/Vertex.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
-#include "Vulkan/VulkanCommandBuffer.hpp"
-#include "Vulkan/VulkanCommandPool.hpp"
+#include "Vulkan/VulkanFrameContext.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanLogicalDevice.hpp"
+#include "Vulkan/VulkanMemory.hpp"
 #include "Vulkan/VulkanMesh.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanPipeline.hpp"
 #include "Vulkan/VulkanSwapChain.hpp"
-
-#include <vk_mem_alloc.h>
 
 namespace LumenEngine
 {
@@ -61,8 +59,8 @@ namespace VulkanRHI
         /** @brief Waits until the logical device is idle. */
         void WaitIdle () const noexcept override;
 
-        /** @brief Prepares the frame for rendering. */
-        [[nodiscard]] Bool BeginFrame () override;
+        /** @brief Prepares the frame for rendering and updates global uniform buffers. */
+        [[nodiscard]] Bool BeginFrame ( const RHI::FGlobalUniformData &InUniforms ) override;
 
         /** @brief Submits the frame and presents it. */
         void EndFrame () override;
@@ -109,15 +107,11 @@ namespace VulkanRHI
 
         void InitializeVulkanInstance ( const TSharedPtr<FGenericWindow> &InWindow );
         void InitializeVulkanDevice ();
-        void InitializeVMA ();
         void InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow );
-        void InitializeCommandBuffers ();
 
         void DestroyVulkanInstance () noexcept;
         void DestroyVulkanDevice () noexcept;
-        void DestroyVMA () noexcept;
         void DestroySwapChain () noexcept;
-        void DestroyCommandBuffers () noexcept;
 
     private:
 
@@ -134,16 +128,10 @@ namespace VulkanRHI
         FVulkanPhysicalDevice PhysicalDevice;
         FVulkanLogicalDevice LogicalDevice;
         FVulkanSwapChain SwapChain;
-
-        FVulkanCommandPool CommandPool;
-        FVulkanCommandBuffer CommandBuffers[MaxFramesInFlight];
-
-        VmaAllocator Allocator = VK_NULL_HANDLE;
+        FVulkanMemory Memory;
+        FVulkanFrameContext FrameContext;
 
         Bool bIsInitialized = false;
-
-        UInt64 FrameIndex        = 0;
-        UInt32 CurrentImageIndex = 0;
     };
 
 } // namespace VulkanRHI

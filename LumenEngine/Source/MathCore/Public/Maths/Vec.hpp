@@ -134,6 +134,12 @@ namespace Maths
         constexpr TVec ( const TVec<Type, Dimension> &Other ) noexcept = default;
 
         /**
+         * @brief Fixed: Explicitly defaulted assignment operators to satisfy Clang-Tidy / C++20 standards.
+         */
+        constexpr TVec &operator=( const TVec &Other ) noexcept = default;
+        constexpr TVec &operator=( TVec &&Other ) noexcept      = default;
+
+        /**
          * @brief Construct a Vec by converting from another Vec of a different type but the same dimension
          * @param Other The Vec to convert from
          * @return A new Vec with component values converted from Other
@@ -144,8 +150,38 @@ namespace Maths
             requires( sizeof...( Arguments ) == Dimension && ( std::is_convertible_v<Arguments, Type> && ... ) )
         constexpr TVec( Arguments &&...Args ) noexcept;
 
+        /** Operators */
+
         constexpr Bool operator==( const TVec<Type, Dimension> &Other ) const noexcept;
         constexpr Bool operator!=( const TVec<Type, Dimension> &Other ) const noexcept;
+
+        [[nodiscard]] constexpr TVec operator+( const TVec &Other ) const noexcept;
+        [[nodiscard]] constexpr TVec operator-( const TVec &Other ) const noexcept;
+        [[nodiscard]] constexpr TVec operator*( const TVec &Other ) const noexcept;
+        [[nodiscard]] constexpr TVec operator/( const TVec &Other ) const noexcept;
+
+        [[nodiscard]] constexpr TVec operator+( Type Scalar ) const noexcept;
+        [[nodiscard]] constexpr TVec operator-( Type Scalar ) const noexcept;
+        [[nodiscard]] constexpr TVec operator*( Type Scalar ) const noexcept;
+        [[nodiscard]] constexpr TVec operator/( Type Scalar ) const noexcept;
+
+        [[nodiscard]] constexpr TVec &operator+=( const TVec &Other ) noexcept;
+        [[nodiscard]] constexpr TVec &operator-=( const TVec &Other ) noexcept;
+        [[nodiscard]] constexpr TVec &operator*=( const TVec &Other ) noexcept;
+        [[nodiscard]] constexpr TVec &operator/=( const TVec &Other ) noexcept;
+
+        [[nodiscard]] constexpr TVec operator-() const noexcept;
+
+        /** Methods */
+
+        [[nodiscard]] constexpr Type Dot ( const TVec &Other ) const noexcept;
+        [[nodiscard]] constexpr TVec Cross ( const TVec &Other ) const noexcept
+            requires( Dimension == 3 );
+
+        [[nodiscard]] constexpr Type LengthSquared () const noexcept;
+        [[nodiscard]] constexpr Type Length () const noexcept;
+
+        [[nodiscard]] constexpr TVec Normalize () const noexcept;
     };
 
     using FVec2f = TVec<Float32, 2>;

@@ -4,10 +4,14 @@
  */
 
 #include "MessageHandler.hpp"
-
 #include "LaunchEngineLoop.hpp"
 
-void LumenEngine::FBaseExampleMessageHandler::OnRequestExit ()
+namespace LumenEngine
+{
+
+void FTriangleExampleMessageHandler::OnRequestExit ()
 {
     GEngineLoop.RequestExit( "Event: Application exit requested" );
 }
+
+} // namespace LumenEngine

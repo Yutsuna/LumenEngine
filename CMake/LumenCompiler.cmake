@@ -31,6 +31,7 @@ target_compile_options(LumenCompiler INTERFACE
         -Wdouble-promotion
         -Wformat=2
         -Wimplicit-fallthrough
+        -Wno-missing-braces
         -Werror
     >
     $<${IS_MSVC}:

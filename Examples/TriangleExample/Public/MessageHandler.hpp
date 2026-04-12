@@ -10,7 +10,7 @@
 namespace LumenEngine
 {
 
-class FBaseExampleMessageHandler final : public FGenericApplicationMessageHandler
+class FTriangleExampleMessageHandler final : public FGenericApplicationMessageHandler
 {
 public:
 
