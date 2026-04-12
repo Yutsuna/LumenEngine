@@ -4,7 +4,7 @@ from invoke import (
 )
 
 from LumenBuild.Tasks.Build import (
-    Build as FBuildDebug,
+    BuildDebug as FBuildDebug,
     BuildRelease as FBuildRelease,
     BuildHelp as FBuildHelp,
 )
