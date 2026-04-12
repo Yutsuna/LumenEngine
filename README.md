@@ -73,11 +73,18 @@ Alternatively, ensure you have the following installed:
 
 ### Building the project
 
-We recommand to use the [**Lumen Building Script**](./Scripts/LumenBuild.bash).
+We recommend using the [**Lumen Build System**](./Scripts/LumenBuild/Tasks.py).
+The script will be automatically loaded in your environment when you run `nix develop` or `nix shell`.
 
 Usage:
 ```bash
 lumen help
+```
+
+Otherwise, you can build the project manually using CMake:
+
+```bash
+mkdir -p Build;cd Build;cmake .. -G Ninja; ninja
 ```
 
 ## License
