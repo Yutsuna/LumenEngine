@@ -1,8 +1,11 @@
 from invoke import task
 
 from LumenBuild import CMake as FCMake
-from LumenBuild.Constants import BUILD_TYPE_DEBUG, BUILD_TYPE_RELEASE
-from LumenBuild.Constants import EAnsiColor as C
+from LumenBuild.Constants import (
+    BUILD_TYPE_DEBUG,
+    BUILD_TYPE_RELEASE,
+    EAnsiColor as C,
+)
 from LumenBuild.Utils import Log
 
 

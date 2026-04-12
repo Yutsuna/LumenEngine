@@ -11,7 +11,7 @@ SUCCESS_CODE = 0
 # Paths
 # ---------------------------------------------------------------------------
 
-ROOT_DIR: Path = Path(__file__).resolve().parents[1]
+ROOT_DIR: Path = Path(__file__).resolve().parents[2]
 BUILD_DIR: Path = ROOT_DIR / "Build"
 SOURCE_DIR: Path = ROOT_DIR / "LumenEngine" / "Source"
 
@@ -46,11 +46,11 @@ SANITIZER_ALIASES: dict[str, str] = {
 CLANG_FORMAT_EXTENSIONS = ("*.cpp", "*.hpp", "*.h", "*.cxx", "*.cc")
 
 # ---------------------------------------------------------------------------
-# Colours (ANSI)
+# Colours
 # ---------------------------------------------------------------------------
 
 
-class EAnsiColor:
+class EAnsiColor():
     RESET = "\033[0m"
     BOLD = "\033[1m"
     RED = "\033[91m"

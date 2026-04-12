@@ -3,7 +3,7 @@ from __future__ import annotations
 from invoke import task
 
 from LumenBuild import CMake as FCMake
-from LumenBuild.Constants import BUILD_TYPE_DEBUG, C
+from LumenBuild.Constants import BUILD_TYPE_DEBUG, EAnsiColor as C
 from LumenBuild.Utils import Log
 
 

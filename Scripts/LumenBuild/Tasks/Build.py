@@ -6,8 +6,8 @@ from LumenBuild import CMake as FCMake
 from LumenBuild.Constants import (
     BUILD_TYPE_DEBUG,
     BUILD_TYPE_RELEASE,
-    C,
     SANITIZER_FLAGS,
+    EAnsiColor as C,
 )
 from LumenBuild.Utils import Log
 

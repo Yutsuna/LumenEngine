@@ -1,6 +1,6 @@
 from invoke import task
 
-from LumenBuild.Constants import C, SANITIZER_FLAGS
+from LumenBuild.Constants import EAnsiColor as C, SANITIZER_FLAGS
 
 
 @task(name="help")
