@@ -144,7 +144,7 @@ namespace Maths
          * @param Other The Vec to convert from
          * @return A new Vec with component values converted from Other
          */
-        template <typename OtherType> constexpr explicit TVec ( const TVec<OtherType, Dimension> &Other ) noexcept;
+        template <typename OtherType> constexpr explicit TVec( const TVec<OtherType, Dimension> &Other ) noexcept;
 
         template <typename... Arguments>
             requires( sizeof...( Arguments ) == Dimension && ( std::is_convertible_v<Arguments, Type> && ... ) )
