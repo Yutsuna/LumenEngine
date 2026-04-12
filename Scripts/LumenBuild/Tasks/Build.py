@@ -21,7 +21,7 @@ from LumenBuild.Utils import Log
     },
     aliases=("d",),
 )
-def Build(
+def BuildDebug(
     ctx,
     sanitizer: str = "",
     target: str = "",
