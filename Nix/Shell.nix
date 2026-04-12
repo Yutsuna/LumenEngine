@@ -19,12 +19,13 @@ pkgs.mkShell {
     lumenCli
     pkgs.vulkan-tools
     pkgs.vulkan-validation-layers
+    pkgs.clang-tools
   ];
 
   shellHook = ''
     export CPATH="${vmaInclude}:$CPATH"
     export CPLUS_INCLUDE_PATH="${vmaInclude}:$CPLUS_INCLUDE_PATH"
-    
+
     export LD_LIBRARY_PATH="${vulkanLibs}:$LD_LIBRARY_PATH"
     export VK_LAYER_PATH="${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d"
   '';
