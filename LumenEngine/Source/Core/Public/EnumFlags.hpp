@@ -6,6 +6,7 @@
 #pragma once
 
 #define LUMEN_ENUM_FLAGS( EnumType )                                                                                                                                     \
+    /** Binary operators for enum flags */                                                                                                                               \
     [[nodiscard]] constexpr inline EnumType operator|( EnumType lhs, EnumType rhs )                                                                                      \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
@@ -26,21 +27,23 @@
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<EnumType>( ~static_cast<UnderlyingType>( value ) );                                                                                           \
     }                                                                                                                                                                    \
-    [[nodiscard]] constexpr inline EnumType &operator|=( EnumType &lhs, EnumType rhs )                                                                                   \
+    /** Assignment operators for enum flags */                                                                                                                           \
+    constexpr inline EnumType &operator|=( EnumType &lhs, EnumType rhs )                                                                                                 \
     {                                                                                                                                                                    \
         lhs = lhs | rhs;                                                                                                                                                 \
         return lhs;                                                                                                                                                      \
     }                                                                                                                                                                    \
-    [[nodiscard]] constexpr inline EnumType &operator&=( EnumType &lhs, EnumType rhs )                                                                                   \
+    constexpr inline EnumType &operator&=( EnumType &lhs, EnumType rhs )                                                                                                 \
     {                                                                                                                                                                    \
         lhs = lhs & rhs;                                                                                                                                                 \
         return lhs;                                                                                                                                                      \
     }                                                                                                                                                                    \
-    [[nodiscard]] constexpr inline EnumType &operator^=( EnumType &lhs, EnumType rhs )                                                                                   \
+    constexpr inline EnumType &operator^=( EnumType &lhs, EnumType rhs )                                                                                                 \
     {                                                                                                                                                                    \
         lhs = lhs ^ rhs;                                                                                                                                                 \
         return lhs;                                                                                                                                                      \
     }                                                                                                                                                                    \
+    /** Logical comparison operators for enum flags */                                                                                                                   \
     [[nodiscard]] constexpr inline bool operator!( EnumType value )                                                                                                      \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
