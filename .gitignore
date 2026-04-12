@@ -11,5 +11,6 @@ Build/
 compile_commands.json
 *.spv
 *.log
+*.md
 
 result
