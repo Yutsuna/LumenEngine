@@ -84,6 +84,10 @@ namespace Maths
         static constexpr TMatrix<Type, 4, 4> Perspective ( Type InFieldOfViewRadians, Type InAspectRatio, Type InNearPlane, Type InFarPlane ) noexcept
             requires( Rows == 4 && Columns == 4 );
 
+        /** @brief Create an orthographic projection matrix (Vulkan clip space) */
+        static constexpr TMatrix<Type, 4, 4> Orthographic ( Type InWidth, Type InHeight, Type InNearPlane, Type InFarPlane ) noexcept
+            requires( Rows == 4 && Columns == 4 );
+
         /** @brief Create a look-at view matrix */
         static constexpr TMatrix<Type, 4, 4> LookAt ( const TVec<Type, 3> &InEye, const TVec<Type, 3> &InTarget, const TVec<Type, 3> &InUp ) noexcept
             requires( Rows == 4 && Columns == 4 );

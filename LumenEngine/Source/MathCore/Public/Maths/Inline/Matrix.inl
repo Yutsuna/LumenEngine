@@ -191,6 +191,23 @@ namespace Maths
 
     template <typename Type, USize Rows, USize Columns>
         requires CMatrixDimension<Rows, Columns>
+    constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Orthographic ( Type InWidth, Type InHeight, Type InNearPlane, Type InFarPlane ) noexcept
+        requires( Rows == 4 && Columns == 4 )
+    {
+        TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
+
+        Result[0].Data[0] = static_cast<Type>( 2 ) / InWidth;
+        Result[1].Data[1] = static_cast<Type>( -2 ) / InHeight;
+        Result[2].Data[2] = static_cast<Type>( 1 ) / ( InFarPlane - InNearPlane );
+        Result[3].Data[3] = static_cast<Type>( 1 );
+
+        Result[3].Data[2] = -InNearPlane / ( InFarPlane - InNearPlane );
+
+        return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+        requires CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::LookAt ( const TVec<Type, 3> &InEye, const TVec<Type, 3> &InTarget, const TVec<Type, 3> &InUp ) noexcept
         requires( Rows == 4 && Columns == 4 )
     {
