@@ -27,7 +27,6 @@ namespace Maths
         Perspective, /**< Standard 3D projection with depth foreshortening. */
         Orthographic /**< Parallel projection for 2D, UI, or technical 3D views. */
     };
-    LUMEN_ENUM_FLAGS( ECameraProjectionMode )
 
     enum class ECameraDirtyFlags : UInt8
     {
@@ -52,26 +51,38 @@ namespace Maths
     public:
 
         /** @brief Sets the perspective projection parameters. */
-        void SetPerspective ( const Float32 InFovDegrees, const Float32 InAspectRatio, const Float32 InNear, const Float32 InFar ) noexcept;
+        inline void SetPerspective ( const Float32 InFovDegrees, const Float32 InAspectRatio, const Float32 InNear, const Float32 InFar ) noexcept;
 
         /** @brief Sets the camera's view using LookAt logic. */
-        void LookAt ( const FVec3f &InEye, const FVec3f &InTarget, const FVec3f &InUp = { 0.0F, -1.0F, 0.0F } ) noexcept;
+        inline void LookAt ( const FVec3f &InEye, const FVec3f &InTarget, const FVec3f &InUp = { 0.0F, -1.0F, 0.0F } ) noexcept;
 
         /** @brief Updates the internal matrices if dirty. */
-        void Update () noexcept;
+        void Tick ( const Float64 InDeltaTime ) noexcept;
 
     public:
 
         /** @brief Returns the view matrix. */
-        [[nodiscard]] const FMatrix4x4f &GetViewMatrix () const noexcept;
+        [[nodiscard]] inline const FMatrix4x4f &GetViewMatrix () const noexcept;
 
         /** @brief Returns the projection matrix. */
-        [[nodiscard]] const FMatrix4x4f &GetProjectionMatrix () const noexcept;
+        [[nodiscard]] inline const FMatrix4x4f &GetProjectionMatrix () const noexcept;
 
         /** @brief Combined View-Projection matrix. */
-        [[nodiscard]] FMatrix4x4f GetViewProjectionMatrix () const noexcept;
+        [[nodiscard]] inline FMatrix4x4f GetViewProjectionMatrix () const noexcept;
 
     private:
+
+        void UpdateMatrix () noexcept;
+
+        void RecalculateViewMatrix () noexcept;
+        void RecalculateProjectionMatrix () noexcept;
+        void RecalculateViewProjectionMatrix () noexcept;
+
+    private:
+
+        FMatrix4x4f ViewMatrix           = FMatrix4x4f::Identity();
+        FMatrix4x4f ProjectionMatrix     = FMatrix4x4f::Identity();
+        FMatrix4x4f ViewProjectionMatrix = FMatrix4x4f::Identity();
 
         FVec3f Position{ 0.0F, 0.0F, -3.0F };
         FVec3f Target{ 0.0F, 0.0F, 0.0F };
@@ -79,13 +90,12 @@ namespace Maths
 
         Float32 FieldOfView{ 60.0F }, AspectRatio{ 1.77F }, NearPlane{ 0.1F }, FarPlane{ 100.0F };
 
-        FMatrix4x4f ViewMatrix           = FMatrix4x4f::Identity();
-        FMatrix4x4f ProjectionMatrix     = FMatrix4x4f::Identity();
-        FMatrix4x4f ViewProjectionMatrix = FMatrix4x4f::Identity();
-
-        ECameraDirtyFlags DirtyFlags = ECameraDirtyFlags::All;
+        ECameraProjectionMode ProjectionMode = ECameraProjectionMode::Perspective;
+        ECameraDirtyFlags DirtyFlags         = ECameraDirtyFlags::All;
     };
 
 } // namespace Maths
 
 } // namespace LumenEngine
+
+#include "Inline/Camera.inl"

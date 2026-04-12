@@ -4,59 +4,65 @@
  */
 
 #include "Maths/Camera.hpp"
+#include "Maths/Macros.hpp"
 #include "Maths/Matrix.hpp"
 
-void LumenEngine::Maths::FCamera::SetPerspective ( const Float32 InFovDegrees, const Float32 InAspectRatio, const Float32 InNear, const Float32 InFar ) noexcept
-{
-    FieldOfView = InFovDegrees;
-    AspectRatio = InAspectRatio;
-    NearPlane   = InNear;
-    FarPlane    = InFar;
-    DirtyFlags |= ECameraDirtyFlags::Projection | ECameraDirtyFlags::ViewProjection;
-}
+/**
+ * Public Methods
+ */
 
-void LumenEngine::Maths::FCamera::LookAt ( const FVec3f &InEye, const FVec3f &InTarget, const FVec3f &InUp ) noexcept
+void LumenEngine::Maths::FCamera::Tick ( const Float64 InDeltaTime ) noexcept
 {
-    Position = InEye;
-    Target   = InTarget;
-    UpVector = InUp;
-    DirtyFlags |= ECameraDirtyFlags::View | ECameraDirtyFlags::ViewProjection;
-}
-
-void LumenEngine::Maths::FCamera::Update () noexcept
-{
+    ( void )InDeltaTime;
     if ( DirtyFlags == ECameraDirtyFlags::None ) [[likely]]
     {
         return;
     }
 
+    UpdateMatrix();
+}
+
+/**
+ * Private Methods
+ */
+
+void LumenEngine::Maths::FCamera::UpdateMatrix () noexcept
+{
     if ( Bool( DirtyFlags & ECameraDirtyFlags::View ) )
     {
-        ViewMatrix = FMatrix4x4f::LookAt( Position, Target, UpVector );
+        RecalculateViewMatrix();
     }
     if ( Bool( DirtyFlags & ECameraDirtyFlags::Projection ) )
     {
-        ProjectionMatrix = FMatrix4x4f::Perspective( FieldOfView, AspectRatio, NearPlane, FarPlane );
+        RecalculateProjectionMatrix();
     }
     if ( Bool( DirtyFlags & ECameraDirtyFlags::ViewProjection ) )
     {
-        ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
+        RecalculateViewProjectionMatrix();
     }
 
     DirtyFlags = ECameraDirtyFlags::None;
 }
 
-const LumenEngine::Maths::FMatrix4x4f &LumenEngine::Maths::FCamera::GetViewMatrix () const noexcept
+void LumenEngine::Maths::FCamera::RecalculateViewMatrix () noexcept
 {
-    return ViewMatrix;
+    ViewMatrix = FMatrix4x4f::LookAt( Position, Target, UpVector );
 }
 
-const LumenEngine::Maths::FMatrix4x4f &LumenEngine::Maths::FCamera::GetProjectionMatrix () const noexcept
+void LumenEngine::Maths::FCamera::RecalculateProjectionMatrix () noexcept
 {
-    return ProjectionMatrix;
+    if ( ProjectionMode == ECameraProjectionMode::Perspective )
+    {
+        const Float32 FovRadians = FieldOfView * static_cast<Float32>( DegToRad );
+        ProjectionMatrix         = FMatrix4x4f::Perspective( FovRadians, AspectRatio, NearPlane, FarPlane );
+    }
+    else
+    {
+        ProjectionMatrix = FMatrix4x4f::Orthographic( FieldOfView, AspectRatio, NearPlane, FarPlane );
+    }
 }
 
-LumenEngine::Maths::FMatrix4x4f LumenEngine::Maths::FCamera::GetViewProjectionMatrix () const noexcept
+void LumenEngine::Maths::FCamera::RecalculateViewProjectionMatrix () noexcept
 {
-    return ViewProjectionMatrix;
+    ViewProjectionMatrix = ProjectionMatrix * ViewMatrix;
 }
