@@ -13,6 +13,8 @@ compile_commands.json
 *.log
 *.md
 
+!README.md
+
 result
 
 __pycache__/
