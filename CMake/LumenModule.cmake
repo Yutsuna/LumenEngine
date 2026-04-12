@@ -81,6 +81,40 @@ function(LumenModule)
 
 ###########################################################
 
+    if(LUMEN_ENABLE_TESTING)
+        
+        file(GLOB_RECURSE FUNC_TEST_SOURCES 
+            CONFIGURE_DEPENDS 
+            "${CMAKE_CURRENT_SOURCE_DIR}/Tests/Functional/*.cpp"
+        )
+        if(FUNC_TEST_SOURCES)
+            LumenAddTestTarget(
+                NAME "${M_NAME}_Func"
+                MODULE_TARGET ${M_NAME}
+                TYPE "Functional"
+                SOURCES ${FUNC_TEST_SOURCES}
+                DEPS ${M_DEPS}
+            )
+        endif()
+
+        file(GLOB_RECURSE INTEG_TEST_SOURCES 
+            CONFIGURE_DEPENDS 
+            "${CMAKE_CURRENT_SOURCE_DIR}/Tests/Integration/*.cpp"
+        )
+        if(INTEG_TEST_SOURCES)
+            LumenAddTestTarget(
+                NAME "${M_NAME}_Integ"
+                MODULE_TARGET ${M_NAME}
+                TYPE "Integration"
+                SOURCES ${INTEG_TEST_SOURCES}
+                DEPS ${M_DEPS}
+            )
+        endif()
+
+    endif()
+
+###########################################################
+
     message(STATUS "[Lumen] Module: ${M_NAME}")
 
 endfunction()
