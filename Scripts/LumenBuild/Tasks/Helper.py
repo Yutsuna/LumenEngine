@@ -13,30 +13,30 @@ def PrintHelp(ctx):
 ╚══════════════════════════════════════════════════════╝{C.RESET}
 
 {C.BOLD}USAGE{C.RESET}
-  lumen <command> [options]
+  lumen <command>[.<subcommand>] [options]
 
 {C.BOLD}BUILD COMMANDS{C.RESET}
 
-  {C.GREEN}lumen build debug{C.RESET}
+  {C.GREEN}lumen build.debug{C.RESET}  (alias: {C.GREEN}build.d{C.RESET})
       Configure + compile in Debug mode.
 
-  {C.GREEN}lumen build debug --sanitizer <s>{C.RESET}
+  {C.GREEN}lumen build.debug --sanitizer <s>{C.RESET}
       Debug build with a sanitizer.
       Available: {C.YELLOW}{sanitizers}{C.RESET}
 
-  {C.GREEN}lumen build debug --target <Target>{C.RESET}
+  {C.GREEN}lumen build.debug --target <Target>{C.RESET}
       Build a single CMake target (e.g. Core, Renderer).
 
-  {C.GREEN}lumen build debug --testing{C.RESET}
+  {C.GREEN}lumen build.debug --testing{C.RESET}
       Enable test targets (requires GoogleTest).
 
-  {C.GREEN}lumen build release{C.RESET}
+  {C.GREEN}lumen build.release{C.RESET}  (alias: {C.GREEN}build.r{C.RESET})
       Configure + compile in Release mode (-O3).
 
-  {C.GREEN}lumen build release --lto{C.RESET}
+  {C.GREEN}lumen build.release --lto{C.RESET}
       Release build with Link-Time Optimisation.
 
-  {C.GREEN}lumen build help{C.RESET}
+  {C.GREEN}lumen build.help{C.RESET}
       Detailed build subcommand reference.
 
 {C.BOLD}OTHER COMMANDS{C.RESET}
