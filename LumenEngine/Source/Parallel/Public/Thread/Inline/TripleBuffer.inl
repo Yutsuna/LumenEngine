@@ -37,7 +37,7 @@ constexpr LumenEngine::Parallel::Internal::FBufferFlag::Type LumenEngine::Parall
     const FBufferFlag::Type ReaderBit = ReaderIndex << ReaderShift ;
     const FBufferFlag::Type WriterBit = WriterIndex << WriterShift ;
     const FBufferFlag::Type TempBit   = TempIndex << TempShift ;
-    const FBufferFlag::Type DirtyBit  = bIsDirty ? Dirty  : 0U;
+    const FBufferFlag::Type DirtyBit  = bIsDirty ? Dirty : static_cast<FBufferFlag::Type>( 0U );
 
     return ReaderBit | WriterBit | TempBit | DirtyBit ;
 }
@@ -93,7 +93,7 @@ template <typename BufferType> const BufferType &LumenEngine::Parallel::TTripleB
 
 template <typename BufferType> void LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapReadBuffers () noexcept
 {
-    const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_acquire );
+    Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_acquire );
 
     if ( not Internal::FBufferFlag::IsDirty( CurrentFlags ) )
     {
@@ -118,7 +118,7 @@ template <typename BufferType> void LumenEngine::Parallel::TTripleBuffer<BufferT
 
 template <typename BufferType> void LumenEngine::Parallel::TTripleBuffer<BufferType>::WriteBuffer ( const BufferType &InData )
 {
-    TLockGuard<FMutex> LockGuard{ this };
+    TLockGuard<FMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -131,7 +131,7 @@ template <typename BufferType> void LumenEngine::Parallel::TTripleBuffer<BufferT
 template <typename BufferType>
 void LumenEngine::Parallel::TTripleBuffer<BufferType>::WriteBuffer ( BufferType &&InData ) noexcept( std::is_nothrow_move_assignable_v<BufferType> )
 {
-    TLockGuard<FMutex> LockGuard{ this };
+    TLockGuard<FMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -143,11 +143,11 @@ void LumenEngine::Parallel::TTripleBuffer<BufferType>::WriteBuffer ( BufferType 
 
 template <typename BufferType> void LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapWriteBuffers () noexcept
 {
-    TLockGuard<FMutex> LockGuard{ this };
+    TLockGuard<FMutex> LockGuard{ WriteMutex };
     PublishWrite();
 }
 
-template <typename BufferType> LumenEngine::UInt8 LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapReadWithTempFlags ( const UInt8 Flags ) const noexcept
+template <typename BufferType> LumenEngine::Parallel::Internal::FBufferFlag::Type LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapReadWithTempFlags ( const Internal::FBufferFlag::Type Flags ) const noexcept
 {
     /**
      * INFO: Reader takes the Temp slot, Temp takes the old Reader slot.
@@ -160,7 +160,7 @@ template <typename BufferType> LumenEngine::UInt8 LumenEngine::Parallel::TTriple
         /* bIsDirty  */ false );
 }
 
-template <typename BufferType> LumenEngine::UInt8 LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapWriteWithTempFlags ( const UInt8 Flags ) const noexcept
+template <typename BufferType> LumenEngine::Parallel::Internal::FBufferFlag::Type LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapWriteWithTempFlags ( const Internal::FBufferFlag::Type Flags ) const noexcept
 {
     /**
      * INFO: Writer takes the Temp slot, Temp takes the old Writer slot.
@@ -175,7 +175,7 @@ template <typename BufferType> LumenEngine::UInt8 LumenEngine::Parallel::TTriple
 
 template <typename BufferType> void LumenEngine::Parallel::TTripleBuffer<BufferType>::PublishWrite () noexcept
 {
-    const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
+    Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
 
     /**
      * INFO:
