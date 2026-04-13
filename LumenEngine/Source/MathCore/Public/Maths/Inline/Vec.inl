@@ -175,6 +175,7 @@ namespace Maths
         requires CVecDimension<Type, Dimension>
     constexpr TVec<Type, Dimension> TVec<Type, Dimension>::operator/( Type Scalar ) const noexcept
     {
+        [[assume( Scalar != static_cast<Type>( 0 ) )]];
         TVec Result;
         const Type InvScalar = static_cast<Type>( 1 ) / Scalar;
         for ( USize Index = 0; Index < Dimension; ++Index )
