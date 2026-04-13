@@ -62,7 +62,7 @@ namespace Maths
 
 } // namespace LumenEngine
 
-#include "Inline/SIMDNeon.inl"
+    #include "Inline/SIMDNeon.inl"
 
 #else
     #error "SIMDNeon.hpp should only be included on ARM64 platforms with Neon support."

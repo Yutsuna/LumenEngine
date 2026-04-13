@@ -68,7 +68,7 @@ namespace Maths
 
 } // namespace LumenEngine
 
-#include "Inline/SIMDSSE.inl"
+    #include "Inline/SIMDSSE.inl"
 
 #else
     #error "SIMDSSE.hpp should only be included on x86 platforms with SSE support."
