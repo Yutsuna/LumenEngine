@@ -6,4 +6,4 @@
 #include "Actor/ActorTypes.hpp"
 #include "Logging/Logger.hpp"
 
-LUMEN_LOG_DEFINE_CATEGORY( LogActor, "Actor" )
+const LumenEngine::FLogCategory LumenEngine::LogActor( "Actor" );

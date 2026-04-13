@@ -21,6 +21,8 @@ struct FMessage
     UInt32 Type = 0U;
     FAny Payload;
     ActorID Sender = 0ULL;
+
+    static FMessage Make ( UInt32 InType, ActorID InSender, FAny InPayload ) noexcept;
 };
 
 } // namespace LumenEngine

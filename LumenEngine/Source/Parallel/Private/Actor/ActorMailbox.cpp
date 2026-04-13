@@ -43,7 +43,7 @@ void LumenEngine::FMailBox::Push ( FMessage InMessage ) noexcept
         LUMEN_LOG_ERROR( LogActor, "FMailBox::Push: failed to allocate node for new message" );
         return;
     }
-    NewNode->Message     = std::move( InMessage );
+    NewNode->Message = std::move( InMessage );
 
     /**
      * INFO: exchange is the wait-free heart of Vyukov's algorithm.
