@@ -165,10 +165,10 @@ namespace Maths
         [[nodiscard]] constexpr TVec operator*( Type Scalar ) const noexcept;
         [[nodiscard]] constexpr TVec operator/( Type Scalar ) const noexcept;
 
-        [[nodiscard]] constexpr TVec &operator+=( const TVec &Other ) noexcept;
-        [[nodiscard]] constexpr TVec &operator-=( const TVec &Other ) noexcept;
-        [[nodiscard]] constexpr TVec &operator*=( const TVec &Other ) noexcept;
-        [[nodiscard]] constexpr TVec &operator/=( const TVec &Other ) noexcept;
+        constexpr TVec &operator+=( const TVec &Other ) noexcept;
+        constexpr TVec &operator-=( const TVec &Other ) noexcept;
+        constexpr TVec &operator*=( const TVec &Other ) noexcept;
+        constexpr TVec &operator/=( const TVec &Other ) noexcept;
 
         [[nodiscard]] constexpr TVec operator-() const noexcept;
 
