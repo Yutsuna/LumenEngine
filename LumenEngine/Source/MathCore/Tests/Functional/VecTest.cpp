@@ -20,7 +20,7 @@ protected:
     static constexpr LumenEngine::Float32 Epsilon = 1e-6F;
 };
 
-}
+} // namespace
 
 TEST_F( FVecTest, DefaultConstructor )
 {
@@ -127,7 +127,7 @@ TEST_F( FVecTest, DotProduct )
     const LumenEngine::Maths::FVec3f Vec2( 4.0F, 5.0F, 6.0F );
     LumenEngine::Float32 DotValue = Vec1.Dot( Vec2 );
 
-    EXPECT_EQ( DotValue, (1.0F * 4.0F) + (2.0F * 5.0F) + (3.0F * 6.0F) );
+    EXPECT_EQ( DotValue, ( 1.0F * 4.0F ) + ( 2.0F * 5.0F ) + ( 3.0F * 6.0F ) );
 }
 
 TEST_F( FVecTest, CrossProduct )
