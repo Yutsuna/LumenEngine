@@ -10,6 +10,14 @@ ProcessorCount(NPROC)
 
 ###########################################################
 
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND)
+    set(CMAKE_CXX_COMPILER_LAUNCHER ccache)
+    message(STATUS "[Lumen] Compiler: ccache enabled")
+endif()
+
+###########################################################
+
 find_program(MOLD_LINKER mold)
 find_program(LLD_LINKER  lld)
 find_program(GOLD_LINKER gold)
@@ -29,7 +37,7 @@ endif()
 
 ###########################################################
 
-option(LUMEN_ENABLE_TESTING "Enable LumenEngine test targets" OFF)
-option(LUMEN_ENABLE_ASAN "Enable AddressSanitizer (Debug only)" OFF)
-option(LUMEN_ENABLE_UBSAN "Enable UndefinedBehaviorSanitizer (Debug only)" OFF)
-option(LUMEN_ENABLE_TSAN "Enable ThreadSanitizer (Debug only)" OFF)
+option(LUMEN_ENABLE_TESTING     "Enable LumenEngine test targets"       OFF)
+option(LUMEN_ENABLE_ASAN        "Enable AddressSanitizer (Debug only)"  OFF)
+option(LUMEN_ENABLE_UBSAN       "Enable UndefinedBehaviorSanitizer"     OFF)
+option(LUMEN_ENABLE_TSAN        "Enable ThreadSanitizer (Debug only)"   OFF)
