@@ -27,9 +27,9 @@ namespace Maths
     {
 
 #if LUMEN_SIMD_SSE
-        using FSimdFloat = FSimdRegisterF32;
+        using FSimdFloat = FSSEFloat32x4;
 #elif LUMEN_SIMD_NEON
-        using FSimdFloat = FSimdRegisterF32;
+        using FSimdFloat = FNeonFloat32x4;
 #endif
 
     } // namespace SIMD
