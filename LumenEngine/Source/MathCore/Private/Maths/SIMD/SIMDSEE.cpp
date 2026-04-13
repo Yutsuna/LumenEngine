@@ -11,21 +11,17 @@
 
 void LumenEngine::Maths::SIMD::MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept
 {
-    [[assume( ( reinterpret_cast<UPtr>( InLeft ) & 15 ) == 0 )]];
-    [[assume( ( reinterpret_cast<UPtr>( InRight ) & 15 ) == 0 )]];
-    [[assume( ( reinterpret_cast<UPtr>( OutResult ) & 15 ) == 0 )]];
-
-    const __m128 L0 = _mm_load_ps( InLeft + 0 );
-    const __m128 L1 = _mm_load_ps( InLeft + 4 );
-    const __m128 L2 = _mm_load_ps( InLeft + 8 );
-    const __m128 L3 = _mm_load_ps( InLeft + 12 );
+    const __m128 L0 = _mm_loadu_ps( InLeft + 0 );
+    const __m128 L1 = _mm_loadu_ps( InLeft + 4 );
+    const __m128 L2 = _mm_loadu_ps( InLeft + 8 );
+    const __m128 L3 = _mm_loadu_ps( InLeft + 12 );
 
     for ( USize Idx = 0; Idx < 4; ++Idx )
     {
         /**
          * Load the current column of the right matrix
          */
-        const __m128 RCol = _mm_load_ps( InRight + ( Idx * 4 ) );
+        const __m128 RCol = _mm_loadu_ps( InRight + ( Idx * 4 ) );
 
         const __m128 V0 = _mm_shuffle_ps( RCol, RCol, _MM_SHUFFLE( 0, 0, 0, 0 ) );
         const __m128 V1 = _mm_shuffle_ps( RCol, RCol, _MM_SHUFFLE( 1, 1, 1, 1 ) );
@@ -40,7 +36,7 @@ void LumenEngine::Maths::SIMD::MatrixMul4x4 ( const Float32 *InLeft, const Float
         Res        = _mm_add_ps( Res, _mm_mul_ps( V2, L2 ) );
         Res        = _mm_add_ps( Res, _mm_mul_ps( V3, L3 ) );
 
-        _mm_store_ps( OutResult + ( Idx * 4 ), Res );
+        _mm_storeu_ps( OutResult + ( Idx * 4 ), Res );
     }
 }
 
@@ -50,9 +46,9 @@ void LumenEngine::Maths::SIMD::MatrixScalarMul4x4 ( const Float32 *InMatrix, con
 
     for ( USize Idx = 0; Idx < 4; ++Idx )
     {
-        const __m128 MatCol = _mm_load_ps( InMatrix + ( Idx * 4 ) );
+        const __m128 MatCol = _mm_loadu_ps( InMatrix + ( Idx * 4 ) );
         const __m128 Res    = _mm_mul_ps( MatCol, ScalarVec );
-        _mm_store_ps( OutResult + ( Idx * 4 ), Res );
+        _mm_storeu_ps( OutResult + ( Idx * 4 ), Res );
     }
 }
 
