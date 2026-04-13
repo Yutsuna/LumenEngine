@@ -26,10 +26,12 @@ namespace Maths
     namespace SIMD
     {
 
-#if LUMEN_SIMD_SSE
+#if defined( LUMEN_SIMD_SSE )
         using FSimdFloat = FSSEFloat32x4;
-#elif LUMEN_SIMD_NEON
+#elif defined( LUMEN_SIMD_NEON )
         using FSimdFloat = FNeonFloat32x4;
+#else
+        using FSimdFloat = FGenericFloat32x4;
 #endif
 
     } // namespace SIMD
