@@ -13,6 +13,7 @@ LumenAddModules(
     Core
     MathCore
     Parallel
+    Engine
     ApplicationCore
     RHI
     VulkanRHI
