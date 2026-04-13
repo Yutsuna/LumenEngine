@@ -46,4 +46,18 @@ private:
     FAtomicFlag MutexFlag = ATOMIC_FLAG_INIT; /**< Atomic flag for lock state. */
 };
 
+template <typename MutexType> class TLockGuard final : public FNonCopyable, public FNonMovable
+{
+public:
+
+    explicit TLockGuard ( MutexType &InMutex ) noexcept;
+    ~TLockGuard () noexcept;
+
+private:
+
+    MutexType &Mutex;
+};
+
 } // namespace LumenEngine
+
+#include "Inline/Mutex.inl"
