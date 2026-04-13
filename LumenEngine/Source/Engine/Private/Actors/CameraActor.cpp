@@ -28,12 +28,12 @@ void LumenEngine::Engine::FCameraActor::Receive ( FMessage InMessage )
     }
 }
 
-void LumenEngine::Engine::FCameraActor::HandleMessage ( const FMessage& /*InMessage*/ )
+void LumenEngine::Engine::FCameraActor::HandleMessage ( const FMessage & /*InMessage*/ )
 {
     /** NOTE: Override in derived classes for specific logic (like InputAxis handling) */
 }
 
-const LumenEngine::Maths::FCamera& LumenEngine::Engine::FCameraActor::GetCamera () const noexcept
+const LumenEngine::Maths::FCamera &LumenEngine::Engine::FCameraActor::GetCamera () const noexcept
 {
     return Camera;
 }

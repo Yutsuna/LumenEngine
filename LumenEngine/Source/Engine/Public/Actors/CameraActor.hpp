@@ -16,7 +16,7 @@ namespace Engine
 
     /**
      * @class FCameraActor
-     * @brief Abstract base class for all camera actors. 
+     * @brief Abstract base class for all camera actors.
      * @details Encapsulates the Maths::FCamera and provides base message handling.
      */
     class LUMEN_ENGINE_API FCameraActor : public AActor
@@ -24,7 +24,7 @@ namespace Engine
     public:
 
         explicit FCameraActor ( const ActorID InId ) noexcept;
-        ~FCameraActor ()override = default;
+        ~FCameraActor () override = default;
 
     public:
 
@@ -32,7 +32,7 @@ namespace Engine
         void Receive ( FMessage InMessage ) override;
 
         /** @brief Retrieve the mathematical camera state. */
-        [[nodiscard]] const Maths::FCamera& GetCamera () const noexcept;
+        [[nodiscard]] const Maths::FCamera &GetCamera () const noexcept;
 
     protected:
 
@@ -40,13 +40,13 @@ namespace Engine
         virtual void Tick ( const Float64 InDeltaTime ) = 0;
 
         /** @brief Called for unhandled messages. Can be overridden. */
-        virtual void HandleMessage ( const FMessage& InMessage );
-    
+        virtual void HandleMessage ( const FMessage &InMessage );
+
     protected:
 
         Maths::FCamera Camera;
-        
-        Maths::FVec3f Position { 0.0F, 0.0F, 0.0F };
+
+        Maths::FVec3f Position{ 0.0F, 0.0F, 0.0F };
         Float32 Pitch = 0.0F;
         Float32 Yaw   = 0.0F;
     };
