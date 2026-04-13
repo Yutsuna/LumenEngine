@@ -141,8 +141,8 @@ namespace Parallel
 
     private:
 
-        [[nodiscard]] UInt8 SwapReadWithTempFlags ( UInt8 Flags ) const noexcept;
-        [[nodiscard]] UInt8 SwapWriteWithTempFlags ( UInt8 Flags ) const noexcept;
+        [[nodiscard]] Internal::FBufferFlag::Type SwapReadWithTempFlags ( Internal::FBufferFlag::Type Flags ) const noexcept;
+        [[nodiscard]] Internal::FBufferFlag::Type SwapWriteWithTempFlags ( Internal::FBufferFlag::Type Flags ) const noexcept;
 
         void PublishWrite () noexcept;
 

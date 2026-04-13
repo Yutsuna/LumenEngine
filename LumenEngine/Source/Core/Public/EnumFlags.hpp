@@ -27,6 +27,16 @@
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<EnumType>( ~static_cast<UnderlyingType>( value ) );                                                                                           \
     }                                                                                                                                                                    \
+    [[nodiscard]] static constexpr inline EnumType operator<<( EnumType value, int Shift ) noexcept                                                                      \
+    {                                                                                                                                                                    \
+        using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
+        return static_cast<EnumType>( static_cast<UnderlyingType>( value ) << Shift );                                                                                   \
+    }                                                                                                                                                                    \
+    [[nodiscard]] static constexpr inline EnumType operator>>( EnumType value, int Shift ) noexcept                                                                      \
+    {                                                                                                                                                                    \
+        using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
+        return static_cast<EnumType>( static_cast<UnderlyingType>( value ) >> Shift );                                                                                   \
+    }                                                                                                                                                                    \
     /** Assignment operators for enum flags */                                                                                                                           \
     static constexpr inline EnumType &operator|=( EnumType &Lhs, EnumType Rhs ) noexcept                                                                                 \
     {                                                                                                                                                                    \
