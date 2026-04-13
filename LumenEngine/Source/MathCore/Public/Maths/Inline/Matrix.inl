@@ -288,6 +288,45 @@ namespace Maths
         return Left * Right;
     }
 
+    template <typename Type, USize Rows, USize Inner, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &&Left, const TMatrix<Type, Inner, Columns> &Right ) noexcept
+    {
+        return Left * Right;
+    }
+
+    template <typename Type, USize Rows, USize Inner, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &&Left, const TMatrix<Type, Inner, Columns> &&Right ) noexcept
+    {
+        return Left * Right;
+    }
+
+    template <typename Type, USize Rows, USize Inner, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left, const Type Scalar ) noexcept
+    {
+        TMatrix<Type, Rows, Columns> Result;
+
+        if constexpr ( Concepts::CFloatingPoint<Type> and Concepts::CSquareMatrix<4, 4> )
+        {
+            SIMD::MatrixScalarMul4x4( 
+                reinterpret_cast<const Float32*>( &Left ), 
+                Scalar, 
+                reinterpret_cast<Float32*>( &Result ) 
+            );
+
+            return Result;}
+        else {
+        for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
+        {
+            for ( USize RowIndex = 0; RowIndex < Rows; ++RowIndex )
+            {
+                Result[ColIndex].Data[RowIndex] = Left[ColIndex].Data[RowIndex] * Scalar;
+            }
+        }
+    }
+        return Result;
+    }
+    
+
 } // namespace Maths
 
 } // namespace LumenEngine

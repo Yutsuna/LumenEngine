@@ -130,6 +130,19 @@ namespace Maths
     template <typename Type, USize Rows, USize Inner, USize Columns>
     constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left, const TMatrix<Type, Inner, Columns> &&Right ) noexcept;
 
+    /** @brief Matrix Multiplication with rvalue reference for the left operand */
+    template <typename Type, USize Rows, USize Inner, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &&Left, const TMatrix<Type, Inner, Columns> &Right ) noexcept;
+
+    /** @brief Matrix Multiplication with rvalue reference for both operands */
+    template <typename Type, USize Rows, USize Inner, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &&Left, const TMatrix<Type, Inner, Columns> &&Right ) noexcept;
+
+    /** @brief Matrix Multiplication with a scalar */
+    template <typename Type, USize Rows, USize Inner, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left, const Type Scalar ) noexcept;
+
+
 } // namespace Maths
 
 } // namespace LumenEngine
