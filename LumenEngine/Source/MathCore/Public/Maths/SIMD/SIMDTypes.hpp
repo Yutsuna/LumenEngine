@@ -39,6 +39,15 @@ namespace Maths
         using FSimdRegisterF32 = TSimdRegister<Float32>;
         using FSimdRegisterI32 = TSimdRegister<Int32>;
 
+        /**
+         * @struct FGenericFloat32x4
+         * @brief Fallback structure for platforms without native SIMD support.
+         */
+        struct alignas( 16 ) FGenericFloat32x4 final : public TSimdRegister<Float32>
+        {
+            Float32 Data[4];
+        };
+
     } // namespace SIMD
 
 } // namespace Maths
