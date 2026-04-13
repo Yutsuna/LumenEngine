@@ -11,11 +11,11 @@
 namespace
 {
 
-class FCollectingActor final : public LumenEngine::FActor
+class FCollectingActor final : public LumenEngine::AActor
 {
 public:
 
-    explicit FCollectingActor ( LumenEngine::ActorID InId ) : LumenEngine::FActor( InId )
+    explicit FCollectingActor ( LumenEngine::ActorID InId ) : LumenEngine::AActor( InId )
     {
     }
 

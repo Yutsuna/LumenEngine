@@ -13,19 +13,19 @@ namespace LumenEngine
 {
 
 /**
- * @class FActor
+ * @class AActor
  * @brief Abstract base for all actors.
  * @details Each actor owns a lock-free mailbox.
  *          The engine calls ProcessMailbox() from a worker thread
  *          Receive() is always single-threaded per instance.
- *          Actors communicate exclusively via FActorRef::Send(); no shared state.
+ *          Actors communicate exclusively via AActorRef::Send(); no shared state.
  */
-class FActor : public FNonCopyable
+class AActor : public FNonCopyable
 {
 public:
 
-    explicit FActor ( ActorID InId ) noexcept;
-    virtual ~FActor () = default;
+    explicit AActor ( ActorID InId ) noexcept;
+    virtual ~AActor () = default;
 
 public:
 
@@ -54,6 +54,6 @@ private:
     ActorID Id = 0ULL;
     FMailBox Mailbox;
 
-}; // class FActor
+}; // class AActor
 
 } // namespace LumenEngine

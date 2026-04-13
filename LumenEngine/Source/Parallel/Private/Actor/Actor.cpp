@@ -1,21 +1,21 @@
 /**
  * @file Actor.cpp
- * @brief FActor base class implementation for LumenEngine.
+ * @brief AActor base class implementation for LumenEngine.
  */
 
 #include "Actor/Actor.hpp"
 
-LumenEngine::FActor::FActor ( ActorID InId ) noexcept : Id( InId )
+LumenEngine::AActor::AActor ( ActorID InId ) noexcept : Id( InId )
 {
     /* CTOR */
 }
 
-void LumenEngine::FActor::EnqueueMessage ( FMessage InMessage ) noexcept
+void LumenEngine::AActor::EnqueueMessage ( FMessage InMessage ) noexcept
 {
     Mailbox.Push( std::move( InMessage ) );
 }
 
-void LumenEngine::FActor::ProcessMailbox () noexcept
+void LumenEngine::AActor::ProcessMailbox () noexcept
 {
     while ( TOptional<FMessage> Message = Mailbox.Pop() )
     {
@@ -23,7 +23,7 @@ void LumenEngine::FActor::ProcessMailbox () noexcept
     }
 }
 
-LumenEngine::ActorID LumenEngine::FActor::GetId () const noexcept
+LumenEngine::ActorID LumenEngine::AActor::GetId () const noexcept
 {
     return Id;
 }
