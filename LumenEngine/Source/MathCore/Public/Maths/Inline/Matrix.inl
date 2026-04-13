@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Maths/Matrix.hpp"
+#include "Maths/SIMD/SIMD.hpp"
 
 #include <cmath>
 
@@ -87,7 +88,7 @@ namespace Maths
         requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr Bool TMatrix<Type, Rows, Columns>::operator!=( const TMatrix<Type, Rows, Columns> &Other ) const noexcept
     {
-        return not ( *this == Other );
+        return not( *this == Other );
     }
 
     template <typename Type, USize Rows, USize Columns>
@@ -95,7 +96,7 @@ namespace Maths
     constexpr TMatrix<Type, Rows, Columns> TMatrix<Type, Rows, Columns>::Identity () noexcept
         requires Concepts::CSquareMatrix<Rows, Columns>
     {
-        return TMatrix(static_cast<Type>( 1 ) );
+        return TMatrix( static_cast<Type>( 1 ) );
     }
 
     template <typename Type, USize Rows, USize Columns>
@@ -249,12 +250,20 @@ namespace Maths
     template <typename Type, USize Rows, USize Inner, USize Columns>
     constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left, const TMatrix<Type, Inner, Columns> &Right ) noexcept
     {
-        if constexpr ( Concepts::CFloatingPoint<Type> and Concepts::CSquareMatrix<4, 4>)
+        TMatrix<Type, Rows, Columns> Result;
+
+        if constexpr ( Concepts::CFloatingPoint<Type> and Concepts::CSquareMatrix<4, 4> )
         {
-            //TODO: add SIMD optimizations for 4x4 floating-point matrix multiplication
-            
-        } else {
-            TMatrix<Type, Rows, Columns> Result;
+            SIMD::MatrixMul4x4( 
+                reinterpret_cast<const Float32*>( &Left ), 
+                reinterpret_cast<const Float32*>( &Right ), 
+                reinterpret_cast<Float32*>( &Result ) 
+            );
+
+            return Result;
+        }
+        else
+        {
             for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
             {
                 for ( USize RowIndex = 0; RowIndex < Rows; ++RowIndex )
@@ -270,14 +279,14 @@ namespace Maths
             }
             return Result;
         }
+        return Result;
     }
 
-    template< typename Type, USize Rows, USize Inner, USize Columns>
-    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows,
-    Inner> &Left, const TMatrix<Type, Inner, Columns> &&Right ) noexcept
-        {
-            return Left * Right;
-        }
+    template <typename Type, USize Rows, USize Inner, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left, const TMatrix<Type, Inner, Columns> &&Right ) noexcept
+    {
+        return Left * Right;
+    }
 
 } // namespace Maths
 
