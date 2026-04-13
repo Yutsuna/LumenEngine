@@ -17,7 +17,7 @@ namespace Engine
 
     /**
      * @class FSceneActor
-     * @brief The central authority for the scene state. 
+     * @brief The central authority for the scene state.
      * @details Collects transform updates from entities, maintains visibility, and pushes data to the Renderer.
      */
     class LUMEN_ENGINE_API FSceneActor final : public AActor
@@ -34,7 +34,7 @@ namespace Engine
     private:
 
         void HandleTick ( const Float64 InDeltaTime ) noexcept;
-        void HandleTransformUpdate ( const ActorID InSender, const Maths::FMatrix4x4f& InTransform ) noexcept;
+        void HandleTransformUpdate ( const ActorID InSender, const Maths::FMatrix4x4f &InTransform ) noexcept;
 
     private:
 
