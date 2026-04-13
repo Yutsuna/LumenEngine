@@ -139,8 +139,8 @@ namespace Maths
     constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &&Left, const TMatrix<Type, Inner, Columns> &&Right ) noexcept;
 
     /** @brief Matrix Multiplication with a scalar */
-    template <typename Type, USize Rows, USize Inner, USize Columns>
-    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left, const Type Scalar ) noexcept;
+    template <typename Type, USize Rows, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Columns> &Left, const Type Scalar ) noexcept;
 
 } // namespace Maths
 

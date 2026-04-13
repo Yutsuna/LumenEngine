@@ -254,11 +254,7 @@ namespace Maths
 
         if constexpr ( Concepts::CFloatingPoint<Type> and Concepts::CSquareMatrix<4, 4> )
         {
-            SIMD::MatrixMul4x4( 
-                reinterpret_cast<const Float32*>( &Left ), 
-                reinterpret_cast<const Float32*>( &Right ), 
-                reinterpret_cast<Float32*>( &Result ) 
-            );
+            SIMD::MatrixMul4x4( reinterpret_cast<const Float32 *>( &Left ), reinterpret_cast<const Float32 *>( &Right ), reinterpret_cast<Float32 *>( &Result ) );
 
             return Result;
         }
@@ -300,32 +296,30 @@ namespace Maths
         return Left * Right;
     }
 
-    template <typename Type, USize Rows, USize Inner, USize Columns>
-    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left, const Type Scalar ) noexcept
+    template <typename Type, USize Rows, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Columns> &Left, const Type Scalar ) noexcept
     {
         TMatrix<Type, Rows, Columns> Result;
 
         if constexpr ( Concepts::CFloatingPoint<Type> and Concepts::CSquareMatrix<4, 4> )
         {
-            SIMD::MatrixScalarMul4x4( 
-                reinterpret_cast<const Float32*>( &Left ), 
-                Scalar, 
-                reinterpret_cast<Float32*>( &Result ) 
-            );
+            SIMD::MatrixScalarMul4x4( reinterpret_cast<const Float32 *>( &Left ), static_cast<Float32>( Scalar ), reinterpret_cast<Float32 *>( &Result ) );
 
-            return Result;}
-        else {
-        for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
+            return Result;
+        }
+
+        else
         {
-            for ( USize RowIndex = 0; RowIndex < Rows; ++RowIndex )
+            for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
             {
-                Result[ColIndex].Data[RowIndex] = Left[ColIndex].Data[RowIndex] * Scalar;
+                for ( USize RowIndex = 0; RowIndex < Rows; ++RowIndex )
+                {
+                    Result[ColIndex].Data[RowIndex] = Left[ColIndex].Data[RowIndex] * Scalar;
+                }
             }
         }
-    }
         return Result;
     }
-    
 
 } // namespace Maths
 
