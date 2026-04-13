@@ -1,14 +1,14 @@
-name: LinuxBuild
+name: Run Unit Tests
 
 on:
-  push:
-    branches: ["main"]
-  pull_request:
-    branches: ["main"]
+    push:
+        branches: [ main ]
+    pull_request:
+        branches: [ main ]
 
 jobs:
   Build:
-    name: LinuxBuild
+    name: RunUnitTests
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -18,4 +18,4 @@ jobs:
         uses: DeterminateSystems/nix-installer-action@v12
 
       - name: Build the project
-        run: nix build
+        run: nix develop --command lumen test
