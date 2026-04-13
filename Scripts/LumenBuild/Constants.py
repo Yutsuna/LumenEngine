@@ -43,7 +43,7 @@ SANITIZER_ALIASES: dict[str, str] = {
 # Formatting
 # ---------------------------------------------------------------------------
 
-CLANG_FORMAT_EXTENSIONS = ("*.cpp", "*.hpp", "*.h", "*.cxx", "*.cc")
+CLANG_FORMAT_EXTENSIONS = ("*.cpp", "*.hpp", ".inl", ".frag", ".vert", ".comp")
 
 # ---------------------------------------------------------------------------
 # Colours
