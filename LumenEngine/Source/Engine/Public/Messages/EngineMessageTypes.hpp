@@ -11,6 +11,7 @@
 #include "Maths/Vec.hpp"
 
 #include "Actor/ActorTypes.hpp"
+#include "Graphics/RenderResource.hpp"
 
 namespace LumenEngine
 {
@@ -36,7 +37,7 @@ namespace Engine
             /** Sent by the input system when an action is triggered. Payload: FInputActionPayload */
             InputAction,
 
-            /** Sent by entities to update their spatial transform. Payload: FTransformPayload */
+            /** Sent by entities to update their spatial transform. Payload: FDrawCommandPayload */
             TransformUpdate,
 
             /** Sent to cameras to bind them to a specific target actor. Payload: FSetCameraTargetPayload */
@@ -59,9 +60,11 @@ namespace Engine
     };
 
     /** @brief Payload for EEngineMessage::TransformUpdate */
-    struct FTransformPayload final
+    struct FDrawCommandPayload final
     {
-        Maths::FMatrix4x4f Transform = Maths::FMatrix4x4f::Identity();
+        Renderer::FRenderMesh *Mesh     = nullptr;
+        Renderer::FRenderShader *Shader = nullptr;
+        Maths::FMatrix4x4f Transform    = Maths::FMatrix4x4f::Identity();
     };
 
     /** @brief Payload for EEngineMessage::SetCameraTarget */
