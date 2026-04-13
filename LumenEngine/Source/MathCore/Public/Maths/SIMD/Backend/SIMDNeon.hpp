@@ -5,15 +5,10 @@
 
 #pragma once
 
-#include "Maths/SIMD/SIMDTypes.hpp"
-
 #if defined( __aarch64__ ) || defined( _M_ARM64 )
-    #include <arm_neon.h>
-#endif
+    #include "Maths/SIMD/SIMDTypes.hpp"
 
-#if !defined( __aarch64__ ) && !defined( _M_ARM64 )
-    #error "SIMDNeon.hpp should only be included on ARM64 platforms with Neon support."
-#endif
+    #include <arm_neon.h>
 
 namespace LumenEngine
 {
@@ -34,15 +29,15 @@ namespace Maths
         public:
 
             /**
-             * @brief Loads 4 contiguous Float32 values from memory into an FNeonFloat32x4 register.
-             * @param InAddress A pointer to the first Float32 value in memory to load.
+             * @brief Loads 4 contiguous Float32 values from memory.
+             * @param InAddress Must be 16-byte aligned for optimal performance.
              * @return An FNeonFloat32x4 register containing the loaded values.
              */
             static FNeonFloat32x4 Load ( const Float32 *const InAddress ) noexcept;
 
             /**
              * @brief Stores the values in an FNeonFloat32x4 register into memory.
-             * @param OutAddress A pointer to the location in memory where the values should be stored.
+             * @param OutAddress Must be 16-byte aligned.
              */
             void Store ( Float32 *const OutAddress ) const noexcept;
 
@@ -52,20 +47,14 @@ namespace Maths
         };
 
         /**
-         * @brief Multiplies two 4x4 matrices A and B, storing the result in Out.
-         * @param InLeft A pointer to the first element of the first 4x4 matrix (16 Float32 values).
-         * @param InRight A pointer to the first element of the second 4x4 matrix (16 Float32 values).
-         * @param OutResult A pointer to the first element of the output 4x4 matrix where the result will be stored (16 Float32 values).
+         * @brief Multiplies two 4x4 column-major matrices A and B, storing the result in Out.
          */
-        static void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept;
+        inline void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept;
 
         /**
-         * @brief Multiplies a 4x4 matrix by a scalar, storing the result in Out.
-         * @param InMatrix A pointer to the first element of the 4x4 matrix (16 Float32 values).
-         * @param Scalar The scalar value to multiply by.
-         * @param OutResult A pointer to the first element of the output 4x4 matrix where the result will be stored (16 Float32 values).
+         * @brief Multiplies a 4x4 column-major matrix by a scalar.
          */
-        static void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept;
+        inline void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept;
 
     } // namespace SIMD
 
@@ -74,3 +63,7 @@ namespace Maths
 } // namespace LumenEngine
 
 #include "Inline/SIMDNeon.inl"
+
+#else
+    #error "SIMDNeon.hpp should only be included on ARM64 platforms with Neon support."
+#endif

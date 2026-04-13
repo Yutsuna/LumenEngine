@@ -16,12 +16,14 @@ namespace Maths
     namespace SIMD
     {
 
-        FNeonFloat32x4::FNeonFloat32x4 () noexcept : Internal( vdupq_n_f32( 0.0f ) )
+        FNeonFloat32x4::FNeonFloat32x4 () noexcept : Internal( vdupq_n_f32( 0.0F ) )
         {
+            /* */
         }
 
         FNeonFloat32x4::FNeonFloat32x4 ( const float32x4_t InInternal ) noexcept : Internal( InInternal )
         {
+            /* */
         }
 
         FNeonFloat32x4 FNeonFloat32x4::Load ( const Float32 *const InAddress ) noexcept
@@ -43,14 +45,9 @@ namespace Maths
 
             for ( USize Idx = 0; Idx < 4; ++Idx )
             {
-                /**
-                 * Load the current column of the right matrix.
-                 */
                 const float32x4_t RCol = vld1q_f32( InRight + ( Idx * 4 ) );
 
-                /**
-                 * Compute the linear combination for the current column of the output matrix.
-                 */
+                /** Compute linear combination using Neon intrinsics */
                 float32x4_t Res = vmulq_n_f32( L0, vgetq_lane_f32( RCol, 0 ) );
                 Res             = vmlaq_n_f32( Res, L1, vgetq_lane_f32( RCol, 1 ) );
                 Res             = vmlaq_n_f32( Res, L2, vgetq_lane_f32( RCol, 2 ) );
