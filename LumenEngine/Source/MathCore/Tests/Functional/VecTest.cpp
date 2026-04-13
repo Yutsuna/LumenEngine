@@ -24,7 +24,7 @@ protected:
 
 TEST_F( FVecTest, DefaultConstructor )
 {
-    const LumenEngine::Maths::FVec3f Vec {};
+    const LumenEngine::Maths::FVec3f Vec{};
     EXPECT_EQ( Vec.X, 0.0F );
     EXPECT_EQ( Vec.Y, 0.0F );
     EXPECT_EQ( Vec.Z, 0.0F );
