@@ -77,6 +77,18 @@ namespace Maths
             }
         }
 
+        constexpr void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept
+        {
+            const __m128 ScalarVec = _mm_set1_ps( Scalar );
+
+            for ( USize Idx = 0; Idx < 4; ++Idx )
+            {
+                const __m128 MatCol = _mm_load_ps( InMatrix + ( Idx * 4 ) );
+                const __m128 Res = _mm_mul_ps( MatCol, ScalarVec );
+                _mm_store_ps( OutResult + ( Idx * 4 ), Res );
+            }
+        }
+
     } // namespace SIMD
 
 } // namespace Maths

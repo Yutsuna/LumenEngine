@@ -62,6 +62,18 @@ namespace Maths
 			}
 		}
 
+		constexpr void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept
+		{
+			const float32x4_t VecScalar = vdupq_n_f32( Scalar );
+
+			for ( USize Idx = 0; Idx < 4; ++Idx )
+			{
+				const float32x4_t MatCol = vld1q_f32( InMatrix + ( Idx * 4 ) );
+				const float32x4_t Res    = vmulq_f32( MatCol, VecScalar );
+				vst1q_f32( OutResult + ( Idx * 4 ), Res );
+			}
+		}
+
 	} // namespace SIMD
 
 } // namespace Maths

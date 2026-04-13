@@ -57,6 +57,14 @@ namespace Maths
          */
         static constexpr void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept;
 
+        /**
+         * @brief Multiplies a 4x4 matrix by a scalar, storing the result in Out.
+         * @param InMatrix A pointer to the first element of the 4x4 matrix (16 Float32 values).
+         * @param Scalar The scalar value to multiply by.
+         * @param OutResult A pointer to the first element of the output 4x4 matrix where the result will be stored (16 Float32 values).
+         */
+        static constexpr void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept;
+
     } // namespace SIMD
 
 } // namespace Maths
