@@ -42,6 +42,7 @@ def BuildDebug(
     help={
         "target": "CMake target to build  (default: all)",
         "lto": "Enable Link-Time Optimisation",
+        "testing": "Enable test targets",
     },
     aliases=("r",),
 )
@@ -49,6 +50,7 @@ def BuildRelease(
     ctx,
     target: str = "",
     lto: bool = False,
+    testing: bool = False,
 ):
     _Header("Release", None)
 
@@ -60,6 +62,7 @@ def BuildRelease(
         BUILD_TYPE_RELEASE,
         target=target or None,
         extra_flags=extra,
+        enable_testing=testing,
     )
 
 

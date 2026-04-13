@@ -50,7 +50,7 @@ CLANG_FORMAT_EXTENSIONS = ("*.cpp", "*.hpp", ".inl", ".frag", ".vert", ".comp")
 # ---------------------------------------------------------------------------
 
 
-class EAnsiColor():
+class EAnsiColor:
     RESET = "\033[0m"
     BOLD = "\033[1m"
     RED = "\033[91m"

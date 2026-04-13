@@ -163,14 +163,11 @@ def Test(
     filter_pattern: str | None = None,
     parallel: bool = True,
 ) -> None:
+    Build(build_type, enable_testing=True)
+
     ctest = RequireTool("ctest")
     jobs = GetParallelJobs()
     bdir = BuildDir(build_type)
-
-    if not bdir.exists():
-        LogWarn(f"Build directory not found: {bdir}")
-        LogWarn("Run  'lumen build debug --testing'  first.")
-        sys.exit(ERROR_CODE)
 
     cmd: list[str] = [
         ctest,
