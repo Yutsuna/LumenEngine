@@ -100,7 +100,7 @@ namespace Parallel
      *
      * @tparam BufferType The type stored in each slot.
      */
-    template <typename BufferType> class TTripleBuffer : public FNonCopyable, public FNonMovable
+    template <typename BufferType> class TTripleBuffer final : public FNonCopyable, public FNonMovable
     {
         static_assert( std::is_default_constructible_v<BufferType>, "BufferType must be default constructible because all triple-buffer slots are pre-allocated" );
 
