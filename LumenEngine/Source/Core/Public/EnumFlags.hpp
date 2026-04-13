@@ -7,55 +7,55 @@
 
 #define LUMEN_ENUM_FLAGS( EnumType )                                                                                                                                     \
     /** Binary operators for enum flags */                                                                                                                               \
-    [[nodiscard]] constexpr inline EnumType operator|( EnumType lhs, EnumType rhs ) noexcept                                                                             \
+    [[nodiscard]] static constexpr inline EnumType operator|( EnumType Lhs, EnumType Rhs ) noexcept                                                                             \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
-        return static_cast<EnumType>( static_cast<UnderlyingType>( lhs ) | static_cast<UnderlyingType>( rhs ) );                                                         \
+        return static_cast<EnumType>( static_cast<UnderlyingType>( Lhs ) | static_cast<UnderlyingType>( Rhs ) );                                                         \
     }                                                                                                                                                                    \
-    [[nodiscard]] constexpr inline EnumType operator&( EnumType lhs, EnumType rhs ) noexcept                                                                             \
+    [[nodiscard]] static constexpr inline EnumType operator&( EnumType Lhs, EnumType Rhs ) noexcept                                                                             \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
-        return static_cast<EnumType>( static_cast<UnderlyingType>( lhs ) & static_cast<UnderlyingType>( rhs ) );                                                         \
+        return static_cast<EnumType>( static_cast<UnderlyingType>( Lhs ) & static_cast<UnderlyingType>( Rhs ) );                                                         \
     }                                                                                                                                                                    \
-    [[nodiscard]] constexpr inline EnumType operator^( EnumType lhs, EnumType rhs ) noexcept                                                                             \
+    [[nodiscard]] static constexpr inline EnumType operator^( EnumType Lhs, EnumType Rhs ) noexcept                                                                             \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
-        return static_cast<EnumType>( static_cast<UnderlyingType>( lhs ) ^ static_cast<UnderlyingType>( rhs ) );                                                         \
+        return static_cast<EnumType>( static_cast<UnderlyingType>( Lhs ) ^ static_cast<UnderlyingType>( Rhs ) );                                                         \
     }                                                                                                                                                                    \
-    [[nodiscard]] constexpr inline EnumType operator~( EnumType value ) noexcept                                                                                         \
+    [[nodiscard]] static constexpr inline EnumType operator~( EnumType value ) noexcept                                                                                         \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<EnumType>( ~static_cast<UnderlyingType>( value ) );                                                                                           \
     }                                                                                                                                                                    \
     /** Assignment operators for enum flags */                                                                                                                           \
-    constexpr inline EnumType &operator|=( EnumType &lhs, EnumType rhs ) noexcept                                                                                        \
+    static constexpr inline EnumType &operator|=( EnumType &Lhs, EnumType Rhs ) noexcept                                                                                        \
     {                                                                                                                                                                    \
-        lhs = lhs | rhs;                                                                                                                                                 \
-        return lhs;                                                                                                                                                      \
+        Lhs = Lhs | Rhs;                                                                                                                                                 \
+        return Lhs;                                                                                                                                                      \
     }                                                                                                                                                                    \
-    constexpr inline EnumType &operator&=( EnumType &lhs, EnumType rhs ) noexcept                                                                                        \
+    static constexpr inline EnumType &operator&=( EnumType &Lhs, EnumType Rhs ) noexcept                                                                                        \
     {                                                                                                                                                                    \
-        lhs = lhs & rhs;                                                                                                                                                 \
-        return lhs;                                                                                                                                                      \
+        Lhs = Lhs & Rhs;                                                                                                                                                 \
+        return Lhs;                                                                                                                                                      \
     }                                                                                                                                                                    \
-    constexpr inline EnumType &operator^=( EnumType &lhs, EnumType rhs ) noexcept                                                                                        \
+    static constexpr inline EnumType &operator^=( EnumType &Lhs, EnumType Rhs ) noexcept                                                                                        \
     {                                                                                                                                                                    \
-        lhs = lhs ^ rhs;                                                                                                                                                 \
-        return lhs;                                                                                                                                                      \
+        Lhs = Lhs ^ Rhs;                                                                                                                                                 \
+        return Lhs;                                                                                                                                                      \
     }                                                                                                                                                                    \
     /** Logical comparison operators for enum flags */                                                                                                                   \
-    [[nodiscard]] constexpr inline bool operator!( EnumType value ) noexcept                                                                                             \
+    [[nodiscard]] static constexpr inline bool operator!( EnumType value ) noexcept                                                                                             \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<UnderlyingType>( value ) == 0;                                                                                                                \
     }                                                                                                                                                                    \
-    [[nodiscard]] constexpr inline bool operator==( EnumType lhs, int rhs ) noexcept                                                                                     \
+    [[nodiscard]] static constexpr inline bool operator==( EnumType Lhs, int Rhs ) noexcept                                                                                     \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
-        return static_cast<UnderlyingType>( lhs ) == rhs;                                                                                                                \
+        return static_cast<UnderlyingType>( Lhs ) == Rhs;                                                                                                                \
     }                                                                                                                                                                    \
-    [[nodiscard]] constexpr inline bool operator!=( EnumType lhs, int rhs ) noexcept                                                                                     \
+    [[nodiscard]] static constexpr inline bool operator!=( EnumType Lhs, int Rhs ) noexcept                                                                                     \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
-        return static_cast<UnderlyingType>( lhs ) != rhs;                                                                                                                \
+        return static_cast<UnderlyingType>( Lhs ) != Rhs;                                                                                                                \
     }
