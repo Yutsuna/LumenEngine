@@ -1,6 +1,6 @@
 /**
  * @file CameraActor.hpp
- * @brief Declaration of the base FCameraActor class.
+ * @brief Declaration of the base ACameraActor class.
  */
 
 #pragma once
@@ -15,16 +15,16 @@ namespace Engine
 {
 
     /**
-     * @class FCameraActor
+     * @class ACameraActor
      * @brief Abstract base class for all camera actors.
      * @details Encapsulates the Maths::FCamera and provides base message handling.
      */
-    class LUMEN_ENGINE_API FCameraActor : public AActor
+    class LUMEN_ENGINE_API ACameraActor : public AActor
     {
     public:
 
-        explicit FCameraActor ( const ActorID InId ) noexcept;
-        ~FCameraActor () override = default;
+        explicit ACameraActor ( const ActorID InId ) noexcept;
+        ~ACameraActor () override = default;
 
     public:
 

@@ -1,25 +1,23 @@
 /**
  * @file CameraActor.cpp
- * @brief Implementation of the FCameraActor base class.
+ * @brief Implementation of the ACameraActor base class.
  */
 
 #include "Actors/CameraActor.hpp"
 #include "Messages/EngineMessageTypes.hpp"
 
-#include "Container/Any.hpp"
-
-LumenEngine::Engine::FCameraActor::FCameraActor ( const ActorID InId ) noexcept : AActor( InId )
+LumenEngine::Engine::ACameraActor::ACameraActor ( const ActorID InId ) noexcept : AActor( InId )
 {
     /* Ctor */
 }
 
-void LumenEngine::Engine::FCameraActor::Receive ( FMessage InMessage )
+void LumenEngine::Engine::ACameraActor::Receive ( FMessage InMessage )
 {
     if ( InMessage.Type == EEngineMessage::Tick )
     {
-        const FTickPayload Payload = TAnyCast<FTickPayload>( InMessage.Payload );
-        Tick( Payload.DeltaTime );
+        const FTickPayload &Payload = InMessage.GetPayload<FTickPayload>();
 
+        Tick( Payload.DeltaTime );
         Camera.Tick( Payload.DeltaTime );
     }
     else
@@ -28,12 +26,12 @@ void LumenEngine::Engine::FCameraActor::Receive ( FMessage InMessage )
     }
 }
 
-void LumenEngine::Engine::FCameraActor::HandleMessage ( const FMessage & /*InMessage*/ )
+void LumenEngine::Engine::ACameraActor::HandleMessage ( const FMessage & /*InMessage*/ )
 {
     /** NOTE: Override in derived classes for specific logic (like InputAxis handling) */
 }
 
-const LumenEngine::Maths::FCamera &LumenEngine::Engine::FCameraActor::GetCamera () const noexcept
+const LumenEngine::Maths::FCamera &LumenEngine::Engine::ACameraActor::GetCamera () const noexcept
 {
     return Camera;
 }
