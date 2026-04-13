@@ -10,17 +10,17 @@
 
 constexpr LumenEngine::Parallel::Internal::FBufferFlag::Type LumenEngine::Parallel::Internal::FBufferFlag::GetReaderIndex ( FBufferFlag::Type Flags ) noexcept
 {
-    return ( Flags & ReaderMask ) >> ReaderShift ;
+    return ( Flags & ReaderMask ) >> ReaderShift;
 }
 
 constexpr LumenEngine::Parallel::Internal::FBufferFlag::Type LumenEngine::Parallel::Internal::FBufferFlag::GetWriterIndex ( FBufferFlag::Type Flags ) noexcept
 {
-    return ( Flags & WriterMask ) >> WriterShift ;
+    return ( Flags & WriterMask ) >> WriterShift;
 }
 
 constexpr LumenEngine::Parallel::Internal::FBufferFlag::Type LumenEngine::Parallel::Internal::FBufferFlag::GetTempIndex ( FBufferFlag::Type Flags ) noexcept
 {
-    return ( Flags & TempMask ) >> TempShift ;
+    return ( Flags & TempMask ) >> TempShift;
 }
 
 constexpr LumenEngine::Bool LumenEngine::Parallel::Internal::FBufferFlag::IsDirty ( FBufferFlag::Type Flags ) noexcept
@@ -28,26 +28,27 @@ constexpr LumenEngine::Bool LumenEngine::Parallel::Internal::FBufferFlag::IsDirt
     return ( Flags & Dirty ) != 0;
 }
 
-constexpr LumenEngine::Parallel::Internal::FBufferFlag::Type LumenEngine::Parallel::Internal::FBufferFlag::Make ( FBufferFlag::Type ReaderIndex, FBufferFlag::Type WriterIndex, FBufferFlag::Type TempIndex, Bool bIsDirty ) noexcept
+constexpr LumenEngine::Parallel::Internal::FBufferFlag::Type
+LumenEngine::Parallel::Internal::FBufferFlag::Make ( FBufferFlag::Type ReaderIndex, FBufferFlag::Type WriterIndex, FBufferFlag::Type TempIndex, Bool bIsDirty ) noexcept
 {
     assert( ReaderIndex < 3 && "ReaderIndex must designate one of the 3 triple-buffer slots [0, 2]" );
     assert( WriterIndex < 3 && "WriterIndex must designate one of the 3 triple-buffer slots [0, 2]" );
     assert( TempIndex < 3 && "TempIndex must designate one of the 3 triple-buffer slots [0, 2]" );
 
-    const FBufferFlag::Type ReaderBit = ReaderIndex << ReaderShift ;
-    const FBufferFlag::Type WriterBit = WriterIndex << WriterShift ;
-    const FBufferFlag::Type TempBit   = TempIndex << TempShift ;
+    const FBufferFlag::Type ReaderBit = ReaderIndex << ReaderShift;
+    const FBufferFlag::Type WriterBit = WriterIndex << WriterShift;
+    const FBufferFlag::Type TempBit   = TempIndex << TempShift;
     const FBufferFlag::Type DirtyBit  = bIsDirty ? Dirty : static_cast<FBufferFlag::Type>( 0U );
 
-    return ReaderBit | WriterBit | TempBit | DirtyBit ;
+    return ReaderBit | WriterBit | TempBit | DirtyBit;
 }
 
 /**
-* TTripleBuffer
-*/
+ * TTripleBuffer
+ */
 
 template <typename BufferType>
-LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer ()
+LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer()
     : OwnedBuffers( LumenEngine::MakeUnique<BufferType[]>( 3 ) ),
       //
       Buffers( OwnedBuffers.Get() ),
@@ -58,7 +59,7 @@ LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer ()
 }
 
 template <typename BufferType>
-LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer ( const BufferType &InData )
+LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer( const BufferType &InData )
     : OwnedBuffers( LumenEngine::MakeUnique<BufferType[]>( 3 ) ),
       //
       Buffers( OwnedBuffers.Get() ),
@@ -69,10 +70,10 @@ LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer ( const BufferTy
 }
 
 template <typename BufferType>
-LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer ( BufferType ( &InBuffers )[3] )
+LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer( BufferType ( &InBuffers )[3] )
     : Buffers( &InBuffers[0] ),
       //
-      BufferFlags(( Internal::FBufferFlag::Type::Initial | Internal::FBufferFlag::Type::Dirty ) )
+      BufferFlags( ( Internal::FBufferFlag::Type::Initial | Internal::FBufferFlag::Type::Dirty ) )
 {
 }
 
@@ -147,7 +148,9 @@ template <typename BufferType> void LumenEngine::Parallel::TTripleBuffer<BufferT
     PublishWrite();
 }
 
-template <typename BufferType> LumenEngine::Parallel::Internal::FBufferFlag::Type LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapReadWithTempFlags ( const Internal::FBufferFlag::Type Flags ) const noexcept
+template <typename BufferType>
+LumenEngine::Parallel::Internal::FBufferFlag::Type
+LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapReadWithTempFlags ( const Internal::FBufferFlag::Type Flags ) const noexcept
 {
     /**
      * INFO: Reader takes the Temp slot, Temp takes the old Reader slot.
@@ -160,7 +163,9 @@ template <typename BufferType> LumenEngine::Parallel::Internal::FBufferFlag::Typ
         /* bIsDirty  */ false );
 }
 
-template <typename BufferType> LumenEngine::Parallel::Internal::FBufferFlag::Type LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapWriteWithTempFlags ( const Internal::FBufferFlag::Type Flags ) const noexcept
+template <typename BufferType>
+LumenEngine::Parallel::Internal::FBufferFlag::Type
+LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapWriteWithTempFlags ( const Internal::FBufferFlag::Type Flags ) const noexcept
 {
     /**
      * INFO: Writer takes the Temp slot, Temp takes the old Writer slot.

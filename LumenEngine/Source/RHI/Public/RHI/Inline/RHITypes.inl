@@ -7,7 +7,7 @@
 
 #include "RHI/RHITypes.hpp"
 
-template <typename Tag> constexpr LumenEngine::RHI::TRenderResourceHandle<Tag>::TRenderResourceHandle ( UInt32 InID ) noexcept : ID( InID )
+template <typename Tag> constexpr LumenEngine::RHI::TRenderResourceHandle<Tag>::TRenderResourceHandle( UInt32 InID ) noexcept : ID( InID )
 {
     //
 }
