@@ -24,8 +24,8 @@ class FActor : public FNonCopyable
 {
 public:
 
-    explicit FActor( ActorID InId ) noexcept;
-    virtual ~FActor() = default;
+    explicit FActor ( ActorID InId ) noexcept;
+    virtual ~FActor () = default;
 
 public:
 
@@ -33,25 +33,25 @@ public:
      * @brief Processes one incoming message. Implemented by concrete actors.
      * @param InMessage The message to handle.
      */
-    virtual void Receive( FMessage InMessage ) = 0;
+    virtual void Receive ( FMessage InMessage ) = 0;
 
     /**
      * @brief Enqueues a message into this actor's mailbox. Thread-safe.
      * @param InMessage The message to deliver.
      */
-    void EnqueueMessage( FMessage InMessage ) noexcept;
+    void EnqueueMessage ( FMessage InMessage ) noexcept;
 
     /** @brief Drains and processes all pending messages. Single-consumer. */
-    void ProcessMailbox() noexcept;
+    void ProcessMailbox () noexcept;
 
 public:
 
     /** @return This actor's unique identifier. */
-    [[nodiscard]] ActorID GetId() const noexcept;
+    [[nodiscard]] ActorID GetId () const noexcept;
 
 private:
 
-    ActorID  Id      = 0ULL;
+    ActorID Id = 0ULL;
     FMailBox Mailbox;
 
 }; // class FActor

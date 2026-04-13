@@ -5,18 +5,17 @@
 
 #include "Actor/Actor.hpp"
 
-LumenEngine::FActor::FActor( ActorID InId ) noexcept
-    : Id( InId )
+LumenEngine::FActor::FActor ( ActorID InId ) noexcept : Id( InId )
 {
     /* CTOR */
 }
 
-void LumenEngine::FActor::EnqueueMessage( FMessage InMessage ) noexcept
+void LumenEngine::FActor::EnqueueMessage ( FMessage InMessage ) noexcept
 {
     Mailbox.Push( std::move( InMessage ) );
 }
 
-void LumenEngine::FActor::ProcessMailbox() noexcept
+void LumenEngine::FActor::ProcessMailbox () noexcept
 {
     while ( TOptional<FMessage> Message = Mailbox.Pop() )
     {
@@ -24,7 +23,7 @@ void LumenEngine::FActor::ProcessMailbox() noexcept
     }
 }
 
-LumenEngine::ActorID LumenEngine::FActor::GetId() const noexcept
+LumenEngine::ActorID LumenEngine::FActor::GetId () const noexcept
 {
     return Id;
 }

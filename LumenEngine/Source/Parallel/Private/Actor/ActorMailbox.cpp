@@ -6,6 +6,8 @@
 #include "Actor/ActorMailbox.hpp"
 #include "Logging/Logger.hpp"
 
+#include <new>
+
 LumenEngine::FMailBox::FMailBox () noexcept : Head( &Stub )
 {
     Tail.store( &Stub, std::memory_order_relaxed );
@@ -34,7 +36,13 @@ LumenEngine::FMailBox::~FMailBox () noexcept
 
 void LumenEngine::FMailBox::Push ( FMessage InMessage ) noexcept
 {
-    FNode *const NewNode = new FNode();
+    FNode *const NewNode = new ( std::nothrow ) FNode();
+
+    if ( NewNode == nullptr )
+    {
+        LUMEN_LOG_ERROR( LogActor, "FMailBox::Push: failed to allocate node for new message" );
+        return;
+    }
     NewNode->Message     = std::move( InMessage );
 
     /**
