@@ -12,7 +12,6 @@ namespace LumenEngine
 {
 
 using ActorID = UInt64;
-
 struct FMessage;
 
 namespace Concepts
