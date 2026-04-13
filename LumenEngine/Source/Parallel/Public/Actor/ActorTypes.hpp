@@ -6,6 +6,7 @@
 #pragma once
 
 #include "CoreTypes.hpp"
+#include "Logging/LoggingCategory.hpp"
 
 namespace LumenEngine
 {
@@ -23,5 +24,7 @@ namespace Concepts
     };
 
 } // namespace Concepts
+
+extern const FLogCategory LogActor;
 
 } // namespace LumenEngine
