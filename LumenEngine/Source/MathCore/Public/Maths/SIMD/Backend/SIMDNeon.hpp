@@ -28,8 +28,8 @@ namespace Maths
         {
         public:
 
-            constexpr FNeonFloat32x4 () noexcept;
-            explicit constexpr FNeonFloat32x4 ( const float32x4_t InInternal ) noexcept;
+            FNeonFloat32x4 () noexcept;
+            explicit FNeonFloat32x4 ( const float32x4_t InInternal ) noexcept;
 
         public:
 
@@ -38,13 +38,13 @@ namespace Maths
              * @param InAddress A pointer to the first Float32 value in memory to load.
              * @return An FNeonFloat32x4 register containing the loaded values.
              */
-            static constexpr FNeonFloat32x4 Load ( const Float32 *const InAddress ) noexcept;
+            static FNeonFloat32x4 Load ( const Float32 *const InAddress ) noexcept;
 
             /**
              * @brief Stores the values in an FNeonFloat32x4 register into memory.
              * @param OutAddress A pointer to the location in memory where the values should be stored.
              */
-            constexpr void Store ( Float32 *const OutAddress ) const noexcept;
+            void Store ( Float32 *const OutAddress ) const noexcept;
 
         private:
 
@@ -57,7 +57,7 @@ namespace Maths
          * @param InRight A pointer to the first element of the second 4x4 matrix (16 Float32 values).
          * @param OutResult A pointer to the first element of the output 4x4 matrix where the result will be stored (16 Float32 values).
          */
-        static constexpr void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept;
+        static void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept;
 
         /**
          * @brief Multiplies a 4x4 matrix by a scalar, storing the result in Out.
@@ -65,7 +65,7 @@ namespace Maths
          * @param Scalar The scalar value to multiply by.
          * @param OutResult A pointer to the first element of the output 4x4 matrix where the result will be stored (16 Float32 values).
          */
-        static constexpr void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept;
+        static void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept;
 
     } // namespace SIMD
 

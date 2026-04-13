@@ -16,25 +16,25 @@ namespace Maths
     namespace SIMD
     {
 
-        constexpr FNeonFloat32x4::FNeonFloat32x4 () noexcept : Internal( vdupq_n_f32( 0.0f ) )
+        FNeonFloat32x4::FNeonFloat32x4 () noexcept : Internal( vdupq_n_f32( 0.0f ) )
         {
         }
 
-        constexpr FNeonFloat32x4::FNeonFloat32x4 ( const float32x4_t InInternal ) noexcept : Internal( InInternal )
+        FNeonFloat32x4::FNeonFloat32x4 ( const float32x4_t InInternal ) noexcept : Internal( InInternal )
         {
         }
 
-        constexpr FNeonFloat32x4 FNeonFloat32x4::Load ( const Float32 *const InAddress ) noexcept
+        FNeonFloat32x4 FNeonFloat32x4::Load ( const Float32 *const InAddress ) noexcept
         {
             return FNeonFloat32x4( vld1q_f32( InAddress ) );
         }
 
-        constexpr void FNeonFloat32x4::Store ( Float32 *const OutAddress ) const noexcept
+        void FNeonFloat32x4::Store ( Float32 *const OutAddress ) const noexcept
         {
             vst1q_f32( OutAddress, Internal );
         }
 
-        constexpr void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept
+        void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept
         {
             const float32x4_t L0 = vld1q_f32( InLeft + 0 );
             const float32x4_t L1 = vld1q_f32( InLeft + 4 );
@@ -60,7 +60,7 @@ namespace Maths
             }
         }
 
-        constexpr void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept
+        void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept
         {
             const float32x4_t VecScalar = vdupq_n_f32( Scalar );
 

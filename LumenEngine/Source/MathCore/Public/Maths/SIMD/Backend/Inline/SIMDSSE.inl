@@ -16,25 +16,25 @@ namespace Maths
     namespace SIMD
     {
 
-        constexpr FSSEFloat32x4::FSSEFloat32x4 () noexcept : Internal( _mm_setzero_ps() )
+        FSSEFloat32x4::FSSEFloat32x4 () noexcept : Internal( _mm_setzero_ps() )
         {
         }
 
-        constexpr FSSEFloat32x4::FSSEFloat32x4 ( const __m128 InInternal ) noexcept : Internal( InInternal )
+        FSSEFloat32x4::FSSEFloat32x4 ( const __m128 InInternal ) noexcept : Internal( InInternal )
         {
         }
 
-        constexpr FSSEFloat32x4 FSSEFloat32x4::Load ( const Float32 *const InAddress ) noexcept
+        FSSEFloat32x4 FSSEFloat32x4::Load ( const Float32 *const InAddress ) noexcept
         {
             return FSSEFloat32x4( _mm_load_ps( InAddress ) );
         }
 
-        constexpr void FSSEFloat32x4::Store ( Float32 *const OutAddress ) const noexcept
+        void FSSEFloat32x4::Store ( Float32 *const OutAddress ) const noexcept
         {
             _mm_store_ps( OutAddress, Internal );
         }
 
-        constexpr void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept
+        void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept
         {
             const __m128 L0 = _mm_load_ps( InLeft + 0 );
             const __m128 L1 = _mm_load_ps( InLeft + 4 );
@@ -75,7 +75,7 @@ namespace Maths
             }
         }
 
-        constexpr void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept
+        void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept
         {
             const __m128 ScalarVec = _mm_set1_ps( Scalar );
 
