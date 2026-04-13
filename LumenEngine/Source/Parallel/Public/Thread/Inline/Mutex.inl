@@ -5,12 +5,17 @@
 
 #include "Thread/Mutex.hpp"
 
-template <typename MutexType> LumenEngine::TLockGuard<MutexType>::TLockGuard( MutexType &InMutex ) noexcept : Mutex( InMutex )
+namespace LumenEngine
+{
+
+template <typename MutexType> TLockGuard<MutexType>::TLockGuard( MutexType &InMutex ) noexcept : Mutex( InMutex )
 {
     Mutex.Lock();
 }
 
-template <typename MutexType> LumenEngine::TLockGuard<MutexType>::~TLockGuard() noexcept
+template <typename MutexType> TLockGuard<MutexType>::~TLockGuard() noexcept
 {
     Mutex.Unlock();
 }
+
+} // namespace LumenEngine
