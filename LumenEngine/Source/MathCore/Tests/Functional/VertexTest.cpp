@@ -9,7 +9,7 @@
 namespace
 {
 
-    /**
+/**
  * @class FVertexTest
  * @brief Test fixture for FVertex functional tests
  */

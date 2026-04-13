@@ -142,7 +142,6 @@ namespace Maths
     template <typename Type, USize Rows, USize Inner, USize Columns>
     constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left, const Type Scalar ) noexcept;
 
-
 } // namespace Maths
 
 } // namespace LumenEngine

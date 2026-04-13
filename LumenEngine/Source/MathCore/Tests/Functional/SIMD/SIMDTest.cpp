@@ -34,14 +34,14 @@ TEST_F( FSIMDTest, LoadAndStore )
 
     /** Ensure input data is 16-byte aligned for SIMD operations. */
     alignas( 16 ) const LumenEngine::Float32 InputData[4] = { 1.0F, 2.0F, 3.0F, 4.0F };
-    alignas( 16 ) LumenEngine::Float32 OutputData[4] = { 0.0F, 0.0F, 0.0F, 0.0F };
+    alignas( 16 ) LumenEngine::Float32 OutputData[4]      = { 0.0F, 0.0F, 0.0F, 0.0F };
 
     const FSimdFloat Register = FSimdFloat::Load( InputData );
     Register.Store( OutputData );
 
-    for ( LumenEngine::USize i = 0; i < 4; ++i )
+    for ( LumenEngine::USize Idx = 0; Idx < 4; ++Idx )
     {
-        EXPECT_EQ( InputData[i], OutputData[i] );
+        EXPECT_EQ( InputData[Idx], OutputData[Idx] );
     }
 }
 
@@ -59,65 +59,45 @@ TEST_F( FSIMDTest, MatrixMul4x4 )
      */
 
     /** Identity Matrix */
-    alignas( 16 ) const LumenEngine::Float32 MatrixA[16] = {
-        1.0F, 0.0F, 0.0F, 0.0F,
-        0.0F, 1.0F, 0.0F, 0.0F,
-        0.0F, 0.0F, 1.0F, 0.0F,
-        0.0F, 0.0F, 0.0F, 1.0F
-    };
+    alignas( 16 ) const LumenEngine::Float32 MatrixA[16] = { 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F, 0.0F, 0.0F, 0.0F, 0.0F, 1.0F };
 
     /** Arbitrary Matrix */
-    alignas( 16 ) const LumenEngine::Float32 MatrixB[16] = {
-        1.0F, 5.0F, 9.0F, 13.0F,
-        2.0F, 6.0F, 10.0F, 14.0F,
-        3.0F, 7.0F, 11.0F, 15.0F,
-        4.0F, 8.0F, 12.0F, 16.0F
-    };
+    alignas( 16 ) const LumenEngine::Float32 MatrixB[16] = { 1.0F, 5.0F, 9.0F, 13.0F, 2.0F, 6.0F, 10.0F, 14.0F, 3.0F, 7.0F, 11.0F, 15.0F, 4.0F, 8.0F, 12.0F, 16.0F };
 
     alignas( 16 ) LumenEngine::Float32 Result[16] = { 0.0F };
 
     /** Identity * B = B */
     MatrixMul4x4( MatrixA, MatrixB, Result );
 
-    for ( LumenEngine::USize i = 0; i < 16; ++i )
+    for ( LumenEngine::USize Idx = 0; Idx < 16; ++Idx )
     {
-        EXPECT_NEAR( Result[i], MatrixB[i], Epsilon );
+        EXPECT_NEAR( Result[Idx], MatrixB[Idx], Epsilon );
     }
 
     /** B * Identity = B */
     MatrixMul4x4( MatrixB, MatrixA, Result );
 
-    for ( LumenEngine::USize i = 0; i < 16; ++i )
+    for ( LumenEngine::USize Idx = 0; Idx < 16; ++Idx )
     {
-        EXPECT_NEAR( Result[i], MatrixB[i], Epsilon );
+        EXPECT_NEAR( Result[Idx], MatrixB[Idx], Epsilon );
     }
 
     /** Specific multiplication: Diagonal * Diagonal */
-    alignas( 16 ) const LumenEngine::Float32 MatrixD1[16] = {
-        2.0F, 0.0F, 0.0F, 0.0F,
-        0.0F, 2.0F, 0.0F, 0.0F,
-        0.0F, 0.0F, 2.0F, 0.0F,
-        0.0F, 0.0F, 0.0F, 2.0F
-    };
+    alignas( 16 ) const LumenEngine::Float32 MatrixD1[16] = { 2.0F, 0.0F, 0.0F, 0.0F, 0.0F, 2.0F, 0.0F, 0.0F, 0.0F, 0.0F, 2.0F, 0.0F, 0.0F, 0.0F, 0.0F, 2.0F };
 
-    alignas( 16 ) const LumenEngine::Float32 MatrixD2[16] = {
-        3.0F, 0.0F, 0.0F, 0.0F,
-        0.0F, 3.0F, 0.0F, 0.0F,
-        0.0F, 0.0F, 3.0F, 0.0F,
-        0.0F, 0.0F, 0.0F, 3.0F
-    };
+    alignas( 16 ) const LumenEngine::Float32 MatrixD2[16] = { 3.0F, 0.0F, 0.0F, 0.0F, 0.0F, 3.0F, 0.0F, 0.0F, 0.0F, 0.0F, 3.0F, 0.0F, 0.0F, 0.0F, 0.0F, 3.0F };
 
     MatrixMul4x4( MatrixD1, MatrixD2, Result );
 
-    for ( LumenEngine::USize i = 0; i < 16; ++i )
+    for ( LumenEngine::USize Idx = 0; Idx < 16; ++Idx )
     {
-        if ( i == 0 || i == 5 || i == 10 || i == 15 )
+        if ( Idx == 0 || Idx == 5 || Idx == 10 || Idx == 15 )
         {
-            EXPECT_NEAR( Result[i], 6.0F, Epsilon );
+            EXPECT_NEAR( Result[Idx], 6.0F, Epsilon );
         }
         else
         {
-            EXPECT_NEAR( Result[i], 0.0F, Epsilon );
+            EXPECT_NEAR( Result[Idx], 0.0F, Epsilon );
         }
     }
 }
