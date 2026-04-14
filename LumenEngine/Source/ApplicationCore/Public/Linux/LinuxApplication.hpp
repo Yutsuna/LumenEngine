@@ -5,9 +5,9 @@
 
 #pragma once
 
-#if defined( LUMEN_ENGINE_PLATFORM_LINUX )
+#include "Definitions.hpp"
 
-    #include "Definitions.hpp"
+#if defined( LUMEN_ENGINE_PLATFORM_LINUX )
 
     #include "Container/Vector.hpp"
     #include "Generic/GenericApplication.hpp"
@@ -40,6 +40,9 @@ public:
 
     /** Adds a pending SDL event to be processed in the next message pump */
     void AddPendingEvent ( const SDL_Event &InEvent );
+
+    /** Shuts down the application and releases resources */
+    void Shutdown () noexcept override;
 
 public:
 

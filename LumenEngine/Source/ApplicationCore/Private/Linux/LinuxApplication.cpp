@@ -3,11 +3,10 @@
  * @brief Implementation of the FLinuxApplication class for Linux-specific application management.
  */
 
-#include "Definitions.hpp"
+#include "Linux/LinuxApplication.hpp"
 
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
 
-    #include "Linux/LinuxApplication.hpp"
     #include "Linux/LinuxBackend.hpp"
     #include "Linux/LinuxWindow.hpp"
 
@@ -27,12 +26,7 @@ const LumenEngine::FLogCategory LogLinuxApplication( "LinuxApplication" );
 
 LumenEngine::FLinuxApplication::~FLinuxApplication ()
 {
-    /** INFO: Release all tracked OS windows and message handlers prior to SDL shutdown */
-    Windows.clear();
-    MainWindow.Reset();
-    MessageHandler.Reset();
-
-    FLinuxBackend::ShutdownSDL();
+    Shutdown();
 
     if ( GLinuxApplication == this )
     {
@@ -71,6 +65,15 @@ void LumenEngine::FLinuxApplication::InitializeWindow ( const TSharedRef<FGeneri
 
     LinuxWindow->Initialize( this, InDescription, InParentWindow, bShowImmediately );
     Windows.push_back( LinuxWindow );
+}
+
+void LumenEngine::FLinuxApplication::Shutdown () noexcept
+{
+    /** INFO: Clear all tracked windows and message handlers */
+    Windows.clear();
+    MainWindow.Reset();
+    MessageHandler.Reset();
+    FLinuxBackend::ShutdownSDL();
 }
 
 namespace LumenEngine
