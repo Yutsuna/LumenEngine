@@ -49,7 +49,7 @@ public:
 private:
 
     /** Helper function to find a window by its SDL Window ID */
-    TSharedPtr<FLinuxWindow> FindWindowByID ( const SDL_WindowID InWindowID ) const;
+    [[nodiscard]] TSharedPtr<FLinuxWindow> FindWindowByID ( const SDL_WindowID InWindowID ) const;
 
 private:
 

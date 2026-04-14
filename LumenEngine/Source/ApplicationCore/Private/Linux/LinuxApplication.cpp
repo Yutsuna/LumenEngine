@@ -26,7 +26,17 @@ const LumenEngine::FLogCategory LogLinuxApplication( "LinuxApplication" );
 
 LumenEngine::FLinuxApplication::~FLinuxApplication ()
 {
+    /** INFO: Release all tracked OS windows and message handlers prior to SDL shutdown */
+    Windows.clear();
+    MainWindow.Reset();
+    MessageHandler.Reset();
+
     FLinuxBackend::ShutdownSDL();
+
+    if ( GLinuxApplication == this )
+    {
+        GLinuxApplication = nullptr;
+    }
 }
 
 LumenEngine::TSharedRef<LumenEngine::FGenericWindow> LumenEngine::FLinuxApplication::MakeWindow ()
@@ -43,10 +53,11 @@ LumenEngine::TSharedPtr<LumenEngine::FGenericApplication> LumenEngine::FLinuxApp
         return nullptr;
     }
 
-    FLinuxApplication *Application = new FLinuxApplication();
-    GLinuxApplication              = Application;
+    /** Use MakeShared to align the control block and pointer cleanly together */
+    TSharedPtr<FLinuxApplication> Application = MakeShared<FLinuxApplication>();
+    GLinuxApplication                         = Application.Get();
 
-    return MakeShareable( Application );
+    return StaticCastSharedPtr<FGenericApplication>( Application );
 }
 
 void LumenEngine::FLinuxApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
