@@ -1,4 +1,10 @@
-#include "Thread/Mutex.hpp"
+/**
+ * @file MutexTest.cpp
+ * @brief Unit tests for FMutex in LumenEngine
+ */
+
+#include "HAL/Mutex.hpp"
+#include "CoreTypes.hpp"
 
 #include <gtest/gtest.h>
 
@@ -31,23 +37,23 @@ TEST( ParallelMutex, TryLockAndUnlockTransitionsState )
 TEST( ParallelMutex, LockAndUnlockAllowMutualExclusion )
 {
     LumenEngine::FMutex Mutex;
-    std::atomic<int> ProtectedCounter = 0;
+    LumenEngine::TAtomic<LumenEngine::Int32> ProtectedCounter = 0;
 
-    constexpr int ThreadCount         = 8;
-    constexpr int IncrementsPerThread = 5000;
+    constexpr LumenEngine::Int32 ThreadCount         = 8;
+    constexpr LumenEngine::Int32 IncrementsPerThread = 5000;
 
     std::barrier StartBarrier( ThreadCount );
     std::vector<std::jthread> Workers;
     Workers.reserve( ThreadCount );
 
-    for ( int ThreadIndex = 0; ThreadIndex < ThreadCount; ++ThreadIndex )
+    for ( LumenEngine::Int32 ThreadIndex = 0; ThreadIndex < ThreadCount; ++ThreadIndex )
     {
         Workers.emplace_back(
             [&Mutex, &ProtectedCounter, &StartBarrier] ()
             {
                 StartBarrier.arrive_and_wait();
 
-                for ( int Iteration = 0; Iteration < IncrementsPerThread; ++Iteration )
+                for ( LumenEngine::Int32 Iteration = 0; Iteration < IncrementsPerThread; ++Iteration )
                 {
                     Mutex.Lock();
                     ++ProtectedCounter;
@@ -58,7 +64,7 @@ TEST( ParallelMutex, LockAndUnlockAllowMutualExclusion )
 
     Workers.clear();
 
-    const int Expected = ThreadCount * IncrementsPerThread;
+    const LumenEngine::Int32 Expected = ThreadCount * IncrementsPerThread;
     EXPECT_EQ( ProtectedCounter.load(), Expected );
 }
 
@@ -66,7 +72,7 @@ TEST( ParallelMutex, TryLockFailsWhenHeldByAnotherThread )
 {
     LumenEngine::FMutex Mutex;
     std::barrier SyncPoint( 2 );
-    std::atomic<bool> bObservedTryLockFailure = false;
+    LumenEngine::TAtomic<LumenEngine::Bool> bObservedTryLockFailure = false;
 
     Mutex.Lock();
 
@@ -86,7 +92,7 @@ TEST( ParallelMutex, TryLockFailsWhenHeldByAnotherThread )
 TEST( ParallelMutex, LockBlocksUntilAnotherThreadUnlocks )
 {
     LumenEngine::FMutex Mutex;
-    std::atomic<bool> bSecondThreadEnteredCriticalSection = false;
+    LumenEngine::TAtomic<LumenEngine::Bool> bSecondThreadEnteredCriticalSection = false;
     std::barrier SyncPoint( 2 );
 
     Mutex.Lock();
