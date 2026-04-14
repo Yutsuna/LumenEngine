@@ -127,7 +127,7 @@ template <typename Type> void TSharedPtr<Type>::Reset ()
 
 template <typename Type> void TSharedPtr<Type>::Release ()
 {
-    if ( Controller && Controller->SharedCount.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
+    if ( Controller and Controller->SharedCount.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
     {
         Controller->DestroyObject();
         Controller->Deallocate();

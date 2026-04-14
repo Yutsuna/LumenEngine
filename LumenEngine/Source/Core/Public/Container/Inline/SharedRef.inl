@@ -17,7 +17,7 @@ template <typename Type> TSharedRef<Type>::TSharedRef( const TSharedRef &Other )
 
 template <typename Type> TSharedRef<Type>::TSharedRef( TSharedRef &&Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
-    /* Empty */
+    Other.Controller = nullptr;
 }
 
 template <typename Type>
@@ -54,6 +54,18 @@ template <typename Type> TSharedRef<Type> &TSharedRef<Type>::operator=( const TS
     return *this;
 }
 
+template <typename Type> TSharedRef<Type> &TSharedRef<Type>::operator=( TSharedRef &&Other )
+{
+    if ( this != &Other )
+    {
+        Release();
+        Object           = Other.Object;
+        Controller       = Other.Controller;
+        Other.Controller = nullptr;
+    }
+    return *this;
+}
+
 template <typename Type> Type &TSharedRef<Type>::operator*() const
 {
     return *Object;
@@ -82,7 +94,7 @@ TSharedRef<Type>::TSharedRef( Type *InObject, SharedPtrInternal::FReferenceContr
 
 template <typename Type> void TSharedRef<Type>::Release ()
 {
-    if ( Controller && Controller->SharedCount.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
+    if ( Controller and Controller->SharedCount.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
     {
         Controller->DestroyObject();
         Controller->Deallocate();
