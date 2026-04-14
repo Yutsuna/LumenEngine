@@ -29,6 +29,7 @@ inline LumenEngine::Bool EngineRequestingExit ()
 inline void EngineExit ()
 {
     LumenEngine::GEngineLoop.Exit();
+    LumenEngine::FSignal::Reset();
     LumenEngine::FLogger::GetInstance().Shutdown();
 }
 
