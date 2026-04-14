@@ -18,7 +18,7 @@ public:
         /* Ctor */
     }
 
-    void Receive ( LumenEngine::FMessage InMessage ) override
+    void Receive ( const LumenEngine::FMessage &InMessage ) override
     {
         ReceivedMessages.push_back( InMessage );
     }
