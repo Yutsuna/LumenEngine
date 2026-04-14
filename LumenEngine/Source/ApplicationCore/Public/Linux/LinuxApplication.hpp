@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include "Definitions.hpp"
-
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
+
+    #include "Definitions.hpp"
 
     #include "Container/Vector.hpp"
     #include "Generic/GenericApplication.hpp"

@@ -3,22 +3,23 @@
  * @brief Implementation of the FLinuxApplication class for Linux-specific application management.
  */
 
-#include "Linux/LinuxApplication.hpp"
+#include "Definitions.hpp"
 
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
 
-    #include "Container/Signal.hpp"
+    #include "Linux/LinuxApplication.hpp"
     #include "Linux/LinuxBackend.hpp"
     #include "Linux/LinuxWindow.hpp"
+
+    #include "Container/Signal.hpp"
 
     #include "Generic/GenericApplicationInput.hpp"
     #include "Generic/GenericApplicationMessageHandler.hpp"
 
+    #include "Logging/Logger.hpp"
     #include "Logging/LoggingCategory.hpp"
+
     #include "SDL3/SDL_events.h"
-
-    #include <Logging/Logger.hpp>
-
     #include <SDL3/SDL.h>
 
 LumenEngine::FLinuxApplication *LumenEngine::GLinuxApplication = nullptr;
