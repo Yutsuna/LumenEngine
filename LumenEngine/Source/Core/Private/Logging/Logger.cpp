@@ -60,7 +60,7 @@ void LumenEngine::FLogger::Shutdown ()
 void LumenEngine::FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message )
 {
     {
-        std::lock_guard<std::mutex> Lock( QueueMutex );
+        TLockGuard<FMutex> Lock( QueueMutex );
         LogMessageQueue.push( { Category, Verbosity, std::move( Message ), HAL::FPlatformTime::Seconds() } );
     }
     Condition.notify_one();
@@ -70,7 +70,7 @@ void LumenEngine::FLogger::FlushLogMessages ( std::stop_token &StopToken )
 {
     while ( not StopToken.stop_requested() or not LogMessageQueue.empty() )
     {
-        std::unique_lock Lock( QueueMutex );
+        TUniqueLock<FMutex> Lock( QueueMutex );
 
         Condition.wait( Lock, StopToken, [this] { return !LogMessageQueue.empty(); } );
 
@@ -79,9 +79,9 @@ void LumenEngine::FLogger::FlushLogMessages ( std::stop_token &StopToken )
             FLogMessage Msg = std::move( LogMessageQueue.front() );
             LogMessageQueue.pop();
 
-            Lock.unlock();
+            Lock.Unlock();
             CoutMessage( Msg );
-            Lock.lock();
+            Lock.Lock();
         }
     }
 }
