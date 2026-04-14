@@ -1,0 +1,18 @@
+/**
+ * @file World.inl
+ * @brief Implementation of the FWorld class.
+ */
+
+#pragma once
+
+#include "World/World.hpp"
+
+template <typename ActorType, typename... Args> LumenEngine::TSharedRef<ActorType> LumenEngine::Engine::FWorld::SpawnActor ( Args &&...InArgs )
+{
+    ActorID NewId                  = NextActorId++;
+    TSharedRef<ActorType> NewActor = MakeShared<ActorType>( NewId, std::forward<Args>( InArgs )... );
+
+    Actors[NewId] = NewActor;
+    ActiveActors.push_back( NewActor );
+    return NewActor;
+}
