@@ -142,6 +142,22 @@ void LumenEngine::Parallel::TTripleBuffer<BufferType>::WriteBuffer ( BufferType 
     PublishWrite();
 }
 
+template <typename BufferType>
+template <typename Callable>
+    requires std::is_invocable_v<Callable, BufferType &>
+void LumenEngine::Parallel::TTripleBuffer<BufferType>::WriteBuffer ( Callable &&InEditor )
+{
+    TLockGuard<FMutex> LockGuard{ WriteMutex };
+
+    const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
+    const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
+
+    /** Let the caller modify the underlying buffer in-place directly */
+    InEditor( Buffers[WriterIndex] );
+
+    PublishWrite();
+}
+
 template <typename BufferType> void LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapWriteBuffers () noexcept
 {
     TLockGuard<FMutex> LockGuard{ WriteMutex };

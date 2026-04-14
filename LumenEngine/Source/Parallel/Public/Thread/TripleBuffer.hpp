@@ -134,6 +134,14 @@ namespace Parallel
         void WriteBuffer ( BufferType &&InData ) noexcept( std::is_nothrow_move_assignable_v<BufferType> );
 
         /**
+         * @brief Accesses the writer slot directly for in-place modifications, avoiding allocations.
+         * @param InEditor A callable taking a reference to the mutable BufferType.
+         */
+        template <typename Callable>
+            requires std::is_invocable_v<Callable, BufferType &>
+        void WriteBuffer ( Callable &&InEditor );
+
+        /**
          * @brief Publishes the current writer slot without writing.
          * Safe to call from multiple producer threads simultaneously.
          */
