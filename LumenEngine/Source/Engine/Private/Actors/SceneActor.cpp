@@ -18,12 +18,10 @@ void LumenEngine::Engine::ASceneActor::Receive ( FMessage InMessage )
     {
         const FDrawCommandPayload &Payload = InMessage.GetPayload<FDrawCommandPayload>();
 
-        Renderer::FDrawCommand Cmd;
-        Cmd.Mesh      = Payload.Mesh;
-        Cmd.Shader    = Payload.Shader;
-        Cmd.Transform = Payload.Transform;
-
-        PendingDraws[InMessage.Sender] = Cmd;
+        Renderer::FDrawCommand &Cmd = PendingDraws[InMessage.Sender];
+        Cmd.Mesh                    = Payload.Mesh;
+        Cmd.Shader                  = Payload.Shader;
+        Cmd.Transform               = Payload.Transform;
     }
     else if ( InMessage.Type == EEngineMessage::Tick )
     {
@@ -45,7 +43,9 @@ void LumenEngine::Engine::ASceneActor::HandleTick ( const Float64 /*InDeltaTime*
     Packet.ClearColor[2] = 0.05F;
     Packet.ClearColor[3] = 1.00F;
 
-    for ( const auto &[DrawId, DrawCmd] : PendingDraws )
+    Packet.DrawCommands.reserve( PendingDraws.size() );
+
+    for ( const auto &[_, DrawCmd] : PendingDraws )
     {
         Packet.DrawCommands.push_back( DrawCmd );
     }
