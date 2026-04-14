@@ -11,8 +11,9 @@ template <typename ActorType, typename... Args> LumenEngine::TSharedRef<ActorTyp
 {
     ActorID NewId                  = NextActorId++;
     TSharedRef<ActorType> NewActor = MakeShared<ActorType>( NewId, std::forward<Args>( InArgs )... );
+    TSharedPtr<AActor> StoredActor = NewActor;
 
-    Actors[NewId] = NewActor;
-    ActiveActors.push_back( NewActor );
+    Actors[NewId] = StoredActor;
+    ActiveActors.push_back( StoredActor );
     return NewActor;
 }

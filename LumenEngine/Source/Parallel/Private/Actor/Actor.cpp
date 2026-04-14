@@ -12,14 +12,14 @@ LumenEngine::AActor::AActor ( ActorID InId ) noexcept : Id( InId )
 
 void LumenEngine::AActor::EnqueueMessage ( FMessage InMessage ) noexcept
 {
-    Mailbox.Push( std::move( InMessage ) );
+    Mailbox.Push( InMessage );
 }
 
 void LumenEngine::AActor::ProcessMailbox () noexcept
 {
     while ( TOptional<FMessage> Message = Mailbox.Pop() )
     {
-        Receive( std::move( *Message ) );
+        Receive( *Message );
     }
 }
 

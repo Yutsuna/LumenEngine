@@ -43,7 +43,7 @@ void LumenEngine::FMailBox::Push ( FMessage InMessage ) noexcept
         LUMEN_LOG_ERROR( LogActor, "FMailBox::Push: failed to allocate node for new message" );
         return;
     }
-    NewNode->Message = std::move( InMessage );
+    NewNode->Message = InMessage;
 
     /**
      * INFO: exchange is the wait-free heart of Vyukov's algorithm.
@@ -72,7 +72,6 @@ LumenEngine::TOptional<LumenEngine::FMessage> LumenEngine::FMailBox::Pop () noex
 
     if ( NextNode == nullptr )
     {
-        LUMEN_LOG_WARNING( LogActor, "FMailBox::Pop: queue is empty or producer is in transient gap" );
         return {};
     }
 
@@ -82,7 +81,7 @@ LumenEngine::TOptional<LumenEngine::FMessage> LumenEngine::FMailBox::Pop () noex
         return {};
     }
 
-    TOptional<FMessage> Result = std::move( NextNode->Message );
+    TOptional<FMessage> Result = NextNode->Message;
 
     /** INFO: The old Head becomes the new stub; delete it unless it is the original stub. */
     FNode *const OldHead = Head;
