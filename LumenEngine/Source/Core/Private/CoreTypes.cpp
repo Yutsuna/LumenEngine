@@ -4,6 +4,3 @@
  */
 
 #include "CoreTypes.hpp"
-#include "Logging/LoggingCategory.hpp"
-
-const LumenEngine::FLogCategory LumenEngine::LogCore( "Core" );
