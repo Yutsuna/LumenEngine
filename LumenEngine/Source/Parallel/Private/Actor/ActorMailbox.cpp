@@ -8,7 +8,7 @@
 
 #include <new>
 
-LumenEngine::FMailBox::FMailBox () noexcept : Head( &Stub )
+LumenEngine::FMailBox::FMailBox () noexcept : FreeNodes( 256ULL ), Head( &Stub )
 {
     Tail.store( &Stub, std::memory_order_relaxed );
 }
@@ -32,17 +32,34 @@ LumenEngine::FMailBox::~FMailBox () noexcept
 
         CurrentNode = NextNode;
     }
+
+    /** Clear the internal free list cache */
+    while ( TOptional<FNode *> PooledNode = FreeNodes.Pop() )
+    {
+        delete *PooledNode;
+    }
 }
 
 void LumenEngine::FMailBox::Push ( const FMessage &InMessage ) noexcept
 {
-    FNode *const NewNode = new ( std::nothrow ) FNode();
+    FNode *NewNode = nullptr;
+
+    /** Try taking an existing node lock-free, allocate only if pool is depleted */
+    if ( TOptional<FNode *> PooledNode = FreeNodes.Pop() )
+    {
+        NewNode = *PooledNode;
+    }
+    else
+    {
+        NewNode = new ( std::nothrow ) FNode();
+    }
 
     if ( NewNode == nullptr )
     {
         LUMEN_LOG_ERROR( LogActor, "FMailBox::Push: failed to allocate node for new message" );
         return;
     }
+
     NewNode->Next.store( nullptr, std::memory_order_relaxed );
     NewNode->Message = InMessage;
 
@@ -85,7 +102,13 @@ LumenEngine::TOptional<LumenEngine::FMessage> LumenEngine::FMailBox::Pop () noex
 
     if ( OldHead != &Stub )
     {
-        delete OldHead;
+        OldHead->Message.reset();
+
+        /** Return node to pool, fallback to OS deallocation if the queue is full */
+        if ( not FreeNodes.Push( OldHead ) )
+        {
+            delete OldHead;
+        }
     }
 
     return Result;
