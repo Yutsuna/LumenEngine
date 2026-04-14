@@ -25,11 +25,14 @@ public:
 
 private:
 
+    void CreateResources ();
     void CreateActors ();
 
 private:
 
     TUniquePtr<Engine::FWorld> World;
+    Renderer::FRenderMesh TriangleMesh;
+    Renderer::FRenderShader TriangleShader;
 };
 
 } // namespace LumenEngine

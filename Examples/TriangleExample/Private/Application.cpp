@@ -10,7 +10,7 @@
 
 #include "Actors/Camera.hpp"
 #include "Actors/SceneActor.hpp"
-#include "Actors/Triangle.hpp"
+#include "Actors/StaticMeshActor.hpp"
 
 #include "Generic/GenericApplication.hpp"
 
@@ -18,6 +18,7 @@
 
 namespace LumenEngine
 {
+
 LUMEN_LOG_DEFINE_CATEGORY( LogTriangleExample, "TriangleExample" );
 
 Int32 FTriangleExampleApplication::Initialize ()
@@ -30,6 +31,7 @@ Int32 FTriangleExampleApplication::Initialize ()
     GPlatformApplication->SetMessageHandler( MakeShared<FTriangleExampleMessageHandler>() );
     World = MakeUnique<Engine::FWorld>();
 
+    CreateResources();
     CreateActors();
 
     LUMEN_LOG_INFO( LogTriangleExample, "TriangleExample: World initialized with Camera, Scene and Mesh actors." );
@@ -41,12 +43,23 @@ void FTriangleExampleApplication::Tick ( const Float64 InDeltaTime )
     World->Tick( InDeltaTime );
 }
 
+void FTriangleExampleApplication::CreateResources ()
+{
+    TriangleMesh.Vertices       = { { { 0.0F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
+                                    { { 0.5F, 0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
+                                    { { -0.5F, 0.5F, 0.0F }, { 0.0F, 0.0F, 1.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } } };
+    TriangleMesh.Indices        = { 0, 1, 2 };
+    TriangleShader.VertexPath   = "Shaders/Triangle.vert.spv";
+    TriangleShader.FragmentPath = "Shaders/Triangle.frag.spv";
+}
+
 void FTriangleExampleApplication::CreateActors ()
 {
-    TSharedRef<Engine::ASceneActor> SceneActor  = World->SpawnActor<Engine::ASceneActor>();
-    TSharedRef<AExampleCameraActor> CameraActor = World->SpawnActor<AExampleCameraActor>();
-    TSharedRef<ATriangleMeshActor> MeshActor    = World->SpawnActor<ATriangleMeshActor>();
+    TSharedRef<Engine::ASceneActor> SceneActor     = World->SpawnActor<Engine::ASceneActor>();
+    TSharedRef<AExampleCameraActor> CameraActor    = World->SpawnActor<AExampleCameraActor>();
+    TSharedRef<Engine::AStaticMeshActor> MeshActor = World->SpawnActor<Engine::AStaticMeshActor>();
 
+    MeshActor->SetMeshAndShader( &TriangleMesh, &TriangleShader );
     MeshActor->SetSceneActor( SceneActor );
 }
 
