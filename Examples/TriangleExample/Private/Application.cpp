@@ -1,5 +1,7 @@
 #include "Application.hpp"
 
+#include "Actors/SceneActor.hpp"
+#include "Actors/StaticMeshActor.hpp"
 #include "ErrorCodes.hpp"
 #include "Generic/GenericApplication.hpp"
 #include "Graphics/RenderResource.hpp"
@@ -7,6 +9,7 @@
 #include "Logging/Logger.hpp"
 #include "Maths/Vec.hpp"
 #include "MessageHandler.hpp"
+#include "World/World.hpp"
 
 namespace LumenEngine
 {
@@ -45,9 +48,11 @@ Int32 FTriangleExampleApplication::Initialize ()
     }
 
     GPlatformApplication->SetMessageHandler( MakeShared<FTriangleExampleMessageHandler>() );
+
     CreateTriangle();
     CreatePacket();
     CreateCamera();
+    CreateActors();
 
     LUMEN_LOG_INFO( LogTriangleExample, "TriangleExample Initialized with MathCore abstractions." );
     return EErrorCode::Success;
@@ -55,11 +60,7 @@ Int32 FTriangleExampleApplication::Initialize ()
 
 void FTriangleExampleApplication::Tick ( const Float64 DeltaTime )
 {
-    if ( not Renderer::GRenderer.IsValid() ) [[unlikely]]
-    {
-        return;
-    }
-
+    World->Tick(DeltaTime);
     Camera.Tick( DeltaTime );
 
     const RHI::FGlobalUniformData Uniforms = { .ViewProjectionMatrix = Maths::FMatrix4x4f::Identity(),
@@ -93,6 +94,17 @@ void FTriangleExampleApplication::CreateCamera () noexcept
 {
     Camera.SetPerspective( CameraFovDegrees, CameraAspectRatio, CameraNearPlane, CameraFarPlane );
     Camera.LookAt( CameraEye, {} );
+}
+
+void FTriangleExampleApplication::CreateActors () noexcept
+{
+    World = MakeUnique<Engine::FWorld>();
+
+    TSharedRef<Engine::ASceneActor> SceneActor         = World->SpawnActor<Engine::ASceneActor>();
+    TSharedRef<Engine::AStaticMeshActor> TriangleActor = World->SpawnActor<Engine::AStaticMeshActor>();
+
+    TriangleActor->SetMeshAndShader( &Triangle.Mesh, &Triangle.Shader );
+    TriangleActor->SetSceneActor( SceneActor );
 }
 
 } // namespace LumenEngine

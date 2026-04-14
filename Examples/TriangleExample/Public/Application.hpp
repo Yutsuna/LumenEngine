@@ -9,6 +9,10 @@
 #include "Graphics/Resources/RenderMesh.hpp"
 #include "Graphics/Resources/RenderShader.hpp"
 
+#include "Container/UniquePtr.hpp"
+
+#include "World/World.hpp"
+
 #include "Maths/Camera.hpp"
 
 namespace LumenEngine
@@ -34,6 +38,7 @@ private:
     void CreateTriangle () noexcept;
     void CreatePacket () noexcept;
     void CreateCamera () noexcept;
+    void CreateActors () noexcept;
 
 private:
 
@@ -45,6 +50,7 @@ private:
 
     Maths::FCamera Camera;
     Renderer::FRenderPacket RenderPacket;
+    TUniquePtr<Engine::FWorld> World;
 };
 
 } // namespace LumenEngine
