@@ -34,7 +34,7 @@ LumenEngine::FMailBox::~FMailBox () noexcept
     }
 }
 
-void LumenEngine::FMailBox::Push ( FMessage InMessage ) noexcept
+void LumenEngine::FMailBox::Push ( const FMessage &InMessage ) noexcept
 {
     FNode *const NewNode = new ( std::nothrow ) FNode();
 
@@ -43,23 +43,19 @@ void LumenEngine::FMailBox::Push ( FMessage InMessage ) noexcept
         LUMEN_LOG_ERROR( LogActor, "FMailBox::Push: failed to allocate node for new message" );
         return;
     }
+    NewNode->Next.store( nullptr, std::memory_order_relaxed );
     NewNode->Message = InMessage;
 
     /**
      * INFO: exchange is the wait-free heart of Vyukov's algorithm.
      *   release -> synchronises with the consumer's acquire on Next.
-     *   After this line, PrevTail->Next must still be written
      */
     FNode *const PrevTail = Tail.exchange( NewNode, std::memory_order_release );
 
     /**
-     * INFO: This relaxed store is safe: the consumer will only ever reach
-     * PrevTail->Next after it has seen NewNode as the new Tail (via acquire on exchange),
-     * which already carries the release above. The gap between exchange and
-     * this store is the "transient gap";
-     * Pop() handles it by returning nullopt.
+     * INFO: This store must be release to synchronize with the consumer's acquire on Next.
      */
-    PrevTail->Next.store( NewNode, std::memory_order_relaxed );
+    PrevTail->Next.store( NewNode, std::memory_order_release );
 }
 
 LumenEngine::TOptional<LumenEngine::FMessage> LumenEngine::FMailBox::Pop () noexcept

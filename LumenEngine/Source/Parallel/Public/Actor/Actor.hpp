@@ -49,7 +49,7 @@ public:
     [[nodiscard]] ActorID GetId () const noexcept;
 
     /** @return A lightweight handle to this actor. */
-    [[nodiscard]] FActorRef GetRef () const noexcept;
+    [[nodiscard]] FActorRef GetRef () noexcept;
 
 private:
 

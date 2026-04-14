@@ -19,22 +19,6 @@
 namespace LumenEngine
 {
 
-namespace Internal
-{
-
-    /**
-     * @struct FMailBoxNode
-     * @brief Intrusive linked-list node for the Vyukov MPSC queue.
-     * @details Owns an optional message payload. The stub sentinel carries no message.
-     */
-    struct FMailBoxNode
-    {
-        TAtomic<FMailBoxNode *> Next = { nullptr };
-        TOptional<FMessage> Message;
-    };
-
-} // namespace Internal
-
 /**
  * @class FMailBox
  * @brief Wait-free MPSC (multi-producer, single-consumer) mailbox.
@@ -51,11 +35,24 @@ namespace Internal
  *    - Never blocks. Caller must handle empty returns gracefully.
  *
  *  Memory ordering:
- *    - Push: release on Tail exchange + relaxed store on Next.
+ *    - Push: release on Tail exchange + release store on Next.
  *    - Pop:  acquire on Next load to synchronise with the producer's release.
  */
 class FMailBox final : public FNonCopyable, public FNonMovable
 {
+private:
+
+    /**
+     * @struct FNode
+     * @brief Intrusive linked-list node for the Vyukov MPSC queue.
+     * @details Owns an optional message payload. The stub sentinel carries no message.
+     */
+    struct alignas( 64 ) FNode
+    {
+        TAtomic<FNode *> Next = { nullptr };
+        TOptional<FMessage> Message;
+    };
+
 public:
 
     FMailBox () noexcept;
@@ -65,9 +62,9 @@ public:
 
     /**
      * @brief Enqueues a message. Safe to call from any thread simultaneously.
-     * @param InMessage The message to send. Moved into the internal node.
+     * @param InMessage The message to send.
      */
-    void Push ( FMessage InMessage ) noexcept;
+    void Push ( const FMessage &InMessage ) noexcept;
 
     /**
      * @brief Attempts to dequeue the front message.
@@ -83,8 +80,6 @@ public:
     [[nodiscard]] Bool IsEmpty () const noexcept;
 
 private:
-
-    using FNode = Internal::FMailBoxNode;
 
     /** @brief Stub sentinel — Head always points to the node *before* the first real message. */
     alignas( 64 ) FNode Stub = {};
