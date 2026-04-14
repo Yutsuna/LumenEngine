@@ -7,18 +7,18 @@
 
 #if defined( LUMEN_ENGINE_PLATFORM_LINUX )
 
-    #include "Container/Signal.hpp"
     #include "Linux/LinuxBackend.hpp"
     #include "Linux/LinuxWindow.hpp"
+
+    #include "Container/Signal.hpp"
 
     #include "Generic/GenericApplicationInput.hpp"
     #include "Generic/GenericApplicationMessageHandler.hpp"
 
+    #include "Logging/Logger.hpp"
     #include "Logging/LoggingCategory.hpp"
+
     #include "SDL3/SDL_events.h"
-
-    #include <Logging/Logger.hpp>
-
     #include <SDL3/SDL.h>
 
 LumenEngine::FLinuxApplication *LumenEngine::GLinuxApplication = nullptr;
@@ -26,7 +26,12 @@ const LumenEngine::FLogCategory LogLinuxApplication( "LinuxApplication" );
 
 LumenEngine::FLinuxApplication::~FLinuxApplication ()
 {
-    FLinuxBackend::ShutdownSDL();
+    Shutdown();
+
+    if ( GLinuxApplication == this )
+    {
+        GLinuxApplication = nullptr;
+    }
 }
 
 LumenEngine::TSharedRef<LumenEngine::FGenericWindow> LumenEngine::FLinuxApplication::MakeWindow ()
@@ -43,10 +48,11 @@ LumenEngine::TSharedPtr<LumenEngine::FGenericApplication> LumenEngine::FLinuxApp
         return nullptr;
     }
 
-    FLinuxApplication *Application = new FLinuxApplication();
-    GLinuxApplication              = Application;
+    /** Use MakeShared to align the control block and pointer cleanly together */
+    TSharedPtr<FLinuxApplication> Application = MakeShared<FLinuxApplication>();
+    GLinuxApplication                         = Application.Get();
 
-    return MakeShareable( Application );
+    return StaticCastSharedPtr<FGenericApplication>( Application );
 }
 
 void LumenEngine::FLinuxApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
@@ -59,6 +65,15 @@ void LumenEngine::FLinuxApplication::InitializeWindow ( const TSharedRef<FGeneri
 
     LinuxWindow->Initialize( this, InDescription, InParentWindow, bShowImmediately );
     Windows.push_back( LinuxWindow );
+}
+
+void LumenEngine::FLinuxApplication::Shutdown () noexcept
+{
+    /** INFO: Clear all tracked windows and message handlers */
+    Windows.clear();
+    MainWindow.Reset();
+    MessageHandler.Reset();
+    FLinuxBackend::ShutdownSDL();
 }
 
 namespace LumenEngine

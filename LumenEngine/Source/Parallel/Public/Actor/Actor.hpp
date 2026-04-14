@@ -18,7 +18,6 @@ namespace LumenEngine
  * @details Each actor owns a lock-free mailbox.
  *          The engine calls ProcessMailbox() from a worker thread
  *          Receive() is always single-threaded per instance.
- *          Actors communicate exclusively via AActorRef::Send(); no shared state.
  */
 class AActor : public FNonCopyable
 {
@@ -33,13 +32,13 @@ public:
      * @brief Processes one incoming message. Implemented by concrete actors.
      * @param InMessage The message to handle.
      */
-    virtual void Receive ( FMessage InMessage ) = 0;
+    virtual void Receive ( const FMessage &InMessage ) = 0;
 
     /**
      * @brief Enqueues a message into this actor's mailbox. Thread-safe.
      * @param InMessage The message to deliver.
      */
-    void EnqueueMessage ( FMessage InMessage ) noexcept;
+    void EnqueueMessage ( const FMessage &InMessage ) noexcept;
 
     /** @brief Drains and processes all pending messages. Single-consumer. */
     void ProcessMailbox () noexcept;
@@ -48,6 +47,9 @@ public:
 
     /** @return This actor's unique identifier. */
     [[nodiscard]] ActorID GetId () const noexcept;
+
+    /** @return A lightweight handle to this actor. */
+    [[nodiscard]] FActorRef GetRef () noexcept;
 
 private:
 

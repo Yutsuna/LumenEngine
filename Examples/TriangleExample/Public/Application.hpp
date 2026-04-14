@@ -31,8 +31,8 @@ private:
 private:
 
     TUniquePtr<Engine::FWorld> World;
-    Renderer::FRenderMesh TriangleMesh;
-    Renderer::FRenderShader TriangleShader;
+    TSharedPtr<Renderer::FRenderMesh> TriangleMesh;
+    TSharedPtr<Renderer::FRenderShader> TriangleShader;
 };
 
 } // namespace LumenEngine

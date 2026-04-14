@@ -51,6 +51,8 @@ public:
 
     [[nodiscard]] virtual TSharedPtr<FGenericWindow> GetMainWindow () const noexcept;
 
+    virtual void Shutdown () noexcept;
+
 protected:
 
     TSharedPtr<FGenericApplicationMessageHandler> MessageHandler;

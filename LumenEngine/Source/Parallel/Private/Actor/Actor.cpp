@@ -10,7 +10,7 @@ LumenEngine::AActor::AActor ( ActorID InId ) noexcept : Id( InId )
     /* CTOR */
 }
 
-void LumenEngine::AActor::EnqueueMessage ( FMessage InMessage ) noexcept
+void LumenEngine::AActor::EnqueueMessage ( const FMessage &InMessage ) noexcept
 {
     Mailbox.Push( InMessage );
 }
@@ -26,4 +26,9 @@ void LumenEngine::AActor::ProcessMailbox () noexcept
 LumenEngine::ActorID LumenEngine::AActor::GetId () const noexcept
 {
     return Id;
+}
+
+LumenEngine::FActorRef LumenEngine::AActor::GetRef () noexcept
+{
+    return FActorRef( Id, this );
 }

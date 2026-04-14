@@ -37,7 +37,7 @@ TSharedPtr<FGenericApplication> GPlatformApplication = nullptr;
 
 namespace
 {
-    inline const FGenericWindowDescription GetDefaultWindowDescription ()
+    const FGenericWindowDescription GetDefaultWindowDescription () noexcept
     {
         return { .Title        = "Lumen Engine",
                  .Position     = Maths::FVec2i( 100, 100 ),
@@ -51,7 +51,7 @@ namespace
 
 } // namespace LumenEngine
 
-LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiChar *[] )
+LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiChar LUMEN_UNUSED *Argv[] )
 {
     LumenEngine::FLogger::GetInstance().Initialize();
     LUMEN_LOG_INFO( LogLaunch, "Engine PreInit started with {} arguments", Argc );
@@ -119,6 +119,11 @@ void LumenEngine::FEngineLoop::Exit () const
     LUMEN_LOG_INFO( LogLaunch, "Engine Exit requested. Releasing platform application..." );
 
     Renderer::GRenderer.Reset();
+
+    if ( GPlatformApplication.IsValid() )
+    {
+        GPlatformApplication->Shutdown();
+    }
     GPlatformApplication.Reset();
 }
 

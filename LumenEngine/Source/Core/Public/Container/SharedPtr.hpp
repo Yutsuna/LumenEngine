@@ -8,7 +8,6 @@
 #include "Concepts/ConvertibleTo.hpp"
 #include "CoreTypes.hpp"
 
-#include <cassert>
 #include <type_traits>
 
 namespace LumenEngine
@@ -149,6 +148,7 @@ public:
 
     /** Assignment Operators */
     TSharedRef &operator=( const TSharedRef &Other );
+    TSharedRef &operator=( TSharedRef &&Other );
 
     /** Accessors */
     Type &operator*() const;
@@ -157,6 +157,26 @@ public:
 
     /** Returns the current number of shared references. */
     Int32 GetSharedReferenceCount () const;
+
+public:
+
+    /** Comparison Operators */
+    template <typename OtherType> bool operator==( const TSharedRef<OtherType> &Other ) const noexcept
+    {
+        return Object == Other.Object;
+    }
+    template <typename OtherType> bool operator!=( const TSharedRef<OtherType> &Other ) const noexcept
+    {
+        return Object != Other.Object;
+    }
+    template <typename OtherType> bool operator==( const TSharedPtr<OtherType> &Other ) const noexcept
+    {
+        return Object == Other.Get();
+    }
+    template <typename OtherType> bool operator!=( const TSharedPtr<OtherType> &Other ) const noexcept
+    {
+        return Object != Other.Get();
+    }
 
 private:
 
@@ -227,6 +247,35 @@ public:
 
     /** Resets the pointer to null. */
     void Reset ();
+
+public:
+
+    /** Comparison Operators */
+    template <typename OtherType> bool operator==( const TSharedPtr<OtherType> &Other ) const noexcept
+    {
+        return Object == Other.Get();
+    }
+    template <typename OtherType> bool operator!=( const TSharedPtr<OtherType> &Other ) const noexcept
+    {
+        return Object != Other.Get();
+    }
+    template <typename OtherType> bool operator==( const TSharedRef<OtherType> &Other ) const noexcept
+    {
+        return Object == Other.Get();
+    }
+    template <typename OtherType> bool operator!=( const TSharedRef<OtherType> &Other ) const noexcept
+    {
+        return Object != Other.Get();
+    }
+
+    bool operator==( NullptrType ) const noexcept
+    {
+        return Object == nullptr;
+    }
+    bool operator!=( NullptrType ) const noexcept
+    {
+        return Object != nullptr;
+    }
 
 private:
 

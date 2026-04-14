@@ -52,3 +52,8 @@ LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> LumenEngine::FGenericApplic
 {
     return MainWindow;
 }
+
+void LumenEngine::FGenericApplication::Shutdown () noexcept
+{
+    /* Empty */
+}

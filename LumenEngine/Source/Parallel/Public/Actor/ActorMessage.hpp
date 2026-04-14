@@ -13,9 +13,9 @@ namespace LumenEngine
 /**
  * @struct FMessage
  * @brief Represents a message sent between actors in the Lumen Engine.
- * @details Sized to exactly 128 bytes to fit perfectly in 2 CPU cache lines.
+ * @details Sized to exactly 128 bytes and aligned to 64 bytes to fit perfectly in 2 CPU cache lines.
  */
-struct alignas( 16 ) FMessage
+struct alignas( 64 ) FMessage
 {
     /**
      * Header (16 bytes total)

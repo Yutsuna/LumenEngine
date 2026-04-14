@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Container/Queue.hpp"
+#include "HAL/Mutex.hpp"
 #include "LoggingCategory.hpp"
 #include "LoggingVerbosity.hpp"
 
@@ -59,9 +60,9 @@ private:
 
 private:
 
-    std::mutex QueueMutex;
+    FMutex QueueMutex;
     std::condition_variable_any Condition;
-    FQueue<FLogMessage> LogMessageQueue;
+    TQueue<FLogMessage> LogMessageQueue;
 
     std::jthread WorkerThread;
     TAtomic<Bool> bIsAsync;

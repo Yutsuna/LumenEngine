@@ -41,6 +41,9 @@ public:
     /** Adds a pending SDL event to be processed in the next message pump */
     void AddPendingEvent ( const SDL_Event &InEvent );
 
+    /** Shuts down the application and releases resources */
+    void Shutdown () noexcept override;
+
 public:
 
     /** Factory to create the application instance */
@@ -49,7 +52,7 @@ public:
 private:
 
     /** Helper function to find a window by its SDL Window ID */
-    TSharedPtr<FLinuxWindow> FindWindowByID ( const SDL_WindowID InWindowID ) const;
+    [[nodiscard]] TSharedPtr<FLinuxWindow> FindWindowByID ( const SDL_WindowID InWindowID ) const;
 
 private:
 

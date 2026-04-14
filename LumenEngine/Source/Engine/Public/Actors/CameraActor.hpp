@@ -29,7 +29,7 @@ namespace Engine
     public:
 
         /** @brief Overrides the base actor receive to route messages. */
-        void Receive ( FMessage InMessage ) override;
+        void Receive ( const FMessage &InMessage ) override;
 
         /** @brief Retrieve the mathematical camera state. */
         [[nodiscard]] const Maths::FCamera &GetCamera () const noexcept;

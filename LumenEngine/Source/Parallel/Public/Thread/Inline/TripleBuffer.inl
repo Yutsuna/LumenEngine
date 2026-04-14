@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreTypes.hpp"
-#include "Thread/Mutex.hpp"
+#include "HAL/Mutex.hpp"
 #include "Thread/TripleBuffer.hpp"
 
 /**
@@ -138,6 +138,22 @@ void LumenEngine::Parallel::TTripleBuffer<BufferType>::WriteBuffer ( BufferType 
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
 
     Buffers[WriterIndex] = std::move( InData );
+
+    PublishWrite();
+}
+
+template <typename BufferType>
+template <typename Callable>
+    requires std::is_invocable_v<Callable, BufferType &>
+void LumenEngine::Parallel::TTripleBuffer<BufferType>::WriteBuffer ( Callable &&InEditor )
+{
+    TLockGuard<FMutex> LockGuard{ WriteMutex };
+
+    const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
+    const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
+
+    /** Let the caller modify the underlying buffer in-place directly */
+    InEditor( Buffers[WriterIndex] );
 
     PublishWrite();
 }

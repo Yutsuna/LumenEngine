@@ -9,8 +9,6 @@
 #include "CoreTypes.hpp"
 #include "Logging/Logger.hpp"
 
-const LumenEngine::FLogCategory LumenEngine::FIOFile::LogIOFile( "IOFile" );
-
 template <typename Type> LumenEngine::TOptional<LumenEngine::TVector<Type>> LumenEngine::FIOFile::ReadAllBytes ( const FString &FilePath ) noexcept
 {
     TOptional<std::ifstream> FileOpt = Open( FilePath );

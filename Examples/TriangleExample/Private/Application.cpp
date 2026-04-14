@@ -18,10 +18,10 @@
 
 namespace LumenEngine
 {
-
 LUMEN_LOG_DEFINE_CATEGORY( LogTriangleExample, "TriangleExample" );
+}
 
-Int32 FTriangleExampleApplication::Initialize ()
+LumenEngine::Int32 LumenEngine::FTriangleExampleApplication::Initialize ()
 {
     if ( not GPlatformApplication.IsValid() )
     {
@@ -38,29 +38,30 @@ Int32 FTriangleExampleApplication::Initialize ()
     return EErrorCode::Success;
 }
 
-void FTriangleExampleApplication::Tick ( const Float64 InDeltaTime )
+void LumenEngine::FTriangleExampleApplication::Tick ( const Float64 InDeltaTime )
 {
     World->Tick( InDeltaTime );
 }
 
-void FTriangleExampleApplication::CreateResources ()
+void LumenEngine::FTriangleExampleApplication::CreateResources ()
 {
-    TriangleMesh.Vertices       = { { { 0.0F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
-                                    { { 0.5F, 0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
-                                    { { -0.5F, 0.5F, 0.0F }, { 0.0F, 0.0F, 1.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } } };
-    TriangleMesh.Indices        = { 0, 1, 2 };
-    TriangleShader.VertexPath   = "Shaders/Triangle.vert.spv";
-    TriangleShader.FragmentPath = "Shaders/Triangle.frag.spv";
+    TriangleMesh           = MakeShared<Renderer::FRenderMesh>();
+    TriangleMesh->Vertices = { { { 0.0F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
+                               { { 0.5F, 0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
+                               { { -0.5F, 0.5F, 0.0F }, { 0.0F, 0.0F, 1.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } } };
+    TriangleMesh->Indices  = { 0, 1, 2 };
+
+    TriangleShader               = MakeShared<Renderer::FRenderShader>();
+    TriangleShader->VertexPath   = "Shaders/Triangle.vert.spv";
+    TriangleShader->FragmentPath = "Shaders/Triangle.frag.spv";
 }
 
-void FTriangleExampleApplication::CreateActors ()
+void LumenEngine::FTriangleExampleApplication::CreateActors ()
 {
     TSharedRef<Engine::ASceneActor> SceneActor  = World->SpawnActor<Engine::ASceneActor>();
     TSharedRef<AExampleCameraActor> CameraActor = World->SpawnActor<AExampleCameraActor>();
     TSharedRef<ATriangle> MeshActor             = World->SpawnActor<ATriangle>();
 
-    MeshActor->SetMeshAndShader( &TriangleMesh, &TriangleShader );
-    MeshActor->SetSceneActor( SceneActor );
+    MeshActor->SetMeshAndShader( TriangleMesh, TriangleShader );
+    MeshActor->SetSceneActor( FActorRef( SceneActor.Get() ) );
 }
-
-} // namespace LumenEngine

@@ -10,52 +10,37 @@
 
 #include "Container/Optional.hpp"
 
-#include "CoreTypes.hpp"
 #include "NonCopyable.hpp"
 #include "NonMovable.hpp"
+
+#include "Thread/SPMCQueue.hpp"
 
 #include <cassert>
 
 namespace LumenEngine
 {
 
-namespace Internal
-{
-
-    /**
-     * @struct FMailBoxNode
-     * @brief Intrusive linked-list node for the Vyukov MPSC queue.
-     * @details Owns an optional message payload. The stub sentinel carries no message.
-     */
-    struct FMailBoxNode
-    {
-        TAtomic<FMailBoxNode *> Next = { nullptr };
-        TOptional<FMessage> Message;
-    };
-
-} // namespace Internal
-
 /**
  * @class FMailBox
  * @brief Wait-free MPSC (multi-producer, single-consumer) mailbox.
  *
- * @details Implements the Dmitry Vyukov intrusive MPSC queue.
- *
- *  Producers (any thread):
- *    - Allocate a node, store the message, atomic exchange on Tail → wait-free.
- *    - Write node.Next after exchange — may cause a transient gap.
- *
- *  Consumer (single thread only):
- *    - Pop() walks from Head forward via stub.Next.
- *    - Returns TOptional<FMessage>{} when the queue is empty OR during a transient gap.
- *    - Never blocks. Caller must handle empty returns gracefully.
- *
- *  Memory ordering:
- *    - Push: release on Tail exchange + relaxed store on Next.
- *    - Pop:  acquire on Next load to synchronise with the producer's release.
+ * @details Implements the Dmitry Vyukov intrusive MPSC queue with an internal
+ *          lock-free free-list to prevent per-message allocation bottlenecks.
  */
 class FMailBox final : public FNonCopyable, public FNonMovable
 {
+private:
+
+    /**
+     * @struct FNode
+     * @brief Intrusive linked-list node for the Vyukov MPSC queue.
+     */
+    struct alignas( 64 ) FNode
+    {
+        TAtomic<FNode *> Next = { nullptr };
+        TOptional<FMessage> Message;
+    };
+
 public:
 
     FMailBox () noexcept;
@@ -65,9 +50,9 @@ public:
 
     /**
      * @brief Enqueues a message. Safe to call from any thread simultaneously.
-     * @param InMessage The message to send. Moved into the internal node.
+     * @param InMessage The message to send.
      */
-    void Push ( FMessage InMessage ) noexcept;
+    void Push ( const FMessage &InMessage ) noexcept;
 
     /**
      * @brief Attempts to dequeue the front message.
@@ -84,7 +69,8 @@ public:
 
 private:
 
-    using FNode = Internal::FMailBoxNode;
+    /** @brief Lock-free pool of nodes to eliminate dynamic allocations in hot paths. */
+    alignas( 64 ) Parallel::TSPMCQueue<FNode *> FreeNodes;
 
     /** @brief Stub sentinel — Head always points to the node *before* the first real message. */
     alignas( 64 ) FNode Stub = {};

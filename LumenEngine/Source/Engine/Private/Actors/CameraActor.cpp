@@ -11,7 +11,7 @@ LumenEngine::Engine::ACameraActor::ACameraActor ( const ActorID InId ) noexcept 
     /* Ctor */
 }
 
-void LumenEngine::Engine::ACameraActor::Receive ( FMessage InMessage )
+void LumenEngine::Engine::ACameraActor::Receive ( const FMessage &InMessage )
 {
     if ( InMessage.Type == EEngineMessage::Tick )
     {
@@ -28,7 +28,7 @@ void LumenEngine::Engine::ACameraActor::Receive ( FMessage InMessage )
 
 void LumenEngine::Engine::ACameraActor::HandleMessage ( const FMessage & /*InMessage*/ )
 {
-    /** NOTE: Override in derived classes for specific logic (like InputAxis handling) */
+    /** NOTE: Override in derived classes for specific logic */
 }
 
 const LumenEngine::Maths::FCamera &LumenEngine::Engine::ACameraActor::GetCamera () const noexcept

@@ -20,7 +20,12 @@ public:
 
     using AStaticMeshActor::AStaticMeshActor;
 
-    void Receive ( FMessage InMessage ) override;
+    void Receive ( const FMessage &InMessage ) override;
+
+private:
+
+    void RotateTriangle ( const Float64 InDeltaTime ) noexcept;
+    void DrawTriangle () noexcept;
 };
 
 } // namespace LumenEngine

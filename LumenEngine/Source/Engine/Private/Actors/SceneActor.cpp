@@ -12,7 +12,7 @@ LumenEngine::Engine::ASceneActor::ASceneActor ( const ActorID InId ) noexcept : 
     /* */
 }
 
-void LumenEngine::Engine::ASceneActor::Receive ( FMessage InMessage )
+void LumenEngine::Engine::ASceneActor::Receive ( const FMessage &InMessage )
 {
     if ( InMessage.Type == EEngineMessage::TransformUpdate )
     {
