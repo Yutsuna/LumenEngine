@@ -4,7 +4,6 @@
  */
 
 #include "Actors/StaticMeshActor.hpp"
-#include "Messages/EngineMessageTypes.hpp"
 
 LumenEngine::Engine::AStaticMeshActor::AStaticMeshActor ( const ActorID InId ) noexcept : AActor( InId )
 {
