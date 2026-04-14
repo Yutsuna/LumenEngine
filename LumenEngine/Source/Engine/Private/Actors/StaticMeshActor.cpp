@@ -14,7 +14,7 @@ void LumenEngine::Engine::AStaticMeshActor::Receive ( FMessage /* InMessage */ )
 {
 }
 
-void LumenEngine::Engine::AStaticMeshActor::SetMeshAndShader ( Renderer::FRenderMesh *InMesh, Renderer::FRenderShader *InShader ) noexcept
+void LumenEngine::Engine::AStaticMeshActor::SetMeshAndShader ( TSharedPtr<Renderer::FRenderMesh> InMesh, TSharedPtr<Renderer::FRenderShader> InShader ) noexcept
 {
     Mesh   = InMesh;
     Shader = InShader;
