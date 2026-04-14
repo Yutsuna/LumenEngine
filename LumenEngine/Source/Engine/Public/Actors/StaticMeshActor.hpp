@@ -21,7 +21,7 @@ namespace Engine
      * @class AStaticMeshActor
      * @brief An actor representing a 3D static mesh in the scene.
      */
-    class LUMEN_ENGINE_API AStaticMeshActor final : public AActor
+    class LUMEN_ENGINE_API AStaticMeshActor : public AActor
     {
     public:
 
@@ -36,7 +36,7 @@ namespace Engine
         void SetTransform ( const Maths::FMatrix4x4f &InTransform ) noexcept;
         void SetSceneActor ( const TSharedPtr<AActor> &InSceneActor ) noexcept;
 
-    private:
+    protected:
 
         Renderer::FRenderMesh *Mesh     = nullptr;
         Renderer::FRenderShader *Shader = nullptr;
