@@ -8,6 +8,7 @@
 #include "Container/SharedPtr.hpp"
 
 #include "Container/Inline/SharedPtrInternal.inl"
+#include <cassert>
 
 namespace LumenEngine
 {

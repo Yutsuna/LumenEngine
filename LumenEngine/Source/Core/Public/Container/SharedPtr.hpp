@@ -8,7 +8,6 @@
 #include "Concepts/ConvertibleTo.hpp"
 #include "CoreTypes.hpp"
 
-#include <cassert>
 #include <type_traits>
 
 namespace LumenEngine
