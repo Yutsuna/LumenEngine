@@ -12,19 +12,29 @@ void LumenEngine::ATriangle::Receive ( FMessage InMessage )
     if ( InMessage.Type == Engine::EEngineMessage::Tick )
     {
         const Engine::FTickPayload &Payload = InMessage.GetPayload<Engine::FTickPayload>();
-        static Float32 Angle                = 0.0F;
 
-        Angle += static_cast<Float32>( Payload.DeltaTime ) * 0.5F;
-        Transform = Maths::FMatrix4x4f::RotateZ( Angle );
+        RotateTriangle( Payload.DeltaTime );
+        DrawTriangle();
+    }
+}
 
-        if ( SceneActor.IsValid() and Mesh != nullptr and Shader != nullptr )
-        {
-            Engine::FDrawCommandPayload CmdPayload;
-            CmdPayload.Mesh      = Mesh;
-            CmdPayload.Shader    = Shader;
-            CmdPayload.Transform = Transform;
+void LumenEngine::ATriangle::RotateTriangle ( const Float64 InDeltaTime ) noexcept
+{
+    static Float32 Angle = 0.0F;
 
-            SceneActor->EnqueueMessage( FMessage::Make( Engine::EEngineMessage::TransformUpdate, GetId(), CmdPayload ) );
-        }
+    Angle += static_cast<Float32>( InDeltaTime ) * 0.5F;
+    Transform = Maths::FMatrix4x4f::RotateZ( Angle );
+}
+
+void LumenEngine::ATriangle::DrawTriangle () noexcept
+{
+    if ( SceneActor.IsValid() and Mesh != nullptr and Shader != nullptr )
+    {
+        Engine::FDrawCommandPayload CmdPayload;
+        CmdPayload.Mesh      = Mesh.Get();
+        CmdPayload.Shader    = Shader.Get();
+        CmdPayload.Transform = Transform;
+
+        SceneActor->EnqueueMessage( FMessage::Make( Engine::EEngineMessage::TransformUpdate, GetId(), CmdPayload ) );
     }
 }
