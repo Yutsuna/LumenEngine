@@ -55,9 +55,9 @@ void FTriangleExampleApplication::CreateResources ()
 
 void FTriangleExampleApplication::CreateActors ()
 {
-    TSharedRef<Engine::ASceneActor> SceneActor     = World->SpawnActor<Engine::ASceneActor>();
-    TSharedRef<AExampleCameraActor> CameraActor    = World->SpawnActor<AExampleCameraActor>();
-    TSharedRef<ATriangle> MeshActor = World->SpawnActor<ATriangle>();
+    TSharedRef<Engine::ASceneActor> SceneActor  = World->SpawnActor<Engine::ASceneActor>();
+    TSharedRef<AExampleCameraActor> CameraActor = World->SpawnActor<AExampleCameraActor>();
+    TSharedRef<ATriangle> MeshActor             = World->SpawnActor<ATriangle>();
 
     MeshActor->SetMeshAndShader( &TriangleMesh, &TriangleShader );
     MeshActor->SetSceneActor( SceneActor );
