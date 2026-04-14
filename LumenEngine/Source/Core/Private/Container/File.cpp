@@ -27,6 +27,8 @@ std::filesystem::path GetExecutableDirectory () noexcept
 }
 } // namespace
 
+const LumenEngine::FLogCategory LumenEngine::FIOFile::LogIOFile( "IOFile" );
+
 LumenEngine::TOptional<std::ifstream> LumenEngine::FIOFile::Open ( const FString &FilePath ) noexcept
 {
     constexpr std::ios::openmode OpenMode = std::ios::ate | std::ios::binary;
