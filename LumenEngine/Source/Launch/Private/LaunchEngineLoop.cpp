@@ -105,15 +105,16 @@ void LumenEngine::FEngineLoop::Tick ()
         GPlatformApplication->PumpMessages( LastTickTime );
     }
 
+    Launch::ClientTick( LastTickTime );
+
     if ( Renderer::GRenderer.IsValid() )
     {
         Renderer::GRenderer->RenderFrame();
     }
     ++FrameIndex;
-    Launch::ClientTick( LastTickTime );
 }
 
-void LumenEngine::FEngineLoop::Exit ()
+void LumenEngine::FEngineLoop::Exit () const
 {
     LUMEN_LOG_INFO( LogLaunch, "Engine Exit requested. Releasing platform application..." );
 

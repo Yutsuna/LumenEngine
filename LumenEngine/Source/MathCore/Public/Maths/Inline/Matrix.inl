@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Maths/Matrix.hpp"
+#include "Maths/SIMD/SIMD.hpp"
 
 #include <cmath>
 
@@ -15,8 +16,12 @@ namespace LumenEngine
 namespace Maths
 {
 
+    /**
+     * Ctors
+     */
+
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, Rows, Columns>::TMatrix( const Type &Scalar ) noexcept
     {
         for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
@@ -36,7 +41,7 @@ namespace Maths
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, Rows, Columns>::TMatrix( const ColumnType ( &InColumns )[Columns] ) noexcept
     {
         for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
@@ -45,22 +50,28 @@ namespace Maths
         }
     }
 
+    /**
+     * Operators
+     */
+
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TVec<Type, Rows> &TMatrix<Type, Rows, Columns>::operator[]( USize ColumnIndex ) noexcept
     {
+        [[assume( ColumnIndex < Columns )]];
         return Data[ColumnIndex];
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr const TVec<Type, Rows> &TMatrix<Type, Rows, Columns>::operator[]( USize ColumnIndex ) const noexcept
     {
+        [[assume( ColumnIndex < Columns )]];
         return Data[ColumnIndex];
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr Bool TMatrix<Type, Rows, Columns>::operator==( const TMatrix<Type, Rows, Columns> &Other ) const noexcept
     {
         for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
@@ -74,24 +85,24 @@ namespace Maths
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr Bool TMatrix<Type, Rows, Columns>::operator!=( const TMatrix<Type, Rows, Columns> &Other ) const noexcept
     {
-        return !( *this == Other );
+        return not( *this == Other );
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, Rows, Columns> TMatrix<Type, Rows, Columns>::Identity () noexcept
-        requires( Rows == Columns )
+        requires Concepts::CSquareMatrix<Rows, Columns>
     {
-        return TMatrix<Type, Rows, Columns>( static_cast<Type>( 1 ) );
+        return TMatrix( static_cast<Type>( 1 ) );
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Translate ( const TVec<Type, 3> &InTranslation ) noexcept
-        requires( Rows == 4 && Columns == 4 )
+        requires Concepts::CSquareMatrix<4, 4>
     {
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
@@ -103,9 +114,9 @@ namespace Maths
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Scale ( const TVec<Type, 3> &InScale ) noexcept
-        requires( Rows == 4 && Columns == 4 )
+        requires Concepts::CSquareMatrix<4, 4>
     {
         TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
 
@@ -118,9 +129,9 @@ namespace Maths
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::RotateX ( Type InAngleRadians ) noexcept
-        requires( Rows == 4 && Columns == 4 )
+        requires Concepts::CSquareMatrix<4, 4>
     {
         const Type CosAngle = std::cos( InAngleRadians );
         const Type SinAngle = std::sin( InAngleRadians );
@@ -136,9 +147,9 @@ namespace Maths
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::RotateY ( Type InAngleRadians ) noexcept
-        requires( Rows == 4 && Columns == 4 )
+        requires Concepts::CSquareMatrix<4, 4>
     {
         const Type CosAngle = std::cos( InAngleRadians );
         const Type SinAngle = std::sin( InAngleRadians );
@@ -154,9 +165,9 @@ namespace Maths
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::RotateZ ( Type InAngleRadians ) noexcept
-        requires( Rows == 4 && Columns == 4 )
+        requires Concepts::CSquareMatrix<4, 4>
     {
         const Type CosAngle = std::cos( InAngleRadians );
         const Type SinAngle = std::sin( InAngleRadians );
@@ -172,9 +183,9 @@ namespace Maths
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Perspective ( Type InFieldOfViewRadians, Type InAspectRatio, Type InNearPlane, Type InFarPlane ) noexcept
-        requires( Rows == 4 && Columns == 4 )
+        requires Concepts::CSquareMatrix<4, 4>
     {
         const Type TanHalfFov = std::tan( InFieldOfViewRadians / static_cast<Type>( 2 ) );
 
@@ -190,9 +201,9 @@ namespace Maths
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Orthographic ( Type InWidth, Type InHeight, Type InNearPlane, Type InFarPlane ) noexcept
-        requires( Rows == 4 && Columns == 4 )
+        requires Concepts::CSquareMatrix<4, 4>
     {
         TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
 
@@ -207,9 +218,9 @@ namespace Maths
     }
 
     template <typename Type, USize Rows, USize Columns>
-        requires CMatrixDimension<Rows, Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::LookAt ( const TVec<Type, 3> &InEye, const TVec<Type, 3> &InTarget, const TVec<Type, 3> &InUp ) noexcept
-        requires( Rows == 4 && Columns == 4 )
+        requires Concepts::CSquareMatrix<4, 4>
     {
         const TVec<Type, 3> F = ( InTarget - InEye ).Normalize();
         const TVec<Type, 3> R = InUp.Cross( F ).Normalize();
@@ -240,18 +251,29 @@ namespace Maths
     constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left, const TMatrix<Type, Inner, Columns> &Right ) noexcept
     {
         TMatrix<Type, Rows, Columns> Result;
-        for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
-        {
-            for ( USize RowIndex = 0; RowIndex < Rows; ++RowIndex )
-            {
-                Type Sum = static_cast<Type>( 0 );
 
-                for ( USize InnerIndex = 0; InnerIndex < Inner; ++InnerIndex )
+        if constexpr ( Concepts::CFloatingPoint<Type> and Concepts::CSquareMatrix<4, 4> )
+        {
+            SIMD::MatrixMul4x4( reinterpret_cast<const Float32 *>( &Left ), reinterpret_cast<const Float32 *>( &Right ), reinterpret_cast<Float32 *>( &Result ) );
+
+            return Result;
+        }
+        else
+        {
+            for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
+            {
+                for ( USize RowIndex = 0; RowIndex < Rows; ++RowIndex )
                 {
-                    Sum += Left[InnerIndex].Data[RowIndex] * Right[ColIndex].Data[InnerIndex];
+                    Type Sum = static_cast<Type>( 0 );
+
+                    for ( USize InnerIndex = 0; InnerIndex < Inner; ++InnerIndex )
+                    {
+                        Sum += Left[InnerIndex].Data[RowIndex] * Right[ColIndex].Data[InnerIndex];
+                    }
+                    Result[ColIndex].Data[RowIndex] = Sum;
                 }
-                Result[ColIndex].Data[RowIndex] = Sum;
             }
+            return Result;
         }
         return Result;
     }
@@ -260,6 +282,43 @@ namespace Maths
     constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left, const TMatrix<Type, Inner, Columns> &&Right ) noexcept
     {
         return Left * Right;
+    }
+
+    template <typename Type, USize Rows, USize Inner, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &&Left, const TMatrix<Type, Inner, Columns> &Right ) noexcept
+    {
+        return Left * Right;
+    }
+
+    template <typename Type, USize Rows, USize Inner, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &&Left, const TMatrix<Type, Inner, Columns> &&Right ) noexcept
+    {
+        return Left * Right;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Columns> &Left, const Type Scalar ) noexcept
+    {
+        TMatrix<Type, Rows, Columns> Result;
+
+        if constexpr ( Concepts::CFloatingPoint<Type> and Concepts::CSquareMatrix<4, 4> )
+        {
+            SIMD::MatrixScalarMul4x4( reinterpret_cast<const Float32 *>( &Left ), static_cast<Float32>( Scalar ), reinterpret_cast<Float32 *>( &Result ) );
+
+            return Result;
+        }
+
+        else
+        {
+            for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
+            {
+                for ( USize RowIndex = 0; RowIndex < Rows; ++RowIndex )
+                {
+                    Result[ColIndex].Data[RowIndex] = Left[ColIndex].Data[RowIndex] * Scalar;
+                }
+            }
+        }
+        return Result;
     }
 
 } // namespace Maths

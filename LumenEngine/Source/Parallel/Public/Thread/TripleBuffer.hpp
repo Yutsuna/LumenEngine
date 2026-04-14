@@ -1,13 +1,14 @@
 #pragma once
 
 #include "CoreTypes.hpp"
+#include "EnumFlags.hpp"
 #include "NonCopyable.hpp"
 #include "NonMovable.hpp"
+#include "Thread/Mutex.hpp"
 
 #include "Container/UniquePtr.hpp"
 
 #include <cassert>
-#include <cstdint>
 #include <type_traits>
 
 namespace LumenEngine
@@ -25,7 +26,7 @@ namespace Parallel
          */
         struct FBufferFlag
         {
-            enum Type : uint8_t
+            enum Type : UInt8
             {
                 /** Bits 0-1: reader buffer index (0000 0011) */
                 ReaderMask  = ( 1U << 0U ) | ( 1U << 1U ),
@@ -46,40 +47,14 @@ namespace Parallel
                 Initial = ( 2U << ReaderShift ) | ( 1U << WriterShift ) | ( 0U << TempShift )
             };
 
-            static constexpr uint8_t GetReaderIndex ( uint8_t Flags ) noexcept
-            {
-                return static_cast<uint8_t>( ( Flags & ReaderMask ) >> ReaderShift );
-            }
-
-            static constexpr uint8_t GetWriterIndex ( uint8_t Flags ) noexcept
-            {
-                return static_cast<uint8_t>( ( Flags & WriterMask ) >> WriterShift );
-            }
-
-            static constexpr uint8_t GetTempIndex ( uint8_t Flags ) noexcept
-            {
-                return static_cast<uint8_t>( ( Flags & TempMask ) >> TempShift );
-            }
-
-            static constexpr bool IsDirty ( uint8_t Flags ) noexcept
-            {
-                return ( Flags & Dirty ) != 0;
-            }
-
-            static constexpr uint8_t Make ( uint8_t ReaderIndex, uint8_t WriterIndex, uint8_t TempIndex, bool bIsDirty ) noexcept
-            {
-                assert( ReaderIndex < 3 && "ReaderIndex must designate one of the 3 triple-buffer slots [0, 2]" );
-                assert( WriterIndex < 3 && "WriterIndex must designate one of the 3 triple-buffer slots [0, 2]" );
-                assert( TempIndex < 3 && "TempIndex must designate one of the 3 triple-buffer slots [0, 2]" );
-
-                const uint8_t ReaderBit = static_cast<uint8_t>( ReaderIndex << ReaderShift );
-                const uint8_t WriterBit = static_cast<uint8_t>( WriterIndex << WriterShift );
-                const uint8_t TempBit   = static_cast<uint8_t>( TempIndex << TempShift );
-                const uint8_t DirtyBit  = bIsDirty ? static_cast<uint8_t>( Dirty ) : 0U;
-
-                return static_cast<uint8_t>( ReaderBit | WriterBit | TempBit | DirtyBit );
-            }
+            static constexpr Type GetReaderIndex ( Type Flags ) noexcept;
+            static constexpr Type GetWriterIndex ( Type Flags ) noexcept;
+            static constexpr Type GetTempIndex ( Type Flags ) noexcept;
+            static constexpr Bool IsDirty ( Type Flags ) noexcept;
+            static constexpr Type Make ( Type ReaderIndex, Type WriterIndex, Type TempIndex, Bool bIsDirty ) noexcept;
         };
+
+        LUMEN_ENUM_FLAGS( FBufferFlag::Type );
 
     } // namespace Internal
 
@@ -100,7 +75,7 @@ namespace Parallel
      *
      * @tparam BufferType The type stored in each slot.
      */
-    template <typename BufferType> class TTripleBuffer : public FNonCopyable, public FNonMovable
+    template <typename BufferType> class TTripleBuffer final : public FNonCopyable, public FNonMovable
     {
         static_assert( std::is_default_constructible_v<BufferType>, "BufferType must be default constructible because all triple-buffer slots are pre-allocated" );
 
@@ -131,7 +106,7 @@ namespace Parallel
         /**
          * @return True if the writer has published new data not yet consumed by the reader.
          */
-        [[nodiscard]] bool IsDirty () const noexcept;
+        [[nodiscard]] Bool IsDirty () const noexcept;
 
         //------
 
@@ -166,30 +141,17 @@ namespace Parallel
 
     private:
 
-        [[nodiscard]] UInt8 SwapReadWithTempFlags ( UInt8 Flags ) const noexcept;
-        [[nodiscard]] UInt8 SwapWriteWithTempFlags ( UInt8 Flags ) const noexcept;
+        [[nodiscard]] Internal::FBufferFlag::Type SwapReadWithTempFlags ( Internal::FBufferFlag::Type Flags ) const noexcept;
+        [[nodiscard]] Internal::FBufferFlag::Type SwapWriteWithTempFlags ( Internal::FBufferFlag::Type Flags ) const noexcept;
 
         void PublishWrite () noexcept;
-        void AcquireWriteLock () noexcept;
-        void ReleaseWriteLock () noexcept;
-
-    private:
-
-        struct FWriteLockGuard
-        {
-            TTripleBuffer *Owner;
-            ~FWriteLockGuard ()
-            {
-                Owner->ReleaseWriteLock();
-            }
-        };
 
     private:
 
         TUniquePtr<BufferType[]> OwnedBuffers;
         BufferType *Buffers = nullptr;
-        TAtomic<UInt8> BufferFlags;
-        alignas( 64 ) FAtomicFlag WriteGuard;
+        TAtomic<Internal::FBufferFlag::Type> BufferFlags;
+        alignas( 64 ) FMutex WriteMutex;
     };
 
 } // namespace Parallel

@@ -45,7 +45,7 @@ public:
     void Tick ();
 
     /** Shuts down the engine loop, called after the main loop ends */
-    void Exit ();
+    void Exit () const;
 
     /** Check if the application should exit */
     [[nodiscard]] Bool ShouldExit () const noexcept;

@@ -28,7 +28,7 @@ namespace SharedPtrInternal
      * TIntrusiveReferenceController
      */
 
-    template <typename Type> template <typename... Arguments> TIntrusiveReferenceController<Type>::TIntrusiveReferenceController ( Arguments &&...InArgs )
+    template <typename Type> template <typename... Arguments> TIntrusiveReferenceController<Type>::TIntrusiveReferenceController( Arguments &&...InArgs )
     {
         new ( Storage ) Type( std::forward<Arguments>( InArgs )... );
     }
@@ -52,7 +52,7 @@ namespace SharedPtrInternal
      * TDefaultReferenceController
      */
 
-    template <typename Type> TDefaultReferenceController<Type>::TDefaultReferenceController ( Type *InObject ) : Object( InObject )
+    template <typename Type> TDefaultReferenceController<Type>::TDefaultReferenceController( Type *InObject ) : Object( InObject )
     {
         /* Empty */
     }
@@ -70,7 +70,7 @@ namespace SharedPtrInternal
     /**
      * TRawPtrProxy
      */
-    template <typename Type> TRawPtrProxy<Type>::TRawPtrProxy ( Type *InObject ) : Object( InObject )
+    template <typename Type> TRawPtrProxy<Type>::TRawPtrProxy( Type *InObject ) : Object( InObject )
     {
         /* Empty */
     }

@@ -1,12 +1,14 @@
 name: LinuxBuild
 
 on:
+  push:
+    branches: ["main"]
   pull_request:
     branches: ["main"]
 
 jobs:
   Build:
-    name: BuildAndTest
+    name: LinuxBuild
     runs-on: ubuntu-latest
     steps:
       - name: Checkout

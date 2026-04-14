@@ -12,12 +12,12 @@
 namespace LumenEngine
 {
 
-template <typename Type> TSharedPtr<Type>::TSharedPtr () : Object( nullptr ), Controller( nullptr )
+template <typename Type> TSharedPtr<Type>::TSharedPtr() : Object( nullptr ), Controller( nullptr )
 {
     /* Empty */
 }
 
-template <typename Type> TSharedPtr<Type>::TSharedPtr ( NullptrType ) : Object( nullptr ), Controller( nullptr )
+template <typename Type> TSharedPtr<Type>::TSharedPtr( NullptrType ) : Object( nullptr ), Controller( nullptr )
 {
     /* Empty */
 }
@@ -47,7 +47,7 @@ TSharedPtr<Type>::TSharedPtr( const TSharedRef<OtherType> &Other ) : Object( Oth
     Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
 }
 
-template <typename Type> TSharedPtr<Type>::TSharedPtr ( const TSharedPtr &Other ) : Object( Other.Object ), Controller( Other.Controller )
+template <typename Type> TSharedPtr<Type>::TSharedPtr( const TSharedPtr &Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     if ( Controller )
     {
@@ -55,13 +55,13 @@ template <typename Type> TSharedPtr<Type>::TSharedPtr ( const TSharedPtr &Other 
     }
 }
 
-template <typename Type> TSharedPtr<Type>::TSharedPtr ( TSharedPtr &&Other ) : Object( Other.Object ), Controller( Other.Controller )
+template <typename Type> TSharedPtr<Type>::TSharedPtr( TSharedPtr &&Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
     Other.Object     = nullptr;
     Other.Controller = nullptr;
 }
 
-template <typename Type> TSharedPtr<Type>::~TSharedPtr ()
+template <typename Type> TSharedPtr<Type>::~TSharedPtr()
 {
     Release();
 }

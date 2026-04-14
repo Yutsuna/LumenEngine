@@ -17,6 +17,7 @@ LumenAddModules(
     RHI
     VulkanRHI
     Renderer
+    Engine
     Launch
 )
 

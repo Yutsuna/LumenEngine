@@ -24,6 +24,23 @@ from LumenBuild.Utils import (
 )
 
 
+def _LinkCompileCommands(build_dir: Path) -> None:
+    source = build_dir / "compile_commands.json"
+    target = ROOT_DIR / "compile_commands.json"
+
+    if not source.exists():
+        return
+
+    if target.is_symlink() and target.resolve() == source.resolve():
+        return
+
+    if target.exists() or target.is_symlink():
+        target.unlink()
+
+    target.symlink_to(source)
+    LogStep(f"compile_commands.json -> {source}")
+
+
 def _ResolveSanitizer(name: str) -> str:
     key = name.lower()
     return SANITIZER_ALIASES.get(key, key)
@@ -89,6 +106,7 @@ def Configure(
     LogStep("Configure : " + build_type + (f"  [{sanitizer}]" if sanitizer else ""))
 
     Run(cmd, cwd=ROOT_DIR)
+    _LinkCompileCommands(bdir)
     return bdir
 
 
@@ -145,14 +163,11 @@ def Test(
     filter_pattern: str | None = None,
     parallel: bool = True,
 ) -> None:
+    Build(build_type, enable_testing=True)
+
     ctest = RequireTool("ctest")
     jobs = GetParallelJobs()
     bdir = BuildDir(build_type)
-
-    if not bdir.exists():
-        LogWarn(f"Build directory not found: {bdir}")
-        LogWarn("Run  'lumen build debug --testing'  first.")
-        sys.exit(ERROR_CODE)
 
     cmd: list[str] = [
         ctest,
