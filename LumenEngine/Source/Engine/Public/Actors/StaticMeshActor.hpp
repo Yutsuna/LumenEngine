@@ -30,11 +30,11 @@ namespace Engine
 
     public:
 
-        void Receive ( FMessage InMessage ) override;
+        void Receive ( const FMessage &InMessage ) override;
 
         void SetMeshAndShader ( TSharedPtr<Renderer::FRenderMesh> InMesh, TSharedPtr<Renderer::FRenderShader> InShader ) noexcept;
         void SetTransform ( const Maths::FMatrix4x4f &InTransform ) noexcept;
-        void SetSceneActor ( const TSharedPtr<AActor> &InSceneActor ) noexcept;
+        void SetSceneActor ( const FActorRef &InSceneActor ) noexcept;
 
     protected:
 
@@ -42,8 +42,8 @@ namespace Engine
         TSharedPtr<Renderer::FRenderShader> Shader = nullptr;
         Maths::FMatrix4x4f Transform               = Maths::FMatrix4x4f::Identity();
 
-        /** @note Use ActorID instead of TSharedPtr for scene actor relationships to avoid memory cycles. */
-        TSharedPtr<AActor> SceneActor;
+        /** @note Use FActorRef instead of TSharedPtr for scene actor relationships to avoid memory cycles. */
+        FActorRef SceneActor;
     };
 
 } // namespace Engine

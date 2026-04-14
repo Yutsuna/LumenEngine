@@ -29,7 +29,7 @@ namespace Engine
 
     public:
 
-        void Receive ( FMessage InMessage ) override;
+        void Receive ( const FMessage &InMessage ) override;
 
     private:
 

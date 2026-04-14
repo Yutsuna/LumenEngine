@@ -10,7 +10,7 @@ LumenEngine::Engine::AStaticMeshActor::AStaticMeshActor ( const ActorID InId ) n
     /* Ctor */
 }
 
-void LumenEngine::Engine::AStaticMeshActor::Receive ( FMessage /* InMessage */ )
+void LumenEngine::Engine::AStaticMeshActor::Receive ( const FMessage & /* InMessage */ )
 {
 }
 
@@ -25,7 +25,7 @@ void LumenEngine::Engine::AStaticMeshActor::SetTransform ( const Maths::FMatrix4
     Transform = InTransform;
 }
 
-void LumenEngine::Engine::AStaticMeshActor::SetSceneActor ( const TSharedPtr<AActor> &InSceneActor ) noexcept
+void LumenEngine::Engine::AStaticMeshActor::SetSceneActor ( const FActorRef &InSceneActor ) noexcept
 {
     SceneActor = InSceneActor;
 }
