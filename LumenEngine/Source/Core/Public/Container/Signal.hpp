@@ -67,6 +67,11 @@ public:
      */
     static void Unbind ( const ESystemSignal::Type InSignal );
 
+    /**
+     * @brief Restores all registered OS handlers to defaults and releases all listener storage.
+     */
+    static void Reset ();
+
 private:
 
     /** @brief Internal handler called by the OS */

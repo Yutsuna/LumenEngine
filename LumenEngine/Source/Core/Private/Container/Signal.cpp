@@ -36,6 +36,19 @@ void LumenEngine::FSignal::Unbind ( const ESystemSignal::Type InSignal )
     }
 }
 
+void LumenEngine::FSignal::Reset ()
+{
+    for ( const auto &[Signal, Handlers] : SignalListeners )
+    {
+        static_cast<void>( Handlers );
+        const Int32 OSCode = static_cast<Int32>( Signal );
+        std::signal( OSCode, SIG_DFL );
+    }
+
+    SignalListeners.clear();
+    SignalListeners.rehash( 0 );
+}
+
 void LumenEngine::FSignal::HandleOSSignal ( const Int32 InSignal )
 {
     const ESystemSignal::Type SignalType = static_cast<ESystemSignal::Type>( InSignal );
