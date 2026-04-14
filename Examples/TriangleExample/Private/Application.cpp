@@ -10,7 +10,7 @@
 
 #include "Actors/Camera.hpp"
 #include "Actors/SceneActor.hpp"
-#include "Actors/StaticMeshActor.hpp"
+#include "Actors/Triangle.hpp"
 
 #include "Generic/GenericApplication.hpp"
 
@@ -57,7 +57,7 @@ void FTriangleExampleApplication::CreateActors ()
 {
     TSharedRef<Engine::ASceneActor> SceneActor     = World->SpawnActor<Engine::ASceneActor>();
     TSharedRef<AExampleCameraActor> CameraActor    = World->SpawnActor<AExampleCameraActor>();
-    TSharedRef<Engine::AStaticMeshActor> MeshActor = World->SpawnActor<Engine::AStaticMeshActor>();
+    TSharedRef<ATriangle> MeshActor = World->SpawnActor<ATriangle>();
 
     MeshActor->SetMeshAndShader( &TriangleMesh, &TriangleShader );
     MeshActor->SetSceneActor( SceneActor );
