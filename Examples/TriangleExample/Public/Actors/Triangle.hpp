@@ -20,7 +20,7 @@ public:
 
     using AStaticMeshActor::AStaticMeshActor;
 
-    void Receive ( FMessage InMessage ) override;
+    void Receive ( const FMessage &InMessage ) override;
 
 private:
 

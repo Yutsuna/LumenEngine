@@ -6,9 +6,8 @@
 #include "Actors/Triangle.hpp"
 #include "Messages/EngineMessageTypes.hpp"
 
-void LumenEngine::ATriangle::Receive ( FMessage InMessage )
+void LumenEngine::ATriangle::Receive ( const FMessage &InMessage )
 {
-
     if ( InMessage.Type == Engine::EEngineMessage::Tick )
     {
         const Engine::FTickPayload &Payload = InMessage.GetPayload<Engine::FTickPayload>();
@@ -35,6 +34,6 @@ void LumenEngine::ATriangle::DrawTriangle () noexcept
         CmdPayload.Shader    = Shader.Get();
         CmdPayload.Transform = Transform;
 
-        SceneActor->EnqueueMessage( FMessage::Make( Engine::EEngineMessage::TransformUpdate, GetId(), CmdPayload ) );
+        SceneActor.EnqueueMessage( FMessage::Make( Engine::EEngineMessage::TransformUpdate, GetId(), CmdPayload ) );
     }
 }

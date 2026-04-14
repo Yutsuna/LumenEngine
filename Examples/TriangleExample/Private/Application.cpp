@@ -63,5 +63,5 @@ void LumenEngine::FTriangleExampleApplication::CreateActors ()
     TSharedRef<ATriangle> MeshActor             = World->SpawnActor<ATriangle>();
 
     MeshActor->SetMeshAndShader( TriangleMesh, TriangleShader );
-    MeshActor->SetSceneActor( SceneActor );
+    MeshActor->SetSceneActor( FActorRef( SceneActor.Get() ) );
 }
