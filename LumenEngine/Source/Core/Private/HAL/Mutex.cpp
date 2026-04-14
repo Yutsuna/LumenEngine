@@ -3,25 +3,15 @@
  * @brief Implementation of the FMutex class for thread synchronization in Lumen Engine.
  */
 
-#include "Thread/Mutex.hpp"
+#include "HAL/Mutex.hpp"
 
 #include <atomic>
 
 void LumenEngine::FMutex::Lock () noexcept
 {
-    if ( not MutexFlag.test_and_set( std::memory_order::acquire ) )
-    {
-        return;
-    }
-
-    while ( MutexFlag.test( std::memory_order::relaxed ) )
+    while ( MutexFlag.test_and_set( std::memory_order::acquire ) )
     {
         MutexFlag.wait( true, std::memory_order::relaxed );
-
-        if ( not MutexFlag.test_and_set( std::memory_order::acquire ) )
-        {
-            return;
-        }
     }
 }
 
