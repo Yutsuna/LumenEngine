@@ -9,7 +9,7 @@
 #include "Container/SharedPtr.hpp"
 #include "Container/String.hpp"
 
-#include "Thread/Mutex.hpp"
+#include "HAL/Mutex.hpp"
 
 namespace LumenEngine
 {

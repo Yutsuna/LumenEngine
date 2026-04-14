@@ -2,9 +2,9 @@
 
 #include "CoreTypes.hpp"
 #include "EnumFlags.hpp"
+#include "HAL/Mutex.hpp"
 #include "NonCopyable.hpp"
 #include "NonMovable.hpp"
-#include "Thread/Mutex.hpp"
 
 #include "Container/UniquePtr.hpp"
 

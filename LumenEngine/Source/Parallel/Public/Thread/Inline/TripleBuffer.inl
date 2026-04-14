@@ -1,7 +1,7 @@
 #pragma once
 
 #include "CoreTypes.hpp"
-#include "Thread/Mutex.hpp"
+#include "HAL/Mutex.hpp"
 #include "Thread/TripleBuffer.hpp"
 
 /**
