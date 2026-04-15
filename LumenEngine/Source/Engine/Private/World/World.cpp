@@ -12,7 +12,7 @@
 
 void LumenEngine::Engine::FWorld::Broadcast ( const FMessage &InMessage )
 {
-    for ( const auto &Actor : ActiveActors )
+    for ( const TSharedPtr<AActor> &Actor : ActiveActors )
     {
         Actor->EnqueueMessage( InMessage );
     }
@@ -23,7 +23,7 @@ void LumenEngine::Engine::FWorld::Tick ( const Float64 InDeltaTime )
     const FTickPayload Payload{ .DeltaTime = InDeltaTime };
     const FMessage TickMsg = FMessage::Make( EEngineMessage::Tick, 0ULL, Payload );
 
-    for ( const auto &Actor : ActiveActors )
+    for ( const TSharedPtr<AActor> &Actor : ActiveActors )
     {
         Actor->EnqueueMessage( TickMsg );
     }
