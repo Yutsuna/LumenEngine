@@ -9,6 +9,7 @@
 
 #include "Container/Array.hpp"
 
+#include "Maths/Matrix.hpp"
 #include "Maths/Vertex.hpp"
 
 #include <cstddef>
@@ -359,6 +360,13 @@ LumenEngine::VulkanRHI::FPipelineDescription LumenEngine::VulkanRHI::FVulkanPipe
     Description.GlobalSetLayout     = InGlobalSetLayout;
     Description.Shader.VertexPath   = InVertexPath;
     Description.Shader.FragmentPath = InFragmentPath;
+
+    LumenEngine::VulkanRHI::FPipelinePushConstantRangeDescription PushConstant;
+    PushConstant.StageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
+    PushConstant.Offset     = 0;
+    PushConstant.Size       = sizeof( LumenEngine::Maths::FMatrix4x4f );
+    Description.PushConstantRanges.push_back( PushConstant );
+
     return Description;
 }
 
