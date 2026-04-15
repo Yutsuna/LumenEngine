@@ -1,6 +1,6 @@
 /**
  * @file Actor.hpp
- * @brief Actor base class for the LumenEngine parallel Actor Model.
+ * @brief Pure Actor base class for the LumenEngine parallel Actor Model.
  */
 
 #pragma once
@@ -15,11 +15,9 @@ namespace LumenEngine
 /**
  * @class AActor
  * @brief Abstract base for all actors.
- * @details Each actor owns a lock-free mailbox.
- *          The engine calls ProcessMailbox() from a worker thread
- *          Receive() is always single-threaded per instance.
+ * @details Represents a pure concurrent computational entity.
  */
-class AActor : public FNonCopyable
+class LUMEN_ENGINE_API AActor : public FNonCopyable
 {
 public:
 
@@ -28,34 +26,22 @@ public:
 
 public:
 
-    /**
-     * @brief Processes one incoming message. Implemented by concrete actors.
-     * @param InMessage The message to handle.
-     */
+    /** @brief Core logic entry point. Must be implemented by derived actors. */
     virtual void Receive ( const FMessage &InMessage ) = 0;
 
-    /**
-     * @brief Enqueues a message into this actor's mailbox. Thread-safe.
-     * @param InMessage The message to deliver.
-     */
+    /** @brief Lock-free message enqueueing. */
     void EnqueueMessage ( const FMessage &InMessage ) noexcept;
 
-    /** @brief Drains and processes all pending messages. Single-consumer. */
+    /** @brief Single-consumer mailbox processing. */
     void ProcessMailbox () noexcept;
 
-public:
-
-    /** @return This actor's unique identifier. */
     [[nodiscard]] ActorID GetId () const noexcept;
-
-    /** @return A lightweight handle to this actor. */
     [[nodiscard]] FActorRef GetRef () noexcept;
 
 private:
 
     ActorID Id = 0ULL;
     FMailBox Mailbox;
-
-}; // class AActor
+};
 
 } // namespace LumenEngine
