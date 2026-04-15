@@ -5,6 +5,8 @@
 
 #include "World/World.hpp"
 #include "Messages/EngineMessageTypes.hpp"
+#include "World/SpatialRegistry.hpp"
+
 #include <algorithm>
 #include <execution>
 
@@ -19,7 +21,7 @@ void LumenEngine::Engine::FWorld::Broadcast ( const FMessage &InMessage )
 void LumenEngine::Engine::FWorld::Tick ( const Float64 InDeltaTime )
 {
     const FTickPayload Payload{ .DeltaTime = InDeltaTime };
-    FMessage TickMsg = FMessage::Make( EEngineMessage::Tick, 0ULL, Payload );
+    const FMessage TickMsg = FMessage::Make( EEngineMessage::Tick, 0ULL, Payload );
 
     for ( const auto &Actor : ActiveActors )
     {
@@ -30,5 +32,9 @@ void LumenEngine::Engine::FWorld::Tick ( const Float64 InDeltaTime )
     const ActorIterator ActorBegin = ActiveActors.begin();
     const ActorIterator ActorEnd   = ActiveActors.end();
 
+    /** NOTE: Core parallel Mailbox evaluation of the Active Actors */
     std::for_each( std::execution::par_unseq, ActorBegin, ActorEnd, [] ( const TSharedPtr<AActor> &InActor ) -> void { InActor->ProcessMailbox(); } );
+
+    /** NOTE: Publish the spatial changes to the lock-free snapshot buffer */
+    FSpatialRegistry::Get().Publish();
 }

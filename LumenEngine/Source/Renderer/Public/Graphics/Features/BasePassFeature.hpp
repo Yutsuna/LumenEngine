@@ -31,10 +31,6 @@ namespace Renderer
 
     private:
 
-        void ExecuteDrawCommand ( RHI::IRHICommandList &InCmdList, const FDrawCommand &InCommand ) const;
-
-    private:
-
         RHI::IRHI *RHI = nullptr;
     };
 

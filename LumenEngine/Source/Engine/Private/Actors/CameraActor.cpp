@@ -6,7 +6,7 @@
 #include "Actors/CameraActor.hpp"
 #include "Messages/EngineMessageTypes.hpp"
 
-LumenEngine::Engine::ACameraActor::ACameraActor ( const ActorID InId ) noexcept : AActor( InId )
+LumenEngine::Engine::ACameraActor::ACameraActor ( const ActorID InId ) noexcept : ASpatialActor( InId )
 {
     /* Ctor */
 }
