@@ -99,3 +99,21 @@ void LumenEngine::Renderer::FRenderer::RenderFrame ()
 
     RHI->EndFrame();
 }
+
+LumenEngine::RHI::FMeshHandle LumenEngine::Renderer::FRenderer::CreateMesh ( const TVector<Maths::FVertex> &InVertices, const TVector<UInt32> &InIndices )
+{
+    if ( RHI )
+    {
+        return RHI->CreateMesh( InVertices, InIndices );
+    }
+    return {};
+}
+
+LumenEngine::RHI::FPipelineHandle LumenEngine::Renderer::FRenderer::CreatePipeline ( const FString &InVertexPath, const FString &InFragmentPath )
+{
+    if ( RHI )
+    {
+        return RHI->CreatePipeline( InVertexPath, InFragmentPath );
+    }
+    return {};
+}
