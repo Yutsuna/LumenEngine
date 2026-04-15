@@ -9,14 +9,15 @@ namespace LumenEngine
 
 namespace
 {
-    const TUniquePtr<FTriangleExampleApplication> GAppInstance = MakeUnique<FTriangleExampleApplication>();
+    TUniquePtr<FTriangleExampleApplication> GAppInstance = nullptr;
 }
 
 Int32 Launch::ClientInit ( const Int32 LUMEN_UNUSED Argc, const AnsiChar LUMEN_UNUSED **Argv )
 {
+    GAppInstance = MakeUnique<FTriangleExampleApplication>();
     if ( not GAppInstance.IsValid() )
     {
-        return EErrorCode::Type::Failure;
+        return EErrorCode::Failure;
     }
 
     return GAppInstance->Initialize();
@@ -24,10 +25,12 @@ Int32 Launch::ClientInit ( const Int32 LUMEN_UNUSED Argc, const AnsiChar LUMEN_U
 
 void Launch::ClientTick ( const Float64 DeltaTime )
 {
-    if ( GAppInstance.IsValid() )
-    {
-        GAppInstance->Tick( DeltaTime );
-    }
+    GAppInstance->Tick( DeltaTime );
+}
+
+void Launch::ClientShutdown ()
+{
+    GAppInstance.Reset();
 }
 
 } // namespace LumenEngine

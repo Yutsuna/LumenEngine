@@ -13,6 +13,7 @@
 #include "Actors/Triangle.hpp"
 
 #include "Generic/GenericApplication.hpp"
+#include "Graphics/Renderer.hpp"
 
 #include "Logging/Logger.hpp"
 
@@ -45,15 +46,17 @@ void LumenEngine::FTriangleExampleApplication::Tick ( const Float64 InDeltaTime 
 
 void LumenEngine::FTriangleExampleApplication::CreateResources ()
 {
-    TriangleMesh           = MakeShared<Renderer::FRenderMesh>();
-    TriangleMesh->Vertices = { { { 0.0F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
-                               { { 0.5F, 0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
-                               { { -0.5F, 0.5F, 0.0F }, { 0.0F, 0.0F, 1.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } } };
-    TriangleMesh->Indices  = { 0, 1, 2 };
+    TriangleMesh               = MakeShared<Renderer::FRenderMesh>();
+    TriangleMesh->Vertices     = { { { 0.0F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
+                                   { { 0.5F, 0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
+                                   { { -0.5F, 0.5F, 0.0F }, { 0.0F, 0.0F, 1.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } } };
+    TriangleMesh->Indices      = { 0, 1, 2 };
+    TriangleMesh->RenderHandle = Renderer::GRenderer->CreateMesh( TriangleMesh->Vertices, TriangleMesh->Indices );
 
     TriangleShader               = MakeShared<Renderer::FRenderShader>();
     TriangleShader->VertexPath   = "Shaders/Triangle.vert.spv";
     TriangleShader->FragmentPath = "Shaders/Triangle.frag.spv";
+    TriangleShader->RenderHandle = Renderer::GRenderer->CreatePipeline( TriangleShader->VertexPath, TriangleShader->FragmentPath );
 }
 
 void LumenEngine::FTriangleExampleApplication::CreateActors ()

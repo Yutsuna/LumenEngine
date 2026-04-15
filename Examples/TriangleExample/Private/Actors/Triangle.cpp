@@ -15,6 +15,10 @@ void LumenEngine::ATriangle::Receive ( const FMessage &InMessage )
         RotateTriangle( Payload.DeltaTime );
         DrawTriangle();
     }
+    else
+    {
+        Engine::AStaticMeshActor::Receive( InMessage );
+    }
 }
 
 void LumenEngine::ATriangle::RotateTriangle ( const Float64 InDeltaTime ) noexcept
