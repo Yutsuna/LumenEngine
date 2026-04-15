@@ -40,11 +40,21 @@ namespace Engine
             /** Sent by entities to update their spatial transform. Payload: FDrawCommandPayload */
             TransformUpdate,
 
+            /** Sent by entities to request a draw call. Payload: FSubmitDrawPayload */
+            SubmitDraw,
+
             /** Sent to cameras to bind them to a specific target actor. Payload: FSetCameraTargetPayload */
             SetCameraTarget,
+
         };
 
     } // namespace EEngineMessage
+
+    /** @brief Payload for EEngineMessage::TransformUpdate */
+    struct FTransformPayload final
+    {
+        Maths::FMatrix4x4f NewTransform = Maths::FMatrix4x4f::Identity();
+    };
 
     /** @brief Payload for EEngineMessage::Tick */
     struct FTickPayload final
@@ -59,12 +69,18 @@ namespace Engine
         Float32 Value = 0.0F;
     };
 
-    /** @brief Payload for EEngineMessage::TransformUpdate */
+    /** @brief Payload for the ASceneActor for rendering draws */
     struct FDrawCommandPayload final
     {
-        Renderer::FRenderMesh *Mesh     = nullptr;
-        Renderer::FRenderShader *Shader = nullptr;
-        Maths::FMatrix4x4f Transform    = Maths::FMatrix4x4f::Identity();
+        RHI::FMeshHandle Mesh;
+        RHI::FPipelineHandle Shader;
+        Maths::FMatrix4x4f Transform;
+    };
+
+    /** @brief Payload for EEngineMessage::SubmitDraw */
+    struct FSubmitDrawPayload final
+    {
+        ActorID Id = 0ULL;
     };
 
     /** @brief Payload for EEngineMessage::SetCameraTarget */

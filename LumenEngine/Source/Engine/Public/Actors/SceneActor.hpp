@@ -6,8 +6,7 @@
 #pragma once
 
 #include "Actor/Actor.hpp"
-#include "Container/Map.hpp"
-#include "Graphics/RenderResource.hpp"
+#include "Container/Vector.hpp"
 
 namespace LumenEngine
 {
@@ -33,12 +32,12 @@ namespace Engine
 
     private:
 
-        void HandleTick ( const Float64 InDeltaTime ) const;
+        void HandleTick ( const Float64 InDeltaTime );
 
     private:
 
-        /** Cached draw commands for all renderable entities */
-        TMap<ActorID, Renderer::FDrawCommand> PendingDraws;
+        /** @brief Pending draw IDs for the current frame */
+        TVector<ActorID> PendingDraws;
     };
 
 } // namespace Engine
