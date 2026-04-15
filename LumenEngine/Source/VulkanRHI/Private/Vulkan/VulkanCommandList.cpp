@@ -35,3 +35,8 @@ void LumenEngine::VulkanRHI::FVulkanCommandList::DrawMesh ( const RHI::FMeshHand
 {
     RHI->DrawMeshInternal( CurrentCmd, InMesh );
 }
+
+void LumenEngine::VulkanRHI::FVulkanCommandList::SetActiveCommandBuffer ( VkCommandBuffer InCmd ) noexcept
+{
+    CurrentCmd = InCmd;
+}

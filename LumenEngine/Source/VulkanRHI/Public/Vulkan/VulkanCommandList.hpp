@@ -40,10 +40,7 @@ namespace VulkanRHI
     public:
 
         /** @brief Used internally to set the active Vulkan command buffer for this frame */
-        void SetActiveCommandBuffer ( VkCommandBuffer InCmd ) noexcept
-        {
-            CurrentCmd = InCmd;
-        }
+        void SetActiveCommandBuffer ( VkCommandBuffer InCmd ) noexcept;
 
     private:
 
