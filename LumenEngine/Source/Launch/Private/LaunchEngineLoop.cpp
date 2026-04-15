@@ -4,7 +4,7 @@
  */
 
 #include "LaunchEngineLoop.hpp"
-#include "LaunchEngine.hpp"
+#include "GameApplication.hpp"
 
 #include "ErrorCodes.hpp"
 #include "HAL/PlatformTime.hpp"
@@ -106,7 +106,7 @@ void LumenEngine::FEngineLoop::Tick ()
         GPlatformApplication->PumpMessages( LastTickTime );
     }
 
-    Launch::ClientTick( LastTickTime );
+    Launch::GetGameApplication().Tick( LastTickTime );
 
     if ( Renderer::GRenderer.IsValid() )
     {

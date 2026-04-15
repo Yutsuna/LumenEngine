@@ -3,7 +3,8 @@
  * @brief Implementation of the entry points of the Engine
  */
 
-#include "LaunchEngine.hpp"
+#include "GameApplication.hpp"
+
 #include "Container/Signal.hpp"
 #include "ErrorCodes.hpp"
 #include "LaunchEngineLoop.hpp"
@@ -28,7 +29,7 @@ inline LumenEngine::Bool EngineRequestingExit ()
 
 inline void EngineExit ()
 {
-    LumenEngine::Launch::ClientShutdown();
+    LumenEngine::Launch::GetGameApplication().Shutdown();
     LumenEngine::GEngineLoop.Exit();
     LumenEngine::FSignal::Reset();
     LumenEngine::FLogger::GetInstance().Shutdown();
@@ -63,7 +64,7 @@ inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, const Lume
         return ErrorCode;
     }
 
-    return LumenEngine::Launch::ClientInit( Argc, Argv );
+    return LumenEngine::Launch::GetGameApplication().Initialize( Argc, Argv );
 }
 
 } // namespace
