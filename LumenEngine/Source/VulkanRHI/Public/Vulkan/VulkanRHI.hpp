@@ -93,6 +93,7 @@ namespace VulkanRHI
          */
         void BeginRenderingInternal ( VkCommandBuffer InCmd, const Float32 InClearColor[4] ) noexcept;
         void BindPipelineInternal ( VkCommandBuffer InCmd, const RHI::FPipelineHandle InPipeline ) noexcept;
+        void PushConstantsInternal ( VkCommandBuffer InCmd, const RHI::FPipelineHandle InPipeline, const void *InData, UInt32 InSize, UInt32 InOffset ) noexcept;
         void DrawMeshInternal ( VkCommandBuffer InCmd, const RHI::FMeshHandle InMesh ) noexcept;
 
     public:
