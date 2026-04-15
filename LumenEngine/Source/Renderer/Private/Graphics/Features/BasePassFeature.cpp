@@ -14,6 +14,7 @@ inline void ExecuteDrawCommand ( LumenEngine::RHI::IRHICommandList &InCmdList, c
     if ( InCommand.Mesh.IsValid() and InCommand.Shader.IsValid() )
     {
         InCmdList.BindPipeline( InCommand.Shader );
+        InCmdList.PushConstants( InCommand.Shader, &InCommand.Transform, sizeof( LumenEngine::Maths::FMatrix4x4f ), 0 );
         InCmdList.DrawMesh( InCommand.Mesh );
     }
 }
