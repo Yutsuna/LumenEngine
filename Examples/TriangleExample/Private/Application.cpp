@@ -17,12 +17,12 @@
 
 #include "Logging/Logger.hpp"
 
-namespace LumenEngine
+namespace
 {
 LUMEN_LOG_DEFINE_CATEGORY( LogTriangleExample, "TriangleExample" );
 }
 
-LumenEngine::Int32 LumenEngine::FTriangleExampleApplication::Initialize ()
+LumenEngine::Int32 LumenEngine::FTriangleExampleApplication::Initialize ( const Int32 LUMEN_UNUSED Argc, const AnsiChar LUMEN_UNUSED *Argv[] )
 {
     if ( not GPlatformApplication.IsValid() )
     {
@@ -37,6 +37,13 @@ LumenEngine::Int32 LumenEngine::FTriangleExampleApplication::Initialize ()
 
     LUMEN_LOG_INFO( LogTriangleExample, "TriangleExample: World initialized with Camera, Scene and Mesh actors." );
     return EErrorCode::Success;
+}
+
+void LumenEngine::FTriangleExampleApplication::Shutdown ()
+{
+    TriangleShader.Reset();
+    TriangleMesh.Reset();
+    World.Reset();
 }
 
 void LumenEngine::FTriangleExampleApplication::Tick ( const Float64 InDeltaTime )
@@ -68,3 +75,5 @@ void LumenEngine::FTriangleExampleApplication::CreateActors ()
     MeshActor->SetMeshAndShader( TriangleMesh->RenderHandle, TriangleShader->RenderHandle );
     MeshActor->SetSceneActor( FActorRef( SceneActor.Get() ) );
 }
+
+LUMEN_REGISTER_GAME_APPLICATION( LumenEngine::FTriangleExampleApplication );

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Container/UniquePtr.hpp"
+#include "GameApplication.hpp"
 #include "World/World.hpp"
 
 #include "Graphics/Resources/RenderMesh.hpp"
@@ -14,14 +15,17 @@
 namespace LumenEngine
 {
 
-class FTriangleExampleApplication final
+class FTriangleExampleApplication final : public IGameApplication
 {
 public:
 
     FTriangleExampleApplication () noexcept = default;
 
-    Int32 Initialize ();
-    void Tick ( const Float64 InDeltaTime );
+public:
+
+    Int32 Initialize ( Int32 Argc, const AnsiChar *Argv[] ) override;
+    void Tick ( const Float64 InDeltaTime ) override;
+    void Shutdown () override;
 
 private:
 
