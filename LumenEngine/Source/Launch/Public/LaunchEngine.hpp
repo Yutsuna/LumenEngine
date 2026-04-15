@@ -29,6 +29,11 @@ namespace Launch
      */
     void ClientTick ( const Float64 DeltaTime );
 
+    /**
+     * @brief Shuts down the client application, guaranteeing proper destruction before core systems terminate.
+     */
+    void ClientShutdown ();
+
 } // namespace Launch
 
 } // namespace LumenEngine
