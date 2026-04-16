@@ -47,18 +47,33 @@ TEST( ParallelActor, ActorRefBehavior )
     MockActor.ProcessMailbox();
     EXPECT_TRUE( MockActor.bReceived );
 
-    /** Branch: EnqueueMessage through null ActorPtr (Safety check) */
-    FActorRef NullPtrRef( 20ULL, nullptr );
+    /** Branch: EnqueueMessage through ID that doesn't exist (Safety check) */
+    FActorRef NullPtrRef( 20ULL );
     NullPtrRef.EnqueueMessage( FMessage::Make( 2U, 0ULL ) );
+}
+
+TEST( ParallelActor, ActorRefDanglingSafety )
+{
+    using namespace LumenEngine;
+
+    FActorRef DanglingRef;
+    {
+        FActorRefMock TempActor( 42ULL );
+        DanglingRef = TempActor.GetRef();
+        EXPECT_TRUE( DanglingRef.IsValid() );
+    }
+    /** TempActor is now destroyed and unregistered. */
+    /** This should not crash and should simply drop the message. */
+    DanglingRef.EnqueueMessage( FMessage::Make( 99U, 0ULL ) );
 }
 
 TEST( ParallelActor, ActorRefComparison )
 {
     using namespace LumenEngine;
 
-    FActorRef RefA( 1ULL, nullptr );
-    FActorRef RefB( 2ULL, nullptr );
-    FActorRef RefAAgain( 1ULL, nullptr );
+    FActorRef RefA( 1ULL );
+    FActorRef RefB( 2ULL );
+    FActorRef RefAAgain( 1ULL );
 
     EXPECT_TRUE( RefA == RefAAgain );
     EXPECT_TRUE( RefA != RefB );
