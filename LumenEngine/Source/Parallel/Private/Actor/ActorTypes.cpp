@@ -4,15 +4,16 @@
  */
 
 #include "Actor/Actor.hpp"
+#include "ActorRegistry.hpp"
 
 const LumenEngine::FLogCategory LumenEngine::LogActor( "Actor" );
 
-LumenEngine::FActorRef::FActorRef ( ActorID InId, AActor *InActor ) noexcept : Id( InId ), ActorPtr( InActor )
+LumenEngine::FActorRef::FActorRef ( ActorID InId ) noexcept : Id( InId )
 {
     /* */
 }
 
-LumenEngine::FActorRef::FActorRef ( AActor *InActor ) noexcept : Id( InActor != nullptr ? InActor->GetId() : 0ULL ), ActorPtr( InActor )
+LumenEngine::FActorRef::FActorRef ( AActor *InActor ) noexcept : Id( InActor != nullptr ? InActor->GetId() : 0ULL )
 {
     /* */
 }
@@ -29,8 +30,5 @@ LumenEngine::Bool LumenEngine::FActorRef::IsValid () const noexcept
 
 void LumenEngine::FActorRef::EnqueueMessage ( const FMessage &InMessage ) const noexcept
 {
-    if ( ActorPtr != nullptr )
-    {
-        ActorPtr->EnqueueMessage( InMessage );
-    }
+    LumenEngine::Internal::FActorRegistry::EnqueueMessage( Id, InMessage );
 }
