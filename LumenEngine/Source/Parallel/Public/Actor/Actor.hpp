@@ -22,7 +22,7 @@ class LUMEN_ENGINE_API AActor : public FNonCopyable
 public:
 
     explicit AActor ( ActorID InId ) noexcept;
-    virtual ~AActor () = default;
+    virtual ~AActor () noexcept;
 
 public:
 
@@ -36,7 +36,7 @@ public:
     void ProcessMailbox () noexcept;
 
     [[nodiscard]] ActorID GetId () const noexcept;
-    [[nodiscard]] FActorRef GetRef () noexcept;
+    [[nodiscard]] FActorRef GetRef () const noexcept;
 
 private:
 

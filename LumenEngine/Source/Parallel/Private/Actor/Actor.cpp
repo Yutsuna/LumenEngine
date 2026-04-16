@@ -4,10 +4,16 @@
  */
 
 #include "Actor/Actor.hpp"
+#include "ActorRegistry.hpp"
 
 LumenEngine::AActor::AActor ( ActorID InId ) noexcept : Id( InId )
 {
-    /* CTOR */
+    LumenEngine::Internal::FActorRegistry::Register( this );
+}
+
+LumenEngine::AActor::~AActor () noexcept
+{
+    LumenEngine::Internal::FActorRegistry::Unregister( this );
 }
 
 void LumenEngine::AActor::EnqueueMessage ( const FMessage &InMessage ) noexcept
@@ -28,7 +34,7 @@ LumenEngine::ActorID LumenEngine::AActor::GetId () const noexcept
     return Id;
 }
 
-LumenEngine::FActorRef LumenEngine::AActor::GetRef () noexcept
+LumenEngine::FActorRef LumenEngine::AActor::GetRef () const noexcept
 {
-    return FActorRef( Id, this );
+    return FActorRef( Id );
 }
