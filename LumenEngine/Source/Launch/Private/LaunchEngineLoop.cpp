@@ -131,12 +131,11 @@ void LumenEngine::FEngineLoop::Exit () const
 void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *const Reason ) noexcept
 {
     LUMEN_LOG_WARNING( LogLaunch, "Exit requested: {}", Reason );
-    RequestExitAsyncSafe( Reason );
+    RequestExitAsyncSafe();
 }
 
-void LumenEngine::FEngineLoop::RequestExitAsyncSafe ( const AnsiChar *const Reason ) noexcept
+void LumenEngine::FEngineLoop::RequestExitAsyncSafe () noexcept
 {
-    FLogger::Flush( Reason );
     bRequestingExit.store( true, std::memory_order_relaxed );
 }
 

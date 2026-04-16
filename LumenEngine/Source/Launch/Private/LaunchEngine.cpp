@@ -37,14 +37,14 @@ inline void EngineExit ()
 
 void EngineTrapInterrupt ( const LumenEngine::ESystemSignal::Type __attribute__( ( unused ) ) SignalType )
 {
-    LumenEngine::FLogger::Flush( "\r" );
-    LumenEngine::GEngineLoop.RequestExitAsyncSafe( "Interrupt signal received. Requesting engine termination..." );
+    LumenEngine::FLogger::Flush( "\rInterrupt signal trapped: exiting gracefully..." );
+    LumenEngine::GEngineLoop.RequestExitAsyncSafe();
 }
 
 void EngineTrapTerminate ( const LumenEngine::ESystemSignal::Type __attribute__( ( unused ) ) SignalType )
 {
-    LumenEngine::FLogger::Flush( "\r" );
-    LumenEngine::GEngineLoop.RequestExitAsyncSafe( "Termination signal received. Requesting engine termination..." );
+    LumenEngine::FLogger::Flush( "\rTerminate signal trapped: exiting gracefully..." );
+    LumenEngine::GEngineLoop.RequestExitAsyncSafe();
 }
 
 inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )

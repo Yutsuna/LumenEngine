@@ -51,7 +51,7 @@ public:
 
     /** Request the application to exit */
     void RequestExit ( const AnsiChar *const Reason ) noexcept;
-    void RequestExitAsyncSafe ( const AnsiChar *const Reason ) noexcept;
+    void RequestExitAsyncSafe () noexcept;
 
     /** @return The current frame index since the engine started */
     [[nodiscard]] UInt64 GetFrameIndex () const noexcept;
