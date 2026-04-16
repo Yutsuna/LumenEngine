@@ -147,6 +147,12 @@ namespace Parallel
          */
         void SwapWriteBuffers () noexcept;
 
+        /**
+         * @brief Returns a pointer to the internal array of 3 buffers.
+         * Useful for identifying the index of a buffer reference.
+         */
+        [[nodiscard]] const BufferType *GetBuffers () const noexcept;
+
     private:
 
         [[nodiscard]] Internal::FBufferFlag::Type SwapReadWithTempFlags ( Internal::FBufferFlag::Type Flags ) const noexcept;

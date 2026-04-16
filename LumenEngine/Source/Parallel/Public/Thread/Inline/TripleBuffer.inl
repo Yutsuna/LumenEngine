@@ -164,6 +164,11 @@ template <typename BufferType> void LumenEngine::Parallel::TTripleBuffer<BufferT
     PublishWrite();
 }
 
+template <typename BufferType> const BufferType *LumenEngine::Parallel::TTripleBuffer<BufferType>::GetBuffers () const noexcept
+{
+    return Buffers;
+}
+
 template <typename BufferType>
 LumenEngine::Parallel::Internal::FBufferFlag::Type
 LumenEngine::Parallel::TTripleBuffer<BufferType>::SwapReadWithTempFlags ( const Internal::FBufferFlag::Type Flags ) const noexcept
