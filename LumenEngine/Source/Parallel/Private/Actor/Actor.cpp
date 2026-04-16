@@ -28,7 +28,7 @@ void LumenEngine::AActor::ProcessMailbox ( const UInt32 InMaxMessages ) noexcept
     while ( TOptional<FMessage> Message = Mailbox.Pop() )
     {
         Receive( *Message );
-        ProcessedCount++;
+        ++ProcessedCount;
 
         if ( InMaxMessages > 0U and ProcessedCount >= InMaxMessages )
         {
