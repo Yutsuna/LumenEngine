@@ -7,7 +7,7 @@
 
 #include "Actor/ActorTypes.hpp"
 #include "Container/Map.hpp"
-#include <shared_mutex>
+#include "HAL/SharedMutex.hpp"
 
 namespace LumenEngine
 {
@@ -33,7 +33,7 @@ namespace Internal
 
     private:
 
-        static std::shared_mutex RegistryMutex;
+        static FSharedMutex RegistryMutex;
         static TMap<ActorID, AActor *> Actors;
     };
 } // namespace Internal
