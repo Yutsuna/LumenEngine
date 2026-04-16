@@ -21,11 +21,19 @@ void LumenEngine::AActor::EnqueueMessage ( const FMessage &InMessage ) noexcept
     Mailbox.Push( InMessage );
 }
 
-void LumenEngine::AActor::ProcessMailbox () noexcept
+void LumenEngine::AActor::ProcessMailbox ( const UInt32 InMaxMessages ) noexcept
 {
+    UInt32 ProcessedCount = 0U;
+
     while ( TOptional<FMessage> Message = Mailbox.Pop() )
     {
         Receive( *Message );
+        ProcessedCount++;
+
+        if ( InMaxMessages > 0U and ProcessedCount >= InMaxMessages )
+        {
+            break;
+        }
     }
 }
 
@@ -37,4 +45,9 @@ LumenEngine::ActorID LumenEngine::AActor::GetId () const noexcept
 LumenEngine::FActorRef LumenEngine::AActor::GetRef () const noexcept
 {
     return FActorRef( Id );
+}
+
+std::type_index LumenEngine::AActor::GetTypeIndex () const noexcept
+{
+    return typeid( *this );
 }
