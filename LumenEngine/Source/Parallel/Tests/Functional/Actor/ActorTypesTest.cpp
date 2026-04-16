@@ -22,6 +22,7 @@ public:
     {
         bReceived = true;
     }
+
     LumenEngine::Bool bReceived = false;
 };
 } // namespace
