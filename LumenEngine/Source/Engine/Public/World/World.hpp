@@ -44,6 +44,7 @@ namespace Engine
         TMap<ActorID, TSharedPtr<AActor>> Actors;
         TVector<TSharedPtr<AActor>> ActiveActors;
         ActorID NextActorId = 1000ULL;
+        Bool bNeedsSorting  = false;
     };
 
 } // namespace Engine

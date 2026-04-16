@@ -34,7 +34,11 @@ void LumenEngine::Engine::FWorld::Tick ( const Float64 InDeltaTime )
      * when the parallel loop invokes the virtual Receive function.
      * Pure C++ automatic sorting via RTTI.
      */
-    std::ranges::sort( ActiveActors, [] ( const TSharedPtr<AActor> &A, const TSharedPtr<AActor> &B ) { return A->GetTypeIndex() < B->GetTypeIndex(); } );
+    if ( bNeedsSorting ) [[unlikely]]
+    {
+        std::ranges::sort( ActiveActors, [] ( const TSharedPtr<AActor> &A, const TSharedPtr<AActor> &B ) { return A->GetTypeIndex() < B->GetTypeIndex(); } );
+        bNeedsSorting = false;
+    }
 
     using ActorIterator            = TVector<TSharedPtr<AActor>>::iterator;
     const ActorIterator ActorBegin = ActiveActors.begin();
