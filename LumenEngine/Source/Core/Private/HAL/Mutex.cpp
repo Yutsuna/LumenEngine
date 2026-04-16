@@ -30,3 +30,8 @@ LumenEngine::Bool LumenEngine::FMutex::IsLocked () const noexcept
 {
     return MutexFlag.test( std::memory_order::relaxed );
 }
+
+LumenEngine::FMutex::operator Bool () const noexcept
+{
+    return IsLocked();
+}
