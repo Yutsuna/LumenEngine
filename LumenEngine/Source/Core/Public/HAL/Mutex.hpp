@@ -40,22 +40,6 @@ public:
     /** @brief Checks if the mutex is locked. */
     [[nodiscard]] Bool IsLocked () const noexcept;
 
-public:
-
-    /** @brief Standard library compatibility aliases. */
-    void lock () noexcept
-    {
-        Lock();
-    }
-    void unlock () noexcept
-    {
-        Unlock();
-    }
-    [[nodiscard]] Bool try_lock () noexcept
-    {
-        return TryLock();
-    }
-
 private:
 
     /** The underlying atomic flag used for locking */
@@ -79,7 +63,7 @@ private:
  * @brief A move-only mutex ownership wrapper.
  * @details Similar to std::unique_lock, but follows LumenEngine conventions.
  */
-template <typename MutexType> class TUniqueLock final : public FNonCopyable, public FNonMovable
+template <typename MutexType> class TUniqueLock final : public FNonCopyable
 {
 public:
 
@@ -99,30 +83,8 @@ public:
     /** @brief Releases the mutex ownership without unlocking it. */
     MutexType *Release () noexcept;
 
-    [[nodiscard]] Bool IsLocked () const noexcept
-    {
-        return bIsLocked;
-    }
-    [[nodiscard]] explicit operator bool () const noexcept
-    {
-        return IsLocked();
-    }
-
-public:
-
-    /** @brief Standard library compatibility aliases. */
-    void lock () noexcept
-    {
-        Lock();
-    }
-    void unlock () noexcept
-    {
-        Unlock();
-    }
-    [[nodiscard]] Bool try_lock () noexcept
-    {
-        return TryLock();
-    }
+    [[nodiscard]] Bool IsLocked () const noexcept;
+    [[nodiscard]] explicit operator bool () const noexcept;
 
 private:
 
