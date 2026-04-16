@@ -9,6 +9,6 @@ LumenModule(
 
 LumenCompileShaders(TriangleExample "Shaders"
     SOURCES
-    "Private/Shaders/Triangle.vert"
-    "Private/Shaders/Triangle.frag"
+    "Shaders/Triangle.vert"
+    "Shaders/Triangle.frag"
 )

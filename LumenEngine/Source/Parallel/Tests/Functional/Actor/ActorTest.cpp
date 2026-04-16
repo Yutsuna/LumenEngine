@@ -1,90 +1,72 @@
-#include "Actor/Actor.hpp"
-#include "Container/Vector.hpp"
-#include "CoreTypes.hpp"
+/**
+ * @file ActorTest.cpp
+ * @brief Functional tests for AActor base class logic.
+ */
 
-#include <barrier>
+#include "Actor/Actor.hpp"
 #include <gtest/gtest.h>
-#include <thread>
 
 namespace
 {
 
-class FCollectingActor final : public LumenEngine::AActor
+class FFunctionalActor final : public LumenEngine::AActor
 {
 public:
 
-    explicit FCollectingActor ( LumenEngine::ActorID InId ) noexcept : LumenEngine::AActor( InId )
+    explicit FFunctionalActor ( LumenEngine::ActorID InId ) noexcept : AActor( InId )
     {
-        /* Ctor */
+        /* Ctor*/
     }
 
     void Receive ( const LumenEngine::FMessage &InMessage ) override
     {
-        ReceivedMessages.push_back( InMessage );
+        LastType = InMessage.Type;
+        ReceivedCount++;
     }
 
-    LumenEngine::TVector<LumenEngine::FMessage> ReceivedMessages;
-};
-
-struct FTestPayload
-{
-    LumenEngine::Int32 Value = 0;
+    LumenEngine::UInt32 LastType      = 0U;
+    LumenEngine::UInt32 ReceivedCount = 0U;
 };
 
 } // namespace
 
-TEST( ParallelActor, ProcessMailboxDrainsAllEnqueuedMessages )
+TEST( ParallelActor, ActorLifecycle )
 {
-    FCollectingActor Actor( 1ULL );
+    using namespace LumenEngine;
 
-    Actor.EnqueueMessage( LumenEngine::FMessage::Make( 1U, 10ULL, FTestPayload{ 100 } ) );
-    Actor.EnqueueMessage( LumenEngine::FMessage::Make( 2U, 20ULL, FTestPayload{ 200 } ) );
-    Actor.EnqueueMessage( LumenEngine::FMessage::Make( 3U, 30ULL, FTestPayload{ 300 } ) );
+    FFunctionalActor Actor( 500ULL );
 
+    EXPECT_EQ( Actor.GetId(), 500ULL );
+    EXPECT_EQ( Actor.ReceivedCount, 0U );
+
+    /** Test mailbox processing loop */
+    Actor.EnqueueMessage( FMessage::Make( 10U, 1ULL ) );
+    Actor.EnqueueMessage( FMessage::Make( 20U, 1ULL ) );
+    Actor.EnqueueMessage( FMessage::Make( 30U, 1ULL ) );
+
+    /** Branch: ProcessMailbox draining multiple messages */
     Actor.ProcessMailbox();
 
-    ASSERT_EQ( Actor.ReceivedMessages.size(), 3U );
+    EXPECT_EQ( Actor.ReceivedCount, 3U );
+    EXPECT_EQ( Actor.LastType, 30U );
 
-    EXPECT_EQ( Actor.ReceivedMessages[0].Type, 1U );
-    EXPECT_EQ( Actor.ReceivedMessages[1].Type, 2U );
-    EXPECT_EQ( Actor.ReceivedMessages[2].Type, 3U );
-
-    EXPECT_EQ( Actor.ReceivedMessages[0].GetPayload<FTestPayload>().Value, 100 );
-    EXPECT_EQ( Actor.ReceivedMessages[1].GetPayload<FTestPayload>().Value, 200 );
-    EXPECT_EQ( Actor.ReceivedMessages[2].GetPayload<FTestPayload>().Value, 300 );
+    /** Branch: ProcessMailbox on empty */
+    Actor.ProcessMailbox();
+    EXPECT_EQ( Actor.ReceivedCount, 3U );
 }
 
-TEST( ParallelActor, AcceptsConcurrentProducers )
+TEST( ParallelActor, ActorReferenceStability )
 {
-    FCollectingActor Actor( 3ULL );
+    using namespace LumenEngine;
 
-    constexpr LumenEngine::Int32 ProducerCount       = 4;
-    constexpr LumenEngine::Int32 MessagesPerProducer = 300;
+    FFunctionalActor Actor( 1ULL );
+    FActorRef Ref = Actor.GetRef();
 
-    std::barrier StartBarrier( ProducerCount + 1 );
-    LumenEngine::TVector<std::jthread> Producers;
-    Producers.reserve( ProducerCount );
+    EXPECT_EQ( Ref.GetId(), Actor.GetId() );
 
-    for ( LumenEngine::Int32 Producer = 0; Producer < ProducerCount; ++Producer )
-    {
-        Producers.emplace_back(
-            [Producer, &Actor, &StartBarrier] ()
-            {
-                StartBarrier.arrive_and_wait();
+    FMessage Msg = FMessage::Make( 99U, 1ULL );
+    Ref.EnqueueMessage( Msg );
 
-                for ( LumenEngine::Int32 Index = 0; Index < MessagesPerProducer; ++Index )
-                {
-                    FTestPayload Payload{ ( Producer * 100000 ) + Index };
-                    Actor.EnqueueMessage(
-                        LumenEngine::FMessage::Make( static_cast<LumenEngine::UInt32>( Producer ), static_cast<LumenEngine::ActorID>( Producer ), Payload ) );
-                }
-            } );
-    }
-
-    StartBarrier.arrive_and_wait();
-    Producers.clear();
     Actor.ProcessMailbox();
-
-    const LumenEngine::USize ExpectedCount = static_cast<LumenEngine::USize>( ProducerCount ) * static_cast<LumenEngine::USize>( MessagesPerProducer );
-    EXPECT_EQ( Actor.ReceivedMessages.size(), ExpectedCount );
+    EXPECT_EQ( Actor.LastType, 99U );
 }

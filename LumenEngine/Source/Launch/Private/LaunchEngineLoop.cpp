@@ -4,7 +4,7 @@
  */
 
 #include "LaunchEngineLoop.hpp"
-#include "LaunchEngine.hpp"
+#include "GameApplication.hpp"
 
 #include "ErrorCodes.hpp"
 #include "HAL/PlatformTime.hpp"
@@ -37,7 +37,8 @@ TSharedPtr<FGenericApplication> GPlatformApplication = nullptr;
 
 namespace
 {
-    const FGenericWindowDescription GetDefaultWindowDescription () noexcept
+
+    inline FGenericWindowDescription GetDefaultWindowDescription () noexcept
     {
         return { .Title        = "Lumen Engine",
                  .Position     = Maths::FVec2i( 100, 100 ),
@@ -73,7 +74,7 @@ LumenEngine::Int32 LumenEngine::FEngineLoop::PreInit ( Int32 Argc, const AnsiCha
     LastFrameSeconds = HAL::FPlatformTime::Seconds();
     TotalTickTime    = 0.0;
     LastTickTime     = HAL::FPlatformTime::DefaultTickRate;
-    bRequestingExit  = false;
+    bRequestingExit.store( false, std::memory_order_relaxed );
 
     LUMEN_LOG_INFO( LogLaunch, "Engine PreInit completed successfully." );
     return EErrorCode::Success;
@@ -105,7 +106,7 @@ void LumenEngine::FEngineLoop::Tick ()
         GPlatformApplication->PumpMessages( LastTickTime );
     }
 
-    Launch::ClientTick( LastTickTime );
+    Launch::GetGameApplication().Tick( LastTickTime );
 
     if ( Renderer::GRenderer.IsValid() )
     {
@@ -127,10 +128,15 @@ void LumenEngine::FEngineLoop::Exit () const
     GPlatformApplication.Reset();
 }
 
-void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *Reason ) noexcept
+void LumenEngine::FEngineLoop::RequestExit ( const AnsiChar *const Reason ) noexcept
 {
     LUMEN_LOG_WARNING( LogLaunch, "Exit requested: {}", Reason );
-    bRequestingExit = true;
+    RequestExitAsyncSafe();
+}
+
+void LumenEngine::FEngineLoop::RequestExitAsyncSafe () noexcept
+{
+    bRequestingExit.store( true, std::memory_order_relaxed );
 }
 
 LumenEngine::UInt64 LumenEngine::FEngineLoop::GetFrameIndex () const noexcept
@@ -140,26 +146,7 @@ LumenEngine::UInt64 LumenEngine::FEngineLoop::GetFrameIndex () const noexcept
 
 LumenEngine::Bool LumenEngine::FEngineLoop::ShouldExit () const noexcept
 {
-    return bRequestingExit;
-}
-
-LumenEngine::EErrorCode::Type LumenEngine::FEngineLoop::AppInit ()
-{
-    LUMEN_LOG_INFO( LogLaunch, "Application Logic Init started..." );
-
-    if ( GEngineLoop.Init() != EErrorCode::Success )
-    {
-        LUMEN_LOG_ERROR( LogLaunch, "Failed to initialize Engine from AppInit. " );
-        return EErrorCode::Failure;
-    }
-
-    return EErrorCode::Success;
-}
-
-void LumenEngine::FEngineLoop::AppShutdown ()
-{
-    LUMEN_LOG_INFO( LogLaunch, "Application Logic Shutdown started..." );
-    GPlatformApplication.Reset();
+    return bRequestingExit.load( std::memory_order_relaxed );
 }
 
 void LumenEngine::FEngineLoop::CalculateDeltaTime () noexcept
@@ -168,7 +155,7 @@ void LumenEngine::FEngineLoop::CalculateDeltaTime () noexcept
 
     LastTickTime = CurrentFrameSeconds - LastFrameSeconds;
 
-    if ( LastTickTime > HAL::FPlatformTime::MaxTickRate )
+    if ( std::min( LastTickTime, HAL::FPlatformTime::MaxTickRate ) != LastTickTime )
     {
         LastTickTime = HAL::FPlatformTime::MaxTickRate;
     }

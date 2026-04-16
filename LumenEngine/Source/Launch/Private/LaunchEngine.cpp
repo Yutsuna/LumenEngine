@@ -3,7 +3,8 @@
  * @brief Implementation of the entry points of the Engine
  */
 
-#include "LaunchEngine.hpp"
+#include "GameApplication.hpp"
+
 #include "Container/Signal.hpp"
 #include "ErrorCodes.hpp"
 #include "LaunchEngineLoop.hpp"
@@ -28,6 +29,7 @@ inline LumenEngine::Bool EngineRequestingExit ()
 
 inline void EngineExit ()
 {
+    LumenEngine::Launch::GetGameApplication().Shutdown();
     LumenEngine::GEngineLoop.Exit();
     LumenEngine::FSignal::Reset();
     LumenEngine::FLogger::GetInstance().Shutdown();
@@ -35,16 +37,14 @@ inline void EngineExit ()
 
 void EngineTrapInterrupt ( const LumenEngine::ESystemSignal::Type __attribute__( ( unused ) ) SignalType )
 {
-    LumenEngine::FLogger::Flush( "\r" );
-    LUMEN_LOG_INFO( LogLaunch, "Interrupt signal received. Requesting engine termination..." );
-    LumenEngine::FSignal::Raise( LumenEngine::ESystemSignal::Terminate );
+    LumenEngine::FLogger::Flush( "\rInterrupt signal trapped: exiting gracefully..." );
+    LumenEngine::GEngineLoop.RequestExitAsyncSafe();
 }
 
 void EngineTrapTerminate ( const LumenEngine::ESystemSignal::Type __attribute__( ( unused ) ) SignalType )
 {
-    LumenEngine::FLogger::Flush( "\r" );
-    LUMEN_LOG_INFO( LogLaunch, "Termination signal received. Requesting engine termination..." );
-    LumenEngine::GEngineLoop.RequestExit( "Termination signal received" );
+    LumenEngine::FLogger::Flush( "\rTerminate signal trapped: exiting gracefully..." );
+    LumenEngine::GEngineLoop.RequestExitAsyncSafe();
 }
 
 inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, const LumenEngine::AnsiChar *Argv[] )
@@ -64,7 +64,7 @@ inline LumenEngine::Int32 EngineInit ( const LumenEngine::Int32 Argc, const Lume
         return ErrorCode;
     }
 
-    return LumenEngine::Launch::ClientInit( Argc, Argv );
+    return LumenEngine::Launch::GetGameApplication().Initialize( Argc, Argv );
 }
 
 } // namespace

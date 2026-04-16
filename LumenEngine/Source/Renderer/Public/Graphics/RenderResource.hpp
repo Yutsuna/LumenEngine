@@ -5,10 +5,9 @@
 
 #pragma once
 
-#include "Graphics/Resources/RenderMesh.hpp"
-#include "Graphics/Resources/RenderShader.hpp"
-
+#include "Container/Vector.hpp"
 #include "Maths/Matrix.hpp"
+#include "RHI/RHITypes.hpp"
 
 namespace LumenEngine
 {
@@ -18,8 +17,8 @@ namespace Renderer
 
     struct LUMEN_ENGINE_API FDrawCommand
     {
-        FRenderMesh *Mesh            = nullptr;
-        FRenderShader *Shader        = nullptr;
+        RHI::FMeshHandle Mesh;
+        RHI::FPipelineHandle Shader;
         Maths::FMatrix4x4f Transform = Maths::FMatrix4x4f::Identity();
     };
 

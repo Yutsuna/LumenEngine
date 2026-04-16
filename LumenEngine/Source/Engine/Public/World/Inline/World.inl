@@ -15,5 +15,6 @@ template <typename ActorType, typename... Args> LumenEngine::TSharedRef<ActorTyp
 
     Actors[NewId] = StoredActor;
     ActiveActors.push_back( StoredActor );
+    bNeedsSorting = true;
     return NewActor;
 }

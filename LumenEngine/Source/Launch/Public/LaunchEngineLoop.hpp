@@ -7,7 +7,6 @@
 
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
-#include "ErrorCodes.hpp"
 
 namespace LumenEngine
 {
@@ -51,18 +50,11 @@ public:
     [[nodiscard]] Bool ShouldExit () const noexcept;
 
     /** Request the application to exit */
-    void RequestExit ( const AnsiChar *Reason ) noexcept;
+    void RequestExit ( const AnsiChar *const Reason ) noexcept;
+    void RequestExitAsyncSafe () noexcept;
 
     /** @return The current frame index since the engine started */
     [[nodiscard]] UInt64 GetFrameIndex () const noexcept;
-
-public:
-
-    /** Initializes the application */
-    [[nodiscard]] static EErrorCode::Type AppInit ();
-
-    /** Shuts down the application */
-    static void AppShutdown ();
 
 private:
 
@@ -76,7 +68,7 @@ private:
 
     UInt64 FrameIndex = 0;
 
-    Bool bRequestingExit = false;
+    TAtomic<Bool> bRequestingExit = { false };
 };
 
 /**

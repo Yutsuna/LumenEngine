@@ -35,10 +35,13 @@ namespace RHI
         /** @brief Binds a graphics pipeline */
         virtual void BindPipeline ( const FPipelineHandle InPipeline ) = 0;
 
+        /** @brief Updates push constants */
+        virtual void PushConstants ( const FPipelineHandle InPipeline, const void *InData, UInt32 InSize, UInt32 InOffset = 0 ) = 0;
+
         /** @brief Draws an indexed mesh */
         virtual void DrawMesh ( const FMeshHandle InMesh ) = 0;
 
-        // Future additions: BindDescriptorSet, PushConstants, SetScissor, etc.
+        /** TODO: Future additions: BindDescriptorSet, SetScissor... */
     };
 
 } // namespace RHI

@@ -195,7 +195,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRenderingInternal ( VkCommandBuffe
 
 void LumenEngine::VulkanRHI::FVulkanRHI::BindPipelineInternal ( VkCommandBuffer InCmd, const LumenEngine::RHI::FPipelineHandle InPipeline ) noexcept
 {
-    if ( not InPipeline.IsValid() || not PipelineRegistry.contains( InPipeline.ID ) )
+    if ( not InPipeline.IsValid() or not PipelineRegistry.contains( InPipeline.ID ) )
     {
         return;
     }
@@ -208,9 +208,20 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BindPipelineInternal ( VkCommandBuffer 
     vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineRegistry[InPipeline.ID].GetLayout(), 0, 1, &GlobalDescriptorSet, 0, nullptr );
 }
 
+void LumenEngine::VulkanRHI::FVulkanRHI::PushConstantsInternal (
+    VkCommandBuffer InCmd, const LumenEngine::RHI::FPipelineHandle InPipeline, const void *InData, UInt32 InSize, UInt32 InOffset ) noexcept
+{
+    if ( not InPipeline.IsValid() or not PipelineRegistry.contains( InPipeline.ID ) )
+    {
+        return;
+    }
+
+    vkCmdPushConstants( InCmd, PipelineRegistry[InPipeline.ID].GetLayout(), VK_SHADER_STAGE_ALL_GRAPHICS, InOffset, InSize, InData );
+}
+
 void LumenEngine::VulkanRHI::FVulkanRHI::DrawMeshInternal ( VkCommandBuffer InCmd, const LumenEngine::RHI::FMeshHandle InMesh ) noexcept
 {
-    if ( not InMesh.IsValid() || not MeshRegistry.contains( InMesh.ID ) )
+    if ( not InMesh.IsValid() or not MeshRegistry.contains( InMesh.ID ) )
     {
         return;
     }

@@ -97,4 +97,14 @@ template <typename MutexType> MutexType *TUniqueLock<MutexType>::Release () noex
     return ReleasedMutex;
 }
 
+template <typename MutexType> Bool TUniqueLock<MutexType>::IsLocked () const noexcept
+{
+    return bIsLocked;
+}
+
+template <typename MutexType> TUniqueLock<MutexType>::operator bool () const noexcept
+{
+    return IsLocked();
+}
+
 } // namespace LumenEngine

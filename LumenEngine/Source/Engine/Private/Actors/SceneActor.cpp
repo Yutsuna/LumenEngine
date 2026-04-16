@@ -6,6 +6,7 @@
 #include "Actors/SceneActor.hpp"
 #include "Graphics/Renderer.hpp"
 #include "Messages/EngineMessageTypes.hpp"
+#include "World/SpatialRegistry.hpp"
 
 LumenEngine::Engine::ASceneActor::ASceneActor ( const ActorID InId ) noexcept : AActor( InId )
 {
@@ -14,14 +15,10 @@ LumenEngine::Engine::ASceneActor::ASceneActor ( const ActorID InId ) noexcept : 
 
 void LumenEngine::Engine::ASceneActor::Receive ( const FMessage &InMessage )
 {
-    if ( InMessage.Type == EEngineMessage::TransformUpdate )
+    if ( InMessage.Type == EEngineMessage::SubmitDraw )
     {
-        const FDrawCommandPayload &Payload = InMessage.GetPayload<FDrawCommandPayload>();
-
-        Renderer::FDrawCommand &Cmd = PendingDraws[InMessage.Sender];
-        Cmd.Mesh                    = Payload.Mesh;
-        Cmd.Shader                  = Payload.Shader;
-        Cmd.Transform               = Payload.Transform;
+        const FSubmitDrawPayload &Payload = InMessage.GetPayload<FSubmitDrawPayload>();
+        PendingDraws.push_back( Payload.Id );
     }
     else if ( InMessage.Type == EEngineMessage::Tick )
     {
@@ -30,12 +27,15 @@ void LumenEngine::Engine::ASceneActor::Receive ( const FMessage &InMessage )
     }
 }
 
-void LumenEngine::Engine::ASceneActor::HandleTick ( const Float64 /*InDeltaTime*/ ) const
+void LumenEngine::Engine::ASceneActor::HandleTick ( const Float64 /*InDeltaTime*/ )
 {
     if ( not Renderer::GRenderer.IsValid() )
     {
         return;
     }
+
+    FSpatialRegistry::Get().SwapReadBuffers();
+    const FSpatialRegistryData &Snapshot = FSpatialRegistry::Get().GetReadSnapshot();
 
     Renderer::FRenderPacket Packet;
     Packet.ClearColor[0] = 0.02F;
@@ -45,10 +45,26 @@ void LumenEngine::Engine::ASceneActor::HandleTick ( const Float64 /*InDeltaTime*
 
     Packet.DrawCommands.reserve( PendingDraws.size() );
 
-    for ( const auto &[_, DrawCmd] : PendingDraws )
+    for ( const ActorID PendingDrawId : PendingDraws )
     {
-        Packet.DrawCommands.push_back( DrawCmd );
+        const auto It = Snapshot.IDToIndex.find( PendingDrawId );
+
+        if ( It != Snapshot.IDToIndex.end() )
+        {
+            const USize Index = It->second;
+
+            if ( Snapshot.Meshes[Index].IsValid() and Snapshot.Shaders[Index].IsValid() )
+            {
+                Renderer::FDrawCommand Cmd;
+                Cmd.Mesh      = Snapshot.Meshes[Index];
+                Cmd.Shader    = Snapshot.Shaders[Index];
+                Cmd.Transform = Snapshot.Transforms[Index];
+
+                Packet.DrawCommands.push_back( Cmd );
+            }
+        }
     }
 
     Renderer::GRenderer->SubmitRenderPacket( Packet );
+    PendingDraws.clear();
 }

@@ -39,7 +39,7 @@ public:
 
     FActorRef () noexcept = default;
 
-    explicit FActorRef ( ActorID InId, AActor *InActor = nullptr ) noexcept;
+    explicit FActorRef ( ActorID InId ) noexcept;
 
     explicit FActorRef ( AActor *InActor ) noexcept;
 
@@ -59,8 +59,7 @@ public:
 
 private:
 
-    ActorID Id       = 0ULL;
-    AActor *ActorPtr = nullptr;
+    ActorID Id = 0ULL;
 };
 
 extern const FLogCategory LogActor;

@@ -5,7 +5,8 @@
 
 #pragma once
 
-#include "Actor/Actor.hpp"
+#include "Actors/SpatialActor.hpp"
+
 #include "Maths/Camera.hpp"
 
 namespace LumenEngine
@@ -19,7 +20,7 @@ namespace Engine
      * @brief Abstract base class for all camera actors.
      * @details Encapsulates the Maths::FCamera and provides base message handling.
      */
-    class LUMEN_ENGINE_API ACameraActor : public AActor
+    class LUMEN_ENGINE_API ACameraActor : public ASpatialActor
     {
     public:
 
