@@ -40,14 +40,21 @@ namespace Engine
     {
     public:
 
+        /** @brief Returns the singleton instance of the registry. */
         static FSpatialRegistry &Get () noexcept;
 
     public:
 
+        /** @brief Registers a new entity in the registry with default transform. */
         void RegisterSpatialEntity ( ActorID InId );
+
+        /** @brief Removes an entity from the registry. */
         void UnregisterSpatialEntity ( ActorID InId );
 
+        /** @brief Updates the transform for a specific entity and marks it as dirty for delta-tracking. */
         void UpdateTransform ( ActorID InId, const Maths::FMatrix4x4f &InTransform ) noexcept;
+
+        /** @brief Assigns mesh and shader data to an entity. */
         void AssignRenderData ( ActorID InId, RHI::FMeshHandle InMesh, RHI::FPipelineHandle InShader ) noexcept;
 
         /** @brief Safely publishes the working state to the TripleBuffer lock-free snapshot. */
@@ -63,6 +70,8 @@ namespace Engine
 
         FSpatialRegistry () noexcept = default;
 
+    private:
+
         mutable FMutex RegistryMutex;
 
         /** Working Data for writes during the active frame */
@@ -70,6 +79,21 @@ namespace Engine
 
         /** Triple buffer for lock-free read access by the Renderer/SceneActor */
         Parallel::TTripleBuffer<FSpatialRegistryData> SnapshotBuffer;
+
+        struct FDeltaTracker
+        {
+            /** List of indices that have changed since this specific buffer was last updated. */
+            TVector<USize> DirtyIndices;
+
+            /** Bitset for O(1) membership check to avoid duplicate entries in DirtyIndices. */
+            TVector<Bool> IsDirty;
+
+            /** True if structural metadata (EntityIDs, Meshes, etc.) needs a full sync. */
+            Bool bMetadataDirty = true;
+        };
+
+        /** Per-buffer tracking state for the TripleBuffer slots. */
+        FDeltaTracker DeltaTrackers[3];
     };
 
 } // namespace Engine
