@@ -11,6 +11,8 @@ namespace
 
 class FFunctionalActor final : public LumenEngine::AActor
 {
+    LUMEN_ACTOR_BODY ( FFunctionalActor );
+
 public:
 
     explicit FFunctionalActor ( LumenEngine::ActorID InId ) noexcept : AActor( InId )
@@ -21,7 +23,7 @@ public:
     void Receive ( const LumenEngine::FMessage &InMessage ) override
     {
         LastType = InMessage.Type;
-        ReceivedCount++;
+        ++ReceivedCount;
     }
 
     LumenEngine::UInt32 LastType      = 0U;

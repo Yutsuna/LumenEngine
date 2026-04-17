@@ -14,6 +14,8 @@ namespace
 
 class FTestActor final : public LumenEngine::AActor
 {
+    LUMEN_ACTOR_BODY ( FTestActor );
+
 public:
 
     FTestActor ( LumenEngine::ActorID InId ) noexcept : AActor( InId )
@@ -31,6 +33,8 @@ public:
 
 class FAnotherActor final : public LumenEngine::AActor
 {
+    LUMEN_ACTOR_BODY ( FAnotherActor );
+
 public:
 
     FAnotherActor ( LumenEngine::ActorID InId ) noexcept : AActor( InId )
@@ -79,10 +83,10 @@ TEST( ParallelActor, TypeIndexSorting )
     Actors.emplace_back( MakeShared<FTestActor>( 4ULL ) );
 
     /** Automatic sorting by type index */
-    std::ranges::sort( Actors, [] ( const TSharedPtr<AActor> &A, const TSharedPtr<AActor> &B ) { return A->GetTypeIndex() < B->GetTypeIndex(); } );
+    std::ranges::sort( Actors, [] ( const TSharedPtr<AActor> &A, const TSharedPtr<AActor> &B ) { return A->GetTypeID() < B->GetTypeID(); } );
 
     /** Verify they are grouped by type */
-    EXPECT_EQ( Actors[0]->GetTypeIndex(), Actors[1]->GetTypeIndex() );
-    EXPECT_EQ( Actors[2]->GetTypeIndex(), Actors[3]->GetTypeIndex() );
-    EXPECT_NE( Actors[0]->GetTypeIndex(), Actors[2]->GetTypeIndex() );
+    EXPECT_EQ( Actors[0]->GetTypeID(), Actors[1]->GetTypeID() );
+    EXPECT_EQ( Actors[2]->GetTypeID(), Actors[3]->GetTypeID() );
+    EXPECT_NE( Actors[0]->GetTypeID(), Actors[2]->GetTypeID() );
 }
