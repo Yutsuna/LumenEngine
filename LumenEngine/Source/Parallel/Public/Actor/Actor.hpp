@@ -52,7 +52,7 @@ public:
      *       // Actor implementation...
      *  };
      */
-    [[nodiscard]] virtual constexpr USize GetTypeID () const noexcept = 0;
+    [[nodiscard]] virtual USize GetTypeID () const noexcept = 0;
 
     /**
      * @brief Retrieves the unique ActorID for this actor instance.
