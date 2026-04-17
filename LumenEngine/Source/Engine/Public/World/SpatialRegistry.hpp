@@ -23,8 +23,11 @@ namespace LumenEngine
 
 namespace Engine
 {
-    using namespace LumenEngine;
 
+    /**
+     * @struct FSpatialRegistryData
+     * @brief Plain data structure holding spatial and render information for registered entities.
+     */
     struct LUMEN_ENGINE_API FSpatialRegistryData
     {
         TVector<ActorID> EntityIDs;
@@ -83,6 +86,10 @@ namespace Engine
         /** Triple buffer for lock-free read access by the Renderer/SceneActor */
         Parallel::TTripleBuffer<FSpatialRegistryData> SnapshotBuffer;
 
+        /**
+         * @struct FDeltaTracker
+         * @brief Tracks which entities have had their transforms modified since the last publish, using an
+         */
         struct FDeltaTracker
         {
             /** Atomic bitset for lock-free dirty tracking of transforms. */
