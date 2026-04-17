@@ -21,6 +21,8 @@ namespace Engine
      */
     class LUMEN_ENGINE_API ASceneActor final : public AActor
     {
+        LUMEN_ACTOR_BODY ( ASceneActor );
+
     public:
 
         explicit ASceneActor ( const ActorID InId ) noexcept;

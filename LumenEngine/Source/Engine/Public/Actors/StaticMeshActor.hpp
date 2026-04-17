@@ -5,13 +5,11 @@
 
 #pragma once
 
+#include "Actor/ActorTypes.hpp"
 #include "Actors/SpatialActor.hpp"
-#include "Container/SharedPtr.hpp"
-
-#include "Graphics/Resources/RenderMesh.hpp"
-#include "Graphics/Resources/RenderShader.hpp"
 
 #include "Maths/Matrix.hpp"
+#include "RHI/RHITypes.hpp"
 
 namespace LumenEngine
 {
@@ -25,6 +23,8 @@ namespace Engine
      */
     class LUMEN_ENGINE_API AStaticMeshActor : public ASpatialActor
     {
+        LUMEN_ACTOR_BODY ( AStaticMeshActor );
+
     public:
 
         explicit AStaticMeshActor ( const ActorID InId ) noexcept;
