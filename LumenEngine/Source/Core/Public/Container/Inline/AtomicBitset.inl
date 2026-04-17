@@ -16,14 +16,13 @@ inline LumenEngine::FAtomicBitset::FAtomicBitset ( USize InNumBits )
 
 inline void LumenEngine::FAtomicBitset::Resize ( USize InNumBits )
 {
-    const USize NewNumBlocks = ( InNumBits + 63U ) / 64U;
+    const USize NewNumBlocks = ( InNumBits + ( BitsPerBlock - 1U ) ) / BitsPerBlock;
 
     if ( NewNumBlocks != NumBlocks )
     {
         Blocks    = MakeUnique<TAtomic<UInt64>[]>( NewNumBlocks );
         NumBlocks = NewNumBlocks;
 
-        /** INFO: Initializing new blocks to zero */
         for ( USize Index = 0U; Index < NumBlocks; ++Index )
         {
             Blocks[Index].store( 0ULL, std::memory_order_relaxed );
@@ -31,7 +30,6 @@ inline void LumenEngine::FAtomicBitset::Resize ( USize InNumBits )
     }
     else
     {
-        /** INFO: Size is same, just clear it to be safe */
         ClearAll();
     }
 
@@ -40,27 +38,27 @@ inline void LumenEngine::FAtomicBitset::Resize ( USize InNumBits )
 
 inline void LumenEngine::FAtomicBitset::Set ( USize InIndex ) noexcept
 {
-    const USize BlockIndex = InIndex / 64U;
-    const USize BitOffset  = InIndex % 64U;
-    const UInt64 Mask      = 1ULL << BitOffset;
+    const USize BlockIndex = InIndex / BitsPerBlock;
+    const USize BitOffset  = InIndex % BitsPerBlock;
+    const UInt64 Mask      = One << BitOffset;
 
     Blocks[BlockIndex].fetch_or( Mask, std::memory_order_relaxed );
 }
 
 inline void LumenEngine::FAtomicBitset::Clear ( USize InIndex ) noexcept
 {
-    const USize BlockIndex = InIndex / 64U;
-    const USize BitOffset  = InIndex % 64U;
-    const UInt64 Mask      = 1ULL << BitOffset;
+    const USize BlockIndex = InIndex / BitsPerBlock;
+    const USize BitOffset  = InIndex % BitsPerBlock;
+    const UInt64 Mask      = One << BitOffset;
 
     Blocks[BlockIndex].fetch_and( ~Mask, std::memory_order_relaxed );
 }
 
 inline LumenEngine::Bool LumenEngine::FAtomicBitset::Test ( USize InIndex ) const noexcept
 {
-    const USize BlockIndex = InIndex / 64U;
-    const USize BitOffset  = InIndex % 64U;
-    const UInt64 Mask      = 1ULL << BitOffset;
+    const USize BlockIndex = InIndex / BitsPerBlock;
+    const USize BitOffset  = InIndex % BitsPerBlock;
+    const UInt64 Mask      = One << BitOffset;
 
     return ( Blocks[BlockIndex].load( std::memory_order_relaxed ) & Mask ) != 0ULL;
 }
@@ -71,16 +69,14 @@ inline void LumenEngine::FAtomicBitset::ForEachSetBitAndClear ( Callable &&InFun
 {
     for ( USize BlockIdx = 0U; BlockIdx < NumBlocks; ++BlockIdx )
     {
+        /** INFO: Atomic exchange ensures we consume the bits and clear them in one op */
         UInt64 Value = Blocks[BlockIdx].exchange( 0ULL, std::memory_order_relaxed );
 
-        /** INFO: Processing set bits in the current block */
         while ( Value != 0ULL )
         {
             const USize BitIdx = static_cast<USize>( std::countr_zero( Value ) );
-
-            /** INFO: Invoking the provided function with the index of the set bit */
-            InFunc( ( BlockIdx * 64U ) + BitIdx );
-            Value &= ~( 1ULL << BitIdx );
+            InFunc( ( BlockIdx * BitsPerBlock ) + BitIdx );
+            Value &= ~( One << BitIdx );
         }
     }
 }

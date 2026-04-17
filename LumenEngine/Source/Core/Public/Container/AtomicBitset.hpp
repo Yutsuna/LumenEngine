@@ -25,7 +25,7 @@ public:
 
 public:
 
-    /** @brief Resizes the bitset and clears all bits. Not thread-safe with other operations. */
+    /** @brief Resizes the bitset. Structural change; clears all bits. */
     void Resize ( USize InNumBits );
 
     /** @brief Sets the bit at the specified index atomically. Thread-safe. */
@@ -40,15 +40,20 @@ public:
 public:
 
     /**
-     * @brief Iterates over all set bits, calls the provided function for each, and clears them.
+     * @brief Iterates over all set bits, calls the provided function, and clears them.
      * The clearing is done per-block (64 bits) atomically using exchange(0).
      */
     template <typename Callable>
         requires std::is_invocable_v<Callable, USize>
     void ForEachSetBitAndClear ( Callable &&InFunc ) noexcept;
 
-    /** @brief Clears all bits in the bitset. Not thread-safe with other operations. */
+    /** @brief Clears all bits in the bitset. */
     void ClearAll () noexcept;
+
+private:
+
+    static constexpr USize BitsPerBlock = 64U;
+    static constexpr UInt64 One         = 1ULL;
 
 private:
 
