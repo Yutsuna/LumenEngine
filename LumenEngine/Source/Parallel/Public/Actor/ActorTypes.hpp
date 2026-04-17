@@ -25,6 +25,29 @@ namespace Concepts
 
 } // namespace Concepts
 
+namespace Internal
+{
+
+    /**
+     * @trait TActorTypeRegistry
+     * @brief Compile-time registry for actor types, associating each type with a unique ID.
+     */
+    template <typename ActorType> struct TActorTypeRegistry
+    {
+        static constexpr char ID = 0;
+    };
+
+} // namespace Internal
+
+#define LUMEN_ACTOR_BODY( ActorClassName )                                                                                                                               \
+                                                                                                                                                                         \
+public:                                                                                                                                                                  \
+                                                                                                                                                                         \
+    [[nodiscard]] constexpr LumenEngine::USize GetTypeID() const noexcept override                                                                                       \
+    {                                                                                                                                                                    \
+        return reinterpret_cast<LumenEngine::USize>( &LumenEngine::Internal::TActorTypeRegistry<ActorClassName>::ID );                                                   \
+    }
+
 /**
  * @class FActorRef
  * @brief Lightweight handle to an actor.
