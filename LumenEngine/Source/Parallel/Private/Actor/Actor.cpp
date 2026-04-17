@@ -46,8 +46,3 @@ LumenEngine::FActorRef LumenEngine::AActor::GetRef () const noexcept
 {
     return FActorRef( Id );
 }
-
-std::type_index LumenEngine::AActor::GetTypeIndex () const noexcept
-{
-    return typeid( *this );
-}

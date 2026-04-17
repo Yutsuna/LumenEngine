@@ -8,7 +8,6 @@
 #include "Actor/ActorMailbox.hpp"
 #include "Actor/ActorMessage.hpp"
 #include "Actor/ActorTypes.hpp"
-#include <typeindex>
 
 namespace LumenEngine
 {
@@ -30,11 +29,6 @@ public:
     /** @brief Core logic entry point. Must be implemented by derived actors. */
     virtual void Receive ( const FMessage &InMessage ) = 0;
 
-    /** @brief Returns a unique identifier for the actor class. Used for sorting to optimize I-Cache.
-     *  @details Pure C++ implementation using RTTI. Automatically returns the most derived type.
-     */
-    [[nodiscard]] virtual std::type_index GetTypeIndex () const noexcept;
-
     /** @brief Lock-free message enqueueing. */
     void EnqueueMessage ( const FMessage &InMessage ) noexcept;
 
@@ -45,7 +39,31 @@ public:
      */
     void ProcessMailbox ( UInt32 InMaxMessages = 0U ) noexcept;
 
+    /**
+     * @brief Retrieves the unique type ID for this actor instance.
+     * @return A unique identifier representing the actor's type.
+     *
+     * @example:
+     *  class MyActor final : public AActor
+     *  {
+     *       LUMEN_ACTOR_BODY( MyActor );
+     *
+     *   public:
+     *       // Actor implementation...
+     *  };
+     */
+    [[nodiscard]] virtual constexpr USize GetTypeID () const noexcept = 0;
+
+    /**
+     * @brief Retrieves the unique ActorID for this actor instance.
+     * @return The unique ActorID assigned to this actor.
+     */
     [[nodiscard]] ActorID GetId () const noexcept;
+
+    /**
+     * @brief Retrieves a reference to this actor for message sending.
+     * @return An FActorRef that can be used to send messages to this actor.
+     */
     [[nodiscard]] FActorRef GetRef () const noexcept;
 
 private:
