@@ -36,7 +36,7 @@ void LumenEngine::Engine::FWorld::Tick ( const Float64 InDeltaTime )
      */
     if ( bNeedsSorting ) [[unlikely]]
     {
-        std::ranges::sort( ActiveActors, [] ( const TSharedPtr<AActor> &A, const TSharedPtr<AActor> &B ) { return A->GetTypeIndex() < B->GetTypeIndex(); } );
+        std::ranges::sort( ActiveActors, [] ( const TSharedPtr<AActor> &A, const TSharedPtr<AActor> &B ) { return A->GetTypeID() < B->GetTypeID(); } );
         bNeedsSorting = false;
     }
 
