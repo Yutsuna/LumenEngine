@@ -14,7 +14,7 @@ LumenEngine::Engine::FSpatialRegistry &LumenEngine::Engine::FSpatialRegistry::Ge
 
 void LumenEngine::Engine::FSpatialRegistry::RegisterSpatialEntity ( ActorID InId )
 {
-    TLockGuard<FMutex> Lock( RegistryMutex );
+    TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
 
     if ( WorkingData.IDToIndex.contains( InId ) )
     {
@@ -33,14 +33,13 @@ void LumenEngine::Engine::FSpatialRegistry::RegisterSpatialEntity ( ActorID InId
     for ( USize Index = 0U; Index < 3U; ++Index )
     {
         DeltaTrackers[Index].bMetadataDirty = true;
-        DeltaTrackers[Index].DirtyIndices.clear();
-        DeltaTrackers[Index].IsDirty.assign( WorkingData.EntityIDs.size(), false );
+        DeltaTrackers[Index].AtomicIsDirty.Resize( WorkingData.EntityIDs.size() );
     }
 }
 
 void LumenEngine::Engine::FSpatialRegistry::UnregisterSpatialEntity ( ActorID InId )
 {
-    TLockGuard<FMutex> Lock( RegistryMutex );
+    TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
     const auto It = WorkingData.IDToIndex.find( InId );
 
     if ( It == WorkingData.IDToIndex.end() )
@@ -74,14 +73,13 @@ void LumenEngine::Engine::FSpatialRegistry::UnregisterSpatialEntity ( ActorID In
     for ( USize Index = 0U; Index < 3U; ++Index )
     {
         DeltaTrackers[Index].bMetadataDirty = true;
-        DeltaTrackers[Index].DirtyIndices.clear();
-        DeltaTrackers[Index].IsDirty.assign( WorkingData.EntityIDs.size(), false );
+        DeltaTrackers[Index].AtomicIsDirty.Resize( WorkingData.EntityIDs.size() );
     }
 }
 
 void LumenEngine::Engine::FSpatialRegistry::UpdateTransform ( ActorID InId, const Maths::FMatrix4x4f &InTransform ) noexcept
 {
-    TLockGuard<FMutex> Lock( RegistryMutex );
+    TSharedLock<FSharedMutex> Lock( RegistryMutex );
     const auto It = WorkingData.IDToIndex.find( InId );
 
     if ( It == WorkingData.IDToIndex.end() )
@@ -94,17 +92,13 @@ void LumenEngine::Engine::FSpatialRegistry::UpdateTransform ( ActorID InId, cons
 
     for ( USize TrackerIdx = 0U; TrackerIdx < 3U; ++TrackerIdx )
     {
-        if ( not DeltaTrackers[TrackerIdx].IsDirty[Index] )
-        {
-            DeltaTrackers[TrackerIdx].IsDirty[Index] = true;
-            DeltaTrackers[TrackerIdx].DirtyIndices.push_back( Index );
-        }
+        DeltaTrackers[TrackerIdx].AtomicIsDirty.Set( Index );
     }
 }
 
 void LumenEngine::Engine::FSpatialRegistry::AssignRenderData ( ActorID InId, RHI::FMeshHandle InMesh, RHI::FPipelineHandle InShader ) noexcept
 {
-    TLockGuard<FMutex> Lock( RegistryMutex );
+    TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
     const auto It = WorkingData.IDToIndex.find( InId );
 
     if ( It == WorkingData.IDToIndex.end() )
@@ -122,7 +116,7 @@ void LumenEngine::Engine::FSpatialRegistry::AssignRenderData ( ActorID InId, RHI
 
 void LumenEngine::Engine::FSpatialRegistry::Publish () noexcept
 {
-    TLockGuard<FMutex> Lock( RegistryMutex );
+    TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
 
     /**
      * INFO: We use delta-tracking to only copy changed transforms to the snapshot buffer.
@@ -138,17 +132,11 @@ void LumenEngine::Engine::FSpatialRegistry::Publish () noexcept
             {
                 OutData                = WorkingData;
                 Tracker.bMetadataDirty = false;
-                Tracker.DirtyIndices.clear();
-                Tracker.IsDirty.assign( WorkingData.Transforms.size(), false );
+                Tracker.AtomicIsDirty.ClearAll();
             }
             else
             {
-                for ( const USize Index : Tracker.DirtyIndices )
-                {
-                    OutData.Transforms[Index] = WorkingData.Transforms[Index];
-                    Tracker.IsDirty[Index]    = false;
-                }
-                Tracker.DirtyIndices.clear();
+                Tracker.AtomicIsDirty.ForEachSetBitAndClear( [this, &OutData] ( USize Index ) { OutData.Transforms[Index] = WorkingData.Transforms[Index]; } );
             }
         } );
 }

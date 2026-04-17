@@ -11,10 +11,11 @@
 #include "Container/Map.hpp"
 #include "Container/Vector.hpp"
 
-#include "HAL/Mutex.hpp"
+#include "HAL/SharedMutex.hpp"
 #include "Maths/Matrix.hpp"
 #include "RHI/RHITypes.hpp"
 
+#include "Container/AtomicBitset.hpp"
 #include "Thread/TripleBuffer.hpp"
 
 namespace LumenEngine
@@ -22,6 +23,7 @@ namespace LumenEngine
 
 namespace Engine
 {
+    using namespace LumenEngine;
 
     struct LUMEN_ENGINE_API FSpatialRegistryData
     {
@@ -72,7 +74,8 @@ namespace Engine
 
     private:
 
-        mutable FMutex RegistryMutex;
+        /** Mutex protecting structural changes (registration, unregistration, metadata updates) */
+        mutable FSharedMutex RegistryMutex;
 
         /** Working Data for writes during the active frame */
         FSpatialRegistryData WorkingData;
@@ -82,11 +85,8 @@ namespace Engine
 
         struct FDeltaTracker
         {
-            /** List of indices that have changed since this specific buffer was last updated. */
-            TVector<USize> DirtyIndices;
-
-            /** Bitset for O(1) membership check to avoid duplicate entries in DirtyIndices. */
-            TVector<Bool> IsDirty;
+            /** Atomic bitset for lock-free dirty tracking of transforms. */
+            FAtomicBitset AtomicIsDirty;
 
             /** True if structural metadata (EntityIDs, Meshes, etc.) needs a full sync. */
             Bool bMetadataDirty = true;
