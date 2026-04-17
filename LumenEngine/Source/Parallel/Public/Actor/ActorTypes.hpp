@@ -34,7 +34,7 @@ namespace Internal
      */
     template <typename ActorType> struct TActorTypeRegistry
     {
-        static constexpr char ID = 0;
+        static void GetID () noexcept {};
     };
 
 } // namespace Internal
@@ -43,9 +43,9 @@ namespace Internal
                                                                                                                                                                          \
 public:                                                                                                                                                                  \
                                                                                                                                                                          \
-    [[nodiscard]] constexpr LumenEngine::USize GetTypeID() const noexcept override                                                                                       \
+    [[nodiscard]] LumenEngine::USize GetTypeID() const noexcept override                                                                                                 \
     {                                                                                                                                                                    \
-        return reinterpret_cast<LumenEngine::USize>( &LumenEngine::Internal::TActorTypeRegistry<ActorClassName>::ID );                                                   \
+        return reinterpret_cast<LumenEngine::USize>( &LumenEngine::Internal::TActorTypeRegistry<ActorClassName>::GetID );                                                \
     }
 
 /**
@@ -53,8 +53,6 @@ public:                                                                         
  * @brief Lightweight handle to an actor.
  * @details Used for communication instead of TSharedPtr to avoid keeping actors alive
  *          indefinitely and to prevent memory cycles.
- *          Currently a wrapper around ActorID, but designed to be extended with
- *          safety checks (e.g. WeakPtr) or remote delivery capabilities.
  */
 class FActorRef
 {
