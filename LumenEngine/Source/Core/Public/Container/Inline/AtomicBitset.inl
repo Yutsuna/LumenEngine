@@ -20,23 +20,19 @@ inline void LumenEngine::FAtomicBitset::Resize ( USize InNumBits )
 
     if ( NewNumBlocks != NumBlocks )
     {
-        TUniquePtr<TAtomic<UInt64>[]> NewBlocks = MakeUnique<TAtomic<UInt64>[]>( NewNumBlocks );
-
-        for ( USize Index = 0U; Index < NewNumBlocks; ++Index )
-        {
-            /** NOTE: TAtomic is not Copyable / Movable, so we must use Store/Load */
-            if ( Index < NumBlocks )
-            {
-                NewBlocks[Index].store( Blocks[Index].load( std::memory_order_relaxed ), std::memory_order_relaxed );
-            }
-            else
-            {
-                NewBlocks[Index].store( 0ULL, std::memory_order_relaxed );
-            }
-        }
-
-        Blocks    = std::move( NewBlocks );
+        Blocks    = MakeUnique<TAtomic<UInt64>[]>( NewNumBlocks );
         NumBlocks = NewNumBlocks;
+
+        /** INFO: Initializing new blocks to zero */
+        for ( USize Index = 0U; Index < NumBlocks; ++Index )
+        {
+            Blocks[Index].store( 0ULL, std::memory_order_relaxed );
+        }
+    }
+    else
+    {
+        /** INFO: Size is same, just clear it to be safe */
+        ClearAll();
     }
 
     NumBits = InNumBits;
@@ -77,9 +73,12 @@ inline void LumenEngine::FAtomicBitset::ForEachSetBitAndClear ( Callable &&InFun
     {
         UInt64 Value = Blocks[BlockIdx].exchange( 0ULL, std::memory_order_relaxed );
 
+        /** INFO: Processing set bits in the current block */
         while ( Value != 0ULL )
         {
             const USize BitIdx = static_cast<USize>( std::countr_zero( Value ) );
+
+            /** INFO: Invoking the provided function with the index of the set bit */
             InFunc( ( BlockIdx * 64U ) + BitIdx );
             Value &= ~( 1ULL << BitIdx );
         }
