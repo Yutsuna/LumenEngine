@@ -22,6 +22,8 @@ namespace Engine
      */
     class LUMEN_ENGINE_API ACameraActor : public ASpatialActor
     {
+        LUMEN_ACTOR_BODY ( ACameraActor );
+
     public:
 
         explicit ACameraActor ( const ActorID InId ) noexcept;

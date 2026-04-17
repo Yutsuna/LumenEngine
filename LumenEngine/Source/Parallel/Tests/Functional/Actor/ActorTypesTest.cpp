@@ -11,6 +11,8 @@ namespace
 {
 class FActorRefMock final : public LumenEngine::AActor
 {
+    LUMEN_ACTOR_BODY ( FActorRefMock );
+
 public:
 
     explicit FActorRefMock ( LumenEngine::ActorID InId ) noexcept : AActor( InId )

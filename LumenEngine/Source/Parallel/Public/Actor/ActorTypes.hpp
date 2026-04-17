@@ -25,13 +25,34 @@ namespace Concepts
 
 } // namespace Concepts
 
+namespace Internal
+{
+
+    /**
+     * @trait TActorTypeRegistry
+     * @brief Compile-time registry for actor types, associating each type with a unique ID.
+     */
+    template <typename ActorType> struct TActorTypeRegistry
+    {
+        static void GetID () noexcept {};
+    };
+
+} // namespace Internal
+
+#define LUMEN_ACTOR_BODY( ActorClassName )                                                                                                                               \
+                                                                                                                                                                         \
+public:                                                                                                                                                                  \
+                                                                                                                                                                         \
+    [[nodiscard]] LumenEngine::USize GetTypeID() const noexcept override                                                                                                 \
+    {                                                                                                                                                                    \
+        return reinterpret_cast<LumenEngine::USize>( &LumenEngine::Internal::TActorTypeRegistry<ActorClassName>::GetID );                                                \
+    }
+
 /**
  * @class FActorRef
  * @brief Lightweight handle to an actor.
  * @details Used for communication instead of TSharedPtr to avoid keeping actors alive
  *          indefinitely and to prevent memory cycles.
- *          Currently a wrapper around ActorID, but designed to be extended with
- *          safety checks (e.g. WeakPtr) or remote delivery capabilities.
  */
 class FActorRef
 {
