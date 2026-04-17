@@ -18,91 +18,105 @@
 #include "Container/AtomicBitset.hpp"
 #include "Thread/TripleBuffer.hpp"
 
-namespace LumenEngine
+namespace LumenEngine::Engine
 {
 
-namespace Engine
+/**
+ * @enum ESpatialComponentType
+ * @brief Categorizes registry data for granular dirty tracking.
+ */
+enum class ESpatialComponentType : UInt8
 {
+    Transform,
+    Mesh,
+    Shader,
+    Count
+};
+
+/**
+ * @struct FSpatialRegistryData
+ * @brief SoA storage for actor spatial state.
+ */
+struct LUMEN_ENGINE_API FSpatialRegistryData
+{
+    TVector<ActorID> EntityIDs;
+    TVector<Maths::FMatrix4x4f> Transforms;
+    TVector<RHI::FMeshHandle> Meshes;
+    TVector<RHI::FPipelineHandle> Shaders;
+    TMap<ActorID, USize> IDToIndex;
+
+    using FMapIterator = TMap<ActorID, USize>::const_iterator;
+};
+
+/**
+ * @class FSpatialRegistry
+ * @brief High-performance bridge between Actors and the Renderer.
+ */
+class LUMEN_ENGINE_API FSpatialRegistry final : public FNonCopyable
+{
+public:
+
+    /** @brief Gets the singleton instance of the spatial registry. */
+    static FSpatialRegistry &Get () noexcept;
+
+public:
+
+    /** @brief Registers a new spatial entity in the registry. */
+    void RegisterSpatialEntity ( ActorID InId );
+
+    /** @brief Unregisters a spatial entity from the registry. */
+    void UnregisterSpatialEntity ( ActorID InId );
 
     /**
-     * @struct FSpatialRegistryData
-     * @brief Plain data structure holding spatial and render information for registered entities.
+     * @brief Updates the transform of a spatial entity. (Thread-safe)
+     * @param InId The ID of the entity to update.
+     * @param InTransform The new transform.
      */
-    struct LUMEN_ENGINE_API FSpatialRegistryData
-    {
-        TVector<ActorID> EntityIDs;
-        TVector<Maths::FMatrix4x4f> Transforms;
-        TVector<RHI::FMeshHandle> Meshes;
-        TVector<RHI::FPipelineHandle> Shaders;
-        TMap<ActorID, USize> IDToIndex;
-    };
+    void UpdateTransform ( ActorID InId, const Maths::FMatrix4x4f &InTransform ) noexcept;
+
+    /** @brief Assigns render data to a spatial entity. */
+    void AssignRenderData ( ActorID InId, RHI::FMeshHandle InMesh, RHI::FPipelineHandle InShader ) noexcept;
+
+    /** @brief Publishes the current state of the registry. */
+    void Publish () noexcept;
+
+    /** @brief Swaps the read buffers. */
+    void SwapReadBuffers () noexcept;
+
+    /** @brief Gets a read-only snapshot of the current registry state. */
+    [[nodiscard]] const FSpatialRegistryData &GetReadSnapshot () const noexcept;
+
+private:
+
+    FSpatialRegistry () noexcept = default;
+
+    /** Internal helper to mark a component dirty across all TripleBuffer slots */
+    void MarkComponentDirty ( USize InIndex, ESpatialComponentType InComponent ) noexcept;
+
+private:
+
+    mutable FSharedMutex RegistryMutex;
+    FSpatialRegistryData WorkingData;
+    Parallel::TTripleBuffer<FSpatialRegistryData> SnapshotBuffer;
 
     /**
-     * @class FSpatialRegistry
-     * @brief Maps an ActorID to spatial and render components using triple-buffered snapshots.
+     * @struct FDeltaTracker
+     * @brief Tracks which components have changed for each entity to optimize data copying during Publish.
      */
-    class LUMEN_ENGINE_API FSpatialRegistry final : public FNonCopyable
+    struct FDeltaTracker
     {
-    public:
+        /** One bitset per component to avoid over-copying unrelated data */
+        FAtomicBitset ComponentDirtyStates[static_cast<USize>( ESpatialComponentType::Count )];
+        Bool bMetadataDirty = true;
 
-        /** @brief Returns the singleton instance of the registry. */
-        static FSpatialRegistry &Get () noexcept;
+        /** @brief Resizes the delta tracker. */
+        void Resize ( USize InNumBits );
 
-    public:
-
-        /** @brief Registers a new entity in the registry with default transform. */
-        void RegisterSpatialEntity ( ActorID InId );
-
-        /** @brief Removes an entity from the registry. */
-        void UnregisterSpatialEntity ( ActorID InId );
-
-        /** @brief Updates the transform for a specific entity and marks it as dirty for delta-tracking. */
-        void UpdateTransform ( ActorID InId, const Maths::FMatrix4x4f &InTransform ) noexcept;
-
-        /** @brief Assigns mesh and shader data to an entity. */
-        void AssignRenderData ( ActorID InId, RHI::FMeshHandle InMesh, RHI::FPipelineHandle InShader ) noexcept;
-
-        /** @brief Safely publishes the working state to the TripleBuffer lock-free snapshot. */
-        void Publish () noexcept;
-
-        /** @brief Promotes the latest published snapshot to be available for reading. */
-        void SwapReadBuffers () noexcept;
-
-        /** @brief Exposes the current read-only snapshot. Call SwapReadBuffers first. */
-        [[nodiscard]] const FSpatialRegistryData &GetReadSnapshot () const noexcept;
-
-    private:
-
-        FSpatialRegistry () noexcept = default;
-
-    private:
-
-        /** Mutex protecting structural changes (registration, unregistration, metadata updates) */
-        mutable FSharedMutex RegistryMutex;
-
-        /** Working Data for writes during the active frame */
-        FSpatialRegistryData WorkingData;
-
-        /** Triple buffer for lock-free read access by the Renderer/SceneActor */
-        Parallel::TTripleBuffer<FSpatialRegistryData> SnapshotBuffer;
-
-        /**
-         * @struct FDeltaTracker
-         * @brief Tracks which entities have had their transforms modified since the last publish, using an
-         */
-        struct FDeltaTracker
-        {
-            /** Atomic bitset for lock-free dirty tracking of transforms. */
-            FAtomicBitset AtomicIsDirty;
-
-            /** True if structural metadata (EntityIDs, Meshes, etc.) needs a full sync. */
-            Bool bMetadataDirty = true;
-        };
-
-        /** Per-buffer tracking state for the TripleBuffer slots. */
-        FDeltaTracker DeltaTrackers[3];
+        /** @brief Clears all dirty flags. */
+        void ClearAll () noexcept;
     };
 
-} // namespace Engine
+    FDeltaTracker DeltaTrackers[3];
+};
 
-} // namespace LumenEngine
+} // namespace LumenEngine::Engine
