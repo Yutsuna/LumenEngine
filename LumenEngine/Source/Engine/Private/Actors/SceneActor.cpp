@@ -10,7 +10,7 @@
 
 LumenEngine::Engine::ASceneActor::ASceneActor ( const ActorID InId ) noexcept : AActor( InId )
 {
-    /* */
+    GetMailbox().Reserve( 512ULL );
 }
 
 void LumenEngine::Engine::ASceneActor::Receive ( const FMessage &InMessage )
