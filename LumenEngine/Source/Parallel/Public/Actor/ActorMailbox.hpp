@@ -27,7 +27,7 @@ namespace LumenEngine
  * @details Implements the Dmitry Vyukov intrusive MPSC queue with an internal
  *          lock-free free-list to prevent per-message allocation bottlenecks.
  */
-class FMailBox final : public FNonCopyable, public FNonMovable
+class LUMEN_ENGINE_API FMailBox final : public FNonCopyable, public FNonMovable
 {
 private:
 
@@ -60,6 +60,13 @@ public:
      * @note Must be called from a single consumer thread only.
      */
     [[nodiscard]] TOptional<FMessage> Pop () noexcept;
+
+    /**
+     * @brief Pre-allocates nodes in the free-list pool.
+     * @param InCapacity The number of nodes to pre-allocate.
+     * @note Should be called from the consumer thread or during initialization.
+     */
+    void Reserve ( USize InCapacity ) noexcept;
 
     /**
      * @brief Returns true if no messages are pending.

@@ -6,6 +6,11 @@
 #include "Actors/Triangle.hpp"
 #include "Messages/EngineMessageTypes.hpp"
 
+LumenEngine::ATriangle::ATriangle ( const ActorID InId ) noexcept : Engine::AStaticMeshActor( InId )
+{
+    GetMailbox().Reserve( 128ULL );
+}
+
 void LumenEngine::ATriangle::Receive ( const FMessage &InMessage )
 {
     if ( InMessage.Type == Engine::EEngineMessage::Tick )

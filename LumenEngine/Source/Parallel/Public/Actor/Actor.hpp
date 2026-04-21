@@ -66,6 +66,11 @@ public:
      */
     [[nodiscard]] FActorRef GetRef () const noexcept;
 
+protected:
+
+    /** @brief Provides access to the mailbox for subclasses (e.g. for Reserve()). */
+    [[nodiscard]] FMailBox &GetMailbox () noexcept;
+
 private:
 
     ActorID Id = 0ULL;

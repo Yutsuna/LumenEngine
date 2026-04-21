@@ -18,7 +18,7 @@ class ATriangle : public Engine::AStaticMeshActor
 {
 public:
 
-    using AStaticMeshActor::AStaticMeshActor;
+    explicit ATriangle ( const ActorID InId ) noexcept;
 
     void Receive ( const FMessage &InMessage ) override;
 

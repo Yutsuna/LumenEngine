@@ -4,13 +4,72 @@
  */
 
 #include "Actors/SceneActor.hpp"
+#include "Actor/ActorTypes.hpp"
+
+#include "Graphics/RenderResource.hpp"
 #include "Graphics/Renderer.hpp"
+
 #include "Messages/EngineMessageTypes.hpp"
 #include "World/SpatialRegistry.hpp"
 
+namespace LumenEngine
+{
+
+namespace
+{
+
+    const Engine::FSpatialRegistryData &SwapAndSnaphotSpatialRegistry () noexcept
+    {
+        Engine::FSpatialRegistry::Get().SwapReadBuffers();
+
+        return Engine::FSpatialRegistry::Get().GetReadSnapshot();
+    }
+
+    TOptional<Renderer::FDrawCommand> ResolveDrawCommand ( const ActorID InId, const Engine::FSpatialRegistryData &InRegistryData )
+    {
+        const auto It = InRegistryData.IDToIndex.find( InId );
+
+        if ( It == InRegistryData.IDToIndex.end() )
+        {
+            return {};
+        }
+
+        const USize Index       = It->second;
+        const Bool bMeshValid   = InRegistryData.Meshes[Index].IsValid();
+        const Bool bShaderValid = InRegistryData.Shaders[Index].IsValid();
+
+        if ( not bMeshValid or not bShaderValid )
+        {
+            return {};
+        }
+
+        return Renderer::FDrawCommand{ .Mesh = InRegistryData.Meshes[Index], .Shader = InRegistryData.Shaders[Index], .Transform = InRegistryData.Transforms[Index] };
+    }
+
+    Renderer::FRenderPacket BuildRenderPacket ( const Engine::FSpatialRegistryData &InRegistryData, const TVector<ActorID> &InPendingDraws )
+    {
+        Renderer::FRenderPacket Packet;
+
+        Packet.DrawCommands.reserve( InPendingDraws.size() );
+
+        for ( const ActorID Id : InPendingDraws )
+        {
+            if ( const TOptional<Renderer::FDrawCommand> DrawCommand = ResolveDrawCommand( Id, InRegistryData ) )
+            {
+                Packet.DrawCommands.emplace_back( *DrawCommand );
+            }
+        }
+
+        return Packet;
+    }
+
+} // namespace
+
+} // namespace LumenEngine
+
 LumenEngine::Engine::ASceneActor::ASceneActor ( const ActorID InId ) noexcept : AActor( InId )
 {
-    /* */
+    GetMailbox().Reserve( 512ULL );
 }
 
 void LumenEngine::Engine::ASceneActor::Receive ( const FMessage &InMessage )
@@ -34,37 +93,8 @@ void LumenEngine::Engine::ASceneActor::HandleTick ( const Float64 /*InDeltaTime*
         return;
     }
 
-    FSpatialRegistry::Get().SwapReadBuffers();
-    const FSpatialRegistryData &Snapshot = FSpatialRegistry::Get().GetReadSnapshot();
+    const FSpatialRegistryData &RegistryData = SwapAndSnaphotSpatialRegistry();
 
-    Renderer::FRenderPacket Packet;
-    Packet.ClearColor[0] = 0.02F;
-    Packet.ClearColor[1] = 0.02F;
-    Packet.ClearColor[2] = 0.05F;
-    Packet.ClearColor[3] = 1.00F;
-
-    Packet.DrawCommands.reserve( PendingDraws.size() );
-
-    for ( const ActorID PendingDrawId : PendingDraws )
-    {
-        const auto It = Snapshot.IDToIndex.find( PendingDrawId );
-
-        if ( It != Snapshot.IDToIndex.end() )
-        {
-            const USize Index = It->second;
-
-            if ( Snapshot.Meshes[Index].IsValid() and Snapshot.Shaders[Index].IsValid() )
-            {
-                Renderer::FDrawCommand Cmd;
-                Cmd.Mesh      = Snapshot.Meshes[Index];
-                Cmd.Shader    = Snapshot.Shaders[Index];
-                Cmd.Transform = Snapshot.Transforms[Index];
-
-                Packet.DrawCommands.push_back( Cmd );
-            }
-        }
-    }
-
-    Renderer::GRenderer->SubmitRenderPacket( Packet );
+    Renderer::GRenderer->SubmitRenderPacket( BuildRenderPacket( RegistryData, PendingDraws ) );
     PendingDraws.clear();
 }
