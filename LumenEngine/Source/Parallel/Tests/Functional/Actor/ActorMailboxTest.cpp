@@ -63,6 +63,68 @@ TEST( ParallelActor, MailboxOperations )
     EXPECT_TRUE( Mailbox.IsEmpty() );
 }
 
+TEST( ParallelActor, MailboxReserve )
+{
+    using namespace LumenEngine;
+
+    FMailBox Mailbox;
+
+    /** Edge Case: Reserve zero should do nothing and not crash */
+    Mailbox.Reserve( 0ULL );
+    EXPECT_TRUE( Mailbox.IsEmpty() );
+
+    /**
+     * Pre-allocate 10 nodes.
+     * We can't directly inspect the free list, but we can verify that
+     * push operations succeed after reservation.
+     */
+    Mailbox.Reserve( 10ULL );
+
+    for ( UInt32 Index = 0U; Index < 10U; ++Index )
+    {
+        Mailbox.Push( FMessage::Make( Index, 100ULL ) );
+    }
+
+    for ( UInt32 Index = 0U; Index < 10U; ++Index )
+    {
+        TOptional<FMessage> Popped = Mailbox.Pop();
+        ASSERT_TRUE( Popped.has_value() );
+        EXPECT_EQ( Popped->Type, Index );
+    }
+
+    EXPECT_TRUE( Mailbox.IsEmpty() );
+
+    /**
+     * Edge Case: Over-reserve (Pool capacity is 256)
+     * This triggers the 'FreeNodes.Push' failure branch in Reserve().
+     */
+    Mailbox.Reserve( 1000ULL );
+
+    /** Verify it still works after over-reservation */
+    Mailbox.Push( FMessage::Make( 999U, 0ULL ) );
+    TOptional<FMessage> Popped = Mailbox.Pop();
+    ASSERT_TRUE( Popped.has_value() );
+    EXPECT_EQ( Popped->Type, 999U );
+
+    /**
+     * Edge Case: Multiple reservations
+     */
+    Mailbox.Reserve( 5ULL );
+    Mailbox.Reserve( 5ULL );
+
+    for ( UInt32 Index = 0U; Index < 10U; ++Index )
+    {
+        Mailbox.Push( FMessage::Make( Index, 100ULL ) );
+    }
+
+    for ( UInt32 Index = 0U; Index < 10U; ++Index )
+    {
+        EXPECT_TRUE( Mailbox.Pop().has_value() );
+    }
+
+    EXPECT_TRUE( Mailbox.IsEmpty() );
+}
+
 TEST( ParallelActor, MailboxDestructorCleanup )
 {
     using namespace LumenEngine;

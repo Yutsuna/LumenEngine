@@ -114,6 +114,25 @@ LumenEngine::TOptional<LumenEngine::FMessage> LumenEngine::FMailBox::Pop () noex
     return Result;
 }
 
+void LumenEngine::FMailBox::Reserve ( USize InCapacity ) noexcept
+{
+    for ( USize Index = 0ULL; Index < InCapacity; ++Index )
+    {
+        FNode *const NewNode = new ( std::nothrow ) FNode();
+
+        if ( NewNode == nullptr )
+        {
+            break;
+        }
+
+        if ( not FreeNodes.Push( NewNode ) )
+        {
+            delete NewNode;
+            break;
+        }
+    }
+}
+
 LumenEngine::Bool LumenEngine::FMailBox::IsEmpty () const noexcept
 {
     return Head->Next.load( std::memory_order_acquire ) == nullptr;
