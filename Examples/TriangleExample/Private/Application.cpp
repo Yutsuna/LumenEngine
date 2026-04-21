@@ -61,8 +61,8 @@ void LumenEngine::FTriangleExampleApplication::CreateResources ()
     TriangleMesh->RenderHandle = Renderer::GRenderer->CreateMesh( TriangleMesh->Vertices, TriangleMesh->Indices );
 
     TriangleShader               = MakeShared<Renderer::FRenderShader>();
-    TriangleShader->VertexPath   = "Shaders/Triangle.vert.spv";
-    TriangleShader->FragmentPath = "Shaders/Triangle.frag.spv";
+    TriangleShader->VertexPath   = "Assets/Shaders/Triangle.vert.spv";
+    TriangleShader->FragmentPath = "Assets/Shaders/Triangle.frag.spv";
     TriangleShader->RenderHandle = Renderer::GRenderer->CreatePipeline( TriangleShader->VertexPath, TriangleShader->FragmentPath );
 }
 
