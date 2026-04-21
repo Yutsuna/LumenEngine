@@ -4,12 +4,16 @@
  */
 
 #include "HAL/Memory/LinearAllocator.hpp"
+#include "Logging/Logger.hpp"
 
+#include <algorithm>
 #include <bit>
 #include <cassert>
 
 namespace
 {
+
+const LumenEngine::FLogCategory LogLinearAllocator( "LinearAllocator" );
 
 /**
  * @brief Aligns a value up to the next multiple of alignment.
@@ -26,7 +30,7 @@ inline LumenEngine::USize AlignUp ( LumenEngine::USize InValue, LumenEngine::USi
 } // namespace
 
 LumenEngine::HAL::FLinearAllocator::FLinearAllocator ( void *InBytes, USize InSize ) noexcept
-    : Buffer( static_cast<LumenEngine::Byte *>( InBytes ) ), TotalSize( InSize ), Offset( 0U )
+    : Buffer( static_cast<LumenEngine::Byte *>( InBytes ) ), TotalSize( InSize ), Offset( 0U ), HighWatermark( 0U )
 {
     /** Ctor */
 }
@@ -49,11 +53,22 @@ void *LumenEngine::HAL::FLinearAllocator::Allocate ( USize InSize, USize InAlign
     /** SECURITY: Check for integer overflow during size addition and ensure we stay within bounds */
     if ( InSize > TotalSize - AlignedOffset )
     {
+        if ( InSize > TotalSize )
+        {
+            LUMEN_LOG_WARNING( LogLinearAllocator, "LinearAllocator allocation request ({}) exceeds allocator capacity ({})", InSize, TotalSize );
+        }
+        else
+        {
+            LUMEN_LOG_WARNING( LogLinearAllocator, "LinearAllocator out of scratch memory: requested {}, available {}, high watermark {} of {}", InSize,
+                               TotalSize - AlignedOffset, HighWatermark, TotalSize );
+        }
+
         return nullptr;
     }
 
     void *Pointer = Buffer + AlignedOffset;
     Offset        = AlignedOffset + InSize;
+    HighWatermark = std::max( Offset, HighWatermark );
 
     return Pointer;
 }

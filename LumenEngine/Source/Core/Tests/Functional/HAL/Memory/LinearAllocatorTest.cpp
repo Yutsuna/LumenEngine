@@ -28,13 +28,16 @@ TEST( HALMemoryLinearAllocator, AllocationAndReset )
     void *Ptr2 = Allocator.Allocate( 128ULL );
     EXPECT_NE( Ptr2, nullptr );
     EXPECT_EQ( Allocator.GetUsedMemory(), 256ULL );
+    EXPECT_EQ( Allocator.GetHighWatermark(), 256ULL );
     EXPECT_EQ( static_cast<Byte *>( Ptr2 ) - static_cast<Byte *>( Ptr1 ), static_cast<ISize>( 128 ) );
 
     Allocator.Reset();
     EXPECT_EQ( Allocator.GetUsedMemory(), 0ULL );
+    EXPECT_EQ( Allocator.GetHighWatermark(), 256ULL );
 
     void *Ptr3 = Allocator.Allocate( 64ULL );
     EXPECT_EQ( Ptr3, Ptr1 );
+    EXPECT_EQ( Allocator.GetHighWatermark(), 256ULL );
 }
 
 TEST( HALMemoryLinearAllocator, Alignment )
@@ -133,6 +136,7 @@ TEST( HALMemoryLinearAllocator, NestedScopeGuard )
         EXPECT_EQ( Allocator.GetUsedMemory(), 200ULL );
     }
     EXPECT_EQ( Allocator.GetUsedMemory(), 100ULL );
+    EXPECT_EQ( Allocator.GetHighWatermark(), 300ULL );
 }
 
 TEST( HALMemoryLinearAllocator, OverflowProtection )

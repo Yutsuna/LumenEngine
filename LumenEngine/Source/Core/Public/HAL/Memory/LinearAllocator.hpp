@@ -61,6 +61,7 @@ namespace HAL
          * @tparam ObjectType Type of the object.
          * @tparam TArgs Argument types for the constructor.
          * @param InArgs Arguments for the constructor.
+         * @note If ObjectType owns non-trivial resources, callers must invoke its destructor manually.
          * @return Pointer to the constructed object, or nullptr if allocation failed.
          */
         template <typename ObjectType, typename... TArgs> [[nodiscard]] ObjectType *New ( TArgs &&...InArgs ) noexcept;
@@ -69,6 +70,9 @@ namespace HAL
 
         /** @return Current memory usage in bytes. */
         [[nodiscard]] USize GetUsedMemory () const noexcept;
+
+        /** @return Highest memory usage reached since allocator construction. */
+        [[nodiscard]] USize GetHighWatermark () const noexcept;
 
         /** @return Total capacity in bytes. */
         [[nodiscard]] USize GetTotalMemory () const noexcept;
@@ -89,6 +93,7 @@ namespace HAL
         Byte *Buffer;
         USize TotalSize;
         USize Offset;
+        USize HighWatermark;
 
         friend class FScopeLinear;
 

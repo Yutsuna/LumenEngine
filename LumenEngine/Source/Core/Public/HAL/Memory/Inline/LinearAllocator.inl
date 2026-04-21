@@ -24,6 +24,11 @@ inline LumenEngine::USize LumenEngine::HAL::FLinearAllocator::GetUsedMemory () c
     return Offset;
 }
 
+inline LumenEngine::USize LumenEngine::HAL::FLinearAllocator::GetHighWatermark () const noexcept
+{
+    return HighWatermark;
+}
+
 inline LumenEngine::USize LumenEngine::HAL::FLinearAllocator::GetTotalMemory () const noexcept
 {
     return TotalSize;
