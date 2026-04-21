@@ -39,21 +39,18 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
 
     LogicalDevice.WaitIdle();
 
-    for ( std::pair<const LumenEngine::UInt32, LumenEngine::VulkanRHI::FVulkanPipeline> &Pair : PipelineRegistry )
-    {
-        Pair.second.Cleanup( LogicalDevice.GetHandle() );
-    }
-    PipelineRegistry.clear();
+    PipelineRegistry.ForEach( [this] ( FVulkanPipeline &Pipeline ) { Pipeline.Cleanup( LogicalDevice.GetHandle() ); } );
+    PipelineRegistry.Clear();
 
-    for ( std::pair<const LumenEngine::UInt32, LumenEngine::VulkanRHI::FVulkanMesh> &Pair : MeshRegistry )
-    {
-        Pair.second.Cleanup( Memory.GetAllocator() );
-    }
-    MeshRegistry.clear();
+    MeshRegistry.ForEach( [this] ( FVulkanMesh &Mesh ) { Mesh.Cleanup( Memory.GetAllocator() ); } );
+    MeshRegistry.Clear();
 
     FrameContext.Shutdown( LogicalDevice.GetHandle() );
+
     DestroySwapChain();
+
     Memory.Shutdown( LogicalDevice.GetHandle() );
+
     DestroyVulkanDevice();
     DestroyVulkanInstance();
 
@@ -195,38 +192,44 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRenderingInternal ( VkCommandBuffe
 
 void LumenEngine::VulkanRHI::FVulkanRHI::BindPipelineInternal ( VkCommandBuffer InCmd, const LumenEngine::RHI::FPipelineHandle InPipeline ) noexcept
 {
-    if ( not InPipeline.IsValid() or not PipelineRegistry.contains( InPipeline.ID ) )
+    FVulkanPipeline *Pipeline = PipelineRegistry.Get( InPipeline );
+
+    if ( Pipeline == nullptr )
     {
         return;
     }
 
-    PipelineRegistry[InPipeline.ID].Bind( InCmd );
+    Pipeline->Bind( InCmd );
 
     const UInt32 CurrentFrame           = FrameContext.GetCurrentFrameIndex();
     VkDescriptorSet GlobalDescriptorSet = Memory.GetGlobalDescriptorSet( CurrentFrame );
 
-    vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineRegistry[InPipeline.ID].GetLayout(), 0, 1, &GlobalDescriptorSet, 0, nullptr );
+    vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetLayout(), 0, 1, &GlobalDescriptorSet, 0, nullptr );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::PushConstantsInternal (
     VkCommandBuffer InCmd, const LumenEngine::RHI::FPipelineHandle InPipeline, const void *InData, UInt32 InSize, UInt32 InOffset ) noexcept
 {
-    if ( not InPipeline.IsValid() or not PipelineRegistry.contains( InPipeline.ID ) )
+    FVulkanPipeline *Pipeline = PipelineRegistry.Get( InPipeline );
+
+    if ( Pipeline == nullptr )
     {
         return;
     }
 
-    vkCmdPushConstants( InCmd, PipelineRegistry[InPipeline.ID].GetLayout(), VK_SHADER_STAGE_ALL_GRAPHICS, InOffset, InSize, InData );
+    vkCmdPushConstants( InCmd, Pipeline->GetLayout(), VK_SHADER_STAGE_ALL_GRAPHICS, InOffset, InSize, InData );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::DrawMeshInternal ( VkCommandBuffer InCmd, const LumenEngine::RHI::FMeshHandle InMesh ) noexcept
 {
-    if ( not InMesh.IsValid() or not MeshRegistry.contains( InMesh.ID ) )
+    FVulkanMesh *Mesh = MeshRegistry.Get( InMesh );
+
+    if ( Mesh == nullptr )
     {
         return;
     }
 
-    MeshRegistry[InMesh.ID].BindAndDraw( InCmd );
+    Mesh->BindAndDraw( InCmd );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
@@ -243,28 +246,23 @@ LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( c
                                                                                const LumenEngine::TVector<LumenEngine::UInt32> &InIndices )
 {
     LumenEngine::VulkanRHI::FVulkanMesh NewMesh;
+
     NewMesh.Initialize( Memory.GetAllocator(), InVertices, InIndices );
-
-    const LumenEngine::UInt32 Handle = NextMeshID++;
-    MeshRegistry[Handle]             = NewMesh;
-
-    return LumenEngine::RHI::FMeshHandle( Handle );
+    return MeshRegistry.Insert( std::move( NewMesh ) );
 }
 
 LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath,
                                                                                        const LumenEngine::FString &InFragmentPath )
 {
-    LumenEngine::VulkanRHI::FVulkanPipeline NewPipeline;
-    const LumenEngine::VulkanRHI::FPipelineDescription PipelineDescription =
-        LumenEngine::VulkanRHI::FVulkanPipeline::CreateDefaultDescription( InVertexPath, InFragmentPath, SwapChain.GetImageFormat(), Memory.GetGlobalSetLayout() );
+    FVulkanPipeline NewPipeline;
+    const VkFormat &SwapChainFormat                = SwapChain.GetImageFormat();
+    const VkDescriptorSetLayout &GlobalSetLayout   = Memory.GetGlobalSetLayout();
+    const FPipelineDescription PipelineDescription = FVulkanPipeline::CreateDefaultDescription( InVertexPath, InFragmentPath, SwapChainFormat, GlobalSetLayout );
 
     if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), PipelineDescription ).has_value() )
     {
         return {};
     }
 
-    const LumenEngine::UInt32 Handle = NextPipelineID++;
-    PipelineRegistry[Handle]         = NewPipeline;
-
-    return LumenEngine::RHI::FPipelineHandle( Handle );
+    return PipelineRegistry.Insert( std::move( NewPipeline ) );
 }

@@ -7,12 +7,12 @@
 
 #include "Definitions.hpp"
 
-#include "Container/Map.hpp"
 #include "Container/SharedPtr.hpp"
 #include "CoreTypes.hpp"
 
 #include "RHI/RHI.hpp"
 #include "RHI/RHICommandList.hpp"
+#include "RHI/ResourceRegistry.hpp"
 #include "Vulkan/VulkanCommandList.hpp"
 
 #include "Maths/Vertex.hpp"
@@ -116,12 +116,9 @@ namespace VulkanRHI
 
     private:
 
-        TMap<UInt32, FVulkanMesh> MeshRegistry;
-        TMap<UInt32, FVulkanPipeline> PipelineRegistry;
+        RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> MeshRegistry;
+        RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> PipelineRegistry;
         FVulkanCommandList CommandListImpl;
-
-        UInt32 NextMeshID     = 1;
-        UInt32 NextPipelineID = 1;
 
     private:
 
