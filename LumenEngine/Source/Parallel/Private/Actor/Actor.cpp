@@ -46,3 +46,8 @@ LumenEngine::FActorRef LumenEngine::AActor::GetRef () const noexcept
 {
     return FActorRef( Id );
 }
+
+LumenEngine::FMailBox &LumenEngine::AActor::GetMailbox () noexcept
+{
+    return Mailbox;
+}
