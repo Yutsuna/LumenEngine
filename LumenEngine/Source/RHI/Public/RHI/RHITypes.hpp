@@ -6,7 +6,6 @@
 #pragma once
 
 #include "CoreTypes.hpp"
-
 #include "Maths/Matrix.hpp"
 
 namespace LumenEngine
@@ -41,16 +40,20 @@ namespace RHI
 
     /**
      * @struct TRenderResourceHandle
-     * @brief Strongly typed handle to prevent mixing up resource IDs.
+     * @brief Strongly typed handle storing a Generational Index (16-bit Index, 16-bit Generation).
      */
     template <typename Tag> struct TRenderResourceHandle
     {
         static constexpr UInt32 InvalidID = 0xFFFFFFFF;
-        UInt32 ID                         = 0xFFFFFFFF;
+
+        UInt32 ID = InvalidID;
 
         constexpr TRenderResourceHandle () noexcept = default;
         constexpr explicit TRenderResourceHandle ( UInt32 InID ) noexcept;
+        constexpr explicit TRenderResourceHandle ( UInt16 InIndex, UInt16 InGeneration ) noexcept;
 
+        [[nodiscard]] constexpr UInt16 GetIndex () const noexcept;
+        [[nodiscard]] constexpr UInt16 GetGeneration () const noexcept;
         [[nodiscard]] constexpr Bool IsValid () const noexcept;
 
         constexpr Bool operator==( const TRenderResourceHandle &Other ) const noexcept;

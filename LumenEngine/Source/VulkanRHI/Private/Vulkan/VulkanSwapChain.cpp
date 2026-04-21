@@ -72,7 +72,7 @@ VkExtent2D ChooseSwapExtent ( const VkSurfaceCapabilitiesKHR &Capabilities, cons
         return Capabilities.currentExtent;
     }
 
-    VkExtent2D ActualExtent = { Size.Width, Size.Height };
+    VkExtent2D ActualExtent = { .width = Size.Width, .height = Size.Height };
     ActualExtent.width      = std::clamp( ActualExtent.width, Capabilities.minImageExtent.width, Capabilities.maxImageExtent.width );
     ActualExtent.height     = std::clamp( ActualExtent.height, Capabilities.minImageExtent.height, Capabilities.maxImageExtent.height );
     return ActualExtent;
@@ -148,7 +148,7 @@ VkExtent2D ChooseSwapExtent ( const VkSurfaceCapabilitiesKHR &Capabilities, cons
     };
 }
 
-void BuildSubmitInfo2 ( FSubmitInfoBundle &OutSubmitBundle, const VkCommandBuffer InCmd, const VkSemaphore InWaitSemaphore, const VkSemaphore InRenderSemaphore ) noexcept
+void BuildSubmitInfo2 ( FSubmitInfoBundle &OutSubmitBundle, VkCommandBuffer InCmd, VkSemaphore InWaitSemaphore, VkSemaphore InRenderSemaphore ) noexcept
 {
     OutSubmitBundle.CommandBufferSubmitInfo = VkCommandBufferSubmitInfo{
         .sType         = VK_STRUCTURE_TYPE_COMMAND_BUFFER_SUBMIT_INFO,
@@ -246,7 +246,7 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::CreateInternal ( VkPhysicalDevice
     const VkSwapchainCreateInfoKHR CreateInfo =
         CreateSwapChainCreateInfo( InDescription.Surface, Details.Capabilities, SurfaceFormat, PresentMode, Extent, ImageCount, InOldSwapchainHandle );
 
-    VkSwapchainKHR NewSwapchainHandle;
+    VkSwapchainKHR NewSwapchainHandle = VK_NULL_HANDLE;
     LUMEN_VK_CHECK( vkCreateSwapchainKHR( InDevice, &CreateInfo, nullptr, &NewSwapchainHandle ) );
 
     if ( InOldSwapchainHandle != VK_NULL_HANDLE )
