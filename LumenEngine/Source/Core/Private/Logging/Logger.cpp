@@ -37,8 +37,13 @@ void LumenEngine::FLogger::Initialize ()
 
 void LumenEngine::FLogger::Flush ( const AnsiChar *const String )
 {
-    std::println( "{}", String );
-    std::fflush( stdout );
+    const USize StringLength = std::char_traits<AnsiChar>::length( String );
+
+    if ( write( STDOUT_FILENO, String, StringLength ) == -1 )
+    {
+        return;
+    }
+    fflush( stdout );
 }
 
 LumenEngine::FLogger::~FLogger ()
@@ -61,9 +66,11 @@ void LumenEngine::FLogger::EnqueueLogMessage ( const FLogCategory &Category, con
 {
     {
         TLockGuard<FMutex> Lock( QueueMutex );
-        LogMessageQueue.push( { Category, Verbosity, std::move( Message ), HAL::FPlatformTime::Seconds() } );
+        const FLogMessage LogMessage{ .Category = Category, .Verbosity = Verbosity, .Message = std::move( Message ), .Timestamp = HAL::FPlatformTime::Seconds() };
+
+        LogMessageQueue.emplace( LogMessage );
+        Condition.notify_one();
     }
-    Condition.notify_one();
 }
 
 void LumenEngine::FLogger::FlushLogMessages ( std::stop_token &StopToken )
