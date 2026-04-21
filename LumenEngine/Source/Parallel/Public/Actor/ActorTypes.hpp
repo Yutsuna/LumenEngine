@@ -23,6 +23,16 @@ namespace Concepts
         { InActor.Receive( InMessage ) } -> std::same_as<void>;
     };
 
+    /**
+     * @concept CTriviallyCopyablePayload
+     * @brief Ensures that a type is safe to be sent as a message payload.
+     * @details Requires the type to be trivially copyable, meaning it has no
+     *          non-trivial destructor, virtual functions, or complex state that
+     *          cannot be bitwise copied.
+     */
+    template <typename T>
+    concept CTriviallyCopyablePayload = std::is_trivially_copyable_v<T>;
+
 } // namespace Concepts
 
 namespace Internal
@@ -53,6 +63,7 @@ public:                                                                         
  * @brief Lightweight handle to an actor.
  * @details Used for communication instead of TSharedPtr to avoid keeping actors alive
  *          indefinitely and to prevent memory cycles.
+ * @note Use FActorRef for cross-actor object references inside message payloads instead of raw pointers.
  */
 class FActorRef
 {
