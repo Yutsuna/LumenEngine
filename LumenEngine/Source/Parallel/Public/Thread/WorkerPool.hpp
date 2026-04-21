@@ -10,6 +10,7 @@
 #include "NonCopyable.hpp"
 #include "NonMovable.hpp"
 
+#include "HAL/Memory/LinearAllocator.hpp"
 #include "Thread/SPMCQueue.hpp"
 
 #include <functional>
@@ -37,7 +38,7 @@ namespace Parallel
          * @param InWorkerCount The number of hardware threads to allocate.
          * @param InQueueCapacity The maximum number of pending tasks (will be rounded up to the nearest power of 2).
          */
-        explicit FWorkerPool ( UInt32 InWorkerCount, std::size_t InQueueCapacity = 1024ULL ) noexcept;
+        explicit FWorkerPool ( UInt32 InWorkerCount, USize InQueueCapacity = 1024ULL ) noexcept;
 
         /**
          * @brief Cleans up workers gracefully. Calls Shutdown() automatically.
@@ -68,6 +69,13 @@ namespace Parallel
          * @return Worker index bound to the calling thread, or empty if called from outside the pool.
          */
         static TOptional<UInt32> GetCurrentWorkerIndex () noexcept;
+
+        /**
+         * @brief Returns the linear allocator for the current worker thread.
+         * @return Reference to the worker's linear allocator.
+         * @note Only valid when called from a worker thread. Behavior is undefined otherwise.
+         */
+        static HAL::FLinearAllocator &GetWorkerAllocator () noexcept;
 
         /**
          * @brief Snapshot of executed task count per worker.
