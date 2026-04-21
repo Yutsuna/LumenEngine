@@ -31,16 +31,27 @@ struct alignas( 64 ) FMessage
      */
     Byte PayloadData[112] = {};
 
-    /** @brief Create a message with a payload */
-    template <typename PayloadType> static FMessage Make ( UInt32 InType, ActorID InSender, const PayloadType &InPayload ) noexcept;
+    /**
+     * @brief Create a message with a payload.
+     * @tparam PayloadType Must satisfy Concepts::CTriviallyCopyablePayload and fit in the buffer.
+     * @note Use FActorRef for cross-actor object references instead of pointers.
+     */
+    template <Concepts::CTriviallyCopyablePayload PayloadType>
+        requires( sizeof( PayloadType ) <= 112 )
+    [[nodiscard]] static FMessage Make ( UInt32 InType, ActorID InSender, const PayloadType &InPayload ) noexcept;
 
     /** @brief Create a message without a payload */
-    static FMessage Make ( UInt32 InType, ActorID InSender ) noexcept;
+    [[nodiscard]] static FMessage Make ( UInt32 InType, ActorID InSender ) noexcept;
 
-    /** @brief Read the payload directly from the inline buffer */
-    template <typename PayloadType> const PayloadType &GetPayload () const noexcept;
+    /**
+     * @brief Read the payload directly from the inline buffer.
+     * @tparam PayloadType Must satisfy Concepts::CTriviallyCopyablePayload and fit in the buffer.
+     */
+    template <Concepts::CTriviallyCopyablePayload PayloadType>
+        requires( sizeof( PayloadType ) <= 112 )
+    [[nodiscard]] const PayloadType &GetPayload () const noexcept;
 
-    static constexpr std::size_t MaxPayloadSize = sizeof( PayloadData );
+    static constexpr USize MaxPayloadSize = sizeof( PayloadData );
 };
 
 static_assert( sizeof( FMessage ) == 128, "FMessage should be exactly 128 bytes for performance reasons." );
