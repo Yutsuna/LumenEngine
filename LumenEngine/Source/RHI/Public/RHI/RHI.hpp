@@ -14,6 +14,8 @@
 #include "Maths/Vertex.hpp"
 #include "RHI/RHITypes.hpp"
 
+#include "Logging/LoggingCategory.hpp"
+
 namespace LumenEngine
 {
 
@@ -48,6 +50,8 @@ namespace RHI
         virtual FPipelineHandle CreatePipeline ( const FString &InVertexPath, const FString &InFragmentPath )          = 0;
         virtual FMeshHandle CreateMesh ( const TVector<Maths::FVertex> &InVertices, const TVector<UInt32> &InIndices ) = 0;
     };
+
+    extern LUMEN_ENGINE_API const FLogCategory LogRHI;
 
 } // namespace RHI
 

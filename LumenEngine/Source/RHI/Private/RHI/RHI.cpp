@@ -4,3 +4,5 @@
  */
 
 #include "RHI/RHI.hpp"
+
+const LumenEngine::FLogCategory LumenEngine::RHI::LogRHI( "RHI" );
