@@ -5,13 +5,21 @@
 
 #include "Thread/WorkerPool.hpp"
 
+#include "Container/UniquePtr.hpp"
+
 #include <bit>
+#include <cassert>
 
 namespace
 {
 
 thread_local LumenEngine::Bool bLumenIsWorkerThread      = false;
 thread_local LumenEngine::UInt32 LumenCurrentWorkerIndex = 0U;
+
+/** INFO: Each worker thread gets a 1MB scratch buffer for transient allocations */
+constexpr LumenEngine::USize LumenWorkerScratchSize = 1024ULL * 1024ULL;
+thread_local LumenEngine::TUniquePtr<LumenEngine::Byte[]> LumenWorkerScratchBuffer;
+thread_local LumenEngine::TOptional<LumenEngine::HAL::FLinearAllocator> LumenWorkerAllocator;
 
 } // namespace
 
@@ -109,6 +117,12 @@ LumenEngine::TOptional<LumenEngine::UInt32> LumenEngine::Parallel::FWorkerPool::
     return LumenCurrentWorkerIndex;
 }
 
+LumenEngine::HAL::FLinearAllocator &LumenEngine::Parallel::FWorkerPool::GetWorkerAllocator () noexcept
+{
+    assert( LumenWorkerAllocator.has_value() and "GetWorkerAllocator() called from a non-worker thread or before initialization." );
+    return *LumenWorkerAllocator;
+}
+
 LumenEngine::TVector<LumenEngine::UInt64> LumenEngine::Parallel::FWorkerPool::GetWorkerExecutionCounts () const noexcept
 {
     TVector<UInt64> Result;
@@ -139,6 +153,9 @@ void LumenEngine::Parallel::FWorkerPool::WorkerLoop ( UInt32 InWorkerIndex ) noe
     bLumenIsWorkerThread    = true;
     LumenCurrentWorkerIndex = InWorkerIndex;
 
+    LumenWorkerScratchBuffer = MakeUnique<Byte[]>( LumenWorkerScratchSize );
+    LumenWorkerAllocator.emplace( LumenWorkerScratchBuffer.Get(), LumenWorkerScratchSize );
+
     while ( bIsActive.load( std::memory_order_acquire ) )
     {
         TaskSemaphore.acquire();
@@ -150,13 +167,20 @@ void LumenEngine::Parallel::FWorkerPool::WorkerLoop ( UInt32 InWorkerIndex ) noe
 
         if ( TOptional<FTask> Task = Queue.Pop() )
         {
-            ( *Task )();
+            {
+                HAL::FScopeLinear Scope( *LumenWorkerAllocator );
+                ( *Task )();
+            }
+
             WorkerExecutionCounts[InWorkerIndex].fetch_add( 1ULL, std::memory_order_relaxed );
 
             ActiveTaskCount.fetch_sub( 1U, std::memory_order_release );
             ActiveTaskCount.notify_all();
         }
     }
+
+    LumenWorkerAllocator.reset();
+    LumenWorkerScratchBuffer.Reset();
 
     bLumenIsWorkerThread = false;
 }
