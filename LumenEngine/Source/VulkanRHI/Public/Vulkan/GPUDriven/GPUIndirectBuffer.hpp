@@ -8,6 +8,7 @@
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
 
+#include "Vulkan/GPUDriven/GPUSceneBuffer.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanCore.hpp"
 
@@ -56,24 +57,18 @@ namespace VulkanRHI
         void Shutdown ( VmaAllocator InAllocator ) noexcept;
 
         /**
-         * @brief Inserts a pipeline barrier that ensures:
-         *   - The compute write to IndirectBuffer/CountBuffer is visible
-         *     to the indirect draw commands in the graphics pipeline.
-         *
-         * Called by FGPUCullingPass between the compute dispatch and
-         * the vkCmdDrawIndexedIndirectCount invocation.
-         *
-         * @param InCmd The current frame's command buffer.
-         */
-        void InsertReadBarrier ( VkCommandBuffer InCmd ) const noexcept;
-
-        /**
-         * @brief Inserts a barrier that prepares the buffers for
-         *        compute writes at the start of the culling pass.
-         *
+         * @brief Inserts a pipeline barrier that ensures the indirect draw
+         *        buffers are ready for compute writes.
          * @param InCmd The current frame's command buffer.
          */
         void InsertWriteBarrier ( VkCommandBuffer InCmd ) const noexcept;
+
+        /**
+         * @brief Inserts a barrier that makes the compute-written buffers
+         *        visible to the indirect draw stage.
+         * @param InCmd The current frame's command buffer.
+         */
+        void InsertReadBarrier ( VkCommandBuffer InCmd ) const noexcept;
 
     public:
 
