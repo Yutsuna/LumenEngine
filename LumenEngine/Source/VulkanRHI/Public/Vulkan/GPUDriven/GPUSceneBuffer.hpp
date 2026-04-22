@@ -110,6 +110,7 @@ namespace VulkanRHI
 
         FVulkanBuffer SSBOs[MaxFramesInFlight]            = {};
         VkDescriptorSet DescriptorSets[MaxFramesInFlight] = {};
+        VmaAllocator Allocator                            = nullptr;
 
         /** Number of valid instances from the last Upload() call. */
         UInt32 LastInstanceCount = 0U;

@@ -30,6 +30,8 @@ void LumenEngine::VulkanRHI::FGPUSceneBuffer::Initialize ( VmaAllocator InAlloca
                                                            VkDescriptorPool InDescPool,
                                                            VkDescriptorSetLayout InSceneSetLayout )
 {
+    Allocator = InAllocator;
+
     const VkDeviceSize BufferSize = static_cast<VkDeviceSize>( MaxInstances * sizeof( FGPUInstanceData ) );
 
     VkBufferCreateInfo BufferInfo{};
@@ -110,7 +112,7 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const FGPU
             continue;
         }
 
-        const FVulkanMesh *Mesh = const_cast<RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> &>( MeshRegistry ).Get( MeshHandle );
+        const FVulkanMesh *Mesh = MeshRegistry.Get( MeshHandle );
 
         if ( Mesh == nullptr )
         {
@@ -141,8 +143,7 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const FGPU
 
     if ( FlushedSize > 0ULL )
     {
-        /** TODO: Implement flush logic */
-        vmaFlushAllocation( nullptr, SSBOs[InFrameIndex].Allocation, 0, FlushedSize );
+        LUMEN_VK_CHECK( vmaFlushAllocation( Allocator, SSBOs[InFrameIndex].Allocation, 0, FlushedSize ) );
     }
 
     LastInstanceCount = ValidCount;
