@@ -4,33 +4,40 @@
  */
 
 #include "Maths/Macros.hpp"
+#include "CoreTypes.hpp"
+
 #include <gtest/gtest.h>
+
+namespace LumenEngine
+{
 
 namespace
 {
 
-/**
- * @class FMacrosTest
- * @brief Test fixture for mathematical constants and macros functional tests
- */
-class FMacrosTest : public ::testing::Test
-{
-protected:
+    /**
+     * @class FMacrosTest
+     * @brief Test fixture for mathematical constants and macros functional tests
+     */
+    class FMacrosTest : public ::testing::Test
+    {
+    protected:
 
-    static constexpr LumenEngine::Float64 Precision = 1e-10;
-};
+        static constexpr Float64 Precision = 1e-10;
+    };
 
 } // namespace
 
 TEST_F( FMacrosTest, Constants )
 {
-    EXPECT_NEAR( LumenEngine::Maths::Pi, 3.14159265358979323846, Precision );
-    EXPECT_NEAR( LumenEngine::Maths::TwoPi, LumenEngine::Maths::Pi * 2.0, Precision );
-    EXPECT_NEAR( LumenEngine::Maths::HalfPi, LumenEngine::Maths::Pi / 2.0, Precision );
+    EXPECT_NEAR( Maths::Pi<Float64>, 3.14159265358979323846, Precision );
+    EXPECT_NEAR( Maths::TwoPi<Float64>, Maths::Pi<Float64> * 2.0, Precision );
+    EXPECT_NEAR( Maths::HalfPi<Float64>, Maths::Pi<Float64> / 2.0, Precision );
 }
 
 TEST_F( FMacrosTest, Conversion )
 {
-    EXPECT_NEAR( 180.0 * LumenEngine::Maths::DegToRad, LumenEngine::Maths::Pi, Precision );
-    EXPECT_NEAR( LumenEngine::Maths::Pi * LumenEngine::Maths::RadToDeg, 180.0, Precision );
+    EXPECT_NEAR( 180.0 * Maths::DegToRad<Float64>, Maths::Pi<Float64>, Precision );
+    EXPECT_NEAR( Maths::Pi<Float64> * Maths::RadToDeg<Float64>, 180.0, Precision );
 }
+
+} // namespace LumenEngine
