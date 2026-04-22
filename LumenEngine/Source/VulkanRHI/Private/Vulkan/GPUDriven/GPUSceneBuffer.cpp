@@ -81,8 +81,6 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const RHI:
                                                                       const RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> &PipelineRegistry,
                                                                       UInt32 InFrameIndex )
 {
-    static_cast<void>( PipelineRegistry );
-
     const USize EntityCount = std::min( { InSnapshot.Transforms.size(), InSnapshot.Meshes.size(), InSnapshot.Shaders.size() } );
 
     if ( EntityCount == 0U )
@@ -105,9 +103,11 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const RHI:
             continue;
         }
 
-        const FVulkanMesh *Mesh = MeshRegistry.Get( MeshHandle );
+        /** INFO: Validate that both Mesh and Pipeline exist in the RHI registries before uploading */
+        const FVulkanMesh *Mesh         = MeshRegistry.Get( MeshHandle );
+        const FVulkanPipeline *Pipeline = PipelineRegistry.Get( ShaderHandle );
 
-        if ( Mesh == nullptr )
+        if ( Mesh == nullptr or Pipeline == nullptr )
         {
             continue;
         }
@@ -116,28 +116,31 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const RHI:
 
         Instance.Transform = InSnapshot.Transforms[EntityIndex];
 
-        /** INFO: Extract Object-space AABB from the Mesh resource */
+        /** INFO: Extract Object-space AABB from the Mesh resource for GPU culling */
         Instance.AABBMin = Mesh->GetAABBMin();
         Instance.AABBMax = Mesh->GetAABBMax();
 
         Instance.MeshHandleID   = MeshHandle.ID;
         Instance.ShaderHandleID = ShaderHandle.ID;
 
+        /** INFO: Copy draw parameters needed by the indirect command generator */
         Instance.IndexCount   = Mesh->GetIndexCount();
         Instance.FirstIndex   = Mesh->GetFirstIndex();
         Instance.VertexOffset = Mesh->GetVertexOffset();
         Instance.Pad0         = 0U;
 
+        /** INFO: BDA addresses for future programmable pulling or raytracing */
         Instance.VertexBufferAddr = Mesh->GetVertexBufferAddress();
         Instance.IndexBufferAddr  = Mesh->GetIndexBufferAddress();
 
         ++ValidCount;
     }
 
-    const VkDeviceSize FlushedSize = static_cast<VkDeviceSize>( ValidCount * sizeof( FGPUInstanceData ) );
+    const VkDeviceSize FlushedSize = ValidCount * sizeof( FGPUInstanceData );
 
     if ( FlushedSize > 0ULL )
     {
+        /** INFO: Ensure CPU writes are visible to the GPU compute shader */
         LUMEN_VK_CHECK( vmaFlushAllocation( Allocator, SSBOs[InFrameIndex].Allocation, 0, FlushedSize ) );
     }
 
