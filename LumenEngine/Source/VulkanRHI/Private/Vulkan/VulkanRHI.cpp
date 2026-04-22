@@ -9,8 +9,7 @@
 
 #include "Generic/GenericWindow.hpp"
 #include "Vulkan/VulkanCore.hpp"
-
-#include <algorithm>
+#include "Vulkan/VulkanSceneRenderer.hpp"
 
 #ifndef LUMEN_GPU_CULL_SHADER_PATH
     #define LUMEN_GPU_CULL_SHADER_PATH ""
@@ -248,91 +247,15 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InC
                                                              const LumenEngine::RHI::FSceneSnapshot &InSceneSnapshot,
                                                              const LumenEngine::Float32 InClearColor[4] ) noexcept
 {
-    const USize SceneCount = std::min( { InSceneSnapshot.Transforms.size(), InSceneSnapshot.Meshes.size(), InSceneSnapshot.Shaders.size() } );
-
-    if ( SceneCount == 0U )
-    {
-        BeginRenderingInternal( InCmd, InClearColor );
-        vkCmdEndRendering( InCmd );
-        return;
-    }
-
-    /** INFO: Fallback to CPU-driven loop if culling pass is not initialized */
-    if ( not CullingPass.IsReady() )
-    {
-        BeginRenderingInternal( InCmd, InClearColor );
-
-        for ( USize Index = 0U; Index < SceneCount; ++Index )
-        {
-            const RHI::FMeshHandle MeshHandle         = InSceneSnapshot.Meshes[Index];
-            const RHI::FPipelineHandle PipelineHandle = InSceneSnapshot.Shaders[Index];
-
-            if ( not MeshHandle.IsValid() or not PipelineHandle.IsValid() )
-            {
-                continue;
-            }
-
-            BindPipelineInternal( InCmd, PipelineHandle );
-            PushConstantsInternal( InCmd, PipelineHandle, &InSceneSnapshot.Transforms[Index], static_cast<UInt32>( sizeof( Maths::FMatrix4x4f ) ), 0U );
-            DrawMeshInternal( InCmd, MeshHandle );
-        }
-
-        vkCmdEndRendering( InCmd );
-        return;
-    }
-
-    /** INFO: Select the primary pipeline for the indirect draw batch */
-    RHI::FPipelineHandle SelectedPipeline{};
-    for ( USize Index = 0U; Index < SceneCount; ++Index )
-    {
-        const RHI::FPipelineHandle PipelineHandle = InSceneSnapshot.Shaders[Index];
-        if ( PipelineHandle.IsValid() and PipelineRegistry.Get( PipelineHandle ) != nullptr )
-        {
-            SelectedPipeline = PipelineHandle;
-            break;
-        }
-    }
-
-    if ( not SelectedPipeline.IsValid() )
-    {
-        BeginRenderingInternal( InCmd, InClearColor );
-        vkCmdEndRendering( InCmd );
-        return;
-    }
-
-    /** INFO: Modularized - Upload directly from RHI snapshot to avoid redundant allocations */
-    const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
-    SceneBuffer.Upload( InSceneSnapshot, MeshRegistry, PipelineRegistry, CurrentFrame );
-
-    const VkDescriptorSet &GlobalDescriptorSet = Memory.GetGlobalDescriptorSet( CurrentFrame );
-    CullingPass.Execute( InCmd, GlobalDescriptorSet, SceneBuffer, IndirectBuffer, CurrentFrame );
-
+    /** INFO: Start a dynamic rendering region */
     BeginRenderingInternal( InCmd, InClearColor );
 
-    if ( SelectedPipeline.IsValid() )
-    {
-        BindPipelineInternal( InCmd, SelectedPipeline );
+    /** INFO: Delegate actual rendering to the specialized SceneRenderer sub-system */
+    const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
 
-        /** INFO: Bind any valid VB/IB to satisfy the pipeline before indirect execution */
-        for ( USize Index = 0U; Index < SceneCount; ++Index )
-        {
-            const RHI::FMeshHandle MeshHandle = InSceneSnapshot.Meshes[Index];
-            FVulkanMesh *Mesh                 = MeshRegistry.Get( MeshHandle );
-            if ( Mesh != nullptr )
-            {
-                VkDeviceSize Offset = 0;
-                VkBuffer VB         = Mesh->GetVertexBuffer();
-                VkBuffer IB         = Mesh->GetIndexBuffer();
-                vkCmdBindVertexBuffers( InCmd, 0, 1, &VB, &Offset );
-                vkCmdBindIndexBuffer( InCmd, IB, 0, VK_INDEX_TYPE_UINT32 );
-                break;
-            }
-        }
+    VulkanSceneRenderer::RenderScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, SceneBuffer, IndirectBuffer, CullingPass );
 
-        vkCmdDrawIndexedIndirectCount( InCmd, IndirectBuffer.GetIndirectBuffer(), 0, IndirectBuffer.GetCountBuffer(), 0,
-                                       static_cast<UInt32>( FGPUIndirectBuffer::MaxDraws ), static_cast<UInt32>( sizeof( VkDrawIndexedIndirectCommand ) ) );
-    }
-
+    /** INFO: End dynamic rendering */
     vkCmdEndRendering( InCmd );
 }
 
