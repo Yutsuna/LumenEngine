@@ -7,95 +7,155 @@
 
 #include "Vulkan/VulkanCore.hpp"
 #include "Vulkan/VulkanDescriptorWriter.hpp"
-
 #include <cstring>
+#include <vulkan/vulkan_core.h>
 
 namespace
 {
 
-VkDescriptorSetLayoutBinding CreateGlobalUniformLayoutBinding () noexcept
+[[nodiscard]] VkDescriptorSetLayout CreateGlobalSetLayout ( VkDevice InDevice )
 {
-    return {
-        .binding            = 0,
+    const VkDescriptorSetLayoutBinding Binding{
+        .binding            = 0U,
         .descriptorType     = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,
-        .descriptorCount    = 1,
-        .stageFlags         = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT,
+        .descriptorCount    = 1U,
+        .stageFlags         = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT | VK_SHADER_STAGE_COMPUTE_BIT,
         .pImmutableSamplers = nullptr,
     };
+
+    VkDescriptorSetLayoutCreateInfo LayoutInfo{
+        .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext        = nullptr,
+        .flags        = 0U,
+        .bindingCount = 1U,
+        .pBindings    = &Binding,
+    };
+
+    VkDescriptorSetLayout Layout = VK_NULL_HANDLE;
+    LUMEN_VK_CHECK( vkCreateDescriptorSetLayout( InDevice, &LayoutInfo, nullptr, &Layout ) );
+    return Layout;
 }
 
-void CreateDescriptorSetLayout ( VkDevice InDevice, VkDescriptorSetLayout &OutLayout )
+[[nodiscard]] VkDescriptorSetLayout CreateSceneSetLayout ( VkDevice InDevice )
 {
-    const VkDescriptorSetLayoutBinding Binding = CreateGlobalUniformLayoutBinding();
+    const VkDescriptorSetLayoutBinding Binding{
+        .binding            = 0U,
+        .descriptorType     = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+        .descriptorCount    = 1U,
+        .stageFlags         = VK_SHADER_STAGE_COMPUTE_BIT,
+        .pImmutableSamplers = nullptr,
+    };
 
-    VkDescriptorSetLayoutCreateInfo LayoutInfo{};
-    LayoutInfo.sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-    LayoutInfo.bindingCount = 1;
-    LayoutInfo.pBindings    = &Binding;
+    VkDescriptorSetLayoutCreateInfo LayoutInfo{
+        .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext        = nullptr,
+        .flags        = 0U,
+        .bindingCount = 1U,
+        .pBindings    = &Binding,
+    };
 
-    LUMEN_VK_CHECK( vkCreateDescriptorSetLayout( InDevice, &LayoutInfo, nullptr, &OutLayout ) );
+    VkDescriptorSetLayout Layout = VK_NULL_HANDLE;
+    LUMEN_VK_CHECK( vkCreateDescriptorSetLayout( InDevice, &LayoutInfo, nullptr, &Layout ) );
+    return Layout;
+}
+
+[[nodiscard]] VkDescriptorSetLayout CreateCullSetLayout ( VkDevice InDevice )
+{
+    const VkDescriptorSetLayoutBinding Bindings[2] = {
+        {
+            .binding            = 0U,
+            .descriptorType     = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount    = 1U,
+            .stageFlags         = VK_SHADER_STAGE_COMPUTE_BIT,
+            .pImmutableSamplers = nullptr,
+        },
+        {
+            .binding            = 1U,
+            .descriptorType     = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount    = 1U,
+            .stageFlags         = VK_SHADER_STAGE_COMPUTE_BIT,
+            .pImmutableSamplers = nullptr,
+        },
+    };
+
+    VkDescriptorSetLayoutCreateInfo LayoutInfo{
+        .sType        = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO,
+        .pNext        = nullptr,
+        .flags        = 0U,
+        .bindingCount = 2U,
+        .pBindings    = Bindings,
+    };
+
+    VkDescriptorSetLayout Layout = VK_NULL_HANDLE;
+    LUMEN_VK_CHECK( vkCreateDescriptorSetLayout( InDevice, &LayoutInfo, nullptr, &Layout ) );
+    return Layout;
 }
 
 void CreateDescriptorPool ( VkDevice InDevice, VkDescriptorPool &OutPool )
 {
-    VkDescriptorPoolSize PoolSize{};
-    PoolSize.type            = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    PoolSize.descriptorCount = static_cast<LumenEngine::UInt32>( LumenEngine::VulkanRHI::MaxFramesInFlight );
+    const VkDescriptorPoolSize PoolSizes[] = {
+        { .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = LumenEngine::VulkanRHI::MaxFramesInFlight },
+        { .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = LumenEngine::VulkanRHI::MaxFramesInFlight * 4U },
+    };
 
-    VkDescriptorPoolCreateInfo PoolInfo{};
-    PoolInfo.sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
-    PoolInfo.poolSizeCount = 1;
-    PoolInfo.pPoolSizes    = &PoolSize;
-    PoolInfo.maxSets       = static_cast<LumenEngine::UInt32>( LumenEngine::VulkanRHI::MaxFramesInFlight );
+    VkDescriptorPoolCreateInfo PoolInfo{
+        .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
+        .pNext         = nullptr,
+        .flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
+        .maxSets       = LumenEngine::VulkanRHI::MaxFramesInFlight * 4U,
+        .poolSizeCount = 2U,
+        .pPoolSizes    = PoolSizes,
+    };
 
     LUMEN_VK_CHECK( vkCreateDescriptorPool( InDevice, &PoolInfo, nullptr, &OutPool ) );
 }
 
-void CreateGlobalUniformBuffers ( VmaAllocator InAllocator, LumenEngine::VulkanRHI::FVulkanBuffer OutBuffers[LumenEngine::VulkanRHI::MaxFramesInFlight] )
+[[nodiscard]] inline VkBufferCreateInfo CreateBufferInfo ( LumenEngine::USize InSize ) noexcept
 {
-    VkBufferCreateInfo BufferInfo{};
-    BufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-    BufferInfo.size        = sizeof( LumenEngine::RHI::FGlobalUniformData );
-    BufferInfo.usage       = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    BufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+    return VkBufferCreateInfo{
+        .sType                 = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO,
+        .pNext                 = nullptr,
+        .flags                 = 0U,
+        .size                  = InSize,
+        .usage                 = VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
+        .sharingMode           = VK_SHARING_MODE_EXCLUSIVE,
+        .queueFamilyIndexCount = 0U,
+        .pQueueFamilyIndices   = nullptr,
+    };
+}
 
+[[nodiscard]] inline VmaAllocatorCreateInfo
+CreateVmaAllocatorInfo ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, VmaVulkanFunctions *InFunctions ) noexcept
+{
+    VmaAllocatorCreateInfo VmaAllocCreateInfo{};
+    VmaAllocCreateInfo.flags            = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    VmaAllocCreateInfo.physicalDevice   = InPhysicalDevice;
+    VmaAllocCreateInfo.device           = InDevice;
+    VmaAllocCreateInfo.pVulkanFunctions = InFunctions;
+    VmaAllocCreateInfo.instance         = InInstance;
+    VmaAllocCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+
+    return VmaAllocCreateInfo;
+}
+
+[[nodiscard]] inline VmaAllocationCreateInfo CreateVmaAllocationInfo () noexcept
+{
     VmaAllocationCreateInfo AllocInfo{};
-    AllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+
     AllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
-
-    for ( LumenEngine::UInt32 Index = 0; Index < LumenEngine::VulkanRHI::MaxFramesInFlight; ++Index )
-    {
-        LUMEN_VK_CHECK(
-            vmaCreateBuffer( InAllocator, &BufferInfo, &AllocInfo, &OutBuffers[Index].Buffer, &OutBuffers[Index].Allocation, &OutBuffers[Index].AllocationInfo ) );
-    }
+    AllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
+    return AllocInfo;
 }
 
-void AllocateDescriptorSets ( VkDevice InDevice,
-                              VkDescriptorPool InPool,
-                              VkDescriptorSetLayout InLayout,
-                              VkDescriptorSet OutDescriptorSets[LumenEngine::VulkanRHI::MaxFramesInFlight] )
+[[nodiscard]] inline VkDescriptorSetAllocateInfo CreateGlobalDescriptorSetAllocInfo ( VkDescriptorPool InPool, VkDescriptorSetLayout InLayout ) noexcept
 {
-    LumenEngine::TVector<VkDescriptorSetLayout> Layouts( LumenEngine::VulkanRHI::MaxFramesInFlight, InLayout );
-
-    VkDescriptorSetAllocateInfo AllocSetInfo{};
-    AllocSetInfo.sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-    AllocSetInfo.descriptorPool     = InPool;
-    AllocSetInfo.descriptorSetCount = static_cast<LumenEngine::UInt32>( LumenEngine::VulkanRHI::MaxFramesInFlight );
-    AllocSetInfo.pSetLayouts        = Layouts.data();
-
-    LUMEN_VK_CHECK( vkAllocateDescriptorSets( InDevice, &AllocSetInfo, OutDescriptorSets ) );
-}
-
-void UpdateDescriptorSets ( VkDevice InDevice,
-                            const LumenEngine::VulkanRHI::FVulkanBuffer InBuffers[LumenEngine::VulkanRHI::MaxFramesInFlight],
-                            const VkDescriptorSet InDescriptorSets[LumenEngine::VulkanRHI::MaxFramesInFlight] )
-{
-    for ( LumenEngine::UInt32 Index = 0; Index < LumenEngine::VulkanRHI::MaxFramesInFlight; ++Index )
-    {
-        LumenEngine::VulkanRHI::FVulkanDescriptorWriter Writer;
-        Writer.WriteBuffer( 0, InBuffers[Index].Buffer, sizeof( LumenEngine::RHI::FGlobalUniformData ), 0, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER );
-        Writer.UpdateSet( InDevice, InDescriptorSets[Index] );
-    }
+    return VkDescriptorSetAllocateInfo{
+        .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext              = nullptr,
+        .descriptorPool     = InPool,
+        .descriptorSetCount = 1U,
+        .pSetLayouts        = &InLayout,
+    };
 }
 
 } // namespace
@@ -114,28 +174,36 @@ void LumenEngine::VulkanRHI::FVulkanMemory::Shutdown ( VkDevice InDevice ) noexc
 
 void LumenEngine::VulkanRHI::FVulkanMemory::InitializeVMA ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice )
 {
-    VmaVulkanFunctions VulkanFunctions    = {};
+    VmaVulkanFunctions VulkanFunctions{};
     VulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
     VulkanFunctions.vkGetDeviceProcAddr   = vkGetDeviceProcAddr;
 
-    VmaAllocatorCreateInfo AllocatorInfo = {};
-    AllocatorInfo.physicalDevice         = InPhysicalDevice;
-    AllocatorInfo.device                 = InDevice;
-    AllocatorInfo.instance               = InInstance;
-    AllocatorInfo.vulkanApiVersion       = VK_API_VERSION_1_3;
-    AllocatorInfo.pVulkanFunctions       = &VulkanFunctions;
-    AllocatorInfo.flags                  = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
-
+    VmaAllocatorCreateInfo AllocatorInfo = CreateVmaAllocatorInfo( InInstance, InPhysicalDevice, InDevice, &VulkanFunctions );
     LUMEN_VK_CHECK( vmaCreateAllocator( &AllocatorInfo, &Allocator ) );
 }
 
 void LumenEngine::VulkanRHI::FVulkanMemory::InitializeDescriptors ( VkDevice InDevice )
 {
-    CreateDescriptorSetLayout( InDevice, GlobalSetLayout );
+    GlobalSetLayout = CreateGlobalSetLayout( InDevice );
+    SceneSetLayout  = CreateSceneSetLayout( InDevice );
+    CullSetLayout   = CreateCullSetLayout( InDevice );
+
     CreateDescriptorPool( InDevice, DescriptorPool );
-    CreateGlobalUniformBuffers( Allocator, GlobalUniformBuffers );
-    AllocateDescriptorSets( InDevice, DescriptorPool, GlobalSetLayout, GlobalDescriptorSets );
-    UpdateDescriptorSets( InDevice, GlobalUniformBuffers, GlobalDescriptorSets );
+
+    VkBufferCreateInfo BufferInfo     = CreateBufferInfo( sizeof( FGPUGlobalUniforms ) );
+    VmaAllocationCreateInfo AllocInfo = CreateVmaAllocationInfo();
+
+    for ( UInt32 Index = 0U; Index < MaxFramesInFlight; ++Index )
+    {
+        LUMEN_VK_CHECK( vmaCreateBuffer( Allocator, &BufferInfo, &AllocInfo, &GlobalUniformBuffers[Index].Buffer, &GlobalUniformBuffers[Index].Allocation,
+                                         &GlobalUniformBuffers[Index].AllocationInfo ) );
+        VkDescriptorSetAllocateInfo SetAllocInfo = CreateGlobalDescriptorSetAllocInfo( DescriptorPool, GlobalSetLayout );
+        LUMEN_VK_CHECK( vkAllocateDescriptorSets( InDevice, &SetAllocInfo, &GlobalDescriptorSets[Index] ) );
+
+        FVulkanDescriptorWriter Writer;
+        Writer.WriteBuffer( 0U, GlobalUniformBuffers[Index].Buffer, sizeof( FGPUGlobalUniforms ), 0U, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER );
+        Writer.UpdateSet( InDevice, GlobalDescriptorSets[Index] );
+    }
 }
 
 void LumenEngine::VulkanRHI::FVulkanMemory::DestroyDescriptors ( VkDevice InDevice ) noexcept
@@ -143,21 +211,25 @@ void LumenEngine::VulkanRHI::FVulkanMemory::DestroyDescriptors ( VkDevice InDevi
     if ( DescriptorPool != VK_NULL_HANDLE )
     {
         vkDestroyDescriptorPool( InDevice, DescriptorPool, nullptr );
-        DescriptorPool = VK_NULL_HANDLE;
     }
-
     if ( GlobalSetLayout != VK_NULL_HANDLE )
     {
         vkDestroyDescriptorSetLayout( InDevice, GlobalSetLayout, nullptr );
-        GlobalSetLayout = VK_NULL_HANDLE;
+    }
+    if ( SceneSetLayout != VK_NULL_HANDLE )
+    {
+        vkDestroyDescriptorSetLayout( InDevice, SceneSetLayout, nullptr );
+    }
+    if ( CullSetLayout != VK_NULL_HANDLE )
+    {
+        vkDestroyDescriptorSetLayout( InDevice, CullSetLayout, nullptr );
     }
 
-    for ( UInt32 Index = 0; Index < MaxFramesInFlight; ++Index )
+    for ( UInt32 Index = 0U; Index < MaxFramesInFlight; ++Index )
     {
         if ( GlobalUniformBuffers[Index].Buffer != VK_NULL_HANDLE )
         {
             vmaDestroyBuffer( Allocator, GlobalUniformBuffers[Index].Buffer, GlobalUniformBuffers[Index].Allocation );
-            GlobalUniformBuffers[Index].Buffer = VK_NULL_HANDLE;
         }
     }
 }
@@ -167,13 +239,19 @@ void LumenEngine::VulkanRHI::FVulkanMemory::DestroyVMA () noexcept
     if ( Allocator != VK_NULL_HANDLE )
     {
         vmaDestroyAllocator( Allocator );
-        Allocator = VK_NULL_HANDLE;
     }
+}
+
+void LumenEngine::VulkanRHI::FVulkanMemory::UpdateGlobalUniformData ( UInt32 InFrameIndex, const FGPUGlobalUniforms &InUniforms ) noexcept
+{
+    std::memcpy( GlobalUniformBuffers[InFrameIndex].AllocationInfo.pMappedData, &InUniforms, sizeof( FGPUGlobalUniforms ) );
 }
 
 void LumenEngine::VulkanRHI::FVulkanMemory::UpdateGlobalUniformData ( UInt32 InFrameIndex, const RHI::FGlobalUniformData &InUniforms ) noexcept
 {
-    std::memcpy( GlobalUniformBuffers[InFrameIndex].AllocationInfo.pMappedData, &InUniforms, sizeof( RHI::FGlobalUniformData ) );
+    FGPUGlobalUniforms GPUData = FGPUGlobalUniforms::Build( InUniforms.ViewProjectionMatrix, InUniforms.TimeSeconds, InUniforms.DeltaTime );
+
+    UpdateGlobalUniformData( InFrameIndex, GPUData );
 }
 
 VmaAllocator LumenEngine::VulkanRHI::FVulkanMemory::GetAllocator () const noexcept
@@ -181,9 +259,24 @@ VmaAllocator LumenEngine::VulkanRHI::FVulkanMemory::GetAllocator () const noexce
     return Allocator;
 }
 
+VkDescriptorPool LumenEngine::VulkanRHI::FVulkanMemory::GetDescriptorPool () const noexcept
+{
+    return DescriptorPool;
+}
+
 VkDescriptorSetLayout LumenEngine::VulkanRHI::FVulkanMemory::GetGlobalSetLayout () const noexcept
 {
     return GlobalSetLayout;
+}
+
+VkDescriptorSetLayout LumenEngine::VulkanRHI::FVulkanMemory::GetSceneSetLayout () const noexcept
+{
+    return SceneSetLayout;
+}
+
+VkDescriptorSetLayout LumenEngine::VulkanRHI::FVulkanMemory::GetCullSetLayout () const noexcept
+{
+    return CullSetLayout;
 }
 
 VkDescriptorSet LumenEngine::VulkanRHI::FVulkanMemory::GetGlobalDescriptorSet ( UInt32 InFrameIndex ) const noexcept

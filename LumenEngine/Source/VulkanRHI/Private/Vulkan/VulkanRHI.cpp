@@ -4,8 +4,16 @@
  */
 
 #include "Vulkan/VulkanRHI.hpp"
+
+#include "Container/String.hpp"
+
 #include "Generic/GenericWindow.hpp"
 #include "Vulkan/VulkanCore.hpp"
+#include "Vulkan/VulkanSceneRenderer.hpp"
+
+#ifndef LUMEN_GPU_CULL_SHADER_PATH
+    #define LUMEN_GPU_CULL_SHADER_PATH ""
+#endif
 
 LumenEngine::VulkanRHI::FVulkanRHI::FVulkanRHI () noexcept : CommandListImpl( this )
 {
@@ -24,6 +32,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TShared
     Memory.Initialize( Instance.GetHandle(), PhysicalDevice.GetHandle(), LogicalDevice.GetHandle() );
     InitializeSwapChain( InWindow );
     FrameContext.Initialize( LogicalDevice.GetHandle(), LogicalDevice.GetGraphicsQueueFamily() );
+    InitializeGpuDrivenResources();
 
     bIsInitialized = true;
 
@@ -44,6 +53,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
 
     MeshRegistry.ForEach( [this] ( FVulkanMesh &Mesh ) { Mesh.Cleanup( Memory.GetAllocator() ); } );
     MeshRegistry.Clear();
+
+    ShutdownGpuDrivenResources();
 
     FrameContext.Shutdown( LogicalDevice.GetHandle() );
 
@@ -176,8 +187,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRenderingInternal ( VkCommandBuffe
     const VkViewport Viewport{
         .x        = 0.F,
         .y        = 0.F,
-        .width    = static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.width ),
-        .height   = static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.height ),
+        .width    = static_cast<Float32>( RenderInfo.renderArea.extent.width ),
+        .height   = static_cast<Float32>( RenderInfo.renderArea.extent.height ),
         .minDepth = 0.F,
         .maxDepth = 1.F,
     };
@@ -232,6 +243,25 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DrawMeshInternal ( VkCommandBuffer InCm
     Mesh->BindAndDraw( InCmd );
 }
 
+void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InCmd,
+                                                             const LumenEngine::RHI::FSceneSnapshot &InSceneSnapshot,
+                                                             const LumenEngine::Float32 InClearColor[4] ) noexcept
+{
+
+    /** INFO: Delegate actual rendering to the specialized SceneRenderer sub-system */
+    const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
+
+    VulkanSceneRenderer::PrepareScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, SceneBuffer, IndirectBuffer, CullingPass );
+
+    /** INFO: Start a dynamic rendering region */
+    BeginRenderingInternal( InCmd, InClearColor );
+
+    VulkanSceneRenderer::RenderScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, IndirectBuffer, CullingPass );
+
+    /** INFO: End dynamic rendering */
+    vkCmdEndRendering( InCmd );
+}
+
 void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
 {
     const VkImage &Image = SwapChain.GetImages()[FrameContext.GetCurrentImageIndex()];
@@ -247,7 +277,7 @@ LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( c
 {
     LumenEngine::VulkanRHI::FVulkanMesh NewMesh;
 
-    NewMesh.Initialize( Memory.GetAllocator(), InVertices, InIndices );
+    NewMesh.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), InVertices, InIndices );
     return MeshRegistry.Insert( std::move( NewMesh ) );
 }
 
@@ -265,4 +295,29 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
     }
 
     return PipelineRegistry.Insert( std::move( NewPipeline ) );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
+{
+    SceneBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetSceneSetLayout() );
+    IndirectBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetCullSetLayout() );
+
+    const FString ShaderPath = LUMEN_GPU_CULL_SHADER_PATH;
+    if ( ShaderPath.empty() )
+    {
+        LUMEN_LOG_WARNING( LogVulkanRHI, "GPU culling shader path is empty; GPU-driven culling disabled." );
+        return;
+    }
+
+    if ( not CullingPass.Initialize( LogicalDevice.GetHandle(), Memory.GetGlobalSetLayout(), Memory.GetSceneSetLayout(), Memory.GetCullSetLayout(), ShaderPath ) )
+    {
+        LUMEN_LOG_WARNING( LogVulkanRHI, "Failed to initialize GPU culling pass from '{}'.", ShaderPath.c_str() );
+    }
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::ShutdownGpuDrivenResources () noexcept
+{
+    CullingPass.Shutdown( LogicalDevice.GetHandle() );
+    IndirectBuffer.Shutdown( Memory.GetAllocator() );
+    SceneBuffer.Shutdown( Memory.GetAllocator(), LogicalDevice.GetHandle() );
 }

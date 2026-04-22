@@ -25,6 +25,7 @@ namespace Renderer
     struct LUMEN_ENGINE_API FRenderPacket
     {
         Float32 ClearColor[4] = { 0.F, 0.F, 0.F, 1.F };
+        RHI::FSceneSnapshot SceneSnapshot;
         TVector<FDrawCommand> DrawCommands;
     };
 

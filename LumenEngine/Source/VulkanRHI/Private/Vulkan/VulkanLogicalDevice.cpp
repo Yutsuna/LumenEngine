@@ -97,10 +97,12 @@ void LumenEngine::VulkanRHI::FVulkanLogicalDevice::CreateLogicalDevice ( const T
 
     VkPhysicalDeviceFeatures DeviceFeatures{};
     DeviceFeatures.samplerAnisotropy = VK_TRUE;
+    DeviceFeatures.shaderInt64       = VK_TRUE;
 
     VkPhysicalDeviceVulkan12Features Features12{};
     Features12.sType               = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
     Features12.bufferDeviceAddress = VK_TRUE;
+    Features12.drawIndirectCount   = VK_TRUE;
     Features12.pNext               = nullptr;
 
     VkPhysicalDeviceVulkan13Features Features13{};

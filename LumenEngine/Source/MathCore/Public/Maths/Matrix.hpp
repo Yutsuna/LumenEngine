@@ -9,8 +9,6 @@
 #include "Definitions.hpp"
 #include "Maths/Vec.hpp"
 
-#include <type_traits>
-
 namespace LumenEngine
 {
 
@@ -25,9 +23,6 @@ namespace Maths
 
         template <USize Rows, USize Columns>
         concept CSquareMatrix = CMatrixDimension<Rows, Columns> && ( Rows == Columns );
-
-        template <typename Type>
-        concept CFloatingPoint = std::is_floating_point_v<Type>;
 
     } // namespace Concepts
 
@@ -67,6 +62,9 @@ namespace Maths
         constexpr ColumnType &operator[]( USize ColumnIndex ) noexcept;
         /** @brief Access a column by index */
         constexpr const ColumnType &operator[]( USize ColumnIndex ) const noexcept;
+
+        /** @brief Extracts a specific row as a vector */
+        [[nodiscard]] constexpr RowType GetRow ( USize RowIndex ) const noexcept;
 
         constexpr Bool operator==( const TMatrix<Type, Rows, Columns> &Other ) const noexcept;
         constexpr Bool operator!=( const TMatrix<Type, Rows, Columns> &Other ) const noexcept;
@@ -141,6 +139,12 @@ namespace Maths
     /** @brief Matrix Multiplication with a scalar */
     template <typename Type, USize Rows, USize Columns>
     constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Columns> &Left, const Type Scalar ) noexcept;
+
+    /**
+     * @brief Compute a conservative world-space AABB by transforming the 8
+     *        corners of the object-space AABB through the world transform.
+     */
+    void TransformAABB ( const FVec3f &LocalMin, const FVec3f &LocalMax, const FMatrix4x4f &Transform, FVec3f &OutWorldMin, FVec3f &OutWorldMax ) noexcept;
 
 } // namespace Maths
 

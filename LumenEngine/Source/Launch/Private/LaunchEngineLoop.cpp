@@ -160,7 +160,7 @@ void LumenEngine::FEngineLoop::CalculateDeltaTime () noexcept
         LastTickTime = HAL::FPlatformTime::MaxTickRate;
     }
 
-    if ( LastTickTime < Maths::Epsilon )
+    if ( LastTickTime < Maths::Epsilon<Float64> )
     {
         LastTickTime = 0.0;
     }
