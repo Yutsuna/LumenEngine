@@ -41,6 +41,9 @@ namespace RHI
         /** @brief Draws an indexed mesh */
         virtual void DrawMesh ( const FMeshHandle InMesh ) = 0;
 
+        /** @brief Draws a full scene snapshot using backend-specific acceleration. */
+        virtual void DrawScene ( const FSceneSnapshot &InSceneSnapshot, const Float32 InClearColor[4] ) = 0;
+
         /** TODO: Future additions: BindDescriptorSet, SetScissor... */
     };
 
