@@ -93,6 +93,11 @@ namespace VulkanRHI
 
     private:
 
+        /** @brief Ensures CPU writes to the SSBO mapped memory are flushed to the GPU. */
+        void FlushSSBO ( UInt32 InFrameIndex, UInt32 InValidCount ) const;
+
+    private:
+
         FVulkanBuffer SSBOs[MaxFramesInFlight]            = {};
         VkDescriptorSet DescriptorSets[MaxFramesInFlight] = {};
         VmaAllocator Allocator                            = nullptr;

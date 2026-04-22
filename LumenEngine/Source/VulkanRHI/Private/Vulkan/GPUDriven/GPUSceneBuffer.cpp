@@ -18,6 +18,39 @@
 
 #include <algorithm>
 
+namespace LumenEngine
+{
+
+namespace
+{
+
+    void PopulateInstanceData ( VulkanRHI::FGPUInstanceData &OutInstance,
+                                const Maths::FMatrix4x4f &InTransform,
+                                const VulkanRHI::FVulkanMesh *InMesh,
+                                UInt32 InMeshID,
+                                UInt32 InShaderID ) noexcept
+    {
+        OutInstance.Transform = InTransform;
+
+        OutInstance.AABBMin = InMesh->GetAABBMin();
+        OutInstance.AABBMax = InMesh->GetAABBMax();
+
+        OutInstance.MeshHandleID   = InMeshID;
+        OutInstance.ShaderHandleID = InShaderID;
+
+        OutInstance.IndexCount   = InMesh->GetIndexCount();
+        OutInstance.FirstIndex   = InMesh->GetFirstIndex();
+        OutInstance.VertexOffset = InMesh->GetVertexOffset();
+        OutInstance.Pad0         = 0U;
+
+        OutInstance.VertexBufferAddr = InMesh->GetVertexBufferAddress();
+        OutInstance.IndexBufferAddr  = InMesh->GetIndexBufferAddress();
+    }
+
+} // namespace
+
+} // namespace LumenEngine
+
 void LumenEngine::VulkanRHI::FGPUSceneBuffer::Initialize ( VmaAllocator InAllocator,
                                                            VkDevice InDevice,
                                                            VkDescriptorPool InDescPool,
@@ -25,7 +58,7 @@ void LumenEngine::VulkanRHI::FGPUSceneBuffer::Initialize ( VmaAllocator InAlloca
 {
     Allocator = InAllocator;
 
-    const VkDeviceSize BufferSize = MaxInstances * sizeof( FGPUInstanceData );
+    const VkDeviceSize BufferSize = static_cast<VkDeviceSize>( MaxInstances * sizeof( FGPUInstanceData ) );
 
     VkBufferCreateInfo BufferInfo{};
     BufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -103,7 +136,6 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const RHI:
             continue;
         }
 
-        /** INFO: Validate that both Mesh and Pipeline exist in the RHI registries before uploading */
         const FVulkanMesh *Mesh         = MeshRegistry.Get( MeshHandle );
         const FVulkanPipeline *Pipeline = PipelineRegistry.Get( ShaderHandle );
 
@@ -112,40 +144,24 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const RHI:
             continue;
         }
 
-        FGPUInstanceData &Instance = Dest[ValidCount];
-
-        Instance.Transform = InSnapshot.Transforms[EntityIndex];
-
-        /** INFO: Extract Object-space AABB from the Mesh resource for GPU culling */
-        Instance.AABBMin = Mesh->GetAABBMin();
-        Instance.AABBMax = Mesh->GetAABBMax();
-
-        Instance.MeshHandleID   = MeshHandle.ID;
-        Instance.ShaderHandleID = ShaderHandle.ID;
-
-        /** INFO: Copy draw parameters needed by the indirect command generator */
-        Instance.IndexCount   = Mesh->GetIndexCount();
-        Instance.FirstIndex   = Mesh->GetFirstIndex();
-        Instance.VertexOffset = Mesh->GetVertexOffset();
-        Instance.Pad0         = 0U;
-
-        /** INFO: BDA addresses for future programmable pulling or raytracing */
-        Instance.VertexBufferAddr = Mesh->GetVertexBufferAddress();
-        Instance.IndexBufferAddr  = Mesh->GetIndexBufferAddress();
-
+        PopulateInstanceData( Dest[ValidCount], InSnapshot.Transforms[EntityIndex], Mesh, MeshHandle.ID, ShaderHandle.ID );
         ++ValidCount;
     }
 
-    const VkDeviceSize FlushedSize = ValidCount * sizeof( FGPUInstanceData );
-
-    if ( FlushedSize > 0ULL )
-    {
-        /** INFO: Ensure CPU writes are visible to the GPU compute shader */
-        LUMEN_VK_CHECK( vmaFlushAllocation( Allocator, SSBOs[InFrameIndex].Allocation, 0, FlushedSize ) );
-    }
+    FlushSSBO( InFrameIndex, ValidCount );
 
     LastInstanceCount = ValidCount;
     return ValidCount;
+}
+
+void LumenEngine::VulkanRHI::FGPUSceneBuffer::FlushSSBO ( UInt32 InFrameIndex, UInt32 InValidCount ) const
+{
+    const VkDeviceSize FlushedSize = static_cast<VkDeviceSize>( InValidCount * sizeof( FGPUInstanceData ) );
+
+    if ( FlushedSize > 0ULL )
+    {
+        LUMEN_VK_CHECK( vmaFlushAllocation( Allocator, SSBOs[InFrameIndex].Allocation, 0, FlushedSize ) );
+    }
 }
 
 VkBuffer LumenEngine::VulkanRHI::FGPUSceneBuffer::GetBuffer ( UInt32 InFrameIndex ) const noexcept
