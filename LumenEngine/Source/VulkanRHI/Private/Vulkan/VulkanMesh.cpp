@@ -128,6 +128,16 @@ const LumenEngine::Maths::FVec3f &LumenEngine::VulkanRHI::FVulkanMesh::GetAABBMa
     return AABBMax;
 }
 
+VkBuffer LumenEngine::VulkanRHI::FVulkanMesh::GetVertexBuffer () const noexcept
+{
+    return VertexBuffer.Buffer;
+}
+
+VkBuffer LumenEngine::VulkanRHI::FVulkanMesh::GetIndexBuffer () const noexcept
+{
+    return IndexBuffer.Buffer;
+}
+
 void LumenEngine::VulkanRHI::FVulkanMesh::ComputeAABB ( const TVector<Maths::FVertex> &InVertices ) noexcept
 {
     if ( InVertices.empty() )

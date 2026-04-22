@@ -89,6 +89,12 @@ namespace VulkanRHI
         /** @return Object-space AABB maximum corner (computed from vertices). */
         [[nodiscard]] const Maths::FVec3f &GetAABBMax () const noexcept;
 
+        /** @return The Vulkan buffer handle for the vertex buffer. */
+        [[nodiscard]] VkBuffer GetVertexBuffer () const noexcept;
+
+        /** @return The Vulkan buffer handle for the index buffer. */
+        [[nodiscard]] VkBuffer GetIndexBuffer () const noexcept;
+
     private:
 
         void ComputeAABB ( const TVector<Maths::FVertex> &InVertices ) noexcept;
