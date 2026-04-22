@@ -5,6 +5,7 @@
 
 #include "Vulkan/GPUDriven/GPUCullingPass.hpp"
 
+#include "CoreTypes.hpp"
 #include "Vulkan/GPUDriven/GPUIndirectBuffer.hpp"
 #include "Vulkan/GPUDriven/GPUSceneBuffer.hpp"
 #include "Vulkan/GPUDriven/GPUSceneTypes.hpp"
@@ -20,11 +21,6 @@
 
 namespace
 {
-
-[[nodiscard]] inline LumenEngine::TOptional<LumenEngine::TVector<LumenEngine::UInt8>> ReadComputeShaderCode ( const FString &InShaderPath )
-{
-    return FIOFile::ReadAllBytes<LumenEngine::UInt8>( InShaderPath );
-}
 
 [[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const LumenEngine::TVector<LumenEngine::UInt8> &InShaderCode )
 {
@@ -51,7 +47,7 @@ CreateCullPipelineLayout ( VkDevice InDevice, VkDescriptorSetLayout InGlobalSetL
     VkPushConstantRange PCRange{};
     PCRange.stageFlags = VK_SHADER_STAGE_COMPUTE_BIT;
     PCRange.offset     = 0;
-    PCRange.size       = sizeof( FGPUCullPushConstants );
+    PCRange.size       = sizeof( LumenEngine::VulkanRHI::FGPUCullPushConstants );
 
     VkPipelineLayoutCreateInfo LayoutCI{};
     LayoutCI.sType                  = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
@@ -87,7 +83,7 @@ CreateCullPipelineLayout ( VkDevice InDevice, VkDescriptorSetLayout InGlobalSetL
 
 void ResetIndirectDrawCount ( VkCommandBuffer InCmd, VkBuffer InCountBuffer )
 {
-    vkCmdFillBuffer( InCmd, InCountBuffer, 0, sizeof( UInt32 ), 0U );
+    vkCmdFillBuffer( InCmd, InCountBuffer, 0, sizeof( LumenEngine::UInt32 ), 0U );
 }
 
 void InsertFillToComputeBarrier ( VkCommandBuffer InCmd, VkBuffer InCountBuffer )
@@ -125,7 +121,7 @@ bool LumenEngine::VulkanRHI::FGPUCullingPass::Initialize ( VkDevice InDevice,
                                                            VkDescriptorSetLayout InCullSetLayout,
                                                            const FString &InShaderPath )
 {
-    TOptional<TVector<UInt8>> ShaderCode = ReadComputeShaderCode( InShaderPath );
+    LumenEngine::TOptional<LumenEngine::TVector<LumenEngine::UInt8>> ShaderCode = LumenEngine::FIOFile::ReadAllBytes<LumenEngine::UInt8>( InShaderPath );
 
     if ( not ShaderCode.has_value() or ShaderCode->empty() )
     {
@@ -183,7 +179,7 @@ void LumenEngine::VulkanRHI::FGPUCullingPass::Execute ( VkCommandBuffer InCmd,
     InIndirectBuffer.InsertWriteBarrier( InCmd );
 
     /** INFO: Zero the draw count atomically before the shader increments it */
-    const VkBuffer CountBuffer = InIndirectBuffer.GetCountBuffer();
+    const VkBuffer &CountBuffer = InIndirectBuffer.GetCountBuffer();
     ResetIndirectDrawCount( InCmd, CountBuffer );
     InsertFillToComputeBarrier( InCmd, CountBuffer );
 
