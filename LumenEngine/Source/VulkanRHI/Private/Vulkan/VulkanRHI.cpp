@@ -247,7 +247,7 @@ LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( c
 {
     LumenEngine::VulkanRHI::FVulkanMesh NewMesh;
 
-    NewMesh.Initialize( Memory.GetAllocator(), InVertices, InIndices );
+    NewMesh.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), InVertices, InIndices );
     return MeshRegistry.Insert( std::move( NewMesh ) );
 }
 
