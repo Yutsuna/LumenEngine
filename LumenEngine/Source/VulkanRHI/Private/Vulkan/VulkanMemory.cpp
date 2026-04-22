@@ -7,7 +7,6 @@
 
 #include "Vulkan/VulkanCore.hpp"
 #include "Vulkan/VulkanDescriptorWriter.hpp"
-
 #include <cstring>
 #include <vulkan/vulkan_core.h>
 
@@ -63,8 +62,20 @@ namespace
 [[nodiscard]] VkDescriptorSetLayout CreateCullSetLayout ( VkDevice InDevice )
 {
     const VkDescriptorSetLayoutBinding Bindings[2] = {
-        { .binding = 0U, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = 1U, .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT },
-        { .binding = 1U, .descriptorType = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = 1U, .stageFlags = VK_SHADER_STAGE_COMPUTE_BIT },
+        {
+            .binding            = 0U,
+            .descriptorType     = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount    = 1U,
+            .stageFlags         = VK_SHADER_STAGE_COMPUTE_BIT,
+            .pImmutableSamplers = nullptr,
+        },
+        {
+            .binding            = 1U,
+            .descriptorType     = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,
+            .descriptorCount    = 1U,
+            .stageFlags         = VK_SHADER_STAGE_COMPUTE_BIT,
+            .pImmutableSamplers = nullptr,
+        },
     };
 
     VkDescriptorSetLayoutCreateInfo LayoutInfo{
@@ -113,13 +124,41 @@ void CreateDescriptorPool ( VkDevice InDevice, VkDescriptorPool &OutPool )
     };
 }
 
-[[nodiscard]] inline VmaAllocationCreateInfo CreateBufferAllocInfo () noexcept
+[[nodiscard]] inline VmaAllocatorCreateInfo CreateVmaAllocatorInfo ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice ) noexcept
+{
+    VmaVulkanFunctions VulkanFunctions{};
+    VulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    VulkanFunctions.vkGetDeviceProcAddr   = vkGetDeviceProcAddr;
+
+    VmaAllocatorCreateInfo VmaAllocCreateInfo{};
+    VmaAllocCreateInfo.flags            = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
+    VmaAllocCreateInfo.physicalDevice   = InPhysicalDevice;
+    VmaAllocCreateInfo.device           = InDevice;
+    VmaAllocCreateInfo.pVulkanFunctions = &VulkanFunctions;
+    VmaAllocCreateInfo.instance         = InInstance;
+    VmaAllocCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
+
+    return VmaAllocCreateInfo;
+}
+
+[[nodiscard]] inline VmaAllocationCreateInfo CreateVmaAllocationInfo () noexcept
 {
     VmaAllocationCreateInfo AllocInfo{};
 
     AllocInfo.flags = VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_MAPPED_BIT;
     AllocInfo.usage = VMA_MEMORY_USAGE_AUTO;
     return AllocInfo;
+}
+
+[[nodiscard]] inline VkDescriptorSetAllocateInfo CreateGlobalDescriptorSetAllocInfo ( VkDescriptorPool InPool, VkDescriptorSetLayout InLayout ) noexcept
+{
+    return VkDescriptorSetAllocateInfo{
+        .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+        .pNext              = nullptr,
+        .descriptorPool     = InPool,
+        .descriptorSetCount = 1U,
+        .pSetLayouts        = &InLayout,
+    };
 }
 
 } // namespace
@@ -138,20 +177,7 @@ void LumenEngine::VulkanRHI::FVulkanMemory::Shutdown ( VkDevice InDevice ) noexc
 
 void LumenEngine::VulkanRHI::FVulkanMemory::InitializeVMA ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice )
 {
-    VmaVulkanFunctions VulkanFunctions{
-        .vkGetInstanceProcAddr = vkGetInstanceProcAddr,
-        .vkGetDeviceProcAddr   = vkGetDeviceProcAddr,
-    };
-
-    VmaAllocatorCreateInfo AllocatorInfo{
-        .flags            = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT,
-        .physicalDevice   = InPhysicalDevice,
-        .device           = InDevice,
-        .pVulkanFunctions = &VulkanFunctions,
-        .instance         = InInstance,
-        .vulkanApiVersion = VK_API_VERSION_1_3,
-    };
-
+    VmaAllocatorCreateInfo AllocatorInfo = CreateVmaAllocatorInfo( InInstance, InPhysicalDevice, InDevice );
     LUMEN_VK_CHECK( vmaCreateAllocator( &AllocatorInfo, &Allocator ) );
 }
 
@@ -164,20 +190,14 @@ void LumenEngine::VulkanRHI::FVulkanMemory::InitializeDescriptors ( VkDevice InD
     CreateDescriptorPool( InDevice, DescriptorPool );
 
     VkBufferCreateInfo BufferInfo     = CreateBufferInfo( sizeof( FGPUGlobalUniforms ) );
-    VmaAllocationCreateInfo AllocInfo = CreateBufferAllocInfo();
+    VmaAllocationCreateInfo AllocInfo = CreateVmaAllocationInfo();
 
     for ( UInt32 Index = 0U; Index < MaxFramesInFlight; ++Index )
     {
         LUMEN_VK_CHECK( vmaCreateBuffer( Allocator, &BufferInfo, &AllocInfo, &GlobalUniformBuffers[Index].Buffer, &GlobalUniformBuffers[Index].Allocation,
                                          &GlobalUniformBuffers[Index].AllocationInfo ) );
-
-        VkDescriptorSetAllocateInfo SetAlloc{
-            .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-            .descriptorPool     = DescriptorPool,
-            .descriptorSetCount = 1U,
-            .pSetLayouts        = &GlobalSetLayout,
-        };
-        LUMEN_VK_CHECK( vkAllocateDescriptorSets( InDevice, &SetAlloc, &GlobalDescriptorSets[Index] ) );
+        VkDescriptorSetAllocateInfo SetAllocInfo = CreateGlobalDescriptorSetAllocInfo( DescriptorPool, GlobalSetLayout );
+        LUMEN_VK_CHECK( vkAllocateDescriptorSets( InDevice, &SetAllocInfo, &GlobalDescriptorSets[Index] ) );
 
         FVulkanDescriptorWriter Writer;
         Writer.WriteBuffer( 0U, GlobalUniformBuffers[Index].Buffer, sizeof( FGPUGlobalUniforms ), 0U, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER );
