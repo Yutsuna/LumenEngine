@@ -144,7 +144,7 @@ namespace Maths
          * @param Other The Vec to convert from
          * @return A new Vec with component values converted from Other
          */
-        template <typename OtherType> constexpr explicit TVec( const TVec<OtherType, Dimension> &Other ) noexcept;
+        template <typename OtherType> constexpr explicit TVec ( const TVec<OtherType, Dimension> &Other ) noexcept;
 
         template <typename... Arguments>
             requires( sizeof...( Arguments ) == Dimension && ( std::is_convertible_v<Arguments, Type> && ... ) )
@@ -199,6 +199,13 @@ namespace Maths
     using FVec2u = TVec<UInt32, 2>;
     using FVec3u = TVec<UInt32, 3>;
     using FVec4u = TVec<UInt32, 4>;
+
+    /**
+     * @brief Normalize a plane represented as a vec4 (Normal.xyz, Distance)
+     * @param InPlane The input plane to normalize
+     * @return A new plane with the normal vector normalized and distance adjusted accordingly
+     */
+    template <typename Type> [[nodiscard]] constexpr TVec<Type, 4> NormalizePlane ( const TVec<Type, 4> &InPlane ) noexcept;
 
 } // namespace Maths
 

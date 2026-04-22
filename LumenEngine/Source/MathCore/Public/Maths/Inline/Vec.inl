@@ -1,5 +1,6 @@
 #pragma once
 
+#include "Maths/Macros.hpp"
 #include "Maths/Vec.hpp"
 
 #include <cmath>
@@ -285,6 +286,19 @@ namespace Maths
             return *this / Len;
         }
         return *this;
+    }
+
+    template <typename Type> constexpr LumenEngine::Maths::TVec<Type, 4> NormalizePlane ( const TVec<Type, 4> &InPlane ) noexcept
+    {
+        const Type MagSq = ( InPlane.X * InPlane.X ) + ( InPlane.Y * InPlane.Y ) + ( InPlane.Z * InPlane.Z );
+
+        if ( MagSq > static_cast<Type>( Epsilon * Epsilon ) )
+        {
+            const Type InvMag = static_cast<Type>( 1 ) / std::sqrt( MagSq );
+            return InPlane * InvMag;
+        }
+
+        return InPlane;
     }
 
 } // namespace Maths
