@@ -53,7 +53,7 @@ void LumenEngine::Maths::FCamera::RecalculateProjectionMatrix () noexcept
 {
     if ( ProjectionMode == ECameraProjectionMode::Perspective )
     {
-        const Float32 FovRadians = FieldOfView * static_cast<Float32>( DegToRad );
+        const Float32 FovRadians = FieldOfView * DegToRad<Float32>;
         ProjectionMatrix         = FMatrix4x4f::Perspective( FovRadians, AspectRatio, NearPlane, FarPlane );
     }
     else

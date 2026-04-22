@@ -9,8 +9,6 @@
 #include "Definitions.hpp"
 #include "Maths/Vec.hpp"
 
-#include <type_traits>
-
 namespace LumenEngine
 {
 
@@ -25,9 +23,6 @@ namespace Maths
 
         template <USize Rows, USize Columns>
         concept CSquareMatrix = CMatrixDimension<Rows, Columns> && ( Rows == Columns );
-
-        template <typename Type>
-        concept CFloatingPoint = std::is_floating_point_v<Type>;
 
     } // namespace Concepts
 

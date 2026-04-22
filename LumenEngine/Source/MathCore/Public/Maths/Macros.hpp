@@ -5,8 +5,7 @@
 
 #pragma once
 
-#include "CoreTypes.hpp"
-
+#include <limits>
 #include <numbers>
 
 namespace LumenEngine
@@ -14,6 +13,12 @@ namespace LumenEngine
 
 namespace Maths
 {
+
+    namespace Concepts
+    {
+        template <typename Type>
+        concept CFloatingPoint = std::is_floating_point_v<Type>;
+    }
 
     template <Concepts::CFloatingPoint Type> static inline constexpr Type Pi = std::numbers::pi_v<Type>;
 

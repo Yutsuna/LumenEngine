@@ -292,9 +292,9 @@ namespace Maths
     {
         const Type MagSq = ( InPlane.X * InPlane.X ) + ( InPlane.Y * InPlane.Y ) + ( InPlane.Z * InPlane.Z );
 
-        if ( MagSq > static_cast<Type>( Epsilon * Epsilon ) )
+        if ( MagSq > LumenEngine::Maths::Epsilon<Type> * LumenEngine::Maths::Epsilon<Type> )
         {
-            const Type InvMag = static_cast<Type>( 1 ) / std::sqrt( MagSq );
+            const Type InvMag = Type{ 1 } / std::sqrt( MagSq );
             return InPlane * InvMag;
         }
 
