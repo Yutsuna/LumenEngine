@@ -124,17 +124,14 @@ void CreateDescriptorPool ( VkDevice InDevice, VkDescriptorPool &OutPool )
     };
 }
 
-[[nodiscard]] inline VmaAllocatorCreateInfo CreateVmaAllocatorInfo ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice ) noexcept
+[[nodiscard]] inline VmaAllocatorCreateInfo
+CreateVmaAllocatorInfo ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, VmaVulkanFunctions *InFunctions ) noexcept
 {
-    VmaVulkanFunctions VulkanFunctions{};
-    VulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
-    VulkanFunctions.vkGetDeviceProcAddr   = vkGetDeviceProcAddr;
-
     VmaAllocatorCreateInfo VmaAllocCreateInfo{};
     VmaAllocCreateInfo.flags            = VMA_ALLOCATOR_CREATE_BUFFER_DEVICE_ADDRESS_BIT;
     VmaAllocCreateInfo.physicalDevice   = InPhysicalDevice;
     VmaAllocCreateInfo.device           = InDevice;
-    VmaAllocCreateInfo.pVulkanFunctions = &VulkanFunctions;
+    VmaAllocCreateInfo.pVulkanFunctions = InFunctions;
     VmaAllocCreateInfo.instance         = InInstance;
     VmaAllocCreateInfo.vulkanApiVersion = VK_API_VERSION_1_3;
 
@@ -177,7 +174,11 @@ void LumenEngine::VulkanRHI::FVulkanMemory::Shutdown ( VkDevice InDevice ) noexc
 
 void LumenEngine::VulkanRHI::FVulkanMemory::InitializeVMA ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice )
 {
-    VmaAllocatorCreateInfo AllocatorInfo = CreateVmaAllocatorInfo( InInstance, InPhysicalDevice, InDevice );
+    VmaVulkanFunctions VulkanFunctions{};
+    VulkanFunctions.vkGetInstanceProcAddr = vkGetInstanceProcAddr;
+    VulkanFunctions.vkGetDeviceProcAddr   = vkGetDeviceProcAddr;
+
+    VmaAllocatorCreateInfo AllocatorInfo = CreateVmaAllocatorInfo( InInstance, InPhysicalDevice, InDevice, &VulkanFunctions );
     LUMEN_VK_CHECK( vmaCreateAllocator( &AllocatorInfo, &Allocator ) );
 }
 
