@@ -18,9 +18,9 @@ namespace
  * Adds VK_BUFFER_USAGE_SHADER_DEVICE_ADDRESS_BIT to every buffer so that
  * BDA can be queried later.
  */
-FVulkanBuffer CreateStagedBuffer ( VmaAllocator InAllocator, USize InSize, VkBufferUsageFlags InUsage )
+LumenEngine::VulkanRHI::FVulkanBuffer CreateStagedBuffer ( VmaAllocator InAllocator, LumenEngine::USize InSize, VkBufferUsageFlags InUsage )
 {
-    FVulkanBuffer Buffer;
+    LumenEngine::VulkanRHI::FVulkanBuffer Buffer;
 
     VkBufferCreateInfo BufferInfo{};
     BufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
