@@ -249,7 +249,7 @@ void LumenEngine::VulkanRHI::FVulkanMemory::UpdateGlobalUniformData ( UInt32 InF
 
 void LumenEngine::VulkanRHI::FVulkanMemory::UpdateGlobalUniformData ( UInt32 InFrameIndex, const RHI::FGlobalUniformData &InUniforms ) noexcept
 {
-    FGPUGlobalUniforms GPUData = FGPUGlobalUniforms::Build( InUniforms.ViewProjectionMatrix, 0.0F, 0.016F );
+    FGPUGlobalUniforms GPUData = FGPUGlobalUniforms::Build( InUniforms.ViewProjectionMatrix, InUniforms.TimeSeconds, InUniforms.DeltaTime );
 
     UpdateGlobalUniformData( InFrameIndex, GPUData );
 }

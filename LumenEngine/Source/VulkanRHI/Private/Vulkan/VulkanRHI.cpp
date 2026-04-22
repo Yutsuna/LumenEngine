@@ -257,6 +257,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InC
         return;
     }
 
+    /** INFO: Fallback to CPU-driven loop if culling pass is not initialized */
     if ( not CullingPass.IsReady() )
     {
         BeginRenderingInternal( InCmd, InClearColor );
@@ -280,6 +281,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InC
         return;
     }
 
+    /** INFO: Select the primary pipeline for the indirect draw batch */
     RHI::FPipelineHandle SelectedPipeline{};
     for ( USize Index = 0U; Index < SceneCount; ++Index )
     {
@@ -298,26 +300,9 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InC
         return;
     }
 
-    FGPUSceneSnapshot GPUSnapshot;
-    GPUSnapshot.Transforms.reserve( SceneCount );
-    GPUSnapshot.Meshes.reserve( SceneCount );
-    GPUSnapshot.Shaders.reserve( SceneCount );
-
-    for ( USize Index = 0U; Index < SceneCount; ++Index )
-    {
-        const RHI::FPipelineHandle PipelineHandle = InSceneSnapshot.Shaders[Index];
-        const RHI::FMeshHandle MeshHandle         = InSceneSnapshot.Meshes[Index];
-
-        if ( PipelineHandle == SelectedPipeline and MeshHandle.IsValid() )
-        {
-            GPUSnapshot.Transforms.emplace_back( InSceneSnapshot.Transforms[Index] );
-            GPUSnapshot.Meshes.emplace_back( MeshHandle );
-            GPUSnapshot.Shaders.emplace_back( PipelineHandle );
-        }
-    }
-
+    /** INFO: Modularized - Upload directly from RHI snapshot to avoid redundant allocations */
     const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
-    SceneBuffer.Upload( GPUSnapshot, MeshRegistry, PipelineRegistry, CurrentFrame );
+    SceneBuffer.Upload( InSceneSnapshot, MeshRegistry, PipelineRegistry, CurrentFrame );
 
     const VkDescriptorSet &GlobalDescriptorSet = Memory.GetGlobalDescriptorSet( CurrentFrame );
     CullingPass.Execute( InCmd, GlobalDescriptorSet, SceneBuffer, IndirectBuffer, CurrentFrame );
@@ -328,6 +313,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InC
     {
         BindPipelineInternal( InCmd, SelectedPipeline );
 
+        /** INFO: Bind any valid VB/IB to satisfy the pipeline before indirect execution */
         for ( USize Index = 0U; Index < SceneCount; ++Index )
         {
             const RHI::FMeshHandle MeshHandle = InSceneSnapshot.Meshes[Index];
