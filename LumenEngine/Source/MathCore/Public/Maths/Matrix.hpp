@@ -145,6 +145,12 @@ namespace Maths
     template <typename Type, USize Rows, USize Columns>
     constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Columns> &Left, const Type Scalar ) noexcept;
 
+    /**
+     * @brief Compute a conservative world-space AABB by transforming the 8
+     *        corners of the object-space AABB through the world transform.
+     */
+    void TransformAABB ( const FVec3f &LocalMin, const FVec3f &LocalMax, const FMatrix4x4f &Transform, FVec3f &OutWorldMin, FVec3f &OutWorldMax ) noexcept;
+
 } // namespace Maths
 
 } // namespace LumenEngine
