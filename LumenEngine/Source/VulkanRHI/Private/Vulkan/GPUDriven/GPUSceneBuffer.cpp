@@ -13,8 +13,6 @@
 #include "Vulkan/VulkanMesh.hpp"
 #include "Vulkan/VulkanPipeline.hpp"
 
-#include "World/SpatialRegistry.hpp"
-
 #include "Logging/Logger.hpp"
 
 #include <algorithm>
@@ -25,6 +23,7 @@ namespace
 
 constexpr Maths::FVec3f GDefaultLocalMin{ -0.5F, -0.5F, -0.5F };
 constexpr Maths::FVec3f GDefaultLocalMax{ 0.5F, 0.5F, 0.5F };
+
 } // namespace
 
 void LumenEngine::VulkanRHI::FGPUSceneBuffer::Initialize ( VmaAllocator InAllocator,
@@ -133,7 +132,6 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const Engi
 
         Instance.VertexBufferAddr = Mesh->GetVertexBufferAddress();
         Instance.IndexBufferAddr  = Mesh->GetIndexBufferAddress();
-        Instance.Pad1             = 0ULL;
 
         ++ValidCount;
     }

@@ -21,17 +21,17 @@
 namespace
 {
 
-[[nodiscard]] inline TOptional<TVector<UInt8>> ReadComputeShaderCode ( const FString &InShaderPath )
+[[nodiscard]] inline LumenEngine::TOptional<LumenEngine::TVector<LumenEngine::UInt8>> ReadComputeShaderCode ( const FString &InShaderPath )
 {
-    return FIOFile::ReadAllBytes<UInt8>( InShaderPath );
+    return FIOFile::ReadAllBytes<LumenEngine::UInt8>( InShaderPath );
 }
 
-[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const TVector<UInt8> &InShaderCode )
+[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const LumenEngine::TVector<LumenEngine::UInt8> &InShaderCode )
 {
     VkShaderModuleCreateInfo ShaderCI{};
     ShaderCI.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
     ShaderCI.codeSize = InShaderCode.size();
-    ShaderCI.pCode    = reinterpret_cast<const UInt32 *>( InShaderCode.data() );
+    ShaderCI.pCode    = reinterpret_cast<const LumenEngine::UInt32 *>( InShaderCode.data() );
 
     VkShaderModule ShaderModule = VK_NULL_HANDLE;
     LUMEN_VK_CHECK( vkCreateShaderModule( InDevice, &ShaderCI, nullptr, &ShaderModule ) );
@@ -112,7 +112,7 @@ void InsertFillToComputeBarrier ( VkCommandBuffer InCmd, VkBuffer InCountBuffer 
     vkCmdPipelineBarrier2( InCmd, &FillDep );
 }
 
-[[nodiscard]] inline UInt32 ComputeDispatchGroupCount ( UInt32 InInstanceCount, UInt32 InWorkgroupSize )
+[[nodiscard]] inline LumenEngine::UInt32 ComputeDispatchGroupCount ( LumenEngine::UInt32 InInstanceCount, LumenEngine::UInt32 InWorkgroupSize )
 {
     return ( InInstanceCount + InWorkgroupSize - 1U ) / InWorkgroupSize;
 }
