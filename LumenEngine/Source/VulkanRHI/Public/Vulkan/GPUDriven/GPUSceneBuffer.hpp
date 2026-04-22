@@ -10,6 +10,9 @@
 
 #include "Container/Vector.hpp"
 
+#include "Maths/Matrix.hpp"
+#include "RHI/RHITypes.hpp"
+
 #include "Vulkan/GPUDriven/GPUSceneTypes.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanCore.hpp"
@@ -18,11 +21,6 @@
 
 namespace LumenEngine
 {
-
-namespace Engine
-{
-    struct FSpatialRegistryData;
-}
 
 namespace RHI
 {
@@ -35,6 +33,17 @@ namespace RHI
 
 namespace VulkanRHI
 {
+
+    /**
+     * @struct FGPUSceneSnapshot
+     * @brief Render-facing snapshot consumed by VulkanRHI upload path.
+     */
+    struct LUMEN_ENGINE_API FGPUSceneSnapshot final
+    {
+        TVector<Maths::FMatrix4x4f> Transforms;
+        TVector<RHI::FMeshHandle> Meshes;
+        TVector<RHI::FPipelineHandle> Shaders;
+    };
 
     class FVulkanMesh;
     class FVulkanPipeline;
@@ -81,7 +90,7 @@ namespace VulkanRHI
          * @param InFrameIndex    Current frame-in-flight index [0, MaxFramesInFlight).
          * @return Number of valid instances written to the GPU buffer.
          */
-        UInt32 Upload ( const Engine::FSpatialRegistryData &InSnapshot,
+        UInt32 Upload ( const FGPUSceneSnapshot &InSnapshot,
                         const RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> &MeshRegistry,
                         const RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> &PipelineRegistry,
                         UInt32 InFrameIndex );

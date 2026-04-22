@@ -16,13 +16,12 @@
 #include "Logging/Logger.hpp"
 
 #include <algorithm>
-#include <cstring>
 
 namespace
 {
 
-constexpr Maths::FVec3f GDefaultLocalMin{ -0.5F, -0.5F, -0.5F };
-constexpr Maths::FVec3f GDefaultLocalMax{ 0.5F, 0.5F, 0.5F };
+constexpr LumenEngine::Maths::FVec3f GDefaultLocalMin{ -0.5F, -0.5F, -0.5F };
+constexpr LumenEngine::Maths::FVec3f GDefaultLocalMax{ 0.5F, 0.5F, 0.5F };
 
 } // namespace
 
@@ -82,12 +81,14 @@ void LumenEngine::VulkanRHI::FGPUSceneBuffer::Shutdown ( VmaAllocator InAllocato
     }
 }
 
-LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const Engine::FSpatialRegistryData &InSnapshot,
+LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const FGPUSceneSnapshot &InSnapshot,
                                                                       const RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> &MeshRegistry,
                                                                       const RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> &PipelineRegistry,
                                                                       UInt32 InFrameIndex )
 {
-    const USize EntityCount = InSnapshot.EntityIDs.size();
+    static_cast<void>( PipelineRegistry );
+
+    const USize EntityCount = std::min( { InSnapshot.Transforms.size(), InSnapshot.Meshes.size(), InSnapshot.Shaders.size() } );
 
     if ( EntityCount == 0U )
     {
@@ -120,7 +121,7 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const Engi
 
         Instance.Transform = InSnapshot.Transforms[EntityIndex];
 
-        Maths::TransformAABB( GDefaultLocalMin, GDefaultLocalMax, Instance.Transform, Instance.AABBMin, Instance.AABBMax );
+        LumenEngine::Maths::TransformAABB( GDefaultLocalMin, GDefaultLocalMax, Instance.Transform, Instance.AABBMin, Instance.AABBMax );
 
         Instance.MeshHandleID   = MeshHandle.ID;
         Instance.ShaderHandleID = ShaderHandle.ID;
