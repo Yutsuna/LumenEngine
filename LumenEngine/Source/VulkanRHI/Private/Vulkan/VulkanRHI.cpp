@@ -4,8 +4,17 @@
  */
 
 #include "Vulkan/VulkanRHI.hpp"
+
+#include "Container/String.hpp"
+
 #include "Generic/GenericWindow.hpp"
 #include "Vulkan/VulkanCore.hpp"
+
+#include <algorithm>
+
+#ifndef LUMEN_GPU_CULL_SHADER_PATH
+    #define LUMEN_GPU_CULL_SHADER_PATH ""
+#endif
 
 LumenEngine::VulkanRHI::FVulkanRHI::FVulkanRHI () noexcept : CommandListImpl( this )
 {
@@ -24,6 +33,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TShared
     Memory.Initialize( Instance.GetHandle(), PhysicalDevice.GetHandle(), LogicalDevice.GetHandle() );
     InitializeSwapChain( InWindow );
     FrameContext.Initialize( LogicalDevice.GetHandle(), LogicalDevice.GetGraphicsQueueFamily() );
+    InitializeGpuDrivenResources();
 
     bIsInitialized = true;
 
@@ -44,6 +54,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
 
     MeshRegistry.ForEach( [this] ( FVulkanMesh &Mesh ) { Mesh.Cleanup( Memory.GetAllocator() ); } );
     MeshRegistry.Clear();
+
+    ShutdownGpuDrivenResources();
 
     FrameContext.Shutdown( LogicalDevice.GetHandle() );
 
@@ -232,6 +244,112 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DrawMeshInternal ( VkCommandBuffer InCm
     Mesh->BindAndDraw( InCmd );
 }
 
+void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InCmd,
+                                                             const LumenEngine::RHI::FSceneSnapshot &InSceneSnapshot,
+                                                             const LumenEngine::Float32 InClearColor[4] ) noexcept
+{
+    const USize SceneCount = std::min( { InSceneSnapshot.Transforms.size(), InSceneSnapshot.Meshes.size(), InSceneSnapshot.Shaders.size() } );
+
+    if ( SceneCount == 0U )
+    {
+        BeginRenderingInternal( InCmd, InClearColor );
+        vkCmdEndRendering( InCmd );
+        return;
+    }
+
+    if ( not CullingPass.IsReady() )
+    {
+        BeginRenderingInternal( InCmd, InClearColor );
+
+        for ( USize Index = 0U; Index < SceneCount; ++Index )
+        {
+            const RHI::FMeshHandle MeshHandle         = InSceneSnapshot.Meshes[Index];
+            const RHI::FPipelineHandle PipelineHandle = InSceneSnapshot.Shaders[Index];
+
+            if ( not MeshHandle.IsValid() or not PipelineHandle.IsValid() )
+            {
+                continue;
+            }
+
+            BindPipelineInternal( InCmd, PipelineHandle );
+            PushConstantsInternal( InCmd, PipelineHandle, &InSceneSnapshot.Transforms[Index], static_cast<UInt32>( sizeof( Maths::FMatrix4x4f ) ), 0U );
+            DrawMeshInternal( InCmd, MeshHandle );
+        }
+
+        vkCmdEndRendering( InCmd );
+        return;
+    }
+
+    RHI::FPipelineHandle SelectedPipeline{};
+    for ( USize Index = 0U; Index < SceneCount; ++Index )
+    {
+        const RHI::FPipelineHandle PipelineHandle = InSceneSnapshot.Shaders[Index];
+        if ( PipelineHandle.IsValid() and PipelineRegistry.Get( PipelineHandle ) != nullptr )
+        {
+            SelectedPipeline = PipelineHandle;
+            break;
+        }
+    }
+
+    if ( not SelectedPipeline.IsValid() )
+    {
+        BeginRenderingInternal( InCmd, InClearColor );
+        vkCmdEndRendering( InCmd );
+        return;
+    }
+
+    FGPUSceneSnapshot GPUSnapshot;
+    GPUSnapshot.Transforms.reserve( SceneCount );
+    GPUSnapshot.Meshes.reserve( SceneCount );
+    GPUSnapshot.Shaders.reserve( SceneCount );
+
+    for ( USize Index = 0U; Index < SceneCount; ++Index )
+    {
+        const RHI::FPipelineHandle PipelineHandle = InSceneSnapshot.Shaders[Index];
+        const RHI::FMeshHandle MeshHandle         = InSceneSnapshot.Meshes[Index];
+
+        if ( PipelineHandle == SelectedPipeline and MeshHandle.IsValid() )
+        {
+            GPUSnapshot.Transforms.emplace_back( InSceneSnapshot.Transforms[Index] );
+            GPUSnapshot.Meshes.emplace_back( MeshHandle );
+            GPUSnapshot.Shaders.emplace_back( PipelineHandle );
+        }
+    }
+
+    const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
+    SceneBuffer.Upload( GPUSnapshot, MeshRegistry, PipelineRegistry, CurrentFrame );
+
+    const VkDescriptorSet &GlobalDescriptorSet = Memory.GetGlobalDescriptorSet( CurrentFrame );
+    CullingPass.Execute( InCmd, GlobalDescriptorSet, SceneBuffer, IndirectBuffer, CurrentFrame );
+
+    BeginRenderingInternal( InCmd, InClearColor );
+
+    if ( SelectedPipeline.IsValid() )
+    {
+        BindPipelineInternal( InCmd, SelectedPipeline );
+
+        for ( USize Index = 0U; Index < SceneCount; ++Index )
+        {
+            const RHI::FMeshHandle MeshHandle = InSceneSnapshot.Meshes[Index];
+            FVulkanMesh *Mesh                 = MeshRegistry.Get( MeshHandle );
+            if ( Mesh != nullptr )
+            {
+                VkDeviceSize Offset = 0;
+                VkBuffer VB         = Mesh->GetVertexBuffer();
+                VkBuffer IB         = Mesh->GetIndexBuffer();
+                vkCmdBindVertexBuffers( InCmd, 0, 1, &VB, &Offset );
+                vkCmdBindIndexBuffer( InCmd, IB, 0, VK_INDEX_TYPE_UINT32 );
+                break;
+            }
+        }
+
+        vkCmdDrawIndexedIndirectCount( InCmd, IndirectBuffer.GetIndirectBuffer(), 0, IndirectBuffer.GetCountBuffer(), 0,
+                                       static_cast<UInt32>( FGPUIndirectBuffer::MaxDraws ), static_cast<UInt32>( sizeof( VkDrawIndexedIndirectCommand ) ) );
+    }
+
+    vkCmdEndRendering( InCmd );
+}
+
 void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
 {
     const VkImage &Image = SwapChain.GetImages()[FrameContext.GetCurrentImageIndex()];
@@ -265,4 +383,29 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
     }
 
     return PipelineRegistry.Insert( std::move( NewPipeline ) );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
+{
+    SceneBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetSceneSetLayout() );
+    IndirectBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetCullSetLayout() );
+
+    const FString ShaderPath = LUMEN_GPU_CULL_SHADER_PATH;
+    if ( ShaderPath.empty() )
+    {
+        LUMEN_LOG_WARNING( LogVulkanRHI, "GPU culling shader path is empty; GPU-driven culling disabled." );
+        return;
+    }
+
+    if ( not CullingPass.Initialize( LogicalDevice.GetHandle(), Memory.GetGlobalSetLayout(), Memory.GetSceneSetLayout(), Memory.GetCullSetLayout(), ShaderPath ) )
+    {
+        LUMEN_LOG_WARNING( LogVulkanRHI, "Failed to initialize GPU culling pass from '{}'.", ShaderPath.c_str() );
+    }
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::ShutdownGpuDrivenResources () noexcept
+{
+    CullingPass.Shutdown( LogicalDevice.GetHandle() );
+    IndirectBuffer.Shutdown( Memory.GetAllocator() );
+    SceneBuffer.Shutdown( Memory.GetAllocator(), LogicalDevice.GetHandle() );
 }
