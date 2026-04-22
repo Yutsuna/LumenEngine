@@ -32,17 +32,17 @@ namespace VulkanRHI
     {
 
         /**
-         * @brief Executes the rendering of a scene snapshot.
+         * @brief Orchestrates the rendering sequence for the provided scene snapshot.
          *
-         * @param InCmd             The active command buffer.
-         * @param InSceneSnapshot   The data provided by the Game Thread.
-         * @param InFrameIndex      Current frame-in-flight index.
-         * @param InMeshRegistry    Reference to the RHI mesh storage.
-         * @param InPipelineRegistry Reference to the RHI pipeline storage.
-         * @param InMemory          The memory manager (for global descriptor sets).
-         * @param InSceneBuffer     SSBO for instance data.
-         * @param InIndirectBuffer  Indirect draw commands storage.
-         * @param InCullingPass     The compute pass for GPU culling.
+         * @param InCmd             The command buffer currently recording.
+         * @param InSceneSnapshot   Snapshot of entities (transforms/meshes/shaders) to draw.
+         * @param InFrameIndex      Index of the current frame in flight [0, MaxFramesInFlight).
+         * @param InMeshRegistry    Registry used to resolve backend Mesh resources.
+         * @param InPipelineRegistry Registry used to resolve backend Pipeline resources.
+         * @param InMemory          Global memory manager for UBO access.
+         * @param InSceneBuffer     SSBO used for instance data streaming.
+         * @param InIndirectBuffer  Buffers containing indirect commands and draw count.
+         * @param InCullingPass     The Compute Pipeline responsible for GPU culling.
          */
         void RenderScene ( VkCommandBuffer InCmd,
                            const RHI::FSceneSnapshot &InSceneSnapshot,

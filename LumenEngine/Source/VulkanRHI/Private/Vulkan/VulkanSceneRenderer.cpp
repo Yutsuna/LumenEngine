@@ -26,15 +26,45 @@ namespace VulkanRHI
         namespace
         {
 
-            RHI::FPipelineHandle FindBatchPipeline ( const RHI::FSceneSnapshot &InSnapshot,
-                                                     USize InCount,
-                                                     const RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> &InPipelineRegistry ) noexcept
+            /** INFO: Extracts the first valid mesh/pipeline pair to establish the "Batch State" */
+            struct FBatchResources
+            {
+                const FVulkanPipeline *Pipeline = nullptr;
+                const FVulkanMesh *Mesh         = nullptr;
+                RHI::FPipelineHandle Handle;
+            };
+
+            /** INFO: Common helper to bind the graphics state (Pipeline + Global UBO) */
+            inline void SetupGraphicsState ( VkCommandBuffer InCmd, const FVulkanPipeline *InPipeline, VkDescriptorSet InGlobalSet ) noexcept
+            {
+                InPipeline->Bind( InCmd );
+
+                vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, InPipeline->GetLayout(), 0, 1, &InGlobalSet, 0, nullptr );
+            }
+
+            /** INFO: Common helper to bind Mesh-specific buffers (VB + IB) */
+            inline void BindGeometry ( VkCommandBuffer InCmd, const FVulkanMesh *InMesh ) noexcept
+            {
+                VkDeviceSize Offset = 0;
+                VkBuffer VB         = InMesh->GetVertexBuffer();
+
+                vkCmdBindVertexBuffers( InCmd, 0, 1, &VB, &Offset );
+                vkCmdBindIndexBuffer( InCmd, InMesh->GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32 );
+            }
+
+            [[nodiscard]] FBatchResources GetFirstValidBatch ( const RHI::FSceneSnapshot &InSnapshot,
+                                                               USize InCount,
+                                                               const RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> &InMeshRegistry,
+                                                               const RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> &InPipelineRegistry ) noexcept
             {
                 for ( USize Index = 0U; Index < InCount; ++Index )
                 {
-                    if ( InPipelineRegistry.IsValid( InSnapshot.Shaders[Index] ) )
+                    const FVulkanPipeline *P = InPipelineRegistry.Get( InSnapshot.Shaders[Index] );
+                    const FVulkanMesh *M     = InMeshRegistry.Get( InSnapshot.Meshes[Index] );
+
+                    if ( P != nullptr and M != nullptr )
                     {
-                        return InSnapshot.Shaders[Index];
+                        return { .Pipeline=P, .Mesh=M, .Handle=InSnapshot.Shaders[Index] };
                     }
                 }
                 return {};
@@ -60,8 +90,8 @@ namespace VulkanRHI
                         continue;
                     }
 
-                    Pipeline->Bind( InCmd );
-                    vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetLayout(), 0, 1, &GlobalSet, 0, nullptr );
+                    SetupGraphicsState( InCmd, Pipeline, GlobalSet );
+
                     vkCmdPushConstants( InCmd, Pipeline->GetLayout(), VK_SHADER_STAGE_ALL_GRAPHICS, 0, sizeof( Maths::FMatrix4x4f ), &InSnapshot.Transforms[Index] );
 
                     Mesh->BindAndDraw( InCmd );
@@ -79,35 +109,24 @@ namespace VulkanRHI
                                    const FGPUIndirectBuffer &InIndirectBuffer,
                                    const FGPUCullingPass &InCullingPass ) noexcept
             {
-                const RHI::FPipelineHandle PipelineHandle = FindBatchPipeline( InSnapshot, InCount, InPipelineRegistry );
-                if ( not PipelineHandle.IsValid() )
+                const FBatchResources Batch = GetFirstValidBatch( InSnapshot, InCount, InMeshRegistry, InPipelineRegistry );
+
+                if ( Batch.Pipeline == nullptr )
                 {
                     return;
                 }
 
-                /** INFO: Prepare GPU Data & Execute Compute Culling */
+                /** INFO: 1. Data Upload & Compute Frustum Culling */
                 InSceneBuffer.Upload( InSnapshot, InMeshRegistry, InPipelineRegistry, InFrameIndex );
 
                 const VkDescriptorSet &GlobalSet = InMemory.GetGlobalDescriptorSet( InFrameIndex );
                 InCullingPass.Execute( InCmd, GlobalSet, InSceneBuffer, InIndirectBuffer, InFrameIndex );
 
-                /** INFO: Execute Indirect Draw Batch */
-                const FVulkanPipeline *Pipeline = InPipelineRegistry.Get( PipelineHandle );
-                Pipeline->Bind( InCmd );
-                vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetLayout(), 0, 1, &GlobalSet, 0, nullptr );
+                /** INFO: 2. State Setup & Geometry Binding */
+                SetupGraphicsState( InCmd, Batch.Pipeline, GlobalSet );
+                BindGeometry( InCmd, Batch.Mesh );
 
-                /** INFO: Bind a representative vertex/index buffer to satisfy the pipeline state */
-                const FVulkanMesh *RepresentativeMesh = InMeshRegistry.Get( InSnapshot.Meshes[0] );
-
-                if ( RepresentativeMesh != nullptr )
-                {
-                    VkDeviceSize Offset = 0;
-                    VkBuffer VB         = RepresentativeMesh->GetVertexBuffer();
-
-                    vkCmdBindVertexBuffers( InCmd, 0, 1, &VB, &Offset );
-                    vkCmdBindIndexBuffer( InCmd, RepresentativeMesh->GetIndexBuffer(), 0, VK_INDEX_TYPE_UINT32 );
-                }
-
+                /** INFO: 3. Final Indirect Dispatch */
                 vkCmdDrawIndexedIndirectCount( InCmd, InIndirectBuffer.GetIndirectBuffer(), 0, InIndirectBuffer.GetCountBuffer(), 0,
                                                static_cast<UInt32>( FGPUIndirectBuffer::MaxDraws ), sizeof( VkDrawIndexedIndirectCommand ) );
             }
@@ -131,7 +150,7 @@ namespace VulkanRHI
                 return;
             }
 
-            /** INFO: Decide execution path based on Culling Pass readiness */
+            /** INFO: Select logic path; fallback is only used if the culling shader failed to initialize */
             if ( not InCullingPass.IsReady() )
             {
                 RenderFallbackCPU( InCmd, InSceneSnapshot, SceneCount, InPipelineRegistry, InMeshRegistry, InMemory, InFrameIndex );
