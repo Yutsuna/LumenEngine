@@ -8,12 +8,8 @@
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
 
-#include "Container/Vector.hpp"
-
-#include "Maths/Matrix.hpp"
 #include "RHI/RHITypes.hpp"
 
-#include "Vulkan/GPUDriven/GPUSceneTypes.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanCore.hpp"
 
@@ -33,17 +29,6 @@ namespace RHI
 
 namespace VulkanRHI
 {
-
-    /**
-     * @struct FGPUSceneSnapshot
-     * @brief Render-facing snapshot consumed by VulkanRHI upload path.
-     */
-    struct LUMEN_ENGINE_API FGPUSceneSnapshot final
-    {
-        TVector<Maths::FMatrix4x4f> Transforms;
-        TVector<RHI::FMeshHandle> Meshes;
-        TVector<RHI::FPipelineHandle> Shaders;
-    };
 
     class FVulkanMesh;
     class FVulkanPipeline;
@@ -76,21 +61,21 @@ namespace VulkanRHI
 
         /**
          * @brief Frees all GPU resources.
-         * @param InAllocator VMA allocator used during Initialize().
+         * @param InAllocator Vma allocator used during Initialize().
          * @param InDevice    Logical device.
          */
         void Shutdown ( VmaAllocator InAllocator, VkDevice InDevice ) noexcept;
 
         /**
-         * @brief Translates a snapshot from FSpatialRegistry into GPU instance data
+         * @brief Translates a snapshot from RHI into GPU instance data
          *        and uploads it to the current frame's SSBO.
-         * @param InSnapshot      Read-only snapshot from FSpatialRegistry.
+         * @param InSnapshot      Read-only snapshot containing meshes/transforms.
          * @param MeshRegistry    To resolve FMeshHandle → FVulkanMesh.
          * @param PipelineRegistry To resolve FPipelineHandle → FVulkanPipeline.
          * @param InFrameIndex    Current frame-in-flight index [0, MaxFramesInFlight).
          * @return Number of valid instances written to the GPU buffer.
          */
-        UInt32 Upload ( const FGPUSceneSnapshot &InSnapshot,
+        UInt32 Upload ( const RHI::FSceneSnapshot &InSnapshot,
                         const RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> &MeshRegistry,
                         const RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> &PipelineRegistry,
                         UInt32 InFrameIndex );

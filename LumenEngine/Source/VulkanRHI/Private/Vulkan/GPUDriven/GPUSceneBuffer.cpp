@@ -8,6 +8,7 @@
 #include "RHI/RHITypes.hpp"
 #include "RHI/ResourceRegistry.hpp"
 
+#include "Vulkan/GPUDriven/GPUSceneTypes.hpp"
 #include "Vulkan/VulkanCore.hpp"
 #include "Vulkan/VulkanDescriptorWriter.hpp"
 #include "Vulkan/VulkanMesh.hpp"
@@ -17,14 +18,6 @@
 
 #include <algorithm>
 
-namespace
-{
-
-constexpr LumenEngine::Maths::FVec3f GDefaultLocalMin{ -0.5F, -0.5F, -0.5F };
-constexpr LumenEngine::Maths::FVec3f GDefaultLocalMax{ 0.5F, 0.5F, 0.5F };
-
-} // namespace
-
 void LumenEngine::VulkanRHI::FGPUSceneBuffer::Initialize ( VmaAllocator InAllocator,
                                                            VkDevice InDevice,
                                                            VkDescriptorPool InDescPool,
@@ -32,7 +25,7 @@ void LumenEngine::VulkanRHI::FGPUSceneBuffer::Initialize ( VmaAllocator InAlloca
 {
     Allocator = InAllocator;
 
-    const VkDeviceSize BufferSize = static_cast<VkDeviceSize>( MaxInstances * sizeof( FGPUInstanceData ) );
+    const VkDeviceSize BufferSize = MaxInstances * sizeof( FGPUInstanceData );
 
     VkBufferCreateInfo BufferInfo{};
     BufferInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
@@ -83,7 +76,7 @@ void LumenEngine::VulkanRHI::FGPUSceneBuffer::Shutdown ( VmaAllocator InAllocato
     }
 }
 
-LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const FGPUSceneSnapshot &InSnapshot,
+LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const RHI::FSceneSnapshot &InSnapshot,
                                                                       const RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> &MeshRegistry,
                                                                       const RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> &PipelineRegistry,
                                                                       UInt32 InFrameIndex )
@@ -123,14 +116,16 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FGPUSceneBuffer::Upload ( const FGPU
 
         Instance.Transform = InSnapshot.Transforms[EntityIndex];
 
-        LumenEngine::Maths::TransformAABB( GDefaultLocalMin, GDefaultLocalMax, Instance.Transform, Instance.AABBMin, Instance.AABBMax );
+        /** INFO: Extract Object-space AABB from the Mesh resource */
+        Instance.AABBMin = Mesh->GetAABBMin();
+        Instance.AABBMax = Mesh->GetAABBMax();
 
         Instance.MeshHandleID   = MeshHandle.ID;
         Instance.ShaderHandleID = ShaderHandle.ID;
 
         Instance.IndexCount   = Mesh->GetIndexCount();
-        Instance.FirstIndex   = 0U;
-        Instance.VertexOffset = 0;
+        Instance.FirstIndex   = Mesh->GetFirstIndex();
+        Instance.VertexOffset = Mesh->GetVertexOffset();
         Instance.Pad0         = 0U;
 
         Instance.VertexBufferAddr = Mesh->GetVertexBufferAddress();
