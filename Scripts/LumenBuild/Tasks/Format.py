@@ -23,6 +23,7 @@ def Format(ctx, check: bool = False) -> None:
 
     search_roots = [
         ROOT_DIR / "LumenEngine" / "Source",
+        ROOT_DIR / "LumenEngine" / "Shaders",
         ROOT_DIR / "Examples",
     ]
 
