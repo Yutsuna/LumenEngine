@@ -5,7 +5,6 @@
 
 #include "Vulkan/GPUDriven/GPUCullingPass.hpp"
 
-#include "Vulkan/GPUDriven/GPUCullPushConstants.hpp"
 #include "Vulkan/GPUDriven/GPUIndirectBuffer.hpp"
 #include "Vulkan/GPUDriven/GPUSceneBuffer.hpp"
 #include "Vulkan/GPUDriven/GPUSceneTypes.hpp"
