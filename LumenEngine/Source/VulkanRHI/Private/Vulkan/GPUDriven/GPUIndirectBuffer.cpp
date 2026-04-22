@@ -21,10 +21,9 @@ void LumenEngine::VulkanRHI::FGPUIndirectBuffer::Initialize ( VmaAllocator InAll
         const VkDeviceSize IndirectSize = static_cast<VkDeviceSize>( MaxDraws * sizeof( VkDrawIndexedIndirectCommand ) );
 
         VkBufferCreateInfo BufInfo{};
-        BufInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-        BufInfo.size  = IndirectSize;
-        BufInfo.usage = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT 
-                        | VK_BUFFER_USAGE_TRANSFER_DST_BIT;                                      
+        BufInfo.sType       = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+        BufInfo.size        = IndirectSize;
+        BufInfo.usage       = VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT | VK_BUFFER_USAGE_STORAGE_BUFFER_BIT | VK_BUFFER_USAGE_TRANSFER_DST_BIT;
         BufInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
 
         VmaAllocationCreateInfo AllocCI{};

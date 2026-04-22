@@ -1,4 +1,4 @@
-b/**
+/**
  * @file GPUGlobalUniforms.cpp
  * @brief Implementation of FGPUGlobalUniforms factory.
  */
