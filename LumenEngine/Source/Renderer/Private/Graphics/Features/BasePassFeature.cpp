@@ -33,6 +33,12 @@ void LumenEngine::Renderer::FBasePassFeature::Execute ( RHI::IRHICommandList &In
         return;
     }
 
+    if ( not InPacket.SceneSnapshot.Transforms.empty() )
+    {
+        InCmdList.DrawScene( InPacket.SceneSnapshot, InPacket.ClearColor );
+        return;
+    }
+
     InCmdList.BeginRendering( InPacket.ClearColor );
 
     for ( const FDrawCommand &Command : InPacket.DrawCommands )
