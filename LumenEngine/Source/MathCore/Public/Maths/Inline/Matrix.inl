@@ -72,6 +72,19 @@ namespace Maths
 
     template <typename Type, USize Rows, USize Columns>
         requires Concepts::CMatrixDimension<Rows, Columns>
+    constexpr typename TMatrix<Type, Rows, Columns>::RowType TMatrix<Type, Rows, Columns>::GetRow ( USize RowIndex ) const noexcept
+    {
+        [[assume( RowIndex < Rows )]];
+        RowType Result;
+        for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
+        {
+            Result.Data[ColIndex] = Data[ColIndex].Data[RowIndex];
+        }
+        return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+        requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr Bool TMatrix<Type, Rows, Columns>::operator==( const TMatrix<Type, Rows, Columns> &Other ) const noexcept
     {
         for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )

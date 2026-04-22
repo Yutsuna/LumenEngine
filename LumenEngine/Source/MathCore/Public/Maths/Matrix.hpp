@@ -68,6 +68,9 @@ namespace Maths
         /** @brief Access a column by index */
         constexpr const ColumnType &operator[]( USize ColumnIndex ) const noexcept;
 
+        /** @brief Extracts a specific row as a vector */
+        [[nodiscard]] constexpr RowType GetRow ( USize RowIndex ) const noexcept;
+
         constexpr Bool operator==( const TMatrix<Type, Rows, Columns> &Other ) const noexcept;
         constexpr Bool operator!=( const TMatrix<Type, Rows, Columns> &Other ) const noexcept;
 
