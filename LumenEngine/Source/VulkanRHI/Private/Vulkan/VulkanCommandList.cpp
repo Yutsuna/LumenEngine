@@ -36,6 +36,11 @@ void LumenEngine::VulkanRHI::FVulkanCommandList::DrawMesh ( const RHI::FMeshHand
     RHI->DrawMeshInternal( CurrentCmd, InMesh );
 }
 
+void LumenEngine::VulkanRHI::FVulkanCommandList::DrawScene ( const RHI::FSceneSnapshot &InSceneSnapshot, const Float32 InClearColor[4] )
+{
+    RHI->DrawSceneInternal( CurrentCmd, InSceneSnapshot, InClearColor );
+}
+
 void LumenEngine::VulkanRHI::FVulkanCommandList::SetActiveCommandBuffer ( VkCommandBuffer InCmd ) noexcept
 {
     CurrentCmd = InCmd;

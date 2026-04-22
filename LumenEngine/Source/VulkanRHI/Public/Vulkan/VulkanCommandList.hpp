@@ -36,6 +36,7 @@ namespace VulkanRHI
         void BindPipeline ( const RHI::FPipelineHandle InPipeline ) override;
         void PushConstants ( const RHI::FPipelineHandle InPipeline, const void *InData, UInt32 InSize, UInt32 InOffset = 0 ) override;
         void DrawMesh ( const RHI::FMeshHandle InMesh ) override;
+        void DrawScene ( const RHI::FSceneSnapshot &InSceneSnapshot, const Float32 InClearColor[4] ) override;
 
     public:
 
