@@ -1,0 +1,197 @@
+/**
+ * gpu_cull.comp
+ *
+ * GPU-driven view-frustum culling compute shader.
+ *
+ * One thread per instance. Each thread:
+ *   1. Reads the world-space AABB from the scene SSBO.
+ *   2. Tests the AABB against the 6 frustum planes from the global UBO.
+ *   3. If the instance is visible, atomically appends a
+ *      VkDrawIndexedIndirectCommand to the output buffer and increments
+ *      the draw count.
+ *
+ * Descriptor set layout:
+ *   set=0 binding=0  — GlobalUniforms  (VP + frustum planes)
+ *   set=1 binding=0  — SceneInstances  (FGPUInstanceData[])
+ *   set=2 binding=0  — DrawCommands    (VkDrawIndexedIndirectCommand[])
+ *   set=2 binding=1  — DrawCount       (uint atomic counter)
+ *
+ * Push constants:
+ *   uint  InstanceCount    — total instances to process
+ *   uint  bDisableCulling  — if != 0, emit all instances unconditionally
+ *
+ * Compile:
+ *   glslc -O --target-env=vulkan1.3 gpu_cull.comp -o gpu_cull.comp.spv
+ */
+
+#version 460
+#extension GL_EXT_buffer_reference : require
+#extension GL_EXT_shader_explicit_arithmetic_types_int64 : require
+#extension GL_KHR_shader_subgroup_arithmetic : enable
+
+/* ------------------------------------------------------------------ */
+/* Workgroup size — must match FGPUCullingPass::WorkgroupSize = 64.    */
+/* ------------------------------------------------------------------ */
+layout(local_size_x = 64, local_size_y = 1, local_size_z = 1) in;
+
+/* ------------------------------------------------------------------ */
+/* set=0 — Global Uniforms                                              */
+/* ------------------------------------------------------------------ */
+layout(set = 0, binding = 0, std140) uniform GlobalUniforms
+{
+    mat4  ViewProjectionMatrix;
+    float TimeSeconds;
+    float DeltaTime;
+    float _pad0[2];
+
+    /* Six frustum planes in world space.
+       Plane convention: dot(plane.xyz, worldPos) + plane.w >= 0  → inside */
+    vec4  FrustumPlanes[6];
+
+    float _pad1[4];
+} GlobalUBO;
+
+/* ------------------------------------------------------------------ */
+/* set=1 — Per-instance scene data (read-only)                          */
+/* ------------------------------------------------------------------ */
+struct GPUInstanceData
+{
+    mat4  Transform;        /* col-major, offset   0 */
+    vec3  AABBMin;          /* offset  64 */
+    uint  MeshHandleID;     /* offset  76 */
+    vec3  AABBMax;          /* offset  80 */
+    uint  ShaderHandleID;   /* offset  92 */
+    uint  IndexCount;       /* offset  96 */
+    uint  FirstIndex;       /* offset 100 */
+    int   VertexOffset;     /* offset 104 */
+    uint  _pad0;            /* offset 108 */
+    uint64_t VertexBDA;     /* offset 112 */
+    uint64_t IndexBDA;      /* offset 120 */
+    uint64_t _pad1;         /* offset 128 — total 128 bytes */
+};
+
+layout(set = 1, binding = 0, std430) readonly buffer SceneBuffer
+{
+    GPUInstanceData Instances[];
+};
+
+/* ------------------------------------------------------------------ */
+/* set=2 — Culling output                                               */
+/* ------------------------------------------------------------------ */
+
+/* VkDrawIndexedIndirectCommand equivalent */
+struct DrawIndexedIndirectCommand
+{
+    uint indexCount;
+    uint instanceCount;
+    uint firstIndex;
+    int  vertexOffset;
+    uint firstInstance;   /* we repurpose this as the source instanceIndex */
+};
+
+layout(set = 2, binding = 0, std430) writeonly buffer DrawCommandBuffer
+{
+    DrawIndexedIndirectCommand DrawCommands[];
+};
+
+layout(set = 2, binding = 1, std430) buffer DrawCountBuffer
+{
+    uint DrawCount;
+};
+
+/* ------------------------------------------------------------------ */
+/* Push constants                                                       */
+/* ------------------------------------------------------------------ */
+layout(push_constant) uniform CullPushConstants
+{
+    uint InstanceCount;
+    uint bDisableCulling;
+    uint64_t _reserved;
+} PC;
+
+/* ------------------------------------------------------------------ */
+/* Helpers                                                              */
+/* ------------------------------------------------------------------ */
+
+/**
+ * @brief Test whether the world-space AABB (wMin, wMax) is inside or
+ *        intersecting all six frustum planes.
+ *
+ * Uses the "positive vertex" (p-vertex) trick for each plane:
+ *   pVertex = the AABB corner that is most aligned with the plane normal.
+ * If the p-vertex is outside the plane, the entire AABB is culled.
+ *
+ * @return true if the AABB passes the cull test (visible or intersecting).
+ */
+bool TestAABBFrustum(vec3 wMin, vec3 wMax)
+{
+    for (int i = 0; i < 6; ++i)
+    {
+        vec4 plane = GlobalUBO.FrustumPlanes[i];
+
+        /* p-vertex: choose the corner most in the direction of the normal */
+        vec3 pVertex = vec3(
+            (plane.x >= 0.0) ? wMax.x : wMin.x,
+            (plane.y >= 0.0) ? wMax.y : wMin.y,
+            (plane.z >= 0.0) ? wMax.z : wMin.z
+        );
+
+        /* If the p-vertex is behind this plane the entire AABB is culled. */
+        if (dot(plane.xyz, pVertex) + plane.w < 0.0)
+        {
+            return false;
+        }
+    }
+    return true;
+}
+
+/* ------------------------------------------------------------------ */
+/* Main                                                                 */
+/* ------------------------------------------------------------------ */
+void main()
+{
+    const uint Index = gl_GlobalInvocationID.x;
+
+    /* Guard against over-dispatch in the last workgroup */
+    if (Index >= PC.InstanceCount)
+    {
+        return;
+    }
+
+    const GPUInstanceData Inst = Instances[Index];
+
+    /* Cull test */
+    bool bVisible;
+    if (PC.bDisableCulling != 0u)
+    {
+        bVisible = true;
+    }
+    else
+    {
+        bVisible = TestAABBFrustum(Inst.AABBMin, Inst.AABBMax);
+    }
+
+    if (!bVisible)
+    {
+        return;
+    }
+
+    /* Atomically claim a slot in the draw-command buffer */
+    uint SlotIndex = atomicAdd(DrawCount, 1u);
+
+    if (SlotIndex >= DrawCommands.length())
+    {
+        /* Guard against overflow (should not happen if MaxDraws == MaxInstances) */
+        return;
+    }
+
+    /* Write the indirect draw command */
+    DrawCommands[SlotIndex].indexCount    = Inst.IndexCount;
+    DrawCommands[SlotIndex].instanceCount = 1u;
+    DrawCommands[SlotIndex].firstIndex    = Inst.FirstIndex;
+    DrawCommands[SlotIndex].vertexOffset  = Inst.VertexOffset;
+    /* firstInstance encodes the source instance index so the vertex shader
+       can look up the correct transform from the scene SSBO via gl_InstanceIndex. */
+    DrawCommands[SlotIndex].firstInstance = Index;
+}
+
