@@ -13,10 +13,12 @@
 #include "RHI/RHI.hpp"
 #include "RHI/RHICommandList.hpp"
 #include "RHI/ResourceRegistry.hpp"
-#include "Vulkan/VulkanCommandList.hpp"
 
-#include "Maths/Vertex.hpp"
+#include "Vulkan/GPUDriven/GPUCullingPass.hpp"
+#include "Vulkan/GPUDriven/GPUIndirectBuffer.hpp"
+#include "Vulkan/GPUDriven/GPUSceneBuffer.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
+#include "Vulkan/VulkanCommandList.hpp"
 #include "Vulkan/VulkanFrameContext.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanLogicalDevice.hpp"
@@ -95,6 +97,7 @@ namespace VulkanRHI
         void BindPipelineInternal ( VkCommandBuffer InCmd, const RHI::FPipelineHandle InPipeline ) noexcept;
         void PushConstantsInternal ( VkCommandBuffer InCmd, const RHI::FPipelineHandle InPipeline, const void *InData, UInt32 InSize, UInt32 InOffset ) noexcept;
         void DrawMeshInternal ( VkCommandBuffer InCmd, const RHI::FMeshHandle InMesh ) noexcept;
+        void DrawSceneInternal ( VkCommandBuffer InCmd, const RHI::FSceneSnapshot &InSceneSnapshot, const Float32 InClearColor[4] ) noexcept;
 
     public:
 
@@ -114,6 +117,9 @@ namespace VulkanRHI
         void DestroyVulkanDevice () noexcept;
         void DestroySwapChain () noexcept;
 
+        void InitializeGpuDrivenResources ();
+        void ShutdownGpuDrivenResources () noexcept;
+
     private:
 
         RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> MeshRegistry;
@@ -128,6 +134,10 @@ namespace VulkanRHI
         FVulkanSwapChain SwapChain;
         FVulkanMemory Memory;
         FVulkanFrameContext FrameContext;
+
+        FGPUSceneBuffer SceneBuffer;
+        FGPUIndirectBuffer IndirectBuffer;
+        FGPUCullingPass CullingPass;
 
         Bool bIsInitialized = false;
     };
