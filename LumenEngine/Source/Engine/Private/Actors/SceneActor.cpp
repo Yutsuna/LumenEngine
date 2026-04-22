@@ -9,8 +9,12 @@
 #include "Graphics/RenderResource.hpp"
 #include "Graphics/Renderer.hpp"
 
+#include "Maths/Matrix.hpp"
 #include "Messages/EngineMessageTypes.hpp"
+#include "RHI/RHITypes.hpp"
 #include "World/SpatialRegistry.hpp"
+
+#include <algorithm>
 
 namespace LumenEngine
 {
@@ -18,46 +22,44 @@ namespace LumenEngine
 namespace
 {
 
-    const Engine::FSpatialRegistryData &SwapAndSnaphotSpatialRegistry () noexcept
+    inline const Engine::FSpatialRegistryData &SwapAndSnaphotSpatialRegistry () noexcept
     {
         Engine::FSpatialRegistry::Get().SwapReadBuffers();
 
         return Engine::FSpatialRegistry::Get().GetReadSnapshot();
     }
 
-    TOptional<Renderer::FDrawCommand> ResolveDrawCommand ( const ActorID InId, const Engine::FSpatialRegistryData &InRegistryData )
+    inline void
+    PushNewDrawCommand ( Renderer::FRenderPacket &Packet, const RHI::FMeshHandle &InMesh, const RHI::FPipelineHandle &InShader, const Maths::FMatrix4x4f &InTransform )
     {
-        const auto It = InRegistryData.IDToIndex.find( InId );
+        const Bool bMeshValid   = InMesh.IsValid();
+        const Bool bShaderValid = InShader.IsValid();
 
-        if ( It == InRegistryData.IDToIndex.end() )
+        if ( bMeshValid and bShaderValid )
         {
-            return {};
+            Packet.DrawCommands.emplace_back( Renderer::FDrawCommand{
+                .Mesh      = InMesh,
+                .Shader    = InShader,
+                .Transform = InTransform,
+            } );
         }
-
-        const USize Index       = It->second;
-        const Bool bMeshValid   = InRegistryData.Meshes[Index].IsValid();
-        const Bool bShaderValid = InRegistryData.Shaders[Index].IsValid();
-
-        if ( not bMeshValid or not bShaderValid )
-        {
-            return {};
-        }
-
-        return Renderer::FDrawCommand{ .Mesh = InRegistryData.Meshes[Index], .Shader = InRegistryData.Shaders[Index], .Transform = InRegistryData.Transforms[Index] };
     }
 
-    Renderer::FRenderPacket BuildRenderPacket ( const Engine::FSpatialRegistryData &InRegistryData, const TVector<ActorID> &InPendingDraws )
+    Renderer::FRenderPacket BuildRenderPacket ( const Engine::FSpatialRegistryData &InRegistryData )
     {
         Renderer::FRenderPacket Packet;
 
-        Packet.DrawCommands.reserve( InPendingDraws.size() );
+        Packet.SceneSnapshot.Transforms = InRegistryData.Transforms;
+        Packet.SceneSnapshot.Meshes     = InRegistryData.Meshes;
+        Packet.SceneSnapshot.Shaders    = InRegistryData.Shaders;
 
-        for ( const ActorID Id : InPendingDraws )
+        Packet.DrawCommands.reserve( InRegistryData.Meshes.size() );
+
+        const USize DrawCount = std::min( { InRegistryData.Transforms.size(), InRegistryData.Meshes.size(), InRegistryData.Shaders.size() } );
+
+        for ( USize Index = 0U; Index < DrawCount; ++Index )
         {
-            if ( const TOptional<Renderer::FDrawCommand> DrawCommand = ResolveDrawCommand( Id, InRegistryData ) )
-            {
-                Packet.DrawCommands.emplace_back( *DrawCommand );
-            }
+            PushNewDrawCommand( Packet, InRegistryData.Meshes[Index], InRegistryData.Shaders[Index], InRegistryData.Transforms[Index] );
         }
 
         return Packet;
@@ -95,6 +97,6 @@ void LumenEngine::Engine::ASceneActor::HandleTick ( const Float64 /*InDeltaTime*
 
     const FSpatialRegistryData &RegistryData = SwapAndSnaphotSpatialRegistry();
 
-    Renderer::GRenderer->SubmitRenderPacket( BuildRenderPacket( RegistryData, PendingDraws ) );
+    Renderer::GRenderer->SubmitRenderPacket( BuildRenderPacket( RegistryData ) );
     PendingDraws.clear();
 }
