@@ -24,3 +24,16 @@ LumenModule(
     DEPS            Core ApplicationCore MathCore RHI
     LINUX_LIBS      Vulkan::Vulkan GPUOpen::VulkanMemoryAllocator
 )
+
+LumenCompileShaders(
+    VulkanRHI
+    Shaders
+    SOURCES
+        "${CMAKE_SOURCE_DIR}/LumenEngine/Shaders/GpuCulling.comp"
+)
+
+target_compile_definitions(
+    VulkanRHI
+    PRIVATE
+        LUMEN_GPU_CULL_SHADER_PATH="${CMAKE_CURRENT_BINARY_DIR}/Shaders/GpuCulling.comp.spv"
+)
