@@ -187,8 +187,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BeginRenderingInternal ( VkCommandBuffe
     const VkViewport Viewport{
         .x        = 0.F,
         .y        = 0.F,
-        .width    = static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.width ),
-        .height   = static_cast<LumenEngine::Float32>( RenderInfo.renderArea.extent.height ),
+        .width    = static_cast<Float32>( RenderInfo.renderArea.extent.width ),
+        .height   = static_cast<Float32>( RenderInfo.renderArea.extent.height ),
         .minDepth = 0.F,
         .maxDepth = 1.F,
     };
@@ -247,13 +247,16 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InC
                                                              const LumenEngine::RHI::FSceneSnapshot &InSceneSnapshot,
                                                              const LumenEngine::Float32 InClearColor[4] ) noexcept
 {
-    /** INFO: Start a dynamic rendering region */
-    BeginRenderingInternal( InCmd, InClearColor );
 
     /** INFO: Delegate actual rendering to the specialized SceneRenderer sub-system */
     const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
 
-    VulkanSceneRenderer::RenderScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, SceneBuffer, IndirectBuffer, CullingPass );
+    VulkanSceneRenderer::PrepareScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, SceneBuffer, IndirectBuffer, CullingPass );
+
+    /** INFO: Start a dynamic rendering region */
+    BeginRenderingInternal( InCmd, InClearColor );
+
+    VulkanSceneRenderer::RenderScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, IndirectBuffer, CullingPass );
 
     /** INFO: End dynamic rendering */
     vkCmdEndRendering( InCmd );

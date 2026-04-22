@@ -32,17 +32,23 @@ namespace VulkanRHI
     {
 
         /**
-         * @brief Orchestrates the rendering sequence for the provided scene snapshot.
-         *
-         * @param InCmd             The command buffer currently recording.
-         * @param InSceneSnapshot   Snapshot of entities (transforms/meshes/shaders) to draw.
-         * @param InFrameIndex      Index of the current frame in flight [0, MaxFramesInFlight).
-         * @param InMeshRegistry    Registry used to resolve backend Mesh resources.
-         * @param InPipelineRegistry Registry used to resolve backend Pipeline resources.
-         * @param InMemory          Global memory manager for UBO access.
-         * @param InSceneBuffer     SSBO used for instance data streaming.
-         * @param InIndirectBuffer  Buffers containing indirect commands and draw count.
-         * @param InCullingPass     The Compute Pipeline responsible for GPU culling.
+         * @brief Phase 1: Preparation.
+         *        Handles data upload and Compute Culling.
+         *        MUST be called OUTSIDE of a BeginRendering/EndRendering block.
+         */
+        void PrepareScene ( VkCommandBuffer InCmd,
+                            const RHI::FSceneSnapshot &InSceneSnapshot,
+                            UInt32 InFrameIndex,
+                            const RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> &InMeshRegistry,
+                            const RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> &InPipelineRegistry,
+                            const FVulkanMemory &InMemory,
+                            FGPUSceneBuffer &InSceneBuffer,
+                            const FGPUIndirectBuffer &InIndirectBuffer,
+                            const FGPUCullingPass &InCullingPass ) noexcept;
+
+        /**
+         * @brief Records actual draw commands (Indirect or Fallback).
+         *        MUST be called INSIDE a BeginRendering/EndRendering block.
          */
         void RenderScene ( VkCommandBuffer InCmd,
                            const RHI::FSceneSnapshot &InSceneSnapshot,
@@ -50,7 +56,6 @@ namespace VulkanRHI
                            const RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> &InMeshRegistry,
                            const RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> &InPipelineRegistry,
                            const FVulkanMemory &InMemory,
-                           FGPUSceneBuffer &InSceneBuffer,
                            const FGPUIndirectBuffer &InIndirectBuffer,
                            const FGPUCullingPass &InCullingPass ) noexcept;
 
