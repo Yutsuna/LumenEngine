@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Container/Vector.hpp"
 #include "CoreTypes.hpp"
 #include "Maths/Matrix.hpp"
 
@@ -73,6 +74,17 @@ namespace RHI
         Maths::FMatrix4x4f ViewProjectionMatrix = Maths::FMatrix4x4f::Identity();
         Float32 TimeSeconds                     = 0.0F;
         Float32 DeltaTime                       = 0.0F;
+    };
+
+    /**
+     * @struct FSceneSnapshot
+     * @brief Render-thread snapshot streamed from the game-thread spatial registry.
+     */
+    struct FSceneSnapshot
+    {
+        TVector<Maths::FMatrix4x4f> Transforms;
+        TVector<FMeshHandle> Meshes;
+        TVector<FPipelineHandle> Shaders;
     };
 
 } // namespace RHI
