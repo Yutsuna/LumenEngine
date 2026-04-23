@@ -24,47 +24,19 @@ namespace EShaderStage
         Count
     };
 
-    [[nodiscard]] constexpr const AnsiChar *ToString ( const Type InStage ) noexcept
-    {
-        switch ( InStage )
-        {
-        case Vertex:
-            return "Vertex";
-        case Fragment:
-            return "Fragment";
-        case Geometry:
-            return "Geometry";
-        case Compute:
-            return "Compute";
-        case TessellationControl:
-            return "TessellationControl";
-        case TessellationEvaluation:
-            return "TessellationEvaluation";
-        default:
-            return "Unknown";
-        }
-    }
+    /**
+     * @brief Converts a shader stage type to its string representation.
+     * @param InStage The shader stage type to convert.
+     * @return A string representation of the shader stage type.
+     */
+    [[nodiscard]] constexpr const AnsiChar *ToString ( const Type InStage ) noexcept;
 
-    [[nodiscard]] constexpr const AnsiChar *ToGlslExtension ( const Type InStage ) noexcept
-    {
-        switch ( InStage )
-        {
-        case Vertex:
-            return ".vert";
-        case Fragment:
-            return ".frag";
-        case Geometry:
-            return ".geom";
-        case Compute:
-            return ".comp";
-        case TessellationControl:
-            return ".tesc";
-        case TessellationEvaluation:
-            return ".tese";
-        default:
-            return ".glsl";
-        }
-    }
+    /**
+     * @brief Converts a shader stage type to its corresponding GLSL file extension.
+     * @param InStage The shader stage type to convert.
+     * @return A string representing the GLSL file extension for the shader stage type.
+     */
+    [[nodiscard]] constexpr const AnsiChar *ToGlslExtension ( const Type InStage ) noexcept;
 
 } // namespace EShaderStage
 
@@ -105,35 +77,15 @@ namespace EShaderCompilerError
         ReflectionFailed   = 9,
     };
 
-    [[nodiscard]] constexpr const AnsiChar *ToString ( const Type InError ) noexcept
-    {
-        switch ( InError )
-        {
-        case None:
-            return "None";
-        case FileNotFound:
-            return "FileNotFound";
-        case ReadFailed:
-            return "ReadFailed";
-        case CompilationFailed:
-            return "CompilationFailed";
-        case OptimizationFailed:
-            return "OptimizationFailed";
-        case CacheWriteFailed:
-            return "CacheWriteFailed";
-        case CacheReadFailed:
-            return "CacheReadFailed";
-        case InvalidStage:
-            return "InvalidStage";
-        case InvalidSource:
-            return "InvalidSource";
-        case ReflectionFailed:
-            return "ReflectionFailed";
-        default:
-            return "UnknownError";
-        }
-    }
+    /**
+     * @brief Converts a shader compiler error type to its string representation.
+     * @param InError The shader compiler error type to convert.
+     * @return A string representation of the shader compiler error type.
+     */
+    [[nodiscard]] constexpr const AnsiChar *ToString ( const Type InError ) noexcept;
 
 } // namespace EShaderCompilerError
 
 } // namespace LumenEngine
+
+#include "Inline/ShaderCompilerTypes.inl"
