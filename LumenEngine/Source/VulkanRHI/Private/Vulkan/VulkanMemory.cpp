@@ -147,17 +147,6 @@ CreateVmaAllocatorInfo ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevic
     return AllocInfo;
 }
 
-[[nodiscard]] inline VkDescriptorSetAllocateInfo CreateGlobalDescriptorSetAllocInfo ( VkDescriptorPool InPool, VkDescriptorSetLayout InLayout ) noexcept
-{
-    return VkDescriptorSetAllocateInfo{
-        .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
-        .pNext              = nullptr,
-        .descriptorPool     = InPool,
-        .descriptorSetCount = 1U,
-        .pSetLayouts        = &InLayout,
-    };
-}
-
 } // namespace
 
 void LumenEngine::VulkanRHI::FVulkanMemory::Initialize ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice )
@@ -197,7 +186,13 @@ void LumenEngine::VulkanRHI::FVulkanMemory::InitializeDescriptors ( VkDevice InD
     {
         LUMEN_VK_CHECK( vmaCreateBuffer( Allocator, &BufferInfo, &AllocInfo, &GlobalUniformBuffers[Index].Buffer, &GlobalUniformBuffers[Index].Allocation,
                                          &GlobalUniformBuffers[Index].AllocationInfo ) );
-        VkDescriptorSetAllocateInfo SetAllocInfo = CreateGlobalDescriptorSetAllocInfo( DescriptorPool, GlobalSetLayout );
+
+        VkDescriptorSetAllocateInfo SetAllocInfo{ .sType              = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO,
+                                                  .pNext              = nullptr,
+                                                  .descriptorPool     = DescriptorPool,
+                                                  .descriptorSetCount = 1U,
+                                                  .pSetLayouts        = &GlobalSetLayout };
+
         LUMEN_VK_CHECK( vkAllocateDescriptorSets( InDevice, &SetAllocInfo, &GlobalDescriptorSets[Index] ) );
 
         FVulkanDescriptorWriter Writer;
