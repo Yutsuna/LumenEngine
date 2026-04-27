@@ -4,6 +4,9 @@
  */
 
 #include "Container/File.hpp"
+#include "Container/Optional.hpp"
+#include "Container/String.hpp"
+#include "CoreTypes.hpp"
 #include "Logging/Logger.hpp"
 
 #include <filesystem>
@@ -54,4 +57,17 @@ LumenEngine::TOptional<std::ifstream> LumenEngine::FIOFile::Open ( const FString
     }
 
     return File;
+}
+
+LumenEngine::TOptional<LumenEngine::FString> LumenEngine::FIOFile::ReadAllText ( const FString &FilePath ) noexcept
+{
+    TOptional<TVector<AnsiChar>> FileContentOpt = ReadAllBytes<AnsiChar>( FilePath );
+
+    if ( not FileContentOpt )
+    {
+        return std::nullopt;
+    }
+
+    const TVector<AnsiChar> &FileContent = *FileContentOpt;
+    return FString( FileContent.data(), FileContent.size() );
 }

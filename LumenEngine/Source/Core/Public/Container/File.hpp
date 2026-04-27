@@ -26,7 +26,7 @@ namespace FIOFile
      * @param FilePath The path to the file to open.
      * @return An optional containing the file stream if successful, or std::nullopt if it fails.
      */
-    TOptional<std::ifstream> Open ( const FString &FilePath ) noexcept;
+    [[nodiscard]] TOptional<std::ifstream> Open ( const FString &FilePath ) noexcept;
 
     /**
      * @brief Reads all bytes from a file and returns them as a vector.
@@ -34,7 +34,14 @@ namespace FIOFile
      * @param FilePath The path to the file to read.
      * @return An optional containing a vector of bytes if successful, or std::nullopt if it fails.
      */
-    template <typename Type> TOptional<TVector<Type>> ReadAllBytes ( const FString &FilePath ) noexcept;
+    template <typename Type> [[nodiscard]] TOptional<TVector<Type>> ReadAllBytes ( const FString &FilePath ) noexcept;
+
+    /**
+     * @brief Reads all text from a file and returns it as a string.
+     * @param FilePath The path to the file to read.
+     * @return An optional containing the file content if successful, or std::nullopt if it fails.
+     */
+    [[nodiscard]] TOptional<FString> ReadAllText ( const FString &FilePath ) noexcept;
 
 } // namespace FIOFile
 
