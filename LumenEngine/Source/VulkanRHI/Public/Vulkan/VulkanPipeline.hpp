@@ -5,11 +5,15 @@
 
 #pragma once
 
-#include "Container/String.hpp"
-#include "Container/Vector.hpp"
 #include "CoreTypes.hpp"
 #include "Definitions.hpp"
+
+#include "Container/String.hpp"
+#include "Container/Vector.hpp"
+
 #include "ErrorCodes.hpp"
+
+#include "Shader/ShaderCompilerTypes.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -119,9 +123,12 @@ namespace VulkanRHI
          * @brief Initializes the Vulkan pipeline.
          * @param InDevice The Vulkan device.
          * @param InDescription Logical state description used to build the graphics pipeline.
+         * @param InVertexSpirV The SPIR-V bytecode for the vertex shader.
+         * @param InFragmentSpirV The SPIR-V bytecode for the fragment shader.
          * @return Success or a detailed initialization error code.
          */
-        [[nodiscard]] TExpected<void, EErrorCode::Type> Initialize ( VkDevice InDevice, const FPipelineDescription &InDescription );
+        [[nodiscard]] TExpected<void, EErrorCode::Type>
+        Initialize ( VkDevice InDevice, const FPipelineDescription &InDescription, const FSpirVBlob &InVertexSpirV, const FSpirVBlob &InFragmentSpirV );
 
         /** @brief Convenience factory for a default pipeline description. */
         [[nodiscard]] static FPipelineDescription

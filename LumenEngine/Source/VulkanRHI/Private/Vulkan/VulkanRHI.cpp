@@ -5,7 +5,6 @@
 
 #include "Vulkan/VulkanRHI.hpp"
 
-#include "Container/File.hpp"
 #include "Container/String.hpp"
 
 #include "Generic/GenericWindow.hpp"
@@ -286,24 +285,26 @@ LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( c
 LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath,
                                                                                        const LumenEngine::FString &InFragmentPath )
 {
-    if ( not FIOFile::Exists( InVertexPath ) )
+    FShaderCompileResult VResult = RuntimeCompiler->CompileShader( FShaderCompileRequestBuilder().Path( InVertexPath ).Vertex().Build() );
+    if ( not VResult.IsSuccess() )
     {
-        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to create pipeline: Vertex shader file '{}' does not exist.", InVertexPath.c_str() );
+        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to compile vertex shader (Path: {}, Log: {}).", InVertexPath, VResult.ErrorLog.c_str() );
         return {};
     }
 
-    if ( not FIOFile::Exists( InFragmentPath ) )
+    FShaderCompileResult FResult = RuntimeCompiler->CompileShader( FShaderCompileRequestBuilder().Path( InFragmentPath ).Fragment().Build() );
+    if ( not FResult.IsSuccess() )
     {
-        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to create pipeline: Fragment shader file '{}' does not exist.", InFragmentPath.c_str() );
+        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to compile fragment shader (Path: {}, Log: {}).", InFragmentPath, FResult.ErrorLog.c_str() );
         return {};
     }
 
     FVulkanPipeline NewPipeline;
-    const VkFormat &SwapChainFormat                = SwapChain.GetImageFormat();
-    const VkDescriptorSetLayout &GlobalSetLayout   = Memory.GetGlobalSetLayout();
-    const FPipelineDescription PipelineDescription = FVulkanPipeline::CreateDefaultDescription( InVertexPath, InFragmentPath, SwapChainFormat, GlobalSetLayout );
+    VkFormat ImageFormat                   = SwapChain.GetImageFormat();
+    VkDescriptorSetLayout GlobalSetLayout  = Memory.GetGlobalSetLayout();
+    const FPipelineDescription Description = FVulkanPipeline::CreateDefaultDescription( InVertexPath, InFragmentPath, ImageFormat, GlobalSetLayout );
 
-    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), PipelineDescription ).has_value() )
+    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), Description, VResult.Shader->SpirV, FResult.Shader->SpirV ).has_value() )
     {
         return {};
     }
