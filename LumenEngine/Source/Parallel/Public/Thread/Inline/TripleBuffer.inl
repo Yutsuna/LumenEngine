@@ -48,7 +48,7 @@ LumenEngine::Parallel::Internal::FBufferFlag::Make ( FBufferFlag::Type ReaderInd
  */
 
 template <typename BufferType>
-LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer()
+LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer ()
     : OwnedBuffers( LumenEngine::MakeUnique<BufferType[]>( 3 ) ),
       //
       Buffers( OwnedBuffers.Get() ),
@@ -59,7 +59,7 @@ LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer()
 }
 
 template <typename BufferType>
-LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer( const BufferType &InData )
+LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer ( const BufferType &InData )
     : OwnedBuffers( LumenEngine::MakeUnique<BufferType[]>( 3 ) ),
       //
       Buffers( OwnedBuffers.Get() ),
@@ -70,7 +70,7 @@ LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer( const BufferTyp
 }
 
 template <typename BufferType>
-LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer( BufferType ( &InBuffers )[3] )
+LumenEngine::Parallel::TTripleBuffer<BufferType>::TTripleBuffer ( BufferType ( &InBuffers )[3] )
     : Buffers( &InBuffers[0] ),
       //
       BufferFlags( ( Internal::FBufferFlag::Type::Initial | Internal::FBufferFlag::Type::Dirty ) )

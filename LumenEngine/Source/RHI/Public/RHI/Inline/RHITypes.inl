@@ -7,13 +7,13 @@
 
 #include "RHI/RHITypes.hpp"
 
-template <typename Tag> constexpr LumenEngine::RHI::TRenderResourceHandle<Tag>::TRenderResourceHandle( UInt32 InID ) noexcept : ID( InID )
+template <typename Tag> constexpr LumenEngine::RHI::TRenderResourceHandle<Tag>::TRenderResourceHandle ( UInt32 InID ) noexcept : ID( InID )
 {
     /** Ctor */
 }
 
 template <typename Tag>
-constexpr LumenEngine::RHI::TRenderResourceHandle<Tag>::TRenderResourceHandle( UInt16 InIndex, UInt16 InGeneration ) noexcept
+constexpr LumenEngine::RHI::TRenderResourceHandle<Tag>::TRenderResourceHandle ( UInt16 InIndex, UInt16 InGeneration ) noexcept
     : ID( ( static_cast<UInt32>( InGeneration ) << 16 ) | static_cast<UInt32>( InIndex ) )
 {
     /** Ctor */
