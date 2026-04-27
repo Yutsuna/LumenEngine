@@ -14,8 +14,7 @@ LumenRegisterPackage(VulkanMemoryAllocator  GPUOpen::VulkanMemoryAllocator  "")
 
 LumenRegisterPackage(GLSLang                glslang::glslang                "glslang")
 LumenRegisterPackage(SPIRV-Tools            SPIRV-Tools-opt                 "SPIRV-Tools")
-LumenRegisterPackage(SPIRV-Cross-Core       spirv-cross-core                "spirv-cross-core")
-LumenRegisterPackage(SPIRV-Cross-GLSL       spirv-cross-glsl                "spirv-cross-glsl")
+LumenRegisterPackage(SPIRV-Cross            spirv-cross-c                   "spirv-cross-c")
 
 ###########################################################
 
