@@ -30,7 +30,7 @@ LumenEngine::UInt64 LumenEngine::FCompiledShader::GetByteSize () const noexcept
 
 LumenEngine::Bool LumenEngine::FCompiledShader::IsValid () const noexcept
 {
-    return not SpirV.empty() and not Reflection.ResourceBindings.empty();
+    return not SpirV.empty();
 }
 
 /**
@@ -39,7 +39,7 @@ LumenEngine::Bool LumenEngine::FCompiledShader::IsValid () const noexcept
 
 LumenEngine::Bool LumenEngine::FShaderCompileResult::IsSuccess () const noexcept
 {
-    return Shader->IsValid() and Error == EShaderCompilerError::None;
+    return Shader.has_value() and Shader->IsValid() and Error == EShaderCompilerError::None;
 }
 
 LumenEngine::FShaderCompileResult LumenEngine::FShaderCompileResult::Success ( FCompiledShader &&InShader ) noexcept
