@@ -77,6 +77,7 @@ namespace VulkanRHI
                               const FGPUIndirectBuffer &InIndirectBuffer ) noexcept
         {
             const VkDescriptorSet &GlobalSet = InMemory.GetGlobalDescriptorSet( InFrameIndex );
+            Bool bHasValidPipelineBound      = false;
 
             /** INFO: Find a valid batch resource to bind the pipeline state */
             for ( USize Index = 0U; Index < InCount; ++Index )
@@ -88,8 +89,14 @@ namespace VulkanRHI
                 {
                     SetupGraphicsState( InCmd, Pipeline, GlobalSet );
                     BindGeometry( InCmd, Mesh );
+                    bHasValidPipelineBound = true;
                     break;
                 }
+            }
+
+            if ( not bHasValidPipelineBound )
+            {
+                return;
             }
 
             vkCmdDrawIndexedIndirectCount( InCmd, InIndirectBuffer.GetIndirectBuffer(), 0, InIndirectBuffer.GetCountBuffer(), 0,

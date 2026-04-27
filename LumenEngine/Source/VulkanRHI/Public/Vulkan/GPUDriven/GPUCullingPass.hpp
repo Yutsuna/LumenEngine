@@ -10,6 +10,8 @@
 
 #include "Vulkan/VulkanCore.hpp"
 
+#include "Shader/ShaderCompilerTypes.hpp"
+
 #include <vulkan/vulkan_core.h>
 
 namespace LumenEngine
@@ -47,14 +49,13 @@ namespace VulkanRHI
          * @param InGlobalSetLayout  Existing set=0 layout from FVulkanMemory.
          * @param InSceneSetLayout   New set=1 layout for FGPUSceneBuffer.
          * @param InCullSetLayout    New set=2 layout for FGPUIndirectBuffer.
-         * @param InShaderPath       Path to gpu_cull.comp.spv.
-         * @return true on success, false if the shader file is missing.
+         * @param InSpirV            Pre-compiled SPIR-V shader.
          */
-        bool Initialize ( VkDevice InDevice,
+        Bool Initialize ( VkDevice InDevice,
                           VkDescriptorSetLayout InGlobalSetLayout,
                           VkDescriptorSetLayout InSceneSetLayout,
                           VkDescriptorSetLayout InCullSetLayout,
-                          const FString &InShaderPath );
+                          const FSpirVBlob &InSpirV );
 
         /**
          * @brief Destroys the compute pipeline and layout.
@@ -77,7 +78,7 @@ namespace VulkanRHI
                        UInt32 InFrameIndex ) const noexcept;
 
         /** @return Whether Initialize() completed successfully. */
-        [[nodiscard]] bool IsReady () const noexcept;
+        [[nodiscard]] Bool IsReady () const noexcept;
 
     private:
 

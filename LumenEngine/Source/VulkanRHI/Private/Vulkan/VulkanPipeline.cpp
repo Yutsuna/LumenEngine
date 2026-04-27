@@ -1,14 +1,12 @@
 /**
  * @file VulkanPipeline.cpp
- * @brief Implementation of the FVulkanPipeline class.
+ * @brief Implementation of the FVulkanPipeline class using SPIR-V blobs.
  */
 
 #include "Vulkan/VulkanPipeline.hpp"
 #include "Vulkan/VulkanCore.hpp"
-#include "Vulkan/VulkanShader.hpp"
 
 #include "Container/Array.hpp"
-
 #include "Maths/Matrix.hpp"
 #include "Maths/Vertex.hpp"
 
@@ -17,6 +15,19 @@
 
 namespace
 {
+
+[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const LumenEngine::FSpirVBlob &InSpirV )
+{
+    VkShaderModuleCreateInfo ShaderCI{ .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+                                       .pNext    = nullptr,
+                                       .flags    = 0,
+                                       .codeSize = InSpirV.size() * sizeof( LumenEngine::UInt32 ),
+                                       .pCode    = InSpirV.data() };
+
+    VkShaderModule Module = VK_NULL_HANDLE;
+    LUMEN_VK_CHECK( vkCreateShaderModule( InDevice, &ShaderCI, nullptr, &Module ) );
+    return Module;
+}
 
 struct FPipelineBuildState final
 {
@@ -370,40 +381,31 @@ LumenEngine::VulkanRHI::FPipelineDescription LumenEngine::VulkanRHI::FVulkanPipe
     return Description;
 }
 
-LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type>
-LumenEngine::VulkanRHI::FVulkanPipeline::Initialize ( VkDevice InDevice, const LumenEngine::VulkanRHI::FPipelineDescription &InDescription )
+LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanRHI::FVulkanPipeline::Initialize ( VkDevice InDevice,
+                                                                                                                  const FPipelineDescription &InDescription,
+                                                                                                                  const FSpirVBlob &InVertexSpirV,
+                                                                                                                  const FSpirVBlob &InFragmentSpirV )
 {
     Cleanup( InDevice );
 
-    if ( InDevice == VK_NULL_HANDLE || InDescription.GlobalSetLayout == VK_NULL_HANDLE || InDescription.Shader.VertexPath.empty() ||
-         InDescription.Shader.FragmentPath.empty() )
+    if ( InDevice == VK_NULL_HANDLE or InDescription.GlobalSetLayout == VK_NULL_HANDLE or InVertexSpirV.empty() or InFragmentSpirV.empty() )
     {
         return std::unexpected( LumenEngine::EErrorCode::InvalidArgument );
     }
 
-    LumenEngine::VulkanRHI::FVulkanShader VertexShader;
-    if ( not VertexShader.CompileFromFile( InDevice, InDescription.Shader.VertexPath, VK_SHADER_STAGE_VERTEX_BIT ) )
-    {
-        return std::unexpected( LumenEngine::EErrorCode::NotFound );
-    }
-
-    LumenEngine::VulkanRHI::FVulkanShader FragmentShader;
-    if ( not FragmentShader.CompileFromFile( InDevice, InDescription.Shader.FragmentPath, VK_SHADER_STAGE_FRAGMENT_BIT ) )
-    {
-        VertexShader.Cleanup( InDevice );
-        return std::unexpected( LumenEngine::EErrorCode::NotFound );
-    }
+    VkShaderModule VertexModule   = CreateShaderModule( InDevice, InVertexSpirV );
+    VkShaderModule FragmentModule = CreateShaderModule( InDevice, InFragmentSpirV );
 
     FPipelineBuildState PipelineState;
-    BuildPipelineState( PipelineState, InDescription, VertexShader.GetModule(), FragmentShader.GetModule() );
+    BuildPipelineState( PipelineState, InDescription, VertexModule, FragmentModule );
 
     LUMEN_VK_CHECK( vkCreatePipelineLayout( InDevice, &PipelineState.PipelineLayoutInfo, nullptr, &PipelineLayout ) );
 
     const VkGraphicsPipelineCreateInfo PipelineInfo = CreateGraphicsPipelineInfoFromState( PipelineState, PipelineLayout, PipelineState.RenderingInfo );
     LUMEN_VK_CHECK( vkCreateGraphicsPipelines( InDevice, VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &Pipeline ) );
 
-    VertexShader.Cleanup( InDevice );
-    FragmentShader.Cleanup( InDevice );
+    vkDestroyShaderModule( InDevice, VertexModule, nullptr );
+    vkDestroyShaderModule( InDevice, FragmentModule, nullptr );
 
     return {};
 }

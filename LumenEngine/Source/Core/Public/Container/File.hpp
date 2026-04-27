@@ -26,7 +26,7 @@ namespace FIOFile
      * @param FilePath The path to the file to open.
      * @return An optional containing the file stream if successful, or std::nullopt if it fails.
      */
-    TOptional<std::ifstream> Open ( const FString &FilePath ) noexcept;
+    [[nodiscard]] TOptional<std::ifstream> Open ( const FString &FilePath ) noexcept;
 
     /**
      * @brief Reads all bytes from a file and returns them as a vector.
@@ -34,7 +34,38 @@ namespace FIOFile
      * @param FilePath The path to the file to read.
      * @return An optional containing a vector of bytes if successful, or std::nullopt if it fails.
      */
-    template <typename Type> TOptional<TVector<Type>> ReadAllBytes ( const FString &FilePath ) noexcept;
+    template <typename Type> [[nodiscard]] TOptional<TVector<Type>> ReadAllBytes ( const FString &FilePath ) noexcept;
+
+    /**
+     * @brief Reads all text from a file and returns it as a string.
+     * @param FilePath The path to the file to read.
+     * @return An optional containing the file content if successful, or std::nullopt if it fails.
+     */
+    [[nodiscard]] TOptional<FString> ReadAllText ( const FString &FilePath ) noexcept;
+
+    /**
+     * @brief Writes all bytes to a file.
+     * @tparam Type The type of bytes to write.
+     * @param FilePath The path to the file.
+     * @param Data The data to write.
+     * @return True if successful.
+     */
+    template <typename Type> [[nodiscard]] Bool WriteAllBytes ( const FString &FilePath, const TVector<Type> &Data ) noexcept;
+
+    /**
+     * @brief Writes text to a file.
+     * @param FilePath The path to the file.
+     * @param Text The text to write.
+     * @return True if successful.
+     */
+    [[nodiscard]] Bool WriteAllText ( const FString &FilePath, const FString &Text ) noexcept;
+
+    /**
+     * @brief Checks if a file exists at the given path.
+     * @param FilePath The path to the file to check.
+     * @return True if the file exists, false otherwise.
+     */
+    [[nodiscard]] Bool Exists ( const FString &FilePath ) noexcept;
 
 } // namespace FIOFile
 

@@ -17,9 +17,15 @@
 
 #include "Logging/Logger.hpp"
 
+#ifndef LUMEN_EXAMPLE_TRIANGLE_SHADER_PATH
+    #define LUMEN_EXAMPLE_TRIANGLE_SHADER_PATH ""
+#endif
+
 namespace
 {
+
 LUMEN_LOG_DEFINE_CATEGORY( LogTriangleExample, "TriangleExample" );
+
 }
 
 LumenEngine::Int32 LumenEngine::FTriangleExampleApplication::Initialize ( const Int32 LUMEN_UNUSED Argc, const AnsiChar LUMEN_UNUSED *Argv[] )
@@ -61,8 +67,8 @@ void LumenEngine::FTriangleExampleApplication::CreateResources ()
     TriangleMesh->RenderHandle = Renderer::GRenderer->CreateMesh( TriangleMesh->Vertices, TriangleMesh->Indices );
 
     TriangleShader               = MakeShared<Renderer::FRenderShader>();
-    TriangleShader->VertexPath   = "Shaders/Triangle.vert.spv";
-    TriangleShader->FragmentPath = "Shaders/Triangle.frag.spv";
+    TriangleShader->VertexPath   = LUMEN_EXAMPLE_TRIANGLE_SHADER_PATH ".vert";
+    TriangleShader->FragmentPath = LUMEN_EXAMPLE_TRIANGLE_SHADER_PATH ".frag";
     TriangleShader->RenderHandle = Renderer::GRenderer->CreatePipeline( TriangleShader->VertexPath, TriangleShader->FragmentPath );
 }
 
