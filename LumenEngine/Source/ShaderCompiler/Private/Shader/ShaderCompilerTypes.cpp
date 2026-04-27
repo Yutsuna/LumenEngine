@@ -8,6 +8,8 @@
 
 #include <algorithm>
 
+const LumenEngine::FLogCategory LumenEngine::ShaderCompilerLog( "ShaderCompiler" );
+
 /**
  * FShaderMacro
  */

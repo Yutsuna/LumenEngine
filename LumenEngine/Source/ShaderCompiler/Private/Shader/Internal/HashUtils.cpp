@@ -5,19 +5,27 @@
 
 #include "Shader/Internal/HashUtils.hpp"
 
+namespace
+{
+
+constexpr LumenEngine::FSourceHash FNV1aOffsetBasis = 0XCBF29CE484222325ULL;
+constexpr LumenEngine::FSourceHash FNV1aPrime       = 0X100000001B3ULL;
+
+} // namespace
+
 void LumenEngine::Internal::FHashUtils::CombineHash ( FSourceHash &InOutHash, const void *InData, const USize InSize ) noexcept
 {
     const Byte *DataBytes = static_cast<const Byte *>( InData );
     for ( USize Index = 0ULL; Index < InSize; ++Index )
     {
         InOutHash ^= DataBytes[Index];
-        InOutHash *= 0x100000001B3ULL; ///< FNV-1a 64-bit prime
+        InOutHash *= FNV1aPrime;
     }
 }
 
 LumenEngine::FSourceHash LumenEngine::Internal::FHashUtils::ComputeRequestHash ( FStringView InSource, const FShaderCompileRequest &InRequest ) noexcept
 {
-    FSourceHash Hash = 0xCBF29CE484222325ULL; ///< FNV-1a 64-bit offset basis
+    FSourceHash Hash = FNV1aOffsetBasis;
 
     CombineHash( Hash, InSource.data(), InSource.size() );
     CombineHash( Hash, &InRequest.Stage, sizeof( InRequest.Stage ) );
