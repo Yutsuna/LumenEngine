@@ -71,3 +71,16 @@ LumenEngine::TOptional<LumenEngine::FString> LumenEngine::FIOFile::ReadAllText (
     const TVector<AnsiChar> &FileContent = *FileContentOpt;
     return FString( FileContent.data(), FileContent.size() );
 }
+
+LumenEngine::Bool LumenEngine::FIOFile::WriteAllText ( const FString &FilePath, const FString &Text ) noexcept
+{
+    std::ofstream File( FilePath.c_str(), std::ios::trunc );
+
+    if ( not File.is_open() )
+    {
+        return false;
+    }
+
+    File << Text;
+    return File.good();
+}

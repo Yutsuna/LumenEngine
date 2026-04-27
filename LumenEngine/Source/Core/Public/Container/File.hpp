@@ -43,6 +43,23 @@ namespace FIOFile
      */
     [[nodiscard]] TOptional<FString> ReadAllText ( const FString &FilePath ) noexcept;
 
+    /**
+     * @brief Writes all bytes to a file.
+     * @tparam Type The type of bytes to write.
+     * @param FilePath The path to the file.
+     * @param Data The data to write.
+     * @return True if successful.
+     */
+    template <typename Type> [[nodiscard]] Bool WriteAllBytes ( const FString &FilePath, const TVector<Type> &Data ) noexcept;
+
+    /**
+     * @brief Writes text to a file.
+     * @param FilePath The path to the file.
+     * @param Text The text to write.
+     * @return True if successful.
+     */
+    [[nodiscard]] Bool WriteAllText ( const FString &FilePath, const FString &Text ) noexcept;
+
 } // namespace FIOFile
 
 } // namespace LumenEngine
