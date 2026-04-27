@@ -51,12 +51,12 @@ void LumenEngine::Bytes::WriteBigEndian ( TVector<Byte> &OutBuffer, const Type V
 
 template <typename Type>
     requires LumenEngine::Concepts::CTriviallyCopyable<Type>
-Type LumenEngine::Bytes::Read ( const TVector<Byte> &Buffer, const Endian ByteOrder ) noexcept
+Type LumenEngine::Bytes::Read ( const Byte *InPtr, const Endian ByteOrder ) noexcept
 {
     constexpr USize TypeSize = sizeof( Type );
 
     Byte Bytes[TypeSize];
-    std::memcpy( Bytes, Buffer.data(), TypeSize );
+    std::memcpy( Bytes, InPtr, TypeSize );
 
     if ( ByteOrder != Endian::native )
     {
@@ -70,14 +70,14 @@ Type LumenEngine::Bytes::Read ( const TVector<Byte> &Buffer, const Endian ByteOr
 
 template <typename Type>
     requires LumenEngine::Concepts::CTriviallyCopyable<Type>
-Type LumenEngine::Bytes::ReadLittleEndian ( const TVector<Byte> &Buffer ) noexcept
+Type LumenEngine::Bytes::ReadLittleEndian ( const Byte *InPtr ) noexcept
 {
-    return Read<Type>( Buffer, Endian::little );
+    return Read<Type>( InPtr, Endian::little );
 }
 
 template <typename Type>
     requires LumenEngine::Concepts::CTriviallyCopyable<Type>
-Type LumenEngine::Bytes::ReadBigEndian ( const TVector<Byte> &Buffer ) noexcept
+Type LumenEngine::Bytes::ReadBigEndian ( const Byte *InPtr ) noexcept
 {
-    return Read<Type>( Buffer, Endian::big );
+    return Read<Type>( InPtr, Endian::big );
 }

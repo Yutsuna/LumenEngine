@@ -56,33 +56,33 @@ namespace Bytes
     /**
      * @brief Reads a trivially copyable value from a byte buffer with specified endianness.
      * @tparam Type The type of the value to read, must be trivially copyable
-     * @param Buffer The byte buffer to read from.
+     * @param InPtr The byte buffer to read from.
      * @param ByteOrder The endianness to use when reading the value (default is native endianness).
      * @return The value read from the buffer.
      */
     template <typename Type>
         requires Concepts::CTriviallyCopyable<Type>
-    Type Read ( const TVector<Byte> &Buffer, const Endian ByteOrder = Endian::native ) noexcept;
+    Type Read ( const Byte *InPtr, const Endian ByteOrder = Endian::native ) noexcept;
 
     /**
      * @brief Reads a trivially copyable value from a byte buffer in little-endian format.
      * @tparam Type The type of the value to read, must be trivially copyable
-     * @param Buffer The byte buffer to read from.
+     * @param InPtr The byte buffer to read from.
      * @return The value read from the buffer.
      */
     template <typename Type>
         requires Concepts::CTriviallyCopyable<Type>
-    Type ReadLittleEndian ( const TVector<Byte> &Buffer ) noexcept;
+    Type ReadLittleEndian ( const Byte *InPtr ) noexcept;
 
     /**
      * @brief Reads a trivially copyable value from a byte buffer in big-endian format.
      * @tparam Type The type of the value to read, must be trivially copyable
-     * @param Buffer The byte buffer to read from.
+     * @param InPtr The byte buffer to read from.
      * @return The value read from the buffer.
      */
     template <typename Type>
         requires Concepts::CTriviallyCopyable<Type>
-    Type ReadBigEndian ( const TVector<Byte> &Buffer ) noexcept;
+    Type ReadBigEndian ( const Byte *InPtr ) noexcept;
 
 } // namespace Bytes
 
