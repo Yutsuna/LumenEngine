@@ -81,6 +81,10 @@ constexpr const LumenEngine::AnsiChar *LumenEngine::EShaderCompilerError::ToStri
         return "InvalidSource";
     case ReflectionFailed:
         return "ReflectionFailed";
+    case GlslangInitFailed:
+        return "GlslangInitFailed";
+    case UnsupportedProfile:
+        return "UnsupportedProfile";
     default:
         return "UnknownError";
     }
