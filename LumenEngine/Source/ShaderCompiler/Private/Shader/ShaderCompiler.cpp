@@ -97,7 +97,7 @@ LumenEngine::FShaderCompileResult LumenEngine::FShaderCompiler::CompileShaderFro
 
     if ( Config.bDumpAssembly )
     {
-        const FString AsmPath = ( std::filesystem::path( Config.CacheDirectory ) / std::format( "{:016X}.spvasm", Hash ) ).string();
+        const FString AsmPath = ( std::filesystem::path( Config.CacheDirectory ) / std::format( "{:016x}.spvasm", Hash ) ).string();
         if ( not FIOFile::WriteAllText( AsmPath, Internal::FSpirvUtils::Disassemble( Compiled.SpirV ) ) )
         {
             LUMEN_LOG_ERROR( LogShaderCompiler, "Failed to write assembly file: {}", AsmPath );

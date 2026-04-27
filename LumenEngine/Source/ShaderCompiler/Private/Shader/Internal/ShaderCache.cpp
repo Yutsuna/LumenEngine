@@ -133,7 +133,7 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::WarmUp () noexcept
     }
     catch ( const std::filesystem::filesystem_error &SystemError )
     {
-        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while warming up cache: %s", SystemError.what() );
+        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while warming up cache: {}", SystemError.what() );
     }
     return LoadedCount;
 }
@@ -154,7 +154,7 @@ void LumenEngine::Internal::FShaderCache::Invalidate ( FSourceHash InHash, EShad
     }
     catch ( const std::filesystem::filesystem_error &SystemError )
     {
-        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while invalidating cache for hash {:016X}: %s", InHash, SystemError.what() );
+        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while invalidating cache for hash {:016x}: {}", InHash, SystemError.what() );
     }
 }
 
@@ -187,7 +187,7 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::Clear () noexcept
     }
     catch ( const std::filesystem::filesystem_error &SystemError )
     {
-        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while clearing cache: %s", SystemError.what() );
+        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while clearing cache: {}", SystemError.what() );
     }
 
     return RemovedCount / 2ULL;
@@ -227,7 +227,7 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::ClearStale ( const doubl
     }
     catch ( const std::filesystem::filesystem_error &SystemError )
     {
-        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while clearing stale cache entries: %s", SystemError.what() );
+        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while clearing stale cache entries: {}", SystemError.what() );
     }
 
     return RemovedCount;
@@ -255,5 +255,5 @@ LumenEngine::UInt64 LumenEngine::Internal::FShaderCache::GetMisses () const noex
 
 LumenEngine::FString LumenEngine::Internal::FShaderCache::BuildCachePath ( const FSourceHash InHash, const EShaderStage::Type InStage, const AnsiChar *InExt ) const
 {
-    return ( std::filesystem::path( Config.CacheDirectory ) / std::format( "{:016X}_{}{}", InHash, EShaderStage::ToString( InStage ), InExt ) ).string();
+    return ( std::filesystem::path( Config.CacheDirectory ) / std::format( "{:016x}_{}{}", InHash, EShaderStage::ToString( InStage ), InExt ) ).string();
 }

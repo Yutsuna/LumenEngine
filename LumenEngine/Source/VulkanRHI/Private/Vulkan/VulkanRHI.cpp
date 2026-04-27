@@ -306,7 +306,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
 
     RuntimeCompiler = MakeUnique<FShaderCompiler>( std::move( CompilerConfig ) );
 
-    LUMEN_LOG_DISPLAY( LogVulkanRHI, "Compiling GPU Culling compute shader..." );
+    LUMEN_LOG_VERBOSE( LogVulkanRHI, "Compiling GPU Culling compute shader..." );
 
     FShaderCompileRequestBuilder RequestBuilder;
     RequestBuilder.Path( LUMEN_GPU_CULL_SHADER_PATH ).Compute().Macro( "MAX_INSTANCES", std::format( "{}ULL", FGPUSceneBuffer::MaxInstances ) );
@@ -317,7 +317,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
     {
         const FCompiledShader &CompiledShader = *CompileResult.Shader;
 
-        LUMEN_LOG_INFO( LogVulkanRHI, "GPU Culling shader JIT successful (Source: %s, Hash: {:016X}).", CompiledShader.bFromCache ? "Disk Cache" : "Freshly Compiled",
+        LUMEN_LOG_INFO( LogVulkanRHI, "GPU Culling shader JIT successful (Source: {}, Hash: {:016x}).", CompiledShader.bFromCache ? "Disk Cache" : "Freshly Compiled",
                         CompiledShader.Hash );
 
         const Bool bCullingPassReady =
@@ -334,7 +334,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
     }
     else
     {
-        LUMEN_LOG_FATAL( LogVulkanRHI, "Critical Failure: GPU Culling shader compilation failed!\nLog Output:\n%s", CompileResult.ErrorLog.c_str() );
+        LUMEN_LOG_FATAL( LogVulkanRHI, "Critical Failure: GPU Culling shader compilation failed!\nLog Output:\n{}", CompileResult.ErrorLog.c_str() );
     }
 }
 
