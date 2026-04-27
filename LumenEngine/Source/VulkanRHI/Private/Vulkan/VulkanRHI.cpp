@@ -318,10 +318,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
     IndirectBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetCullSetLayout() );
 
     FShaderCompilerConfig CompilerConfig;
-
     RuntimeCompiler = MakeUnique<FShaderCompiler>( std::move( CompilerConfig ) );
-
-    LUMEN_LOG_VERBOSE( LogVulkanRHI, "Compiling GPU Culling compute shader..." );
 
     FShaderCompileRequestBuilder RequestBuilder;
     RequestBuilder.Path( LUMEN_GPU_CULL_SHADER_PATH ).Compute().Macro( "MAX_INSTANCES", std::format( "{}ULL", FGPUSceneBuffer::MaxInstances ) );
