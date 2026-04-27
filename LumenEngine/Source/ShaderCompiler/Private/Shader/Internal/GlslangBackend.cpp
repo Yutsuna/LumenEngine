@@ -9,6 +9,7 @@
 #include "Container/UniquePtr.hpp"
 
 #include "Logging/Logger.hpp"
+
 #include "Shader/ShaderCompilerTypes.hpp"
 
 #include <glslang/Include/glslang_c_interface.h>
@@ -51,7 +52,7 @@ namespace Internal
             const USize DataSize    = FileContentPtr->size();
             void *UserData          = FileContentPtr.Release();
 
-            LUMEN_LOG_INFO( ShaderCompilerLog, "Loading include file '%s'", InPath );
+            LUMEN_LOG_INFO( LogShaderCompiler, "Loading include file '{}'", InPath );
             return new FGlslangIncludeResult( InPath, DataPtr, DataSize, UserData );
         }
 
@@ -125,7 +126,7 @@ namespace Internal
                 }
                 catch ( const std::filesystem::filesystem_error &FileSystemError )
                 {
-                    LUMEN_LOG_ERROR( ShaderCompilerLog, "Filesystem error while resolving include '%s': %s", InHeaderName, FileSystemError.what() );
+                    LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while resolving include '{}': {}", InHeaderName, FileSystemError.what() );
                 }
                 return new FGlslangIncludeResult( InHeaderName, "File not found", 14, nullptr );
             }
@@ -220,7 +221,7 @@ LumenEngine::Internal::FGlslangBackend::Compile ( FStringView InSource, const FS
     }
     catch ( const std::filesystem::filesystem_error &FileSystemError )
     {
-        LUMEN_LOG_ERROR( ShaderCompilerLog, "Filesystem error while determining source directory for '%s': %s", InRequest.SourcePath.c_str(), FileSystemError.what() );
+        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while determining source directory for '{}': {}", InRequest.SourcePath.c_str(), FileSystemError.what() );
     }
 
     FGlslangIncluder Includer( InRequest.IncludeDirectories, SourceDir );

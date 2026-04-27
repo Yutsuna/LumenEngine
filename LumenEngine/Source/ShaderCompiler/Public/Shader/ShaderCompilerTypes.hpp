@@ -111,39 +111,6 @@ struct FShaderMacro
 };
 
 /**
- * @struct FShaderCompileRequest
- */
-struct FShaderCompileRequest
-{
-    /** Path to the shader source file to compile (e.g., "Shaders/PBR.frag") */
-    FString SourcePath;
-
-    /** The shader stage to compile for (e.g., vertex, fragment, compute) */
-    EShaderStage::Type Stage = EShaderStage::Vertex;
-
-    /** The GLSL profile to compile for (e.g., Core, ES, Vulkan) */
-    EGlslProfile Profile = EGlslProfile::Vulkan;
-
-    /** The optimization level to use during compilation (e.g., None, Size, Performance) */
-    EShaderOptimizationLevel Optimization = EShaderOptimizationLevel::Performance;
-
-    /** List of preprocessor macros to define during compilation (e.g., { "USE_IBL", "1" }) */
-    TVector<FShaderMacro> Macros;
-
-    /** The entry point function name in the shader source (default is "main") */
-    FString EntryPoint = "main";
-
-    /** The GLSL version to target (e.g., 450, 460). Ignored if Profile is not Vulkan. */
-    Int32 GlslVersion = 460;
-
-    /** Additional include directories to search for #include directives in the shader source. */
-    TVector<FString> IncludeDirectories;
-
-    /** When true, the compiler will emit debug information in the SPIR-V binary (e.g., OpLine instructions). */
-    Bool bEmitDebugInfo = false;
-};
-
-/**
  * @struct FShaderResourceBinding
  * @brief One descriptor-set binding entry (from reflection)
  */
@@ -330,7 +297,7 @@ struct FShaderCompilerConfig
     TFunction<void( FStringView InMessage )> ErrorCallback;
 };
 
-extern const LumenEngine::FLogCategory ShaderCompilerLog;
+extern const LumenEngine::FLogCategory LogShaderCompiler;
 
 } // namespace LumenEngine
 

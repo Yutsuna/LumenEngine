@@ -7,6 +7,7 @@
 
 #include "Container/File.hpp"
 #include "HAL/PlatformTime.hpp"
+#include "Shader/ShaderCompilerTypes.hpp"
 
 #include <chrono>
 #include <filesystem>
@@ -132,7 +133,7 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::WarmUp () noexcept
     }
     catch ( const std::filesystem::filesystem_error &SystemError )
     {
-        LUMEN_LOG_ERROR( ShaderCompilerLog, "Filesystem error while warming up cache: %s", SystemError.what() );
+        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while warming up cache: %s", SystemError.what() );
     }
     return LoadedCount;
 }
@@ -153,7 +154,7 @@ void LumenEngine::Internal::FShaderCache::Invalidate ( FSourceHash InHash, EShad
     }
     catch ( const std::filesystem::filesystem_error &SystemError )
     {
-        LUMEN_LOG_ERROR( ShaderCompilerLog, "Filesystem error while invalidating cache for hash {:016X}: %s", InHash, SystemError.what() );
+        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while invalidating cache for hash {:016X}: %s", InHash, SystemError.what() );
     }
 }
 
@@ -186,7 +187,7 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::Clear () noexcept
     }
     catch ( const std::filesystem::filesystem_error &SystemError )
     {
-        LUMEN_LOG_ERROR( ShaderCompilerLog, "Filesystem error while clearing cache: %s", SystemError.what() );
+        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while clearing cache: %s", SystemError.what() );
     }
 
     return RemovedCount / 2ULL;
@@ -226,7 +227,7 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::ClearStale ( const doubl
     }
     catch ( const std::filesystem::filesystem_error &SystemError )
     {
-        LUMEN_LOG_ERROR( ShaderCompilerLog, "Filesystem error while clearing stale cache entries: %s", SystemError.what() );
+        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while clearing stale cache entries: %s", SystemError.what() );
     }
 
     return RemovedCount;

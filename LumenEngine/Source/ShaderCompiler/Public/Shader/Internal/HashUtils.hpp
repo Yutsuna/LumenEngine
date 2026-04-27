@@ -6,6 +6,8 @@
 #pragma once
 
 #include "CoreTypes.hpp"
+
+#include "Shader/ShaderCompilerRequest.hpp"
 #include "Shader/ShaderCompilerTypes.hpp"
 
 namespace LumenEngine

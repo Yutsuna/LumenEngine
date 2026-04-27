@@ -1,6 +1,6 @@
 /**
  * @file SpirvReflector.cpp
- * @brief Implementation of the SPIR-V reflection backend.
+ * @brief Implementation of SPIR-V reflection using SPIRV-Cross.
  */
 
 #include "Shader/Internal/SpirvReflector.hpp"
@@ -17,6 +17,7 @@ namespace Internal
     namespace
     {
 
+        /** @brief Internal helper to extract bindings from SPIR-V resources. */
         void ExtractBindings ( const spirv_cross::CompilerGLSL &InCompiler,
                                const spirv_cross::SmallVector<spirv_cross::Resource> &InResList,
                                const FString &InTypeName,
@@ -50,8 +51,18 @@ LumenEngine::Bool LumenEngine::Internal::FSpirvReflector::Reflect ( const FSpirV
                                                                     FShaderReflection &OutReflection,
                                                                     FString &OutError ) noexcept
 {
+    if ( InSpirV.empty() )
+    {
+        OutError = "SPIR-V blob is empty.";
+        return false;
+    }
+
     try
     {
+        /**
+         * INFO: We use CompilerGLSL directly here.
+         * This avoids virtual table lookup issues with the base class across shared library boundaries.
+         */
         spirv_cross::CompilerGLSL Compiler( InSpirV.data(), InSpirV.size() );
         const spirv_cross::ShaderResources Resources = Compiler.get_shader_resources();
 
@@ -69,17 +80,21 @@ LumenEngine::Bool LumenEngine::Internal::FSpirvReflector::Reflect ( const FSpirV
                 Input.Location = Compiler.get_decoration( Res.id, spv::DecorationLocation );
 
                 const spirv_cross::SPIRType &Type = Compiler.get_type( Res.type_id );
-                if ( Type.basetype == spirv_cross::SPIRType::Float )
+
+                switch ( Type.basetype )
                 {
+                case spirv_cross::SPIRType::Float:
                     Input.TypeName = "Float";
-                }
-                else if ( Type.basetype == spirv_cross::SPIRType::Int )
-                {
+                    break;
+                case spirv_cross::SPIRType::Int:
                     Input.TypeName = "Int";
-                }
-                else if ( Type.basetype == spirv_cross::SPIRType::UInt )
-                {
+                    break;
+                case spirv_cross::SPIRType::UInt:
                     Input.TypeName = "UInt";
+                    break;
+                default:
+                    Input.TypeName = "Unknown";
+                    break;
                 }
 
                 OutReflection.VertexInputs.push_back( std::move( Input ) );

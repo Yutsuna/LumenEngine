@@ -10,6 +10,7 @@
 
 #include "HAL/SharedMutex.hpp"
 
+#include "Shader/ShaderCompilerRequest.hpp"
 #include "Shader/ShaderCompilerTypes.hpp"
 
 namespace LumenEngine

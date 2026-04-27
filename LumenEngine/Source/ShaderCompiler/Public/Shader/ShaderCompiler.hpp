@@ -7,13 +7,13 @@
 
 #include "CoreTypes.hpp"
 
-#include "Container/Optional.hpp"
 #include "Container/String.hpp"
 #include "Container/UniquePtr.hpp"
 
 #include "NonCopyable.hpp"
 #include "NonMovable.hpp"
 
+#include "Shader/ShaderCompilerRequest.hpp"
 #include "Shader/ShaderCompilerTypes.hpp"
 
 namespace LumenEngine
