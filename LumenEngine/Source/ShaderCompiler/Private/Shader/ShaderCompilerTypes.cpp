@@ -59,22 +59,37 @@ LumenEngine::FShaderCompileResult LumenEngine::FShaderCompileResult::Failure ( c
 LumenEngine::TVector<LumenEngine::Byte> LumenEngine::FShaderCacheMetaData::Serialize () const
 {
     const UInt8 EntryPointLen = static_cast<UInt8>( std::min<UInt64>( EntryPoint.size(), 255 ) );
+    const USize TotalSize     = HeaderSize + EntryPointLen;
+
     TVector<Byte> Buffer;
+    Buffer.resize( TotalSize );
+    Byte *Ptr = Buffer.data();
 
-    Buffer.reserve( HeaderSize + EntryPointLen );
+    const auto Pack = [&Ptr] ( auto Value ) -> void
+    {
+        const USize Size = sizeof( Value );
 
-    Bytes::WriteLittleEndian( Buffer, MagicNumber );                        //<< 4
-    Bytes::WriteLittleEndian( Buffer, Version );                            //<< 4
-    Bytes::WriteLittleEndian( Buffer, SourceHash );                         //<< 8
-    Bytes::WriteLittleEndian( Buffer, static_cast<UInt8>( Stage ) );        //<< 1
-    Bytes::WriteLittleEndian( Buffer, static_cast<UInt8>( Optimization ) ); //<< 1
-    Bytes::WriteLittleEndian( Buffer, CompiledAtNs );                       //<< 8
-    Bytes::WriteLittleEndian( Buffer, SpirVWordCount );                     //<< 4
-    Bytes::WriteLittleEndian( Buffer, EntryPointLen );                      //<< 1
+        std::memcpy( Ptr, &Value, Size );
+        if constexpr ( Bytes::Endian::native == Bytes::Endian::big )
+        {
+            std::reverse( Ptr, Ptr + Size );
+        }
+        Ptr += Size;
+    };
 
-    const Byte *EPBegin = reinterpret_cast<const Byte *>( EntryPoint.data() );
+    Pack( MagicNumber );                        //<< 4
+    Pack( Version );                            //<< 4
+    Pack( SourceHash );                         //<< 8
+    Pack( static_cast<UInt8>( Stage ) );        //<< 1
+    Pack( static_cast<UInt8>( Optimization ) ); //<< 1
+    Pack( CompiledAtNs );                       //<< 8
+    Pack( SpirVWordCount );                     //<< 4
+    Pack( EntryPointLen );                      //<< 1
 
-    Buffer.insert( Buffer.end(), EPBegin, EPBegin + EntryPointLen ); //<< N
+    if ( EntryPointLen > 0 )
+    {
+        std::memcpy( Ptr, EntryPoint.data(), EntryPointLen );
+    }
 
     return Buffer;
 }

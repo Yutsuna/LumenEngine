@@ -59,17 +59,12 @@ namespace Internal
         /**
          * @class FGlslangIncluder
          * @brief Custom includer for glslang that searches specified directories for included files.
-         * @details
-         *   - First attempts to resolve includes as local (relative to the including file).
-         *   - If local resolution fails, searches through configured system include directories.
-         *   - Uses std::filesystem for robust path handling and existence checks.
-         *   - Provides detailed error messages on failure.
          */
         class FGlslangIncluder final : public glslang::TShader::Includer
         {
         public:
 
-            explicit FGlslangIncluder ( const TVector<FString> &InSearchPaths, const FString &InSourceDirectory ) noexcept
+            LUMEN_DISABLE_UBSAN explicit FGlslangIncluder( const TVector<FString> &InSearchPaths, const FString &InSourceDirectory ) noexcept
                 : SearchPaths( InSearchPaths ), SourceDirectory( InSourceDirectory )
             {
                 /* Ctor */
@@ -77,14 +72,7 @@ namespace Internal
 
         public:
 
-            /**
-             * @brief Handles local include directives (#include "file").
-             * @param InHeaderName The name of the header being included.
-             * @param InIncluderName The name of the file that contains the include directive.
-             * @param Depth The depth of the include (for nested includes).
-             * @return A pointer to the include result, or nullptr on failure.
-             */
-            FGlslangIncludeResult *includeLocal ( const AnsiChar *InHeaderName, const AnsiChar *InIncluderName, USize /* Depth */ ) override
+            LUMEN_DISABLE_UBSAN FGlslangIncludeResult *includeLocal ( const AnsiChar *InHeaderName, const AnsiChar *InIncluderName, USize /* Depth */ ) override
             {
                 try
                 {
@@ -103,14 +91,7 @@ namespace Internal
                 return includeSystem( InHeaderName, InIncluderName, 0 );
             }
 
-            /**
-             * @brief Handles system include directives (#include <file>).
-             * @param InHeaderName The name of the header being included.
-             * @param InIncluderName The name of the file that contains the include directive.
-             * @param Depth The depth of the include (for nested includes).
-             * @return A pointer to the include result, or nullptr on failure.
-             */
-            FGlslangIncludeResult *includeSystem ( const AnsiChar *InHeaderName, const AnsiChar * /*InIncluderName*/, USize /* Depth */ ) override
+            LUMEN_DISABLE_UBSAN FGlslangIncludeResult *includeSystem ( const AnsiChar *InHeaderName, const AnsiChar * /*InIncluderName*/, USize /* Depth */ ) override
             {
                 try
                 {
@@ -131,7 +112,7 @@ namespace Internal
                 return new FGlslangIncludeResult( InHeaderName, "File not found", 14, nullptr );
             }
 
-            void releaseInclude ( FGlslangIncludeResult *InIncludeResult ) override
+            LUMEN_DISABLE_UBSAN void releaseInclude ( FGlslangIncludeResult *InIncludeResult ) override
             {
                 if ( InIncludeResult != nullptr )
                 {
@@ -179,13 +160,13 @@ namespace Internal
 
 } // namespace LumenEngine
 
-LumenEngine::Bool LumenEngine::Internal::FGlslangBackend::Initialize () noexcept
+LUMEN_DISABLE_UBSAN LumenEngine::Bool LumenEngine::Internal::FGlslangBackend::Initialize () noexcept
 {
     std::call_once( GGlslangInitFlag, [] { GGlslangInitResult = static_cast<Bool>( glslang::InitializeProcess() ); } );
     return GGlslangInitResult;
 }
 
-void LumenEngine::Internal::FGlslangBackend::Finalize () noexcept
+LUMEN_DISABLE_UBSAN void LumenEngine::Internal::FGlslangBackend::Finalize () noexcept
 {
     if ( GGlslangInitResult )
     {
@@ -193,7 +174,7 @@ void LumenEngine::Internal::FGlslangBackend::Finalize () noexcept
     }
 }
 
-LumenEngine::Bool
+LUMEN_DISABLE_UBSAN LumenEngine::Bool
 LumenEngine::Internal::FGlslangBackend::Compile ( FStringView InSource, const FShaderCompileRequest &InRequest, FSpirVBlob &OutSpirV, FString &OutErrorLog ) noexcept
 {
     const EShLanguage Lang = MapStage( InRequest.Stage );

@@ -8,7 +8,7 @@
 #include <format>
 #include <spirv-tools/libspirv.hpp>
 
-LumenEngine::FString LumenEngine::Internal::FSpirvUtils::Disassemble ( const FSpirVBlob &InSpirV ) noexcept
+LUMEN_DISABLE_UBSAN LumenEngine::FString LumenEngine::Internal::FSpirvUtils::Disassemble ( const FSpirVBlob &InSpirV ) noexcept
 {
     spvtools::SpirvTools Tools( SPV_ENV_VULKAN_1_3 );
     FString Assembly;
@@ -21,7 +21,7 @@ LumenEngine::FString LumenEngine::Internal::FSpirvUtils::Disassemble ( const FSp
     return "";
 }
 
-LumenEngine::FString LumenEngine::Internal::FSpirvUtils::Validate ( const FSpirVBlob &InSpirV ) noexcept
+LUMEN_DISABLE_UBSAN LumenEngine::FString LumenEngine::Internal::FSpirvUtils::Validate ( const FSpirVBlob &InSpirV ) noexcept
 {
     spvtools::SpirvTools Tools( SPV_ENV_VULKAN_1_3 );
     FString ErrorMsg;

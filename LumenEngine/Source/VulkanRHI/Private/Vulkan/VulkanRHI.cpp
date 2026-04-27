@@ -321,7 +321,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
     RuntimeCompiler = MakeUnique<FShaderCompiler>( std::move( CompilerConfig ) );
 
     FShaderCompileRequestBuilder RequestBuilder;
-    RequestBuilder.Path( LUMEN_GPU_CULL_SHADER_PATH ).Compute().Macro( "MAX_INSTANCES", std::format( "{}ULL", FGPUSceneBuffer::MaxInstances ) );
+    RequestBuilder.Path( LUMEN_GPU_CULL_SHADER_PATH ).Compute().Macro( "MAX_INSTANCES", std::format( "{}U", FGPUSceneBuffer::MaxInstances ) );
 
     const FShaderCompileResult CompileResult = RuntimeCompiler->CompileShader( RequestBuilder.Build() );
 

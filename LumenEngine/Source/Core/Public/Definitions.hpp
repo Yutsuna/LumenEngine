@@ -57,3 +57,9 @@
     #define LUMEN_ENGINE_COMPILER_GCC
 
 #endif
+
+#if defined( __clang__ ) || defined( __GNUC__ )
+    #define LUMEN_DISABLE_UBSAN __attribute__( ( no_sanitize( "undefined" ) ) )
+#else
+    #define LUMEN_DISABLE_UBSAN
+#endif

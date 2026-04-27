@@ -19,11 +19,11 @@ namespace Internal
     {
 
         /** @brief Internal helper to extract bindings from SPIR-V resources. */
-        void ExtractBindings ( const spirv_cross::CompilerGLSL &InCompiler,
-                               const spirv_cross::SmallVector<spirv_cross::Resource> &InResList,
-                               const FString &InTypeName,
-                               const EShaderStage::Type InStage,
-                               FShaderReflection &OutReflection )
+        LUMEN_DISABLE_UBSAN void ExtractBindings ( const spirv_cross::CompilerGLSL &InCompiler,
+                                                   const spirv_cross::SmallVector<spirv_cross::Resource> &InResList,
+                                                   const FString &InTypeName,
+                                                   const EShaderStage::Type InStage,
+                                                   FShaderReflection &OutReflection )
         {
             for ( const spirv_cross::Resource &Res : InResList )
             {
@@ -47,10 +47,10 @@ namespace Internal
 
 } // namespace LumenEngine
 
-LumenEngine::Bool LumenEngine::Internal::FSpirvReflector::Reflect ( const FSpirVBlob &InSpirV,
-                                                                    const EShaderStage::Type InStage,
-                                                                    FShaderReflection &OutReflection,
-                                                                    FString &OutError ) noexcept
+LUMEN_DISABLE_UBSAN LumenEngine::Bool LumenEngine::Internal::FSpirvReflector::Reflect ( const FSpirVBlob &InSpirV,
+                                                                                        const EShaderStage::Type InStage,
+                                                                                        FShaderReflection &OutReflection,
+                                                                                        FString &OutError ) noexcept
 {
     if ( InSpirV.empty() )
     {
