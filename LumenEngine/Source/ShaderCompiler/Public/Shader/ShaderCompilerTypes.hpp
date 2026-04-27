@@ -104,8 +104,8 @@ namespace EShaderCompilerError
  */
 struct FShaderMacro
 {
-    FStringView Name;  ///< "USE_PBR"
-    FStringView Value; ///< "1"
+    FString Name;  ///< "USE_PBR"
+    FString Value; ///< "1"
 
     [[nodiscard]] Bool operator==( const FShaderMacro &Other ) const noexcept;
 };
