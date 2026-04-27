@@ -22,8 +22,10 @@ LumenModule(
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
     DEPS            Core ApplicationCore MathCore RHI
-    LINUX_LIBS      Vulkan::Vulkan GPUOpen::VulkanMemoryAllocator
+    GLSLang         SPIRV-Tools SPIRV-Cross-Core SPIRV-Cross-GLSL
 )
+
+###########################################################
 
 LumenCompileShaders(
     VulkanRHI
