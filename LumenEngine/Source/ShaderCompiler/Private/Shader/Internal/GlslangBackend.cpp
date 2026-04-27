@@ -1,12 +1,15 @@
 /**
  * @file GlslangBackend.cpp
- * @brief Implementation of the internal GLSL to SPIR-V compilation backend using glslang.
+ * @brief Implementation of the internal GLSL to SPIR-V compilation backend.
  */
 
 #include "Shader/Internal/GlslangBackend.hpp"
 
 #include "Container/File.hpp"
 #include "Container/UniquePtr.hpp"
+
+#include "Logging/Logger.hpp"
+#include "Shader/ShaderCompilerTypes.hpp"
 
 #include <glslang/Include/glslang_c_interface.h>
 #include <glslang/Public/ResourceLimits.h>
@@ -15,6 +18,7 @@
 
 #include <filesystem>
 #include <format>
+#include <mutex>
 
 namespace LumenEngine
 {
@@ -24,12 +28,13 @@ namespace Internal
 
     namespace
     {
+
         using FGlslangIncludeResult = glslang::TShader::Includer::IncludeResult;
 
         /**
-         * @brief Load a file's content for glslang's includer interface.
+         * @brief Loads the content of a file into a GLSL include result.
          * @param InPath The path to the file to load.
-         * @return A pointer to an FGlslangIncludeResult containing the file's content or an
+         * @return A pointer to the loaded include result.
          */
         [[nodiscard]] FGlslangIncludeResult *LoadFile ( const AnsiChar *InPath )
         {
@@ -46,12 +51,18 @@ namespace Internal
             const USize DataSize    = FileContentPtr->size();
             void *UserData          = FileContentPtr.Release();
 
+            LUMEN_LOG_INFO( ShaderCompilerLog, "Loading include file '%s'", InPath );
             return new FGlslangIncludeResult( InPath, DataPtr, DataSize, UserData );
         }
 
         /**
          * @class FGlslangIncluder
-         * @brief GLSLang Includer Implementation that searches for included files in specified directories
+         * @brief Custom includer for glslang that searches specified directories for included files.
+         * @details
+         *   - First attempts to resolve includes as local (relative to the including file).
+         *   - If local resolution fails, searches through configured system include directories.
+         *   - Uses std::filesystem for robust path handling and existence checks.
+         *   - Provides detailed error messages on failure.
          */
         class FGlslangIncluder final : public glslang::TShader::Includer
         {
@@ -66,52 +77,59 @@ namespace Internal
         public:
 
             /**
-             * @brief Handle local includes (e.g., #include "file.glsl")
-             * @details Searching in the includer's directory first, then falling back to system include paths.
+             * @brief Handles local include directives (#include "file").
              * @param InHeaderName The name of the header being included.
-             * @param InIncluderName The name of the file that is including the header (can be null).
-             * @param Depth The depth of the include (not used in this implementation).
-             * @return The File's content or an error result if the file cannot be found or read.
+             * @param InIncluderName The name of the file that contains the include directive.
+             * @param Depth The depth of the include (for nested includes).
+             * @return A pointer to the include result, or nullptr on failure.
              */
             FGlslangIncludeResult *includeLocal ( const AnsiChar *InHeaderName, const AnsiChar *InIncluderName, USize /* Depth */ ) override
             {
-                /** TODO: Modularize in FIOFile */
-                std::filesystem::path IncluderPath( InIncluderName != nullptr ? InIncluderName : SourceDirectory.c_str() );
-                std::filesystem::path LocalPath = IncluderPath.parent_path() / InHeaderName;
-
-                if ( std::filesystem::exists( LocalPath ) )
+                try
                 {
-                    return LoadFile( LocalPath.string().c_str() );
+                    std::filesystem::path IncluderPath( InIncluderName != nullptr ? InIncluderName : SourceDirectory.c_str() );
+                    std::filesystem::path LocalPath = IncluderPath.parent_path() / InHeaderName;
+
+                    if ( std::filesystem::exists( LocalPath ) )
+                    {
+                        return LoadFile( LocalPath.string().c_str() );
+                    }
+                }
+                catch ( const std::filesystem::filesystem_error & )
+                {
+                    return includeSystem( InHeaderName, InIncluderName, 0 );
                 }
                 return includeSystem( InHeaderName, InIncluderName, 0 );
             }
 
             /**
-             * @brief Handle system includes (e.g., #include <file.glsl>)
-             * @details Searching in the specified system include paths.
+             * @brief Handles system include directives (#include <file>).
              * @param InHeaderName The name of the header being included.
-             * @param InIncluderName The name of the file that is including the header
-             * @param Depth The depth of the include (not used in this implementation).
-             * @return The File's content or an error result if the file cannot be found or read.
+             * @param InIncluderName The name of the file that contains the include directive.
+             * @param Depth The depth of the include (for nested includes).
+             * @return A pointer to the include result, or nullptr on failure.
              */
             FGlslangIncludeResult *includeSystem ( const AnsiChar *InHeaderName, const AnsiChar * /*InIncluderName*/, USize /* Depth */ ) override
             {
-                for ( const FString &SearchPath : SearchPaths )
+                try
                 {
-                    std::filesystem::path SystemPath = std::filesystem::path( SearchPath.c_str() ) / InHeaderName;
-
-                    if ( std::filesystem::exists( SystemPath ) )
+                    for ( const FString &SearchPath : SearchPaths )
                     {
-                        return LoadFile( SystemPath.string().c_str() );
+                        std::filesystem::path SystemPath = std::filesystem::path( SearchPath.c_str() ) / InHeaderName;
+
+                        if ( std::filesystem::exists( SystemPath ) )
+                        {
+                            return LoadFile( SystemPath.string().c_str() );
+                        }
                     }
+                }
+                catch ( const std::filesystem::filesystem_error &FileSystemError )
+                {
+                    LUMEN_LOG_ERROR( ShaderCompilerLog, "Filesystem error while resolving include '%s': %s", InHeaderName, FileSystemError.what() );
                 }
                 return new FGlslangIncludeResult( InHeaderName, "File not found", 14, nullptr );
             }
 
-            /**
-             * @brief Release the memory allocated for an included file.
-             * @param InIncludeResult The include result to release.
-             */
             void releaseInclude ( FGlslangIncludeResult *InIncludeResult ) override
             {
                 if ( InIncludeResult != nullptr )
@@ -130,11 +148,6 @@ namespace Internal
             const FString &SourceDirectory;
         };
 
-        /**
-         * @brief Map a shader stage to its corresponding GLSLang language.
-         * @param InStage The shader stage to map.
-         * @return The corresponding GLSLang language.
-         */
         [[nodiscard]] EShLanguage MapStage ( const EShaderStage::Type InStage ) noexcept
         {
             switch ( InStage )
@@ -156,6 +169,9 @@ namespace Internal
             }
         }
 
+        std::once_flag GGlslangInitFlag;
+        Bool GGlslangInitResult = false;
+
     } // namespace
 
 } // namespace Internal
@@ -164,17 +180,18 @@ namespace Internal
 
 LumenEngine::Bool LumenEngine::Internal::FGlslangBackend::Initialize () noexcept
 {
-    static const Bool bInit = static_cast<Bool>( glslang::InitializeProcess() );
-
-    return bInit;
+    std::call_once( GGlslangInitFlag, [] { GGlslangInitResult = static_cast<Bool>( glslang::InitializeProcess() ); } );
+    return GGlslangInitResult;
 }
 
 void LumenEngine::Internal::FGlslangBackend::Finalize () noexcept
 {
-    glslang::FinalizeProcess();
+    if ( GGlslangInitResult )
+    {
+        glslang::FinalizeProcess();
+    }
 }
 
-/** TODO: Modularize */
 LumenEngine::Bool
 LumenEngine::Internal::FGlslangBackend::Compile ( FStringView InSource, const FShaderCompileRequest &InRequest, FSpirVBlob &OutSpirV, FString &OutErrorLog ) noexcept
 {
@@ -191,26 +208,26 @@ LumenEngine::Internal::FGlslangBackend::Compile ( FStringView InSource, const FS
         Preamble += std::format( "#define {} {}\n", Macro.Name, Macro.Value );
     }
     Shader.setPreamble( Preamble.c_str() );
+    Shader.setEntryPoint( InRequest.EntryPoint.c_str() );
 
-    FString SourceDir;
+    FString SourceDir = ".";
     try
     {
-        SourceDir = std::filesystem::path( InRequest.SourcePath.c_str() ).parent_path().string();
+        if ( not InRequest.SourcePath.empty() )
+        {
+            SourceDir = std::filesystem::path( InRequest.SourcePath.c_str() ).parent_path().string();
+        }
     }
-    catch ( ... )
+    catch ( const std::filesystem::filesystem_error &FileSystemError )
     {
-        SourceDir = ".";
+        LUMEN_LOG_ERROR( ShaderCompilerLog, "Filesystem error while determining source directory for '%s': %s", InRequest.SourcePath.c_str(), FileSystemError.what() );
     }
 
     FGlslangIncluder Includer( InRequest.IncludeDirectories, SourceDir );
 
-    const Int32 ClientInputSemanticsVersion                   = 100;
-    const glslang::EShTargetClientVersion VulkanClientVersion = glslang::EShTargetVulkan_1_3;
-    const glslang::EShTargetLanguageVersion TargetVersion     = glslang::EShTargetSpv_1_6;
-
-    Shader.setEnvInput( glslang::EShSourceGlsl, Lang, glslang::EShClientVulkan, ClientInputSemanticsVersion );
-    Shader.setEnvClient( glslang::EShClientVulkan, VulkanClientVersion );
-    Shader.setEnvTarget( glslang::EShTargetSpv, TargetVersion );
+    Shader.setEnvInput( glslang::EShSourceGlsl, Lang, glslang::EShClientVulkan, 100 );
+    Shader.setEnvClient( glslang::EShClientVulkan, glslang::EShTargetVulkan_1_3 );
+    Shader.setEnvTarget( glslang::EShTargetSpv, glslang::EShTargetSpv_1_6 );
 
     EShMessages Messages = static_cast<EShMessages>( EShMsgSpvRules | EShMsgVulkanRules );
     if ( InRequest.bEmitDebugInfo )
