@@ -302,16 +302,39 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
     SceneBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetSceneSetLayout() );
     IndirectBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetCullSetLayout() );
 
-    const FString ShaderPath = LUMEN_GPU_CULL_SHADER_PATH;
-    if ( ShaderPath.empty() )
-    {
-        LUMEN_LOG_WARNING( LogVulkanRHI, "GPU culling shader path is empty; GPU-driven culling disabled." );
-        return;
-    }
+    FShaderCompilerConfig CompilerConfig;
 
-    if ( not CullingPass.Initialize( LogicalDevice.GetHandle(), Memory.GetGlobalSetLayout(), Memory.GetSceneSetLayout(), Memory.GetCullSetLayout(), ShaderPath ) )
+    RuntimeCompiler = MakeUnique<FShaderCompiler>( std::move( CompilerConfig ) );
+
+    LUMEN_LOG_DISPLAY( LogVulkanRHI, "Compiling GPU Culling compute shader..." );
+
+    FShaderCompileRequestBuilder RequestBuilder;
+    RequestBuilder.Path( LUMEN_GPU_CULL_SHADER_PATH ).Compute().Macro( "MAX_INSTANCES", std::format( "{}ULL", FGPUSceneBuffer::MaxInstances ) );
+
+    const FShaderCompileResult CompileResult = RuntimeCompiler->CompileShader( RequestBuilder.Build() );
+
+    if ( CompileResult.IsSuccess() )
     {
-        LUMEN_LOG_WARNING( LogVulkanRHI, "Failed to initialize GPU culling pass from '{}'.", ShaderPath.c_str() );
+        const FCompiledShader &CompiledShader = *CompileResult.Shader;
+
+        LUMEN_LOG_INFO( LogVulkanRHI, "GPU Culling shader JIT successful (Source: %s, Hash: {:016X}).", CompiledShader.bFromCache ? "Disk Cache" : "Freshly Compiled",
+                        CompiledShader.Hash );
+
+        const Bool bCullingPassReady =
+            CullingPass.Initialize( LogicalDevice.GetHandle(), Memory.GetGlobalSetLayout(), Memory.GetSceneSetLayout(), Memory.GetCullSetLayout(), CompiledShader.SpirV );
+
+        if ( bCullingPassReady )
+        {
+            LUMEN_LOG_INFO( LogVulkanRHI, "GPU-driven culling sub-system fully initialized." );
+        }
+        else
+        {
+            LUMEN_LOG_ERROR( LogVulkanRHI, "GPUCullingPass: Failed to create compute pipeline from SPIR-V bytecode." );
+        }
+    }
+    else
+    {
+        LUMEN_LOG_FATAL( LogVulkanRHI, "Critical Failure: GPU Culling shader compilation failed!\nLog Output:\n%s", CompileResult.ErrorLog.c_str() );
     }
 }
 
