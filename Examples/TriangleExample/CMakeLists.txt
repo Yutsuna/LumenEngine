@@ -4,7 +4,7 @@ LumenModule(
     SOURCES         "Private/*.cpp"
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
-    DEPS            Launch ApplicationCore Renderer MathCore Engine ShaderCompiler
+    DEPS            Launch ApplicationCore Renderer MathCore Engine
 )
 
 LumenCompileShaders(TriangleExample "Shaders"

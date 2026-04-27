@@ -13,8 +13,8 @@ LumenRegisterPackage(SDL3                   SDL3::SDL3                      "sdl
 LumenRegisterPackage(VulkanMemoryAllocator  GPUOpen::VulkanMemoryAllocator  "")
 
 LumenRegisterPackage(GLSLang                glslang::glslang                "glslang")
-LumenRegisterPackage(SPIRV-Tools            SPIRV-Tools-opt                 "SPIRV-Tools")
-LumenRegisterPackage(SPIRV-Cross            spirv-cross-c                   "spirv-cross-c")
+LumenRegisterPackage(SPIRV-Tools            SPIRV-Tools                     "SPIRV-Tools")
+LumenRegisterPackage(SPIRV-Cross            spirv-cross-c-shared            "spirv-cross-c-shared")
 
 ###########################################################
 

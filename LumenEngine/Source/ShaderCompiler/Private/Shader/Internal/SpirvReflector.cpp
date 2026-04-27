@@ -61,7 +61,6 @@ LumenEngine::Bool LumenEngine::Internal::FSpirvReflector::Reflect ( const FSpirV
     {
         /**
          * INFO: We use CompilerGLSL directly here.
-         * This avoids virtual table lookup issues with the base class across shared library boundaries.
          */
         spirv_cross::CompilerGLSL Compiler( InSpirV.data(), InSpirV.size() );
         const spirv_cross::ShaderResources Resources = Compiler.get_shader_resources();

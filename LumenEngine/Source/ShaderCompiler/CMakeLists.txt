@@ -29,6 +29,8 @@ LumenModule(
     DEFINES         LUMEN_ENGINE
     DEPS            Core
     LINUX_LIBS      glslang::glslang
+                    glslang::SPIRV
+                    SPIRV-Tools
                     SPIRV-Tools-opt
-                    spirv-cross-c
+                    spirv-cross-c-shared
 )
