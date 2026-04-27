@@ -84,3 +84,19 @@ LumenEngine::Bool LumenEngine::FIOFile::WriteAllText ( const FString &FilePath, 
     File << Text;
     return File.good();
 }
+
+LumenEngine::Bool LumenEngine::FIOFile::Exists ( const FString &FilePath ) noexcept
+{
+    std::error_code ErrorCode;
+    const std::filesystem::path Path( FilePath.c_str() );
+
+    if ( std::filesystem::exists( Path, ErrorCode ) )
+    {
+        return true;
+    }
+    if ( ErrorCode )
+    {
+        LUMEN_LOG_ERROR( LogIOFile, "Error checking file existence for '{}': {}", FilePath.c_str(), ErrorCode.message().c_str() );
+    }
+    return false;
+}

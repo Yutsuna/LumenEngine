@@ -91,7 +91,7 @@ namespace Internal
                     std::filesystem::path IncluderPath( InIncluderName != nullptr ? InIncluderName : SourceDirectory.c_str() );
                     std::filesystem::path LocalPath = IncluderPath.parent_path() / InHeaderName;
 
-                    if ( std::filesystem::exists( LocalPath ) )
+                    if ( FIOFile::Exists( LocalPath ) )
                     {
                         return LoadFile( LocalPath.string().c_str() );
                     }

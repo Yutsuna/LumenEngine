@@ -107,7 +107,7 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::WarmUp () noexcept
 
     try
     {
-        if ( not std::filesystem::exists( Config.CacheDirectory ) )
+        if ( not FIOFile::Exists( Config.CacheDirectory ) )
         {
             return 0ULL;
         }
@@ -169,7 +169,7 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::Clear () noexcept
 
     try
     {
-        if ( not std::filesystem::exists( Config.CacheDirectory ) )
+        if ( not FIOFile::Exists( Config.CacheDirectory ) )
         {
             return 0ULL;
         }
@@ -181,7 +181,9 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::Clear () noexcept
             if ( Extension == ".meta" or Extension == ".spv" or Extension == ".spvasm" )
             {
                 if ( std::filesystem::remove( Entry.path(), ErrorCode ) )
+                {
                     ++RemovedCount;
+                }
             }
         }
     }
@@ -201,7 +203,7 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::ClearStale ( const doubl
 
     try
     {
-        if ( not std::filesystem::exists( Config.CacheDirectory ) )
+        if ( not FIOFile::Exists( Config.CacheDirectory ) )
         {
             return 0ULL;
         }

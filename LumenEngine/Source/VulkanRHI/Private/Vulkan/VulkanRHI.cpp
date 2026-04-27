@@ -5,9 +5,11 @@
 
 #include "Vulkan/VulkanRHI.hpp"
 
+#include "Container/File.hpp"
 #include "Container/String.hpp"
 
 #include "Generic/GenericWindow.hpp"
+
 #include "Vulkan/VulkanCore.hpp"
 #include "Vulkan/VulkanSceneRenderer.hpp"
 
@@ -284,6 +286,18 @@ LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( c
 LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath,
                                                                                        const LumenEngine::FString &InFragmentPath )
 {
+    if ( not FIOFile::Exists( InVertexPath ) )
+    {
+        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to create pipeline: Vertex shader file '{}' does not exist.", InVertexPath.c_str() );
+        return {};
+    }
+
+    if ( not FIOFile::Exists( InFragmentPath ) )
+    {
+        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to create pipeline: Fragment shader file '{}' does not exist.", InFragmentPath.c_str() );
+        return {};
+    }
+
     FVulkanPipeline NewPipeline;
     const VkFormat &SwapChainFormat                = SwapChain.GetImageFormat();
     const VkDescriptorSetLayout &GlobalSetLayout   = Memory.GetGlobalSetLayout();

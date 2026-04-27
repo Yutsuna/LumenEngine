@@ -60,6 +60,13 @@ namespace FIOFile
      */
     [[nodiscard]] Bool WriteAllText ( const FString &FilePath, const FString &Text ) noexcept;
 
+    /**
+     * @brief Checks if a file exists at the given path.
+     * @param FilePath The path to the file to check.
+     * @return True if the file exists, false otherwise.
+     */
+    [[nodiscard]] Bool Exists ( const FString &FilePath ) noexcept;
+
 } // namespace FIOFile
 
 } // namespace LumenEngine
