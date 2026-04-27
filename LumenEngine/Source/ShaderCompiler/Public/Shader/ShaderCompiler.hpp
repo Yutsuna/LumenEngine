@@ -95,6 +95,12 @@ public:
 
 private:
 
+    [[nodiscard]] FShaderCompileResult TryLoadFromCache ( const FShaderCompileRequest &InRequest, FSourceHash InHash ) const noexcept;
+    [[nodiscard]] FShaderCompileResult CompileFreshAndCache ( FStringView InSource, const FShaderCompileRequest &InRequest, FSourceHash InHash ) const noexcept;
+    void DumpDebugArtifacts ( FSourceHash InHash, const FCompiledShader &InShader ) const noexcept;
+
+private:
+
     FShaderCompilerConfig Config;
     TUniquePtr<Internal::FShaderCache> Cache;
     Bool bInitialised = false;

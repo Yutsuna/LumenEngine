@@ -16,6 +16,10 @@
 
 #include <format>
 
+/**
+ * Ctor & Dtor
+ */
+
 LumenEngine::FShaderCompiler::FShaderCompiler ( FShaderCompilerConfig InConfig ) noexcept
     : Config( std::move( InConfig ) ), Cache( MakeUnique<Internal::FShaderCache>( Config ) ), bInitialised( Internal::FGlslangBackend::Initialize() )
 
@@ -30,6 +34,10 @@ LumenEngine::FShaderCompiler::~FShaderCompiler () noexcept
         Internal::FGlslangBackend::Finalize();
     }
 }
+
+/**
+ * Shader Compilation
+ */
 
 LumenEngine::FShaderCompileResult LumenEngine::FShaderCompiler::CompileShader ( const FShaderCompileRequest &InRequest ) noexcept
 {
@@ -51,66 +59,24 @@ LumenEngine::FShaderCompileResult LumenEngine::FShaderCompiler::CompileShaderFro
 
     const FSourceHash Hash = Internal::FHashUtils::ComputeRequestHash( InSource, InRequest );
 
-    /** 1. Try Cache */
-    if ( TOptional<FCompiledShader> CachedShader = Cache->TryGet( Hash, InRequest.Stage, InRequest.EntryPoint ) )
+    FShaderCompileResult CacheResult = TryLoadFromCache( InRequest, Hash );
+    if ( CacheResult.IsSuccess() )
     {
-        Cache->RecordHit();
-
-        /** INFO: We still perform reflection even on cached shaders to ensure the FCompiledShader is fully populated */
-        FString ReflectionError;
-        if ( not Internal::FSpirvReflector::Reflect( CachedShader->SpirV, InRequest.Stage, CachedShader->Reflection, ReflectionError ) )
-        {
-            return FShaderCompileResult::Failure( EShaderCompilerError::ReflectionFailed, ReflectionError );
-        }
-
-        return FShaderCompileResult::Success( std::move( *CachedShader ) );
+        return CacheResult;
     }
 
-    Cache->RecordMiss();
-
-    /** 2. Compile GLSL -> SPIR-V */
-    FSpirVBlob SpirV;
-    FString ErrorLog;
-
-    if ( not Internal::FGlslangBackend::Compile( InSource, InRequest, SpirV, ErrorLog ) )
-    {
-        return FShaderCompileResult::Failure( EShaderCompilerError::CompilationFailed, std::move( ErrorLog ) );
-    }
-
-    /** 3. Reflect SPIR-V */
-    FShaderReflection Reflection;
-    if ( not Internal::FSpirvReflector::Reflect( SpirV, InRequest.Stage, Reflection, ErrorLog ) )
-    {
-        return FShaderCompileResult::Failure( EShaderCompilerError::ReflectionFailed, std::move( ErrorLog ) );
-    }
-
-    /** 4. Construct Result */
-    FCompiledShader Compiled{ .SpirV      = std::move( SpirV ),
-                              .Reflection = std::move( Reflection ),
-                              .Stage      = InRequest.Stage,
-                              .Hash       = Hash,
-                              .bFromCache = false,
-                              .EntryPoint = InRequest.EntryPoint };
-
-    /** 5. Persist */
-    Cache->Put( Hash, InRequest, Compiled );
-
-    if ( Config.bDumpAssembly )
-    {
-        const FString AsmPath = ( std::filesystem::path( Config.CacheDirectory ) / std::format( "{:016x}.spvasm", Hash ) ).string();
-        if ( not FIOFile::WriteAllText( AsmPath, Internal::FSpirvUtils::Disassemble( Compiled.SpirV ) ) )
-        {
-            LUMEN_LOG_ERROR( LogShaderCompiler, "Failed to write assembly file: {}", AsmPath );
-        }
-    }
-
-    return FShaderCompileResult::Success( std::move( Compiled ) );
+    return CompileFreshAndCache( InSource, InRequest, Hash );
 }
+
+/**
+ * Cache Management
+ */
 
 LumenEngine::USize LumenEngine::FShaderCompiler::WarmCache () noexcept
 {
     return Cache->WarmUp();
 }
+
 void LumenEngine::FShaderCompiler::InvalidateCacheEntry ( const FShaderCompileRequest &InRequest ) noexcept
 {
     if ( TOptional<FString> Source = FIOFile::ReadAllText( InRequest.SourcePath ) )
@@ -118,6 +84,7 @@ void LumenEngine::FShaderCompiler::InvalidateCacheEntry ( const FShaderCompileRe
         Cache->Invalidate( Internal::FHashUtils::ComputeRequestHash( *Source, InRequest ), InRequest.Stage );
     }
 }
+
 LumenEngine::USize LumenEngine::FShaderCompiler::ClearCache () noexcept
 {
     return Cache->Clear();
@@ -132,6 +99,10 @@ LumenEngine::UInt64 LumenEngine::FShaderCompiler::GetCacheHitCount () const noex
 {
     return Cache->GetHits();
 }
+
+/**
+ * Getters
+ */
 
 LumenEngine::UInt64 LumenEngine::FShaderCompiler::GetCacheMissCount () const noexcept
 {
@@ -148,6 +119,10 @@ const LumenEngine::FShaderCompilerConfig &LumenEngine::FShaderCompiler::GetConfi
     return Config;
 }
 
+/**
+ * Static Helpers
+ */
+
 LumenEngine::FSourceHash LumenEngine::FShaderCompiler::ComputeRequestHash ( FStringView InSource, const FShaderCompileRequest &InRequest ) noexcept
 {
     return Internal::FHashUtils::ComputeRequestHash( InSource, InRequest );
@@ -161,4 +136,95 @@ LumenEngine::FString LumenEngine::FShaderCompiler::DisassembleSpirV ( const FSpi
 LumenEngine::FString LumenEngine::FShaderCompiler::ValidateSpirV ( const FSpirVBlob &InSpirV ) noexcept
 {
     return Internal::FSpirvUtils::Validate( InSpirV );
+}
+
+/**
+ * Private Methods
+ */
+
+namespace
+{
+
+inline LumenEngine::Bool TryReflect ( LumenEngine::FCompiledShader &InOutShader, LumenEngine::FString &OutError ) noexcept
+{
+    return LumenEngine::Internal::FSpirvReflector::Reflect( InOutShader.SpirV, InOutShader.Stage, InOutShader.Reflection, OutError );
+}
+
+inline LumenEngine::FCompiledShader
+BuildShaderObject ( LumenEngine::FSpirVBlob &&InSpirV, const LumenEngine::FShaderCompileRequest &InRequest, LumenEngine::FSourceHash Hash ) noexcept
+{
+    return { .SpirV = std::move( InSpirV ), .Reflection = {}, .Stage = InRequest.Stage, .Hash = Hash, .bFromCache = false, .EntryPoint = InRequest.EntryPoint };
+}
+
+} // namespace
+
+LumenEngine::FShaderCompileResult LumenEngine::FShaderCompiler::TryLoadFromCache ( const FShaderCompileRequest &InRequest, FSourceHash Hash ) const noexcept
+{
+    TOptional<FCompiledShader> Cached = Cache->TryGet( Hash, InRequest.Stage, InRequest.EntryPoint );
+    if ( not Cached )
+    {
+        Cache->RecordMiss();
+        return FShaderCompileResult::Failure( EShaderCompilerError::CacheReadFailed );
+    }
+
+    LUMEN_LOG_SHADER_TRACE( LogShaderCompiler, "Shader cache hit for hash {:016x} (Stage: {})", Hash, EShaderStage::ToString( InRequest.Stage ) );
+    Cache->RecordHit();
+
+    FString Error;
+    if ( not TryReflect( *Cached, Error ) )
+    {
+        return FShaderCompileResult::Failure( EShaderCompilerError::ReflectionFailed, std::move( Error ) );
+    }
+
+    LUMEN_LOG_SHADER_TRACE( LogShaderCompiler, "Successfully loaded shader from cache (Hash: {:016x}, Stage: {})", Hash, EShaderStage::ToString( InRequest.Stage ) );
+    return FShaderCompileResult::Success( std::move( *Cached ) );
+}
+
+LumenEngine::FShaderCompileResult
+LumenEngine::FShaderCompiler::CompileFreshAndCache ( FStringView InSource, const FShaderCompileRequest &InRequest, FSourceHash Hash ) const noexcept
+{
+    FSpirVBlob SpirV;
+    FString ErrorLog;
+
+    /** INFO: GLSL -> SPIR-V */
+    if ( not Internal::FGlslangBackend::Compile( InSource, InRequest, SpirV, ErrorLog ) )
+    {
+        return FShaderCompileResult::Failure( EShaderCompilerError::CompilationFailed, std::move( ErrorLog ) );
+    }
+
+    LUMEN_LOG_SHADER_TRACE( LogShaderCompiler, "Shader compiled successfully (Hash: {:016x}, Stage: {})", Hash, EShaderStage::ToString( InRequest.Stage ) );
+
+    /** INFO: Build the compiled shader object */
+    FCompiledShader Compiled = BuildShaderObject( std::move( SpirV ), InRequest, Hash );
+
+    /** INFO: SPIR-V Reflection */
+    if ( not TryReflect( Compiled, ErrorLog ) )
+    {
+        return FShaderCompileResult::Failure( EShaderCompilerError::ReflectionFailed, std::move( ErrorLog ) );
+    }
+    LUMEN_LOG_SHADER_TRACE( LogShaderCompiler, "SPIR-V reflection successful (Hash: {:016x}, Stage: {})", Hash, EShaderStage::ToString( InRequest.Stage ) );
+
+    /** INFO: Cache the compiled shader for future use */
+    Cache->Put( Hash, InRequest, Compiled );
+    DumpDebugArtifacts( Hash, Compiled );
+
+    LUMEN_LOG_SHADER_TRACE( LogShaderCompiler, "Shader compilation and caching complete (Hash: {:016x}, Stage: {})", Hash, EShaderStage::ToString( InRequest.Stage ) );
+    return FShaderCompileResult::Success( std::move( Compiled ) );
+}
+
+void LumenEngine::FShaderCompiler::DumpDebugArtifacts ( FSourceHash Hash, const FCompiledShader &Shader ) const noexcept
+{
+    if ( not Config.bDumpAssembly )
+    {
+        return;
+    }
+
+    const std::filesystem::path CacheDir( Config.CacheDirectory );
+    const FString AsmPath     = ( CacheDir / std::format( "{:016x}.spvasm", Hash ) ).string();
+    const FString Disassembly = Internal::FSpirvUtils::Disassemble( Shader.SpirV );
+
+    if ( not FIOFile::WriteAllText( AsmPath, Disassembly ) )
+    {
+        LUMEN_LOG_SHADER_TRACE( LogShaderCompiler, "Failed to write assembly file: {}", AsmPath );
+    }
 }
