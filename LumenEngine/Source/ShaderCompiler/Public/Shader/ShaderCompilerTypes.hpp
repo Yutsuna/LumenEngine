@@ -5,12 +5,15 @@
 
 #pragma once
 
+#include "CoreTypes.hpp"
+
 #include "Container/Function.hpp"
 #include "Container/Optional.hpp"
 #include "Container/String.hpp"
 #include "Container/Vector.hpp"
 
-#include "CoreTypes.hpp"
+#include "Logging/LoggingCategory.hpp"
+
 #include <filesystem>
 #include <span>
 
@@ -326,6 +329,8 @@ struct FShaderCompilerConfig
     /** Called on every error message from the compiler. */
     TFunction<void( FStringView InMessage )> ErrorCallback;
 };
+
+extern const LumenEngine::FLogCategory ShaderCompilerLog;
 
 } // namespace LumenEngine
 
