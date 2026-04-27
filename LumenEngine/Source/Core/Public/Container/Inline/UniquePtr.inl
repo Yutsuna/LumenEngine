@@ -10,29 +10,29 @@
 namespace LumenEngine
 {
 
-template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::TUniquePtr() : Object( nullptr ), DeleterInstance()
+template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::TUniquePtr () : Object( nullptr ), DeleterInstance()
 {
     /* Empty */
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::TUniquePtr( NullptrType ) : Object( nullptr ), DeleterInstance()
+template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::TUniquePtr ( NullptrType ) : Object( nullptr ), DeleterInstance()
 {
     /* Empty */
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::TUniquePtr( Type *InObject ) : Object( InObject ), DeleterInstance()
-{
-    /* Empty */
-}
-
-template <typename Type, typename Deleter>
-TUniquePtr<Type, Deleter>::TUniquePtr( Type *InObject, Deleter InDeleter ) : Object( InObject ), DeleterInstance( std::move( InDeleter ) )
+template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::TUniquePtr ( Type *InObject ) : Object( InObject ), DeleterInstance()
 {
     /* Empty */
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type, Deleter>::TUniquePtr( TUniquePtr &&Other ) noexcept : Object( Other.Object ), DeleterInstance( std::move( Other.DeleterInstance ) )
+TUniquePtr<Type, Deleter>::TUniquePtr ( Type *InObject, Deleter InDeleter ) : Object( InObject ), DeleterInstance( std::move( InDeleter ) )
+{
+    /* Empty */
+}
+
+template <typename Type, typename Deleter>
+TUniquePtr<Type, Deleter>::TUniquePtr ( TUniquePtr &&Other ) noexcept : Object( Other.Object ), DeleterInstance( std::move( Other.DeleterInstance ) )
 {
     Other.Object = nullptr;
 }
@@ -46,7 +46,7 @@ TUniquePtr<Type, Deleter>::TUniquePtr( TUniquePtr<OtherType, OtherDeleter> &&Oth
     Other.Object = nullptr;
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::~TUniquePtr()
+template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::~TUniquePtr ()
 {
     Reset();
 }
@@ -136,28 +136,28 @@ template <typename Type, typename Deleter> void TUniquePtr<Type, Deleter>::Reset
  * TUniquePtr<Type[]> implementation
  */
 
-template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::TUniquePtr() : Object( nullptr ), DeleterInstance()
+template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::TUniquePtr () : Object( nullptr ), DeleterInstance()
 {
     /* Empty */
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::TUniquePtr( NullptrType ) : Object( nullptr ), DeleterInstance()
+template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::TUniquePtr ( NullptrType ) : Object( nullptr ), DeleterInstance()
 {
     /* Empty */
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::TUniquePtr( Type *InObject ) : Object( InObject ), DeleterInstance()
+template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::TUniquePtr ( Type *InObject ) : Object( InObject ), DeleterInstance()
 {
     /* Empty */
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type[], Deleter>::TUniquePtr( TUniquePtr &&Other ) noexcept : Object( Other.Object ), DeleterInstance( std::move( Other.DeleterInstance ) )
+TUniquePtr<Type[], Deleter>::TUniquePtr ( TUniquePtr &&Other ) noexcept : Object( Other.Object ), DeleterInstance( std::move( Other.DeleterInstance ) )
 {
     Other.Object = nullptr;
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::~TUniquePtr()
+template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::~TUniquePtr ()
 {
     Reset();
 }

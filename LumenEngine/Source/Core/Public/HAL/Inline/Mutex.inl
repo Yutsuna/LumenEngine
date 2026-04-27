@@ -8,12 +8,12 @@
 namespace LumenEngine
 {
 
-template <typename MutexType> TLockGuard<MutexType>::TLockGuard( MutexType &InMutex ) noexcept : Mutex( InMutex )
+template <typename MutexType> TLockGuard<MutexType>::TLockGuard ( MutexType &InMutex ) noexcept : Mutex( InMutex )
 {
     Mutex.Lock();
 }
 
-template <typename MutexType> TLockGuard<MutexType>::~TLockGuard() noexcept
+template <typename MutexType> TLockGuard<MutexType>::~TLockGuard () noexcept
 {
     Mutex.Unlock();
 }
@@ -22,12 +22,12 @@ template <typename MutexType> TLockGuard<MutexType>::~TLockGuard() noexcept
  * TUniqueLock Implementation
  */
 
-template <typename MutexType> TUniqueLock<MutexType>::TUniqueLock( MutexType &InMutex ) noexcept : Mutex( &InMutex )
+template <typename MutexType> TUniqueLock<MutexType>::TUniqueLock ( MutexType &InMutex ) noexcept : Mutex( &InMutex )
 {
     Lock();
 }
 
-template <typename MutexType> TUniqueLock<MutexType>::~TUniqueLock() noexcept
+template <typename MutexType> TUniqueLock<MutexType>::~TUniqueLock () noexcept
 {
     if ( bIsLocked )
     {
@@ -35,7 +35,7 @@ template <typename MutexType> TUniqueLock<MutexType>::~TUniqueLock() noexcept
     }
 }
 
-template <typename MutexType> TUniqueLock<MutexType>::TUniqueLock( TUniqueLock &&InOther ) noexcept : Mutex( InOther.Mutex ), bIsLocked( InOther.bIsLocked )
+template <typename MutexType> TUniqueLock<MutexType>::TUniqueLock ( TUniqueLock &&InOther ) noexcept : Mutex( InOther.Mutex ), bIsLocked( InOther.bIsLocked )
 {
     InOther.Mutex     = nullptr;
     InOther.bIsLocked = false;

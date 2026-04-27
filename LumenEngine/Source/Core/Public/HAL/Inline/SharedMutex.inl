@@ -14,12 +14,12 @@ namespace LumenEngine
  * TSharedLock
  */
 
-template <typename MutexType> TSharedLock<MutexType>::TSharedLock( MutexType &InMutex ) noexcept : Mutex( InMutex )
+template <typename MutexType> TSharedLock<MutexType>::TSharedLock ( MutexType &InMutex ) noexcept : Mutex( InMutex )
 {
     Mutex.LockShared();
 }
 
-template <typename MutexType> TSharedLock<MutexType>::~TSharedLock() noexcept
+template <typename MutexType> TSharedLock<MutexType>::~TSharedLock () noexcept
 {
     Mutex.UnlockShared();
 }
@@ -28,12 +28,12 @@ template <typename MutexType> TSharedLock<MutexType>::~TSharedLock() noexcept
  * TSharedUniqueLock
  */
 
-template <typename MutexType> TSharedUniqueLock<MutexType>::TSharedUniqueLock( MutexType &InMutex ) noexcept : Mutex( &InMutex )
+template <typename MutexType> TSharedUniqueLock<MutexType>::TSharedUniqueLock ( MutexType &InMutex ) noexcept : Mutex( &InMutex )
 {
     Lock();
 }
 
-template <typename MutexType> TSharedUniqueLock<MutexType>::~TSharedUniqueLock() noexcept
+template <typename MutexType> TSharedUniqueLock<MutexType>::~TSharedUniqueLock () noexcept
 {
     if ( bIsLocked )
     {
@@ -42,7 +42,7 @@ template <typename MutexType> TSharedUniqueLock<MutexType>::~TSharedUniqueLock()
 }
 
 template <typename MutexType>
-TSharedUniqueLock<MutexType>::TSharedUniqueLock( TSharedUniqueLock &&InOther ) noexcept : Mutex( InOther.Mutex ), bIsLocked( InOther.bIsLocked )
+TSharedUniqueLock<MutexType>::TSharedUniqueLock ( TSharedUniqueLock &&InOther ) noexcept : Mutex( InOther.Mutex ), bIsLocked( InOther.bIsLocked )
 {
     InOther.Mutex     = nullptr;
     InOther.bIsLocked = false;
