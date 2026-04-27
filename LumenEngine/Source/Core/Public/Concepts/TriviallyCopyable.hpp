@@ -1,5 +1,5 @@
 /**
- * @file Copyable.hpp
+ * @file TriviallyCopyable.hpp
  * @brief Concepts for trivially copyable types.
  */
 

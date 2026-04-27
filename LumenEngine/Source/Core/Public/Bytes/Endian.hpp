@@ -7,7 +7,7 @@
 
 #include "CoreTypes.hpp"
 
-#include "Concepts/Copyable.hpp"
+#include "Concepts/TriviallyCopyable.hpp"
 #include "Container/Vector.hpp"
 
 #include <bit>
