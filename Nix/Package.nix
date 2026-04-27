@@ -10,6 +10,9 @@
   vulkan-loader,
   vulkan-memory-allocator,
   gtest,
+  glslang,
+  spirv-tools,
+  spirv-cross,
   version,
 }:
 
@@ -36,6 +39,9 @@ stdenv.mkDerivation {
     vulkan-loader
     vulkan-memory-allocator
     gtest
+    glslang
+    spirv-tools
+    spirv-cross
   ];
 
   cmakeFlags = [
