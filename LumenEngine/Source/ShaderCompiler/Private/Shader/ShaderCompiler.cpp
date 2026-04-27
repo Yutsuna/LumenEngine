@@ -6,8 +6,12 @@
 #include "Shader/ShaderCompiler.hpp"
 
 #include "Container/File.hpp"
+#include "Container/Optional.hpp"
 #include "Container/String.hpp"
 #include "Container/UniquePtr.hpp"
+#include "CoreTypes.hpp"
+#include "HAL/SharedMutex.hpp"
+#include "Shader/ShaderCompilerTypes.hpp"
 
 #include <glslang/Include/glslang_c_interface.h>
 #include <glslang/Public/ShaderLang.h>
@@ -15,6 +19,8 @@
 #include <glslang/SPIRV/GlslangToSpv.h>
 #include <glslang/SPIRV/SpvTools.h>
 
+#include <mutex>
+#include <optional>
 #include <spirv-tools/libspirv.hpp>
 #include <spirv-tools/optimizer.hpp>
 
@@ -139,6 +145,205 @@ namespace
 
     }; // class FGlslangIncluder
 
+    std::once_flag GGlslangInitOnceFlag;
+    Bool GGlslangInitResult = false;
+
+    void EnsureGlslangInitialized () noexcept
+    {
+        std::call_once( GGlslangInitOnceFlag, [] -> void { GGlslangInitResult = glslang::InitializeProcess(); } );
+    }
+
 } // namespace
 
 } // namespace LumenEngine
+
+/**
+ * Ctor & Dtor
+ */
+
+LumenEngine::FShaderCompiler::FShaderCompiler ( FShaderCompilerConfig InConfig ) noexcept : Config( std::move( InConfig ) ), bInitialised( GGlslangInitResult )
+{
+    EnsureGlslangInitialized();
+
+    if ( not bInitialised )
+    {
+        Config.ErrorCallback( "FShaderCompiler: glslang::InitializeProcess() failed" );
+    }
+
+    std::error_code ErrorCode;
+    std::filesystem::create_directories( Config.CacheDirectory, ErrorCode );
+
+    if ( ErrorCode and Config.ErrorCallback )
+    {
+        Config.ErrorCallback( std::format( "FShaderCompiler: Could not create cache directory '{}': {}", Config.CacheDirectory.c_str(), ErrorCode.message() ) );
+    }
+}
+
+LumenEngine::FShaderCompiler::~FShaderCompiler () noexcept
+{
+    if ( bInitialised )
+    {
+        glslang::FinalizeProcess();
+    }
+}
+
+/**
+ * Public Methods
+ */
+
+LumenEngine::FShaderCompileResult LumenEngine::FShaderCompiler::CompileShader ( const FShaderCompileRequest &InRequest )
+{
+    FShaderCompileResult Result;
+
+    if ( not bInitialised )
+    {
+        return FShaderCompileResult::Failure( EShaderCompilerError::GlslangInitFailed, "FShaderCompiler was not initialised successfully" );
+    }
+    if ( InRequest.Stage >= EShaderStage::Count )
+    {
+        return FShaderCompileResult::Failure( EShaderCompilerError::InvalidStage, std::format( "Invalid shader stage: {}", static_cast<Int32>( InRequest.Stage ) ) );
+    }
+
+    TOptional<FString> SourceCodeOpt = FIOFile::ReadAllText( InRequest.SourcePath );
+    if ( not SourceCodeOpt.has_value() )
+    {
+        return FShaderCompileResult::Failure( EShaderCompilerError::FileNotFound, std::format( "Failed to read shader source file: {}", InRequest.SourcePath ) );
+    }
+
+    return CompileShaderFromSource( *SourceCodeOpt, InRequest );
+}
+
+LumenEngine::FShaderCompileResult LumenEngine::FShaderCompiler::CompileShaderFromSource ( FStringView InSource, const FShaderCompileRequest &InRequest )
+{
+    if ( not bInitialised )
+    {
+        return FShaderCompileResult::Failure( EShaderCompilerError::GlslangInitFailed, "FShaderCompiler was not initialised successfully" );
+    }
+
+    if ( InSource.empty() )
+    {
+        return FShaderCompileResult::Failure( EShaderCompilerError::InvalidSource, "Shader source code is empty" );
+    }
+
+    const FSourceHash ComputeHash = ComputeRequestHash( InSource, InRequest );
+
+    {
+        TSharedLock<FSharedMutex> ReadLock( CacheMutex );
+
+        if ( const auto It = MemoryCache.find( ComputeHash ); It != MemoryCache.end() )
+        {
+            ++CacheHitCount;
+
+            if ( Config.InfoCallback )
+            {
+                Config.InfoCallback( std::format( "FShaderCompiler: Cache HIT (memory) '{}' hash={:016X}", InRequest.SourcePath.string(), ComputeHash ) );
+            }
+
+            FCompiledShader CachedShader = It->second;
+            CachedShader.bFromCache      = true;
+            return FShaderCompileResult::Success( std::move( CachedShader ) );
+        }
+    }
+
+    if ( TOptional<FCompiledShader> DiskShaderOpt = TryLoadFromDiskCache( ComputeHash, InRequest.Stage, InRequest.EntryPoint ) )
+    {
+        ++CacheHitCount;
+
+        if ( Config.InfoCallback )
+        {
+            Config.InfoCallback( std::format( "FShaderCompiler: Cache HIT (disk) '{}' hash={:016X}", InRequest.SourcePath.string(), ComputeHash ) );
+        }
+
+        FCompiledShader DiskShader = DiskShaderOpt.value();
+        DiskShader.bFromCache      = true;
+
+        {
+            TUniqueLock<FSharedMutex> WriteLock( CacheMutex );
+            MemoryCache.emplace( ComputeHash, DiskShader );
+        }
+
+        return FShaderCompileResult::Success( std::move( DiskShader ) );
+    }
+
+    ++CacheMissCount;
+
+    if ( Config.InfoCallback )
+    {
+        Config.InfoCallback( std::format( "FShaderCompiler: Cache MISS '{}' hash={:016X}", InRequest.SourcePath.string(), ComputeHash ) );
+    }
+
+    return CompileAndCacheShader( InSource, InRequest, ComputeHash );
+}
+
+/**
+ * Private Methods
+ */
+
+namespace LumenEngine
+{
+
+namespace
+{
+
+    inline std::filesystem::path BuildCacheFilePath ( const std::filesystem::path &CacheDirectory, const FSourceHash Hash, const EShaderStage::Type Stage )
+    {
+        return CacheDirectory / std::format( "{:016X}_{}.spv", Hash, EShaderStage::ToString( Stage ) );
+    }
+
+    inline std::filesystem::path BuildMetaFilePath ( const std::filesystem::path &CacheDirectory, const FSourceHash Hash, const EShaderStage::Type Stage )
+    {
+        return CacheDirectory / std::format( "{:016X}_{}.meta", Hash, EShaderStage::ToString( Stage ) );
+    }
+
+} // namespace
+
+} // namespace LumenEngine
+
+/**
+ * @brief Attempts to load a compiled shader from the disk cache.
+ * @param InHash The hash of the shader source.
+ * @param InStage The stage of the shader.
+ * @param InEntryPoint The entry point of the shader.
+ * @return An optional containing the compiled shader if found, otherwise an empty optional.
+ */
+LumenEngine::TOptional<LumenEngine::FCompiledShader>
+LumenEngine::FCompiledShader::TryLoadFromDiskCache ( const FSourceHash InHash, const EShaderStage::Type InStage, const FStringView InEntryPoint )
+{
+    const std::filesystem::path SpvPath  = BuildCacheFilePath( Config.CacheDirectory, HashToHex( InHash ), InStage );
+    const std::filesystem::path MetaPath = BuildMetaFilePath( Config.CacheDirectory, HashToHex( InHash ), InStage );
+
+    if ( not std::filesystem::exists( SpvPath ) or not std::filesystem::exists( MetaPath ) )
+    {
+        return std::nullopt;
+    }
+
+    {
+        TOptional<TVector<Byte>> MetaBytes = FIOFile::ReadAllBytes<Byte>( MetaPath.string() );
+        if ( not MetaBytes.has_value() )
+        {
+            Config.ErrorCallback( std::format( "FShaderCompiler: Failed to read cache meta file '{}'", MetaPath.string() ) );
+            return std::nullopt;
+        }
+
+        TOptional<FShaderCacheMetaData> MetaOpt = FShaderCacheMetaData::Deserialize( std::span<const Byte>( *MetaBytes ) );
+        if ( not MetaOpt.has_value() )
+        {
+            Config.ErrorCallback( std::format( "FShaderCompiler: Failed to parse cache meta file '{}'", MetaPath.string() ) );
+            return std::nullopt;
+        }
+
+        if ( MetaOpt->SourceHash != InHash )
+        {
+            Config.ErrorCallback(
+                std::format( "FShaderCompiler: Cache meta file '{}' hash mismatch (expected {:016X}, got {:016X})", MetaPath.string(), InHash, MetaOpt->SourceHash ) );
+            return std::nullopt;
+        }
+
+        if ( MetaOpt->Stage != InStage )
+        {
+            Config.ErrorCallback( std::format( "FShaderCompiler: Cache meta file '{}' stage mismatch (expected {}, got {})", MetaPath.string(),
+                                               EShaderStage::ToString( InStage ), EShaderStage::ToString( MetaOpt->Stage ) ) );
+            return std::nullopt;
+        }
+    }
+}

@@ -11,6 +11,7 @@
 #include "Container/Vector.hpp"
 
 #include "CoreTypes.hpp"
+#include <filesystem>
 #include <span>
 
 namespace LumenEngine
@@ -112,7 +113,7 @@ struct FShaderMacro
 struct FShaderCompileRequest
 {
     /** Path to the shader source file to compile (e.g., "Shaders/PBR.frag") */
-    FStringView SourcePath;
+    FString SourcePath;
 
     /** The shader stage to compile for (e.g., vertex, fragment, compute) */
     EShaderStage::Type Stage = EShaderStage::Vertex;
@@ -133,7 +134,7 @@ struct FShaderCompileRequest
     Int32 GlslVersion = 460;
 
     /** Additional include directories to search for #include directives in the shader source. */
-    TVector<FStringView> IncludeDirectories;
+    TVector<FString> IncludeDirectories;
 
     /** When true, the compiler will emit debug information in the SPIR-V binary (e.g., OpLine instructions). */
     Bool bEmitDebugInfo = false;
@@ -305,7 +306,7 @@ struct FShaderCacheMetaData
 struct FShaderCompilerConfig
 {
     /** Root directory where .spv + .meta cache files are written to and read from. */
-    FStringView CacheDirectory = "Data/ShaderCache/";
+    std::filesystem::path CacheDirectory = "Data/ShaderCache/";
 
     /** Maximum allowed SPIR-V words allowed before the compiler rejects the shader. */
     UInt64 MaxSpirVWords = 0; ///< 0 means No Limit
@@ -323,7 +324,7 @@ struct FShaderCompilerConfig
     TFunction<void( FStringView InMessage )> WarningCallback;
 
     /** Called on every error message from the compiler. */
-    TFunction<void( FStringView InMessage )> ErrorgCallback;
+    TFunction<void( FStringView InMessage )> ErrorCallback;
 };
 
 } // namespace LumenEngine

@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Container/Map.hpp"
+#include "Container/Optional.hpp"
 #include "Container/String.hpp"
 #include "CoreTypes.hpp"
 #include "HAL/SharedMutex.hpp"
@@ -51,7 +52,7 @@ class FShaderCompiler final : public FNonCopyable, public FNonMovable
 {
 public:
 
-    explicit FShaderCompiler ( const FShaderCompilerConfig &InConfig ) noexcept;
+    explicit FShaderCompiler ( FShaderCompilerConfig InConfig ) noexcept;
     ~FShaderCompiler () noexcept;
 
 public:
@@ -67,7 +68,7 @@ public:
      *  @param InRequest Shader compile request parameters
      *  @return Compilation result containing SPIR-V bytecode or error message
      */
-    [[nodiscard]] FShaderCompileResult CompileShader ( const FShaderCompileRequest &InRequest ) noexcept;
+    [[nodiscard]] FShaderCompileResult CompileShader ( const FShaderCompileRequest &InRequest );
 
     /**
      * @brief Compile from an in-memory GLSL source string instead of an I/O file
@@ -75,7 +76,7 @@ public:
      * @param InRequest Shader compile request parameters
      * NOTE: InRequest.SourcePath is ONLY used for diagnostic message; the file is NOT read from disk
      */
-    [[nodiscard]] FShaderCompileResult CompileShaderFromSource ( FStringView InSource, const FShaderCompileRequest &InRequest ) noexcept;
+    [[nodiscard]] FShaderCompileResult CompileShaderFromSource ( FStringView InSource, const FShaderCompileRequest &InRequest );
 
 public:
 
@@ -141,6 +142,10 @@ public:
      * @return Empty string on success; validation error message on failure.
      */
     [[nodiscard]] static FString ValidateSpirV ( const FSpirVBlob &InSpirV );
+
+private:
+
+    TOptional<FCompiledShader> TryLoadFromDiskCache ( const FSourceHash InHash, const EShaderStage::Type InStage, const FStringView InEntryPoint );
 
 private:
 
