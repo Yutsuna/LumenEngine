@@ -1,6 +1,7 @@
 LumenFindPackage(GLSLang)
 LumenFindPackage(SPIRV-Tools)
-LumenFindPackage(SPIRV-Cross)
+LumenFindPackage(spirv_cross_core)
+LumenFindPackage(spirv_cross_glsl)
 
 ###########################################################
 
@@ -14,8 +15,8 @@ if(NOT SPIRV-Tools_FOUND)
     return()
 endif()
 
-if(NOT SPIRV-Cross_FOUND)
-    message(STATUS "[Lumen] ShaderCompiler: skipped (Missing SPIRV-Cross)")
+if(NOT spirv_cross_core_FOUND OR NOT spirv_cross_glsl_FOUND)
+    message(STATUS "[Lumen] ShaderCompiler: skipped (Missing SPIRV-Cross C++ Components)")
     return()
 endif()
 
@@ -29,8 +30,10 @@ LumenModule(
     DEFINES         LUMEN_ENGINE
     DEPS            Core
     LINUX_LIBS      glslang::glslang
+                    glslang::glslang-default-resource-limits
                     glslang::SPIRV
                     SPIRV-Tools
                     SPIRV-Tools-opt
-                    spirv-cross-c-shared
+                    spirv-cross-core
+                    spirv-cross-glsl
 )
