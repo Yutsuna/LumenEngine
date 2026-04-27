@@ -30,8 +30,7 @@ namespace Concepts
      *          non-trivial destructor, virtual functions, or complex state that
      *          cannot be bitwise copied.
      */
-    template <typename T>
-    concept CTriviallyCopyablePayload = std::is_trivially_copyable_v<T>;
+    template <typename Type> using CTriviallyCopyablePayload = Concepts::CTriviallyCopyable<Type>;
 
 } // namespace Concepts
 
