@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Concepts/DefaultInitializable.hpp"
 #include "Concepts/EqualityComparable.hpp"
 #include "Concepts/TriviallyCopyable.hpp"
 #include "CoreTypes.hpp"
@@ -41,7 +42,7 @@ namespace Concepts
      * @endcode
      */
     template <typename TAlgorithm>
-    concept CHashAlgorithm = std::default_initializable<TAlgorithm> and requires( TAlgorithm &Algorithm, const void *Pointer, USize Size ) {
+    concept CHashAlgorithm = CDefaultInitializable<TAlgorithm> and requires( TAlgorithm &Algorithm, const void *Pointer, USize Size ) {
         { Algorithm.Write( Pointer, Size ) } -> CSameAs<void>;
         { Algorithm.Digest() } -> CConvertibleTo<FHashValue>;
     };
