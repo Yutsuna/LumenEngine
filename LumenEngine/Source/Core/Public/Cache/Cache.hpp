@@ -137,6 +137,12 @@ public:
      */
     void SetMaxSize ( const USize InNewMaxSize ) noexcept;
 
+    /** @return Performance statistics snapshot */
+    [[nodiscard]] Cache::FCacheStats GetStats () const noexcept;
+
+    /** @brief Reset performance counters */
+    void ResetStats () noexcept;
+
 private:
 
     /**
@@ -158,16 +164,16 @@ private:
     USize MaxSize{ Unbounded };
 
     /** Underlying storage for key-value pairs */
-    TMap<KeyType, ValueType, HashFunc> Storage;
+    mutable TMap<KeyType, ValueType, HashFunc> Storage;
 
     /** Readers/writer mutex ; many concurrent readers, one exclusive writer */
     mutable FSharedMutex Mutex;
 
     /** Pluggable eviction policy instance */
-    PolicyType EvictionPolicy;
+    mutable PolicyType EvictionPolicy;
 
     /** Atomic hit / miss / eviction / insert counters */
-    Cache::FCacheCounters Counters;
+    mutable Cache::FCacheCounters Counters;
 };
 
 } // namespace LumenEngine

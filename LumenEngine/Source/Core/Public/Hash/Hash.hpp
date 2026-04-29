@@ -9,7 +9,6 @@
 #include "Container/String.hpp"
 #include "Hash/Fnv1a.hpp"
 
-#include <cstring>
 #include <tuple>
 #include <utility>
 

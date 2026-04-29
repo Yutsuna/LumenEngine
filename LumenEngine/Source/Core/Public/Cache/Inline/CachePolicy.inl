@@ -14,17 +14,17 @@
  */
 
 template <typename KeyType, typename ValueType>
-void LumenEngine::Cache::FNoEviction<KeyType, ValueType>::OnInsert ( const KeyType &LUMEN_UNUSED InKey, const ValueType &LUMEN_UNUSED InValue ) noexcept
+void LumenEngine::Cache::FNoEviction<KeyType, ValueType>::OnInsert ( const KeyType LUMEN_UNUSED &InKey, const ValueType LUMEN_UNUSED &InValue ) noexcept
 {
     /* No state to update */
 }
 
-template <typename KeyType, typename ValueType> void LumenEngine::Cache::FNoEviction<KeyType, ValueType>::OnAccess ( const KeyType &LUMEN_UNUSED InKey ) noexcept
+template <typename KeyType, typename ValueType> void LumenEngine::Cache::FNoEviction<KeyType, ValueType>::OnAccess ( const KeyType LUMEN_UNUSED &InKey ) noexcept
 {
     /* No state to update */
 }
 
-template <typename KeyType, typename ValueType> void LumenEngine::Cache::FNoEviction<KeyType, ValueType>::OnErase ( const KeyType &LUMEN_UNUSED InKey ) noexcept
+template <typename KeyType, typename ValueType> void LumenEngine::Cache::FNoEviction<KeyType, ValueType>::OnErase ( const KeyType LUMEN_UNUSED &InKey ) noexcept
 {
     /* No state to update */
 }
@@ -46,7 +46,7 @@ template <typename KeyType, typename ValueType> const KeyType &LumenEngine::Cach
  * FLruPolicy
  */
 
-template <typename TKey, typename TValue> void LumenEngine::Cache::FLruPolicy<TKey, TValue>::OnInsert ( const TKey &InKey, const TValue &LUMEN_UNUSED InValue )
+template <typename TKey, typename TValue> void LumenEngine::Cache::FLruPolicy<TKey, TValue>::OnInsert ( const TKey &InKey, const TValue LUMEN_UNUSED &InValue )
 {
     Order.push_front( InKey );
     IteratorMap.emplace( InKey, Order.begin() );

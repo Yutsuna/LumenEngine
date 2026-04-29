@@ -35,9 +35,9 @@ LUMEN_CACHE_TEMPLATE
 const ValueType *LUMEN_CACHE_CLASS::TryGet ( const KeyType &InKey ) noexcept
 {
     TSharedLock<FSharedMutex> ReadLock( Mutex );
-    const auto It = Storage.Find( InKey );
+    auto It = Storage.find( InKey );
 
-    if ( It == Storage.End() )
+    if ( It == Storage.end() )
     {
         Counters.RecordMiss();
         return nullptr;
@@ -52,9 +52,9 @@ LUMEN_CACHE_TEMPLATE
 LumenEngine::TOptional<ValueType> LUMEN_CACHE_CLASS::TryGetCopy ( const KeyType &InKey ) noexcept
 {
     TSharedLock<FSharedMutex> ReadLock( Mutex );
-    const auto It = Storage.Find( InKey );
+    auto It = Storage.find( InKey );
 
-    if ( It == Storage.End() )
+    if ( It == Storage.end() )
     {
         Counters.RecordMiss();
         return {};
@@ -70,7 +70,7 @@ LumenEngine::Bool LUMEN_CACHE_CLASS::Contains ( const KeyType &InKey ) const noe
 {
     TSharedLock<FSharedMutex> ReadLock( Mutex );
 
-    return Storage.Contains( InKey );
+    return Storage.contains( InKey );
 }
 
 LUMEN_CACHE_TEMPLATE
@@ -91,9 +91,9 @@ LUMEN_CACHE_TEMPLATE
 LumenEngine::Bool LUMEN_CACHE_CLASS::Erase ( const KeyType &InKey )
 {
     TUniqueLock<FSharedMutex> WriteLock( Mutex );
-    const auto It = Storage.Find( InKey );
+    auto It = Storage.find( InKey );
 
-    if ( It == Storage.End() )
+    if ( It == Storage.end() )
     {
         return false;
     }
@@ -107,7 +107,7 @@ LUMEN_CACHE_TEMPLATE
 LumenEngine::USize LUMEN_CACHE_CLASS::Clear () noexcept
 {
     TUniqueLock<FSharedMutex> WriteLock( Mutex );
-    const USize Removed = Storage.Size();
+    const USize Removed = Storage.size();
 
     Storage.clear();
     EvictionPolicy.Clear();
@@ -118,7 +118,7 @@ LUMEN_CACHE_TEMPLATE
 LumenEngine::USize LUMEN_CACHE_CLASS::Size () const noexcept
 {
     TSharedLock<FSharedMutex> ReadLock( Mutex );
-    return Storage.Size();
+    return Storage.size();
 }
 
 LUMEN_CACHE_TEMPLATE
@@ -143,6 +143,18 @@ void LUMEN_CACHE_CLASS::SetMaxSize ( const USize InNewMaxSize ) noexcept
     EvictToCapacity();
 }
 
+LUMEN_CACHE_TEMPLATE
+LumenEngine::Cache::FCacheStats LUMEN_CACHE_CLASS::GetStats () const noexcept
+{
+    return Counters.Snapshot();
+}
+
+LUMEN_CACHE_TEMPLATE
+void LUMEN_CACHE_CLASS::ResetStats () noexcept
+{
+    Counters.Reset();
+}
+
 /**
  * Private Methods
  */
@@ -150,7 +162,7 @@ void LUMEN_CACHE_CLASS::SetMaxSize ( const USize InNewMaxSize ) noexcept
 LUMEN_CACHE_TEMPLATE
 template <typename ForwardValue> void LUMEN_CACHE_CLASS::PutImplementation ( const KeyType &InKey, ForwardValue &&InValue )
 {
-    const auto It = Storage.Find( InKey );
+    auto It = Storage.find( InKey );
 
     if ( It != Storage.end() )
     {
@@ -165,7 +177,7 @@ template <typename ForwardValue> void LUMEN_CACHE_CLASS::PutImplementation ( con
     }
 
     Storage.emplace( InKey, std::forward<ValueType>( InValue ) );
-    EvictionPolicy.OnInsert( InKey );
+    EvictionPolicy.OnInsert( InKey, InValue );
     Counters.RecordInsert();
 }
 
@@ -173,9 +185,9 @@ LUMEN_CACHE_TEMPLATE
 void LUMEN_CACHE_CLASS::EvictOne ()
 {
     const KeyType &Victim = EvictionPolicy.Victim();
-    const auto It         = Storage.Find( Victim );
+    auto It               = Storage.find( Victim );
 
-    if ( It != Storage.End() )
+    if ( It != Storage.end() )
     {
         Storage.erase( Victim );
         EvictionPolicy.OnErase( Victim );
@@ -186,7 +198,7 @@ void LUMEN_CACHE_CLASS::EvictOne ()
 LUMEN_CACHE_TEMPLATE
 void LUMEN_CACHE_CLASS::EvictToCapacity ()
 {
-    while ( Storage.Size() > MaxSize )
+    while ( Storage.size() > MaxSize )
     {
         EvictOne();
     }
