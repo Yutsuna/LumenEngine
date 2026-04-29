@@ -17,6 +17,7 @@ LumenAddModules(
     ShaderCompiler
     RHI
     VulkanRHI
+    Lumen
     Renderer
     Engine
     Launch
