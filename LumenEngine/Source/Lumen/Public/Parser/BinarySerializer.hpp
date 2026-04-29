@@ -53,7 +53,7 @@ namespace Lumen
          * @param InKey The key of the property to find.
          * @return A pointer to the found property node, or nullptr if not found.
          */
-        [[nodiscard]] static FDLSLNode *FindProperty ( const FDLSLNode *InObjectNode, FStringView InKey ) noexcept;
+        [[nodiscard]] static const FDLSLNode *FindProperty ( const FDLSLNode *InObjectNode, FStringView InKey ) noexcept;
 
     private:
 
@@ -62,14 +62,14 @@ namespace Lumen
          * @param InVerticesListNode The node containing the vertex data.
          * @return A vector of vertices on success, otherwise an error message.
          */
-        [[nodiscard]] static TExpected<TVector<Maths::FVertex>, FString> ExtractVertices ( const FDLSLNode *InVerticesListNode ) noexcept;
+        [[nodiscard]] static TExpected<TVector<Maths::FVertex>, FString> ExtractVertices ( const FDLSLNode *InVerticesListNode );
 
         /**
          * @brief Extracts index data from a DLSL node.
          * @param InIndicesListNode The node containing the index data.
          * @return A vector of indices on success, otherwise an error message.
          */
-        [[nodiscard]] static TExpected<TVector<UInt32>, FString> ExtractIndices ( const FDLSLNode *InIndicesListNode ) noexcept;
+        [[nodiscard]] static TExpected<TVector<UInt32>, FString> ExtractIndices ( const FDLSLNode *InIndicesListNode );
 
     private:
 

@@ -20,6 +20,7 @@ namespace Lumen
 
         enum Type : UInt32
         {
+            Unknown  = 0,
             Mesh     = 1,
             Material = 2,
         };
@@ -34,10 +35,10 @@ namespace Lumen
      */
     struct alignas( 16 ) FLumenBinaryHeader
     {
-        UInt32 Magic   = LUMEN_ASSET_CACHE_MAGIC_NUMBER; //<< LMAS = Lumen Asset Cache
-        UInt32 Version = Version::Packed;                //<< 1
-        EAssetType::Type AssetType;                      //<< 1 = Mesh, 2 = Material...
-        UInt32 PayloadSize;                              //<< Size of the data following the header
+        UInt32 Magic               = LUMEN_ASSET_CACHE_MAGIC_NUMBER;
+        UInt32 Version             = Version::Packed;
+        EAssetType::Type AssetType = EAssetType::Unknown;
+        UInt32 PayloadSize         = 0;
     };
 
     /**
@@ -48,9 +49,9 @@ namespace Lumen
     {
         UInt32 VertexCount;
         UInt32 IndexCount;
-        UInt32 Topology;     //<< Maps to VkPrimitiveTopology
-        UInt32 CullMode;     //<< Maps to VkCullModeFlags
-        UInt32 WindingOrder; //<< Maps to VkFrontFace
+        UInt32 Topology;
+        UInt32 CullMode;
+        UInt32 WindingOrder;
         UInt32 Pad[3];
     };
 

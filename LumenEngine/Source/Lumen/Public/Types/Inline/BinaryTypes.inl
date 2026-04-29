@@ -11,6 +11,8 @@ constexpr const LumenEngine::AnsiChar *LumenEngine::Lumen::EAssetType::ToString 
 {
     switch ( AssetType )
     {
+    case Type::Unknown:
+        return "Unknown";
     case Type::Mesh:
         return "Mesh";
     case Type::Material:
