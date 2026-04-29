@@ -14,6 +14,7 @@
 #include "Concepts/SameAs.hpp"
 
 #include <concepts>
+#include <functional>
 
 namespace LumenEngine
 {
@@ -66,11 +67,20 @@ namespace Concepts
     };
 
     /**
+     * @concept CHasStdHash
+     * @brief Constrains types that can be hashed by std::hash and converted to FHashValue.
+     */
+    template <typename ValueType>
+    concept CHasStdHash = requires( const ValueType &Value ) {
+        { std::hash<ValueType>{}( Value ) } -> CConvertibleTo<FHashValue>;
+    };
+
+    /**
      * @concept CHashable
      * @brief A type that can produce a deterministic 64-bit hash
      */
     template <typename ValueType>
-    concept CHashable = CTriviallyCopyable<ValueType> or CHasHasherSpecialisation<ValueType> or CHasADLHash<ValueType>;
+    concept CHashable = CTriviallyCopyable<ValueType> or CHasHasherSpecialisation<ValueType> or CHasADLHash<ValueType> or CHasStdHash<ValueType>;
 
     /**
      * @concept CCacheKey

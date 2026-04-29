@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "CoreTypes.hpp"
+
 #include "Concepts/ConvertibleTo.hpp"
 
 namespace LumenEngine
@@ -25,7 +27,7 @@ namespace Concepts
      */
     template <typename ObjectType>
     concept CEqualityComparable = requires( const ObjectType &A, const ObjectType &B ) {
-        { A == B } -> CConvertibleTo<ObjectType>;
+        { A == B } -> CConvertibleTo<Bool>;
     };
 
 } // namespace Concepts
