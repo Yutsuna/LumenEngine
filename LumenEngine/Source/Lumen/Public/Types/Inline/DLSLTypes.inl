@@ -30,7 +30,7 @@ constexpr const LumenEngine::AnsiChar *LumenEngine::Lumen::EDLSLNodeType::ToStri
     }
 }
 
-LumenEngine::FStringView LumenEngine::Lumen::FDLSLNode::GetString () const noexcept
+inline LumenEngine::FStringView LumenEngine::Lumen::FDLSLNode::GetString () const noexcept
 {
     return { StringRaw.Data, StringRaw.Size };
 }
