@@ -17,15 +17,27 @@ constexpr LumenEngine::Hash::FFnv1a64::FFnv1a64 ( const FHashValue InSeed ) noex
     /* Ctor */
 }
 
-constexpr void LumenEngine::Hash::FFnv1a64::Write ( const void *InData, const USize InSize ) noexcept
+constexpr void LumenEngine::Hash::FFnv1a64::Write ( const Byte *DataPtr, const USize InSize ) noexcept
 {
-    const UInt8 *Bytes = static_cast<const UInt8 *>( InData );
-
     for ( USize Index = 0; Index < InSize; ++Index )
     {
-        HashState ^= Bytes[Index];
+        HashState ^= static_cast<FHashValue>( DataPtr[Index] );
         HashState *= Prime;
     }
+}
+
+constexpr void LumenEngine::Hash::FFnv1a64::Write ( const AnsiChar *InDataPtr, const USize InSize ) noexcept
+{
+    for ( USize Index = 0; Index < InSize; ++Index )
+    {
+        HashState ^= static_cast<FHashValue>( static_cast<unsigned char>( InDataPtr[Index] ) );
+        HashState *= Prime;
+    }
+}
+
+inline void LumenEngine::Hash::FFnv1a64::Write ( const void *InDataPtr, const USize InSize ) noexcept
+{
+    Write( static_cast<const Byte *>( InDataPtr ), InSize );
 }
 
 constexpr LumenEngine::FHashValue LumenEngine::Hash::FFnv1a64::Digest () const noexcept

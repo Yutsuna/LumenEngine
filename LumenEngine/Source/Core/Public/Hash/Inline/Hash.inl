@@ -82,7 +82,7 @@ template <typename TInt> FHashValue Hash::Details::TIntHasher<TInt>::operator()(
     return Algorithm.Digest();
 }
 
-[[nodiscard]] inline FHashValue Hash::THasher<FStringView>::operator()( const FStringView InValue ) const noexcept
+[[nodiscard]] inline FHashValue Hash::THasher<FString>::operator()( const FStringView InValue ) const noexcept
 {
     FFnv1a64 Algorithm;
     Algorithm.Write( InValue.data(), InValue.size() );
@@ -130,7 +130,17 @@ template <Concepts::CHashAlgorithm Algorithm, typename ObjectType> [[nodiscard]]
 
 template <typename ValueType> FHashValue Hash::TStdHashAdapter<ValueType>::operator()( const ValueType &InValue ) const noexcept
 {
-    return THasher<ValueType>{}( InValue );
+    return Compute( InValue );
+}
+
+[[nodiscard]] inline FHashValue Hash::TStdHashAdapter<FString>::operator()( const FString &InValue ) const noexcept
+{
+    return Compute( InValue );
+}
+
+[[nodiscard]] inline FHashValue Hash::TStdHashAdapter<FString>::operator()( const FStringView InValue ) const noexcept
+{
+    return Compute( InValue );
 }
 
 } // namespace LumenEngine

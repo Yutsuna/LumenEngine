@@ -91,11 +91,9 @@ namespace Hash
 
     template <> struct THasher<FString>
     {
-        [[nodiscard]] FHashValue operator()( const FString &InValue ) const noexcept;
-    };
+        using is_transparent = void;
 
-    template <> struct THasher<FStringView>
-    {
+        [[nodiscard]] FHashValue operator()( const FString &InValue ) const noexcept;
         [[nodiscard]] FHashValue operator()( const FStringView InValue ) const noexcept;
     };
 
@@ -145,7 +143,7 @@ namespace Hash
      * @struct TStdHashAdapter<FString>
      * @brief Specialization of TStdHashAdapter for FString | FStringView
      */
-    template <> struct TStdHashAdapter<FStringView>
+    template <> struct TStdHashAdapter<FString>
     {
         using is_transparent = void;
 

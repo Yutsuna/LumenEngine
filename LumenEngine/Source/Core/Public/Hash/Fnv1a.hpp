@@ -53,11 +53,17 @@ namespace Hash
     public:
 
         /**
-         * @brief Ingest InSize bytes starting at InData into the running hash
-         * @param InData Pointer to the data ( must not be null if InSize > 0 )
-         * @param InSize Number of bytes to ingest
+         * @brief Ingest    InSize bytes starting at InData into the running hash
+         * @param InDataPtr Pointer to the data ( must not be null if InSize > 0 )
+         * @param InSize    Number of bytes to ingest
          */
-        constexpr void Write ( const void *InData, const USize InSize ) noexcept;
+        constexpr void Write ( const UInt8 *InDataPtr, const USize InSize ) noexcept;
+
+        /** @overload For ANSI strings */
+        constexpr void Write ( const AnsiChar *InDataPtr, const USize InSize ) noexcept;
+
+        /** @overload For generic data */
+        inline void Write ( const void *InDataPtr, const USize InSize ) noexcept;
 
         /**
          * @brief Return the current hash value without resetting stage.
