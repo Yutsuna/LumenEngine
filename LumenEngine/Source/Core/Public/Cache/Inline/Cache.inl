@@ -49,7 +49,7 @@ const ValueType *LUMEN_CACHE_CLASS::TryGet ( const KeyType &InKey ) noexcept
 }
 
 LUMEN_CACHE_TEMPLATE
-LumenEngine::TOptional<ValueType> LUMEN_CACHE_CLASS::TryGetCopy ( const KeyType &InKey ) noexcept
+LumenEngine::TOptional<ValueType> LUMEN_CACHE_CLASS::TryGetCopy ( const KeyType &InKey ) const noexcept
 {
     TSharedLock<FSharedMutex> ReadLock( Mutex );
     auto It = Storage.find( InKey );
@@ -125,7 +125,7 @@ LUMEN_CACHE_TEMPLATE
 LumenEngine::Bool LUMEN_CACHE_CLASS::IsEmpty () const noexcept
 {
     TSharedLock<FSharedMutex> ReadLock( Mutex );
-    return Storage.IsEmpty();
+    return Storage.empty();
 }
 
 LUMEN_CACHE_TEMPLATE

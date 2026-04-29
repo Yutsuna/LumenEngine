@@ -76,7 +76,7 @@ public:
      * @param InKey  The key to look up.
      * @return Optional containing a copy of the value, or nullopt if not found.
      */
-    [[nodiscard]] TOptional<ValueType> TryGetCopy ( const KeyType &InKey ) noexcept;
+    [[nodiscard]] TOptional<ValueType> TryGetCopy ( const KeyType &InKey ) const noexcept;
 
     /** @return true if the cache contains the given key */
     [[nodiscard]] Bool Contains ( const KeyType &InKey ) const noexcept;
@@ -107,13 +107,13 @@ public:
      * @param InKey  Key to remove.
      * @return True if an entry was removed.
      */
-    [[nodiscard]] Bool Erase ( const KeyType &InKey );
+    Bool Erase ( const KeyType &InKey );
 
     /**
      * @brief Remove all entries.
      * @return Number of entries removed.
      */
-    [[nodiscard]] USize Clear () noexcept;
+    USize Clear () noexcept;
 
 public:
 
