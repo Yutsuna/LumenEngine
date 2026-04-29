@@ -5,7 +5,6 @@
 
 #include "Cache/Cache.hpp"
 #include "Container/Vector.hpp"
-#include "Hash/Hash.hpp"
 
 #include "Container/String.hpp"
 #include "CoreTypes.hpp"
@@ -133,9 +132,15 @@ namespace Cache
         FIntCache Cache;
         Cache.Put( 1, "x" );
 
-        Cache.TryGet( 1 );
-        Cache.TryGet( 2 );
-        Cache.TryGet( 1 );
+        const FString *Ptr1 = Cache.TryGet( 1 );
+        const FString *Ptr2 = Cache.TryGet( 2 );
+        const FString *Ptr3 = Cache.TryGet( 1 );
+
+        ASSERT_NE( Ptr1, nullptr );
+        EXPECT_EQ( *Ptr1, "x" );
+        EXPECT_EQ( Ptr2, nullptr );
+        ASSERT_NE( Ptr3, nullptr );
+        EXPECT_EQ( *Ptr3, "x" );
 
         const FCacheStats Stats = Cache.GetStats();
         EXPECT_EQ( Stats.Hits, 2U );
@@ -156,8 +161,13 @@ namespace Cache
     {
         FIntCache Cache;
         Cache.Put( 1, "v" );
-        Cache.TryGet( 1 );
-        Cache.TryGet( 2 );
+
+        const FString *Ptr1 = Cache.TryGet( 1 );
+        const FString *Ptr2 = Cache.TryGet( 2 );
+
+        ASSERT_NE( Ptr1, nullptr );
+        EXPECT_EQ( *Ptr1, "v" );
+        EXPECT_EQ( Ptr2, nullptr );
 
         const FCacheStats Stats = Cache.GetStats();
         EXPECT_DOUBLE_EQ( Stats.HitRatio(), 0.5 );
@@ -173,8 +183,13 @@ namespace Cache
     {
         FIntCache Cache;
         Cache.Put( 1, "v" );
-        Cache.TryGet( 1 );
-        Cache.TryGet( 2 );
+
+        const FString *Ptr1 = Cache.TryGet( 1 );
+        const FString *Ptr2 = Cache.TryGet( 2 );
+
+        ASSERT_NE( Ptr1, nullptr );
+        EXPECT_EQ( *Ptr1, "v" );
+        EXPECT_EQ( Ptr2, nullptr );
 
         Cache.ResetStats();
         EXPECT_EQ( Cache.GetStats().Hits, 0U );
@@ -199,8 +214,13 @@ namespace Cache
         Cache.Put( 2, "two" );
         Cache.Put( 3, "three" );
 
-        Cache.TryGet( 1 );
-        Cache.TryGet( 3 );
+        const FString *Ptr1 = Cache.TryGet( 1 );
+        const FString *Ptr3 = Cache.TryGet( 3 );
+
+        ASSERT_NE( Ptr1, nullptr );
+        ASSERT_NE( Ptr3, nullptr );
+        EXPECT_EQ( *Ptr1, "one" );
+        EXPECT_EQ( *Ptr3, "three" );
 
         Cache.Put( 4, "four" );
 
@@ -241,7 +261,8 @@ namespace Cache
         FLruCache64 Cache( 2 );
         Cache.Put( 1, "a" );
         Cache.Put( 2, "b" );
-        Cache.Clear();
+
+        ASSERT_EQ( Cache.Clear(), 2U );
 
         Cache.Put( 3, "c" );
         Cache.Put( 4, "d" );
@@ -320,7 +341,7 @@ namespace Cache
                     Start.arrive_and_wait();
                     for ( Int32 I = 0; I < NumKeys; ++I )
                     {
-                        Cache.Put( T * NumKeys + I, FString( std::to_string( I ) ) );
+                        Cache.Put( ( T * NumKeys ) + I, FString( std::to_string( I ) ) );
                     }
                 } );
         }
@@ -356,7 +377,7 @@ namespace Cache
                     Start.arrive_and_wait();
                     for ( Int32 I = 0; I < NumIter; ++I )
                     {
-                        Cache.Put( W * 1000 + ( I % 50 ), FString( "writer" ) );
+                        Cache.Put( ( W * 1000 ) + ( I % 50 ), FString( "writer" ) );
                     }
                 } );
         }

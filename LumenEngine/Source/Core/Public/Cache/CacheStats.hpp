@@ -60,3 +60,5 @@ namespace Cache
 } // namespace Cache
 
 } // namespace LumenEngine
+
+#include "Inline/CacheStats.inl"
