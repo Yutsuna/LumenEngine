@@ -15,8 +15,9 @@ template <typename Type> void LumenEngine::Engine::TAssetCache<Type>::Add ( cons
 template <typename Type> LumenEngine::TSharedPtr<Type> LumenEngine::Engine::TAssetCache<Type>::Find ( const FString &InKey ) const noexcept
 {
     TOptional<TSharedPtr<Type>> Result = InternalCache.TryGetCopy( InKey );
+    LUMEN_OPTIONAL( Result );
 
-    return Result.has_value() ? *Result : nullptr;
+    return Result.value();
 }
 
 template <typename Type> LumenEngine::Bool LumenEngine::Engine::TAssetCache<Type>::Remove ( const FString &InKey ) noexcept

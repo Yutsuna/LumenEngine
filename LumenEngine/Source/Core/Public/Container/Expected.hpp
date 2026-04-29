@@ -41,9 +41,22 @@ template <typename ErrorType> [[nodiscard]] inline auto MakeUnexpected ( ErrorTy
 #define LUMEN_EXPECT( Condition, Error )                                                                                                                                 \
     do                                                                                                                                                                   \
     {                                                                                                                                                                    \
-        if ( !( Condition ) )                                                                                                                                            \
+        if ( not( Condition ) )                                                                                                                                          \
         {                                                                                                                                                                \
             return MakeUnexpected( Error );                                                                                                                              \
+        }                                                                                                                                                                \
+    } while ( false )
+
+/**
+ * @macro LUMEN_EXPECT_VALUE
+ * @brief Evaluates an expected value and returns an unexpected value if it is not a valid value.
+ */
+#define LUMEN_EXPECT_VALUE( ExpectedValue )                                                                                                                              \
+    do                                                                                                                                                                   \
+    {                                                                                                                                                                    \
+        if ( not( ExpectedValue ).has_value() )                                                                                                                          \
+        {                                                                                                                                                                \
+            return MakeUnexpected( ( ExpectedValue ).error() );                                                                                                          \
         }                                                                                                                                                                \
     } while ( false )
 

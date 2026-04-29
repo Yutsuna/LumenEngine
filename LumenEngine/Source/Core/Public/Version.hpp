@@ -19,6 +19,8 @@ namespace Version
 
     constexpr const char *String = "0.1.0";
 
+    constexpr UInt32 Packed = ( Major << 16 ) | ( Minor << 8 ) | Patch;
+
 } // namespace Version
 
 } // namespace LumenEngine
