@@ -45,7 +45,7 @@ const ValueType *LUMEN_CACHE_CLASS::TryGet ( const KeyType &InKey ) noexcept
 
     Counters.RecordHit();
     EvictionPolicy.OnAccess( InKey );
-    return &It->Value;
+    return &It->second;
 }
 
 LUMEN_CACHE_TEMPLATE
@@ -62,7 +62,7 @@ LumenEngine::TOptional<ValueType> LUMEN_CACHE_CLASS::TryGetCopy ( const KeyType 
 
     Counters.RecordHit();
     EvictionPolicy.OnAccess( InKey );
-    return It->Value;
+    return It->second;
 }
 
 LUMEN_CACHE_TEMPLATE
@@ -99,7 +99,7 @@ LumenEngine::Bool LUMEN_CACHE_CLASS::Erase ( const KeyType &InKey )
     }
 
     EvictionPolicy.OnErase( InKey );
-    Storage.Erase( It );
+    Storage.erase( It );
     return true;
 }
 
@@ -110,7 +110,7 @@ LumenEngine::USize LUMEN_CACHE_CLASS::Clear () noexcept
     const USize Removed = Storage.size();
 
     Storage.clear();
-    EvictionPolicy.Clear();
+    EvictionPolicy.OnClear();
     return Removed;
 }
 
@@ -166,7 +166,7 @@ template <typename ForwardValue> void LUMEN_CACHE_CLASS::PutImplementation ( con
 
     if ( It != Storage.end() )
     {
-        It->second = std::forward<ValueType>( InValue );
+        It->second = std::forward<ForwardValue>( InValue );
         EvictionPolicy.OnAccess( InKey );
         return;
     }
@@ -176,7 +176,7 @@ template <typename ForwardValue> void LUMEN_CACHE_CLASS::PutImplementation ( con
         EvictOne();
     }
 
-    Storage.emplace( InKey, std::forward<ValueType>( InValue ) );
+    Storage.emplace( InKey, std::forward<ForwardValue>( InValue ) );
     EvictionPolicy.OnInsert( InKey, InValue );
     Counters.RecordInsert();
 }
@@ -189,7 +189,7 @@ void LUMEN_CACHE_CLASS::EvictOne ()
 
     if ( It != Storage.end() )
     {
-        Storage.erase( Victim );
+        Storage.erase( It );
         EvictionPolicy.OnErase( Victim );
         Counters.RecordEviction();
     }
