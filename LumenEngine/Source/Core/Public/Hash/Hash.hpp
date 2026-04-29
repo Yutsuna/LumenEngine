@@ -97,6 +97,11 @@ namespace Hash
         [[nodiscard]] FHashValue operator()( const FStringView InValue ) const noexcept;
     };
 
+    template <> struct THasher<FStringView> : THasher<FString>
+    {
+        /* Inherits transparent operators */
+    };
+
     template <typename ObjectType> struct THasher<ObjectType *>
     {
         [[nodiscard]] FHashValue operator()( const ObjectType *InPtr ) const noexcept;

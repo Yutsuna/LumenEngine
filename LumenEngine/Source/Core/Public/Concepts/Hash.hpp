@@ -25,7 +25,10 @@ namespace LumenEngine
  */
 using FHashValue = UInt64;
 
-template <typename ValueType> struct THasher;
+namespace Hash
+{
+    template <typename ValueType> struct THasher;
+}
 
 namespace Concepts
 {
@@ -54,7 +57,7 @@ namespace Concepts
      */
     template <typename ValueType>
     concept CHasHasherSpecialisation = requires( const ValueType &Value ) {
-        { THasher<ValueType>{}( Value ) } -> CConvertibleTo<FHashValue>;
+        { Hash::THasher<ValueType>{}( Value ) } -> CConvertibleTo<FHashValue>;
     };
 
     /**
