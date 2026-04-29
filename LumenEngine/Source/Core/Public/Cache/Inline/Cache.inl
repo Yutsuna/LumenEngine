@@ -91,15 +91,14 @@ LUMEN_CACHE_TEMPLATE
 LumenEngine::Bool LUMEN_CACHE_CLASS::Erase ( const KeyType &InKey )
 {
     TUniqueLock<FSharedMutex> WriteLock( Mutex );
-    auto It = Storage.find( InKey );
 
-    if ( It == Storage.end() )
+    if ( not Storage.contains( InKey ) )
     {
         return false;
     }
 
     EvictionPolicy.OnErase( InKey );
-    Storage.erase( It );
+    Storage.erase( InKey );
     return true;
 }
 
