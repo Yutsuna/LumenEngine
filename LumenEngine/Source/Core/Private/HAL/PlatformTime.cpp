@@ -17,6 +17,11 @@ LumenEngine::Float64 LumenEngine::HAL::FPlatformTime::Seconds ()
     return Elapsed.count();
 }
 
+LumenEngine::UInt64 LumenEngine::HAL::FPlatformTime::NowNanoseconds ()
+{
+    return static_cast<UInt64>( std::chrono::duration_cast<std::chrono::nanoseconds>( std::chrono::system_clock::now().time_since_epoch() ).count() );
+}
+
 void LumenEngine::HAL::FPlatformTime::Sleep ( const Float64 Seconds )
 {
     std::this_thread::sleep_for( std::chrono::duration<Float64>( Seconds ) );
