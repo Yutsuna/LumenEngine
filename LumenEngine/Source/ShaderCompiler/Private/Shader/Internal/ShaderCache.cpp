@@ -1,19 +1,22 @@
 /**
  * @file ShaderCache.cpp
- * @brief Implementation of the thread-safe shader cache.
+ * @brief Implementation of the thread-safe shader cache using Core TCache.
  */
 
 #include "Shader/Internal/ShaderCache.hpp"
+#include "Shader/ShaderCompilerTypes.hpp"
 
 #include "Container/File.hpp"
 #include "HAL/PlatformTime.hpp"
-#include "Shader/ShaderCompilerTypes.hpp"
 
-#include <chrono>
 #include <filesystem>
 #include <format>
 
-LumenEngine::Internal::FShaderCache::FShaderCache ( const FShaderCompilerConfig &InConfig ) noexcept : Config( InConfig )
+/**
+ * Ctors
+ */
+
+LumenEngine::Internal::FShaderCache::FShaderCache ( const FShaderCompilerConfig &InConfig ) noexcept : Config( InConfig ), MemoryCache( 1024U )
 {
     std::error_code ErrorCode;
     std::filesystem::create_directories( Config.CacheDirectory, ErrorCode );
@@ -24,17 +27,16 @@ LumenEngine::Internal::FShaderCache::FShaderCache ( const FShaderCompilerConfig 
     }
 }
 
+/**
+ * Public Methods
+ */
+
 LumenEngine::TOptional<LumenEngine::FCompiledShader>
-LumenEngine::Internal::FShaderCache::TryGet ( FSourceHash InHash, EShaderStage::Type InStage, FStringView InEntryPoint ) noexcept
+LumenEngine::Internal::FShaderCache::TryGet ( FSourceHash InHash, EShaderStage::Type InStage, const FString &InEntryPoint ) noexcept
 {
+    if ( TOptional<FCompiledShader> MemoryResult = MemoryCache.TryGetCopy( InHash ) )
     {
-        TSharedLock<FSharedMutex> ReadLock( CacheMutex );
-        if ( auto It = MemoryCache.find( InHash ); It != MemoryCache.end() )
-        {
-            FCompiledShader Cached = It->second;
-            Cached.bFromCache      = true;
-            return Cached;
-        }
+        return MemoryResult;
     }
 
     const FString MetaPath = BuildCachePath( InHash, InStage, ".meta" );
@@ -58,37 +60,37 @@ LumenEngine::Internal::FShaderCache::TryGet ( FSourceHash InHash, EShaderStage::
         return std::nullopt;
     }
 
-    FCompiledShader Shader;
-    Shader.SpirV      = std::move( *SpirV );
-    Shader.Hash       = InHash;
-    Shader.Stage      = InStage;
-    Shader.EntryPoint = InEntryPoint;
-    Shader.bFromCache = true;
+    FCompiledShader Shader = {
+        .SpirV = std::move( *SpirV ),
+        /* */
+        .Reflection = {},
+        /* */
+        .Stage = InStage,
+        /* */
+        .Hash = InHash,
+        /* */
+        .bFromCache = true,
+        /* */
+        .EntryPoint = InEntryPoint,
+    };
 
-    {
-        TUniqueLock<FSharedMutex> WriteLock( CacheMutex );
-        MemoryCache.emplace( InHash, Shader );
-    }
+    MemoryCache.Put( InHash, Shader );
 
     return Shader;
 }
 
 void LumenEngine::Internal::FShaderCache::Put ( FSourceHash InHash, const FShaderCompileRequest &InRequest, const FCompiledShader &InCompiled ) noexcept
 {
-    {
-        TUniqueLock<FSharedMutex> WriteLock( CacheMutex );
-        MemoryCache.emplace( InHash, InCompiled );
-    }
+    MemoryCache.Put( InHash, InCompiled );
 
-    const FString SpvPath  = BuildCachePath( InHash, InRequest.Stage, ".spv" );
-    const FString MetaPath = BuildCachePath( InHash, InRequest.Stage, ".meta" );
-
-    FShaderCacheMetaData Meta{ .SourceHash     = InHash,
-                               .Stage          = InRequest.Stage,
-                               .Optimization   = InRequest.Optimization,
-                               .CompiledAtNs   = static_cast<UInt64>( HAL::FPlatformTime::Seconds() * 1e9 ),
-                               .SpirVWordCount = static_cast<UInt32>( InCompiled.SpirV.size() ),
-                               .EntryPoint     = InRequest.EntryPoint };
+    const FString SpvPath     = BuildCachePath( InHash, InRequest.Stage, ".spv" );
+    const FString MetaPath    = BuildCachePath( InHash, InRequest.Stage, ".meta" );
+    FShaderCacheMetaData Meta = { .SourceHash     = InHash,
+                                  .Stage          = InRequest.Stage,
+                                  .Optimization   = InRequest.Optimization,
+                                  .CompiledAtNs   = static_cast<UInt64>( HAL::FPlatformTime::Seconds() * 1e9 ),
+                                  .SpirVWordCount = static_cast<UInt32>( InCompiled.SpirV.size() ),
+                                  .EntryPoint     = InRequest.EntryPoint };
 
     if ( not FIOFile::WriteAllBytes( SpvPath, InCompiled.SpirV ) and Config.WarningCallback )
     {
@@ -140,10 +142,7 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::WarmUp () noexcept
 
 void LumenEngine::Internal::FShaderCache::Invalidate ( FSourceHash InHash, EShaderStage::Type InStage ) noexcept
 {
-    {
-        TUniqueLock<FSharedMutex> WriteLock( CacheMutex );
-        MemoryCache.erase( InHash );
-    }
+    MemoryCache.Erase( InHash );
 
     try
     {
@@ -160,12 +159,9 @@ void LumenEngine::Internal::FShaderCache::Invalidate ( FSourceHash InHash, EShad
 
 LumenEngine::USize LumenEngine::Internal::FShaderCache::Clear () noexcept
 {
-    USize RemovedCount = 0ULL;
+    MemoryCache.Clear();
 
-    {
-        TUniqueLock<FSharedMutex> WriteLock( CacheMutex );
-        MemoryCache.clear();
-    }
+    USize RemovedCount = 0ULL;
 
     try
     {
@@ -208,7 +204,6 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::ClearStale ( const doubl
             return 0ULL;
         }
 
-        std::error_code ErrorCode;
         for ( const std::filesystem::directory_entry &Entry : std::filesystem::directory_iterator( Config.CacheDirectory ) )
         {
             if ( Entry.path().extension() == ".meta" )
@@ -237,25 +232,29 @@ LumenEngine::USize LumenEngine::Internal::FShaderCache::ClearStale ( const doubl
 
 void LumenEngine::Internal::FShaderCache::RecordHit () noexcept
 {
-    CacheHitCount.fetch_add( 1ULL, std::memory_order_relaxed );
+    MemoryCache.GetCounters().RecordHit();
 }
 
 void LumenEngine::Internal::FShaderCache::RecordMiss () noexcept
 {
-    CacheMissCount.fetch_add( 1ULL, std::memory_order_relaxed );
+    MemoryCache.GetCounters().RecordMiss();
 }
 
 LumenEngine::UInt64 LumenEngine::Internal::FShaderCache::GetHits () const noexcept
 {
-    return CacheHitCount.load( std::memory_order_relaxed );
+    return MemoryCache.GetCounters().Snapshot().Hits;
 }
 
 LumenEngine::UInt64 LumenEngine::Internal::FShaderCache::GetMisses () const noexcept
 {
-    return CacheMissCount.load( std::memory_order_relaxed );
+    return MemoryCache.GetCounters().Snapshot().Misses;
 }
 
-LumenEngine::FString LumenEngine::Internal::FShaderCache::BuildCachePath ( const FSourceHash InHash, const EShaderStage::Type InStage, const AnsiChar *InExt ) const
+/**
+ * Private Methods
+ */
+
+LumenEngine::FString LumenEngine::Internal::FShaderCache::BuildCachePath ( FSourceHash InHash, EShaderStage::Type InStage, const AnsiChar *InExt ) const
 {
-    return ( std::filesystem::path( Config.CacheDirectory ) / std::format( "{:016x}_{}{}", InHash, EShaderStage::ToString( InStage ), InExt ) ).string();
+    return ( Config.CacheDirectory / std::format( "{:016x}_{}{}", InHash, EShaderStage::ToString( InStage ), InExt ) ).string();
 }

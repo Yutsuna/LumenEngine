@@ -163,12 +163,10 @@ LumenEngine::FShaderCompileResult LumenEngine::FShaderCompiler::TryLoadFromCache
     TOptional<FCompiledShader> Cached = Cache->TryGet( Hash, InRequest.Stage, InRequest.EntryPoint );
     if ( not Cached )
     {
-        Cache->RecordMiss();
         return FShaderCompileResult::Failure( EShaderCompilerError::CacheReadFailed );
     }
 
     LUMEN_LOG_SHADER_TRACE( LogShaderCompiler, "Shader cache hit for hash {:016x} (Stage: {})", Hash, EShaderStage::ToString( InRequest.Stage ) );
-    Cache->RecordHit();
 
     FString Error;
     if ( not TryReflect( *Cached, Error ) )

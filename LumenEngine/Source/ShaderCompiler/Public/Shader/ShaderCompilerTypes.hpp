@@ -251,7 +251,7 @@ struct FShaderCacheMetaData
     UInt32 SpirVWordCount = 0;
 
     /** The entry point function name used in the shader (default is "main"). */
-    FStringView EntryPoint = "main";
+    FString EntryPoint = "main";
 
     /** LSHC = Lumen Shader Cache Header */
     static constexpr UInt32 MagicNumber = 0X4C534843;
