@@ -9,9 +9,14 @@
 #include "Concepts/Hash.hpp"
 #include "Concepts/MoveConstructible.hpp"
 
+#include "Container/Map.hpp"
 #include "Container/Optional.hpp"
+
+#include "HAL/SharedMutex.hpp"
 #include "NonCopyable.hpp"
 #include "NonMovable.hpp"
+
+#include "Hash/Hash.hpp"
 
 #include "Cache/CachePolicy.hpp"
 
@@ -101,20 +106,13 @@ public:
      * @param InKey  Key to remove.
      * @return True if an entry was removed.
      */
-    Bool Erase ( const KeyType &InKey ) noexcept;
-
-    /**
-     * @brief Remove a single entry. No-op if the key is absent.
-     * @param InKey  Key to remove.
-     * @return True if an entry was removed.
-     */
-    Bool Erase ( const KeyType &InKey ) noexcept;
+    [[nodiscard]] Bool Erase ( const KeyType &InKey ) noexcept;
 
     /**
      * @brief Remove all entries.
      * @return Number of entries removed.
      */
-    USize Clear () noexcept;
+    [[nodiscard]] USize Clear () noexcept;
 
 private:
 

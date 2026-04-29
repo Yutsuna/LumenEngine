@@ -10,7 +10,6 @@
 namespace LumenEngine
 {
 
-// TODO: Implement custom map class
-template <typename KeyType, typename ValueType> using TMap = std::unordered_map<KeyType, ValueType>;
+template <typename KeyType, typename ValueType, typename HashFunc = std::hash<KeyType>> using TMap = std::unordered_map<KeyType, ValueType, HashFunc>;
 
 } // namespace LumenEngine

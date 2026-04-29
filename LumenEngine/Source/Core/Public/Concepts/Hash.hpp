@@ -53,7 +53,7 @@ namespace Concepts
      */
     template <typename ValueType>
     concept CHasHasherSpecialisation = requires( const ValueType &Value ) {
-        { THasher<ValueType>{} } -> CConvertibleTo<FHashValue>;
+        { THasher<ValueType>{}( Value ) } -> CConvertibleTo<FHashValue>;
     };
 
     /**
