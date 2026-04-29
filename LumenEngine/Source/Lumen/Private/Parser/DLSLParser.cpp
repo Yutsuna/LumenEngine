@@ -152,9 +152,10 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> Lu
 
     Advance();
 
-    FDLSLNode *Node   = NodeResult.value();
-    Node->Type        = EDLSLNodeType::String;
-    Node->StringValue = PreviousToken.Text;
+    FDLSLNode *Node      = NodeResult.value();
+    Node->Type           = EDLSLNodeType::String;
+    Node->StringRaw.Data = PreviousToken.Text.data();
+    Node->StringRaw.Size = PreviousToken.Text.size();
 
     return Node;
 }
@@ -197,8 +198,9 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> Lu
     }
     else
     {
-        Node->Type            = EDLSLNodeType::Identifier;
-        Node->IdentifierValue = PreviousToken.Text;
+        Node->Type               = EDLSLNodeType::Identifier;
+        Node->IdentifierRaw.Data = PreviousToken.Text.data();
+        Node->IdentifierRaw.Size = PreviousToken.Text.size();
     }
 
     return Node;

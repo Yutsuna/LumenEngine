@@ -10,6 +10,17 @@
 #include "Types/BinaryTypes.hpp"
 
 #include <cstring>
+#include <string>
+
+namespace
+{
+
+inline std::string ToString ( LumenEngine::FStringView InView )
+{
+    return { InView.data(), InView.size() };
+}
+
+} // namespace
 
 /**
  * Public Methods
@@ -24,7 +35,7 @@ LumenEngine::Lumen::FBinarySerializer::SerializeMesh ( const FDLSLRootBlock *InM
     }
     if ( InMeshBlock->BlockType != "Mesh" )
     {
-        return std::unexpected( "Invalid root block type for mesh serialization. Expected 'Mesh' but got '" + InMeshBlock->BlockType + "'." );
+        return std::unexpected( "Invalid root block type for mesh serialization. Expected 'Mesh' but got '" + ToString( InMeshBlock->BlockType ) + "'." );
     }
 
     const FDLSLNode *VerticesNode = FindProperty( InMeshBlock->Body, "Vertices" );
@@ -33,29 +44,32 @@ LumenEngine::Lumen::FBinarySerializer::SerializeMesh ( const FDLSLRootBlock *InM
 
     if ( VerticesNode == nullptr )
     {
-        return std::unexpected( "Missing Vertices list for " + InMeshBlock->Name + " mesh." );
+        return std::unexpected( "Missing Vertices list for " + ToString( InMeshBlock->Name ) + " mesh." );
     }
-    if ( VerticesNode->Type != EDLSLNode::Type::List )
+    if ( VerticesNode->Type != EDLSLNodeType::List )
     {
-        return std::unexpected( "Invalid Vertices list type for " + InMeshBlock->Name + " mesh. Got " + EDLSLNode::ToString( VerticesNode->Type ) + " instead of List." );
+        return std::unexpected( "Invalid Vertices list type for " + ToString( InMeshBlock->Name ) + " mesh. Got " + EDLSLNodeType::ToString( VerticesNode->Type ) +
+                                " instead of List." );
     }
 
     if ( IndicesNode == nullptr )
     {
-        return std::unexpected( "Missing Indices list for " + InMeshBlock->Name + " mesh." );
+        return std::unexpected( "Missing Indices list for " + ToString( InMeshBlock->Name ) + " mesh." );
     }
-    if ( IndicesNode->Type != EDLSLNode::Type::List )
+    if ( IndicesNode->Type != EDLSLNodeType::List )
     {
-        return std::unexpected( "Invalid Indices list type for " + InMeshBlock->Name + " mesh. Got " + EDLSLNode::ToString( IndicesNode->Type ) + " instead of List." );
+        return std::unexpected( "Invalid Indices list type for " + ToString( InMeshBlock->Name ) + " mesh. Got " + EDLSLNodeType::ToString( IndicesNode->Type ) +
+                                " instead of List." );
     }
 
     if ( ConfigNode == nullptr )
     {
-        return std::unexpected( "Missing @Config object for " + InMeshBlock->Name + " mesh." );
+        return std::unexpected( "Missing @Config object for " + ToString( InMeshBlock->Name ) + " mesh." );
     }
-    if ( ConfigNode->Type != EDLSLNode::Type::Object )
+    if ( ConfigNode->Type != EDLSLNodeType::Object )
     {
-        return std::unexpected( "Invalid @Config type for " + InMeshBlock->Name + " mesh. Got " + EDLSLNode::ToString( ConfigNode->Type ) + " instead of Object." );
+        return std::unexpected( "Invalid @Config type for " + ToString( InMeshBlock->Name ) + " mesh. Got " + EDLSLNodeType::ToString( ConfigNode->Type ) +
+                                " instead of Object." );
     }
 
     TExpected<TVector<Maths::FVertex>, FString> VerticesResult = ExtractVertices( VerticesNode );
@@ -218,7 +232,7 @@ void LumenEngine::Lumen::FBinarySerializer::ExtractMeshConfig ( const FDLSLNode 
     const FDLSLNode *TopologyNode = FindProperty( InConfigNode, "Topology" );
     if ( TopologyNode != nullptr and TopologyNode->Type == EDLSLNodeType::Identifier )
     {
-        if ( TopologyNode->IdentifierValue == "TriangleList" )
+        if ( TopologyNode->GetString() == "TriangleList" )
         {
             OutHeader.Topology = 3;
         }
@@ -227,7 +241,7 @@ void LumenEngine::Lumen::FBinarySerializer::ExtractMeshConfig ( const FDLSLNode 
     const FDLSLNode *CullModeNode = FindProperty( InConfigNode, "CullMode" );
     if ( CullModeNode != nullptr and CullModeNode->Type == EDLSLNodeType::Identifier )
     {
-        if ( CullModeNode->IdentifierValue == "Back" )
+        if ( CullModeNode->GetString() == "Back" )
         {
             OutHeader.CullMode = 2;
         }
@@ -236,7 +250,7 @@ void LumenEngine::Lumen::FBinarySerializer::ExtractMeshConfig ( const FDLSLNode 
     const FDLSLNode *WindingOrderNode = FindProperty( InConfigNode, "WindingOrder" );
     if ( WindingOrderNode != nullptr and WindingOrderNode->Type == EDLSLNodeType::Identifier )
     {
-        if ( WindingOrderNode->IdentifierValue == "CCW" )
+        if ( WindingOrderNode->GetString() == "CCW" )
         {
             OutHeader.WindingOrder = 1;
         }
@@ -253,13 +267,13 @@ void LumenEngine::Lumen::FBinarySerializer::ExtractRenderState ( const FDLSLNode
     const FDLSLNode *BlendModeNode = FindProperty( InStateNode, "BlendMode" );
     if ( BlendModeNode != nullptr and BlendModeNode->Type == EDLSLNodeType::Identifier )
     {
-        OutHeader.BlendMode = ( BlendModeNode->IdentifierValue == "Opaque" ) ? 0 : 1;
+        OutHeader.BlendMode = ( BlendModeNode->GetString() == "Opaque" ) ? 0 : 1;
     }
 
     const FDLSLNode *DepthTestNode = FindProperty( InStateNode, "DepthTest" );
     if ( DepthTestNode != nullptr and DepthTestNode->Type == EDLSLNodeType::Identifier )
     {
-        OutHeader.DepthTest = ( DepthTestNode->IdentifierValue == "Less" ) ? 1 : 0;
+        OutHeader.DepthTest = ( DepthTestNode->GetString() == "Less" ) ? 1 : 0;
     }
 
     const FDLSLNode *DepthWriteNode = FindProperty( InStateNode, "DepthWrite" );
@@ -271,12 +285,12 @@ void LumenEngine::Lumen::FBinarySerializer::ExtractRenderState ( const FDLSLNode
     const FDLSLNode *CullModeNode = FindProperty( InStateNode, "CullMode" );
     if ( CullModeNode != nullptr and CullModeNode->Type == EDLSLNodeType::Identifier )
     {
-        OutHeader.CullMode = ( CullModeNode->IdentifierValue == "Back" ) ? 2 : 0;
+        OutHeader.CullMode = ( CullModeNode->GetString() == "Back" ) ? 2 : 0;
     }
 
     const FDLSLNode *WireFrameNode = FindProperty( InStateNode, "WireFrame" );
     if ( WireFrameNode != nullptr and WireFrameNode->Type == EDLSLNodeType::Boolean )
     {
-        OutHeader.WireFrame = WireFrameNode->BooleanValue ? 1 : 0;
+        OutHeader.WireFrame = WireFrameNode->WireFrame ? 1 : 0;
     }
 }

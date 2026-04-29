@@ -47,7 +47,12 @@ namespace Lumen
 
         union
         {
-            FStringView StringValue;
+            struct
+            {
+                const char *Data;
+                USize Size;
+            } StringRaw;
+
             Float64 NumberValue;
 
             struct
@@ -55,9 +60,15 @@ namespace Lumen
                 Float32 Data[4];
                 UInt8 Count;
             } VectorValue;
+
             Bool BooleanValue;
 
-            FStringView IdentifierValue;
+            struct
+            {
+                const char *Data;
+                USize Size;
+
+            } IdentifierRaw;
 
             struct
             {
@@ -75,6 +86,8 @@ namespace Lumen
         };
 
         FDLSLNode *Next = nullptr;
+
+        [[nodiscard]] FStringView GetString () const noexcept;
     };
 
     struct FDLSLRootBlock

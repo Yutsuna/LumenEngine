@@ -29,3 +29,8 @@ constexpr const LumenEngine::AnsiChar *LumenEngine::Lumen::EDLSLNodeType::ToStri
         return "Unknown";
     }
 }
+
+LumenEngine::FStringView LumenEngine::Lumen::FDLSLNode::GetString () const noexcept
+{
+    return { StringRaw.Data, StringRaw.Size };
+}
