@@ -25,13 +25,7 @@ namespace Hash
      * @tparam ValueType Any CHashable type
      */
     template <Concepts::CHashAlgorithm TAlgorithm = FFnv1a64, Concepts::CHashable ValueType>
-    [[nodiscard]] FHashValue CombineHash ( FHashValue InSeed, const ValueType &InValue ) noexcept
-    {
-        const FHashValue ValueHash = Compute<TAlgorithm>( InValue );
-
-        constexpr FHashValue Magic = 0x9E3779B97F4A7C15ULL;
-        return InSeed ^ ( ValueHash + Magic + ( InSeed << 6U ) + ( InSeed >> 2U ) );
-    }
+    [[nodiscard]] FHashValue CombineHash ( FHashValue InSeed, const ValueType &InValue ) noexcept;
 
     /**
      * @struct THasher

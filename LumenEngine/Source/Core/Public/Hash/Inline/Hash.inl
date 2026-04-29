@@ -12,6 +12,15 @@
 namespace LumenEngine
 {
 
+template <Concepts::CHashAlgorithm TAlgorithm, Concepts::CHashable ValueType>
+[[nodiscard]] FHashValue Hash::CombineHash ( FHashValue InSeed, const ValueType &InValue ) noexcept
+{
+    const FHashValue ValueHash = Compute<TAlgorithm>( InValue );
+
+    constexpr FHashValue Magic = 0x9E3779B97F4A7C15ULL;
+    return InSeed ^ ( ValueHash + Magic + ( InSeed << 6U ) + ( InSeed >> 2U ) );
+}
+
 template <typename ValueType> FHashValue Hash::THasher<ValueType>::operator()( const ValueType InValue ) const noexcept
 {
     FFnv1a64 Algorithm;
