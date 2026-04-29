@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Cache/CacheStats.hpp"
 #include "Concepts/Cache.hpp"
 #include "Concepts/Hash.hpp"
 #include "Concepts/MoveConstructible.hpp"
@@ -99,20 +100,57 @@ public:
      * @param InKey    The key.
      * @param InValue  The value (moved).
      */
-    void Put ( const KeyType &InKey, ValueType &&InValue ) noexcept;
+    void Put ( const KeyType &InKey, ValueType &&InValue );
 
     /**
      * @brief Remove a single entry. No-op if the key is absent.
      * @param InKey  Key to remove.
      * @return True if an entry was removed.
      */
-    [[nodiscard]] Bool Erase ( const KeyType &InKey ) noexcept;
+    [[nodiscard]] Bool Erase ( const KeyType &InKey );
 
     /**
      * @brief Remove all entries.
      * @return Number of entries removed.
      */
     [[nodiscard]] USize Clear () noexcept;
+
+public:
+
+    /** @return the approximate number of entries currently in the cache */
+    [[nodiscard]] USize Size () const noexcept;
+
+    /** @return true if the cache contains no entries */
+    [[nodiscard]] Bool IsEmpty () const noexcept;
+
+    /** @return the maximum number of entries before eviction occurs */
+    [[nodiscard]] constexpr USize GetMaxSize () const noexcept;
+
+    /**
+     * @brief Change the maximum capacity ( write lock )
+     *
+     * If the new capacity is smaller than the current size, entries will be evicted according
+     * to the eviction policy until the size is within the new limit.
+     *
+     * @param InNewMaxSize  New maximum number of entries before eviction occurs.
+     *                      Pass Unbounded for no limit.
+     */
+    void SetMaxSize ( const USize InNewMaxSize ) noexcept;
+
+private:
+
+    /**
+     * @brief Common implementation for Put() overloads to avoid code duplication.
+     * @param InKey    The key.
+     * @param InValue  The value (perfect-forwarded).
+     */
+    template <typename ForwardValue> void PutImplementation ( const KeyType &InKey, ForwardValue &&InValue );
+
+    /** @brief Evict a single entry from the cache */
+    void EvictOne ();
+
+    /** @brief Evict entries until the cache is within its capacity */
+    void EvictToCapacity ();
 
 private:
 
@@ -133,3 +171,5 @@ private:
 };
 
 } // namespace LumenEngine
+
+#include "Inline/Cache.inl"
