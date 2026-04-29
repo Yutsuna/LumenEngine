@@ -126,6 +126,9 @@ public:
     /** @return the maximum number of entries before eviction occurs */
     [[nodiscard]] constexpr USize GetMaxSize () const noexcept;
 
+    /** @return a snapshot of the current cache performance counters */
+    [[nodiscard]] Cache::FCacheCounters &GetCounters () const noexcept;
+
     /**
      * @brief Change the maximum capacity ( write lock )
      *

@@ -135,6 +135,12 @@ constexpr LumenEngine::USize LUMEN_CACHE_CLASS::GetMaxSize () const noexcept
 }
 
 LUMEN_CACHE_TEMPLATE
+inline LumenEngine::Cache::FCacheCounters &LUMEN_CACHE_CLASS::GetCounters () const noexcept
+{
+    return Counters;
+}
+
+LUMEN_CACHE_TEMPLATE
 void LUMEN_CACHE_CLASS::SetMaxSize ( const USize InNewMaxSize ) noexcept
 {
     TUniqueLock<FSharedMutex> WriteLock( Mutex );
