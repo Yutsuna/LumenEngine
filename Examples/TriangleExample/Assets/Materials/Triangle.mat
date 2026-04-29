@@ -1,8 +1,0 @@
-Material "TriangleMaterial"
-{
-    Shaders
-    {
-        Vertex:   "Shaders/Triangle.vert"
-        Fragment: "Shaders/Triangle.frag"
-    }
-}
