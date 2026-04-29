@@ -11,7 +11,13 @@
 template <typename TTraits>
 LumenEngine::Compiler::TCompilerCache<TTraits>::TCompilerCache( const typename TTraits::ConfigType &InConfig ) : Config( InConfig ), MemoryCache( 1024U )
 {
-    /* Ctor */
+    std::error_code ErrorCode;
+    std::filesystem::create_directories( Config.CacheDirectory, ErrorCode );
+
+    if ( ErrorCode )
+    {
+        LUMEN_LOG_ERROR( LogCompiler, "TCompilerCache: Failed to create cache directory '{}': {}", Config.CacheDirectory.string(), ErrorCode.message() );
+    }
 }
 
 template <typename TTraits>
@@ -52,16 +58,16 @@ void LumenEngine::Compiler::TCompilerCache<TTraits>::Put ( const FSourceHash InH
     const FString BinaryPath = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, TTraits::BinaryExtension );
 
     TMeta Meta        = TTraits::CreateMeta( InHash, InRequest, InCompiled );
-    Meta.CompiledAtNs = static_cast<UInt64>( HAL::FPlatformTime::Seconds() * 1.0E9 );
+    Meta.CompiledAtNs = static_cast<UInt64>( std::chrono::duration_cast<std::chrono::nanoseconds>( std::chrono::system_clock::now().time_since_epoch() ).count() );
 
     if ( not FIOFile::WriteAllBytes( BinaryPath, TTraits::GetBinaryData( InCompiled ) ) )
     {
-        return;
+        LUMEN_LOG_WARNING( LogCompiler, "TCompilerCache: Failed to write binary data to '{}'", BinaryPath );
     }
 
     if ( not FIOFile::WriteAllBytes( MetaPath, Meta.Serialize() ) )
     {
-        return;
+        LUMEN_LOG_WARNING( LogCompiler, "TCompilerCache: Failed to write metadata to '{}'", MetaPath );
     }
 }
 
