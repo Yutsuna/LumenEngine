@@ -11,6 +11,7 @@
 #include "Container/String.hpp"
 #include "Container/Vector.hpp"
 
+#include "Container/Expected.hpp"
 #include "ErrorCodes.hpp"
 
 #include "Shader/ShaderCompilerTypes.hpp"

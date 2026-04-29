@@ -254,7 +254,7 @@ struct FShaderCacheMetaData
     FString EntryPoint = "main";
 
     /** LSHC = Lumen Shader Cache Header */
-    static constexpr UInt32 MagicNumber = 0X4C534843;
+    static constexpr UInt32 MagicNumber = LUMEN_SHADER_CACHE_MAGIC_NUMBER;
 
     /** Version number for the shader cache metadata format. */
     static constexpr UInt32 Version = 2U;
