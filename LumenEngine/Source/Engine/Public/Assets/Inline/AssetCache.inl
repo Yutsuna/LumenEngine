@@ -15,7 +15,7 @@ template <typename Type> void LumenEngine::Engine::TAssetCache<Type>::Add ( cons
 template <typename Type> LumenEngine::TSharedPtr<Type> LumenEngine::Engine::TAssetCache<Type>::Find ( const FString &InKey ) const noexcept
 {
     TOptional<TSharedPtr<Type>> Result = InternalCache.TryGetCopy( InKey );
-    LUMEN_OPTIONAL( Result );
+    LUMEN_OPTIONAL_ERROR( Result, nullptr );
 
     return Result.value();
 }
