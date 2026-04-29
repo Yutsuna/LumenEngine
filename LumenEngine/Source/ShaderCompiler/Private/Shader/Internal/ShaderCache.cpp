@@ -1,19 +1,19 @@
 /**
  * @file ShaderCache.cpp
- * @brief Implementation of the thread-safe shader cache.
+ * @brief Implementation of the thread-safe shader cache using Core TCache.
  */
 
 #include "Shader/Internal/ShaderCache.hpp"
-
-#include "Container/File.hpp"
-#include "HAL/PlatformTime.hpp"
 #include "Shader/ShaderCompilerTypes.hpp"
 
-#include <chrono>
+#include "Container/File.hpp"
+
+#include "HAL/PlatformTime.hpp"
+
 #include <filesystem>
 #include <format>
 
-LumenEngine::Internal::FShaderCache::FShaderCache ( const FShaderCompilerConfig &InConfig ) noexcept : Config( InConfig )
+LumenEngine::Internal::FShaderCache::FShaderCache ( const FShaderCompilerConfig &InConfig ) noexcept : Config( InConfig ), MemoryCache( 1024U )
 {
     std::error_code ErrorCode;
     std::filesystem::create_directories( Config.CacheDirectory, ErrorCode );
@@ -25,16 +25,11 @@ LumenEngine::Internal::FShaderCache::FShaderCache ( const FShaderCompilerConfig 
 }
 
 LumenEngine::TOptional<LumenEngine::FCompiledShader>
-LumenEngine::Internal::FShaderCache::TryGet ( FSourceHash InHash, EShaderStage::Type InStage, FStringView InEntryPoint ) noexcept
+LumenEngine::Internal::FShaderCache::TryGet ( FSourceHash InHash, EShaderStage::Type InStage, const FString &InEntryPoint ) noexcept
 {
+    if ( TOptional<FCompiledShader> MemoryResult = MemoryCache.TryGetCopy( InHash ) )
     {
-        TSharedLock<FSharedMutex> ReadLock( CacheMutex );
-        if ( auto It = MemoryCache.find( InHash ); It != MemoryCache.end() )
-        {
-            FCompiledShader Cached = It->second;
-            Cached.bFromCache      = true;
-            return Cached;
-        }
+        return MemoryResult;
     }
 
     const FString MetaPath = BuildCachePath( InHash, InStage, ".meta" );
@@ -58,27 +53,28 @@ LumenEngine::Internal::FShaderCache::TryGet ( FSourceHash InHash, EShaderStage::
         return std::nullopt;
     }
 
-    FCompiledShader Shader;
-    Shader.SpirV      = std::move( *SpirV );
-    Shader.Hash       = InHash;
-    Shader.Stage      = InStage;
-    Shader.EntryPoint = InEntryPoint;
-    Shader.bFromCache = true;
+    FCompiledShader Shader = {
+        .SpirV = std::move( *SpirV ),
+        /* */
+        .Reflection = {},
+        /* */
+        .Stage = InStage,
+        /* */
+        .Hash = InHash,
+        /* */
+        .bFromCache = true,
+        /* */
+        .EntryPoint = InEntryPoint,
+    };
 
-    {
-        TUniqueLock<FSharedMutex> WriteLock( CacheMutex );
-        MemoryCache.emplace( InHash, Shader );
-    }
+    MemoryCache.Put( InHash, Shader );
 
     return Shader;
 }
 
 void LumenEngine::Internal::FShaderCache::Put ( FSourceHash InHash, const FShaderCompileRequest &InRequest, const FCompiledShader &InCompiled ) noexcept
 {
-    {
-        TUniqueLock<FSharedMutex> WriteLock( CacheMutex );
-        MemoryCache.emplace( InHash, InCompiled );
-    }
+    MemoryCache.Put( InHash, InCompiled );
 
     const FString SpvPath  = BuildCachePath( InHash, InRequest.Stage, ".spv" );
     const FString MetaPath = BuildCachePath( InHash, InRequest.Stage, ".meta" );
@@ -101,161 +97,20 @@ void LumenEngine::Internal::FShaderCache::Put ( FSourceHash InHash, const FShade
     }
 }
 
-LumenEngine::USize LumenEngine::Internal::FShaderCache::WarmUp () noexcept
-{
-    USize LoadedCount = 0ULL;
-
-    try
-    {
-        if ( not FIOFile::Exists( Config.CacheDirectory ) )
-        {
-            return 0ULL;
-        }
-
-        for ( const std::filesystem::directory_entry &Entry : std::filesystem::directory_iterator( Config.CacheDirectory ) )
-        {
-            if ( Entry.path().extension() == ".meta" )
-            {
-                TOptional<TVector<Byte>> MetaBytes = FIOFile::ReadAllBytes<Byte>( Entry.path().string() );
-                if ( MetaBytes.has_value() )
-                {
-                    TOptional<FShaderCacheMetaData> MetaOpt = FShaderCacheMetaData::Deserialize( std::span<const Byte>( *MetaBytes ) );
-                    if ( MetaOpt.has_value() )
-                    {
-                        if ( TOptional<FCompiledShader> ShaderOpt = TryGet( MetaOpt->SourceHash, MetaOpt->Stage, MetaOpt->EntryPoint ) )
-                        {
-                            ++LoadedCount;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    catch ( const std::filesystem::filesystem_error &SystemError )
-    {
-        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while warming up cache: {}", SystemError.what() );
-    }
-    return LoadedCount;
-}
-
 void LumenEngine::Internal::FShaderCache::Invalidate ( FSourceHash InHash, EShaderStage::Type InStage ) noexcept
 {
+
+    if ( not MemoryCache.Contains( InHash ) )
     {
-        TUniqueLock<FSharedMutex> WriteLock( CacheMutex );
-        MemoryCache.erase( InHash );
+        return;
     }
 
-    try
-    {
-        std::error_code ErrorCode;
-        std::filesystem::remove( BuildCachePath( InHash, InStage, ".spv" ), ErrorCode );
-        std::filesystem::remove( BuildCachePath( InHash, InStage, ".meta" ), ErrorCode );
-        std::filesystem::remove( BuildCachePath( InHash, InStage, ".spvasm" ), ErrorCode );
-    }
-    catch ( const std::filesystem::filesystem_error &SystemError )
-    {
-        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while invalidating cache for hash {:016x}: {}", InHash, SystemError.what() );
-    }
+    std::error_code ErrorCode;
+    std::filesystem::remove( BuildCachePath( InHash, InStage, ".spv" ), ErrorCode );
+    std::filesystem::remove( BuildCachePath( InHash, InStage, ".meta" ), ErrorCode );
 }
 
 LumenEngine::USize LumenEngine::Internal::FShaderCache::Clear () noexcept
 {
-    USize RemovedCount = 0ULL;
-
-    {
-        TUniqueLock<FSharedMutex> WriteLock( CacheMutex );
-        MemoryCache.clear();
-    }
-
-    try
-    {
-        if ( not FIOFile::Exists( Config.CacheDirectory ) )
-        {
-            return 0ULL;
-        }
-
-        std::error_code ErrorCode;
-        for ( const std::filesystem::directory_entry &Entry : std::filesystem::directory_iterator( Config.CacheDirectory ) )
-        {
-            const std::filesystem::path Extension = Entry.path().extension();
-            if ( Extension == ".meta" or Extension == ".spv" or Extension == ".spvasm" )
-            {
-                if ( std::filesystem::remove( Entry.path(), ErrorCode ) )
-                {
-                    ++RemovedCount;
-                }
-            }
-        }
-    }
-    catch ( const std::filesystem::filesystem_error &SystemError )
-    {
-        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while clearing cache: {}", SystemError.what() );
-    }
-
-    return RemovedCount / 2ULL;
-}
-
-LumenEngine::USize LumenEngine::Internal::FShaderCache::ClearStale ( const double MaxAgeSeconds ) noexcept
-{
-    USize RemovedCount    = 0ULL;
-    const UInt64 NowNs    = static_cast<UInt64>( std::chrono::duration_cast<std::chrono::nanoseconds>( std::chrono::system_clock::now().time_since_epoch() ).count() );
-    const UInt64 MaxAgeNs = static_cast<UInt64>( MaxAgeSeconds * 1e9 );
-
-    try
-    {
-        if ( not FIOFile::Exists( Config.CacheDirectory ) )
-        {
-            return 0ULL;
-        }
-
-        std::error_code ErrorCode;
-        for ( const std::filesystem::directory_entry &Entry : std::filesystem::directory_iterator( Config.CacheDirectory ) )
-        {
-            if ( Entry.path().extension() == ".meta" )
-            {
-                if ( TOptional<TVector<Byte>> MetaBytes = FIOFile::ReadAllBytes<Byte>( Entry.path().string() ) )
-                {
-                    if ( TOptional<FShaderCacheMetaData> MetaOpt = FShaderCacheMetaData::Deserialize( std::span<const Byte>( *MetaBytes ) ) )
-                    {
-                        if ( NowNs > MetaOpt->CompiledAtNs and ( NowNs - MetaOpt->CompiledAtNs ) > MaxAgeNs )
-                        {
-                            Invalidate( MetaOpt->SourceHash, MetaOpt->Stage );
-                            ++RemovedCount;
-                        }
-                    }
-                }
-            }
-        }
-    }
-    catch ( const std::filesystem::filesystem_error &SystemError )
-    {
-        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while clearing stale cache entries: {}", SystemError.what() );
-    }
-
-    return RemovedCount;
-}
-
-void LumenEngine::Internal::FShaderCache::RecordHit () noexcept
-{
-    CacheHitCount.fetch_add( 1ULL, std::memory_order_relaxed );
-}
-
-void LumenEngine::Internal::FShaderCache::RecordMiss () noexcept
-{
-    CacheMissCount.fetch_add( 1ULL, std::memory_order_relaxed );
-}
-
-LumenEngine::UInt64 LumenEngine::Internal::FShaderCache::GetHits () const noexcept
-{
-    return CacheHitCount.load( std::memory_order_relaxed );
-}
-
-LumenEngine::UInt64 LumenEngine::Internal::FShaderCache::GetMisses () const noexcept
-{
-    return CacheMissCount.load( std::memory_order_relaxed );
-}
-
-LumenEngine::FString LumenEngine::Internal::FShaderCache::BuildCachePath ( const FSourceHash InHash, const EShaderStage::Type InStage, const AnsiChar *InExt ) const
-{
-    return ( std::filesystem::path( Config.CacheDirectory ) / std::format( "{:016x}_{}{}", InHash, EShaderStage::ToString( InStage ), InExt ) ).string();
+    return MemoryCache.Clear();
 }

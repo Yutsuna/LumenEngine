@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "Cache/Cache.hpp"
+#include "Cache/CachePolicy.hpp"
 #include "Container/Map.hpp"
 #include "Container/Optional.hpp"
 
@@ -38,7 +40,7 @@ namespace Internal
          * @param InEntryPoint Entry point name.
          * @return Optional compiled shader if found, otherwise nullopt.
          */
-        [[nodiscard]] TOptional<FCompiledShader> TryGet ( FSourceHash InHash, EShaderStage::Type InStage, FStringView InEntryPoint ) noexcept;
+        [[nodiscard]] TOptional<FCompiledShader> TryGet ( FSourceHash InHash, EShaderStage::Type InStage, const FString &InEntryPoint ) noexcept;
 
         /**
          * @brief Stores a compiled shader in the cache.
@@ -79,16 +81,6 @@ namespace Internal
     public:
 
         /**
-         * @brief Records a cache hit.
-         */
-        void RecordHit () noexcept;
-
-        /**
-         * @brief Records a cache miss.
-         */
-        void RecordMiss () noexcept;
-
-        /**
          * @brief Gets the number of cache hits.
          * @return Number of cache hits.
          */
@@ -108,11 +100,7 @@ namespace Internal
 
         const FShaderCompilerConfig &Config;
 
-        TMap<FSourceHash, FCompiledShader> MemoryCache;
-        FSharedMutex CacheMutex;
-
-        TAtomic<UInt64> CacheHitCount{ 0 };
-        TAtomic<UInt64> CacheMissCount{ 0 };
+        TCache<FSourceHash, FCompiledShader, Cache::FLruPolicy<FSourceHash, FCompiledShader>> MemoryCache;
     };
 
 } // namespace Internal
