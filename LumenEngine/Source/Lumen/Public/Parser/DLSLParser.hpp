@@ -22,7 +22,7 @@ namespace Lumen
 
     /**
      * @class FDLSLParser
-     * @brief Parses a stream of DLSL tokens into an abstract syntax tree (AST
+     * @brief Parses a stream of DLSL tokens into an Abstract Syntax Tree.
      */
     class LUMEN_ENGINE_API FDLSLParser final
     {

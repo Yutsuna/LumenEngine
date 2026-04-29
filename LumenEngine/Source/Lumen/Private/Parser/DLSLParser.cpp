@@ -22,10 +22,6 @@ LumenEngine::Lumen::FDLSLParser::FDLSLParser ( FStringView InSource, HAL::FLinea
  * Public Methods
  */
 
-/**
- * Parsers
- */
-
 namespace
 {
 
@@ -63,15 +59,15 @@ void AppendNodeToList ( LumenEngine::Lumen::FDLSLNode *InOutListNode, LumenEngin
 
 LumenEngine::TExpected<LumenEngine::Lumen::FDLSLDocument *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::Parse ()
 {
-    TExpected<FDLSLDocument *, FString> DocumentResult = AllocateNode<FDLSLDocument>();
+    const TExpected<FDLSLDocument *, FString> DocumentResult = AllocateNode<FDLSLDocument>();
     LUMEN_EXPECT_VALUE( DocumentResult );
 
-    FDLSLDocument *Document      = DocumentResult.value();
-    FDLSLRootBlock *CurrentBlock = nullptr;
+    FDLSLDocument *const Document = DocumentResult.value();
+    FDLSLRootBlock *CurrentBlock  = nullptr;
 
     while ( Peek().Type != FToken::EType::EndOfFile )
     {
-        TExpected<FDLSLRootBlock *, FString> BlockResult = ParseRootBlock();
+        const TExpected<FDLSLRootBlock *, FString> BlockResult = ParseRootBlock();
         LUMEN_EXPECT_VALUE( BlockResult );
 
         if ( CurrentBlock == nullptr )
@@ -95,16 +91,16 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLDocument *, LumenEngine::FString
 
 LumenEngine::TExpected<LumenEngine::Lumen::FDLSLRootBlock *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::ParseRootBlock ()
 {
-    TExpected<FDLSLRootBlock *, FString> BlockResult = AllocateNode<FDLSLRootBlock>();
+    const TExpected<FDLSLRootBlock *, FString> BlockResult = AllocateNode<FDLSLRootBlock>();
     LUMEN_EXPECT_VALUE( BlockResult );
 
-    FDLSLRootBlock *Block = BlockResult.value();
+    FDLSLRootBlock *const Block = BlockResult.value();
 
-    TExpected<FToken, FString> AtTokenResult = Consume( FToken::EType::At, "Expected '@' before root block type." );
-    LUMEN_EXPECT_VALUE( BlockResult );
+    const TExpected<FToken, FString> AtTokenResult = Consume( FToken::EType::At, "Expected '@' before root block type." );
+    LUMEN_EXPECT_VALUE( AtTokenResult );
 
-    TExpected<FToken, FString> TypeTokenResult = Consume( FToken::EType::Identifier, "Expected identifier after '@'." );
-    LUMEN_EXPECT_VALUE( BlockResult );
+    const TExpected<FToken, FString> TypeTokenResult = Consume( FToken::EType::Identifier, "Expected identifier after '@'." );
+    LUMEN_EXPECT_VALUE( TypeTokenResult );
 
     Block->BlockType = TypeTokenResult.value().Text;
 
@@ -113,7 +109,7 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLRootBlock *, LumenEngine::FStrin
         Block->Name = Advance().Text;
     }
 
-    TExpected<FDLSLNode *, FString> BodyResult = ParseObject();
+    const TExpected<FDLSLNode *, FString> BodyResult = ParseObject();
     LUMEN_EXPECT_VALUE( BodyResult );
 
     Block->Body = BodyResult.value();
@@ -121,6 +117,7 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLRootBlock *, LumenEngine::FStrin
     return Block;
 }
 
+// NOLINTBEGIN(misc-no-recursion)
 LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::ParseNode ()
 {
     switch ( Peek().Type )
@@ -141,34 +138,34 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> Lu
         break;
     }
 
-    const FString FormattedError = std::format( "Parse Error [Line {}]: Unexpected token type.", Peek().Line );
-    return std::unexpected( FormattedError );
+    return MakeUnexpected( std::format( "Parse Error [Line {}]: Unexpected token type.", Peek().Line ) );
 }
+// NOLINTEND(misc-no-recursion)
 
 LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::ParseStringNode ()
 {
-    TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
+    const TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
     LUMEN_EXPECT_VALUE( NodeResult );
 
     Advance();
 
-    FDLSLNode *Node      = NodeResult.value();
-    Node->Type           = EDLSLNodeType::String;
-    Node->StringRaw.Data = PreviousToken.Text.data();
-    Node->StringRaw.Size = PreviousToken.Text.size();
+    FDLSLNode *const Node = NodeResult.value();
+    Node->Type            = EDLSLNodeType::String;
+    Node->StringRaw.Data  = PreviousToken.Text.data();
+    Node->StringRaw.Size  = PreviousToken.Text.size();
 
     return Node;
 }
 
 LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::ParseNumberNode ()
 {
-    TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
+    const TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
     LUMEN_EXPECT_VALUE( NodeResult );
 
     Advance();
 
-    FDLSLNode *Node = NodeResult.value();
-    Node->Type      = EDLSLNodeType::Number;
+    FDLSLNode *const Node = NodeResult.value();
+    Node->Type            = EDLSLNodeType::Number;
 
     Float64 Value = 0.0;
     std::from_chars( PreviousToken.Text.data(), PreviousToken.Text.data() + PreviousToken.Text.size(), Value );
@@ -179,12 +176,12 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> Lu
 
 LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::ParseIdentifierOrBooleanNode ()
 {
-    TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
+    const TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
     LUMEN_EXPECT_VALUE( NodeResult );
 
     Advance();
 
-    FDLSLNode *Node = NodeResult.value();
+    FDLSLNode *const Node = NodeResult.value();
 
     if ( PreviousToken.Text == "True" )
     {
@@ -206,20 +203,21 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> Lu
     return Node;
 }
 
+// NOLINTBEGIN(misc-no-recursion)
 LumenEngine::TExpected<LumenEngine::Lumen::FDLSLProperty *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::ParseProperty ()
 {
     FStringView PropertyKey;
 
     if ( Match( FToken::EType::At ) )
     {
-        TExpected<FToken, FString> IdentifierResult = Consume( FToken::EType::Identifier, "Expected identifier after '@'." );
+        const TExpected<FToken, FString> IdentifierResult = Consume( FToken::EType::Identifier, "Expected identifier after '@'." );
         LUMEN_EXPECT_VALUE( IdentifierResult );
 
         PropertyKey = FStringView( IdentifierResult.value().Text.data() - 1, IdentifierResult.value().Text.size() + 1 );
     }
     else
     {
-        TExpected<FToken, FString> IdentifierResult = Consume( FToken::EType::Identifier, "Expected property key." );
+        const TExpected<FToken, FString> IdentifierResult = Consume( FToken::EType::Identifier, "Expected property key." );
         LUMEN_EXPECT_VALUE( IdentifierResult );
 
         PropertyKey = IdentifierResult.value().Text;
@@ -230,28 +228,30 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLProperty *, LumenEngine::FString
         }
     }
 
-    TExpected<FDLSLNode *, FString> ValueResult = ParseNode();
+    const TExpected<FDLSLNode *, FString> ValueResult = ParseNode();
     LUMEN_EXPECT_VALUE( ValueResult );
 
-    TExpected<FDLSLProperty *, FString> PropertyResult = AllocateNode<FDLSLProperty>();
+    const TExpected<FDLSLProperty *, FString> PropertyResult = AllocateNode<FDLSLProperty>();
     LUMEN_EXPECT_VALUE( PropertyResult );
 
-    FDLSLProperty *Property = PropertyResult.value();
-    Property->Key           = PropertyKey;
-    Property->Value         = ValueResult.value();
+    FDLSLProperty *const Property = PropertyResult.value();
+    Property->Key                 = PropertyKey;
+    Property->Value               = ValueResult.value();
 
     return Property;
 }
+// NOLINTEND(misc-no-recursion)
 
+// NOLINTBEGIN(misc-no-recursion)
 LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::ParseObject ()
 {
-    TExpected<FToken, FString> LBraceResult = Consume( FToken::EType::LBrace, "Expected '{' to start object." );
+    const TExpected<FToken, FString> LBraceResult = Consume( FToken::EType::LBrace, "Expected '{' to start object." );
     LUMEN_EXPECT_VALUE( LBraceResult );
 
-    TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
+    const TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
     LUMEN_EXPECT_VALUE( NodeResult );
 
-    FDLSLNode *ObjectNode         = NodeResult.value();
+    FDLSLNode *const ObjectNode   = NodeResult.value();
     ObjectNode->Type              = EDLSLNodeType::Object;
     ObjectNode->ObjectValue.Head  = nullptr;
     ObjectNode->ObjectValue.Tail  = nullptr;
@@ -259,28 +259,30 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> Lu
 
     while ( Peek().Type != FToken::EType::RBrace and Peek().Type != FToken::EType::EndOfFile )
     {
-        TExpected<FDLSLProperty *, FString> PropertyResult = ParseProperty();
+        const TExpected<FDLSLProperty *, FString> PropertyResult = ParseProperty();
         LUMEN_EXPECT_VALUE( PropertyResult );
 
         AppendPropertyToObject( ObjectNode, PropertyResult.value() );
         Match( FToken::EType::Comma );
     }
 
-    TExpected<FToken, FString> RBraceResult = Consume( FToken::EType::RBrace, "Expected '}' to end object." );
+    const TExpected<FToken, FString> RBraceResult = Consume( FToken::EType::RBrace, "Expected '}' to end object." );
     LUMEN_EXPECT_VALUE( RBraceResult );
 
     return ObjectNode;
 }
+// NOLINTEND(misc-no-recursion)
 
+// NOLINTBEGIN(misc-no-recursion)
 LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::ParseList ()
 {
-    TExpected<FToken, FString> LBracketResult = Consume( FToken::EType::LBracket, "Expected '[' to start list." );
+    const TExpected<FToken, FString> LBracketResult = Consume( FToken::EType::LBracket, "Expected '[' to start list." );
     LUMEN_EXPECT_VALUE( LBracketResult );
 
-    TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
+    const TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
     LUMEN_EXPECT_VALUE( NodeResult );
 
-    FDLSLNode *ListNode       = NodeResult.value();
+    FDLSLNode *const ListNode = NodeResult.value();
     ListNode->Type            = EDLSLNodeType::List;
     ListNode->ListValue.Head  = nullptr;
     ListNode->ListValue.Tail  = nullptr;
@@ -288,34 +290,35 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> Lu
 
     while ( Peek().Type != FToken::EType::RBracket and Peek().Type != FToken::EType::EndOfFile )
     {
-        TExpected<FDLSLNode *, FString> ValueResult = ParseNode();
+        const TExpected<FDLSLNode *, FString> ValueResult = ParseNode();
         LUMEN_EXPECT_VALUE( ValueResult );
 
         AppendNodeToList( ListNode, ValueResult.value() );
         Match( FToken::EType::Comma );
     }
 
-    TExpected<FToken, FString> RBracketResult = Consume( FToken::EType::RBracket, "Expected ']' to end list." );
+    const TExpected<FToken, FString> RBracketResult = Consume( FToken::EType::RBracket, "Expected ']' to end list." );
     LUMEN_EXPECT_VALUE( RBracketResult );
 
     return ListNode;
 }
+// NOLINTEND(misc-no-recursion)
 
 LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::ParseVector ()
 {
-    TExpected<FToken, FString> LParenResult = Consume( FToken::EType::LParen, "Expected '(' to start vector." );
+    const TExpected<FToken, FString> LParenResult = Consume( FToken::EType::LParen, "Expected '(' to start vector." );
     LUMEN_EXPECT_VALUE( LParenResult );
 
-    TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
+    const TExpected<FDLSLNode *, FString> NodeResult = AllocateNode<FDLSLNode>();
     LUMEN_EXPECT_VALUE( NodeResult );
 
-    FDLSLNode *VectorNode         = NodeResult.value();
+    FDLSLNode *const VectorNode   = NodeResult.value();
     VectorNode->Type              = EDLSLNodeType::Vector;
     VectorNode->VectorValue.Count = 0;
 
     while ( Peek().Type != FToken::EType::RParen and Peek().Type != FToken::EType::EndOfFile )
     {
-        TExpected<FToken, FString> NumberResult = Consume( FToken::EType::Number, "Expected number in vector." );
+        const TExpected<FToken, FString> NumberResult = Consume( FToken::EType::Number, "Expected number in vector." );
         LUMEN_EXPECT_VALUE( NumberResult );
 
         Float64 Value = 0.0;
@@ -324,29 +327,29 @@ LumenEngine::TExpected<LumenEngine::Lumen::FDLSLNode *, LumenEngine::FString> Lu
         if ( VectorNode->VectorValue.Count < 4 )
         {
             VectorNode->VectorValue.Data[VectorNode->VectorValue.Count] = static_cast<Float32>( Value );
-            VectorNode->VectorValue.Count++;
+            ++VectorNode->VectorValue.Count;
         }
 
         Match( FToken::EType::Comma );
     }
 
-    TExpected<FToken, FString> RParenResult = Consume( FToken::EType::RParen, "Expected ')' to end vector." );
+    const TExpected<FToken, FString> RParenResult = Consume( FToken::EType::RParen, "Expected ')' to end vector." );
     LUMEN_EXPECT_VALUE( RParenResult );
 
     return VectorNode;
 }
 
 /**
- * Private Methods
+ * Private Helper Methods
  */
 
 template <typename Type, typename... Args> LumenEngine::TExpected<Type *, LumenEngine::FString> LumenEngine::Lumen::FDLSLParser::AllocateNode ( Args &&...InArgs )
 {
-    void *Memory = Allocator.Allocate( sizeof( Type ), alignof( Type ) );
+    void *const Memory = Allocator.Allocate( sizeof( Type ), alignof( Type ) );
 
     if ( Memory == nullptr )
     {
-        return std::unexpected( "Out of memory during parsing AST nodes." );
+        return MakeUnexpected( "Out of memory during parsing AST nodes." );
     }
 
     return new ( Memory ) Type( std::forward<Args>( InArgs )... );
@@ -383,6 +386,12 @@ LumenEngine::TExpected<LumenEngine::Lumen::FToken, LumenEngine::FString> LumenEn
         return Advance();
     }
 
-    const FString FormattedError = std::format( "Parse Error [Line {}]: {}", Peek().Line, InErrorMessage );
-    return std::unexpected( FormattedError );
+    try
+    {
+        return MakeUnexpected( std::format( "Parse Error [Line {}]: {}", Peek().Line, InErrorMessage ) );
+    }
+    catch ( const std::format_error &FormatError )
+    {
+        return MakeUnexpected( FormatError.what() );
+    }
 }

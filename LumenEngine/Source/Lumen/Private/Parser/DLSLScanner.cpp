@@ -57,7 +57,7 @@ LumenEngine::AnsiChar LumenEngine::Lumen::FDLSLScanner::Peek () const noexcept
         return '\0';
     }
 
-    return Source[Cursor];
+    return Source.at( Cursor );
 }
 
 LumenEngine::AnsiChar LumenEngine::Lumen::FDLSLScanner::Advance () noexcept
@@ -67,7 +67,7 @@ LumenEngine::AnsiChar LumenEngine::Lumen::FDLSLScanner::Advance () noexcept
         return '\0';
     }
 
-    const AnsiChar Character = Source[Cursor];
+    const AnsiChar Character = Source.at( Cursor );
     ++Cursor;
 
     return Character;
@@ -93,18 +93,13 @@ void LumenEngine::Lumen::FDLSLScanner::SkipWhitespace () noexcept
             break;
 
         case '/':
-            if ( Cursor + 1 < Source.size() and Source[Cursor + 1] == '/' )
+        {
+            while ( not IsAtEnd() and Peek() != '\n' )
             {
-                while ( not IsAtEnd() and Peek() != '\n' )
-                {
-                    Advance();
-                }
+                Advance();
             }
-            else
-            {
-                return;
-            }
-            break;
+        }
+        break;
 
         default:
             return;
