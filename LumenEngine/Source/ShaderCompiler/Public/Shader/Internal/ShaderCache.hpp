@@ -7,10 +7,7 @@
 
 #include "Cache/Cache.hpp"
 #include "Cache/CachePolicy.hpp"
-#include "Container/Map.hpp"
 #include "Container/Optional.hpp"
-
-#include "HAL/SharedMutex.hpp"
 
 #include "Shader/ShaderCompilerRequest.hpp"
 #include "Shader/ShaderCompilerTypes.hpp"
@@ -79,6 +76,16 @@ namespace Internal
         USize ClearStale ( double MaxAgeSeconds ) noexcept;
 
     public:
+
+        /**
+         * @brief Records a cache hit.
+         */
+        void RecordHit () noexcept;
+
+        /**
+         * @brief Records a cache miss.
+         */
+        void RecordMiss () noexcept;
 
         /**
          * @brief Gets the number of cache hits.
