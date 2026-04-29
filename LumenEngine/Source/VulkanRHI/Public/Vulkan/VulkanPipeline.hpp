@@ -14,7 +14,7 @@
 #include "Container/Expected.hpp"
 #include "ErrorCodes.hpp"
 
-#include "Shader/ShaderCompilerTypes.hpp"
+#include "ShaderCompiler/ShaderCompilerTypes.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -128,8 +128,10 @@ namespace VulkanRHI
          * @param InFragmentSpirV The SPIR-V bytecode for the fragment shader.
          * @return Success or a detailed initialization error code.
          */
-        [[nodiscard]] TExpected<void, EErrorCode::Type>
-        Initialize ( VkDevice InDevice, const FPipelineDescription &InDescription, const FSpirVBlob &InVertexSpirV, const FSpirVBlob &InFragmentSpirV );
+        [[nodiscard]] TExpected<void, EErrorCode::Type> Initialize ( VkDevice InDevice,
+                                                                     const FPipelineDescription &InDescription,
+                                                                     const Compiler::FSpirVBlob &InVertexSpirV,
+                                                                     const Compiler::FSpirVBlob &InFragmentSpirV );
 
         /** @brief Convenience factory for a default pipeline description. */
         [[nodiscard]] static FPipelineDescription

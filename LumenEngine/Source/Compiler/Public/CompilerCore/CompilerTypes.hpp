@@ -15,6 +15,7 @@
 
 namespace LumenEngine
 {
+
 namespace Compiler
 {
 
@@ -22,6 +23,7 @@ namespace Compiler
 
     namespace ECompilerError
     {
+
         enum Type : UInt8
         {
             None = 0,
@@ -57,6 +59,7 @@ namespace Compiler
     };
 
 } // namespace Compiler
+
 } // namespace LumenEngine
 
 #include "Inline/CompilerTypes.inl"

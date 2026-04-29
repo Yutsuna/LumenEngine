@@ -20,284 +20,289 @@
 namespace LumenEngine
 {
 
-using FSourceHash = UInt64;
-using FSpirvWord  = UInt32;
-using FSpirVBlob  = TVector<FSpirvWord>;
-
-namespace EShaderStage
+namespace Compiler
 {
 
-    enum Type : UInt8
+    using FSourceHash = UInt64;
+    using FSpirvWord  = UInt32;
+    using FSpirVBlob  = TVector<FSpirvWord>;
+
+    namespace EShaderStage
     {
-        Vertex,
-        Fragment,
-        Geometry,
-        Compute,
-        TessellationControl,
-        TessellationEvaluation,
-        Count
+
+        enum Type : UInt8
+        {
+            Vertex,
+            Fragment,
+            Geometry,
+            Compute,
+            TessellationControl,
+            TessellationEvaluation,
+            Count
+        };
+
+        /**
+         * @brief Converts a shader stage type to its string representation.
+         * @param InStage The shader stage type to convert.
+         * @return A string representation of the shader stage type.
+         */
+        [[nodiscard]] constexpr const AnsiChar *ToString ( const Type InStage ) noexcept;
+
+        /**
+         * @brief Converts a shader stage type to its corresponding GLSL file extension.
+         * @param InStage The shader stage type to convert.
+         * @return A string representing the GLSL file extension for the shader stage type.
+         */
+        [[nodiscard]] constexpr const AnsiChar *ToGlslExtension ( const Type InStage ) noexcept;
+
+    } // namespace EShaderStage
+
+    enum class EShaderOptimizationLevel : UInt8
+    {
+        None        = 0, ///< -O0  — debug builds, full debug info preserved
+        Size        = 1, ///< -Os  — minimize SPIR-V word count
+        Performance = 2  ///< -O   — full performance optimization (default)
+    };
+
+    enum class EGlslProfile : UInt8
+    {
+        Core,          ///< OpenGL Core Profile
+        Compatibility, ///< OpenGL Compatibility Profile
+        Es,            /// OpenGL ES
+        Vulkan         ///< Maps to #version 460 + Vulkan semantics
+    };
+
+    namespace EShaderCompilerError
+    {
+
+        enum Type : UInt8
+        {
+            None               = 0,
+            FileNotFound       = 1,
+            ReadFailed         = 2,
+            CompilationFailed  = 3,
+            OptimizationFailed = 4,
+            CacheWriteFailed   = 5,
+            CacheReadFailed    = 6,
+            InvalidStage       = 7,
+            InvalidSource      = 8,
+            ReflectionFailed   = 9,
+            GlslangInitFailed  = 10,
+            UnsupportedProfile = 11,
+        };
+
+        /**
+         * @brief Converts a shader compiler error type to its string representation.
+         * @param InError The shader compiler error type to convert.
+         * @return A string representation of the shader compiler error type.
+         */
+        [[nodiscard]] constexpr const AnsiChar *ToString ( const Type InError ) noexcept;
+
+    } // namespace EShaderCompilerError
+
+    /**
+     * @struct FShaderMacro
+     * @brief Represents a shader macro definition, consisting of a name and a value.
+     * @example #define USE_PBR 1
+     */
+    struct FShaderMacro
+    {
+        FString Name;  ///< "USE_PBR"
+        FString Value; ///< "1"
+
+        [[nodiscard]] Bool operator==( const FShaderMacro &InOther ) const noexcept;
     };
 
     /**
-     * @brief Converts a shader stage type to its string representation.
-     * @param InStage The shader stage type to convert.
-     * @return A string representation of the shader stage type.
+     * @struct FShaderResourceBinding
+     * @brief One descriptor-set binding entry (from reflection)
      */
-    [[nodiscard]] constexpr const AnsiChar *ToString ( const Type InStage ) noexcept;
-
-    /**
-     * @brief Converts a shader stage type to its corresponding GLSL file extension.
-     * @param InStage The shader stage type to convert.
-     * @return A string representing the GLSL file extension for the shader stage type.
-     */
-    [[nodiscard]] constexpr const AnsiChar *ToGlslExtension ( const Type InStage ) noexcept;
-
-} // namespace EShaderStage
-
-enum class EShaderOptimizationLevel : UInt8
-{
-    None        = 0, ///< -O0  — debug builds, full debug info preserved
-    Size        = 1, ///< -Os  — minimize SPIR-V word count
-    Performance = 2  ///< -O   — full performance optimization (default)
-};
-
-enum class EGlslProfile : UInt8
-{
-    Core,          ///< OpenGL Core Profile
-    Compatibility, ///< OpenGL Compatibility Profile
-    Es,            /// OpenGL ES
-    Vulkan         ///< Maps to #version 460 + Vulkan semantics
-};
-
-namespace EShaderCompilerError
-{
-
-    enum Type : UInt8
+    struct FShaderResourceBinding
     {
-        None               = 0,
-        FileNotFound       = 1,
-        ReadFailed         = 2,
-        CompilationFailed  = 3,
-        OptimizationFailed = 4,
-        CacheWriteFailed   = 5,
-        CacheReadFailed    = 6,
-        InvalidStage       = 7,
-        InvalidSource      = 8,
-        ReflectionFailed   = 9,
-        GlslangInitFailed  = 10,
-        UnsupportedProfile = 11,
+        FString Name;
+        UInt32 Set     = 0;
+        UInt32 Binding = 0;
+
+        /** Vulkan descriptor type as a string (e.g., "UniformBuffer", "SampledImage", ...) */
+        FString DescriptorType;
+
+        /** Array element count ( 1 = non-array resource ) */
+        UInt32 ArraySize = 1;
+
+        /** The shader stage mask where this binding is active ( bit field over EShaderStage ) */
+        UInt8 StageMask = 0;
     };
 
     /**
-     * @brief Converts a shader compiler error type to its string representation.
-     * @param InError The shader compiler error type to convert.
-     * @return A string representation of the shader compiler error type.
+     * @struct FShaderVertexInput
+     * @brief Represents a single vertex input attribute used by a vertex shader
      */
-    [[nodiscard]] constexpr const AnsiChar *ToString ( const Type InError ) noexcept;
+    struct FShaderVertexInput
+    {
+        FString Name;
+        UInt32 Location = 0;
+        FString TypeName;
+    };
 
-} // namespace EShaderCompilerError
+    /**
+     * @struct FShaderResourceBinding
+     * @brief Represents a single resource binding used by a shader
+     */
+    struct FShaderPushConstantRange
+    {
+        FString Name;
+        UInt32 Offset = 0;
+        UInt32 Size   = 0;
+    };
 
-/**
- * @struct FShaderMacro
- * @brief Represents a shader macro definition, consisting of a name and a value.
- * @example #define USE_PBR 1
- */
-struct FShaderMacro
-{
-    FString Name;  ///< "USE_PBR"
-    FString Value; ///< "1"
+    /**
+     * @struct FShaderReflection
+     * @brief Contains reflection data extracted from a compiled shader
+     */
+    struct FShaderReflection
+    {
+        /** List of resource bindings (uniforms, samplers, etc.) used by the shader. */
+        TVector<FShaderResourceBinding> ResourceBindings;
 
-    [[nodiscard]] Bool operator==( const FShaderMacro &Other ) const noexcept;
-};
+        /** List of vertex input attributes (for vertex shaders) used by the shader. */
+        TVector<FShaderVertexInput> VertexInputs;
 
-/**
- * @struct FShaderResourceBinding
- * @brief One descriptor-set binding entry (from reflection)
- */
-struct FShaderResourceBinding
-{
-    FString Name;
-    UInt32 Set     = 0;
-    UInt32 Binding = 0;
+        /** List of push constant ranges used by the shader (for Vulkan). */
+        TVector<FShaderPushConstantRange> PushConstantRanges;
 
-    /** Vulkan descriptor type as a string (e.g., "UniformBuffer", "SampledImage", ...) */
-    FString DexcriptorType;
+        /** Local workgroup size specified in the shader (for compute shaders). */
+        UInt32 LocalSizeX = 0;
+        UInt32 LocalSizeY = 0;
+        UInt32 LocalSizeZ = 0;
+    };
 
-    /** Array element count ( 1 = non-array resource ) */
-    UInt32 ArraySize = 1;
+    /**
+     * @struct FCompiledShader
+     * @brief Represents a successfully compiled shader, including its SPIR-V binary and resource bindings.
+     */
+    struct FCompiledShader
+    {
+        /** The Raw Compiled SPIR-V binary data. */
+        FSpirVBlob SpirV;
 
-    /** The shader stage mask where this binding is active ( bit field over EShaderStage ) */
-    UInt8 StageMask = 0;
-};
+        /** Reflection data extracted from the compiled SPIR-V */
+        FShaderReflection Reflection;
 
-/**
- * @struct FShaderVertexInput
- * @brief Represents a single vertex input attribute used by a vertex shader
- */
-struct FShaderVertexInput
-{
-    FString Name;
-    UInt32 Location = 0;
-    FString TypeName;
-};
+        /** The shader stage this compiled shader corresponds to. */
+        EShaderStage::Type Stage = EShaderStage::Vertex;
 
-/**
- * @struct FShaderResourceBinding
- * @brief Represents a single resource binding used by a shader
- */
-struct FShaderPushConstantRange
-{
-    FString Name;
-    UInt32 Offset = 0;
-    UInt32 Size   = 0;
-};
+        /** Hash that produced this binary */
+        FSourceHash Hash = 0;
 
-/**
- * @struct FShaderReflection
- * @brief Contains reflection data extracted from a compiled shader
- */
-struct FShaderReflection
-{
-    /** List of resource bindings (uniforms, samplers, etc.) used by the shader. */
-    TVector<FShaderResourceBinding> ResourceBindings;
+        /** True when loaded from disk cache */
+        Bool bFromCache = false;
 
-    /** List of vertex input attributes (for vertex shaders) used by the shader. */
-    TVector<FShaderVertexInput> VertexInputs;
+        /** The entry point function name used in the shader (default is "main"). */
+        FString EntryPoint = "main";
 
-    /** List of push constant ranges used by the shader (for Vulkan). */
-    TVector<FShaderPushConstantRange> PushConstantRanges;
+        /** Byte size of the SPIR-V blob */
+        [[nodiscard]] UInt64 GetByteSize () const noexcept;
 
-    /** Local workgroup size specified in the shader (for compute shaders). */
-    UInt32 LocalSizeX = 0;
-    UInt32 LocalSizeY = 0;
-    UInt32 LocalSizeZ = 0;
-};
+        /** Returns true if the compiled shader contains valid SPIR-V code and reflection data. */
+        [[nodiscard]] Bool IsValid () const noexcept;
+    };
 
-/**
- * @struct FCompiledShader
- * @brief Represents a successfully compiled shader, including its SPIR-V binary and resource bindings.
- */
-struct FCompiledShader
-{
-    /** The Raw Compiled SPIR-V binary data. */
-    FSpirVBlob SpirV;
+    /**
+     * @struct FShaderCompileResult
+     * @brief Success or Typed Error
+     */
+    struct FShaderCompileResult
+    {
+        /** The compiled shader */
+        TOptional<FCompiledShader> Shader;
 
-    /** Reflection data extracted from the compiled SPIR-V */
-    FShaderReflection Reflection;
+        /** If Shader is std::nullopt, this contains the error type. */
+        EShaderCompilerError::Type Error = EShaderCompilerError::None;
 
-    /** The shader stage this compiled shader corresponds to. */
-    EShaderStage::Type Stage = EShaderStage::Vertex;
+        /** Human-readable diagnostic log */
+        FString ErrorLog;
 
-    /** Hash that produced this binary */
-    FSourceHash Hash = 0;
+        /** Returns true if the compilation was successful */
+        [[nodiscard]] Bool IsSuccess () const noexcept;
 
-    /** True when loaded from disk cache */
-    Bool bFromCache = false;
+        /** Factory method for creating a successful compile result */
+        [[nodiscard]] static FShaderCompileResult Success ( FCompiledShader &&InShader ) noexcept;
 
-    /** The entry point function name used in the shader (default is "main"). */
-    FString EntryPoint = "main";
+        /** Factory method for creating a failed compile result with an Error Type. */
+        [[nodiscard]] static FShaderCompileResult Failure ( const EShaderCompilerError::Type InError, FString InLog = {} ) noexcept;
+    };
 
-    /** Byte size of the SPIR-V blob */
-    [[nodiscard]] UInt64 GetByteSize () const noexcept;
+    /**
+     * @struct FShaderCacheMetaData
+     * @brief Metadata associated with a compiled shader cache entry
+     */
+    struct FShaderCacheMetaData
+    {
+        /** Hash of the shader source code, used to verify cache validity. */
+        FSourceHash SourceHash = 0;
 
-    /** Returns true if the compiled shader contains valid SPIR-V code and reflection data. */
-    [[nodiscard]] Bool IsValid () const noexcept;
-};
+        /** The shader stage (e.g., vertex, fragment) that this cache entry corresponds to. */
+        EShaderStage::Type Stage = EShaderStage::Vertex;
 
-/**
- * @struct FShaderCompileResult
- * @brief Success or Typed Error
- */
-struct FShaderCompileResult
-{
-    /** The compiled shader */
-    TOptional<FCompiledShader> Shader;
+        /** The GLSL profile used during compilation (e.g., Core, ES, Vulkan). */
+        EShaderOptimizationLevel Optimization = EShaderOptimizationLevel::Performance;
 
-    /** If Shader is std::nullopt, this contains the error type. */
-    EShaderCompilerError::Type Error = EShaderCompilerError::None;
+        /** The timestamp (in nanoseconds since epoch) when the shader was compiled */
+        UInt64 CompiledAtNs = 0;
 
-    /** Human-readable diagnostic log */
-    FString ErrorLog;
+        /** The number of SPIR-V words in the compiled shader binary. */
+        UInt32 SpirVWordCount = 0;
 
-    /** Returns true if the compilation was successful */
-    [[nodiscard]] Bool IsSuccess () const noexcept;
+        /** The entry point function name used in the shader (default is "main"). */
+        FString EntryPoint = "main";
 
-    /** Factory method for creating a successful compile result */
-    [[nodiscard]] static FShaderCompileResult Success ( FCompiledShader &&InShader ) noexcept;
+        /** LSHC = Lumen Shader Cache Header */
+        static constexpr UInt32 MagicNumber = LUMEN_SHADER_CACHE_MAGIC_NUMBER;
 
-    /** Factory method for creating a failed compile result with an Error Type. */
-    [[nodiscard]] static FShaderCompileResult Failure ( const EShaderCompilerError::Type InError, FString InLog = {} ) noexcept;
-};
+        /** Version number for the shader cache metadata format. */
+        static constexpr UInt32 Version = 2U;
 
-/**
- * @struct FShaderCacheMetaData
- * @brief Metadata associated with a compiled shader cache entry
- */
-struct FShaderCacheMetaData
-{
-    /** Hash of the shader source code, used to verify cache validity. */
-    FSourceHash SourceHash = 0;
+        /** Size of the fixed header portion of the cache metadata (excluding the variable-length entry point string). */
+        static constexpr UInt64 HeaderSize = 31U;
 
-    /** The shader stage (e.g., vertex, fragment) that this cache entry corresponds to. */
-    EShaderStage::Type Stage = EShaderStage::Vertex;
+        /** Serialise to a flat Byte buffer ( little-endian, fixed-layout ) */
+        [[nodiscard]] TVector<Byte> Serialize () const;
 
-    /** The GLSL profile used during compilation (e.g., Core, ES, Vulkan). */
-    EShaderOptimizationLevel Optimization = EShaderOptimizationLevel::Performance;
+        /** Returns std::nullopt if the buffer is malformed or contains invalid data. */
+        [[nodiscard]] static TOptional<FShaderCacheMetaData> Deserialize ( const std::span<const Byte> InBytes );
+    };
 
-    /** The timestamp (in nanoseconds since epoch) when the shader was compiled */
-    UInt64 CompiledAtNs = 0;
+    /**
+     * @struct FShaderCompilerConfig
+     * @brief Configuration settings for the shader compiler
+     */
+    struct FShaderCompilerConfig
+    {
+        /** Root directory where .spv + .meta cache files are written to and read from. */
+        std::filesystem::path CacheDirectory = "Data/ShaderCache/";
 
-    /** The number of SPIR-V words in the compiled shader binary. */
-    UInt32 SpirVWordCount = 0;
+        /** Maximum allowed SPIR-V words allowed before the compiler rejects the shader. */
+        UInt64 MaxSpirVWords = 0; ///< 0 means No Limit
 
-    /** The entry point function name used in the shader (default is "main"). */
-    FString EntryPoint = "main";
+        /** Whether to enable GLSLang's HLSL-compatible relaxed Vulkan rules */
+        Bool bRelaxedVulkanRules = false;
 
-    /** LSHC = Lumen Shader Cache Header */
-    static constexpr UInt32 MagicNumber = LUMEN_SHADER_CACHE_MAGIC_NUMBER;
+        /** When true, every compile request also writes an assembly (.spvasm)  file */
+        Bool bDumpAssembly = false;
 
-    /** Version number for the shader cache metadata format. */
-    static constexpr UInt32 Version = 2U;
+        /** Called on every info message from the compiler. */
+        TFunction<void( FStringView InMessage )> InfoCallback;
 
-    /** Size of the fixed header portion of the cache metadata (excluding the variable-length entry point string). */
-    static constexpr UInt64 HeaderSize = 31U;
+        /** Called on every warning message from the compiler. */
+        TFunction<void( FStringView InMessage )> WarningCallback;
 
-    /** Serialise to a flat Byte buffer ( little-endian, fixed-layout ) */
-    [[nodiscard]] TVector<Byte> Serialize () const;
+        /** Called on every error message from the compiler. */
+        TFunction<void( FStringView InMessage )> ErrorCallback;
+    };
 
-    /** Returns std::nullopt if the buffer is malformed or contains invalid data. */
-    [[nodiscard]] static TOptional<FShaderCacheMetaData> Deserialize ( const std::span<const Byte> InBytes );
-};
+    extern const FLogCategory LogShaderCompiler;
 
-/**
- * @struct FShaderCompilerConfig
- * @brief Configuration settings for the shader compiler
- */
-struct FShaderCompilerConfig
-{
-    /** Root directory where .spv + .meta cache files are written to and read from. */
-    std::filesystem::path CacheDirectory = "Data/ShaderCache/";
-
-    /** Maximum allowed SPIR-V words allowed before the compiler rejects the shader. */
-    UInt64 MaxSpirVWords = 0; ///< 0 means No Limit
-
-    /** Whether to enable GLSLang's HLSL-compatible relaxed Vulkan rules */
-    Bool bRelaxedVulkanRules = false;
-
-    /** When true, every compile request also writes an assembly (.spvasm)  file */
-    Bool bDumpAssembly = false;
-
-    /** Called on every info message from the compiler. */
-    TFunction<void( FStringView InMessage )> InfoCallback;
-
-    /** Called on every warning message from the compiler. */
-    TFunction<void( FStringView InMessage )> WarningCallback;
-
-    /** Called on every error message from the compiler. */
-    TFunction<void( FStringView InMessage )> ErrorCallback;
-};
-
-extern const LumenEngine::FLogCategory LogShaderCompiler;
+} // namespace Compiler
 
 } // namespace LumenEngine
 

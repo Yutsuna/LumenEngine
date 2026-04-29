@@ -7,11 +7,14 @@
 
 #include "ShaderCompiler/ShaderCompilerTypes.hpp"
 
+namespace LumenEngine::Compiler
+{
+
 /**
  * EShaderStage
  */
 
-constexpr const LumenEngine::AnsiChar *LumenEngine::EShaderStage::ToString ( const Type InStage ) noexcept
+constexpr const AnsiChar *EShaderStage::ToString ( const Type InStage ) noexcept
 {
     switch ( InStage )
     {
@@ -32,7 +35,7 @@ constexpr const LumenEngine::AnsiChar *LumenEngine::EShaderStage::ToString ( con
     }
 }
 
-constexpr const LumenEngine::AnsiChar *LumenEngine::EShaderStage::ToGlslExtension ( const Type InStage ) noexcept
+constexpr const AnsiChar *EShaderStage::ToGlslExtension ( const Type InStage ) noexcept
 {
     switch ( InStage )
     {
@@ -57,7 +60,7 @@ constexpr const LumenEngine::AnsiChar *LumenEngine::EShaderStage::ToGlslExtensio
  * EShaderCompilerError
  */
 
-constexpr const LumenEngine::AnsiChar *LumenEngine::EShaderCompilerError::ToString ( const Type InError ) noexcept
+constexpr const AnsiChar *EShaderCompilerError::ToString ( const Type InError ) noexcept
 {
     switch ( InError )
     {
@@ -89,3 +92,5 @@ constexpr const LumenEngine::AnsiChar *LumenEngine::EShaderCompilerError::ToStri
         return "UnknownError";
     }
 }
+
+} // namespace LumenEngine::Compiler

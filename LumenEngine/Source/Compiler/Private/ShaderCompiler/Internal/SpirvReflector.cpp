@@ -3,54 +3,46 @@
  * @brief Implementation of SPIR-V reflection using SPIRV-Cross.
  */
 
-#include "Shader/Internal/SpirvReflector.hpp"
+#include "ShaderCompiler/Internal/SpirvReflector.hpp"
 
 #include <spirv_cross/spirv_cross.hpp>
 #include <spirv_cross/spirv_glsl.hpp>
-#include <spirv_glsl.hpp>
 
-namespace LumenEngine
+namespace LumenEngine::Compiler::Internal
 {
 
-namespace Internal
+namespace
 {
 
-    namespace
+    /** @brief Internal helper to extract bindings from SPIR-V resources. */
+    LUMEN_DISABLE_UBSAN void ExtractBindings ( const spirv_cross::CompilerGLSL &InCompiler,
+                                               const spirv_cross::SmallVector<spirv_cross::Resource> &InResList,
+                                               const FString &InTypeName,
+                                               const EShaderStage::Type InStage,
+                                               FShaderReflection &OutReflection )
     {
-
-        /** @brief Internal helper to extract bindings from SPIR-V resources. */
-        LUMEN_DISABLE_UBSAN void ExtractBindings ( const spirv_cross::CompilerGLSL &InCompiler,
-                                                   const spirv_cross::SmallVector<spirv_cross::Resource> &InResList,
-                                                   const FString &InTypeName,
-                                                   const EShaderStage::Type InStage,
-                                                   FShaderReflection &OutReflection )
+        for ( const spirv_cross::Resource &Res : InResList )
         {
-            for ( const spirv_cross::Resource &Res : InResList )
-            {
-                FShaderResourceBinding Binding;
-                Binding.Name           = Res.name;
-                Binding.Set            = InCompiler.get_decoration( Res.id, spv::DecorationDescriptorSet );
-                Binding.Binding        = InCompiler.get_decoration( Res.id, spv::DecorationBinding );
-                Binding.DexcriptorType = InTypeName;
+            FShaderResourceBinding Binding;
+            Binding.Name           = Res.name;
+            Binding.Set            = InCompiler.get_decoration( Res.id, spv::DecorationDescriptorSet );
+            Binding.Binding        = InCompiler.get_decoration( Res.id, spv::DecorationBinding );
+            Binding.DescriptorType = InTypeName;
 
-                const spirv_cross::SPIRType &Type = InCompiler.get_type( Res.type_id );
-                Binding.ArraySize                 = Type.array.empty() ? 1U : Type.array[0];
-                Binding.StageMask                 = static_cast<UInt8>( 1U << InStage );
+            const spirv_cross::SPIRType &Type = InCompiler.get_type( Res.type_id );
+            Binding.ArraySize                 = Type.array.empty() ? 1U : Type.array[0];
+            Binding.StageMask                 = static_cast<UInt8>( 1U << InStage );
 
-                OutReflection.ResourceBindings.push_back( std::move( Binding ) );
-            }
+            OutReflection.ResourceBindings.push_back( std::move( Binding ) );
         }
+    }
 
-    } // namespace
+} // namespace
 
-} // namespace Internal
-
-} // namespace LumenEngine
-
-LUMEN_DISABLE_UBSAN LumenEngine::Bool LumenEngine::Internal::FSpirvReflector::Reflect ( const FSpirVBlob &InSpirV,
-                                                                                        const EShaderStage::Type InStage,
-                                                                                        FShaderReflection &OutReflection,
-                                                                                        FString &OutError ) noexcept
+LUMEN_DISABLE_UBSAN Bool FSpirvReflector::Reflect ( const FSpirVBlob &InSpirV,
+                                                    const EShaderStage::Type InStage,
+                                                    FShaderReflection &OutReflection,
+                                                    FString &OutError ) noexcept
 {
     if ( InSpirV.empty() )
     {
@@ -127,3 +119,5 @@ LUMEN_DISABLE_UBSAN LumenEngine::Bool LumenEngine::Internal::FSpirvReflector::Re
         return false;
     }
 }
+
+} // namespace LumenEngine::Compiler::Internal

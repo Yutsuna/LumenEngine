@@ -11,9 +11,8 @@
 #include "Cache/CachePolicy.hpp"
 
 #include "Container/Optional.hpp"
-#include "Container/Vector.hpp"
 
-#include "CompilerCore/CompilerTypes.hpp"
+#include "ShaderCompiler/ShaderCompilerTypes.hpp"
 
 namespace LumenEngine
 {

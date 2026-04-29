@@ -5,12 +5,16 @@
 
 #pragma once
 
+#include "CompilerCore/CompilerBase.hpp"
+
 #include "Container/File.hpp"
+#include "ShaderCompiler/ShaderCompilerTypes.hpp"
 
 template <typename TTraits, typename TDerived>
-LumenEngine::Compiler::TCompiler<TTraits, TDerived>::TCompiler ( typename TTraits::ConfigType InConfig )
+LumenEngine::Compiler::TCompiler<TTraits, TDerived>::TCompiler( typename TTraits::ConfigType InConfig )
     : Config( std::move( InConfig ) ), Cache( MakeUnique<TCompilerCache<TTraits>>( Config ) )
 {
+    /* Ctor */
 }
 
 template <typename TTraits, typename TDerived>
@@ -20,7 +24,7 @@ typename TTraits::ResultType LumenEngine::Compiler::TCompiler<TTraits, TDerived>
 
     if ( not SourceOpt.has_value() )
     {
-        return TResult::Failure( ECompilerError::FileNotFound );
+        return TResult::Failure( static_cast<decltype( TResult::Error )>( ECompilerError::FileNotFound ) );
     }
     return CompileFromSource( *SourceOpt, InRequest );
 }
@@ -51,7 +55,7 @@ typename TTraits::ResultType LumenEngine::Compiler::TCompiler<TTraits, TDerived>
             return TResult::Success( std::move( Compiled ) );
         }
     }
-    return TResult::Failure( ECompilerError::CompilationFailed, ErrorLog );
+    return TResult::Failure( static_cast<decltype( TResult::Error )>( ECompilerError::CompilationFailed ), ErrorLog );
 }
 
 template <typename TTraits, typename TDerived> LumenEngine::UInt64 LumenEngine::Compiler::TCompiler<TTraits, TDerived>::GetCacheHitCount () const noexcept
