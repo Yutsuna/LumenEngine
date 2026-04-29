@@ -10,6 +10,11 @@
 namespace LumenEngine
 {
 
-template <typename KeyType, typename ValueType, typename HashFunc = std::hash<KeyType>> using TMap = std::unordered_map<KeyType, ValueType, HashFunc>;
+template <typename KeyType,
+          typename ValueType,
+          typename HashFunc  = std::hash<KeyType>,
+          typename EqualFunc = std::equal_to<KeyType>,
+          typename Allocator = std::allocator<std::pair<const KeyType, ValueType>>>
+using TMap = std::unordered_map<KeyType, ValueType, HashFunc, EqualFunc, Allocator>;
 
 } // namespace LumenEngine
