@@ -12,6 +12,15 @@ LumenRegisterPackage(Vulkan                 Vulkan::Vulkan                  "vul
 LumenRegisterPackage(SDL3                   SDL3::SDL3                      "sdl3")
 LumenRegisterPackage(VulkanMemoryAllocator  GPUOpen::VulkanMemoryAllocator  "")
 
+LumenRegisterPackage(GLSLang                glslang::glslang                "glslang")
+LumenRegisterPackage(SPIRV-Tools            SPIRV-Tools                     "SPIRV-Tools")
+
+LumenRegisterPackage(spirv_cross_core       spirv-cross-core                "")
+LumenRegisterPackage(spirv_cross_glsl       spirv-cross-glsl                "")
+LumenRegisterPackage(spirv_cross_cpp        spirv-cross-cpp                 "")
+LumenRegisterPackage(spirv_cross_reflect    spirv-cross-reflect             "")
+LumenRegisterPackage(spirv_cross_c_shared   spirv-cross-c-shared            "spirv-cross-c-shared")
+
 ###########################################################
 
 function(LumenGetProp NAME KEY OUT_VAR)

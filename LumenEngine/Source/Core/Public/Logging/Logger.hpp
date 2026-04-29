@@ -83,3 +83,9 @@ private:
 #define LUMEN_LOG_INFO( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Info, Format __VA_OPT__(, ) __VA_ARGS__ )
 #define LUMEN_LOG_VERBOSE( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::Verbose, Format __VA_OPT__(, ) __VA_ARGS__ )
 #define LUMEN_LOG_VERY_VERBOSE( Category, Format, ... ) LUMEN_LOG( Category, LumenEngine::ELogVerbosity::VeryVerbose, Format __VA_OPT__(, ) __VA_ARGS__ )
+
+#ifdef LUMEN_SHOW_LOG_SHADER_TRACE
+    #define LUMEN_LOG_SHADER_TRACE( Category, Format, ... ) LUMEN_LOG_VERBOSE( Category, Format __VA_OPT__(, ) __VA_ARGS__ )
+#else
+    #define LUMEN_LOG_SHADER_TRACE( Category, Format, ... ) ( ( void )0 )
+#endif

@@ -4,6 +4,9 @@
  */
 
 #include "Container/File.hpp"
+#include "Container/Optional.hpp"
+#include "Container/String.hpp"
+#include "CoreTypes.hpp"
 #include "Logging/Logger.hpp"
 
 #include <filesystem>
@@ -54,4 +57,46 @@ LumenEngine::TOptional<std::ifstream> LumenEngine::FIOFile::Open ( const FString
     }
 
     return File;
+}
+
+LumenEngine::TOptional<LumenEngine::FString> LumenEngine::FIOFile::ReadAllText ( const FString &FilePath ) noexcept
+{
+    TOptional<TVector<AnsiChar>> FileContentOpt = ReadAllBytes<AnsiChar>( FilePath );
+
+    if ( not FileContentOpt )
+    {
+        return std::nullopt;
+    }
+
+    const TVector<AnsiChar> &FileContent = *FileContentOpt;
+    return FString( FileContent.data(), FileContent.size() );
+}
+
+LumenEngine::Bool LumenEngine::FIOFile::WriteAllText ( const FString &FilePath, const FString &Text ) noexcept
+{
+    std::ofstream File( FilePath.c_str(), std::ios::trunc );
+
+    if ( not File.is_open() )
+    {
+        return false;
+    }
+
+    File << Text;
+    return File.good();
+}
+
+LumenEngine::Bool LumenEngine::FIOFile::Exists ( const FString &FilePath ) noexcept
+{
+    std::error_code ErrorCode;
+    const std::filesystem::path Path( FilePath.c_str() );
+
+    if ( std::filesystem::exists( Path, ErrorCode ) )
+    {
+        return true;
+    }
+    if ( ErrorCode )
+    {
+        LUMEN_LOG_ERROR( LogIOFile, "Error checking file existence for '{}': {}", FilePath.c_str(), ErrorCode.message().c_str() );
+    }
+    return false;
 }

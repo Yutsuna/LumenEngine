@@ -8,6 +8,7 @@
 #include "Definitions.hpp"
 
 #include "Container/SharedPtr.hpp"
+#include "Container/UniquePtr.hpp"
 #include "CoreTypes.hpp"
 
 #include "RHI/RHI.hpp"
@@ -27,6 +28,8 @@
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanPipeline.hpp"
 #include "Vulkan/VulkanSwapChain.hpp"
+
+#include "Shader/ShaderCompiler.hpp"
 
 namespace LumenEngine
 {
@@ -138,6 +141,8 @@ namespace VulkanRHI
         FGPUSceneBuffer SceneBuffer;
         FGPUIndirectBuffer IndirectBuffer;
         FGPUCullingPass CullingPass;
+
+        TUniquePtr<FShaderCompiler> RuntimeCompiler;
 
         Bool bIsInitialized = false;
     };

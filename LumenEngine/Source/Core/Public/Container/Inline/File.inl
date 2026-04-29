@@ -13,7 +13,7 @@ template <typename Type> LumenEngine::TOptional<LumenEngine::TVector<Type>> Lume
 {
     TOptional<std::ifstream> FileOpt = Open( FilePath );
 
-    if ( !FileOpt.has_value() )
+    if ( not FileOpt.has_value() )
     {
         return std::nullopt;
     }
@@ -37,11 +37,27 @@ template <typename Type> LumenEngine::TOptional<LumenEngine::TVector<Type>> Lume
     TVector<Type> Buffer( Count );
 
     File.seekg( 0, std::ios::beg );
-    if ( !File.read( reinterpret_cast<char *>( Buffer.data() ), static_cast<std::streamsize>( USizeValue ) ) )
+    if ( not File.read( reinterpret_cast<char *>( Buffer.data() ), static_cast<std::streamsize>( USizeValue ) ) )
     {
         LUMEN_LOG_ERROR( LogIOFile, "Failed to read file: {}", FilePath.c_str() );
         return std::nullopt;
     }
 
     return Buffer;
+}
+
+template <typename Type> LumenEngine::Bool LumenEngine::FIOFile::WriteAllBytes ( const FString &FilePath, const TVector<Type> &Data ) noexcept
+{
+    std::ofstream File( FilePath.c_str(), std::ios::binary | std::ios::trunc );
+
+    if ( not File.is_open() )
+    {
+        return false;
+    }
+
+    const USize ByteCount            = Data.size() * sizeof( Type );
+    const std::streamsize StreamSize = static_cast<std::streamsize>( ByteCount );
+
+    File.write( reinterpret_cast<const AnsiChar *>( Data.data() ), StreamSize );
+    return File.good();
 }

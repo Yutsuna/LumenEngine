@@ -17,7 +17,6 @@ include(LumenCompiler)
 include(LumenDependencies)
 include(LumenTests)
 include(LumenModule)
-include(LumenShaders)
 include(LumenBuild)
 
 ###########################################################

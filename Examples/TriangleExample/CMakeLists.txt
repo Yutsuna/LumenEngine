@@ -7,8 +7,10 @@ LumenModule(
     DEPS            Launch ApplicationCore Renderer MathCore Engine
 )
 
-LumenCompileShaders(TriangleExample "Shaders"
-    SOURCES
-    "Shaders/Triangle.vert"
-    "Shaders/Triangle.frag"
+###########################################################
+
+target_compile_definitions(
+    TriangleExample
+    PRIVATE
+        LUMEN_EXAMPLE_TRIANGLE_SHADER_PATH="${CMAKE_SOURCE_DIR}/Examples/TriangleExample/Shaders/Triangle"
 )

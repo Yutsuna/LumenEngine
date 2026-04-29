@@ -6,6 +6,9 @@
 #pragma once
 
 #include "CoreTypes.hpp"
+
+#include "Concepts/TriviallyCopyable.hpp"
+
 #include "Logging/LoggingCategory.hpp"
 
 namespace LumenEngine
@@ -30,8 +33,8 @@ namespace Concepts
      *          non-trivial destructor, virtual functions, or complex state that
      *          cannot be bitwise copied.
      */
-    template <typename T>
-    concept CTriviallyCopyablePayload = std::is_trivially_copyable_v<T>;
+    template <typename Type>
+    concept CTriviallyCopyablePayload = Concepts::CTriviallyCopyable<Type>;
 
 } // namespace Concepts
 

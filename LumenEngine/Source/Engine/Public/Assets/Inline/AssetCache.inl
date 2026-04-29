@@ -9,37 +9,27 @@
 
 template <typename Type> void LumenEngine::Engine::TAssetCache<Type>::Add ( const FString &InKey, const TSharedPtr<Type> &InAsset ) noexcept
 {
-    TLockGuard<FMutex> Lock( CacheMutex );
-    CachedAssets[InKey] = InAsset;
+    InternalCache.Put( InKey, InAsset );
 }
 
 template <typename Type> LumenEngine::TSharedPtr<Type> LumenEngine::Engine::TAssetCache<Type>::Find ( const FString &InKey ) const noexcept
 {
-    TLockGuard<FMutex> Lock( CacheMutex );
-    using TMapIterator    = typename TMap<FString, TSharedPtr<Type>>::const_iterator;
-    const TMapIterator It = CachedAssets.find( InKey );
+    TOptional<TSharedPtr<Type>> Result = InternalCache.TryGetCopy( InKey );
 
-    if ( It != CachedAssets.end() )
-    {
-        return It->second;
-    }
-    return nullptr;
+    return Result.has_value() ? *Result : nullptr;
 }
 
-template <typename Type> bool LumenEngine::Engine::TAssetCache<Type>::Remove ( const FString &InKey ) noexcept
+template <typename Type> LumenEngine::Bool LumenEngine::Engine::TAssetCache<Type>::Remove ( const FString &InKey ) noexcept
 {
-    TLockGuard<FMutex> Lock( CacheMutex );
-    return CachedAssets.erase( InKey ) > 0;
+    return InternalCache.Erase( InKey );
 }
 
 template <typename Type> void LumenEngine::Engine::TAssetCache<Type>::Clear () noexcept
 {
-    TLockGuard<FMutex> Lock( CacheMutex );
-    CachedAssets.clear();
+    InternalCache.Clear();
 }
 
 template <typename Type> LumenEngine::USize LumenEngine::Engine::TAssetCache<Type>::Count () const noexcept
 {
-    TLockGuard<FMutex> Lock( CacheMutex );
-    return static_cast<USize>( CachedAssets.size() );
+    return InternalCache.Size();
 }
