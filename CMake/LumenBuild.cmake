@@ -21,6 +21,7 @@ LumenAddModules(
     Renderer
     Engine
     Launch
+    Compiler
 )
 
 LumenAddModules(

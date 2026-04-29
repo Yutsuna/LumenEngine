@@ -34,7 +34,7 @@ function(LumenModule)
 
 ###########################################################
 
-    target_link_libraries(${M_NAME} PRIVATE Lumen::Compiler)
+    target_link_libraries(${M_NAME} PRIVATE Lumen::CompileOptions)
 
     set_target_properties(${M_NAME} PROPERTIES 
         OUTPUT_NAME "${M_NAME}" 
