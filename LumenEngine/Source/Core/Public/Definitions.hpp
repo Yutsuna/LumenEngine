@@ -63,3 +63,6 @@
 #else
     #define LUMEN_DISABLE_UBSAN
 #endif
+
+#define LUMEN_SHADER_CACHE_MAGIC_NUMBER 0X4C534843; //<< LSHC = Lumen Shader Cache Header
+#define LUMEN_ASSET_CACHE_MAGIC_NUMBER 0X4C4D4153;  //<< LMAS = Lumen Asset Cache
