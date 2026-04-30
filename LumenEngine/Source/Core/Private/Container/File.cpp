@@ -3,10 +3,12 @@
  * @brief Implementations for file handling utilities in Lumen Engine.
  */
 
+#include "CoreTypes.hpp"
+
 #include "Container/File.hpp"
 #include "Container/Optional.hpp"
 #include "Container/String.hpp"
-#include "CoreTypes.hpp"
+
 #include "Logging/Logger.hpp"
 
 #include <filesystem>
@@ -15,7 +17,7 @@ namespace
 {
 std::filesystem::path GetExecutableDirectory () noexcept
 {
-#if defined( __linux__ )
+#if defined( LUMEN_ENGINE_PLATFORM_LINUX )
     std::error_code ErrorCode;
     const std::filesystem::path ExecutablePath = std::filesystem::read_symlink( "/proc/self/exe", ErrorCode );
 
