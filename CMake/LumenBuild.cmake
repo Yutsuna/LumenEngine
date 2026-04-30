@@ -14,13 +14,12 @@ LumenAddModules(
     MathCore
     Parallel
     ApplicationCore
+    Compiler
     RHI
     VulkanRHI
-    Lumen
     Renderer
     Engine
     Launch
-    Compiler
 )
 
 LumenAddModules(
