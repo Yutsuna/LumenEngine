@@ -148,22 +148,46 @@ namespace
         }
     }
 
-    std::once_flag GGlslangInitFlag;
+    /**
+     * Global variables for managing the initialization state of the glslang library
+     */
+
+    FMutex GInitializationMutex;
+    Int32 GGlslangRefCount   = 0;
     Bool GbGlslangInitResult = false;
 
 } // namespace
 
 LUMEN_DISABLE_UBSAN Bool FGlslangBackend::Initialize () noexcept
 {
-    std::call_once( GGlslangInitFlag, [] { GbGlslangInitResult = static_cast<Bool>( glslang::InitializeProcess() ); } );
+    TLockGuard<FMutex> Lock( GInitializationMutex );
+
+    if ( GGlslangRefCount == 0 )
+    {
+        GbGlslangInitResult = static_cast<Bool>( glslang::InitializeProcess() );
+    }
+
+    if ( GbGlslangInitResult )
+    {
+        ++GGlslangRefCount;
+    }
+
     return GbGlslangInitResult;
 }
 
 LUMEN_DISABLE_UBSAN void FGlslangBackend::Finalize () noexcept
 {
-    if ( GbGlslangInitResult )
+    TLockGuard<FMutex> Lock( GInitializationMutex );
+
+    if ( GGlslangRefCount > 0 )
     {
-        glslang::FinalizeProcess();
+        --GGlslangRefCount;
+
+        if ( GGlslangRefCount == 0 and GbGlslangInitResult )
+        {
+            glslang::FinalizeProcess();
+            GbGlslangInitResult = false;
+        }
     }
 }
 
