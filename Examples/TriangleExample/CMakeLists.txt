@@ -4,7 +4,7 @@ LumenModule(
     SOURCES         "Private/*.cpp"
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
-    DEPS            Launch ApplicationCore Renderer MathCore Engine
+    DEPS            Launch Renderer Engine Compiler
 )
 
 ###########################################################
@@ -13,4 +13,5 @@ target_compile_definitions(
     TriangleExample
     PRIVATE
         LUMEN_EXAMPLE_TRIANGLE_SHADER_PATH="${CMAKE_SOURCE_DIR}/Examples/TriangleExample/Shaders/Triangle"
+        LUMEN_EXAMPLE_TRIANGLE_ASSET_PATH="${CMAKE_SOURCE_DIR}/Examples/TriangleExample/Assets"
 )

@@ -14,6 +14,11 @@
  * Ctor
  */
 
+LumenEngine::Compiler::FLumenCompiler::FLumenCompiler () noexcept : TCompiler( FLumenCompilerConfig() )
+{
+    ScratchBuffer.reserve( Config.ScratchBufferSize );
+}
+
 LumenEngine::Compiler::FLumenCompiler::FLumenCompiler ( FLumenCompilerConfig InConfig ) noexcept : TCompiler( std::move( InConfig ) )
 {
     ScratchBuffer.reserve( Config.ScratchBufferSize );

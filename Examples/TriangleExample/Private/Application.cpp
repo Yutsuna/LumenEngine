@@ -6,6 +6,8 @@
 #include "Application.hpp"
 
 #include "ErrorCodes.hpp"
+#include "LumenCompiler/LumenCompiler.hpp"
+#include "LumenCompiler/LumenCompilerTypes.hpp"
 #include "MessageHandler.hpp"
 
 #include "Actors/Camera.hpp"
@@ -19,6 +21,9 @@
 
 #ifndef LUMEN_EXAMPLE_TRIANGLE_SHADER_PATH
     #define LUMEN_EXAMPLE_TRIANGLE_SHADER_PATH ""
+#endif
+#ifndef LUMEN_EXAMPLE_TRIANGLE_ASSET_PATH
+    #define LUMEN_EXAMPLE_TRIANGLE_ASSET_PATH ""
 #endif
 
 namespace
@@ -57,8 +62,35 @@ void LumenEngine::FTriangleExampleApplication::Tick ( const Float64 InDeltaTime 
     World->Tick( InDeltaTime );
 }
 
+namespace
+{
+
+void CompileAsset ( const LumenEngine::FString &AssetPath, const LumenEngine::FString &BlockName, const LumenEngine::FString &ExpectedBlockType ) noexcept
+{
+    LumenEngine::Compiler::FLumenCompiler LumenCompiler;
+    LumenEngine::Compiler::FLumenCompileRequest Request;
+
+    Request.SourcePath        = AssetPath;
+    Request.TargetBlockName   = BlockName;
+    Request.ExpectedBlockType = ExpectedBlockType;
+
+    if ( const LumenEngine::Compiler::FLumenCompileResult Result = LumenCompiler.CompileAsset( Request ); Result.IsSuccess() )
+    {
+        LUMEN_LOG_INFO( LogTriangleExample, "Successfully compiled material asset: {}", Request.SourcePath.c_str() );
+    }
+    else
+    {
+        LUMEN_LOG_ERROR( LogTriangleExample, "Failed to compile material asset: {}. Error: {}", Request.SourcePath.c_str(), Result.ErrorLog.c_str() );
+    }
+}
+
+} // namespace
+
 void LumenEngine::FTriangleExampleApplication::CreateResources ()
 {
+    CompileAsset( LUMEN_EXAMPLE_TRIANGLE_ASSET_PATH "/Materials/Triangle.lumen", "TriangleMaterial", "Material" );
+    CompileAsset( LUMEN_EXAMPLE_TRIANGLE_ASSET_PATH "/Meshes/Triangle.lumen", "TriangleMesh", "Mesh" );
+
     TriangleMesh               = MakeShared<Renderer::FRenderMesh>();
     TriangleMesh->Vertices     = { { { 0.0F, -0.5F, 0.0F }, { 1.0F, 0.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },
                                    { { 0.5F, 0.5F, 0.0F }, { 0.0F, 1.0F, 0.0F }, { 0.0F, 0.0F }, { 1.0F, 0.0F, 0.0F } },

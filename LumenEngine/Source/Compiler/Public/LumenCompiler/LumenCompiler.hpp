@@ -55,6 +55,11 @@ namespace Compiler
          */
         explicit FLumenCompiler ( FLumenCompilerConfig InConfig ) noexcept;
 
+        /**
+         * @brief Constructs the LumenCompiler with default configuration.
+         */
+        FLumenCompiler () noexcept;
+
         ~FLumenCompiler () override = default;
 
     public:
