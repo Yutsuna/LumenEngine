@@ -62,18 +62,27 @@ FShaderCompileResult FShaderCompiler::CompileShaderFromSource ( FStringView InSo
 USize FShaderCompiler::WarmCache () noexcept
 {
     USize LoadedCount = 0ULL;
-    if ( not std::filesystem::exists( Config.CacheDirectory ) )
+    std::error_code Ec;
+
+    if ( not std::filesystem::exists( Config.CacheDirectory, Ec ) )
     {
         return 0ULL;
     }
 
-    for ( const auto &Entry : std::filesystem::directory_iterator( Config.CacheDirectory ) )
+    for ( const auto &Entry : std::filesystem::directory_iterator( Config.CacheDirectory, Ec ) )
     {
+
+        if ( Ec )
+        {
+            LUMEN_LOG_ERROR( LogShaderCompiler, "Error accessing cache directory entry: {}", Ec.message() );
+            break;
+        }
+
         if ( Entry.path().extension() == ".meta" )
         {
-            if ( auto MetaBytes = FIOFile::ReadAllBytes<Byte>( Entry.path().string() ) )
+            if ( const TOptional<TVector<Byte>> MetaBytes = FIOFile::ReadAllBytes<Byte>( Entry.path().string() ) )
             {
-                if ( auto MetaOpt = FShaderCacheMetaData::Deserialize( std::span<const Byte>( *MetaBytes ) ) )
+                if ( const TOptional<FShaderCacheMetaData> MetaOpt = FShaderCacheMetaData::Deserialize( std::span<const Byte>( *MetaBytes ) ) )
                 {
                     FShaderCompileRequest Request;
                     Request.Stage      = MetaOpt->Stage;
@@ -140,6 +149,7 @@ FSourceHash FShaderCompiler::ComputeHash ( FStringView InSource, const FShaderCo
 Bool FShaderCompiler::TryReflect ( FCompiledShader &InCompiled, FString &OutErrorLog ) noexcept
 {
     const Bool bResult = Internal::FSpirvReflector::Reflect( InCompiled.SpirV, InCompiled.Stage, InCompiled.Reflection, OutErrorLog );
+
     if ( bResult )
     {
         LUMEN_LOG_SHADER_TRACE( LogShaderCompiler, "SPIR-V reflection successful (Hash: {:016x}, Stage: {})", InCompiled.Hash,
