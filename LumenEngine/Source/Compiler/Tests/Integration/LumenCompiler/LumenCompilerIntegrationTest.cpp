@@ -24,8 +24,10 @@ namespace Compiler
 
             void SetUp () override
             {
+                const testing::TestInfo *Info = ::testing::UnitTest::GetInstance()->current_test_info();
+
                 FLumenCompilerConfig Config;
-                Config.CacheDirectory    = std::filesystem::temp_directory_path() / "lumen_compiler_test_cache";
+                Config.CacheDirectory    = std::filesystem::temp_directory_path() / "LumenCompilerTests" / Info->test_suite_name() / Info->name();
                 Config.ScratchBufferSize = 512ULL * 1024ULL;
                 Config.bVerboseLogging   = false;
 
