@@ -15,4 +15,9 @@ namespace LumenEngine
 using FString     = std::string;
 using FStringView = std::string_view;
 
+static inline FString StringViewToString ( FStringView InView )
+{
+    return { InView.data(), InView.size() };
+}
+
 } // namespace LumenEngine
