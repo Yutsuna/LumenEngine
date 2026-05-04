@@ -132,12 +132,12 @@ FString FShaderCompiler::ValidateSpirV ( const FSpirVBlob &InSpirV ) noexcept
  * TCompiler Hooks
  */
 
-FSourceHash FShaderCompiler::ComputeHash ( FStringView InSource, const FShaderCompileRequest &InRequest ) const noexcept
+FSourceHash FShaderCompiler::ComputeHash ( FStringView InSource, const FShaderCompileRequest &InRequest ) noexcept
 {
     return Internal::FHashUtils::ComputeRequestHash( InSource, InRequest );
 }
 
-Bool FShaderCompiler::TryReflect ( FCompiledShader &InCompiled, FString &OutErrorLog ) const noexcept
+Bool FShaderCompiler::TryReflect ( FCompiledShader &InCompiled, FString &OutErrorLog ) noexcept
 {
     const Bool bResult = Internal::FSpirvReflector::Reflect( InCompiled.SpirV, InCompiled.Stage, InCompiled.Reflection, OutErrorLog );
     if ( bResult )

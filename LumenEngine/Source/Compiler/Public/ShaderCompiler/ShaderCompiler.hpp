@@ -83,8 +83,8 @@ namespace Compiler
     public:
 
         /** TCompiler Hooks */
-        [[nodiscard]] FSourceHash ComputeHash ( FStringView InSource, const FShaderCompileRequest &InRequest ) const noexcept;
-        [[nodiscard]] Bool TryReflect ( FCompiledShader &InCompiled, FString &OutErrorLog ) const noexcept;
+        [[nodiscard]] static FSourceHash ComputeHash ( FStringView InSource, const FShaderCompileRequest &InRequest ) noexcept;
+        [[nodiscard]] static Bool TryReflect ( FCompiledShader &InCompiled, FString &OutErrorLog ) noexcept;
         [[nodiscard]] Bool CompileFresh (
             FStringView InSource, const FShaderCompileRequest &InRequest, FSourceHash InHash, FCompiledShader &OutCompiled, FString &OutErrorLog ) const noexcept;
 
