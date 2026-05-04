@@ -132,7 +132,9 @@ TOptional<FShaderCacheMetaData> FShaderCacheMetaData::Deserialize ( std::span<co
     Cursor += sizeof( UInt32 );
 
     const UInt8 EntryPointLen = Bytes::ReadLittleEndian<UInt8>( Cursor );
-    const UInt64 BytesRead    = static_cast<UInt64>( Cursor - InBytes.data() );
+    Cursor += sizeof( UInt8 );
+
+    const UInt64 BytesRead = static_cast<UInt64>( Cursor - InBytes.data() );
 
     if ( BytesRead + EntryPointLen > InBytes.size() )
     {
