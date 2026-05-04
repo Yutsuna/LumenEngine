@@ -38,6 +38,8 @@ typename TTraits::ResultType LumenEngine::Compiler::TCompiler<TTraits, TDerived>
     TOptional<TCompiled> Cached = Cache->TryGet( Hash, InRequest );
     if ( Cached.has_value() )
     {
+        Cached->bFromCache = true;
+
         FString Error;
         if ( Derived->TryReflect( *Cached, Error ) )
         {

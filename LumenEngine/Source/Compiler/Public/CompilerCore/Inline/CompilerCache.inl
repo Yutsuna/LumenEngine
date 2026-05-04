@@ -35,6 +35,12 @@ LumenEngine::TOptional<typename TTraits::CompiledType> LumenEngine::Compiler::TC
     const FString MetaPath   = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, ".meta" );
     const FString BinaryPath = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, TTraits::BinaryExtension );
 
+    std::error_code Ec;
+    if ( not std::filesystem::exists( MetaPath, Ec ) )
+    {
+        return std::nullopt;
+    }
+
     TOptional<TVector<Byte>> MetaData = FIOFile::ReadAllBytes<Byte>( MetaPath );
     if ( MetaData.has_value() )
     {
@@ -88,8 +94,21 @@ template <typename TTraits> LumenEngine::USize LumenEngine::Compiler::TCompilerC
     MemoryCache.Clear();
     USize RemovedCount = 0U;
     std::error_code ErrorCode;
-    for ( const auto &Entry : std::filesystem::directory_iterator( Config.CacheDirectory ) )
+
+    if ( not std::filesystem::exists( Config.CacheDirectory, ErrorCode ) )
     {
+        return 0U;
+    }
+
+    for ( const std::filesystem::directory_entry &Entry : std::filesystem::directory_iterator( Config.CacheDirectory, ErrorCode ) )
+    {
+
+        if ( ErrorCode )
+        {
+            LUMEN_LOG_ERROR( LogCompiler, "TCompilerCache: Failed to iterate cache directory '{}': {}", Config.CacheDirectory.string(), ErrorCode.message() );
+            break;
+        }
+
         const auto Extension = Entry.path().extension();
         if ( Extension == ".meta" or Extension == TTraits::BinaryExtension )
         {
@@ -107,9 +126,22 @@ template <typename TTraits> LumenEngine::USize LumenEngine::Compiler::TCompilerC
     USize RemovedCount    = 0U;
     const UInt64 NowNs    = HAL::FPlatformTime::NowNanoseconds();
     const UInt64 MaxAgeNs = static_cast<UInt64>( InMaxAgeSeconds * 1.0E9 );
+    std::error_code ErrorCode;
 
-    for ( const auto &Entry : std::filesystem::directory_iterator( Config.CacheDirectory ) )
+    if ( not std::filesystem::exists( Config.CacheDirectory, ErrorCode ) )
     {
+        return 0U;
+    }
+
+    for ( const std::filesystem::directory_entry &Entry : std::filesystem::directory_iterator( Config.CacheDirectory, ErrorCode ) )
+    {
+
+        if ( ErrorCode )
+        {
+            LUMEN_LOG_ERROR( LogCompiler, "TCompilerCache: Failed to iterate cache directory '{}': {}", Config.CacheDirectory.string(), ErrorCode.message() );
+            break;
+        }
+
         if ( Entry.path().extension() == ".meta" )
         {
             if ( auto MetaBytes = FIOFile::ReadAllBytes<Byte>( Entry.path().string() ) )
