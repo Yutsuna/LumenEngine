@@ -80,7 +80,10 @@ namespace Compiler
          * @brief Retrieves the memory cache.
          * @return A reference to the memory cache.
          */
-        [[nodiscard]] TCache<FSourceHash, TCompiled, Cache::FLruPolicy<FSourceHash, TCompiled>> &GetMemoryCache () noexcept;
+        [[nodiscard]] TCache<FSourceHash, TCompiled, Cache::FLruPolicy<FSourceHash, TCompiled>> &GetMemoryCache () noexcept
+        {
+            return MemoryCache;
+        }
 
     private:
 

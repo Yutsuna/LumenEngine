@@ -15,6 +15,8 @@
 #include "LumenCompiler/Internal/DLSLTypes.hpp"
 #include "LumenCompiler/LumenCompilerTypes.hpp"
 
+#include "Maths/Vertex.hpp"
+
 namespace LumenEngine
 {
 
@@ -25,12 +27,6 @@ namespace Compiler
      * @class FBinarySerializer
      * @brief Transforms a DLSL AST root block into a raw, aligned binary blob
      *        conforming to the .lumenbin format.
-     *
-     * All methods are static and stateless. The serializer reads from the AST
-     * produced by FDLSLParser and writes a flat binary buffer containing:
-     *  - FLumenBinaryHeader            (16 bytes, aligned)
-     *  - Asset-specific header          (FLumenBinaryMeshHeader or FLumenBinaryMaterialHeader)
-     *  - Payload data                   (vertex/index arrays, etc.)
      */
     class LUMEN_ENGINE_API FBinarySerializer final
     {

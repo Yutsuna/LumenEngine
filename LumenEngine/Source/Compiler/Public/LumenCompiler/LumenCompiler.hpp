@@ -88,39 +88,45 @@ namespace Compiler
          * @brief Pre-warm the in-memory LRU cache from the disk cache directory.
          * @return Number of entries successfully loaded into memory.
          */
-        [[nodiscard]] USize WarmCache () noexcept;
+        USize WarmCache () noexcept;
 
         /**
          * @brief Remove all .lumenbin + .meta files from the cache directory.
          * @return Number of asset entries removed.
          */
-        [[nodiscard]] USize ClearCache () noexcept;
+        USize ClearCache () noexcept;
 
         /**
          * @brief Remove cache entries older than InMaxAgeSeconds.
          * @param InMaxAgeSeconds Maximum age threshold in seconds.
          * @return Number of stale entries removed.
          */
-        [[nodiscard]] USize ClearStaleCache ( Float64 InMaxAgeSeconds ) noexcept;
+        USize ClearStaleCache ( Float64 InMaxAgeSeconds ) noexcept;
 
     public:
 
         /**
          * @brief Compute a deterministic FNV-1a hash for a compile request.
+         *
+         * Called by TCompiler<> as a CRTP hook — must be non-const and static.
+         *
          * @param InSource   Raw DLSL source text.
          * @param InRequest  Compile request parameters.
          * @return 64-bit FNV-1a hash.
          */
-        [[nodiscard]] FAssetHash ComputeHash ( FStringView InSource, const FLumenCompileRequest &InRequest ) const noexcept;
+        [[nodiscard]] static FAssetHash ComputeHash ( FStringView InSource, const FLumenCompileRequest &InRequest ) noexcept;
 
         /**
-         * @brief No-op reflect pass (assets have no shader-style reflection).
+         * @brief Post-compilation reflection hook required by TCompiler<>.
          *
-         * @param InCompiled   The compiled asset (unused).
-         * @param OutErrorLog  Error log (not written to).
+         * Binary asset compilation requires no SPIR-V-style reflection;
+         * this hook is a deliberate no-op that always succeeds.
+         *
+         * @param InOutCompiled  Compiled asset (unused).
+         * @param OutErrorLog    Error log (unused).
          * @return Always true.
          */
-        [[nodiscard]] Bool TryReflect ( FCompiledLumenAsset &InCompiled, FString &OutErrorLog ) const noexcept;
+        [[nodiscard]] static Bool TryReflect ( FCompiledLumenAsset &InOutCompiled, FString &OutErrorLog ) noexcept;
 
         /**
          * @brief Run the full Scanner -> Parser -> Serializer pipeline.
@@ -132,8 +138,8 @@ namespace Compiler
          * @param OutErrorLog Human-readable error on failure.
          * @return True on success, false on any parse or serialization error.
          */
-        [[nodiscard]] Bool CompileFresh (
-            FStringView InSource, const FLumenCompileRequest &InRequest, FAssetHash InHash, FCompiledLumenAsset &OutCompiled, FString &OutErrorLog ) const noexcept;
+        [[nodiscard]] Bool
+        CompileFresh ( FStringView InSource, const FLumenCompileRequest &InRequest, FAssetHash InHash, FCompiledLumenAsset &OutCompiled, FString &OutErrorLog );
 
     private:
 
@@ -148,8 +154,7 @@ namespace Compiler
 
         /**
          * @brief Dispatch serialization to the correct serializer based on block type.
-         * @param InBlock      The root block to serialize.
-         * @param OutErrorLog  Populated on failure.
+         * @param InBlock  The root block to serialize.
          * @return Binary blob on success, error string on failure.
          */
         [[nodiscard]] static TExpected<TVector<Byte>, FString> SerializeBlock ( const FDLSLRootBlock *InBlock );

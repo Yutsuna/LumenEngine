@@ -8,7 +8,6 @@
 #include "CoreTypes.hpp"
 
 #include "CompilerCore/CompilerCache.hpp"
-#include "CompilerCore/CompilerTypes.hpp"
 
 #include "Container/UniquePtr.hpp"
 

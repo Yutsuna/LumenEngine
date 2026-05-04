@@ -193,7 +193,7 @@ namespace Compiler
      * @struct FLumenCacheMetaData
      * @brief Metadata stored alongside each .lumenbin cache entry.
      *
-     * Binary layout (little-endian, fixed-size header + variable BlockName):
+     * Binary layout
      *   [4] Magic
      *   [4] Version
      *   [8] SourceHash
@@ -239,8 +239,6 @@ namespace Compiler
 
         /**
          * @brief Size in bytes of the linear (arena) allocator scratch buffer used per
-         *        compilation to hold the AST nodes.
-         *        Default 1 MiB — sufficient for large DLSL files.
          */
         USize ScratchBufferSize = 1024ULL * 1024ULL;
 
