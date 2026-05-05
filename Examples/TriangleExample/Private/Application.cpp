@@ -5,7 +5,6 @@
 
 #include "Application.hpp"
 
-#include "AssetCompiler.hpp"
 #include "ErrorCodes.hpp"
 #include "MessageHandler.hpp"
 
@@ -14,7 +13,6 @@
 #include "Actors/Triangle.hpp"
 
 #include "Generic/GenericApplication.hpp"
-#include "Graphics/Renderer.hpp"
 
 #include "Logging/Logger.hpp"
 

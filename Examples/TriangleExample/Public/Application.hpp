@@ -15,7 +15,7 @@
 
 #include "GameApplication.hpp"
 
-#include "AssetCompiler.hpp"
+#include "Assets/AssetCompiler.hpp"
 #include "World/World.hpp"
 
 namespace LumenEngine
