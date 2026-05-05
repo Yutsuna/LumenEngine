@@ -30,6 +30,24 @@ void LumenEngine::Engine::AStaticMeshActor::SetMeshAndShader ( RHI::FMeshHandle 
     FSpatialRegistry::Get().AssignRenderData( GetId(), InMesh, InShader );
 }
 
+void LumenEngine::Engine::AStaticMeshActor::SetMaterial ( const TSharedPtr<Renderer::FRenderMaterial> &InMaterial ) noexcept
+{
+    if ( InMaterial )
+    {
+        Shader = InMaterial->RenderHandle;
+        FSpatialRegistry::Get().AssignRenderData( GetId(), Mesh, Shader );
+    }
+}
+
+void LumenEngine::Engine::AStaticMeshActor::SetMesh ( const TSharedPtr<Renderer::FRenderMesh> &InMesh ) noexcept
+{
+    if ( InMesh )
+    {
+        Mesh = InMesh->RenderHandle;
+        FSpatialRegistry::Get().AssignRenderData( GetId(), Mesh, Shader );
+    }
+}
+
 void LumenEngine::Engine::AStaticMeshActor::SetTransform ( const Maths::FMatrix4x4f &InTransform ) noexcept
 {
     Transform = InTransform;
