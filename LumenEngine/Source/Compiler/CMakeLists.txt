@@ -25,12 +25,14 @@ endif()
 LumenModule(
     NAME            Compiler
     TYPE            shared_library
-    SOURCES         "Private/**/*.cpp"
+    SOURCES         "Private/*.cpp"
+                    "Private/**/*.cpp"
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
     DEPS            Core
                     MathCore
                     RHI
+                    Renderer
     LINUX_LIBS      glslang::glslang
                     glslang::glslang-default-resource-limits
                     glslang::SPIRV
