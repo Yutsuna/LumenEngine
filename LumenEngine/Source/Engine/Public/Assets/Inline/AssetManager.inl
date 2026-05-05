@@ -16,3 +16,8 @@ inline LumenEngine::Engine::TAssetCache<LumenEngine::Renderer::FRenderShader> &L
 {
     return ShaderCache;
 }
+
+inline LumenEngine::Engine::TAssetCache<LumenEngine::Renderer::FRenderMaterial> &LumenEngine::Engine::FAssetManager::GetMaterialCache () noexcept
+{
+    return MaterialCache;
+}
