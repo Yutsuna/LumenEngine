@@ -22,6 +22,9 @@ namespace RHI
 namespace Renderer
 {
 
+    class FRenderer;
+    struct FRenderPacket;
+
     /**
      * @class IRenderFeature
      * @brief Abstract interface representing a specific rendering pass (e.g., Opaque, PostProcess).

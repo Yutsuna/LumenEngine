@@ -14,6 +14,7 @@
 
 #include "Graphics/RenderFeature.hpp"
 #include "Graphics/RenderResource.hpp"
+#include "Graphics/Resources/RenderShader.hpp"
 
 #include "Maths/Vertex.hpp"
 
@@ -76,6 +77,13 @@ namespace Renderer
          * @return A strongly typed handle to the created pipeline.
          */
         [[nodiscard]] RHI::FPipelineHandle CreatePipeline ( const FString &InVertexPath, const FString &InFragmentPath );
+
+        /**
+         * @brief Creates a new material.
+         * @param InShader The shader to use.
+         * @return A strongly typed handle to the created pipeline.
+         */
+        [[nodiscard]] RHI::FPipelineHandle CreateMaterial ( const TSharedPtr<FRenderShader> &InShader );
 
     private:
 
