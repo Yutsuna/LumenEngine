@@ -93,7 +93,8 @@ LumenEngine::TOptional<LumenEngine::Compiler::FLumenCacheMetaData> LumenEngine::
         Meta.BlockName = FString( reinterpret_cast<const AnsiChar *>( Cursor ), BlockNameLen );
     }
 
-    if ( Meta.AssetType != EAssetType::Mesh and Meta.AssetType != EAssetType::Material and Meta.AssetType != EAssetType::Unknown )
+    if ( Meta.AssetType != EAssetType::Mesh and Meta.AssetType != EAssetType::Material and Meta.AssetType != EAssetType::Shader and
+         Meta.AssetType != EAssetType::Unknown )
     {
         return std::nullopt;
     }
