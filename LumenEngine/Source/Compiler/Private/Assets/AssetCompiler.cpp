@@ -27,10 +27,7 @@ LumenEngine::Bool LumenEngine::Compiler::FAssetCompileResult::IsSuccess () const
  * Ctor & Dtor
  */
 
-LumenEngine::Compiler::FAssetCompiler::FAssetCompiler () noexcept : ShaderCompiler( FShaderCompilerConfig() )
-{
-    /* Ctor */
-}
+LumenEngine::Compiler::FAssetCompiler::FAssetCompiler () noexcept = default;
 
 LumenEngine::Compiler::FAssetCompiler::~FAssetCompiler () noexcept = default;
 
@@ -132,7 +129,7 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
     {
         LUMEN_LOG_ERROR( LogAssetCompiler, "Assets path does not exist: {}", InAssetsPath.c_str() );
         Result.FailedFiles.emplace_back( InAssetsPath );
-        Result.FailureCount++;
+        ++Result.FailureCount;
         return Result;
     }
 
@@ -203,11 +200,11 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
 
         if ( const FLumenCompileResult CompileRes = LumenCompiler.CompileAsset( Request ); CompileRes.IsSuccess() )
         {
-            Result.SuccessCount++;
+            ++Result.SuccessCount;
         }
         else
         {
-            Result.FailureCount++;
+            ++Result.FailureCount;
             Result.FailedFiles.emplace_back( InFilePath );
             LUMEN_LOG_ERROR( LogAssetCompiler, "Failed to compile Lumen Asset {}: {}", InFilePath.c_str(), CompileRes.ErrorLog.c_str() );
         }
@@ -238,11 +235,11 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
 
         if ( const FShaderCompileResult CompileRes = ShaderCompiler.CompileShader( Request ); CompileRes.IsSuccess() )
         {
-            Result.SuccessCount++;
+            ++Result.SuccessCount;
         }
         else
         {
-            Result.FailureCount++;
+            ++Result.FailureCount;
             Result.FailedFiles.emplace_back( InFilePath );
             LUMEN_LOG_ERROR( LogAssetCompiler, "Failed to compile shader {}: {}", InFilePath.c_str(), CompileRes.ErrorLog.c_str() );
         }
@@ -261,13 +258,17 @@ void LumenEngine::Compiler::FAssetCompiler::AssetOnReloadCallback ( const FStrin
 
     switch ( InType )
     {
+    case EAssetType::Mesh:
+        MeshCache.clear();
+        break;
+    case EAssetType::Material:
+        MaterialCache.clear();
+        break;
     case EAssetType::Shader:
         MaterialCache.clear();
         ShaderCache.clear();
         break;
-    case EAssetType::Mesh:
-        MeshCache.clear();
-        break;
+
     default:
         break;
     }
