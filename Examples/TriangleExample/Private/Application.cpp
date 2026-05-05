@@ -15,6 +15,7 @@
 #include "Generic/GenericApplication.hpp"
 
 #include "Logging/Logger.hpp"
+#include "Messages/EngineMessageTypes.hpp"
 
 #ifndef LUMEN_EXAMPLE_TRIANGLE_ASSET_PATH
     #define LUMEN_EXAMPLE_TRIANGLE_ASSET_PATH ""
@@ -44,6 +45,41 @@ LumenEngine::Int32 LumenEngine::FTriangleExampleApplication::Initialize ( const 
 
     AssetCompiler = MakeUnique<Compiler::FAssetCompiler>();
     AssetCompiler->Initialize( LUMEN_EXAMPLE_TRIANGLE_ASSET_PATH );
+
+    // TODO: make this shit automatic
+    AssetCompiler->SetOnAssetReloadedCallback(
+        [this] ( const FString &InPath, const Compiler::EAssetType::Type InType )
+        {
+            switch ( InType )
+            {
+            case Compiler::EAssetType::Mesh:
+                if ( InPath.find( "Triangle" ) != FString::npos )
+                {
+                    TriangleMesh = AssetCompiler->LoadMesh( "Triangle" );
+                    if ( MeshActorRef.IsValid() and TriangleMesh )
+                    {
+                        Engine::FMeshUpdatedPayload Payload;
+                        Payload.NewMesh = TriangleMesh->RenderHandle;
+                        MeshActorRef.EnqueueMessage( FMessage::Make( Engine::EEngineMessage::MeshUpdated, 0, Payload ) );
+                    }
+                }
+                break;
+
+            case Compiler::EAssetType::Shader:
+            case Compiler::EAssetType::Material:
+                TriangleMaterial = AssetCompiler->LoadMaterial( "Triangle" );
+                if ( MeshActorRef.IsValid() and TriangleMaterial )
+                {
+                    Engine::FMaterialUpdatedPayload Payload;
+                    Payload.NewMaterial = TriangleMaterial->RenderHandle;
+                    MeshActorRef.EnqueueMessage( FMessage::Make( Engine::EEngineMessage::MaterialUpdated, 0, Payload ) );
+                }
+                break;
+
+            default:
+                break;
+            }
+        } );
 
     CreateResources();
     CreateActors();
@@ -77,6 +113,8 @@ void LumenEngine::FTriangleExampleApplication::CreateActors ()
     TSharedRef<Engine::ASceneActor> SceneActor  = World->SpawnActor<Engine::ASceneActor>();
     TSharedRef<AExampleCameraActor> CameraActor = World->SpawnActor<AExampleCameraActor>();
     TSharedRef<ATriangle> MeshActor             = World->SpawnActor<ATriangle>();
+
+    MeshActorRef = MeshActor->GetRef();
 
     MeshActor->SetMesh( TriangleMesh );
     MeshActor->SetMaterial( TriangleMaterial );

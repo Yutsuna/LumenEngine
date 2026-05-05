@@ -40,6 +40,8 @@ private:
     TUniquePtr<Compiler::FAssetCompiler> AssetCompiler;
     TSharedPtr<Renderer::FRenderMesh> TriangleMesh;
     TSharedPtr<Renderer::FRenderMaterial> TriangleMaterial;
+
+    FActorRef MeshActorRef;
 };
 
 } // namespace LumenEngine
