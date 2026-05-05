@@ -7,17 +7,43 @@
 #include "Messages/EngineMessageTypes.hpp"
 #include "World/SpatialRegistry.hpp"
 
+/**
+ * Ctor
+ */
+
 LumenEngine::Engine::AStaticMeshActor::AStaticMeshActor ( const ActorID InId ) noexcept : ASpatialActor( InId )
 {
     /* */
 }
 
+/**
+ * Public
+ */
+
 void LumenEngine::Engine::AStaticMeshActor::Receive ( const FMessage &InMessage )
 {
-    if ( InMessage.Type == EEngineMessage::TransformUpdate )
+    switch ( InMessage.Type )
+    {
+    case EEngineMessage::TransformUpdate:
     {
         const FTransformPayload &Payload = InMessage.GetPayload<FTransformPayload>();
         SetTransform( Payload.NewTransform );
+        break;
+    }
+    case EEngineMessage::MeshUpdated:
+    {
+        const FMeshUpdatedPayload &Payload = InMessage.GetPayload<FMeshUpdatedPayload>();
+        SetMeshAndShader( Payload.NewMesh, Shader );
+        break;
+    }
+    case EEngineMessage::MaterialUpdated:
+    {
+        const FMaterialUpdatedPayload &Payload = InMessage.GetPayload<FMaterialUpdatedPayload>();
+        SetMeshAndShader( Mesh, Payload.NewMaterial );
+        break;
+    }
+    default:
+        break;
     }
 }
 
