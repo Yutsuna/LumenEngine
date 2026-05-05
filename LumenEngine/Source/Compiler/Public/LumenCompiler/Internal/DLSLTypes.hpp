@@ -46,6 +46,7 @@ namespace Compiler
     struct FDLSLProperty
     {
         FStringView Key;
+        FDLSLNode *TypeNode = nullptr;
         FDLSLNode *Value    = nullptr;
         FDLSLProperty *Next = nullptr;
     };
