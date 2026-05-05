@@ -12,6 +12,5 @@ LumenModule(
 target_compile_definitions(
     TriangleExample
     PRIVATE
-        LUMEN_EXAMPLE_TRIANGLE_SHADER_PATH="${CMAKE_SOURCE_DIR}/Examples/TriangleExample/Shaders/Triangle"
         LUMEN_EXAMPLE_TRIANGLE_ASSET_PATH="${CMAKE_SOURCE_DIR}/Examples/TriangleExample/Assets"
 )

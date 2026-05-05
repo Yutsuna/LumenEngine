@@ -6,10 +6,18 @@
 #include "Actors/Triangle.hpp"
 #include "Messages/EngineMessageTypes.hpp"
 
+/**
+ * Ctor
+ */
+
 LumenEngine::ATriangle::ATriangle ( const ActorID InId ) noexcept : Engine::AStaticMeshActor( InId )
 {
     GetMailbox().Reserve( 128ULL );
 }
+
+/**
+ * Public
+ */
 
 void LumenEngine::ATriangle::Receive ( const FMessage &InMessage )
 {
@@ -25,6 +33,10 @@ void LumenEngine::ATriangle::Receive ( const FMessage &InMessage )
         Engine::AStaticMeshActor::Receive( InMessage );
     }
 }
+
+/**
+ * Private
+ */
 
 void LumenEngine::ATriangle::RotateTriangle ( const Float64 InDeltaTime ) noexcept
 {

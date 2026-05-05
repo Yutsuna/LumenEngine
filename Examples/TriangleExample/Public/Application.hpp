@@ -5,22 +5,24 @@
 
 #pragma once
 
-#include "Container/UniquePtr.hpp"
-#include "GameApplication.hpp"
-#include "World/World.hpp"
+#include "CoreTypes.hpp"
 
+#include "Container/SharedPtr.hpp"
+#include "Container/UniquePtr.hpp"
+
+#include "Graphics/Resources/RenderMaterial.hpp"
 #include "Graphics/Resources/RenderMesh.hpp"
-#include "Graphics/Resources/RenderShader.hpp"
+
+#include "GameApplication.hpp"
+
+#include "AssetCompiler.hpp"
+#include "World/World.hpp"
 
 namespace LumenEngine
 {
 
 class FTriangleExampleApplication final : public IGameApplication
 {
-public:
-
-    FTriangleExampleApplication () noexcept = default;
-
 public:
 
     Int32 Initialize ( Int32 Argc, const AnsiChar *Argv[] ) override;
@@ -35,8 +37,9 @@ private:
 private:
 
     TUniquePtr<Engine::FWorld> World;
+    TUniquePtr<Compiler::FAssetCompiler> AssetCompiler;
     TSharedPtr<Renderer::FRenderMesh> TriangleMesh;
-    TSharedPtr<Renderer::FRenderShader> TriangleShader;
+    TSharedPtr<Renderer::FRenderMaterial> TriangleMaterial;
 };
 
 } // namespace LumenEngine

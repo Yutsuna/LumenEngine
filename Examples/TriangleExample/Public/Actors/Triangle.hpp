@@ -20,6 +20,8 @@ public:
 
     explicit ATriangle ( const ActorID InId ) noexcept;
 
+public:
+
     void Receive ( const FMessage &InMessage ) override;
 
 private:
