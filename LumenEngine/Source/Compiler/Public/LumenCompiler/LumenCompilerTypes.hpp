@@ -38,6 +38,7 @@ namespace Compiler
             Unknown  = 0,
             Mesh     = 1,
             Material = 2,
+            Shader   = 3,
         };
 
         [[nodiscard]] constexpr const AnsiChar *ToString ( EAssetType::Type InAssetType ) noexcept;
