@@ -21,6 +21,8 @@ constexpr const LumenEngine::AnsiChar *LumenEngine::Compiler::EAssetType::ToStri
         return "Mesh";
     case Type::Material:
         return "Material";
+    case Type::Shader:
+        return "Shader";
     default:
         return "Unknown";
     }
