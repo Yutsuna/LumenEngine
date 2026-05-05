@@ -208,6 +208,7 @@ LumenEngine::TExpected<LumenEngine::Compiler::FDLSLNode *, LumenEngine::FString>
 LumenEngine::TExpected<LumenEngine::Compiler::FDLSLProperty *, LumenEngine::FString> LumenEngine::Compiler::FDLSLParser::ParseProperty ()
 {
     FStringView PropertyKey;
+    Bool bHadColon = false;
 
     if ( Match( FToken::EType::At ) )
     {
@@ -223,21 +224,41 @@ LumenEngine::TExpected<LumenEngine::Compiler::FDLSLProperty *, LumenEngine::FStr
 
         PropertyKey = IdentifierResult.value().Text;
 
-        if ( not Match( FToken::EType::Colon ) and not Match( FToken::EType::Equals ) )
+        if ( Match( FToken::EType::Colon ) )
         {
-            /* Legal: Nested configuration blocks might lack assignment operators */
+            bHadColon = true;
+        }
+        else if ( Match( FToken::EType::Equals ) )
+        {
+            /* Legal: Simple assignment */
         }
     }
 
-    const TExpected<FDLSLNode *, FString> ValueResult = ParseNode();
-    LUMEN_EXPECT_VALUE( ValueResult );
+    const TExpected<FDLSLNode *, FString> NodeResult = ParseNode();
+    LUMEN_EXPECT_VALUE( NodeResult );
+
+    FDLSLNode *TypeNode  = nullptr;
+    FDLSLNode *ValueNode = nullptr;
+
+    if ( bHadColon and Match( FToken::EType::Equals ) )
+    {
+        TypeNode                                                 = NodeResult.value();
+        const TExpected<FDLSLNode *, FString> DefaultValueResult = ParseNode();
+        LUMEN_EXPECT_VALUE( DefaultValueResult );
+        ValueNode = DefaultValueResult.value();
+    }
+    else
+    {
+        ValueNode = NodeResult.value();
+    }
 
     const TExpected<FDLSLProperty *, FString> PropertyResult = AllocateNode<FDLSLProperty>();
     LUMEN_EXPECT_VALUE( PropertyResult );
 
     FDLSLProperty *const Property = PropertyResult.value();
     Property->Key                 = PropertyKey;
-    Property->Value               = ValueResult.value();
+    Property->TypeNode            = TypeNode;
+    Property->Value               = ValueNode;
 
     return Property;
 }

@@ -42,8 +42,7 @@ LumenEngine::Compiler::FBinarySerializer::SerializeMesh ( const FDLSLRootBlock *
                                " instead of List." );
     }
 
-    LUMEN_EXPECT( ConfigNode != nullptr, "Missing @Config object for " + StringViewToString( InMeshBlock->Name ) + " mesh." );
-    if ( ConfigNode->Type != EDLSLNodeType::Object )
+    if ( ConfigNode != nullptr and ConfigNode->Type != EDLSLNodeType::Object )
     {
         return MakeUnexpected( "Invalid @Config type for " + StringViewToString( InMeshBlock->Name ) + " mesh. Got " + EDLSLNodeType::ToString( ConfigNode->Type ) +
                                " instead of Object." );
@@ -59,9 +58,16 @@ LumenEngine::Compiler::FBinarySerializer::SerializeMesh ( const FDLSLRootBlock *
     const TVector<UInt32> &Indices          = IndicesResult.value();
 
     FLumenBinaryMeshHeader MeshHeader{};
-    MeshHeader.VertexCount = static_cast<UInt32>( Vertices.size() );
-    MeshHeader.IndexCount  = static_cast<UInt32>( Indices.size() );
-    ExtractMeshConfig( ConfigNode, MeshHeader );
+    MeshHeader.Topology     = 3; // Default: TriangleList
+    MeshHeader.CullMode     = 2; // Default: Back
+    MeshHeader.WindingOrder = 1; // Default: CCW
+    MeshHeader.VertexCount  = static_cast<UInt32>( Vertices.size() );
+    MeshHeader.IndexCount   = static_cast<UInt32>( Indices.size() );
+
+    if ( ConfigNode != nullptr )
+    {
+        ExtractMeshConfig( ConfigNode, MeshHeader );
+    }
 
     FLumenBinaryHeader Header;
     Header.Magic       = LUMEN_ASSET_CACHE_MAGIC_NUMBER;
