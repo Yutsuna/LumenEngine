@@ -63,6 +63,11 @@ void LumenEngine::Compiler::FAssetCompiler::Tick () noexcept
     }
 }
 
+void LumenEngine::Compiler::FAssetCompiler::SetOnAssetReloadedCallback ( FOnAssetReloaded InCallback ) noexcept
+{
+    OnAssetReloaded = std::move( InCallback );
+}
+
 LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMesh> LumenEngine::Compiler::FAssetCompiler::LoadMesh ( const FString &InName ) noexcept
 {
     if ( MeshCache.contains( InName ) )
@@ -265,5 +270,10 @@ void LumenEngine::Compiler::FAssetCompiler::AssetOnReloadCallback ( const FStrin
         break;
     default:
         break;
+    }
+
+    if ( OnAssetReloaded )
+    {
+        OnAssetReloaded( InPath, InType );
     }
 }

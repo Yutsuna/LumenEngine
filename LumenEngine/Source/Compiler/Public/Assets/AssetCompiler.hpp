@@ -46,6 +46,9 @@ namespace Compiler
     {
     public:
 
+        /** Callback triggered when an asset is successfully recompiled. */
+        using FOnAssetReloaded = TFunction<void( const FString &InPath, EAssetType::Type InType )>;
+
         FAssetCompiler () noexcept;
         ~FAssetCompiler () noexcept;
 
@@ -61,6 +64,9 @@ namespace Compiler
          * @brief Updates the hot-reload watcher.
          */
         void Tick () noexcept;
+
+        /** @brief Sets the callback for when an asset is successfully recompiled. */
+        void SetOnAssetReloadedCallback ( FOnAssetReloaded InCallback ) noexcept;
 
     public:
 
@@ -112,6 +118,8 @@ namespace Compiler
         FLumenCompiler LumenCompiler;
         FShaderCompiler ShaderCompiler;
         TUniquePtr<FCompilerHotReload> HotReload;
+
+        FOnAssetReloaded OnAssetReloaded;
 
         FString AssetsPath;
 
