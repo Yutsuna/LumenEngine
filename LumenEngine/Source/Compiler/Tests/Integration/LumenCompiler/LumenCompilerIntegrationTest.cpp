@@ -7,6 +7,9 @@
 #include "LumenCompiler/LumenCompiler.hpp"
 #include "LumenCompiler/LumenCompilerTypes.hpp"
 
+#include "Filesystem/Directory.hpp"
+#include "Filesystem/FileSystem.hpp"
+
 #include <gtest/gtest.h>
 
 namespace LumenEngine
@@ -25,21 +28,19 @@ namespace
             const testing::TestInfo *Info = ::testing::UnitTest::GetInstance()->current_test_info();
 
             Compiler::FLumenCompilerConfig Config;
-            Config.CacheDirectory    = std::filesystem::temp_directory_path() / "LumenCompilerTests" / Info->test_suite_name() / Info->name();
+            Config.CacheDirectory    = FFileSystem::GetTempDirectory() / "LumenCompilerTests" / Info->test_suite_name() / Info->name();
             Config.ScratchBufferSize = 512ULL * 1024ULL;
             Config.bVerboseLogging   = false;
 
             Compiler = MakeUnique<Compiler::FLumenCompiler>( std::move( Config ) );
 
-            std::error_code Ec;
-            std::filesystem::remove_all( Compiler->GetConfig().CacheDirectory, Ec );
-            std::filesystem::create_directories( Compiler->GetConfig().CacheDirectory, Ec );
+            Filesystem::FDirectory::Delete( Compiler->GetConfig().CacheDirectory, true );
+            Filesystem::FDirectory::CreateDirectories( Compiler->GetConfig().CacheDirectory );
         }
 
         void TearDown () override
         {
-            std::error_code Ec;
-            std::filesystem::remove_all( Compiler->GetConfig().CacheDirectory, Ec );
+            Filesystem::FDirectory::Delete( Compiler->GetConfig().CacheDirectory, true );
         }
 
         TUniquePtr<Compiler::FLumenCompiler> Compiler;

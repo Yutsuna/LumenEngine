@@ -7,7 +7,11 @@
 #include "ShaderCompiler/ShaderCompiler.hpp"
 #include "ShaderCompiler/ShaderCompilerRequest.hpp"
 
-#include <filesystem>
+#include "Filesystem/Directory.hpp"
+#include "Filesystem/File.hpp"
+#include "Filesystem/FileSystem.hpp"
+#include "Filesystem/Path.hpp"
+
 #include <gtest/gtest.h>
 
 namespace
@@ -22,19 +26,17 @@ protected:
         const testing::TestInfo *Info = ::testing::UnitTest::GetInstance()->current_test_info();
 
         LumenEngine::Compiler::FShaderCompilerConfig Config;
-        Config.CacheDirectory = std::filesystem::temp_directory_path() / "ShaderCompilerTests" / Info->test_suite_name() / Info->name();
+        Config.CacheDirectory = LumenEngine::FFileSystem::GetTempDirectory() / "ShaderCompilerTests" / Info->test_suite_name() / Info->name();
 
-        std::error_code Ec;
-        std::filesystem::remove_all( Config.CacheDirectory, Ec );
-        std::filesystem::create_directories( Config.CacheDirectory, Ec );
+        LumenEngine::Filesystem::FDirectory::Delete( Config.CacheDirectory, true );
+        LumenEngine::Filesystem::FDirectory::CreateDirectories( Config.CacheDirectory );
 
         Compiler = LumenEngine::MakeUnique<LumenEngine::Compiler::FShaderCompiler>( std::move( Config ) );
     }
 
     void TearDown () override
     {
-        std::error_code Ec;
-        std::filesystem::remove_all( Compiler->GetConfig().CacheDirectory, Ec );
+        LumenEngine::Filesystem::FDirectory::Delete( Compiler->GetConfig().CacheDirectory, true );
     }
 
     LumenEngine::TUniquePtr<LumenEngine::Compiler::FShaderCompiler> Compiler;
