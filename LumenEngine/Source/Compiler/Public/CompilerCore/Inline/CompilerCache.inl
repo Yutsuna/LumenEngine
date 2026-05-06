@@ -8,19 +8,16 @@
 #include "CompilerCore/CompilerCache.hpp"
 #include "CompilerCore/CompilerTypes.hpp"
 
-#include "Container/File.hpp"
+#include "Filesystem/Directory.hpp"
+#include "Filesystem/File.hpp"
+#include "Filesystem/Path.hpp"
 #include "HAL/PlatformTime.hpp"
+#include "Logging/Logger.hpp"
 
 template <typename TTraits>
 LumenEngine::Compiler::TCompilerCache<TTraits>::TCompilerCache( const typename TTraits::ConfigType &InConfig ) : Config( InConfig ), MemoryCache( 1024U )
 {
-    std::error_code ErrorCode;
-    std::filesystem::create_directories( Config.CacheDirectory, ErrorCode );
-
-    if ( ErrorCode )
-    {
-        LUMEN_LOG_ERROR( LogCompiler, "TCompilerCache: Failed to create cache directory '{}': {}", Config.CacheDirectory.string(), ErrorCode.message() );
-    }
+    Filesystem::FDirectory::CreateDirectories( Config.CacheDirectory );
 }
 
 template <typename TTraits>
@@ -32,25 +29,24 @@ LumenEngine::TOptional<typename TTraits::CompiledType> LumenEngine::Compiler::TC
         return MemoryResult;
     }
 
-    const FString MetaPath   = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, ".meta" );
-    const FString BinaryPath = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, TTraits::BinaryExtension );
+    const Filesystem::FPath MetaPath   = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, ".meta" );
+    const Filesystem::FPath BinaryPath = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, TTraits::BinaryExtension );
 
-    std::error_code Ec;
-    if ( not std::filesystem::exists( MetaPath, Ec ) )
+    if ( not Filesystem::FFile::Exists( MetaPath ) )
     {
         return std::nullopt;
     }
 
-    TOptional<TVector<Byte>> MetaData = FIOFile::ReadAllBytes<Byte>( MetaPath );
+    auto MetaData = Filesystem::FFile::ReadAllBytes<Byte>( MetaPath );
     if ( MetaData.has_value() )
     {
-        TOptional<TMeta> MetaOpt = TMeta::Deserialize( std::span<const Byte>( *MetaData ) );
+        TOptional<TMeta> MetaOpt = TMeta::Deserialize( std::span<const Byte>( MetaData.value() ) );
         if ( MetaOpt.has_value() and TTraits::IsValidMeta( *MetaOpt, InHash, InRequest ) )
         {
-            TOptional<TVector<typename TTraits::BinaryWordType>> BinaryData = FIOFile::ReadAllBytes<typename TTraits::BinaryWordType>( BinaryPath );
+            auto BinaryData = Filesystem::FFile::ReadAllBytes<typename TTraits::BinaryWordType>( BinaryPath );
             if ( BinaryData.has_value() )
             {
-                TCompiled Compiled = TTraits::RestoreFromCache( InHash, InRequest, *MetaOpt, std::move( *BinaryData ) );
+                TCompiled Compiled = TTraits::RestoreFromCache( InHash, InRequest, *MetaOpt, std::move( BinaryData.value() ) );
                 MemoryCache.Put( InHash, Compiled );
                 return Compiled;
             }
@@ -63,20 +59,20 @@ template <typename TTraits>
 void LumenEngine::Compiler::TCompilerCache<TTraits>::Put ( const FSourceHash InHash, const TRequest &InRequest, const TCompiled &InCompiled ) noexcept
 {
     MemoryCache.Put( InHash, InCompiled );
-    const FString MetaPath   = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, ".meta" );
-    const FString BinaryPath = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, TTraits::BinaryExtension );
+    const Filesystem::FPath MetaPath   = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, ".meta" );
+    const Filesystem::FPath BinaryPath = TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, TTraits::BinaryExtension );
 
     TMeta Meta        = TTraits::CreateMeta( InHash, InRequest, InCompiled );
     Meta.CompiledAtNs = HAL::FPlatformTime::NowNanoseconds();
 
-    if ( not FIOFile::WriteAllBytes( BinaryPath, TTraits::GetBinaryData( InCompiled ) ) )
+    if ( not Filesystem::FFile::WriteAllBytes( BinaryPath, TTraits::GetBinaryData( InCompiled ) ) )
     {
-        LUMEN_LOG_WARNING( LogCompiler, "TCompilerCache: Failed to write binary data to '{}'", BinaryPath );
+        LUMEN_LOG_WARNING( LogCompiler, "TCompilerCache: Failed to write binary data to '{}'", BinaryPath.ToString() );
     }
 
-    if ( not FIOFile::WriteAllBytes( MetaPath, Meta.Serialize() ) )
+    if ( not Filesystem::FFile::WriteAllBytes( MetaPath, Meta.Serialize() ) )
     {
-        LUMEN_LOG_WARNING( LogCompiler, "TCompilerCache: Failed to write metadata to '{}'", MetaPath );
+        LUMEN_LOG_WARNING( LogCompiler, "TCompilerCache: Failed to write metadata to '{}'", MetaPath.ToString() );
     }
 }
 
@@ -84,35 +80,31 @@ template <typename TTraits> void LumenEngine::Compiler::TCompilerCache<TTraits>:
 {
     MemoryCache.Erase( InHash );
 
-    std::error_code ErrorCode;
-    std::filesystem::remove( TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, ".meta" ), ErrorCode );
-    std::filesystem::remove( TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, TTraits::BinaryExtension ), ErrorCode );
+    Filesystem::FFile::Delete( TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, ".meta" ) );
+    Filesystem::FFile::Delete( TTraits::BuildCachePath( Config.CacheDirectory, InHash, InRequest, TTraits::BinaryExtension ) );
 }
 
 template <typename TTraits> LumenEngine::USize LumenEngine::Compiler::TCompilerCache<TTraits>::Clear () noexcept
 {
     MemoryCache.Clear();
     USize RemovedCount = 0U;
-    std::error_code ErrorCode;
 
-    if ( not std::filesystem::exists( Config.CacheDirectory, ErrorCode ) )
+    if ( not Filesystem::FDirectory::Exists( Config.CacheDirectory ) )
     {
         return 0U;
     }
 
-    for ( const std::filesystem::directory_entry &Entry : std::filesystem::directory_iterator( Config.CacheDirectory, ErrorCode ) )
+    auto FilesResult = Filesystem::FDirectory::GetFiles( Config.CacheDirectory );
+    if ( not FilesResult )
     {
+        return 0U;
+    }
 
-        if ( ErrorCode )
+    for ( const auto &FileInfo : FilesResult.value() )
+    {
+        if ( FileInfo.Extension == ".meta" or FileInfo.Extension == TTraits::BinaryExtension )
         {
-            LUMEN_LOG_ERROR( LogCompiler, "TCompilerCache: Failed to iterate cache directory '{}': {}", Config.CacheDirectory.string(), ErrorCode.message() );
-            break;
-        }
-
-        const auto Extension = Entry.path().extension();
-        if ( Extension == ".meta" or Extension == TTraits::BinaryExtension )
-        {
-            if ( std::filesystem::remove( Entry.path(), ErrorCode ) )
+            if ( Filesystem::FFile::Delete( Filesystem::FPath( FileInfo.Path ) ) )
             {
                 ++RemovedCount;
             }
@@ -126,27 +118,25 @@ template <typename TTraits> LumenEngine::USize LumenEngine::Compiler::TCompilerC
     USize RemovedCount    = 0U;
     const UInt64 NowNs    = HAL::FPlatformTime::NowNanoseconds();
     const UInt64 MaxAgeNs = static_cast<UInt64>( InMaxAgeSeconds * 1.0E9 );
-    std::error_code ErrorCode;
 
-    if ( not std::filesystem::exists( Config.CacheDirectory, ErrorCode ) )
+    if ( not Filesystem::FDirectory::Exists( Config.CacheDirectory ) )
     {
         return 0U;
     }
 
-    for ( const std::filesystem::directory_entry &Entry : std::filesystem::directory_iterator( Config.CacheDirectory, ErrorCode ) )
+    auto FilesResult = Filesystem::FDirectory::GetFiles( Config.CacheDirectory );
+    if ( not FilesResult )
     {
+        return 0U;
+    }
 
-        if ( ErrorCode )
+    for ( const auto &FileInfo : FilesResult.value() )
+    {
+        if ( FileInfo.Extension == ".meta" )
         {
-            LUMEN_LOG_ERROR( LogCompiler, "TCompilerCache: Failed to iterate cache directory '{}': {}", Config.CacheDirectory.string(), ErrorCode.message() );
-            break;
-        }
-
-        if ( Entry.path().extension() == ".meta" )
-        {
-            if ( auto MetaBytes = FIOFile::ReadAllBytes<Byte>( Entry.path().string() ) )
+            if ( auto MetaBytes = Filesystem::FFile::ReadAllBytes<Byte>( Filesystem::FPath( FileInfo.Path ) ) )
             {
-                if ( auto MetaOpt = TMeta::Deserialize( std::span<const Byte>( *MetaBytes ) ) )
+                if ( auto MetaOpt = TMeta::Deserialize( std::span<const Byte>( MetaBytes.value() ) ) )
                 {
                     if ( NowNs > MetaOpt->CompiledAtNs and ( NowNs - MetaOpt->CompiledAtNs ) > MaxAgeNs )
                     {
@@ -159,3 +149,4 @@ template <typename TTraits> LumenEngine::USize LumenEngine::Compiler::TCompilerC
     }
     return RemovedCount;
 }
+

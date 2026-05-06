@@ -9,7 +9,8 @@
 
 #include "LumenCompiler/LumenCompilerTypes.hpp"
 
-#include <filesystem>
+#include <format>
+#include "Filesystem/Path.hpp"
 
 namespace LumenEngine
 {
@@ -58,10 +59,10 @@ namespace Compiler
          * @return Full filesystem path as a string.
          */
         [[nodiscard]] static FString
-        BuildCachePath ( const std::filesystem::path &InCacheDir, FAssetHash InHash, const FLumenCompileRequest &InRequest, const AnsiChar *InExt ) noexcept
+        BuildCachePath ( const Filesystem::FPath &InCacheDir, FAssetHash InHash, const FLumenCompileRequest &InRequest, const AnsiChar *InExt ) noexcept
         {
             const FString Suffix = InRequest.TargetBlockName.empty() ? FString{} : ( FString( "_" ) + InRequest.TargetBlockName );
-            return ( InCacheDir / std::format( "{:016x}{}{}", InHash, Suffix, InExt ) ).string();
+            return ( InCacheDir / std::format( "{:016x}{}{}", InHash, Suffix, InExt ) ).ToString();
         }
 
         /**

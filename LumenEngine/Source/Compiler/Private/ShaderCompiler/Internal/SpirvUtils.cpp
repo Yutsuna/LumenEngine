@@ -7,10 +7,9 @@
 
 #include <spirv-tools/libspirv.hpp>
 
-namespace LumenEngine::Compiler::Internal
-{
+#include <format>
 
-LUMEN_DISABLE_UBSAN FString FSpirvUtils::Disassemble ( const FSpirVBlob &InSpirV ) noexcept
+LUMEN_DISABLE_UBSAN LumenEngine::FString LumenEngine::Compiler::Internal::FSpirvUtils::Disassemble ( const FSpirVBlob &InSpirV ) noexcept
 {
     if ( InSpirV.empty() )
     {
@@ -19,6 +18,7 @@ LUMEN_DISABLE_UBSAN FString FSpirvUtils::Disassemble ( const FSpirVBlob &InSpirV
 
     spvtools::SpirvTools Tools( SPV_ENV_VULKAN_1_3 );
     FString Disassembly;
+
     if ( not Tools.Disassemble( InSpirV, &Disassembly, SPV_BINARY_TO_TEXT_OPTION_FRIENDLY_NAMES ) )
     {
         return "Failed to disassemble SPIR-V.";
@@ -27,7 +27,7 @@ LUMEN_DISABLE_UBSAN FString FSpirvUtils::Disassemble ( const FSpirVBlob &InSpirV
     return Disassembly;
 }
 
-LUMEN_DISABLE_UBSAN FString FSpirvUtils::Validate ( const FSpirVBlob &InSpirV ) noexcept
+LUMEN_DISABLE_UBSAN LumenEngine::FString LumenEngine::Compiler::Internal::FSpirvUtils::Validate ( const FSpirVBlob &InSpirV ) noexcept
 {
     if ( InSpirV.empty() )
     {
@@ -36,8 +36,10 @@ LUMEN_DISABLE_UBSAN FString FSpirvUtils::Validate ( const FSpirVBlob &InSpirV ) 
 
     spvtools::SpirvTools Tools( SPV_ENV_VULKAN_1_3 );
     FString Diagnostic;
-    auto MessageConsumer = [&Diagnostic] ( spv_message_level_t /*Level*/, const AnsiChar * /*Source*/, const spv_position_t &Position, const AnsiChar *Message )
-    { Diagnostic += std::format( "at line {}: {}\n", Position.line, Message ); };
+
+    const spvtools::MessageConsumer MessageConsumer = [&Diagnostic] ( spv_message_level_t /*InLevel*/, const AnsiChar * /*InSource*/,
+                                                                      const spv_position_t &InPosition, const AnsiChar *InMessage ) -> void
+    { Diagnostic += std::format( "at line {}: {}\n", InPosition.line, InMessage ); };
 
     Tools.SetMessageConsumer( MessageConsumer );
 
@@ -48,5 +50,3 @@ LUMEN_DISABLE_UBSAN FString FSpirvUtils::Validate ( const FSpirVBlob &InSpirV ) 
 
     return "Validation successful.";
 }
-
-} // namespace LumenEngine::Compiler::Internal

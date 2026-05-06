@@ -12,9 +12,10 @@
 #include "Container/String.hpp"
 #include "Container/Vector.hpp"
 
+#include "Filesystem/Path.hpp"
+
 #include "Logging/LoggingCategory.hpp"
 
-#include <filesystem>
 #include <span>
 
 namespace LumenEngine
@@ -110,6 +111,11 @@ namespace Compiler
         FString Name;  ///< "USE_PBR"
         FString Value; ///< "1"
 
+        /**
+         * @brief Compares two shader macro definitions.
+         * @param InOther Macro to compare against.
+         * @return True when both name and value match.
+         */
         [[nodiscard]] Bool operator==( const FShaderMacro &InOther ) const noexcept;
     };
 
@@ -200,10 +206,16 @@ namespace Compiler
         /** The entry point function name used in the shader (default is "main"). */
         FString EntryPoint = "main";
 
-        /** Byte size of the SPIR-V blob */
+        /**
+         * @brief Returns the byte size of the SPIR-V blob.
+         * @return Number of bytes occupied by SpirV.
+         */
         [[nodiscard]] UInt64 GetByteSize () const noexcept;
 
-        /** Returns true if the compiled shader contains valid SPIR-V code and reflection data. */
+        /**
+         * @brief Returns whether this compiled shader is valid.
+         * @return True when SPIR-V payload is non-empty and reflection payload is consistent.
+         */
         [[nodiscard]] Bool IsValid () const noexcept;
     };
 
@@ -222,13 +234,25 @@ namespace Compiler
         /** Human-readable diagnostic log */
         FString ErrorLog;
 
-        /** Returns true if the compilation was successful */
+        /**
+         * @brief Returns whether compilation succeeded.
+         * @return True when Shader is set and Error is None.
+         */
         [[nodiscard]] Bool IsSuccess () const noexcept;
 
-        /** Factory method for creating a successful compile result */
+        /**
+         * @brief Creates a successful compile result.
+         * @param InShader Compiled shader payload.
+         * @return Success result containing InShader.
+         */
         [[nodiscard]] static FShaderCompileResult Success ( FCompiledShader &&InShader ) noexcept;
 
-        /** Factory method for creating a failed compile result with an Error Type. */
+        /**
+         * @brief Creates a failed compile result.
+         * @param InError Error category associated with the failure.
+         * @param InLog Human-readable diagnostic message.
+         * @return Failed result with error and log set.
+         */
         [[nodiscard]] static FShaderCompileResult Failure ( const EShaderCompilerError::Type InError, FString InLog = {} ) noexcept;
     };
 
@@ -265,10 +289,17 @@ namespace Compiler
         /** Size of the fixed header portion of the cache metadata (excluding the variable-length entry point string). */
         static constexpr UInt64 HeaderSize = 31U;
 
-        /** Serialise to a flat Byte buffer ( little-endian, fixed-layout ) */
+        /**
+         * @brief Serialises metadata to a flat byte buffer.
+         * @return Little-endian fixed-layout metadata bytes.
+         */
         [[nodiscard]] TVector<Byte> Serialize () const;
 
-        /** Returns std::nullopt if the buffer is malformed or contains invalid data. */
+        /**
+         * @brief Deserialises metadata from raw bytes.
+         * @param InBytes Input byte span to decode.
+         * @return Parsed metadata, or std::nullopt when malformed.
+         */
         [[nodiscard]] static TOptional<FShaderCacheMetaData> Deserialize ( const std::span<const Byte> InBytes );
     };
 
@@ -279,7 +310,7 @@ namespace Compiler
     struct FShaderCompilerConfig
     {
         /** Root directory where .spv + .meta cache files are written to and read from. */
-        std::filesystem::path CacheDirectory = "Data/ShaderCache/";
+        Filesystem::FPath CacheDirectory = "Data/ShaderCache/";
 
         /** Maximum allowed SPIR-V words allowed before the compiler rejects the shader. */
         UInt64 MaxSpirVWords = 0; ///< 0 means No Limit

@@ -11,7 +11,9 @@
 #include "ShaderCompiler/Internal/SpirvUtils.hpp"
 #include "ShaderCompiler/ShaderCompilerTypes.hpp"
 
-#include "Container/File.hpp"
+#include "Filesystem/Directory.hpp"
+#include "Filesystem/File.hpp"
+#include "Filesystem/Path.hpp"
 #include "Logging/Logger.hpp"
 
 #include <format>
@@ -22,6 +24,11 @@ namespace LumenEngine::Compiler
 /**
  * Ctor & Dtor
  */
+
+FShaderCompiler::FShaderCompiler () noexcept : TCompiler( FShaderCompilerConfig() ), bInitialised( Internal::FGlslangBackend::Initialize() )
+{
+    /* Ctor */
+}
 
 FShaderCompiler::FShaderCompiler ( FShaderCompilerConfig InConfig ) noexcept : TCompiler( std::move( InConfig ) ), bInitialised( Internal::FGlslangBackend::Initialize() )
 {
@@ -62,27 +69,29 @@ FShaderCompileResult FShaderCompiler::CompileShaderFromSource ( FStringView InSo
 USize FShaderCompiler::WarmCache () noexcept
 {
     USize LoadedCount = 0ULL;
-    std::error_code Ec;
 
-    if ( not std::filesystem::exists( Config.CacheDirectory, Ec ) )
+    const Filesystem::FPath CacheDir( Config.CacheDirectory );
+
+    if ( not Filesystem::FDirectory::Exists( CacheDir ) )
     {
         return 0ULL;
     }
 
-    for ( const auto &Entry : std::filesystem::directory_iterator( Config.CacheDirectory, Ec ) )
+    auto FilesResult = Filesystem::FDirectory::GetFiles( CacheDir );
+    if ( not FilesResult )
     {
+        return 0ULL;
+    }
 
-        if ( Ec )
+    for ( const auto &FileInfo : FilesResult.value() )
+    {
+        if ( FileInfo.Extension == ".meta" )
         {
-            LUMEN_LOG_ERROR( LogShaderCompiler, "Error accessing cache directory entry: {}", Ec.message() );
-            break;
-        }
-
-        if ( Entry.path().extension() == ".meta" )
-        {
-            if ( const TOptional<TVector<Byte>> MetaBytes = FIOFile::ReadAllBytes<Byte>( Entry.path().string() ) )
+            auto MetaBytesResult = Filesystem::FFile::ReadAllBytes<Byte>( Filesystem::FPath( FileInfo.Path ) );
+            if ( MetaBytesResult )
             {
-                if ( const TOptional<FShaderCacheMetaData> MetaOpt = FShaderCacheMetaData::Deserialize( std::span<const Byte>( *MetaBytes ) ) )
+                auto &MetaBytes = MetaBytesResult.value();
+                if ( const auto MetaOpt = FShaderCacheMetaData::Deserialize( std::span<const Byte>( MetaBytes ) ) )
                 {
                     FShaderCompileRequest Request;
                     Request.Stage      = MetaOpt->Stage;
@@ -192,13 +201,13 @@ void FShaderCompiler::DumpDebugArtifacts ( FSourceHash InHash, const FCompiledSh
         return;
     }
 
-    const std::filesystem::path CacheDir( Config.CacheDirectory );
-    const FString AsmPath     = ( CacheDir / std::format( "{:016x}.spvasm", InHash ) ).string();
-    const FString Disassembly = Internal::FSpirvUtils::Disassemble( InShader.SpirV );
+    const Filesystem::FPath CachePath( Config.CacheDirectory );
+    const Filesystem::FPath AsmPath     = CachePath / std::format( "{:016x}.spvasm", InHash );
+    const FString Disassembly           = Internal::FSpirvUtils::Disassemble( InShader.SpirV );
 
-    if ( not FIOFile::WriteAllText( AsmPath, Disassembly ) )
+    if ( not Filesystem::FFile::WriteAllText( AsmPath, Disassembly ) )
     {
-        LUMEN_LOG_SHADER_TRACE( LogShaderCompiler, "Failed to write assembly file: {}", AsmPath );
+        LUMEN_LOG_SHADER_TRACE( LogShaderCompiler, "Failed to write assembly file: {}", AsmPath.ToString() );
     }
 }
 

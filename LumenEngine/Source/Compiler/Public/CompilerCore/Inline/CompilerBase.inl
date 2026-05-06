@@ -7,7 +7,7 @@
 
 #include "CompilerCore/CompilerBase.hpp"
 
-#include "Container/File.hpp"
+#include "Filesystem/File.hpp"
 #include "ShaderCompiler/ShaderCompilerTypes.hpp"
 
 template <typename TTraits, typename TDerived>
@@ -20,13 +20,13 @@ LumenEngine::Compiler::TCompiler<TTraits, TDerived>::TCompiler( typename TTraits
 template <typename TTraits, typename TDerived>
 typename TTraits::ResultType LumenEngine::Compiler::TCompiler<TTraits, TDerived>::Compile ( const TRequest &InRequest ) noexcept
 {
-    TOptional<FString> SourceOpt = FIOFile::ReadAllText( TTraits::GetSourcePath( InRequest ) );
+    auto SourceResult = Filesystem::FFile::ReadAllText( Filesystem::FPath( TTraits::GetSourcePath( InRequest ) ) );
 
-    if ( not SourceOpt.has_value() )
+    if ( not SourceResult.has_value() )
     {
         return TResult::Failure( static_cast<decltype( TResult::Error )>( ECompilerError::FileNotFound ) );
     }
-    return CompileFromSource( *SourceOpt, InRequest );
+    return CompileFromSource( SourceResult.value(), InRequest );
 }
 
 template <typename TTraits, typename TDerived>

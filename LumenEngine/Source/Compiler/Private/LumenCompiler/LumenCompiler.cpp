@@ -7,7 +7,10 @@
 #include "LumenCompiler/Internal/BinarySerializer.hpp"
 #include "LumenCompiler/Internal/DLSLParser.hpp"
 
-#include "Container/File.hpp"
+#include "Filesystem/Directory.hpp"
+#include "Filesystem/File.hpp"
+#include "Filesystem/Path.hpp"
+
 #include "HAL/Memory/LinearAllocator.hpp"
 
 /**
@@ -46,20 +49,26 @@ LumenEngine::Compiler::FLumenCompileResult LumenEngine::Compiler::FLumenCompiler
 LumenEngine::USize LumenEngine::Compiler::FLumenCompiler::WarmCache () noexcept
 {
     USize LoadedCount = 0ULL;
-    std::error_code Ec;
 
-    if ( not std::filesystem::exists( Config.CacheDirectory, Ec ) )
+    if ( not Filesystem::FDirectory::Exists( Config.CacheDirectory ) )
     {
         return LoadedCount;
     }
 
-    for ( const std::filesystem::directory_entry &Entry : std::filesystem::directory_iterator( Config.CacheDirectory, Ec ) )
+    auto FilesResult = Filesystem::FDirectory::GetFiles( Config.CacheDirectory );
+    if ( not FilesResult )
     {
-        if ( Entry.path().extension() == ".meta" )
+        return LoadedCount;
+    }
+
+    for ( const auto &FileInfo : FilesResult.value() )
+    {
+        if ( FileInfo.Extension == ".meta" )
         {
-            if ( const TOptional<TVector<Byte>> MetaBytes = FIOFile::ReadAllBytes<Byte>( Entry.path().string() ) )
+            if ( const auto MetaBytesResult = Filesystem::FFile::ReadAllBytes<Byte>( Filesystem::FPath( FileInfo.Path ) ) )
             {
-                if ( const TOptional<Compiler::FLumenCacheMetaData> MetaOpt = FLumenCacheMetaData::Deserialize( std::span<const Byte>( *MetaBytes ) ) )
+                auto &MetaBytes = MetaBytesResult.value();
+                if ( const auto MetaOpt = FLumenCacheMetaData::Deserialize( std::span<const Byte>( MetaBytes ) ) )
                 {
                     FLumenCompileRequest Request;
                     Request.TargetBlockName = MetaOpt->BlockName;

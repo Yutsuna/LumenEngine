@@ -5,7 +5,9 @@
 
 #include "ShaderCompiler/Internal/GlslangBackend.hpp"
 
-#include "Container/File.hpp"
+#include "Filesystem/File.hpp"
+#include "Filesystem/Path.hpp"
+
 #include "Container/UniquePtr.hpp"
 
 #include "Logging/Logger.hpp"
@@ -17,7 +19,6 @@
 #include <glslang/Public/ShaderLang.h>
 #include <glslang/SPIRV/GlslangToSpv.h>
 
-#include <filesystem>
 #include <format>
 #include <mutex>
 
@@ -37,14 +38,14 @@ namespace
     [[nodiscard]] FGlslangIncludeResult *LoadFile ( const AnsiChar *InPath )
     {
         TUniquePtr<FString> FileContentPtr = MakeUnique<FString>();
-        TOptional<FString> FileContentOpt  = FIOFile::ReadAllText( InPath );
+        auto FileContentResult             = Filesystem::FFile::ReadAllText( Filesystem::FPath( InPath ) );
 
-        if ( not FileContentOpt.has_value() )
+        if ( not FileContentResult.has_value() )
         {
             return new FGlslangIncludeResult( InPath, "Failed to read file", 19, nullptr );
         }
 
-        *FileContentPtr         = std::move( FileContentOpt.value() );
+        *FileContentPtr         = std::move( FileContentResult.value() );
         const AnsiChar *DataPtr = FileContentPtr->data();
         const USize DataSize    = FileContentPtr->size();
         void *UserData          = FileContentPtr.Release();
@@ -71,40 +72,26 @@ namespace
 
         LUMEN_DISABLE_UBSAN FGlslangIncludeResult *includeLocal ( const AnsiChar *InHeaderName, const AnsiChar *InIncluderName, USize /* Depth */ ) override
         {
-            try
-            {
-                std::filesystem::path IncluderPath( InIncluderName != nullptr ? InIncluderName : SourceDirectory.c_str() );
-                std::filesystem::path LocalPath = IncluderPath.parent_path() / InHeaderName;
+            Filesystem::FPath IncluderPath( InIncluderName != nullptr ? InIncluderName : SourceDirectory.c_str() );
+            Filesystem::FPath LocalPath = IncluderPath.GetParentPath() / InHeaderName;
 
-                if ( FIOFile::Exists( LocalPath ) )
-                {
-                    return LoadFile( LocalPath.string().c_str() );
-                }
-            }
-            catch ( const std::filesystem::filesystem_error & )
+            if ( Filesystem::FFile::Exists( LocalPath ) )
             {
-                return includeSystem( InHeaderName, InIncluderName, 0 );
+                return LoadFile( LocalPath.ToString().c_str() );
             }
             return includeSystem( InHeaderName, InIncluderName, 0 );
         }
 
         LUMEN_DISABLE_UBSAN FGlslangIncludeResult *includeSystem ( const AnsiChar *InHeaderName, const AnsiChar * /*InIncluderName*/, USize /* Depth */ ) override
         {
-            try
+            for ( const FString &SearchPath : SearchPaths )
             {
-                for ( const FString &SearchPath : SearchPaths )
-                {
-                    std::filesystem::path SystemPath = std::filesystem::path( SearchPath.c_str() ) / InHeaderName;
+                Filesystem::FPath SystemPath = Filesystem::FPath( SearchPath ) / InHeaderName;
 
-                    if ( std::filesystem::exists( SystemPath ) )
-                    {
-                        return LoadFile( SystemPath.string().c_str() );
-                    }
+                if ( Filesystem::FFile::Exists( SystemPath ) )
+                {
+                    return LoadFile( SystemPath.ToString().c_str() );
                 }
-            }
-            catch ( const std::filesystem::filesystem_error &FileSystemError )
-            {
-                LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while resolving include '{}': {}", InHeaderName, FileSystemError.what() );
             }
             return new FGlslangIncludeResult( InHeaderName, "File not found", 14, nullptr );
         }
@@ -209,16 +196,9 @@ LUMEN_DISABLE_UBSAN Bool FGlslangBackend::Compile ( FStringView InSource, const 
     Shader.setEntryPoint( InRequest.EntryPoint.c_str() );
 
     FString SourceDir = ".";
-    try
+    if ( not InRequest.SourcePath.empty() )
     {
-        if ( not InRequest.SourcePath.empty() )
-        {
-            SourceDir = std::filesystem::path( InRequest.SourcePath.c_str() ).parent_path().string();
-        }
-    }
-    catch ( const std::filesystem::filesystem_error &FileSystemError )
-    {
-        LUMEN_LOG_ERROR( LogShaderCompiler, "Filesystem error while determining source directory for '{}': {}", InRequest.SourcePath.c_str(), FileSystemError.what() );
+        SourceDir = Filesystem::FPath( InRequest.SourcePath ).GetParentPath().ToString();
     }
 
     FGlslangIncluder Includer( InRequest.IncludeDirectories, SourceDir );

@@ -11,7 +11,7 @@
 #include "Container/String.hpp"
 #include "Logging/LoggingCategory.hpp"
 
-#include <filesystem>
+#include "Filesystem/Path.hpp"
 
 namespace LumenEngine
 {
@@ -52,7 +52,7 @@ namespace Compiler
      */
     struct FCompilerConfig
     {
-        std::filesystem::path CacheDirectory = "Data/Cache/";
+        Filesystem::FPath CacheDirectory = "Data/Cache/";
         TFunction<void( FStringView InMessage )> InfoCallback;
         TFunction<void( FStringView InMessage )> WarningCallback;
         TFunction<void( FStringView InMessage )> ErrorCallback;

@@ -30,6 +30,7 @@ namespace Compiler
     {
     public:
 
+        FShaderCompiler () noexcept;
         explicit FShaderCompiler ( FShaderCompilerConfig InConfig ) noexcept;
         ~FShaderCompiler () override;
 

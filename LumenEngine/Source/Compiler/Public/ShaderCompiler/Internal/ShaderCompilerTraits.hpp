@@ -10,7 +10,7 @@
 #include "ShaderCompiler/ShaderCompilerRequest.hpp"
 #include "ShaderCompiler/ShaderCompilerTypes.hpp"
 
-#include <filesystem>
+#include "Filesystem/Path.hpp"
 #include <format>
 
 namespace LumenEngine
@@ -39,12 +39,12 @@ namespace Compiler
         }
 
         [[nodiscard]] static FString
-        BuildCachePath ( const std::filesystem::path &InCacheDir, FSourceHash InHash, const FShaderCompileRequest &InRequest, const AnsiChar *InExt ) noexcept
+        BuildCachePath ( const Filesystem::FPath &InCacheDir, FSourceHash InHash, const FShaderCompileRequest &InRequest, const AnsiChar *InExt ) noexcept
         {
             // The hash already includes all relevant request parameters (Stage, EntryPoint, etc.)
             // so we don't strictly need them in the filename, but keeping the Stage for readability
             // like the original implementation did is a good idea for manual cache inspection.
-            return ( InCacheDir / std::format( "{:016x}_{}{}", InHash, EShaderStage::ToString( InRequest.Stage ), InExt ) ).string();
+            return ( InCacheDir / std::format( "{:016x}_{}{}", InHash, EShaderStage::ToString( InRequest.Stage ), InExt ) ).ToString();
         }
 
         [[nodiscard]] static Bool IsValidMeta ( const FShaderCacheMetaData &InMeta, FSourceHash InHash, const FShaderCompileRequest &InRequest ) noexcept

@@ -9,9 +9,8 @@
 #include "Container/Map.hpp"
 #include "Container/String.hpp"
 
+#include "Filesystem/Path.hpp"
 #include "LumenCompiler/LumenCompilerTypes.hpp"
-
-#include <filesystem>
 
 namespace LumenEngine
 {
@@ -52,7 +51,7 @@ namespace Compiler
         void Scan () noexcept;
 
         /** Scans a specific folder and updates the watched files map. */
-        void ScanFolder ( const std::filesystem::path &InPath, EAssetType::Type InAssetType ) noexcept;
+        void ScanFolder ( const Filesystem::FPath &InPath, EAssetType::Type InAssetType ) noexcept;
 
     private:
 
@@ -62,11 +61,11 @@ namespace Compiler
 
         struct FFileState
         {
-            std::filesystem::file_time_type LastWriteTime;
+            Float64 LastWriteTime      = 0.0;
             EAssetType::Type AssetType = EAssetType::Unknown;
         };
 
-        TMap<std::filesystem::path, FFileState> WatchedFiles;
+        TMap<FString, FFileState> WatchedFiles;
 
         /** Minimum time between scans to avoid excessive I/O. */
         Float64 LastScanTime                  = 0.0;

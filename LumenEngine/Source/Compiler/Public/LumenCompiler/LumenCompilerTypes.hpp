@@ -13,9 +13,10 @@
 #include "Container/String.hpp"
 #include "Container/Vector.hpp"
 
+#include "Filesystem/Path.hpp"
+
 #include "Logging/LoggingCategory.hpp"
 
-#include <filesystem>
 #include <span>
 
 namespace LumenEngine
@@ -236,7 +237,7 @@ namespace Compiler
     struct FLumenCompilerConfig
     {
         /** Root directory where .lumenbin + .meta cache files are written. */
-        std::filesystem::path CacheDirectory = "Data/AssetCache/";
+        Filesystem::FPath CacheDirectory = "Data/AssetCache/";
 
         /**
          * @brief Size in bytes of the linear (arena) allocator scratch buffer used per
