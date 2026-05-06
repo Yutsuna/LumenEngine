@@ -7,10 +7,12 @@
 #include "Assets/AssetDeserializer.hpp"
 #include "Assets/HotReload.hpp"
 
+#include "Filesystem/Directory.hpp"
+#include "Filesystem/File.hpp"
+#include "Filesystem/Path.hpp"
+
 #include "Graphics/Renderer.hpp"
 #include "Logging/Logger.hpp"
-
-#include <filesystem>
 
 LUMEN_LOG_DEFINE_CATEGORY( LogAssetCompiler, "AssetCompiler" );
 
@@ -123,9 +125,9 @@ LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMaterial> LumenEngine::Com
 LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler::CompileAll ( const FString &InAssetsPath ) noexcept
 {
     FAssetCompileResult Result;
-    const std::filesystem::path Root( InAssetsPath.c_str() );
+    const Filesystem::FPath Root( InAssetsPath );
 
-    if ( not std::filesystem::exists( Root ) )
+    if ( not Filesystem::FDirectory::Exists( Root ) )
     {
         LUMEN_LOG_ERROR( LogAssetCompiler, "Assets path does not exist: {}", InAssetsPath.c_str() );
         Result.FailedFiles.emplace_back( InAssetsPath );
@@ -135,17 +137,17 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
 
     LUMEN_LOG_INFO( LogAssetCompiler, "Starting bulk compilation for Assets at: {}", InAssetsPath.c_str() );
 
-    const FAssetCompileResult MaterialsResult = CompileFolder( ( Root / "Materials" ).string(), EAssetType::Material );
+    const FAssetCompileResult MaterialsResult = CompileFolder( ( Root / "Materials" ).ToString(), EAssetType::Material );
     Result.SuccessCount += MaterialsResult.SuccessCount;
     Result.FailureCount += MaterialsResult.FailureCount;
     Result.FailedFiles.insert( Result.FailedFiles.end(), MaterialsResult.FailedFiles.begin(), MaterialsResult.FailedFiles.end() );
 
-    const FAssetCompileResult MeshesResult = CompileFolder( ( Root / "Meshes" ).string(), EAssetType::Mesh );
+    const FAssetCompileResult MeshesResult = CompileFolder( ( Root / "Meshes" ).ToString(), EAssetType::Mesh );
     Result.SuccessCount += MeshesResult.SuccessCount;
     Result.FailureCount += MeshesResult.FailureCount;
     Result.FailedFiles.insert( Result.FailedFiles.end(), MeshesResult.FailedFiles.begin(), MeshesResult.FailedFiles.end() );
 
-    const FAssetCompileResult ShadersResult = CompileFolder( ( Root / "Shaders" ).string(), EAssetType::Unknown );
+    const FAssetCompileResult ShadersResult = CompileFolder( ( Root / "Shaders" ).ToString(), EAssetType::Unknown );
     Result.SuccessCount += ShadersResult.SuccessCount;
     Result.FailureCount += ShadersResult.FailureCount;
     Result.FailedFiles.insert( Result.FailedFiles.end(), ShadersResult.FailedFiles.begin(), ShadersResult.FailedFiles.end() );
@@ -158,21 +160,27 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
 LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler::CompileFolder ( const FString &InFolderPath, EAssetType::Type InAssetType ) noexcept
 {
     FAssetCompileResult Result;
-    const std::filesystem::path Path( InFolderPath.c_str() );
+    const Filesystem::FPath Path( InFolderPath );
 
-    if ( not std::filesystem::exists( Path ) )
+    if ( not Filesystem::FDirectory::Exists( Path ) )
     {
         return Result;
     }
 
-    for ( const auto &Entry : std::filesystem::directory_iterator( Path ) )
+    auto FilesResult = Filesystem::FDirectory::GetFiles( Path );
+    if ( not FilesResult )
     {
-        if ( not Entry.is_regular_file() )
+        return Result;
+    }
+
+    for ( const auto &FileInfo : FilesResult.value() )
+    {
+        if ( FileInfo.IsDirectory() )
         {
             continue;
         }
 
-        const FAssetCompileResult FileResult = CompileFile( Entry.path().string(), InAssetType );
+        const FAssetCompileResult FileResult = CompileFile( FileInfo.Path, InAssetType );
         Result.SuccessCount += FileResult.SuccessCount;
         Result.FailureCount += FileResult.FailureCount;
         Result.FailedFiles.insert( Result.FailedFiles.end(), FileResult.FailedFiles.begin(), FileResult.FailedFiles.end() );
@@ -184,8 +192,8 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
 LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler::CompileFile ( const FString &InFilePath, EAssetType::Type InAssetType ) noexcept
 {
     FAssetCompileResult Result;
-    const std::filesystem::path Path( InFilePath.c_str() );
-    const FString Extension = Path.extension().string();
+    const Filesystem::FPath Path( InFilePath );
+    const FString Extension = Path.GetExtension();
 
     if ( InAssetType == EAssetType::Material or InAssetType == EAssetType::Mesh )
     {

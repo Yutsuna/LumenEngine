@@ -6,10 +6,13 @@
 #include "Assets/HotReload.hpp"
 #include "Assets/AssetCompiler.hpp"
 
+#include "Filesystem/Directory.hpp"
+#include "Filesystem/File.hpp"
+#include "Filesystem/Path.hpp"
+
 #include "HAL/PlatformTime.hpp"
 #include "Logging/Logger.hpp"
 
-#include <filesystem>
 #include <utility>
 
 LUMEN_LOG_DEFINE_CATEGORY( LogHotReload, "HotReload" );
@@ -21,9 +24,9 @@ LUMEN_LOG_DEFINE_CATEGORY( LogHotReload, "HotReload" );
 LumenEngine::Compiler::FCompilerHotReload::FCompilerHotReload ( FAssetCompiler &InAssetCompiler, FString InAssetsPath ) noexcept
     : AssetCompiler( InAssetCompiler ), AssetsPath( std::move( InAssetsPath ) )
 {
-    const std::filesystem::path Root( AssetsPath.c_str() );
+    const Filesystem::FPath Root( AssetsPath );
 
-    if ( std::filesystem::exists( Root ) )
+    if ( Filesystem::FDirectory::Exists( Root ) )
     {
         LUMEN_LOG_INFO( LogHotReload, "HotReload initialized for: {}", AssetsPath.c_str() );
         Scan();
@@ -56,9 +59,9 @@ void LumenEngine::Compiler::FCompilerHotReload::SetOnAssetReloadedCallback ( TFu
 
 void LumenEngine::Compiler::FCompilerHotReload::Scan () noexcept
 {
-    const std::filesystem::path Root( AssetsPath.c_str() );
+    const Filesystem::FPath Root( AssetsPath );
 
-    if ( not std::filesystem::exists( Root ) )
+    if ( not Filesystem::FDirectory::Exists( Root ) )
     {
         return;
     }
@@ -68,22 +71,28 @@ void LumenEngine::Compiler::FCompilerHotReload::Scan () noexcept
     ScanFolder( Root / "Shaders", EAssetType::Shader );
 }
 
-void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const std::filesystem::path &InPath, EAssetType::Type InAssetType ) noexcept
+void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const Filesystem::FPath &InPath, EAssetType::Type InAssetType ) noexcept
 {
-    if ( not std::filesystem::exists( InPath ) )
+    if ( not Filesystem::FDirectory::Exists( InPath ) )
     {
         return;
     }
 
-    for ( const auto &Entry : std::filesystem::directory_iterator( InPath ) )
+    auto FilesResult = Filesystem::FDirectory::GetFiles( InPath );
+    if ( not FilesResult )
     {
-        if ( not Entry.is_regular_file() )
+        return;
+    }
+
+    for ( const auto &FileInfo : FilesResult.value() )
+    {
+        if ( FileInfo.IsDirectory() )
         {
             continue;
         }
 
-        const std::filesystem::path &FilePath = Entry.path();
-        const std::filesystem::path Extension = FilePath.extension();
+        const FString &FilePath = FileInfo.Path;
+        const FString &Extension = FileInfo.Extension;
 
         switch ( InAssetType )
         {
@@ -106,7 +115,7 @@ void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const std::filesyst
             continue;
         }
 
-        const std::filesystem::file_time_type LastWriteTime = std::filesystem::last_write_time( FilePath );
+        const Float64 LastWriteTime = FileInfo.LastModified;
 
         if ( not WatchedFiles.contains( FilePath ) )
         {
@@ -114,16 +123,16 @@ void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const std::filesyst
         }
         else if ( WatchedFiles[FilePath].LastWriteTime != LastWriteTime )
         {
-            LUMEN_LOG_INFO( LogHotReload, "Detected change in: {}. Re-compiling...", FilePath.string().c_str() );
+            LUMEN_LOG_INFO( LogHotReload, "Detected change in: {}. Re-compiling...", FilePath.c_str() );
 
-            const FAssetCompileResult Result = AssetCompiler.CompileFile( FilePath.string(), InAssetType );
+            const FAssetCompileResult Result = AssetCompiler.CompileFile( FilePath, InAssetType );
 
             if ( Result.IsSuccess() )
             {
                 WatchedFiles[FilePath].LastWriteTime = LastWriteTime;
                 if ( OnAssetReloaded )
                 {
-                    OnAssetReloaded( FilePath.string(), InAssetType );
+                    OnAssetReloaded( FilePath, InAssetType );
                 }
             }
         }
