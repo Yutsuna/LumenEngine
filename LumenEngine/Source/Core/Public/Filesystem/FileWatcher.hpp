@@ -26,6 +26,8 @@ namespace LumenEngine
 namespace Filesystem
 {
 
+    using TSnapshot = TMap<FString, Float64>;
+
     /**
      * @class FFileWatcher
      * @brief A high-performance polling-based file watcher using C++23 std::jthread.
@@ -54,7 +56,7 @@ namespace Filesystem
 
     private:
 
-        void PollLoop ( std::stop_token InToken ) noexcept;
+        void PollLoop ( std::stop_token &InToken );
 
     private:
 
@@ -65,7 +67,7 @@ namespace Filesystem
         FMutex WatcherMutex;
         std::jthread WorkerThread;
 
-        TMap<FString, Float64> LastKnownModifiedTimes;
+        TSnapshot LastKnownModifiedTimes;
     };
 
 } // namespace Filesystem

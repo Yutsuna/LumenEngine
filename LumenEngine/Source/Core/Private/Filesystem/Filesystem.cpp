@@ -4,6 +4,7 @@
  */
 
 #include "Filesystem/FileSystem.hpp"
+
 #include <filesystem>
 
 LumenEngine::TExpected<LumenEngine::Filesystem::FDiskSpaceInfo, LumenEngine::EErrorCode::Type>
@@ -31,7 +32,7 @@ LumenEngine::Filesystem::FPath LumenEngine::FFileSystem::GetTempDirectory () noe
 {
     std::error_code Ec;
 
-    return Filesystem::FPath( std::filesystem::temp_directory_path( Ec ).string() );
+    return { std::filesystem::temp_directory_path( Ec ).string() };
 }
 
 LumenEngine::TExpected<LumenEngine::Filesystem::FPath, LumenEngine::EErrorCode::Type> LumenEngine::FFileSystem::GetCurrentDirectory () noexcept

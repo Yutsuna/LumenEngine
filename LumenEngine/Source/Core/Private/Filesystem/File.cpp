@@ -4,6 +4,8 @@
  */
 
 #include "Filesystem/File.hpp"
+#include "Container/Expected.hpp"
+#include "ErrorCodes.hpp"
 
 #include <cstdio>
 #include <filesystem>
@@ -43,6 +45,8 @@ std::filesystem::copy_options ConvertCopyOptions ( LumenEngine::Filesystem::ECop
 
     return FsOptions;
 }
+
+constexpr LumenEngine::USize MaxBufferSize = 1024UL * 1024UL * 64UL;
 
 } // namespace
 
@@ -129,13 +133,13 @@ LumenEngine::Filesystem::FFile::Open ( const FPath &InPath, EFileMode InMode ) n
 
 LumenEngine::TExpected<LumenEngine::USize, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FFile::Read ( void *OutBuffer, USize InBytesToRead ) noexcept
 {
-    if ( FileHandle == nullptr || OutBuffer == nullptr )
+    if ( FileHandle == nullptr or OutBuffer == nullptr )
     {
         return MakeUnexpected( EErrorCode::InvalidArgument );
     }
 
     const USize BytesRead = std::fread( OutBuffer, 1, InBytesToRead, static_cast<FILE *>( FileHandle ) );
-    if ( BytesRead < InBytesToRead && std::ferror( static_cast<FILE *>( FileHandle ) ) )
+    if ( BytesRead < InBytesToRead and ( std::ferror( static_cast<FILE *>( FileHandle ) ) != 0 ) )
     {
         return MakeUnexpected( EErrorCode::Failure );
     }
@@ -145,13 +149,13 @@ LumenEngine::TExpected<LumenEngine::USize, LumenEngine::EErrorCode::Type> LumenE
 
 LumenEngine::TExpected<LumenEngine::USize, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FFile::Write ( const void *InBuffer, USize InBytesToWrite ) noexcept
 {
-    if ( FileHandle == nullptr || InBuffer == nullptr )
+    if ( FileHandle == nullptr or InBuffer == nullptr )
     {
         return MakeUnexpected( EErrorCode::InvalidArgument );
     }
 
     const USize BytesWritten = std::fwrite( InBuffer, 1, InBytesToWrite, static_cast<FILE *>( FileHandle ) );
-    if ( BytesWritten < InBytesToWrite )
+    if ( BytesWritten < InBytesToWrite and ( std::ferror( static_cast<FILE *>( FileHandle ) ) != 0 ) )
     {
         return MakeUnexpected( EErrorCode::Failure );
     }
@@ -253,36 +257,23 @@ LumenEngine::Filesystem::FFile::Copy ( const FPath &InSource, const FPath &InDes
         return MakeUnexpected( EErrorCode::Failure );
     }
 
-    auto SourceFile = Open( InSource, EFileMode::Read );
-    if ( not SourceFile )
-    {
-        return MakeUnexpected( SourceFile.error() );
-    }
+    TExpected<TUniquePtr<Filesystem::FFile>, EErrorCode::Type> SourceFile = Open( InSource, EFileMode::Read );
+    LUMEN_EXPECT_VALUE( SourceFile );
 
-    auto DestFile = Open( InDestination, EFileMode::Write );
-    if ( not DestFile )
-    {
-        return MakeUnexpected( DestFile.error() );
-    }
+    TExpected<TUniquePtr<Filesystem::FFile>, EErrorCode::Type> DestFile = Open( InDestination, EFileMode::Write );
+    LUMEN_EXPECT_VALUE( DestFile );
 
-    constexpr USize BufferSize = 1024 * 1024 * 4; // 4MB Buffer
-    TUniquePtr<Byte[]> Buffer  = MakeUnique<Byte[]>( BufferSize );
+    TUniquePtr<Byte[]> Buffer = MakeUnique<Byte[]>( MaxBufferSize );
 
     USize TotalRead = 0;
     while ( TotalRead < FileSize )
     {
-        const USize BytesToRead = std::min( BufferSize, FileSize - TotalRead );
-        auto ReadResult         = SourceFile.value()->Read( Buffer.Get(), BytesToRead );
-        if ( not ReadResult )
-        {
-            return MakeUnexpected( ReadResult.error() );
-        }
+        const USize BytesToRead                       = std::min( MaxBufferSize, FileSize - TotalRead );
+        TExpected<USize, EErrorCode::Type> ReadResult = SourceFile.value()->Read( Buffer.Get(), BytesToRead );
+        LUMEN_EXPECT_VALUE( ReadResult );
 
-        auto WriteResult = DestFile.value()->Write( Buffer.Get(), ReadResult.value() );
-        if ( not WriteResult )
-        {
-            return MakeUnexpected( WriteResult.error() );
-        }
+        TExpected<USize, EErrorCode::Type> WriteResult = DestFile.value()->Write( Buffer.Get(), ReadResult.value() );
+        LUMEN_EXPECT_VALUE( WriteResult );
 
         TotalRead += ReadResult.value();
         InProgressCallback( TotalRead, FileSize );
@@ -291,19 +282,13 @@ LumenEngine::Filesystem::FFile::Copy ( const FPath &InSource, const FPath &InDes
     return {};
 }
 
-LumenEngine::TExpected<LumenEngine::FString, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FFile::ReadAllText ( const FPath &InPath ) noexcept
+LumenEngine::TExpected<LumenEngine::FString, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FFile::ReadAllText ( const FPath &InPath )
 {
-    auto FileResult = Open( InPath, EFileMode::Read );
-    if ( not FileResult )
-    {
-        return MakeUnexpected( FileResult.error() );
-    }
+    TExpected<TUniquePtr<Filesystem::FFile>, EErrorCode::Type> FileResult = Open( InPath, EFileMode::Read );
+    LUMEN_EXPECT_VALUE( FileResult );
 
-    auto InfoResult = GetInfo( InPath );
-    if ( not InfoResult )
-    {
-        return MakeUnexpected( InfoResult.error() );
-    }
+    TExpected<FFileInfo, EErrorCode::Type> InfoResult = GetInfo( InPath );
+    LUMEN_EXPECT_VALUE( InfoResult );
 
     const USize Size = InfoResult.value().SizeBytes;
     if ( Size == 0 )
@@ -314,28 +299,19 @@ LumenEngine::TExpected<LumenEngine::FString, LumenEngine::EErrorCode::Type> Lume
     FString Content;
     Content.resize( Size );
 
-    auto ReadResult = FileResult.value()->Read( Content.data(), Size );
-    if ( not ReadResult )
-    {
-        return MakeUnexpected( ReadResult.error() );
-    }
+    TExpected<USize, EErrorCode::Type> ReadResult = FileResult.value()->Read( Content.data(), Size );
+    LUMEN_EXPECT_VALUE( ReadResult );
 
     return Content;
 }
 
 LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FFile::WriteAllText ( const FPath &InPath, const FString &InText ) noexcept
 {
-    auto FileResult = Open( InPath, EFileMode::Write );
-    if ( not FileResult )
-    {
-        return MakeUnexpected( FileResult.error() );
-    }
+    TExpected<TUniquePtr<Filesystem::FFile>, EErrorCode::Type> FileResult = Open( InPath, EFileMode::Write );
+    LUMEN_EXPECT_VALUE( FileResult );
 
-    auto WriteResult = FileResult.value()->Write( InText.data(), InText.size() );
-    if ( not WriteResult )
-    {
-        return MakeUnexpected( WriteResult.error() );
-    }
+    TExpected<USize, EErrorCode::Type> WriteResult = FileResult.value()->Write( InText.data(), InText.size() );
+    LUMEN_EXPECT_VALUE( WriteResult );
 
     return {};
 }
@@ -355,10 +331,9 @@ LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesys
 LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FFile::Delete ( const FPath &InPath ) noexcept
 {
     std::error_code ErrorCode;
-    if ( not std::filesystem::remove( InPath.ToString(), ErrorCode ) || ErrorCode )
-    {
-        return MakeUnexpected( EErrorCode::Failure );
-    }
+    const Bool bRemoved = std::filesystem::remove( InPath.ToString(), ErrorCode );
+
+    LUMEN_EXPECT( bRemoved, EErrorCode::NotFound );
     return {};
 }
 
@@ -366,8 +341,9 @@ LumenEngine::TExpected<LumenEngine::Filesystem::FFileInfo, LumenEngine::EErrorCo
 {
     std::error_code ErrorCode;
     const std::filesystem::path StdPath( InPath.ToString() );
+    const Bool bExists = std::filesystem::exists( StdPath, ErrorCode );
 
-    if ( not std::filesystem::exists( StdPath, ErrorCode ) || ErrorCode )
+    if ( not bExists )
     {
         return MakeUnexpected( EErrorCode::NotFound );
     }
@@ -412,11 +388,9 @@ LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesys
 {
     std::error_code ErrorCode;
     const std::filesystem::path StdPath( InPath.ToString() );
+    const Bool bExists = std::filesystem::exists( StdPath, ErrorCode );
 
-    if ( not std::filesystem::exists( StdPath, ErrorCode ) )
-    {
-        return MakeUnexpected( EErrorCode::NotFound );
-    }
+    LUMEN_EXPECT( bExists, EErrorCode::NotFound );
 
     std::filesystem::perms NewPerms = std::filesystem::status( StdPath, ErrorCode ).permissions();
 
@@ -430,10 +404,7 @@ LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesys
     }
 
     std::filesystem::permissions( StdPath, NewPerms, std::filesystem::perm_options::replace, ErrorCode );
-    if ( ErrorCode )
-    {
-        return MakeUnexpected( EErrorCode::PermissionDenied );
-    }
+    LUMEN_EXPECT( ErrorCode, EErrorCode::Failure );
 
     return {};
 }
