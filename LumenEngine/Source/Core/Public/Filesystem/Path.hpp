@@ -21,11 +21,11 @@ namespace Filesystem
 
         FPath () noexcept = default;
 
-        FPath ( FString &InPath );
+        FPath ( const FString &InPath );
 
-        explicit FPath ( const FStringView InPath );
+        FPath ( const FStringView InPath );
 
-        explicit FPath ( const AnsiChar *const InPath );
+        FPath ( const AnsiChar *const InPath );
 
     public:
 
@@ -64,6 +64,12 @@ namespace Filesystem
         [[nodiscard]] FString GetExtension () const noexcept;
 
         [[nodiscard]] FString ToString () const noexcept;
+
+    public:
+
+        FPath operator/ ( const FPath &Other ) const noexcept;
+        FPath operator/ ( const FString &Other ) const noexcept;
+        FPath operator/ ( const AnsiChar *Other ) const noexcept;
 
     private:
 

@@ -291,6 +291,55 @@ LumenEngine::Filesystem::FFile::Copy ( const FPath &InSource, const FPath &InDes
     return {};
 }
 
+LumenEngine::TExpected<LumenEngine::FString, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FFile::ReadAllText ( const FPath &InPath ) noexcept
+{
+    auto FileResult = Open( InPath, EFileMode::Read );
+    if ( not FileResult )
+    {
+        return MakeUnexpected( FileResult.error() );
+    }
+
+    auto InfoResult = GetInfo( InPath );
+    if ( not InfoResult )
+    {
+        return MakeUnexpected( InfoResult.error() );
+    }
+
+    const USize Size = InfoResult.value().SizeBytes;
+    if ( Size == 0 )
+    {
+        return FString();
+    }
+
+    FString Content;
+    Content.resize( Size );
+
+    auto ReadResult = FileResult.value()->Read( Content.data(), Size );
+    if ( not ReadResult )
+    {
+        return MakeUnexpected( ReadResult.error() );
+    }
+
+    return Content;
+}
+
+LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FFile::WriteAllText ( const FPath &InPath, const FString &InText ) noexcept
+{
+    auto FileResult = Open( InPath, EFileMode::Write );
+    if ( not FileResult )
+    {
+        return MakeUnexpected( FileResult.error() );
+    }
+
+    auto WriteResult = FileResult.value()->Write( InText.data(), InText.size() );
+    if ( not WriteResult )
+    {
+        return MakeUnexpected( WriteResult.error() );
+    }
+
+    return {};
+}
+
 LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FFile::Move ( const FPath &InSource, const FPath &InDestination ) noexcept
 {
     std::error_code ErrorCode;

@@ -26,7 +26,7 @@ namespace Filesystem
      * @class FDirectoryIterator
      * @brief Allows iterating through a directory
      */
-    class LUMEN_ENGINE_API FDirectoryIterator final : public FNonCopyable
+    class LUMEN_ENGINE_API FDirectoryIterator final
     {
     public:
 

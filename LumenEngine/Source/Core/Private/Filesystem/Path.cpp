@@ -10,7 +10,7 @@
  * Ctor
  */
 
-LumenEngine::Filesystem::FPath::FPath ( FString &InPath ) : Path( InPath )
+LumenEngine::Filesystem::FPath::FPath ( const FString &InPath ) : Path( InPath )
 {
     /* */
 }
@@ -118,4 +118,25 @@ LumenEngine::FString LumenEngine::Filesystem::FPath::GetExtension () const noexc
 LumenEngine::FString LumenEngine::Filesystem::FPath::ToString () const noexcept
 {
     return Path;
+}
+
+LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::operator/ ( const FPath &Other ) const noexcept
+{
+    std::filesystem::path P( Path );
+    P /= Other.Path;
+    return FPath( P.string() );
+}
+
+LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::operator/ ( const FString &Other ) const noexcept
+{
+    std::filesystem::path P( Path );
+    P /= Other;
+    return FPath( P.string() );
+}
+
+LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::operator/ ( const AnsiChar *Other ) const noexcept
+{
+    std::filesystem::path P( Path );
+    P /= Other;
+    return FPath( P.string() );
 }

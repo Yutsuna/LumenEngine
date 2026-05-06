@@ -11,6 +11,7 @@
 
 #include "Container/Expected.hpp"
 #include "Container/UniquePtr.hpp"
+#include "Container/Vector.hpp"
 
 #include "Filesystem/Path.hpp"
 #include "Filesystem/Types.hpp"
@@ -89,6 +90,26 @@ namespace Filesystem
          */
         void Close () noexcept;
 
+        /**
+         * @brief Reads all bytes from a file.
+         */
+        template <typename Type = Byte> [[nodiscard]] static TExpected<TVector<Type>, EErrorCode::Type> ReadAllBytes ( const FPath &InPath ) noexcept;
+
+        /**
+         * @brief Writes all bytes to a file.
+         */
+        template <typename Type = Byte> static TExpected<void, EErrorCode::Type> WriteAllBytes ( const FPath &InPath, const TVector<Type> &InData ) noexcept;
+
+        /**
+         * @brief Reads the entire content of a file as a string.
+         */
+        [[nodiscard]] static TExpected<FString, EErrorCode::Type> ReadAllText ( const FPath &InPath ) noexcept;
+
+        /**
+         * @brief Writes a string to a file.
+         */
+        static TExpected<void, EErrorCode::Type> WriteAllText ( const FPath &InPath, const FString &InText ) noexcept;
+
     public:
 
         /**
@@ -130,3 +151,5 @@ namespace Filesystem
 } // namespace Filesystem
 
 } // namespace LumenEngine
+
+#include "Filesystem/Inline/File.inl"
