@@ -19,6 +19,9 @@ namespace HAL
         /** @returns The current time in seconds since the application started. */
         static Float64 Seconds ();
 
+        /** @returns The current wall-clock time in nanoseconds since Unix epoch. */
+        static UInt64 NowNanoseconds ();
+
         /** Blocks the current thread for the specified number of seconds. */
         static void Sleep ( const Float64 Seconds );
 

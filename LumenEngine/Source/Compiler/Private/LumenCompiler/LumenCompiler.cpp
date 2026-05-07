@@ -1,0 +1,232 @@
+/**
+ * @file LumenCompiler.cpp
+ * @brief Implementation of LumenCompiler orchestrator and hashing hooks.
+ */
+
+#include "LumenCompiler/LumenCompiler.hpp"
+#include "LumenCompiler/Internal/BinarySerializer.hpp"
+#include "LumenCompiler/Internal/DLSLParser.hpp"
+
+#include "Filesystem/Directory.hpp"
+#include "Filesystem/File.hpp"
+#include "Filesystem/Path.hpp"
+
+#include "Container/Span.hpp"
+
+#include "HAL/Memory/LinearAllocator.hpp"
+
+/**
+ * Ctor
+ */
+
+LumenEngine::Compiler::FLumenCompiler::FLumenCompiler () noexcept : TCompiler( FLumenCompilerConfig() )
+{
+    ScratchBuffer.reserve( Config.ScratchBufferSize );
+}
+
+LumenEngine::Compiler::FLumenCompiler::FLumenCompiler ( FLumenCompilerConfig InConfig ) noexcept : TCompiler( std::move( InConfig ) )
+{
+    ScratchBuffer.reserve( Config.ScratchBufferSize );
+}
+
+/**
+ * Compile Frontends
+ */
+
+LumenEngine::Compiler::FLumenCompileResult LumenEngine::Compiler::FLumenCompiler::CompileAsset ( const FLumenCompileRequest &InRequest ) noexcept
+{
+    return TCompiler::Compile( InRequest );
+}
+
+LumenEngine::Compiler::FLumenCompileResult LumenEngine::Compiler::FLumenCompiler::CompileAssetFromSource ( FStringView InSource,
+                                                                                                           const FLumenCompileRequest &InRequest ) noexcept
+{
+    return TCompiler::CompileFromSource( InSource, InRequest );
+}
+
+/**
+ * Cache Management
+ */
+
+LumenEngine::USize LumenEngine::Compiler::FLumenCompiler::WarmCache ()
+{
+    USize LoadedCount = 0ULL;
+
+    if ( not Filesystem::FDirectory::Exists( Config.CacheDirectory ) )
+    {
+        return LoadedCount;
+    }
+
+    auto FilesResult = Filesystem::FDirectory::GetFiles( Config.CacheDirectory );
+    if ( not FilesResult )
+    {
+        return LoadedCount;
+    }
+
+    for ( const auto &FileInfo : FilesResult.value() )
+    {
+        if ( FileInfo.Extension == ".meta" )
+        {
+            if ( const TExpected<TVector<Byte>, EErrorCode::Type> MetaBytesResult = Filesystem::FFile::ReadAllBytes<Byte>( Filesystem::FPath( FileInfo.Path ) ) )
+            {
+
+                const TVector<Byte> &MetaBytes = MetaBytesResult.value();
+
+                if ( const auto MetaOpt = FLumenCacheMetaData::Deserialize( TSpan<const Byte>( MetaBytes ) ) )
+                {
+                    FLumenCompileRequest Request;
+                    Request.TargetBlockName = MetaOpt->BlockName;
+
+                    if ( Cache->TryGet( MetaOpt->SourceHash, Request ) )
+                    {
+                        ++LoadedCount;
+                    }
+                }
+            }
+        }
+    }
+    return LoadedCount;
+}
+
+LumenEngine::USize LumenEngine::Compiler::FLumenCompiler::ClearCache () noexcept
+{
+    return Cache->Clear();
+}
+
+LumenEngine::USize LumenEngine::Compiler::FLumenCompiler::ClearStaleCache ( Float64 InMaxAgeSeconds ) noexcept
+{
+    return Cache->ClearStale( InMaxAgeSeconds );
+}
+
+/**
+ * Hooks for TCompiler
+ */
+
+LumenEngine::Compiler::FAssetHash LumenEngine::Compiler::FLumenCompiler::ComputeHash ( FStringView InSource, const FLumenCompileRequest &InRequest ) noexcept
+{
+    FAssetHash Hash        = 0XCBF29CE484222325ULL;
+    constexpr UInt64 Prime = 0X100000001B3ULL;
+
+    const auto Combine = [&Hash] ( const void *InData, USize InSize )
+    {
+        const Byte *Ptr = static_cast<const Byte *>( InData );
+        for ( USize Index = 0; Index < InSize; ++Index )
+        {
+            Hash ^= Ptr[Index];
+            Hash *= Prime;
+        }
+    };
+
+    Combine( InSource.data(), InSource.size() );
+    Combine( InRequest.TargetBlockName.data(), InRequest.TargetBlockName.size() );
+    Combine( InRequest.ExpectedBlockType.data(), InRequest.ExpectedBlockType.size() );
+
+    return Hash;
+}
+
+LumenEngine::Bool LumenEngine::Compiler::FLumenCompiler::TryReflect ( FCompiledLumenAsset & /*InOutCompiled*/, FString & /*OutErrorLog*/ ) noexcept
+{
+    return true;
+}
+
+LumenEngine::Bool LumenEngine::Compiler::FLumenCompiler::CompileFresh (
+    FStringView InSource, const FLumenCompileRequest &InRequest, FAssetHash InHash, FCompiledLumenAsset &OutCompiled, FString &OutErrorLog )
+{
+    ScratchBuffer.resize( Config.ScratchBufferSize );
+    HAL::FLinearAllocator Allocator( ScratchBuffer.data(), Config.ScratchBufferSize );
+
+    FDLSLParser Parser( InSource, Allocator );
+    const auto DocResult = Parser.Parse();
+
+    if ( not DocResult.has_value() )
+    {
+        OutErrorLog = DocResult.error();
+        return false;
+    }
+
+    const FDLSLRootBlock *TargetBlock = FindTargetBlock( DocResult.value(), InRequest );
+    if ( TargetBlock == nullptr )
+    {
+        OutErrorLog = "Target block not found.";
+        return false;
+    }
+
+    if ( not InRequest.ExpectedBlockType.empty() and TargetBlock->BlockType != InRequest.ExpectedBlockType )
+    {
+        OutErrorLog = "Block type mismatch.";
+        return false;
+    }
+
+    const auto SerializedResult = SerializeBlock( TargetBlock );
+    if ( not SerializedResult.has_value() )
+    {
+        OutErrorLog = SerializedResult.error();
+        return false;
+    }
+
+    OutCompiled.BinaryBlob = SerializedResult.value();
+    OutCompiled.AssetType  = ResolveAssetType( TargetBlock->BlockType );
+    OutCompiled.Hash       = InHash;
+    OutCompiled.BlockName  = TargetBlock->Name;
+    OutCompiled.bFromCache = false;
+
+    return true;
+}
+
+/**
+ * Internal Block Resolution
+ */
+
+const LumenEngine::Compiler::FDLSLRootBlock *LumenEngine::Compiler::FLumenCompiler::FindTargetBlock ( const FDLSLDocument *InDocument,
+                                                                                                      const FLumenCompileRequest &InRequest ) noexcept
+{
+    if ( InDocument == nullptr )
+    {
+        return nullptr;
+    }
+
+    for ( const FDLSLRootBlock *Block = InDocument->FirstBlock; Block != nullptr; Block = Block->Next )
+    {
+        if ( InRequest.TargetBlockName.empty() )
+        {
+            return Block;
+        }
+        if ( Block->Name == InRequest.TargetBlockName )
+        {
+            return Block;
+        }
+    }
+
+    return nullptr;
+}
+
+LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Byte>, LumenEngine::FString>
+LumenEngine::Compiler::FLumenCompiler::SerializeBlock ( const FDLSLRootBlock *InBlock )
+{
+    if ( InBlock->BlockType == "Mesh" )
+    {
+        return FBinarySerializer::SerializeMesh( InBlock );
+    }
+
+    if ( InBlock->BlockType == "Material" )
+    {
+        return FBinarySerializer::SerializeMaterial( InBlock );
+    }
+
+    return MakeUnexpected( "Unknown block type." );
+}
+
+LumenEngine::Compiler::EAssetType::Type LumenEngine::Compiler::FLumenCompiler::ResolveAssetType ( FStringView InBlockType ) noexcept
+{
+    if ( InBlockType == "Mesh" )
+    {
+        return EAssetType::Mesh;
+    }
+
+    if ( InBlockType == "Material" )
+    {
+        return EAssetType::Material;
+    }
+
+    return EAssetType::Unknown;
+}

@@ -10,6 +10,7 @@
 
 #include "AssetCache.hpp"
 
+#include "Graphics/Resources/RenderMaterial.hpp"
 #include "Graphics/Resources/RenderMesh.hpp"
 #include "Graphics/Resources/RenderShader.hpp"
 
@@ -43,6 +44,9 @@ namespace Engine
         /** @return The shader asset cache. */
         [[nodiscard]] TAssetCache<Renderer::FRenderShader> &GetShaderCache () noexcept;
 
+        /** @return The material asset cache. */
+        [[nodiscard]] TAssetCache<Renderer::FRenderMaterial> &GetMaterialCache () noexcept;
+
     private:
 
         /** The mesh asset cache. */
@@ -50,6 +54,9 @@ namespace Engine
 
         /** The shader asset cache. */
         TAssetCache<Renderer::FRenderShader> ShaderCache;
+
+        /** The material asset cache. */
+        TAssetCache<Renderer::FRenderMaterial> MaterialCache;
     };
 
 } // namespace Engine

@@ -8,6 +8,10 @@
 #include "Actor/ActorTypes.hpp"
 #include "Actors/SpatialActor.hpp"
 
+#include "Container/SharedPtr.hpp"
+#include "Graphics/Resources/RenderMaterial.hpp"
+#include "Graphics/Resources/RenderMesh.hpp"
+
 #include "Maths/Matrix.hpp"
 #include "RHI/RHITypes.hpp"
 
@@ -35,6 +39,8 @@ namespace Engine
         void Receive ( const FMessage &InMessage ) override;
 
         void SetMeshAndShader ( RHI::FMeshHandle InMesh, RHI::FPipelineHandle InShader ) noexcept;
+        void SetMaterial ( const TSharedPtr<Renderer::FRenderMaterial> &InMaterial ) noexcept;
+        void SetMesh ( const TSharedPtr<Renderer::FRenderMesh> &InMesh ) noexcept;
         void SetTransform ( const Maths::FMatrix4x4f &InTransform ) noexcept;
         void SetSceneActor ( const FActorRef &InSceneActor ) noexcept;
 

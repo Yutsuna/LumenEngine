@@ -1,0 +1,8 @@
+@Material "Triangle"
+{
+    @Shaders
+    {
+        Vertex:     "Triangle.vert",
+        Fragment:   "Triangle.frag",
+    }
+}

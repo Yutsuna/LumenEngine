@@ -16,7 +16,7 @@
 namespace
 {
 
-[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const LumenEngine::FSpirVBlob &InSpirV )
+[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const LumenEngine::Compiler::FSpirVBlob &InSpirV )
 {
     VkShaderModuleCreateInfo ShaderCI{ .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                                        .pNext    = nullptr,
@@ -383,8 +383,8 @@ LumenEngine::VulkanRHI::FPipelineDescription LumenEngine::VulkanRHI::FVulkanPipe
 
 LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanRHI::FVulkanPipeline::Initialize ( VkDevice InDevice,
                                                                                                                   const FPipelineDescription &InDescription,
-                                                                                                                  const FSpirVBlob &InVertexSpirV,
-                                                                                                                  const FSpirVBlob &InFragmentSpirV )
+                                                                                                                  const Compiler::FSpirVBlob &InVertexSpirV,
+                                                                                                                  const Compiler::FSpirVBlob &InFragmentSpirV )
 {
     Cleanup( InDevice );
 

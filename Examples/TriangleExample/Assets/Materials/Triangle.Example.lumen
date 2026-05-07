@@ -1,0 +1,55 @@
+@Material "Triangle"
+{
+    @Shaders
+    {
+        Vertex:     "Triangle.vert",
+        Fragment:   "Triangle.frag",
+    }
+
+    @RenderState
+    {
+        BlendMode:  Opaque,
+        DepthTest:  Less,
+        DepthWrite: True,
+        CullMode:   Back,
+        WireFrame:  False,
+    }
+
+    @Properties
+    {
+        Color:  (1.0, 1.0, 1.0, 1.0) = (1.0, 1.0, 1.0, 1.0),
+        Tint:   (1.0, 1.0, 1.0, 1.0) = (1.0, 1.0, 1.0, 1.0),
+
+        Albedo:     Texture2D = None,
+        Normal:     Texture2D = None,
+        Roughness:  Texture2D = None,
+        Metallic:   Texture2D = None,
+
+        RoughnessScale: Float32 = 0.5,
+        MetallicScale:  Float32 = 0.5,
+        NormalScale:    Float32 = 1.0,
+    }
+
+    @Variants
+    {
+        Pbr
+        {
+            Shaders
+            {
+                Vertex:     "Triangle.pbr.vert",
+                Fragment:   "Triangle.pbr.frag",
+            }
+        }
+        Unlit
+        {
+            Shaders
+            {
+                Fragment:   "Triangle.unlit.frag",
+            }
+            @RenderState
+            {
+                WireFrame:  True,
+            }
+        }
+    }
+}

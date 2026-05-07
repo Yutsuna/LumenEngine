@@ -29,7 +29,7 @@
 #include "Vulkan/VulkanPipeline.hpp"
 #include "Vulkan/VulkanSwapChain.hpp"
 
-#include "Shader/ShaderCompiler.hpp"
+#include "ShaderCompiler/ShaderCompiler.hpp"
 
 namespace LumenEngine
 {
@@ -142,7 +142,7 @@ namespace VulkanRHI
         FGPUIndirectBuffer IndirectBuffer;
         FGPUCullingPass CullingPass;
 
-        TUniquePtr<FShaderCompiler> RuntimeCompiler;
+        TUniquePtr<Compiler::FShaderCompiler> RuntimeCompiler;
 
         Bool bIsInitialized = false;
     };

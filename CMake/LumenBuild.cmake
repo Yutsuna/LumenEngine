@@ -14,7 +14,7 @@ LumenAddModules(
     MathCore
     Parallel
     ApplicationCore
-    ShaderCompiler
+    Compiler
     RHI
     VulkanRHI
     Renderer

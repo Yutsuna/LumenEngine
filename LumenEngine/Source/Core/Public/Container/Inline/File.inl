@@ -5,18 +5,17 @@
 
 #pragma once
 
-#include "Container/File.hpp"
 #include "CoreTypes.hpp"
+
+#include "Container/File.hpp"
+#include "Container/Optional.hpp"
+
 #include "Logging/Logger.hpp"
 
 template <typename Type> LumenEngine::TOptional<LumenEngine::TVector<Type>> LumenEngine::FIOFile::ReadAllBytes ( const FString &FilePath ) noexcept
 {
     TOptional<std::ifstream> FileOpt = Open( FilePath );
-
-    if ( not FileOpt.has_value() )
-    {
-        return std::nullopt;
-    }
+    LUMEN_OPTIONAL( FileOpt );
 
     std::ifstream &File        = FileOpt.value();
     const std::streamsize Size = File.tellg();

@@ -12,10 +12,12 @@
 
 #include "Logging/Logger.hpp"
 
+using namespace LumenEngine::Compiler;
+
 namespace
 {
 
-[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const LumenEngine::FSpirVBlob &InSpirV )
+[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const FSpirVBlob &InSpirV )
 {
     VkShaderModuleCreateInfo ShaderCI{ .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                                        .pNext    = nullptr,

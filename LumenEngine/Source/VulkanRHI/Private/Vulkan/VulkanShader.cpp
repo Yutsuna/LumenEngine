@@ -6,13 +6,13 @@
 #include "Vulkan/VulkanShader.hpp"
 #include "Vulkan/VulkanCore.hpp"
 
-#include "Container/File.hpp"
+#include "Filesystem/File.hpp"
 
 LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanShader::CompileFromFile ( VkDevice Device, const FString &FilePath, VkShaderStageFlagBits InStage ) noexcept
 {
     Stage = InStage;
 
-    TOptional<TVector<UInt8>> ShaderCode = FIOFile::ReadAllBytes<LumenEngine::UInt8>( FilePath );
+    auto ShaderCode = Filesystem::FFile::ReadAllBytes<LumenEngine::UInt8>( Filesystem::FPath( FilePath ) );
 
     if ( not ShaderCode.has_value() )
     {
@@ -22,8 +22,8 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanShader::CompileFromFile ( VkDev
 
     VkShaderModuleCreateInfo CreateInfo{};
     CreateInfo.sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-    CreateInfo.codeSize = ShaderCode->size();
-    CreateInfo.pCode    = reinterpret_cast<const UInt32 *>( ShaderCode->data() );
+    CreateInfo.codeSize = ShaderCode.value().size();
+    CreateInfo.pCode    = reinterpret_cast<const UInt32 *>( ShaderCode.value().data() );
 
     /** Create the Vulkan shader module */
     LUMEN_VK_CHECK( vkCreateShaderModule( Device, &CreateInfo, nullptr, &ShaderModule ) );

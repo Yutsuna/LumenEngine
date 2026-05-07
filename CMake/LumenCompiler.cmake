@@ -1,7 +1,7 @@
 ###########################################################
 
-add_library(LumenCompiler INTERFACE)
-add_library(Lumen::Compiler ALIAS LumenCompiler)
+add_library(LumenCompileOptions INTERFACE)
+add_library(Lumen::CompileOptions ALIAS LumenCompileOptions)
 
 ###########################################################
 
@@ -14,7 +14,7 @@ set(CMAKE_CXX_SCAN_FOR_MODULES OFF)
 
 ###########################################################
 
-target_compile_options(LumenCompiler INTERFACE
+target_compile_options(LumenCompileOptions INTERFACE
     $<${IS_GNULIKE}:
         -Wall
         -Wextra
@@ -45,7 +45,7 @@ target_compile_options(LumenCompiler INTERFACE
     >
 )
 
-target_compile_options(LumenCompiler INTERFACE
+target_compile_options(LumenCompileOptions INTERFACE
     $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>:        -Og -g3 -fno-omit-frame-pointer>
     $<$<AND:${IS_GNULIKE},$<CONFIG:Release>>:      -O3 -DNDEBUG>
     $<$<AND:${IS_GNULIKE},$<CONFIG:RelWithDebInfo>>: -O2 -g -DNDEBUG>
@@ -54,30 +54,30 @@ target_compile_options(LumenCompiler INTERFACE
 ###########################################################
 
 if(LUMEN_ENABLE_ASAN)
-    target_compile_options(LumenCompiler INTERFACE
+    target_compile_options(LumenCompileOptions INTERFACE
         $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>: -fsanitize=address -fno-omit-frame-pointer>
     )
-    target_link_options(LumenCompiler INTERFACE
+    target_link_options(LumenCompileOptions INTERFACE
         $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>: -fsanitize=address>
     )
     message(STATUS "[Lumen] ASan: enabled")
 endif()
 
 if(LUMEN_ENABLE_UBSAN)
-    target_compile_options(LumenCompiler INTERFACE
+    target_compile_options(LumenCompileOptions INTERFACE
         $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>: -fsanitize=undefined>
     )
-    target_link_options(LumenCompiler INTERFACE
+    target_link_options(LumenCompileOptions INTERFACE
         $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>: -fsanitize=undefined>
     )
     message(STATUS "[Lumen] UBSan: enabled")
 endif()
 
 if(LUMEN_ENABLE_TSAN)
-    target_compile_options(LumenCompiler INTERFACE
+    target_compile_options(LumenCompileOptions INTERFACE
         $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>: -fsanitize=thread -fno-omit-frame-pointer>
     )
-    target_link_options(LumenCompiler INTERFACE
+    target_link_options(LumenCompileOptions INTERFACE
         $<$<AND:${IS_GNULIKE},$<CONFIG:Debug>>: -fsanitize=thread>
     )
     message(STATUS "[Lumen] TSan: enabled")
@@ -90,7 +90,7 @@ if(LUMEN_ENABLE_LTO)
     include(CheckIPOSupported)
     check_ipo_supported(RESULT IPO_OK OUTPUT IPO_ERR)
     if(IPO_OK)
-        set_property(TARGET LumenCompiler PROPERTY
+        set_property(TARGET LumenCompileOptions PROPERTY
             INTERPROCEDURAL_OPTIMIZATION_RELEASE TRUE)
         message(STATUS "[Lumen] LTO: enabled")
     else()

@@ -21,6 +21,10 @@ LumenEngine::VulkanRHI::FVulkanRHI::FVulkanRHI () noexcept : CommandListImpl( th
     /* Empty */
 }
 
+/**
+ * Public Methods
+ */
+
 void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
 {
     if ( bIsInitialized )
@@ -70,6 +74,14 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
     LUMEN_LOG_INFO( LogVulkanRHI, "Vulkan RHI shut down." );
 }
 
+/**
+ * Private Methods
+ */
+
+/**
+ * Vulkan Cleanup Methods
+ */
+
 void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVulkanInstance () noexcept
 {
     Instance.Cleanup();
@@ -84,6 +96,10 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroySwapChain () noexcept
 {
     SwapChain.Cleanup( LogicalDevice.GetHandle() );
 }
+
+/**
+ * Vulkan Initialization Methods
+ */
 
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanInstance ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
 {
@@ -285,14 +301,14 @@ LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( c
 LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath,
                                                                                        const LumenEngine::FString &InFragmentPath )
 {
-    FShaderCompileResult VResult = RuntimeCompiler->CompileShader( FShaderCompileRequestBuilder().Path( InVertexPath ).Vertex().Build() );
+    Compiler::FShaderCompileResult VResult = RuntimeCompiler->CompileShader( Compiler::FShaderCompileRequestBuilder().Path( InVertexPath ).Vertex().Build() );
     if ( not VResult.IsSuccess() )
     {
         LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to compile vertex shader (Path: {}, Log: {}).", InVertexPath, VResult.ErrorLog.c_str() );
         return {};
     }
 
-    FShaderCompileResult FResult = RuntimeCompiler->CompileShader( FShaderCompileRequestBuilder().Path( InFragmentPath ).Fragment().Build() );
+    Compiler::FShaderCompileResult FResult = RuntimeCompiler->CompileShader( Compiler::FShaderCompileRequestBuilder().Path( InFragmentPath ).Fragment().Build() );
     if ( not FResult.IsSuccess() )
     {
         LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to compile fragment shader (Path: {}, Log: {}).", InFragmentPath, FResult.ErrorLog.c_str() );
@@ -317,17 +333,17 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
     SceneBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetSceneSetLayout() );
     IndirectBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetCullSetLayout() );
 
-    FShaderCompilerConfig CompilerConfig;
-    RuntimeCompiler = MakeUnique<FShaderCompiler>( std::move( CompilerConfig ) );
+    Compiler::FShaderCompilerConfig CompilerConfig;
+    RuntimeCompiler = MakeUnique<Compiler::FShaderCompiler>( std::move( CompilerConfig ) );
 
-    FShaderCompileRequestBuilder RequestBuilder;
+    Compiler::FShaderCompileRequestBuilder RequestBuilder;
     RequestBuilder.Path( LUMEN_GPU_CULL_SHADER_PATH ).Compute().Macro( "MAX_INSTANCES", std::format( "{}U", FGPUSceneBuffer::MaxInstances ) );
 
-    const FShaderCompileResult CompileResult = RuntimeCompiler->CompileShader( RequestBuilder.Build() );
+    const Compiler::FShaderCompileResult CompileResult = RuntimeCompiler->CompileShader( RequestBuilder.Build() );
 
     if ( CompileResult.IsSuccess() )
     {
-        const FCompiledShader &CompiledShader = *CompileResult.Shader;
+        const Compiler::FCompiledShader &CompiledShader = *CompileResult.Shader;
 
         LUMEN_LOG_INFO( LogVulkanRHI, "GPU Culling shader JIT successful (Source: {}, Hash: {:016x}).", CompiledShader.bFromCache ? "Disk Cache" : "Freshly Compiled",
                         CompiledShader.Hash );

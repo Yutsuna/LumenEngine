@@ -46,9 +46,27 @@ namespace Engine
             /** Sent to cameras to bind them to a specific target actor. Payload: FSetCameraTargetPayload */
             SetCameraTarget,
 
+            /** Sent when a mesh resource has been updated (hot-reload). Payload: FMeshUpdatedPayload */
+            MeshUpdated,
+
+            /** Sent when a material resource has been updated (hot-reload). Payload: FMaterialUpdatedPayload */
+            MaterialUpdated,
+
         };
 
     } // namespace EEngineMessage
+
+    /** @brief Payload for EEngineMessage::MeshUpdated */
+    struct FMeshUpdatedPayload final
+    {
+        RHI::FMeshHandle NewMesh;
+    };
+
+    /** @brief Payload for EEngineMessage::MaterialUpdated */
+    struct FMaterialUpdatedPayload final
+    {
+        RHI::FPipelineHandle NewMaterial;
+    };
 
     /** @brief Payload for EEngineMessage::TransformUpdate */
     struct FTransformPayload final

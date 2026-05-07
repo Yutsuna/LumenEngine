@@ -11,10 +11,16 @@
 
 namespace
 {
+
 const LumenEngine::FLogCategory LogRenderer( "Renderer" );
+
 }
 
 LumenEngine::TUniquePtr<LumenEngine::Renderer::FRenderer> LumenEngine::Renderer::GRenderer = nullptr;
+
+/**
+ * Ctor & Dtor
+ */
 
 LumenEngine::Renderer::FRenderer::FRenderer () noexcept = default;
 
@@ -22,6 +28,10 @@ LumenEngine::Renderer::FRenderer::~FRenderer () noexcept
 {
     Shutdown();
 }
+
+/**
+ * Public
+ */
 
 void LumenEngine::Renderer::FRenderer::Initialize ( TUniquePtr<RHI::IRHI> InRHI, const TSharedRef<FGenericWindow> &InWindow )
 {
@@ -114,6 +124,15 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::Renderer::FRenderer::CreatePipeli
     if ( RHI )
     {
         return RHI->CreatePipeline( InVertexPath, InFragmentPath );
+    }
+    return {};
+}
+
+LumenEngine::RHI::FPipelineHandle LumenEngine::Renderer::FRenderer::CreateMaterial ( const TSharedPtr<FRenderShader> &InShader )
+{
+    if ( RHI and InShader )
+    {
+        return RHI->CreatePipeline( InShader->VertexPath, InShader->FragmentPath );
     }
     return {};
 }
