@@ -46,7 +46,7 @@ LumenEngine::TOptional<typename TTraits::CompiledType> LumenEngine::Compiler::TC
             auto BinaryData = Filesystem::FFile::ReadAllBytes<typename TTraits::BinaryWordType>( BinaryPath );
             if ( BinaryData.has_value() )
             {
-                TCompiled Compiled = TTraits::RestoreFromCache( InHash, InRequest, *MetaOpt, std::move( BinaryData.value() ) );
+                TCompiled Compiled = TTraits::RestoreFromCache( InHash, *MetaOpt, std::move( BinaryData.value() ) );
                 MemoryCache.Put( InHash, Compiled );
                 return Compiled;
             }
