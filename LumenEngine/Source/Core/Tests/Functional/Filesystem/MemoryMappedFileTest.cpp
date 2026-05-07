@@ -24,7 +24,7 @@ protected:
         {
             if ( not LumenEngine::Filesystem::FFile::Delete( TestFilePath ) )
             {
-                FAIL() << "Failed to delete existing test file: " << TestFilePath;
+                FAIL() << "Failed to delete existing test file: " << TestFilePath.ToString();
             }
         }
     }
@@ -35,7 +35,7 @@ protected:
         {
             if ( not LumenEngine::Filesystem::FFile::Delete( TestFilePath ) )
             {
-                FAIL() << "Failed to delete test file: " << TestFilePath;
+                FAIL() << "Failed to delete test file: " << TestFilePath.ToString();
             }
         }
     }
