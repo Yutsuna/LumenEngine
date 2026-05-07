@@ -11,10 +11,10 @@
 #include "ShaderCompiler/ShaderCompilerTypes.hpp"
 
 #include "Filesystem/Path.hpp"
-#include <format>
 
 namespace LumenEngine
 {
+
 namespace Compiler
 {
 
@@ -31,50 +31,62 @@ namespace Compiler
         using MetaType       = FShaderCacheMetaData;
         using BinaryWordType = FSpirvWord;
 
+        /** File extension used for the binary payload written to disk. */
         static constexpr const AnsiChar *BinaryExtension = ".spv";
 
-        [[nodiscard]] static FString GetSourcePath ( const FShaderCompileRequest &InRequest ) noexcept
-        {
-            return InRequest.SourcePath;
-        }
+        /**
+         * @brief Return the source file path embedded in a compile request.
+         * @param InRequest The compile request.
+         * @return Path as a string.
+         */
+        [[nodiscard]] static FString GetSourcePath ( const FShaderCompileRequest &InRequest ) noexcept;
 
+        /**
+         * @brief Build the full filesystem path for a cache file.
+         * @param InCacheDir  Root cache directory.
+         * @param InHash      64-bit FNV-1a hash of the request.
+         * @param InRequest   Compile request (used for the block-name suffix).
+         * @param InExt       File extension including the leading dot.
+         * @return Full filesystem path as a string.
+         */
         [[nodiscard]] static FString
-        BuildCachePath ( const Filesystem::FPath &InCacheDir, FSourceHash InHash, const FShaderCompileRequest &InRequest, const AnsiChar *InExt ) noexcept
-        {
-            // The hash already includes all relevant request parameters (Stage, EntryPoint, etc.)
-            // so we don't strictly need them in the filename, but keeping the Stage for readability
-            // like the original implementation did is a good idea for manual cache inspection.
-            return ( InCacheDir / std::format( "{:016x}_{}{}", InHash, EShaderStage::ToString( InRequest.Stage ), InExt ) ).ToString();
-        }
+        BuildCachePath ( const Filesystem::FPath &InCacheDir, FSourceHash InHash, const FShaderCompileRequest &InRequest, const AnsiChar *InExt ) noexcept;
 
-        [[nodiscard]] static Bool IsValidMeta ( const FShaderCacheMetaData &InMeta, FSourceHash InHash, const FShaderCompileRequest &InRequest ) noexcept
-        {
-            return InMeta.SourceHash == InHash and InMeta.Stage == InRequest.Stage;
-        }
+        /**
+         * @brief Validate that a deserialised metadata entry matches the request.
+         * @param InMeta     Deserialised metadata.
+         * @param InHash     Expected hash.
+         * @param InRequest  The original compile request.
+         * @return True if hash, asset-type, and block-name all match.
+         */
+        [[nodiscard]] static Bool IsValidMeta ( const FShaderCacheMetaData &InMeta, FSourceHash InHash, const FShaderCompileRequest &InRequest ) noexcept;
 
-        [[nodiscard]] static FCompiledShader RestoreFromCache ( FSourceHash InHash,
-                                                                [[maybe_unused]] const FShaderCompileRequest &InRequest,
-                                                                const FShaderCacheMetaData &InMeta,
-                                                                TVector<FSpirvWord> &&InBinary ) noexcept
-        {
-            return { .SpirV = std::move( InBinary ), .Reflection = {}, .Stage = InMeta.Stage, .Hash = InHash, .bFromCache = true, .EntryPoint = InMeta.EntryPoint };
-        }
+        /**
+         * @brief Reconstruct a FCompiledShader from cached data.
+         * @param InHash    Hash of the cached entry.
+         * @param InMeta    Deserialised metadata.
+         * @param InBinary  Raw binary blob loaded from disk.
+         * @return Fully populated FCompiledShader.
+         */
+        [[nodiscard]] static FCompiledShader RestoreFromCache ( FSourceHash InHash, const FShaderCacheMetaData &InMeta, TVector<FSpirvWord> &&InBinary ) noexcept;
 
-        [[nodiscard]] static FShaderCacheMetaData CreateMeta ( FSourceHash InHash, const FShaderCompileRequest &InRequest, const FCompiledShader &InCompiled ) noexcept
-        {
-            return { .SourceHash     = InHash,
-                     .Stage          = InRequest.Stage,
-                     .Optimization   = InRequest.Optimization,
-                     .CompiledAtNs   = 0, // Set by TCompilerCache
-                     .SpirVWordCount = static_cast<UInt32>( InCompiled.SpirV.size() ),
-                     .EntryPoint     = InRequest.EntryPoint };
-        }
+        /**
+         * @brief Build metadata from a freshly compiled asset.
+         * @param InHash      Hash of the compiled asset.
+         * @param InRequest   The compile request that produced the asset.
+         * @param InCompiled  The compiled asset.
+         * @return Populated FShaderCacheMetaData (CompiledAtNs is set by TCompilerCache).
+         */
+        [[nodiscard]] static FShaderCacheMetaData CreateMeta ( FSourceHash InHash, const FShaderCompileRequest &InRequest, const FCompiledShader &InCompiled ) noexcept;
 
-        [[nodiscard]] static const TVector<FSpirvWord> &GetBinaryData ( const FCompiledShader &InCompiled ) noexcept
-        {
-            return InCompiled.SpirV;
-        }
+        /**
+         * @brief Return the binary payload to persist on disk.
+         * @param InCompiled The compiled asset.
+         * @return Const reference to the raw byte vector.
+         */
+        [[nodiscard]] static const TVector<FSpirvWord> &GetBinaryData ( const FCompiledShader &InCompiled ) noexcept;
     };
 
 } // namespace Compiler
+
 } // namespace LumenEngine
