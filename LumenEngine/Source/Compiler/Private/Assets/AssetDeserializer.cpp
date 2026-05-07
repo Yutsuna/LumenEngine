@@ -4,7 +4,10 @@
  */
 
 #include "Assets/AssetDeserializer.hpp"
+#include "Container/Expected.hpp"
+#include "Container/Span.hpp"
 
+#include <bit>
 #include <cstring>
 
 namespace
@@ -13,90 +16,111 @@ namespace
 constexpr LumenEngine::USize MaxVertices = 1024UL * 1024UL;
 constexpr LumenEngine::USize MaxIndices  = 4UL * 1024UL * 1024UL;
 
+/**
+ * @brief Internal helper to validate and cast a header from a blob.
+ */
+template <typename HeaderType>
+LumenEngine::TExpected<const HeaderType *, LumenEngine::Compiler::ELumenCompilerError::Type>
+ValidateHeader ( LumenEngine::TSpan<const LumenEngine::Byte> InBlob, LumenEngine::Compiler::EAssetType::Type InExpectedType ) noexcept
+{
+    using namespace LumenEngine::Compiler;
+
+    if ( InBlob.size() < sizeof( FLumenBinaryHeader ) + sizeof( HeaderType ) )
+    {
+        return LumenEngine::MakeUnexpected( ELumenCompilerError::ReadFailed );
+    }
+
+    if ( reinterpret_cast<std::uintptr_t>( InBlob.data() ) % alignof( FLumenBinaryHeader ) != 0 )
+    {
+        return LumenEngine::MakeUnexpected( ELumenCompilerError::ParseFailed );
+    }
+
+    const auto *MainHeader = reinterpret_cast<const FLumenBinaryHeader *>( InBlob.data() );
+
+    if ( MainHeader->Magic != LUMEN_ASSET_CACHE_MAGIC_NUMBER or MainHeader->AssetType != InExpectedType )
+    {
+        return LumenEngine::MakeUnexpected( ELumenCompilerError::ParseFailed );
+    }
+
+    return reinterpret_cast<const HeaderType *>( InBlob.data() + sizeof( FLumenBinaryHeader ) );
+}
+
 } // namespace
 
-LumenEngine::TOptional<LumenEngine::Compiler::FDeserializedMesh> LumenEngine::Compiler::FAssetDeserializer::DeserializeMesh ( const TVector<Byte> &InBlob ) noexcept
+LumenEngine::TExpected<LumenEngine::Compiler::FDeserializedMesh, LumenEngine::Compiler::ELumenCompilerError::Type>
+LumenEngine::Compiler::FAssetDeserializer::DeserializeMesh ( TSpan<const Byte> InBlob ) noexcept
 {
-    if ( InBlob.size() < sizeof( FLumenBinaryHeader ) + sizeof( FLumenBinaryMeshHeader ) )
-    {
-        return std::nullopt;
-    }
+    auto ViewResult = DeserializeMeshView( InBlob );
+    LUMEN_EXPECT_VALUE( ViewResult );
 
-    const Byte *Cursor = InBlob.data();
-    const Byte *End    = InBlob.data() + InBlob.size();
-
-    FLumenBinaryHeader MainHeader;
-    std::memcpy( &MainHeader, Cursor, sizeof( FLumenBinaryHeader ) );
-    Cursor += sizeof( FLumenBinaryHeader );
-
-    if ( MainHeader.Magic != LUMEN_ASSET_CACHE_MAGIC_NUMBER or MainHeader.AssetType != EAssetType::Mesh )
-    {
-        return std::nullopt;
-    }
+    const FMeshView &View = ViewResult.value();
 
     FDeserializedMesh Result;
-    std::memcpy( &Result.Header, Cursor, sizeof( FLumenBinaryMeshHeader ) );
-    Cursor += sizeof( FLumenBinaryMeshHeader );
+    Result.Header = View.Header;
 
-    if ( Result.Header.VertexCount > 0 )
+    if ( not View.Vertices.empty() )
     {
-        if ( Result.Header.VertexCount > MaxVertices )
-        {
-            return std::nullopt;
-        }
-
-        const USize VerticesSize = static_cast<USize>( Result.Header.VertexCount ) * sizeof( Maths::FVertex );
-        if ( Cursor + VerticesSize > End )
-        {
-            return std::nullopt;
-        }
-
-        Result.Vertices.resize( Result.Header.VertexCount );
-        std::memcpy( Result.Vertices.data(), Cursor, VerticesSize );
-        Cursor += VerticesSize;
+        Result.Vertices.assign( View.Vertices.begin(), View.Vertices.end() );
     }
 
-    if ( Result.Header.IndexCount > 0 )
+    if ( not View.Indices.empty() )
     {
-        if ( Result.Header.IndexCount > MaxIndices )
-        {
-            return std::nullopt;
-        }
-
-        const USize IndicesSize = static_cast<USize>( Result.Header.IndexCount ) * sizeof( UInt32 );
-        if ( Cursor + IndicesSize > End )
-        {
-            return std::nullopt;
-        }
-
-        Result.Indices.resize( Result.Header.IndexCount );
-        std::memcpy( Result.Indices.data(), Cursor, IndicesSize );
+        Result.Indices.assign( View.Indices.begin(), View.Indices.end() );
     }
 
     return Result;
 }
 
-LumenEngine::TOptional<LumenEngine::Compiler::FLumenBinaryMaterialHeader>
-LumenEngine::Compiler::FAssetDeserializer::DeserializeMaterial ( const TVector<Byte> &InBlob ) noexcept
+LumenEngine::TExpected<LumenEngine::Compiler::FMeshView, LumenEngine::Compiler::ELumenCompilerError::Type>
+LumenEngine::Compiler::FAssetDeserializer::DeserializeMeshView ( TSpan<const Byte> InBlob ) noexcept
 {
-    if ( InBlob.size() < sizeof( FLumenBinaryHeader ) + sizeof( FLumenBinaryMaterialHeader ) )
+    auto HeaderResult = ValidateHeader<FLumenBinaryMeshHeader>( InBlob, EAssetType::Mesh );
+    LUMEN_EXPECT_VALUE( HeaderResult );
+
+    const FLumenBinaryMeshHeader *MeshHeader = HeaderResult.value();
+
+    if ( MeshHeader->VertexCount > MaxVertices or MeshHeader->IndexCount > MaxIndices )
     {
-        return std::nullopt;
+        return MakeUnexpected( ELumenCompilerError::ParseFailed );
     }
 
-    const Byte *Cursor = InBlob.data();
+    const Byte *Cursor = InBlob.data() + sizeof( FLumenBinaryHeader ) + sizeof( FLumenBinaryMeshHeader );
+    const Byte *End    = InBlob.data() + InBlob.size();
 
-    FLumenBinaryHeader MainHeader;
-    std::memcpy( &MainHeader, Cursor, sizeof( FLumenBinaryHeader ) );
-    Cursor += sizeof( FLumenBinaryHeader );
+    FMeshView Result;
+    Result.Header = *MeshHeader;
 
-    if ( MainHeader.Magic != LUMEN_ASSET_CACHE_MAGIC_NUMBER or MainHeader.AssetType != EAssetType::Material )
+    if ( MeshHeader->VertexCount > 0 )
     {
-        return std::nullopt;
+        const USize VerticesSize = static_cast<USize>( MeshHeader->VertexCount ) * sizeof( Maths::FVertex );
+        if ( Cursor + VerticesSize > End )
+        {
+            return MakeUnexpected( ELumenCompilerError::ReadFailed );
+        }
+
+        Result.Vertices = TSpan<const Maths::FVertex>( reinterpret_cast<const Maths::FVertex *>( Cursor ), MeshHeader->VertexCount );
+        Cursor += VerticesSize;
     }
 
-    FLumenBinaryMaterialHeader Result;
-    std::memcpy( &Result, Cursor, sizeof( FLumenBinaryMaterialHeader ) );
+    if ( MeshHeader->IndexCount > 0 )
+    {
+        const USize IndicesSize = static_cast<USize>( MeshHeader->IndexCount ) * sizeof( UInt32 );
+        if ( Cursor + IndicesSize > End )
+        {
+            return MakeUnexpected( ELumenCompilerError::ReadFailed );
+        }
+
+        Result.Indices = TSpan<const UInt32>( reinterpret_cast<const UInt32 *>( Cursor ), MeshHeader->IndexCount );
+    }
 
     return Result;
+}
+
+LumenEngine::TExpected<LumenEngine::Compiler::FLumenBinaryMaterialHeader, LumenEngine::Compiler::ELumenCompilerError::Type>
+LumenEngine::Compiler::FAssetDeserializer::DeserializeMaterial ( TSpan<const Byte> InBlob ) noexcept
+{
+    auto HeaderResult = ValidateHeader<FLumenBinaryMaterialHeader>( InBlob, EAssetType::Material );
+    LUMEN_EXPECT_VALUE( HeaderResult );
+
+    return *HeaderResult.value();
 }

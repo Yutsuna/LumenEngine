@@ -8,7 +8,6 @@
 #include "Assets/HotReload.hpp"
 
 #include "Filesystem/Directory.hpp"
-#include "Filesystem/File.hpp"
 #include "Filesystem/Path.hpp"
 
 #include "Graphics/Renderer.hpp"
@@ -67,6 +66,8 @@ void LumenEngine::Compiler::FAssetCompiler::SetOnAssetReloadedCallback ( FOnAsse
     OnAssetReloaded = std::move( InCallback );
 }
 
+#include "Filesystem/MemoryMappedFile.hpp"
+
 LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMesh> LumenEngine::Compiler::FAssetCompiler::LoadMesh ( const FString &InName ) noexcept
 {
     if ( MeshCache.contains( InName ) )
@@ -79,15 +80,41 @@ LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMesh> LumenEngine::Compile
     FLumenCompileRequest Request;
     Request.SourcePath        = FilePath;
     Request.ExpectedBlockType = "Mesh";
+    Request.TargetBlockName   = InName;
+
+    const FAssetHash Hash = FLumenCompiler::ComputeHash( "", Request );
+
+    const FString CachePath = ( LumenCompiler.GetConfig().CacheDirectory / std::format( "{:016x}_{}.lumenbin", Hash, InName.c_str() ) ).ToString();
+
+    if ( auto MappedResult = Filesystem::FMemoryMappedFile::Open( CachePath ) )
+    {
+        TUniquePtr<Filesystem::FMemoryMappedFile> MappedFile = std::move( MappedResult.value() );
+
+        if ( auto ViewResult = FAssetDeserializer::DeserializeMeshView( MappedFile->GetRegion() ) )
+        {
+            const FMeshView &View = ViewResult.value();
+
+            TSharedPtr<Renderer::FRenderMesh> Mesh = MakeShared<Renderer::FRenderMesh>();
+            Mesh->Vertices.assign( View.Vertices.begin(), View.Vertices.end() );
+            Mesh->Indices.assign( View.Indices.begin(), View.Indices.end() );
+
+            Mesh->RenderHandle = Renderer::GRenderer->CreateMesh( Mesh->Vertices, Mesh->Indices );
+
+            MeshCache[InName] = Mesh;
+            return Mesh;
+        }
+    }
 
     if ( const FLumenCompileResult Result = LumenCompiler.CompileAsset( Request ); Result.IsSuccess() )
     {
-        if ( const TOptional<FDeserializedMesh> Deserialized = FAssetDeserializer::DeserializeMesh( Result.Asset->BinaryBlob ) )
+        if ( auto DeserializedResult = FAssetDeserializer::DeserializeMesh( Result.Asset->BinaryBlob ) )
         {
+            const FDeserializedMesh &Deserialized  = DeserializedResult.value();
             TSharedPtr<Renderer::FRenderMesh> Mesh = MakeShared<Renderer::FRenderMesh>();
-            Mesh->Vertices                         = Deserialized->Vertices;
-            Mesh->Indices                          = Deserialized->Indices;
-            Mesh->RenderHandle                     = Renderer::GRenderer->CreateMesh( Mesh->Vertices, Mesh->Indices );
+
+            Mesh->Vertices     = Deserialized.Vertices;
+            Mesh->Indices      = Deserialized.Indices;
+            Mesh->RenderHandle = Renderer::GRenderer->CreateMesh( Mesh->Vertices, Mesh->Indices );
 
             MeshCache[InName] = Mesh;
             return Mesh;

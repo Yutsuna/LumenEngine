@@ -93,7 +93,7 @@ namespace Compiler
          * @brief Pre-warm the in-memory LRU cache from the disk cache directory.
          * @return Number of entries successfully loaded into memory.
          */
-        USize WarmCache () noexcept;
+        USize WarmCache ();
 
         /**
          * @brief Remove all .lumenbin + .meta files from the cache directory.
