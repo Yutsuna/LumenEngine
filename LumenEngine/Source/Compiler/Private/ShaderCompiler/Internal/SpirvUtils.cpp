@@ -37,8 +37,8 @@ LUMEN_DISABLE_UBSAN LumenEngine::FString LumenEngine::Compiler::Internal::FSpirv
     spvtools::SpirvTools Tools( SPV_ENV_VULKAN_1_3 );
     FString Diagnostic;
 
-    const spvtools::MessageConsumer MessageConsumer = [&Diagnostic] ( spv_message_level_t /*InLevel*/, const AnsiChar * /*InSource*/,
-                                                                      const spv_position_t &InPosition, const AnsiChar *InMessage ) -> void
+    const spvtools::MessageConsumer MessageConsumer = [&Diagnostic] ( spv_message_level_t /*InLevel*/, const AnsiChar * /*InSource*/, const spv_position_t &InPosition,
+                                                                      const AnsiChar *InMessage ) -> void
     { Diagnostic += std::format( "at line {}: {}\n", InPosition.line, InMessage ); };
 
     Tools.SetMessageConsumer( MessageConsumer );

@@ -202,8 +202,8 @@ void FShaderCompiler::DumpDebugArtifacts ( FSourceHash InHash, const FCompiledSh
     }
 
     const Filesystem::FPath CachePath( Config.CacheDirectory );
-    const Filesystem::FPath AsmPath     = CachePath / std::format( "{:016x}.spvasm", InHash );
-    const FString Disassembly           = Internal::FSpirvUtils::Disassemble( InShader.SpirV );
+    const Filesystem::FPath AsmPath = CachePath / std::format( "{:016x}.spvasm", InHash );
+    const FString Disassembly       = Internal::FSpirvUtils::Disassemble( InShader.SpirV );
 
     if ( not Filesystem::FFile::WriteAllText( AsmPath, Disassembly ) )
     {
