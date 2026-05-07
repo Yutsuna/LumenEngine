@@ -149,7 +149,17 @@ LumenEngine::TExpected<LumenEngine::USize, LumenEngine::EErrorCode::Type> LumenE
 
 LumenEngine::TExpected<LumenEngine::USize, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FFile::Write ( const void *InBuffer, USize InBytesToWrite ) noexcept
 {
-    if ( FileHandle == nullptr or InBuffer == nullptr )
+    if ( FileHandle == nullptr )
+    {
+        return MakeUnexpected( EErrorCode::InvalidArgument );
+    }
+
+    if ( InBytesToWrite == 0 )
+    {
+        return 0;
+    }
+
+    if ( InBuffer == nullptr )
     {
         return MakeUnexpected( EErrorCode::InvalidArgument );
     }
