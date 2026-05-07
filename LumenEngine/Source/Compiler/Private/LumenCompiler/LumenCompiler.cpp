@@ -11,6 +11,8 @@
 #include "Filesystem/File.hpp"
 #include "Filesystem/Path.hpp"
 
+#include "Container/Span.hpp"
+
 #include "HAL/Memory/LinearAllocator.hpp"
 
 /**
@@ -46,7 +48,7 @@ LumenEngine::Compiler::FLumenCompileResult LumenEngine::Compiler::FLumenCompiler
  * Cache Management
  */
 
-LumenEngine::USize LumenEngine::Compiler::FLumenCompiler::WarmCache () noexcept
+LumenEngine::USize LumenEngine::Compiler::FLumenCompiler::WarmCache ()
 {
     USize LoadedCount = 0ULL;
 
@@ -65,10 +67,12 @@ LumenEngine::USize LumenEngine::Compiler::FLumenCompiler::WarmCache () noexcept
     {
         if ( FileInfo.Extension == ".meta" )
         {
-            if ( const auto MetaBytesResult = Filesystem::FFile::ReadAllBytes<Byte>( Filesystem::FPath( FileInfo.Path ) ) )
+            if ( const TExpected<TVector<Byte>, EErrorCode::Type> MetaBytesResult = Filesystem::FFile::ReadAllBytes<Byte>( Filesystem::FPath( FileInfo.Path ) ) )
             {
-                auto &MetaBytes = MetaBytesResult.value();
-                if ( const auto MetaOpt = FLumenCacheMetaData::Deserialize( std::span<const Byte>( MetaBytes ) ) )
+
+                const TVector<Byte> &MetaBytes = MetaBytesResult.value();
+
+                if ( const auto MetaOpt = FLumenCacheMetaData::Deserialize( TSpan<const Byte>( MetaBytes ) ) )
                 {
                     FLumenCompileRequest Request;
                     Request.TargetBlockName = MetaOpt->BlockName;
