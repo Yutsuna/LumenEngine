@@ -85,19 +85,19 @@ LumenEngine::Bool LumenEngine::Filesystem::FPath::HasParentPath () const noexcep
 
 LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::GetParentPath () const noexcept
 {
-    return FPath( std::filesystem::path( Path ).parent_path().string() );
+    return { std::filesystem::path( Path ).parent_path().string() };
 }
 
 LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::GetAbsolutePath () const noexcept
 {
     std::error_code EC;
-    return FPath( std::filesystem::absolute( Path, EC ).string() );
+    return { std::filesystem::absolute( Path, EC ).string() };
 }
 
 LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::GetRelativePath ( const LumenEngine::Filesystem::FPath &BasePath ) const noexcept
 {
     std::error_code EC;
-    return FPath( std::filesystem::relative( Path, BasePath.ToString(), EC ).string() );
+    return { std::filesystem::relative( Path, BasePath.ToString(), EC ).string() };
 }
 
 LumenEngine::FString LumenEngine::Filesystem::FPath::GetFileName () const noexcept
@@ -120,23 +120,26 @@ LumenEngine::FString LumenEngine::Filesystem::FPath::ToString () const noexcept
     return Path;
 }
 
-LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::operator/ ( const FPath &Other ) const noexcept
+LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::operator/( const FPath &Other ) const noexcept
 {
     std::filesystem::path P( Path );
     P /= Other.Path;
-    return FPath( P.string() );
+
+    return { P.string() };
 }
 
-LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::operator/ ( const FString &Other ) const noexcept
+LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::operator/( const FString &Other ) const noexcept
 {
     std::filesystem::path P( Path );
     P /= Other;
-    return FPath( P.string() );
+
+    return { P.string() };
 }
 
-LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::operator/ ( const AnsiChar *Other ) const noexcept
+LumenEngine::Filesystem::FPath LumenEngine::Filesystem::FPath::operator/( const AnsiChar *Other ) const noexcept
 {
     std::filesystem::path P( Path );
     P /= Other;
-    return FPath( P.string() );
+
+    return { P.string() };
 }

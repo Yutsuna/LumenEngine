@@ -67,9 +67,9 @@ namespace Filesystem
 
     public:
 
-        FPath operator/ ( const FPath &Other ) const noexcept;
-        FPath operator/ ( const FString &Other ) const noexcept;
-        FPath operator/ ( const AnsiChar *Other ) const noexcept;
+        FPath operator/( const FPath &Other ) const noexcept;
+        FPath operator/( const FString &Other ) const noexcept;
+        FPath operator/( const AnsiChar *Other ) const noexcept;
 
     private:
 

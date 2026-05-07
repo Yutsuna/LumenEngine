@@ -18,9 +18,13 @@ struct LumenEngine::Filesystem::FDirectoryIterator::FInternalState
     std::error_code ErrorCode;
 };
 
-LumenEngine::Filesystem::FDirectoryIterator::FDirectoryIterator ( const LumenEngine::Filesystem::FPath &InDir, LumenEngine::Bool bSkipPermissionErrors ) noexcept
+/**
+ * Ctor
+ */
+
+LumenEngine::Filesystem::FDirectoryIterator::FDirectoryIterator ( const FPath &InDir, Bool bSkipPermissionErrors ) noexcept
 {
-    State           = LumenEngine::MakeShared<LumenEngine::Filesystem::FDirectoryIterator::FInternalState>();
+    State           = MakeShared<LumenEngine::Filesystem::FDirectoryIterator::FInternalState>();
     State->Iterator = std::filesystem::directory_iterator(
         InDir.ToString(), bSkipPermissionErrors ? std::filesystem::directory_options::skip_permission_denied : std::filesystem::directory_options::none,
         State->ErrorCode );
@@ -36,11 +40,22 @@ LumenEngine::Filesystem::FDirectoryIterator::FDirectoryIterator ( const LumenEng
     }
 }
 
+/**
+ * Dtor
+ */
+
 LumenEngine::Filesystem::FDirectoryIterator::~FDirectoryIterator () noexcept = default;
 
-LumenEngine::Filesystem::FDirectoryIterator::FDirectoryIterator ( const LumenEngine::Filesystem::FDirectoryIterator &InOther ) noexcept = default;
-LumenEngine::Filesystem::FDirectoryIterator &
-LumenEngine::Filesystem::FDirectoryIterator::operator=( const LumenEngine::Filesystem::FDirectoryIterator &InOther ) noexcept = default;
+/**
+ * Copy
+ */
+
+LumenEngine::Filesystem::FDirectoryIterator::FDirectoryIterator ( const FDirectoryIterator &InOther ) noexcept                                    = default;
+LumenEngine::Filesystem::FDirectoryIterator &LumenEngine::Filesystem::FDirectoryIterator::operator=( const FDirectoryIterator &InOther ) noexcept = default;
+
+/**
+ * Iterator Operators
+ */
 
 LumenEngine::Filesystem::FDirectoryIterator::Reference LumenEngine::Filesystem::FDirectoryIterator::operator*() const noexcept
 {
@@ -69,12 +84,12 @@ LumenEngine::Filesystem::FDirectoryIterator &LumenEngine::Filesystem::FDirectory
     return *this;
 }
 
-LumenEngine::Bool LumenEngine::Filesystem::FDirectoryIterator::operator==( const LumenEngine::Filesystem::FDirectoryIterator &InOther ) const noexcept
+LumenEngine::Bool LumenEngine::Filesystem::FDirectoryIterator::operator==( const FDirectoryIterator &InOther ) const noexcept
 {
     return bIsEnd == InOther.bIsEnd;
 }
 
-LumenEngine::Bool LumenEngine::Filesystem::FDirectoryIterator::operator!=( const LumenEngine::Filesystem::FDirectoryIterator &InOther ) const noexcept
+LumenEngine::Bool LumenEngine::Filesystem::FDirectoryIterator::operator!=( const FDirectoryIterator &InOther ) const noexcept
 {
     return not( *this == InOther );
 }
@@ -86,7 +101,8 @@ LumenEngine::Filesystem::FDirectoryIterator LumenEngine::Filesystem::FDirectoryI
 
 LumenEngine::Filesystem::FDirectoryIterator LumenEngine::Filesystem::FDirectoryIterator::End () const noexcept
 {
-    LumenEngine::Filesystem::FDirectoryIterator EndIterator;
+    FDirectoryIterator EndIterator;
+
     EndIterator.bIsEnd = true;
     return EndIterator;
 }
@@ -94,44 +110,54 @@ LumenEngine::Filesystem::FDirectoryIterator LumenEngine::Filesystem::FDirectoryI
 void LumenEngine::Filesystem::FDirectoryIterator::Advance () noexcept
 {
     if ( bIsEnd or not State )
+    {
         return;
+    }
 
-    auto InfoResult = LumenEngine::Filesystem::FFile::GetInfo( LumenEngine::Filesystem::FPath( State->Iterator->path().string() ) );
+    TExpected<FFileInfo, EErrorCode::Type> InfoResult = FFile::GetInfo( FPath( State->Iterator->path().string() ) );
     if ( InfoResult )
     {
         CurrentInfo = InfoResult.value();
     }
 }
 
-// --- FDirectory Implementation ---
+/**
+ * FDirectory
+ */
 
-LumenEngine::Bool LumenEngine::Filesystem::FDirectory::Exists ( const LumenEngine::Filesystem::FPath &InPath ) noexcept
+LumenEngine::Bool LumenEngine::Filesystem::FDirectory::Exists ( const FPath &InPath ) noexcept
 {
     std::error_code ErrorCode;
+
     return std::filesystem::is_directory( InPath.ToString(), ErrorCode ) and not ErrorCode;
 }
 
-LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FDirectory::Create ( const LumenEngine::Filesystem::FPath &InPath ) noexcept
+LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FDirectory::Create ( const FPath &InPath ) noexcept
 {
     std::error_code ErrorCode;
+
     if ( not std::filesystem::create_directory( InPath.ToString(), ErrorCode ) and ErrorCode )
-        return LumenEngine::MakeUnexpected( LumenEngine::EErrorCode::Failure );
+    {
+        return MakeUnexpected( EErrorCode::Failure );
+    }
     return {};
 }
 
-LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type>
-LumenEngine::Filesystem::FDirectory::CreateDirectories ( const LumenEngine::Filesystem::FPath &InPath ) noexcept
+LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FDirectory::CreateDirectories ( const FPath &InPath ) noexcept
 {
     std::error_code ErrorCode;
+
     if ( not std::filesystem::create_directories( InPath.ToString(), ErrorCode ) and ErrorCode )
-        return LumenEngine::MakeUnexpected( LumenEngine::EErrorCode::Failure );
+    {
+        return MakeUnexpected( EErrorCode::Failure );
+    }
     return {};
 }
 
-LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FDirectory::Delete ( const LumenEngine::Filesystem::FPath &InPath,
-                                                                                                          LumenEngine::Bool bInRecursive ) noexcept
+LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FDirectory::Delete ( const FPath &InPath, Bool bInRecursive ) noexcept
 {
     std::error_code ErrorCode;
+
     if ( bInRecursive )
     {
         std::filesystem::remove_all( InPath.ToString(), ErrorCode );
@@ -142,18 +168,23 @@ LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::Filesys
     }
 
     if ( ErrorCode )
-        return LumenEngine::MakeUnexpected( LumenEngine::EErrorCode::Failure );
+    {
+        return MakeUnexpected( EErrorCode::Failure );
+    }
     return {};
 }
 
-LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo>, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FDirectory::GetFiles (
-    const LumenEngine::Filesystem::FPath &InPath, LumenEngine::Bool bInRecursive, const LumenEngine::Filesystem::FFilterPredicate &InFilter ) noexcept
+LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo>, LumenEngine::EErrorCode::Type>
+LumenEngine::Filesystem::FDirectory::GetFiles ( const Filesystem::FPath &InPath, Bool bInRecursive, const FFilterPredicate &InFilter )
 {
     std::error_code ErrorCode;
-    if ( not std::filesystem::is_directory( InPath.ToString(), ErrorCode ) or ErrorCode )
-        return LumenEngine::MakeUnexpected( LumenEngine::EErrorCode::NotFound );
 
-    LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo> FileInfos;
+    if ( not std::filesystem::is_directory( InPath.ToString(), ErrorCode ) or ErrorCode )
+    {
+        return MakeUnexpected( EErrorCode::NotFound );
+    }
+
+    TVector<Filesystem::FFileInfo> FileInfos;
 
     if ( bInRecursive )
     {
@@ -161,10 +192,12 @@ LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo>,
               std::filesystem::recursive_directory_iterator( InPath.ToString(), std::filesystem::directory_options::skip_permission_denied, ErrorCode ) )
         {
             if ( ErrorCode )
+            {
                 continue;
+            }
             if ( DirectoryEntry.is_regular_file( ErrorCode ) )
             {
-                auto InfoResult = LumenEngine::Filesystem::FFile::GetInfo( LumenEngine::Filesystem::FPath( DirectoryEntry.path().string() ) );
+                auto InfoResult = FFile::GetInfo( FPath( DirectoryEntry.path().string() ) );
                 if ( InfoResult and ( not InFilter or InFilter( InfoResult.value() ) ) )
                 {
                     FileInfos.push_back( InfoResult.value() );
@@ -174,7 +207,7 @@ LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo>,
     }
     else
     {
-        for ( auto DirectoryIt = LumenEngine::Filesystem::FDirectoryIterator( InPath ); DirectoryIt != DirectoryIt.End(); ++DirectoryIt )
+        for ( auto DirectoryIt = FDirectoryIterator( InPath ); DirectoryIt != DirectoryIt.End(); ++DirectoryIt )
         {
             if ( not DirectoryIt->IsDirectory() and ( not InFilter or InFilter( *DirectoryIt ) ) )
             {
@@ -186,14 +219,16 @@ LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo>,
     return FileInfos;
 }
 
-LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo>, LumenEngine::EErrorCode::Type> LumenEngine::Filesystem::FDirectory::GetDirectories (
-    const LumenEngine::Filesystem::FPath &InPath, LumenEngine::Bool bInRecursive, const LumenEngine::Filesystem::FFilterPredicate &InFilter ) noexcept
+LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo>, LumenEngine::EErrorCode::Type>
+LumenEngine::Filesystem::FDirectory::GetDirectories ( const FPath &InPath, Bool bInRecursive, const FFilterPredicate &InFilter )
 {
     std::error_code ErrorCode;
     if ( not std::filesystem::is_directory( InPath.ToString(), ErrorCode ) or ErrorCode )
-        return LumenEngine::MakeUnexpected( LumenEngine::EErrorCode::NotFound );
+    {
+        return MakeUnexpected( EErrorCode::NotFound );
+    }
 
-    LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo> DirectoryInfos;
+    TVector<FFileInfo> DirectoryInfos;
 
     if ( bInRecursive )
     {
@@ -201,10 +236,12 @@ LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo>,
               std::filesystem::recursive_directory_iterator( InPath.ToString(), std::filesystem::directory_options::skip_permission_denied, ErrorCode ) )
         {
             if ( ErrorCode )
+            {
                 continue;
+            }
             if ( DirectoryEntry.is_directory( ErrorCode ) )
             {
-                auto InfoResult = LumenEngine::Filesystem::FFile::GetInfo( LumenEngine::Filesystem::FPath( DirectoryEntry.path().string() ) );
+                auto InfoResult = FFile::GetInfo( FPath( DirectoryEntry.path().string() ) );
                 if ( InfoResult and ( not InFilter or InFilter( InfoResult.value() ) ) )
                 {
                     DirectoryInfos.push_back( InfoResult.value() );
@@ -214,7 +251,7 @@ LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Filesystem::FFileInfo>,
     }
     else
     {
-        for ( auto DirectoryIt = LumenEngine::Filesystem::FDirectoryIterator( InPath ); DirectoryIt != DirectoryIt.End(); ++DirectoryIt )
+        for ( auto DirectoryIt = FDirectoryIterator( InPath ); DirectoryIt != DirectoryIt.End(); ++DirectoryIt )
         {
             if ( DirectoryIt->IsDirectory() and ( not InFilter or InFilter( *DirectoryIt ) ) )
             {

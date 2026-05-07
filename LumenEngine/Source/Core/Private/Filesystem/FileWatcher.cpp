@@ -8,6 +8,7 @@
 #include "Filesystem/File.hpp"
 
 #include "Container/Vector.hpp"
+
 #include "HAL/PlatformTime.hpp"
 
 namespace

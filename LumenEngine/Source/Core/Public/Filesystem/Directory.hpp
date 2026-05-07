@@ -112,7 +112,7 @@ namespace Filesystem
          * @return A vector of file information, or an error code.
          */
         [[nodiscard]] static TExpected<TVector<FFileInfo>, EErrorCode::Type>
-        GetFiles ( const FPath &InPath, Bool bInRecursive = false, const FFilterPredicate &InFilter = nullptr ) noexcept;
+        GetFiles ( const FPath &InPath, Bool bInRecursive = false, const FFilterPredicate &InFilter = nullptr );
 
         /**
          * @brief Enumerates directories matching an optional filter.
@@ -122,7 +122,7 @@ namespace Filesystem
          * @return A vector of directory information, or an error code.
          */
         [[nodiscard]] static TExpected<TVector<FFileInfo>, EErrorCode::Type>
-        GetDirectories ( const FPath &InPath, Bool bInRecursive = false, const FFilterPredicate &InFilter = nullptr ) noexcept;
+        GetDirectories ( const FPath &InPath, Bool bInRecursive = false, const FFilterPredicate &InFilter = nullptr );
     };
 
 } // namespace Filesystem

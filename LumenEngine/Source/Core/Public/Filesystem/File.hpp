@@ -103,7 +103,7 @@ namespace Filesystem
         /**
          * @brief Reads the entire content of a file as a string.
          */
-        [[nodiscard]] static TExpected<FString, EErrorCode::Type> ReadAllText ( const FPath &InPath ) noexcept;
+        [[nodiscard]] static TExpected<FString, EErrorCode::Type> ReadAllText ( const FPath &InPath );
 
         /**
          * @brief Writes a string to a file.

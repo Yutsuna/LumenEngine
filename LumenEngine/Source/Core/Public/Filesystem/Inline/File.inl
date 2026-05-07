@@ -11,8 +11,7 @@ namespace LumenEngine
 namespace Filesystem
 {
 
-    template <typename Type>
-    TExpected<TVector<Type>, EErrorCode::Type> FFile::ReadAllBytes ( const FPath &InPath ) noexcept
+    template <typename Type> TExpected<TVector<Type>, EErrorCode::Type> FFile::ReadAllBytes ( const FPath &InPath ) noexcept
     {
         auto FileResult = Open( InPath, EFileMode::Read );
         if ( not FileResult )
@@ -48,8 +47,7 @@ namespace Filesystem
         return Content;
     }
 
-    template <typename Type>
-    TExpected<void, EErrorCode::Type> FFile::WriteAllBytes ( const FPath &InPath, const TVector<Type> &InData ) noexcept
+    template <typename Type> TExpected<void, EErrorCode::Type> FFile::WriteAllBytes ( const FPath &InPath, const TVector<Type> &InData ) noexcept
     {
         auto FileResult = Open( InPath, EFileMode::Write );
         if ( not FileResult )
