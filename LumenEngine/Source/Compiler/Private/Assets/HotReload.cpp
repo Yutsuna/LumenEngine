@@ -7,7 +7,6 @@
 #include "Assets/AssetCompiler.hpp"
 
 #include "Filesystem/Directory.hpp"
-#include "Filesystem/File.hpp"
 #include "Filesystem/Path.hpp"
 
 #include "HAL/PlatformTime.hpp"
@@ -71,7 +70,7 @@ void LumenEngine::Compiler::FCompilerHotReload::Scan () noexcept
     ScanFolder( Root / "Shaders", EAssetType::Shader );
 }
 
-void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const Filesystem::FPath &InPath, EAssetType::Type InAssetType ) noexcept
+void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const Filesystem::FPath &InPath, EAssetType::Type InAssetType )
 {
     if ( not Filesystem::FDirectory::Exists( InPath ) )
     {
@@ -91,7 +90,7 @@ void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const Filesystem::F
             continue;
         }
 
-        const FString &FilePath = FileInfo.Path;
+        const FString &FilePath  = FileInfo.Path;
         const FString &Extension = FileInfo.Extension;
 
         switch ( InAssetType )

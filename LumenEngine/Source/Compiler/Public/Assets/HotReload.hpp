@@ -51,7 +51,7 @@ namespace Compiler
         void Scan () noexcept;
 
         /** Scans a specific folder and updates the watched files map. */
-        void ScanFolder ( const Filesystem::FPath &InPath, EAssetType::Type InAssetType ) noexcept;
+        void ScanFolder ( const Filesystem::FPath &InPath, EAssetType::Type InAssetType );
 
     private:
 
