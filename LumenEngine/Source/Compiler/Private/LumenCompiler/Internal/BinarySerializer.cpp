@@ -9,7 +9,9 @@
 
 #include "Maths/Vertex.hpp"
 
+#include <cmath>
 #include <cstring>
+#include <limits>
 
 namespace
 {
@@ -131,4 +133,275 @@ LumenEngine::Compiler::FBinarySerializer::SerializeMaterial ( const FDLSLRootBlo
     FBinaryWriter( BinaryBlob ).Write( Header ).Write( MaterialHeader );
 
     return BinaryBlob;
+}
+
+const LumenEngine::Compiler::FDLSLNode *LumenEngine::Compiler::FBinarySerializer::FindProperty ( const FDLSLNode *InObjectNode, const FStringView InKey ) noexcept
+{
+    if ( InObjectNode == nullptr or InObjectNode->Type != EDLSLNodeType::Object )
+    {
+        return nullptr;
+    }
+
+    for ( const FDLSLProperty *Property = InObjectNode->ObjectValue.Head; Property != nullptr; Property = Property->Next )
+    {
+        if ( Property->Key == InKey )
+        {
+            return Property->Value;
+        }
+    }
+
+    return nullptr;
+}
+
+LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::Maths::FVertex>, LumenEngine::FString>
+LumenEngine::Compiler::FBinarySerializer::ExtractVertices ( const FDLSLNode *InVerticesListNode )
+{
+    LUMEN_EXPECT( InVerticesListNode != nullptr, "Vertices node is null." );
+    LUMEN_EXPECT( InVerticesListNode->Type == EDLSLNodeType::List, "Vertices must be a list." );
+
+    TVector<Maths::FVertex> Vertices;
+    Vertices.reserve( InVerticesListNode->ListValue.Count );
+
+    const auto ReadVector = [] ( const FDLSLNode *InVectorNode, const USize InExpectedCount, const FStringView InFieldName ) -> TExpected<const Float32 *, FString>
+    {
+        if ( InVectorNode == nullptr )
+        {
+            return MakeUnexpected( "Missing vertex field: '" + StringViewToString( InFieldName ) + "'." );
+        }
+
+        if ( InVectorNode->Type != EDLSLNodeType::Vector )
+        {
+            return MakeUnexpected( "Vertex field '" + StringViewToString( InFieldName ) + "' must be a vector." );
+        }
+
+        if ( InVectorNode->VectorValue.Count < InExpectedCount )
+        {
+            return MakeUnexpected( "Vertex field '" + StringViewToString( InFieldName ) + "' has insufficient components." );
+        }
+
+        return InVectorNode->VectorValue.Data;
+    };
+
+    for ( const FDLSLNode *VertexNode = InVerticesListNode->ListValue.Head; VertexNode != nullptr; VertexNode = VertexNode->Next )
+    {
+        if ( VertexNode->Type != EDLSLNodeType::Object )
+        {
+            return MakeUnexpected( "Each vertex entry must be an object." );
+        }
+
+        const FDLSLNode *const PositionNode = FindProperty( VertexNode, "Position" );
+        const FDLSLNode *const NormalNode   = FindProperty( VertexNode, "Normal" );
+        const FDLSLNode *const UVNode       = FindProperty( VertexNode, "UV" );
+        const FDLSLNode *const TangentNode  = FindProperty( VertexNode, "Tangent" );
+
+        const auto PositionDataResult = ReadVector( PositionNode, 3U, "Position" );
+        LUMEN_EXPECT_VALUE( PositionDataResult );
+
+        Maths::FVertex Vertex{};
+        const Float32 *const PositionData = PositionDataResult.value();
+        Vertex.Position                   = { PositionData[0], PositionData[1], PositionData[2] };
+
+        if ( NormalNode != nullptr )
+        {
+            const auto NormalDataResult = ReadVector( NormalNode, 3U, "Normal" );
+            LUMEN_EXPECT_VALUE( NormalDataResult );
+
+            const Float32 *const NormalData = NormalDataResult.value();
+            Vertex.Normal                   = { NormalData[0], NormalData[1], NormalData[2] };
+        }
+
+        if ( UVNode != nullptr )
+        {
+            const auto UVDataResult = ReadVector( UVNode, 2U, "UV" );
+            LUMEN_EXPECT_VALUE( UVDataResult );
+
+            const Float32 *const UVData = UVDataResult.value();
+            Vertex.UV                   = { UVData[0], UVData[1] };
+        }
+
+        if ( TangentNode != nullptr )
+        {
+            const auto TangentDataResult = ReadVector( TangentNode, 3U, "Tangent" );
+            LUMEN_EXPECT_VALUE( TangentDataResult );
+
+            const Float32 *const TangentData = TangentDataResult.value();
+            Vertex.Tangent                   = { TangentData[0], TangentData[1], TangentData[2] };
+        }
+
+        Vertices.push_back( Vertex );
+    }
+
+    return Vertices;
+}
+
+LumenEngine::TExpected<LumenEngine::TVector<LumenEngine::UInt32>, LumenEngine::FString>
+LumenEngine::Compiler::FBinarySerializer::ExtractIndices ( const FDLSLNode *InIndicesListNode )
+{
+    LUMEN_EXPECT( InIndicesListNode != nullptr, "Indices node is null." );
+    LUMEN_EXPECT( InIndicesListNode->Type == EDLSLNodeType::List, "Indices must be a list." );
+
+    TVector<UInt32> Indices;
+    Indices.reserve( InIndicesListNode->ListValue.Count );
+
+    for ( const FDLSLNode *IndexNode = InIndicesListNode->ListValue.Head; IndexNode != nullptr; IndexNode = IndexNode->Next )
+    {
+        if ( IndexNode->Type != EDLSLNodeType::Number )
+        {
+            return MakeUnexpected( "Each index entry must be a number." );
+        }
+
+        const Float64 Value = IndexNode->NumberValue;
+        if ( Value < 0.0 or std::floor( Value ) != Value or Value > static_cast<Float64>( std::numeric_limits<UInt32>::max() ) )
+        {
+            return MakeUnexpected( "Index values must be non-negative UInt32 integers." );
+        }
+
+        Indices.push_back( static_cast<UInt32>( Value ) );
+    }
+
+    return Indices;
+}
+
+void LumenEngine::Compiler::FBinarySerializer::ExtractMeshConfig ( const FDLSLNode *InConfigNode, FLumenBinaryMeshHeader &OutHeader ) noexcept
+{
+    if ( InConfigNode == nullptr or InConfigNode->Type != EDLSLNodeType::Object )
+    {
+        return;
+    }
+
+    const FDLSLNode *const TopologyNode     = FindProperty( InConfigNode, "Topology" );
+    const FDLSLNode *const CullModeNode     = FindProperty( InConfigNode, "CullMode" );
+    const FDLSLNode *const WindingOrderNode = FindProperty( InConfigNode, "WindingOrder" );
+
+    if ( TopologyNode != nullptr and TopologyNode->Type == EDLSLNodeType::Identifier )
+    {
+        const FStringView Topology = TopologyNode->GetString();
+        if ( Topology == "PointList" )
+        {
+            OutHeader.Topology = 1U;
+        }
+        else if ( Topology == "LineList" )
+        {
+            OutHeader.Topology = 2U;
+        }
+        else if ( Topology == "TriangleList" )
+        {
+            OutHeader.Topology = 3U;
+        }
+    }
+
+    if ( CullModeNode != nullptr and CullModeNode->Type == EDLSLNodeType::Identifier )
+    {
+        const FStringView CullMode = CullModeNode->GetString();
+        if ( CullMode == "None" )
+        {
+            OutHeader.CullMode = 0U;
+        }
+        else if ( CullMode == "Front" )
+        {
+            OutHeader.CullMode = 1U;
+        }
+        else if ( CullMode == "Back" )
+        {
+            OutHeader.CullMode = 2U;
+        }
+        else if ( CullMode == "FrontAndBack" )
+        {
+            OutHeader.CullMode = 3U;
+        }
+    }
+
+    if ( WindingOrderNode != nullptr and WindingOrderNode->Type == EDLSLNodeType::Identifier )
+    {
+        const FStringView WindingOrder = WindingOrderNode->GetString();
+        if ( WindingOrder == "CW" )
+        {
+            OutHeader.WindingOrder = 0U;
+        }
+        else if ( WindingOrder == "CCW" )
+        {
+            OutHeader.WindingOrder = 1U;
+        }
+    }
+}
+
+void LumenEngine::Compiler::FBinarySerializer::ExtractRenderState ( const FDLSLNode *InStateNode, FLumenBinaryMaterialHeader &OutHeader ) noexcept
+{
+    if ( InStateNode == nullptr or InStateNode->Type != EDLSLNodeType::Object )
+    {
+        return;
+    }
+
+    OutHeader.PropertyCount = static_cast<UInt32>( InStateNode->ObjectValue.Count );
+
+    const FDLSLNode *const BlendModeNode  = FindProperty( InStateNode, "BlendMode" );
+    const FDLSLNode *const DepthTestNode  = FindProperty( InStateNode, "DepthTest" );
+    const FDLSLNode *const DepthWriteNode = FindProperty( InStateNode, "DepthWrite" );
+    const FDLSLNode *const CullModeNode   = FindProperty( InStateNode, "CullMode" );
+    const FDLSLNode *const WireFrameNode  = FindProperty( InStateNode, "WireFrame" );
+
+    if ( BlendModeNode != nullptr and BlendModeNode->Type == EDLSLNodeType::Identifier )
+    {
+        const FStringView BlendMode = BlendModeNode->GetString();
+        if ( BlendMode == "Opaque" )
+        {
+            OutHeader.BlendMode = 0U;
+        }
+        else if ( BlendMode == "Alpha" )
+        {
+            OutHeader.BlendMode = 1U;
+        }
+        else if ( BlendMode == "Additive" )
+        {
+            OutHeader.BlendMode = 2U;
+        }
+    }
+
+    if ( DepthTestNode != nullptr and DepthTestNode->Type == EDLSLNodeType::Identifier )
+    {
+        const FStringView DepthTest = DepthTestNode->GetString();
+        if ( DepthTest == "Never" )
+        {
+            OutHeader.DepthTest = 0U;
+        }
+        else if ( DepthTest == "Less" )
+        {
+            OutHeader.DepthTest = 1U;
+        }
+        else if ( DepthTest == "Always" )
+        {
+            OutHeader.DepthTest = 2U;
+        }
+    }
+
+    if ( DepthWriteNode != nullptr and DepthWriteNode->Type == EDLSLNodeType::Boolean )
+    {
+        OutHeader.DepthWrite = DepthWriteNode->BooleanValue ? 1U : 0U;
+    }
+
+    if ( CullModeNode != nullptr and CullModeNode->Type == EDLSLNodeType::Identifier )
+    {
+        const FStringView CullMode = CullModeNode->GetString();
+        if ( CullMode == "None" )
+        {
+            OutHeader.CullMode = 0U;
+        }
+        else if ( CullMode == "Front" )
+        {
+            OutHeader.CullMode = 1U;
+        }
+        else if ( CullMode == "Back" )
+        {
+            OutHeader.CullMode = 2U;
+        }
+        else if ( CullMode == "FrontAndBack" )
+        {
+            OutHeader.CullMode = 3U;
+        }
+    }
+
+    if ( WireFrameNode != nullptr and WireFrameNode->Type == EDLSLNodeType::Boolean )
+    {
+        OutHeader.WireFrame = WireFrameNode->BooleanValue ? 1U : 0U;
+    }
 }
