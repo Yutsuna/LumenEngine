@@ -149,4 +149,3 @@ template <typename TTraits> LumenEngine::USize LumenEngine::Compiler::TCompilerC
     }
     return RemovedCount;
 }
-
