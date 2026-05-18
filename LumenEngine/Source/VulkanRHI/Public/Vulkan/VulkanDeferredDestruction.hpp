@@ -34,7 +34,7 @@ namespace VulkanRHI
          * @param InDeletor   The function to call to destroy the resource.
          * @param InFrameIndex The current absolute frame index.
          */
-        void Enqueue ( TFunction<void ()> &&InDeletor, UInt64 InFrameIndex );
+        void Enqueue ( TFunction<void()> &&InDeletor, UInt64 InFrameIndex );
 
         /**
          * @brief Processes the queue and destroys resources that are safe to release.
@@ -51,7 +51,7 @@ namespace VulkanRHI
 
         struct FPendingDestruction
         {
-            TFunction<void ()> Deletor;
+            TFunction<void()> Deletor;
             UInt64 ReleaseFrameIndex;
         };
 
