@@ -44,8 +44,12 @@ SANITIZER_ALIASES: dict[str, str] = {
 # ---------------------------------------------------------------------------
 
 CLANG_EXTENSIONS = ("*.cpp", "*.hpp", "*.inl", "*.frag", "*.vert", "*.comp")
-TIDY_CACHE_FILE = BUILD_DIR / ".lumen_tidy_cache.json"
-TIDY_HEADER_FILTER = "LumenEngine/Source/.*"
+TIDY_SUPPRESS_NOISE = (
+    "warnings generated.",
+    "Suppressed ",
+    "Use -header-filter=",
+)
+
 
 # ---------------------------------------------------------------------------
 # Colours
