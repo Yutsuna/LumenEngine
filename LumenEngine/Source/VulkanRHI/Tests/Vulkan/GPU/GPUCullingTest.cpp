@@ -19,7 +19,7 @@ namespace LumenEngine
 namespace
 {
 
-    bool TestAABBFrustumCPU ( const Maths::FVec3f &AABBMin, const Maths::FVec3f &AABBMax, const VulkanRHI::FGPUFrustumData &Frustum ) noexcept
+    Bool TestAABBFrustumCPU ( const Maths::FVec3f &AABBMin, const Maths::FVec3f &AABBMax, const VulkanRHI::FGPUFrustumData &Frustum ) noexcept
     {
         for ( Int32 Index = 0; Index < 6; ++Index )
         {
@@ -88,7 +88,7 @@ TEST( GPUDrivenCulling, OriginInsideFrustum )
     const Maths::FMatrix4x4f VP              = BuildTestVP();
     const VulkanRHI::FGPUFrustumData Frustum = VulkanRHI::FGPUFrustumData::ExtractFromViewProjection( VP );
 
-    const bool bVisible = TestAABBFrustumCPU( Maths::FVec3f{ -0.1F, -0.1F, -0.1F }, Maths::FVec3f{ 0.1F, 0.1F, 0.1F }, Frustum );
+    const Bool bVisible = TestAABBFrustumCPU( Maths::FVec3f{ -0.1F, -0.1F, -0.1F }, Maths::FVec3f{ 0.1F, 0.1F, 0.1F }, Frustum );
 
     EXPECT_TRUE( bVisible ) << "A box at the origin should be visible from z=5 looking at origin.";
 }
@@ -98,7 +98,7 @@ TEST( GPUDrivenCulling, BoxBehindCameraIsCulled )
     const Maths::FMatrix4x4f VP              = BuildTestVP();
     const VulkanRHI::FGPUFrustumData Frustum = VulkanRHI::FGPUFrustumData::ExtractFromViewProjection( VP );
 
-    const bool bVisible = TestAABBFrustumCPU( Maths::FVec3f{ -0.5F, -0.5F, 45.F }, Maths::FVec3f{ 0.5F, 0.5F, 50.F }, Frustum );
+    const Bool bVisible = TestAABBFrustumCPU( Maths::FVec3f{ -0.5F, -0.5F, 45.F }, Maths::FVec3f{ 0.5F, 0.5F, 50.F }, Frustum );
 
     EXPECT_FALSE( bVisible ) << "A box behind the camera (z=50) should be culled.";
 }
@@ -108,7 +108,7 @@ TEST( GPUDrivenCulling, BoxBeyondFarPlaneIsCulled )
     const Maths::FMatrix4x4f VP              = BuildTestVP();
     const VulkanRHI::FGPUFrustumData Frustum = VulkanRHI::FGPUFrustumData::ExtractFromViewProjection( VP );
 
-    const bool bVisible = TestAABBFrustumCPU( Maths::FVec3f{ -0.5F, -0.5F, -150.F }, Maths::FVec3f{ 0.5F, 0.5F, -145.F }, Frustum );
+    const Bool bVisible = TestAABBFrustumCPU( Maths::FVec3f{ -0.5F, -0.5F, -150.F }, Maths::FVec3f{ 0.5F, 0.5F, -145.F }, Frustum );
 
     EXPECT_FALSE( bVisible ) << "A box beyond the far plane should be culled.";
 }
@@ -118,7 +118,7 @@ TEST( GPUDrivenCulling, BoxJustInsideFarPlane )
     const Maths::FMatrix4x4f VP              = BuildTestVP();
     const VulkanRHI::FGPUFrustumData Frustum = VulkanRHI::FGPUFrustumData::ExtractFromViewProjection( VP );
 
-    const bool bVisible = TestAABBFrustumCPU( Maths::FVec3f{ -0.1F, -0.1F, -94.F }, Maths::FVec3f{ 0.1F, 0.1F, -90.F }, Frustum );
+    const Bool bVisible = TestAABBFrustumCPU( Maths::FVec3f{ -0.1F, -0.1F, -94.F }, Maths::FVec3f{ 0.1F, 0.1F, -90.F }, Frustum );
 
     EXPECT_TRUE( bVisible ) << "A box just inside the far plane should be visible.";
 }
@@ -133,7 +133,7 @@ TEST( GPUDrivenCulling, GPUGlobalUniformsBuildFactory )
     EXPECT_FLOAT_EQ( Uniforms.TimeSeconds, 1.0F );
     EXPECT_FLOAT_EQ( Uniforms.DeltaTime, 0.016F );
 
-    bool bAnyNonZero = false;
+    Bool bAnyNonZero = false;
     for ( Int32 Index = 0; Index < 6; ++Index )
     {
         const Maths::FVec4f &P = Uniforms.Frustum.Planes[Index];

@@ -47,7 +47,7 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat ( const LumenEngine::TVector<VkSurfac
     return AvailableFormats[0];
 }
 
-VkPresentModeKHR ChooseSwapPresentMode ( const LumenEngine::TVector<VkPresentModeKHR> &AvailablePresentModes, bool bVSync )
+VkPresentModeKHR ChooseSwapPresentMode ( const LumenEngine::TVector<VkPresentModeKHR> &AvailablePresentModes, Bool bVSync )
 {
     if ( bVSync )
     {
@@ -203,7 +203,7 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::InitializeSynStructures ( VkDevic
 }
 
 void LumenEngine::VulkanRHI::FVulkanSwapChain::Create (
-    VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, VkSurfaceKHR InSurface, VkFormat InSwapChainFormat, const Maths::FVec2u &InSize, bool bInVSyncEnabled )
+    VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, VkSurfaceKHR InSurface, VkFormat InSwapChainFormat, const Maths::FVec2u &InSize, Bool bInVSyncEnabled )
 {
     const FSwapChainDescription Description{
         .Surface       = InSurface,
@@ -215,7 +215,7 @@ void LumenEngine::VulkanRHI::FVulkanSwapChain::Create (
 }
 
 void LumenEngine::VulkanRHI::FVulkanSwapChain::Recreate (
-    VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, VkSurfaceKHR InSurface, VkFormat InSwapChainFormat, const Maths::FVec2u &InSize, bool bInVSync )
+    VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, VkSurfaceKHR InSurface, VkFormat InSwapChainFormat, const Maths::FVec2u &InSize, Bool bInVSync )
 {
     const FSwapChainDescription Description{
         .Surface       = InSurface,
