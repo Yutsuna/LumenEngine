@@ -31,7 +31,7 @@ def Format(ctx, check: bool = False) -> None:
     for root in search_roots:
         if not root.exists():
             continue
-        for pattern in CLANG_FORMAT_EXTENSIONS:
+        for pattern in CLANG_EXTENSIONS:
             files.extend(str(path) for path in root.rglob(pattern) if path.is_file())
 
     files = sorted(set(files))
