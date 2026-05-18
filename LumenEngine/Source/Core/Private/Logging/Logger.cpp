@@ -11,14 +11,14 @@
 #include <print>
 #include <system_error>
 
-LumenEngine::FLogger &LumenEngine::FLogger::GetInstance ()
+LumenEngine::FLogger &LumenEngine::FLogger::GetInstance () noexcept
 {
     static FLogger Instance;
 
     return Instance;
 }
 
-void LumenEngine::FLogger::Initialize ()
+void LumenEngine::FLogger::Initialize () noexcept
 {
     if ( not WorkerThread.joinable() )
     {
@@ -35,7 +35,7 @@ void LumenEngine::FLogger::Initialize ()
     }
 }
 
-void LumenEngine::FLogger::Flush ( const AnsiChar *const String )
+void LumenEngine::FLogger::Flush ( const AnsiChar *const String ) noexcept
 {
     const USize StringLength = std::char_traits<AnsiChar>::length( String );
 
@@ -51,7 +51,7 @@ LumenEngine::FLogger::~FLogger ()
     Shutdown();
 }
 
-void LumenEngine::FLogger::Shutdown ()
+void LumenEngine::FLogger::Shutdown () noexcept
 {
     if ( not bIsAsync or not WorkerThread.joinable() )
     {
@@ -65,7 +65,7 @@ void LumenEngine::FLogger::Shutdown ()
 void LumenEngine::FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message )
 {
     {
-        TLockGuard<FMutex> Lock( QueueMutex );
+        const TLockGuard<FMutex> Lock( QueueMutex );
         const FLogMessage LogMessage{ .Category = Category, .Verbosity = Verbosity, .Message = std::move( Message ), .Timestamp = HAL::FPlatformTime::Seconds() };
 
         LogMessageQueue.emplace( LogMessage );
@@ -83,7 +83,7 @@ void LumenEngine::FLogger::FlushLogMessages ( std::stop_token &StopToken )
 
         while ( not LogMessageQueue.empty() )
         {
-            FLogMessage Msg = std::move( LogMessageQueue.front() );
+            const FLogMessage Msg = std::move( LogMessageQueue.front() );
             LogMessageQueue.pop();
 
             Lock.Unlock();
@@ -93,6 +93,7 @@ void LumenEngine::FLogger::FlushLogMessages ( std::stop_token &StopToken )
     }
 }
 
+// NOLINTNEXTLINE (readability-convert-member-functions-to-static)
 void LumenEngine::FLogger::CoutMessage ( const FLogMessage &LogMessage ) const noexcept
 {
     static constexpr const LumenEngine::AnsiChar *const ResetColor   = "\033[0m";
@@ -101,7 +102,16 @@ void LumenEngine::FLogger::CoutMessage ( const FLogMessage &LogMessage ) const n
     const LumenEngine::AnsiChar *const VerbosityColor  = LumenEngine::ELogVerbosity::ToColor( LogMessage.Verbosity );
     const LumenEngine::AnsiChar *const VerbosityString = LumenEngine::ELogVerbosity::ToString( LogMessage.Verbosity );
 
-    std::println( FormatString, LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityColor, VerbosityString, LogMessage.Message, ResetColor );
+    try
+    {
+        std::println( FormatString, LogMessage.Timestamp, LogMessage.Category.CategoryName, VerbosityColor, VerbosityString, LogMessage.Message, ResetColor );
+    }
+    catch ( const std::format_error &FormatError )
+    {
+        Flush( "Log message formatting failed: " );
+        Flush( FormatError.what() );
+        Flush( "\n" );
+    }
 
     if ( LogMessage.Verbosity == LumenEngine::ELogVerbosity::Fatal )
     {
