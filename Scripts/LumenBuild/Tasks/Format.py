@@ -5,7 +5,7 @@ import sys
 from invoke import task
 
 from LumenBuild.Constants import (
-    CLANG_FORMAT_EXTENSIONS,
+    CLANG_EXTENSIONS,
     ERROR_CODE,
     ROOT_DIR,
 )
