@@ -64,6 +64,7 @@ namespace VulkanRHI
 
         [[nodiscard]] UInt32 GetCurrentFrameIndex () const noexcept;
         [[nodiscard]] UInt32 GetCurrentImageIndex () const noexcept;
+        [[nodiscard]] UInt64 GetAbsoluteFrameIndex () const noexcept;
 
         [[nodiscard]] FVulkanCommandBuffer &GetCurrentCommandBuffer () noexcept;
         [[nodiscard]] const FVulkanCommandBuffer &GetCurrentCommandBuffer () const noexcept;
