@@ -2,6 +2,7 @@ Checks: >
   -*,
   bugprone-*,
   -bugprone-easily-swappable-parameters,
+  -bugprone-macro-parentheses,
   cert-*,
   -base_must_be_class,
   -cert-err58-cpp,

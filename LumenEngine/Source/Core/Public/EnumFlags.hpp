@@ -7,7 +7,6 @@
 
 #include "CoreTypes.hpp"
 
-// NOLINTBEGIN(bugprone-macro-parentheses)
 #define LUMEN_ENUM_FLAGS( EnumType )                                                                                                                                     \
     /** Binary operators for enum flags */                                                                                                                               \
     [[nodiscard]] static constexpr inline EnumType operator|( EnumType Lhs, EnumType Rhs ) noexcept                                                                      \
@@ -72,4 +71,3 @@
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<UnderlyingType>( Lhs ) != Rhs;                                                                                                                \
     }
-// NOLINTEND(bugprone-macro-parentheses)
