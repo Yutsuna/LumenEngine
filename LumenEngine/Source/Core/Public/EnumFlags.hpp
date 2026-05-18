@@ -29,15 +29,15 @@
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<EnumType>( ~static_cast<UnderlyingType>( value ) );                                                                                           \
     }                                                                                                                                                                    \
-    [[nodiscard]] static constexpr inline EnumType operator<<( EnumType value, int Shift ) noexcept                                                                      \
+    [[nodiscard]] static constexpr inline EnumType operator<<( EnumType value, Int32 Shift ) noexcept                                                                    \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
-        return static_cast<EnumType>( static_cast<UnderlyingType>( value ) << Shift );                                                                                   \
+        return static_cast<EnumType>( static_cast<UnderlyingType>( value ) << static_cast<UnderlyingType>( Shift ) );                                                    \
     }                                                                                                                                                                    \
-    [[nodiscard]] static constexpr inline EnumType operator>>( EnumType value, int Shift ) noexcept                                                                      \
+    [[nodiscard]] static constexpr inline EnumType operator>>( EnumType value, Int32 Shift ) noexcept                                                                    \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
-        return static_cast<EnumType>( static_cast<UnderlyingType>( value ) >> Shift );                                                                                   \
+        return static_cast<EnumType>( static_cast<UnderlyingType>( value ) >> static_cast<UnderlyingType>( Shift ) );                                                    \
     }                                                                                                                                                                    \
     /** Assignment operators for enum flags */                                                                                                                           \
     static constexpr inline EnumType &operator|=( EnumType &Lhs, EnumType Rhs ) noexcept                                                                                 \
@@ -61,13 +61,13 @@
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<UnderlyingType>( value ) == 0;                                                                                                                \
     }                                                                                                                                                                    \
-    [[nodiscard]] static constexpr inline LumenEngine::Bool operator==( EnumType Lhs, int Rhs ) noexcept                                                                 \
+    [[nodiscard]] static constexpr inline LumenEngine::Bool operator==( EnumType Lhs, Int32 Rhs ) noexcept                                                               \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
-        return static_cast<UnderlyingType>( Lhs ) == Rhs;                                                                                                                \
+        return static_cast<UnderlyingType>( Lhs ) == static_cast<UnderlyingType>( Rhs );                                                                                 \
     }                                                                                                                                                                    \
-    [[nodiscard]] static constexpr inline LumenEngine::Bool operator!=( EnumType Lhs, int Rhs ) noexcept                                                                 \
+    [[nodiscard]] static constexpr inline LumenEngine::Bool operator!=( EnumType Lhs, Int32 Rhs ) noexcept                                                               \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
-        return static_cast<UnderlyingType>( Lhs ) != Rhs;                                                                                                                \
+        return static_cast<UnderlyingType>( Lhs ) != static_cast<UnderlyingType>( Rhs );                                                                                 \
     }

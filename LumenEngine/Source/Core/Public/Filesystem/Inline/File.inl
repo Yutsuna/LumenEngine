@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "Filesystem/File.hpp"
+
 namespace LumenEngine
 {
 
