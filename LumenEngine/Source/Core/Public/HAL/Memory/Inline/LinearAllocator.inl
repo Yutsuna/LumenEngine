@@ -5,7 +5,8 @@
 
 #pragma once
 
-#include <new>
+#include "HAL/Memory/LinearAllocator.hpp"
+
 #include <utility>
 
 template <typename T, typename... TArgs> T *LumenEngine::HAL::FLinearAllocator::New ( TArgs &&...InArgs ) noexcept
