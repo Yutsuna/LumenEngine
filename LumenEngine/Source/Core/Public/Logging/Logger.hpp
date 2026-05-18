@@ -21,7 +21,7 @@ class LUMEN_ENGINE_API FLogger
 public:
 
     /** Logs a message to the console */
-    template <typename... Args> void TLog ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, const FStringView Format, Args &&...InArgs );
+    template <typename... Args> void TLog ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, const FStringView Format, Args &&...InArgs ) noexcept;
 
     /** Initializes the logger and starts the worker thread. */
     void Initialize () noexcept;
