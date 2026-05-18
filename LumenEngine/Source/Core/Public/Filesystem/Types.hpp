@@ -149,7 +149,7 @@ namespace Filesystem
 
     using FWatchCallback    = TFunction<void( const FWatchEventData &WatchEventData )>;
     using FProgressCallback = TFunction<void( USize Done, USize Total )>;
-    using FFilterPredicate  = TFunction<bool( const FFileInfo &FileInfo )>;
+    using FFilterPredicate  = TFunction<Bool( const FFileInfo &FileInfo )>;
 
 } // namespace Filesystem
 

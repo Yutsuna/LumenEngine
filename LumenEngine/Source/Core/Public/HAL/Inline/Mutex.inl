@@ -102,7 +102,7 @@ template <typename MutexType> Bool TUniqueLock<MutexType>::IsLocked () const noe
     return bIsLocked;
 }
 
-template <typename MutexType> TUniqueLock<MutexType>::operator bool () const noexcept
+template <typename MutexType> TUniqueLock<MutexType>::operator Bool () const noexcept
 {
     return IsLocked();
 }

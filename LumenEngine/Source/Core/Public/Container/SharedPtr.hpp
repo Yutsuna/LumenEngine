@@ -48,7 +48,7 @@ namespace SharedPtrInternal
     public:
 
         /** Properly aligned storage for the managed object. */
-        alignas( Type ) Byte Storage[sizeof( Type )];
+        alignas( Type ) Byte Storage[sizeof( Type )]{};
 
         /** Constructs the managed object in place with forwarded arguments. */
         template <typename... Arguments> explicit TIntrusiveReferenceController( Arguments &&...InArgs );
@@ -131,7 +131,7 @@ public:
     TSharedRef ( const TSharedRef &Other );
 
     /** Move Constructor */
-    TSharedRef ( TSharedRef &&Other );
+    TSharedRef ( TSharedRef &&Other ) noexcept ;
 
     /** Proxy Constructor: Allows implicit conversion from MakeShareable to TSharedRef */
     template <typename OtherType>
@@ -148,7 +148,7 @@ public:
 
     /** Assignment Operators */
     TSharedRef &operator=( const TSharedRef &Other );
-    TSharedRef &operator=( TSharedRef &&Other );
+    TSharedRef &operator=( TSharedRef &&Other ) noexcept ;
 
     /** Accessors */
     Type &operator*() const;
@@ -156,24 +156,24 @@ public:
     Type *Get () const;
 
     /** Returns the current number of shared references. */
-    Int32 GetSharedReferenceCount () const;
+    [[nodiscard]] Int32 GetSharedReferenceCount () const;
 
 public:
 
     /** Comparison Operators */
-    template <typename OtherType> bool operator==( const TSharedRef<OtherType> &Other ) const noexcept
+    template <typename OtherType> Bool operator==( const TSharedRef<OtherType> &Other ) const noexcept
     {
         return Object == Other.Object;
     }
-    template <typename OtherType> bool operator!=( const TSharedRef<OtherType> &Other ) const noexcept
+    template <typename OtherType> Bool operator!=( const TSharedRef<OtherType> &Other ) const noexcept
     {
         return Object != Other.Object;
     }
-    template <typename OtherType> bool operator==( const TSharedPtr<OtherType> &Other ) const noexcept
+    template <typename OtherType> Bool operator==( const TSharedPtr<OtherType> &Other ) const noexcept
     {
         return Object == Other.Get();
     }
-    template <typename OtherType> bool operator!=( const TSharedPtr<OtherType> &Other ) const noexcept
+    template <typename OtherType> Bool operator!=( const TSharedPtr<OtherType> &Other ) const noexcept
     {
         return Object != Other.Get();
     }
@@ -222,7 +222,7 @@ public:
     TSharedPtr ( const TSharedPtr &Other );
 
     /** Move Constructor */
-    TSharedPtr ( TSharedPtr &&Other );
+    TSharedPtr ( TSharedPtr &&Other ) noexcept ;
 
     /** Proxy Constructor: Allows implicit conversion from MakeShareable to TSharedPtr */
     template <typename OtherType>
@@ -242,8 +242,8 @@ public:
     Type *Get () const;
 
     /** Validity checks */
-    bool IsValid () const;
-    explicit operator bool () const;
+    [[nodiscard]] Bool IsValid () const;
+    explicit operator Bool () const;
 
     /** Resets the pointer to null. */
     void Reset ();
@@ -251,28 +251,28 @@ public:
 public:
 
     /** Comparison Operators */
-    template <typename OtherType> bool operator==( const TSharedPtr<OtherType> &Other ) const noexcept
+    template <typename OtherType> Bool operator==( const TSharedPtr<OtherType> &Other ) const noexcept
     {
         return Object == Other.Get();
     }
-    template <typename OtherType> bool operator!=( const TSharedPtr<OtherType> &Other ) const noexcept
+    template <typename OtherType> Bool operator!=( const TSharedPtr<OtherType> &Other ) const noexcept
     {
         return Object != Other.Get();
     }
-    template <typename OtherType> bool operator==( const TSharedRef<OtherType> &Other ) const noexcept
+    template <typename OtherType> Bool operator==( const TSharedRef<OtherType> &Other ) const noexcept
     {
         return Object == Other.Get();
     }
-    template <typename OtherType> bool operator!=( const TSharedRef<OtherType> &Other ) const noexcept
+    template <typename OtherType> Bool operator!=( const TSharedRef<OtherType> &Other ) const noexcept
     {
         return Object != Other.Get();
     }
 
-    bool operator==( NullptrType ) const noexcept
+    Bool operator==( NullptrType ) const noexcept
     {
         return Object == nullptr;
     }
-    bool operator!=( NullptrType ) const noexcept
+    Bool operator!=( NullptrType ) const noexcept
     {
         return Object != nullptr;
     }

@@ -115,8 +115,8 @@ public:
     const Deleter &GetDeleter () const;
 
     /** Validity checks */
-    bool IsValid () const;
-    explicit operator bool () const;
+    [[nodiscard]] Bool IsValid () const;
+    explicit operator Bool () const;
 
     /**
      * @brief Relinquishes ownership of the managed object and returns the pointer.
@@ -182,8 +182,8 @@ public:
     const Deleter &GetDeleter () const;
 
     /** Validity checks */
-    bool IsValid () const;
-    explicit operator bool () const;
+    [[nodiscard]] Bool IsValid () const;
+    explicit operator Bool () const;
 
     /**
      * @brief Relinquishes ownership of the managed object and returns the pointer.

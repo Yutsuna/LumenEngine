@@ -104,12 +104,12 @@ template <typename Type, typename Deleter> const Deleter &TUniquePtr<Type, Delet
     return DeleterInstance;
 }
 
-template <typename Type, typename Deleter> bool TUniquePtr<Type, Deleter>::IsValid () const
+template <typename Type, typename Deleter> Bool TUniquePtr<Type, Deleter>::IsValid () const
 {
     return Object != nullptr;
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::operator bool () const
+template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::operator Bool () const
 {
     return IsValid();
 }
@@ -199,12 +199,12 @@ template <typename Type, typename Deleter> const Deleter &TUniquePtr<Type[], Del
     return DeleterInstance;
 }
 
-template <typename Type, typename Deleter> bool TUniquePtr<Type[], Deleter>::IsValid () const
+template <typename Type, typename Deleter> Bool TUniquePtr<Type[], Deleter>::IsValid () const
 {
     return Object != nullptr;
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::operator bool () const
+template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::operator Bool () const
 {
     return IsValid();
 }

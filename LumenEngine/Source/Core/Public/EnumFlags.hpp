@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include "CoreTypes.hpp"
+
 #define LUMEN_ENUM_FLAGS( EnumType )                                                                                                                                     \
     /** Binary operators for enum flags */                                                                                                                               \
     [[nodiscard]] static constexpr inline EnumType operator|( EnumType Lhs, EnumType Rhs ) noexcept                                                                      \
@@ -54,17 +56,17 @@
         return Lhs;                                                                                                                                                      \
     }                                                                                                                                                                    \
     /** Logical comparison operators for enum flags */                                                                                                                   \
-    [[nodiscard]] static constexpr inline bool operator!( EnumType value ) noexcept                                                                                      \
+    [[nodiscard]] static constexpr inline LumenEngine::Bool operator!( EnumType value ) noexcept                                                                                      \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<UnderlyingType>( value ) == 0;                                                                                                                \
     }                                                                                                                                                                    \
-    [[nodiscard]] static constexpr inline bool operator==( EnumType Lhs, int Rhs ) noexcept                                                                              \
+    [[nodiscard]] static constexpr inline LumenEngine::Bool operator==( EnumType Lhs, int Rhs ) noexcept                                                                              \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<UnderlyingType>( Lhs ) == Rhs;                                                                                                                \
     }                                                                                                                                                                    \
-    [[nodiscard]] static constexpr inline bool operator!=( EnumType Lhs, int Rhs ) noexcept                                                                              \
+    [[nodiscard]] static constexpr inline LumenEngine::Bool operator!=( EnumType Lhs, int Rhs ) noexcept                                                                              \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<UnderlyingType>( Lhs ) != Rhs;                                                                                                                \

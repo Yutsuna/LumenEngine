@@ -15,7 +15,7 @@ template <typename... Args>
 void LumenEngine::FLogger::TLog ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, const FStringView Format, Args &&...InArgs )
 {
     FString FormattedMessage = std::vformat( Format, std::make_format_args( InArgs... ) );
-    const bool bAsync        = bIsAsync.load( std::memory_order_relaxed ) && WorkerThread.joinable();
+    const Bool bAsync        = bIsAsync.load( std::memory_order_relaxed ) && WorkerThread.joinable();
 
     if ( not bAsync )
     {

@@ -108,12 +108,12 @@ template <typename Type> Type *TSharedPtr<Type>::Get () const
     return Object;
 }
 
-template <typename Type> bool TSharedPtr<Type>::IsValid () const
+template <typename Type> Bool TSharedPtr<Type>::IsValid () const
 {
     return Object != nullptr;
 }
 
-template <typename Type> TSharedPtr<Type>::operator bool () const
+template <typename Type> TSharedPtr<Type>::operator Bool () const
 {
     return IsValid();
 }

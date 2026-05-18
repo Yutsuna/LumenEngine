@@ -109,7 +109,7 @@ template <typename MutexType> Bool TSharedUniqueLock<MutexType>::IsLocked () con
     return bIsLocked;
 }
 
-template <typename MutexType> TSharedUniqueLock<MutexType>::operator bool () const noexcept
+template <typename MutexType> TSharedUniqueLock<MutexType>::operator Bool () const noexcept
 {
     return IsLocked();
 }
