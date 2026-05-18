@@ -20,7 +20,7 @@ from LumenBuild.Utils import (
     RequireTool,
     RunParallel,
 )
-from LumenBuild.Cache import ( FileCache, GetAllFiles, GetFilesToCheck)
+from LumenBuild.Cache import FileCache, GetAllFiles, GetFilesToCheck
 from LumenBuild.Tasks.Build import BuildDebug
 
 __all__ = ["Tidy"]
@@ -43,6 +43,10 @@ def _PrintTidyFailure(res: subprocess.CompletedProcess) -> None:
             print(filtered, file=sys.stderr)
 
 
+def _RemoveTestFiles(files: list[str]) -> list[str]:
+    test_files = [f for f in files if "Tests" in f]
+    return [f for f in files if f not in test_files]
+
 @task(
     name="tidy",
     help={
@@ -52,7 +56,9 @@ def _PrintTidyFailure(res: subprocess.CompletedProcess) -> None:
         "module": "Only check files in the specified module (e.g. --module=Core)",
     },
 )
-def Tidy(ctx, fix: bool = False, checks: str = "", force: bool = False, module: str = "") -> None:
+def Tidy(
+    ctx, fix: bool = False, checks: str = "", force: bool = False, module: str = ""
+) -> None:
     clang_tidy = RequireTool("clang-tidy")
 
     if not TIDY_COMPILE_DB.exists():
@@ -72,8 +78,7 @@ def Tidy(ctx, fix: bool = False, checks: str = "", force: bool = False, module: 
     else:
         search_roots = TIDY_SEARCH_ROOTS
 
-    all_files: list[str] = GetAllFiles(search_roots, CLANG_EXTENSIONS)
-
+    all_files: list[str] = _RemoveTestFiles(GetAllFiles(search_roots, CLANG_EXTENSIONS))
     if not all_files:
         LogWarn("No C/C++ source files found to tidy.")
         return
