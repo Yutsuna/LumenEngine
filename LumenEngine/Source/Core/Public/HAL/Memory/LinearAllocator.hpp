@@ -92,8 +92,8 @@ namespace HAL
 
         Byte *Buffer;
         USize TotalSize;
-        USize Offset;
-        USize HighWatermark;
+        USize Offset        = 0U;
+        USize HighWatermark = 0U;
 
         friend class FScopeLinear;
 

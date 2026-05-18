@@ -29,8 +29,7 @@ inline LumenEngine::USize AlignUp ( LumenEngine::USize InValue, LumenEngine::USi
 
 } // namespace
 
-LumenEngine::HAL::FLinearAllocator::FLinearAllocator ( void *InBytes, USize InSize ) noexcept
-    : Buffer( static_cast<LumenEngine::Byte *>( InBytes ) ), TotalSize( InSize ), Offset( 0U ), HighWatermark( 0U )
+LumenEngine::HAL::FLinearAllocator::FLinearAllocator ( void *InBytes, USize InSize ) noexcept : Buffer( static_cast<LumenEngine::Byte *>( InBytes ) ), TotalSize( InSize )
 {
     /** Ctor */
 }
