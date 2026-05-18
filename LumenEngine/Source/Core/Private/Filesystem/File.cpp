@@ -111,6 +111,7 @@ LumenEngine::Filesystem::FFile::Open ( const FPath &InPath, EFileMode InMode ) n
     {
         return MakeUnexpected( EErrorCode::InvalidArgument );
     }
+    // NOLINTNEXTLINE (misc-const-correctness)
     FILE *RawHandle = nullptr;
 
 #if defined( LUMEN_ENGINE_PLATFORM_WINDOWS )
