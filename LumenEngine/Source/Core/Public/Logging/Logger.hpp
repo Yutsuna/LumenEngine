@@ -21,21 +21,21 @@ class LUMEN_ENGINE_API FLogger
 public:
 
     /** Logs a message to the console */
-    template <typename... Args> void TLog ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, const FStringView Format, Args &&...InArgs );
+    template <typename... Args> void TLog ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, const FStringView Format, Args &&...InArgs ) noexcept;
 
     /** Initializes the logger and starts the worker thread. */
-    void Initialize ();
+    void Initialize () noexcept;
 
     /** Shuts down the logger and flushes all pending log messages. */
-    void Shutdown ();
+    void Shutdown () noexcept;
 
 public:
 
     /** Gets the singleton instance of the logger. */
-    static FLogger &GetInstance ();
+    static FLogger &GetInstance () noexcept;
 
     /** Flushes a message to the console immediately without enqueuing it. */
-    static void Flush ( const AnsiChar *const String );
+    static void Flush ( const AnsiChar *const String ) noexcept;
 
 public:
 

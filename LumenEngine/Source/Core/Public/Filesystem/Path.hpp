@@ -23,6 +23,8 @@ namespace Filesystem
 
         FPath ( const FString &InPath );
 
+        FPath ( FString &&InPath );
+
         FPath ( const FStringView InPath );
 
         FPath ( const AnsiChar *const InPath );

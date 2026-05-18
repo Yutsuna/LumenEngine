@@ -1,9 +1,3 @@
-"""
-lumen/utils.py
-==============
-Shared utilities: logging, CPU detection, subprocess helpers.
-"""
-
 from __future__ import annotations
 
 import multiprocessing
@@ -13,8 +7,10 @@ import sys
 import time
 from pathlib import Path
 from typing import Sequence
+import concurrent.futures
+from typing import Callable
 
-from LumenBuild.Constants import EAnsiColor as C
+from LumenBuild.Constants import ERROR_CODE, SUCCESS_CODE, EAnsiColor as C
 
 # ---------------------------------------------------------------------------
 # CPU / parallelism
@@ -65,7 +61,7 @@ def RequireTool(name: str) -> str:
     if path is None:
         LogError(f"Required tool not found: {C.BOLD}{name}{C.RESET}")
         LogError("Please install it and make sure it is on your PATH.")
-        sys.exit(1)
+        sys.exit(ERROR_CODE)
     return path
 
 
@@ -114,26 +110,30 @@ def RunParallel(
     *,
     cwd: Path | None = None,
     max_workers: int | None = None,
+    on_failure: Callable[[subprocess.CompletedProcess], None] | None = None,
 ) -> list[subprocess.CompletedProcess]:
-    import concurrent.futures
 
     workers = max_workers or GetParallelJobs()
     results: list[subprocess.CompletedProcess] = []
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {
-            pool.submit(Run, cmd, cwd=cwd, check=False, capture=True): cmd
+        future_list = [
+            pool.submit(Run, cmd, cwd=cwd, check=False, capture=True)
             for cmd in commands
-        }
-        for fut in concurrent.futures.as_completed(futures):
-            cmd = futures[fut]
+        ]
+        for cmd, fut in zip(commands, future_list):
             try:
                 res = fut.result()
                 results.append(res)
-                if res.returncode != 0:
+                if res.returncode != SUCCESS_CODE:
                     LogError(f"Failed: {' '.join(str(a) for a in cmd)}")
-                    if res.stderr:
-                        print(res.stderr, file=sys.stderr)
+                    if on_failure:
+                        on_failure(res)
+                    else:
+                        if res.stdout:
+                            print(res.stdout, file=sys.stderr)
+                        if res.stderr:
+                            print(res.stderr, file=sys.stderr)
             except Exception as exc:
                 LogError(f"Exception for {cmd}: {exc}")
 

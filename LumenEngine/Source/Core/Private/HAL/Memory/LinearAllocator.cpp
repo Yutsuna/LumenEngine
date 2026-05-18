@@ -29,8 +29,7 @@ inline LumenEngine::USize AlignUp ( LumenEngine::USize InValue, LumenEngine::USi
 
 } // namespace
 
-LumenEngine::HAL::FLinearAllocator::FLinearAllocator ( void *InBytes, USize InSize ) noexcept
-    : Buffer( static_cast<LumenEngine::Byte *>( InBytes ) ), TotalSize( InSize ), Offset( 0U ), HighWatermark( 0U )
+LumenEngine::HAL::FLinearAllocator::FLinearAllocator ( void *InBytes, USize InSize ) noexcept : Buffer( static_cast<LumenEngine::Byte *>( InBytes ) ), TotalSize( InSize )
 {
     /** Ctor */
 }
@@ -66,11 +65,10 @@ void *LumenEngine::HAL::FLinearAllocator::Allocate ( USize InSize, USize InAlign
         return nullptr;
     }
 
-    void *Pointer = Buffer + AlignedOffset;
     Offset        = AlignedOffset + InSize;
     HighWatermark = std::max( Offset, HighWatermark );
 
-    return Pointer;
+    return Buffer + AlignedOffset;
 }
 
 void LumenEngine::HAL::FLinearAllocator::Reset () noexcept

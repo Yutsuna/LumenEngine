@@ -5,8 +5,11 @@
 
 #pragma once
 
-#include "Container/Vector.hpp"
+#include "CoreTypes.hpp"
 #include "Definitions.hpp"
+
+#include "Container/Vector.hpp"
+
 #include "Maths/Vec.hpp"
 
 #include "Vulkan/VulkanCore.hpp"
@@ -62,13 +65,13 @@ namespace VulkanRHI
          * @brief Creates the Vulkan SwapChain with the specified parameters natively.
          */
         void Create (
-            VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, VkSurfaceKHR InSurface, VkFormat InSwapChainFormat, const Maths::FVec2u &InSize, bool bInVSyncEnabled );
+            VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, VkSurfaceKHR InSurface, VkFormat InSwapChainFormat, const Maths::FVec2u &InSize, Bool bInVSyncEnabled );
 
         /**
          * @brief Recreates the Vulkan SwapChain natively.
          */
         void Recreate (
-            VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, VkSurfaceKHR InSurface, VkFormat InSwapChainFormat, const Maths::FVec2u &InSize, bool bInVSyncEnabled );
+            VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, VkSurfaceKHR InSurface, VkFormat InSwapChainFormat, const Maths::FVec2u &InSize, Bool bInVSyncEnabled );
 
         /**
          * @brief Cleans up Vulkan resources associated with the swap chain.

@@ -3,7 +3,11 @@
  * @brief Inline implementation for the FMutex class.
  */
 
+#pragma once
+
 #include "HAL/Mutex.hpp"
+
+#include <utility>
 
 namespace LumenEngine
 {
@@ -35,10 +39,11 @@ template <typename MutexType> TUniqueLock<MutexType>::~TUniqueLock() noexcept
     }
 }
 
-template <typename MutexType> TUniqueLock<MutexType>::TUniqueLock( TUniqueLock &&InOther ) noexcept : Mutex( InOther.Mutex ), bIsLocked( InOther.bIsLocked )
+template <typename MutexType>
+TUniqueLock<MutexType>::TUniqueLock( TUniqueLock &&InOther ) noexcept
+    : Mutex( std::exchange<MutexType>( InOther.Mutex, nullptr ) ), bIsLocked( std::exchange<Bool>( InOther.bIsLocked, false ) )
 {
-    InOther.Mutex     = nullptr;
-    InOther.bIsLocked = false;
+    /* Empty */
 }
 
 template <typename MutexType> TUniqueLock<MutexType> &TUniqueLock<MutexType>::operator=( TUniqueLock &&InOther ) noexcept
@@ -50,10 +55,8 @@ template <typename MutexType> TUniqueLock<MutexType> &TUniqueLock<MutexType>::op
             Unlock();
         }
 
-        Mutex             = InOther.Mutex;
-        bIsLocked         = InOther.bIsLocked;
-        InOther.Mutex     = nullptr;
-        InOther.bIsLocked = false;
+        Mutex     = std::exchange<MutexType>( InOther.Mutex, nullptr );
+        bIsLocked = std::exchange<Bool>( InOther.bIsLocked, false );
     }
 
     return *this;
@@ -90,11 +93,8 @@ template <typename MutexType> Bool TUniqueLock<MutexType>::TryLock () noexcept
 
 template <typename MutexType> MutexType *TUniqueLock<MutexType>::Release () noexcept
 {
-    MutexType *ReleasedMutex = Mutex;
-    Mutex                    = nullptr;
-    bIsLocked                = false;
-
-    return ReleasedMutex;
+    bIsLocked = false;
+    return std::exchange<MutexType>( Mutex, nullptr );
 }
 
 template <typename MutexType> Bool TUniqueLock<MutexType>::IsLocked () const noexcept
@@ -102,7 +102,7 @@ template <typename MutexType> Bool TUniqueLock<MutexType>::IsLocked () const noe
     return bIsLocked;
 }
 
-template <typename MutexType> TUniqueLock<MutexType>::operator bool () const noexcept
+template <typename MutexType> TUniqueLock<MutexType>::operator Bool () const noexcept
 {
     return IsLocked();
 }

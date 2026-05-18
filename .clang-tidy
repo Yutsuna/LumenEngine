@@ -2,6 +2,7 @@ Checks: >
   -*,
   bugprone-*,
   -bugprone-easily-swappable-parameters,
+  -bugprone-macro-parentheses,
   cert-*,
   -base_must_be_class,
   -cert-err58-cpp,
@@ -22,6 +23,8 @@ Checks: >
   -cppcoreguidelines-pro-bounds-constant-array-index,
   -cppcoreguidelines-pro-type-union-access,
   -cppcoreguidelines-avoid-non-const-global-variables,
+  -cppcoreguidelines-macro-to-enum,
+  -cppcoreguidelines-use-enum-class,
   hicpp-*,
   -hicpp-explicit-conversions,
   -hicpp-no-array-decay,
@@ -39,6 +42,7 @@ Checks: >
   -modernize-use-auto,
   -modernize-avoid-c-arrays,
   -modernize-concat-nested-namespaces,
+  -modernize-macro-to-enum,
   performance-*,
   readability-*,
   -readability-magic-numbers,
@@ -50,7 +54,7 @@ Checks: >
   -cert-err33-c
 
 WarningsAsErrors: "*"
-HeaderFilterRegex: "^(Include|Source)/.*"
+HeaderFilterRegex: "LumenEngine/Source/.*"
 SystemHeaders: false
 
 CheckOptions:

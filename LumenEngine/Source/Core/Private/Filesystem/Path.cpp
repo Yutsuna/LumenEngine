@@ -15,6 +15,11 @@ LumenEngine::Filesystem::FPath::FPath ( const FString &InPath ) : Path( InPath )
     /* */
 }
 
+LumenEngine::Filesystem::FPath::FPath ( FString &&InPath ) : Path( std::move( InPath ) )
+{
+    /* */
+}
+
 LumenEngine::Filesystem::FPath::FPath ( const FStringView InPath ) : Path( InPath )
 {
     /* */

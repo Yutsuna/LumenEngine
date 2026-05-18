@@ -1,18 +1,16 @@
 from __future__ import annotations
 
-import hashlib
-import json
+import subprocess
 import sys
-from pathlib import Path
-from typing import Sequence
 
 from invoke import task
 
 from LumenBuild.Constants import (
-    CLANG_EXTENSIONS,
+    BUILD_DIR,
     ERROR_CODE,
     ROOT_DIR,
-    TIDY_CACHE_FILE,
+    CLANG_EXTENSIONS,
+    TIDY_SUPPRESS_NOISE,
 )
 from LumenBuild.Utils import (
     Log,
@@ -22,124 +20,112 @@ from LumenBuild.Utils import (
     RequireTool,
     RunParallel,
 )
+from LumenBuild.Cache import FileCache, GetAllFiles, GetFilesToCheck
 from LumenBuild.Tasks.Build import BuildDebug
 
 __all__ = ["Tidy"]
 
-
-def _GetFileHash(path: Path, config_hash: bytes) -> str:
-    hasher = hashlib.sha1()
-    hasher.update(config_hash)
-    hasher.update(path.read_bytes())
-    return hasher.hexdigest()
+TIDY_CACHE_PATH = BUILD_DIR / ".tidy_cache.json"
+TIDY_COMPILE_DB = ROOT_DIR / "compile_commands.json"
+TIDY_SEARCH_ROOTS = [ROOT_DIR / "LumenEngine" / "Source"]
 
 
-def _LoadCache() -> dict[str, str]:
-    if TIDY_CACHE_FILE.exists():
-        try:
-            return json.loads(TIDY_CACHE_FILE.read_text())
-        except Exception:
-            return {}
-    return {}
+def _PrintTidyFailure(res: subprocess.CompletedProcess) -> None:
+    for stream in (res.stdout, res.stderr):
+        if not stream:
+            continue
+        filtered = "\n".join(
+            line
+            for line in stream.splitlines()
+            if not any(line.strip().startswith(n) for n in TIDY_SUPPRESS_NOISE)
+        )
+        if filtered.strip():
+            print(filtered, file=sys.stderr)
 
 
-def _GetSourceFiles(
-    force: bool, config_hash: bytes
-) -> tuple[list[Path], dict[str, str], dict[str, str]]:
-    search_root = ROOT_DIR / "LumenEngine" / "Source"
-    all_files: list[Path] = []
-
-    for pattern in CLANG_EXTENSIONS:
-        all_files.extend(search_root.rglob(pattern))
-
-    all_files = sorted({f.resolve() for f in all_files if f.is_file()})
-
-    cache = _LoadCache()
-    to_process: list[Path] = []
-    current_hashes: dict[str, str] = {}
-
-    for path in all_files:
-        p_str = str(path)
-        h = _GetFileHash(path, config_hash)
-        current_hashes[p_str] = h
-
-        if force or cache.get(p_str) != h:
-            to_process.append(path)
-
-    return to_process, current_hashes, cache
-
-
-def _UpdateCache(
-    results: list, current_hashes: dict[str, str], old_cache: dict[str, str]
-) -> int:
-    new_cache = old_cache.copy()
-    failed_count = 0
-
-    for res in results:
-        file_path = res.args[-1]
-        if res.returncode == 0:
-            new_cache[file_path] = current_hashes[file_path]
-        else:
-            failed_count += 1
-            if file_path in new_cache:
-                del new_cache[file_path]
-
-    TIDY_CACHE_FILE.parent.mkdir(parents=True, exist_ok=True)
-    TIDY_CACHE_FILE.write_text(json.dumps(new_cache, indent=2))
-    return failed_count
-
+def _RemoveTestFiles(files: list[str]) -> list[str]:
+    test_files = [f for f in files if "Tests" in f]
+    return [f for f in files if f not in test_files]
 
 @task(
     name="tidy",
     help={
         "fix": "Apply suggested fixes (inplace)",
         "checks": "Override checks (e.g. --checks='bugprone-*')",
-        "force": "Ignore cache and check all files",
+        "force": "Ignore cache and re-check all files",
+        "module": "Only check files in the specified module (e.g. --module=Core)",
     },
 )
-def Tidy(ctx, fix: bool = False, checks: str = "", force: bool = False) -> None:
+def Tidy(
+    ctx, fix: bool = False, checks: str = "", force: bool = False, module: str = ""
+) -> None:
     clang_tidy = RequireTool("clang-tidy")
-    compile_db = ROOT_DIR / "compile_commands.json"
 
-    if not compile_db.exists():
-        LogWarn(
-            "compile_commands.json not found. Running 'build.debug' to generate it..."
-        )
+    if not TIDY_COMPILE_DB.exists():
+        Log("Generating compile_commands.json with debug configuration")
         BuildDebug(ctx)
-
-        if not compile_db.exists():
-            LogError("Failed to generate compile_commands.json.")
-            sys.exit(ERROR_CODE)
-
-    config_file = ROOT_DIR / ".clang-tidy"
-    config_hash = config_file.read_bytes() if config_file.exists() else b""
-    to_process, current_hashes, cache = _GetSourceFiles(force, config_hash)
-
-    if not to_process:
-        LogOk("No changes detected. Everything is clean (cached).")
-        return
-
-    Log(
-        f"clang-tidy: {len(to_process)} files to check",
-        prefix="TIDY ",
-    )
-
-    base_cmd = [clang_tidy, "-p", str(ROOT_DIR)]
-    if not fix:
-        base_cmd.append("--quiet")
-    else:
-        base_cmd.extend(["--fix-errors", "--format-style=file"])
-
-    if checks:
-        base_cmd.append(f"--checks={checks}")
-
-    commands: list[Sequence[str]] = [base_cmd + [str(p)] for p in to_process]
-    results = RunParallel(commands, cwd=ROOT_DIR)
-
-    failed_count = _UpdateCache(results, current_hashes, {} if force else cache)
-
-    if failed_count > 0:
-        LogError(f"Clang-tidy found issues in {failed_count} file(s).")
+    if not TIDY_COMPILE_DB.exists():
+        LogError("Failed to generate compile_commands.json")
         sys.exit(ERROR_CODE)
 
-    LogOk("All files passed clang-tidy.")
+    if module:
+        module_path = ROOT_DIR / "LumenEngine" / "Source" / module
+        if not module_path.exists():
+            LogError(f"Module '{module}' not found at expected path: {module_path}")
+            sys.exit(ERROR_CODE)
+        search_roots = [module_path]
+        Log(f"Limiting tidy checks to module '{module}'")
+    else:
+        search_roots = TIDY_SEARCH_ROOTS
+
+    all_files: list[str] = _RemoveTestFiles(GetAllFiles(search_roots, CLANG_EXTENSIONS))
+    if not all_files:
+        LogWarn("No C/C++ source files found to tidy.")
+        return
+
+    cache = FileCache(TIDY_CACHE_PATH)
+
+    if force:
+        cache.Wipe()
+        files_to_check = all_files
+        Log("Force mode: ignoring cache, checking all files")
+    else:
+        cache.InvalidateIfMetaChanged("clang_tidy", clang_tidy)
+        cache.InvalidateIfFileMetaChanged("compile_db", TIDY_COMPILE_DB)
+
+        files_to_check = GetFilesToCheck(cache, all_files)
+
+    if not files_to_check:
+        LogOk("Clang-Tidy: nothing to check (all files up to date).")
+        return
+
+    Log(f"Checking {len(files_to_check)} file(s) with clang-tidy")
+
+    compile_db_str = str(TIDY_COMPILE_DB.resolve())
+
+    commands: list[list[str]] = []
+    for file_path in files_to_check:
+        cmd: list[str] = [clang_tidy, f"-p={compile_db_str}", file_path]
+        if checks:
+            cmd.append(f"--checks={checks}")
+        if fix:
+            cmd.append("--fix")
+        commands.append(cmd)
+
+    results = RunParallel(commands, on_failure=_PrintTidyFailure)
+
+    failed_count = 0
+    for cmd, res in zip(commands, results):
+        file_path = cmd[2]
+        if res.returncode == 0:
+            cache.MarkOk(file_path)
+        else:
+            failed_count += 1
+
+    cache.Save()
+
+    if failed_count:
+        LogError(f"Clang-Tidy step failed for {failed_count} file(s)")
+        sys.exit(ERROR_CODE)
+
+    LogOk("Clang-Tidy checks passed.")

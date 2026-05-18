@@ -11,7 +11,7 @@ LumenEngine::TExpected<LumenEngine::Filesystem::FDiskSpaceInfo, LumenEngine::EEr
 LumenEngine::FFileSystem::GetDiskSpace ( const Filesystem::FPath &InPath ) noexcept
 {
     std::error_code Ec;
-    std::filesystem::space_info Space = std::filesystem::space( InPath.ToString(), Ec );
+    const std::filesystem::space_info Space = std::filesystem::space( InPath.ToString(), Ec );
 
     if ( Ec )
     {

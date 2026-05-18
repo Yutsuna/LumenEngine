@@ -36,7 +36,7 @@ namespace Filesystem
     public:
 
         FDirectoryIterator () noexcept = default;
-        explicit FDirectoryIterator ( const FPath &InDir, bool bSkipPermissionErrors = true ) noexcept;
+        explicit FDirectoryIterator ( const FPath &InDir, Bool bSkipPermissionErrors = true ) noexcept;
         ~FDirectoryIterator () noexcept;
 
         FDirectoryIterator ( const FDirectoryIterator &InOther ) noexcept;

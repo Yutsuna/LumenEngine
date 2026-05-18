@@ -5,7 +5,13 @@
 
 #include "Logging/LoggingCategory.hpp"
 
-LumenEngine::FLogCategory::FLogCategory ( const FString &InCategoryName, const ELogVerbosity::Type InDefaultVerbosity )
+LumenEngine::FLogCategory::FLogCategory ( FString &InCategoryName, const ELogVerbosity::Type InDefaultVerbosity )
+    : CategoryName( InCategoryName ), DefaultVerbosity( InDefaultVerbosity )
+{
+    /* Empty */
+}
+
+LumenEngine::FLogCategory::FLogCategory ( FStringView InCategoryName, const ELogVerbosity::Type InDefaultVerbosity )
     : CategoryName( InCategoryName ), DefaultVerbosity( InDefaultVerbosity )
 {
     /* Empty */

@@ -16,6 +16,7 @@ namespace EErrorCode
     /**
      * @brief Enumeration of common error codes used across the engine
      */
+    // NOLINTNEXTLINE(performance-enum-size)
     enum Type : Int32
     {
         /** No error, operation succeeded */

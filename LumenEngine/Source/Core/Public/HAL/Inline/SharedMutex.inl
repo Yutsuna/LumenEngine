@@ -6,6 +6,7 @@
 #pragma once
 
 #include "HAL/SharedMutex.hpp"
+#include <utility>
 
 namespace LumenEngine
 {
@@ -42,10 +43,10 @@ template <typename MutexType> TSharedUniqueLock<MutexType>::~TSharedUniqueLock()
 }
 
 template <typename MutexType>
-TSharedUniqueLock<MutexType>::TSharedUniqueLock( TSharedUniqueLock &&InOther ) noexcept : Mutex( InOther.Mutex ), bIsLocked( InOther.bIsLocked )
+TSharedUniqueLock<MutexType>::TSharedUniqueLock( TSharedUniqueLock &&InOther ) noexcept
+    : Mutex( std::exchange<MutexType>( InOther.Mutex, nullptr ) ), bIsLocked( std::exchange<Bool>( InOther.bIsLocked, false ) )
 {
-    InOther.Mutex     = nullptr;
-    InOther.bIsLocked = false;
+    /* Empty */
 }
 
 template <typename MutexType> TSharedUniqueLock<MutexType> &TSharedUniqueLock<MutexType>::operator=( TSharedUniqueLock &&InOther ) noexcept
@@ -57,8 +58,8 @@ template <typename MutexType> TSharedUniqueLock<MutexType> &TSharedUniqueLock<Mu
             Unlock();
         }
 
-        Mutex             = InOther.Mutex;
-        bIsLocked         = InOther.bIsLocked;
+        Mutex             = std::exchange<MutexType>( InOther.Mutex, nullptr );
+        bIsLocked         = std::exchange<Bool>( InOther.bIsLocked, false );
         InOther.Mutex     = nullptr;
         InOther.bIsLocked = false;
     }
@@ -97,11 +98,8 @@ template <typename MutexType> Bool TSharedUniqueLock<MutexType>::TryLock () noex
 
 template <typename MutexType> MutexType *TSharedUniqueLock<MutexType>::Release () noexcept
 {
-    MutexType *ReleasedMutex = Mutex;
-    Mutex                    = nullptr;
-    bIsLocked                = false;
-
-    return ReleasedMutex;
+    bIsLocked = false;
+    return std::exchange<MutexType>( Mutex, nullptr );
 }
 
 template <typename MutexType> Bool TSharedUniqueLock<MutexType>::IsLocked () const noexcept
@@ -109,7 +107,7 @@ template <typename MutexType> Bool TSharedUniqueLock<MutexType>::IsLocked () con
     return bIsLocked;
 }
 
-template <typename MutexType> TSharedUniqueLock<MutexType>::operator bool () const noexcept
+template <typename MutexType> TSharedUniqueLock<MutexType>::operator Bool () const noexcept
 {
     return IsLocked();
 }

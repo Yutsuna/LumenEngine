@@ -46,7 +46,7 @@ public:
     void Initialize ( FLinuxApplication *const Application,
                       const TSharedRef<FGenericWindowDescription> &InDescription,
                       const TSharedPtr<FGenericWindow> &InParentWindow,
-                      const bool bShowImmediately );
+                      const Bool bShowImmediately );
 
     [[nodiscard]] SDL_Window *GetOSWindowHandle () const;
     [[nodiscard]] SDL_WindowID GetOSWindowID () const;

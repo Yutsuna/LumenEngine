@@ -196,8 +196,8 @@ public:
     /** @returns `true` if the exclusive lock is currently held by this wrapper. */
     [[nodiscard]] Bool IsLocked () const noexcept;
 
-    /** @brief Implicit conversion to `bool`; equivalent to `IsLocked()`. */
-    [[nodiscard]] explicit operator bool () const noexcept;
+    /** @brief Implicit conversion to `Bool`; equivalent to `IsLocked()`. */
+    [[nodiscard]] explicit operator Bool () const noexcept;
 
 private:
 

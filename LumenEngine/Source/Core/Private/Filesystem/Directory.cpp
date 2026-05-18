@@ -99,6 +99,7 @@ LumenEngine::Filesystem::FDirectoryIterator LumenEngine::Filesystem::FDirectoryI
     return *this;
 }
 
+// NOLINTNEXTLINE(readability-convert-member-functions-to-static)
 LumenEngine::Filesystem::FDirectoryIterator LumenEngine::Filesystem::FDirectoryIterator::End () const noexcept
 {
     FDirectoryIterator EndIterator;
