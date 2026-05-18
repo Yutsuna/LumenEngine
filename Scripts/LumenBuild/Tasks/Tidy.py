@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+import subprocess
 import sys
 
 from invoke import task
 
 from LumenBuild.Constants import (
+    BUILD_DIR,
     ERROR_CODE,
     ROOT_DIR,
     CLANG_EXTENSIONS,
@@ -18,9 +20,14 @@ from LumenBuild.Utils import (
     RequireTool,
     RunParallel,
 )
+from LumenBuild.Cache import ( FileCache, GetAllFiles, GetFilesToCheck)
 from LumenBuild.Tasks.Build import BuildDebug
 
 __all__ = ["Tidy"]
+
+TIDY_CACHE_PATH = BUILD_DIR / ".tidy_cache.json"
+TIDY_COMPILE_DB = ROOT_DIR / "compile_commands.json"
+TIDY_SEARCH_ROOTS = [ROOT_DIR / "LumenEngine" / "Source"]
 
 
 def _PrintTidyFailure(res: subprocess.CompletedProcess) -> None:
@@ -41,41 +48,48 @@ def _PrintTidyFailure(res: subprocess.CompletedProcess) -> None:
     help={
         "fix": "Apply suggested fixes (inplace)",
         "checks": "Override checks (e.g. --checks='bugprone-*')",
-        "force": "Ignore cache and check all files",
+        "force": "Ignore cache and re-check all files",
     },
 )
 def Tidy(ctx, fix: bool = False, checks: str = "", force: bool = False) -> None:
     clang_tidy = RequireTool("clang-tidy")
-    compile_db = ROOT_DIR / "compile_commands.json"
-    search_root = ROOT_DIR / "LumenEngine" / "Source"
 
-    if not compile_db.exists():
+    if not TIDY_COMPILE_DB.exists():
         Log("Generating compile_commands.json with debug configuration")
         BuildDebug(ctx)
-    if not compile_db.exists():
+    if not TIDY_COMPILE_DB.exists():
         LogError("Failed to generate compile_commands.json")
         sys.exit(ERROR_CODE)
 
-    files: list[str] = []
-    for pattern in CLANG_EXTENSIONS:
-        files.extend(str(path) for path in search_root.rglob(pattern))
+    all_files: list[str] = GetAllFiles(TIDY_SEARCH_ROOTS, CLANG_EXTENSIONS)
 
-    files = sorted(set(files))
-
-    if not files:
+    if not all_files:
         LogWarn("No C/C++ source files found to tidy.")
         return
 
-    compile_db_str = str(compile_db.resolve())
-    build_path_str = str((ROOT_DIR / "Build" / "Debug").resolve())
+    cache = FileCache(TIDY_CACHE_PATH)
+
+    if force:
+        cache.Wipe()
+        files_to_check = all_files
+        Log("Force mode: ignoring cache, checking all files")
+    else:
+        cache.InvalidateIfMetaChanged("clang_tidy", clang_tidy)
+        cache.InvalidateIfFileMetaChanged("compile_db", TIDY_COMPILE_DB)
+
+        files_to_check = GetFilesToCheck(cache, all_files)
+
+    if not files_to_check:
+        LogOk("Clang-Tidy: nothing to check (all files up to date).")
+        return
+
+    Log(f"Checking {len(files_to_check)} file(s) with clang-tidy")
+
+    compile_db_str = str(TIDY_COMPILE_DB.resolve())
 
     commands: list[list[str]] = []
-    for file_path in files:
-        cmd: list[str] = [
-            clang_tidy,
-            f"-p={compile_db_str}",
-            file_path,
-        ]
+    for file_path in files_to_check:
+        cmd: list[str] = [clang_tidy, f"-p={compile_db_str}", file_path]
         if checks:
             cmd.append(f"--checks={checks}")
         if fix:
@@ -83,9 +97,19 @@ def Tidy(ctx, fix: bool = False, checks: str = "", force: bool = False) -> None:
         commands.append(cmd)
 
     results = RunParallel(commands, on_failure=_PrintTidyFailure)
-    failed = [r for r in results if r.returncode != 0]
-    if failed:
-        LogError(f"Clang-Tidy step failed for {len(failed)} file(s)")
+
+    failed_count = 0
+    for cmd, res in zip(commands, results):
+        file_path = cmd[2]
+        if res.returncode == 0:
+            cache.MarkOk(file_path)
+        else:
+            failed_count += 1
+
+    cache.Save()
+
+    if failed_count:
+        LogError(f"Clang-Tidy step failed for {failed_count} file(s)")
         sys.exit(ERROR_CODE)
 
     LogOk("Clang-Tidy checks passed.")

@@ -1,9 +1,3 @@
-"""
-lumen/utils.py
-==============
-Shared utilities: logging, CPU detection, subprocess helpers.
-"""
-
 from __future__ import annotations
 
 import multiprocessing
