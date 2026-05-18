@@ -60,7 +60,7 @@ namespace SharedPtrInternal
         void Deallocate () override;
 
         /** Returns a pointer to the managed object. */
-        Type *GetObjectPtr ();
+        [[nodiscard]] Type *GetObjectPtr ();
     };
 
     /**

@@ -26,10 +26,8 @@ template <typename Type> TSharedPtr<Type>::TSharedPtr( NullptrType ) : Object( n
 template <typename Type>
 template <typename OtherType>
     requires Concepts::CConvertibleTo<OtherType *, Type *>
-TSharedPtr<Type>::TSharedPtr( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy )
+TSharedPtr<Type>::TSharedPtr( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy ) : Object( Proxy.Object )
 {
-    Object = Proxy.Object;
-
     if ( Proxy.Object )
     {
         Controller = SharedPtrInternal::NewDefaultReferenceController<OtherType>( Proxy.Object );
@@ -50,13 +48,13 @@ TSharedPtr<Type>::TSharedPtr( const TSharedRef<OtherType> &Other ) : Object( Oth
 
 template <typename Type> TSharedPtr<Type>::TSharedPtr( const TSharedPtr &Other ) : Object( Other.Object ), Controller( Other.Controller )
 {
-    if ( Controller )
+    if ( Controller != nullptr )
     {
         Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
     }
 }
 
-template <typename Type> TSharedPtr<Type>::TSharedPtr( TSharedPtr &&Other ) : Object( Other.Object ), Controller( Other.Controller )
+template <typename Type> TSharedPtr<Type>::TSharedPtr( TSharedPtr &&Other ) noexcept : Object( Other.Object ), Controller( Other.Controller )
 {
     Other.Object     = nullptr;
     Other.Controller = nullptr;
@@ -74,7 +72,7 @@ template <typename Type> TSharedPtr<Type> &TSharedPtr<Type>::operator=( const TS
         Release();
         Object     = Other.Object;
         Controller = Other.Controller;
-        if ( Controller )
+        if ( Controller != nullptr )
         {
             Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
         }
@@ -127,7 +125,7 @@ template <typename Type> void TSharedPtr<Type>::Reset ()
 
 template <typename Type> void TSharedPtr<Type>::Release ()
 {
-    if ( Controller and Controller->SharedCount.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
+    if ( ( Controller != nullptr ) and Controller->SharedCount.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
     {
         Controller->DestroyObject();
         Controller->Deallocate();
@@ -138,6 +136,7 @@ template <typename Type> void TSharedPtr<Type>::Release ()
  * SharedPtr Builders
  */
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename ObjectType, typename... Arguments> static inline TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs )
 {
     SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *Controller =
@@ -145,6 +144,7 @@ template <typename ObjectType, typename... Arguments> static inline TSharedRef<O
     return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(), static_cast<SharedPtrInternal::FReferenceController *>( Controller ) );
 }
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename ObjectType> static inline SharedPtrInternal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject )
 {
     return SharedPtrInternal::TRawPtrProxy<ObjectType>( InObject );
@@ -154,6 +154,7 @@ template <typename ObjectType> static inline SharedPtrInternal::TRawPtrProxy<Obj
  * StaticCast
  */
 
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename CastToType, typename CastFromType> static inline TSharedPtr<CastToType> StaticCastSharedPtr ( const TSharedPtr<CastFromType> &InSharedPtr )
 {
     if ( InSharedPtr.IsValid() )

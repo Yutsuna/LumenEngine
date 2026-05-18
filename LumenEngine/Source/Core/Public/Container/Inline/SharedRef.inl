@@ -54,7 +54,7 @@ template <typename Type> TSharedRef<Type> &TSharedRef<Type>::operator=( const TS
     return *this;
 }
 
-template <typename Type> TSharedRef<Type> &TSharedRef<Type>::operator=( TSharedRef &&Other )
+template <typename Type> TSharedRef<Type> &TSharedRef<Type>::operator=( TSharedRef &&Other ) noexcept
 {
     if ( this != &Other )
     {
