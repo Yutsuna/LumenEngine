@@ -45,41 +45,7 @@ LumenEngine::Int32 LumenEngine::FTriangleExampleApplication::Initialize ( const 
 
     AssetCompiler = MakeUnique<Compiler::FAssetCompiler>();
     AssetCompiler->Initialize( LUMEN_EXAMPLE_TRIANGLE_ASSET_PATH );
-
-    // TODO: make this shit automatic
-    AssetCompiler->SetOnAssetReloadedCallback(
-        [this] ( const FString &InPath, const Compiler::EAssetType::Type InType )
-        {
-            switch ( InType )
-            {
-            case Compiler::EAssetType::Mesh:
-                if ( InPath.find( "Triangle" ) != FString::npos )
-                {
-                    TriangleMesh = AssetCompiler->LoadMesh( "Triangle" );
-                    if ( MeshActorRef.IsValid() and TriangleMesh )
-                    {
-                        Engine::FMeshUpdatedPayload Payload;
-                        Payload.NewMesh = TriangleMesh->RenderHandle;
-                        MeshActorRef.EnqueueMessage( FMessage::Make( Engine::EEngineMessage::MeshUpdated, 0, Payload ) );
-                    }
-                }
-                break;
-
-            case Compiler::EAssetType::Shader:
-            case Compiler::EAssetType::Material:
-                TriangleMaterial = AssetCompiler->LoadMaterial( "Triangle" );
-                if ( MeshActorRef.IsValid() and TriangleMaterial )
-                {
-                    Engine::FMaterialUpdatedPayload Payload;
-                    Payload.NewMaterial = TriangleMaterial->RenderHandle;
-                    MeshActorRef.EnqueueMessage( FMessage::Make( Engine::EEngineMessage::MaterialUpdated, 0, Payload ) );
-                }
-                break;
-
-            default:
-                break;
-            }
-        } );
+    AssetCompiler->SetOnAssetReloadedCallback( [this] ( const FString &InPath, const Compiler::EAssetType::Type InType ) { HotReloadAssets( InPath, InType ); } );
 
     CreateResources();
     CreateActors();
@@ -119,6 +85,39 @@ void LumenEngine::FTriangleExampleApplication::CreateActors ()
     MeshActor->SetMesh( TriangleMesh );
     MeshActor->SetMaterial( TriangleMaterial );
     MeshActor->SetSceneActor( FActorRef( SceneActor.Get() ) );
+}
+
+void LumenEngine::FTriangleExampleApplication::HotReloadAssets ( const FString &InAssetPath, const Compiler::EAssetType::Type InAssetType )
+{
+    switch ( InAssetType )
+    {
+    case Compiler::EAssetType::Mesh:
+        if ( InAssetPath.find( "Triangle" ) != FString::npos )
+        {
+            TriangleMesh = AssetCompiler->LoadMesh( "Triangle" );
+            if ( MeshActorRef.IsValid() and TriangleMesh )
+            {
+                Engine::FMeshUpdatedPayload Payload;
+                Payload.NewMesh = TriangleMesh->RenderHandle;
+                MeshActorRef.EnqueueMessage( FMessage::Make( Engine::EEngineMessage::MeshUpdated, 0, Payload ) );
+            }
+        }
+        break;
+
+    case Compiler::EAssetType::Shader:
+    case Compiler::EAssetType::Material:
+        TriangleMaterial = AssetCompiler->LoadMaterial( "Triangle" );
+        if ( MeshActorRef.IsValid() and TriangleMaterial )
+        {
+            Engine::FMaterialUpdatedPayload Payload;
+            Payload.NewMaterial = TriangleMaterial->RenderHandle;
+            MeshActorRef.EnqueueMessage( FMessage::Make( Engine::EEngineMessage::MaterialUpdated, 0, Payload ) );
+        }
+        break;
+
+    default:
+        break;
+    }
 }
 
 LUMEN_REGISTER_GAME_APPLICATION( LumenEngine::FTriangleExampleApplication );
