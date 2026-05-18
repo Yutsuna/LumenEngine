@@ -27,7 +27,7 @@ namespace Filesystem
             return MakeUnexpected( InfoResult.error() );
         }
 
-        const USize SizeInBytes = InfoResult.value().SizeBytes;
+        const USize SizeInBytes = InfoResult->SizeBytes;
         if ( SizeInBytes == 0 )
         {
             return TVector<Type>();
@@ -40,7 +40,7 @@ namespace Filesystem
 
         TVector<Type> Content( SizeInBytes / sizeof( Type ) );
 
-        auto ReadResult = FileResult.value()->Read( Content.data(), SizeInBytes );
+        auto ReadResult = ( *FileResult )->Read( Content.data(), SizeInBytes );
         if ( not ReadResult )
         {
             return MakeUnexpected( ReadResult.error() );
