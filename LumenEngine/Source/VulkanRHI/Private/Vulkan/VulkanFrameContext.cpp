@@ -65,6 +65,11 @@ LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanFrameContext::GetCurrentImage
     return CurrentImageIndex;
 }
 
+LumenEngine::UInt64 LumenEngine::VulkanRHI::FVulkanFrameContext::GetAbsoluteFrameIndex () const noexcept
+{
+    return FrameIndex;
+}
+
 LumenEngine::VulkanRHI::FVulkanCommandBuffer &LumenEngine::VulkanRHI::FVulkanFrameContext::GetCurrentCommandBuffer () noexcept
 {
     return CommandBuffers[GetCurrentFrameIndex()];
