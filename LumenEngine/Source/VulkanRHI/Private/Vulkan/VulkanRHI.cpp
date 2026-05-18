@@ -300,7 +300,7 @@ LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( c
     LumenEngine::VulkanRHI::FVulkanMesh NewMesh;
 
     NewMesh.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), InVertices, InIndices );
-    return MeshRegistry.Insert( std::move( NewMesh ) );
+    return MeshRegistry.Insert( NewMesh );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::DestroyMesh ( RHI::FMeshHandle InHandle )
@@ -344,6 +344,7 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
 
     if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), Description, VResult.Shader->SpirV, FResult.Shader->SpirV ).has_value() )
     {
+        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to create graphics pipeline for shaders (Vertex: {}, Fragment: {}).", InVertexPath, InFragmentPath );
         return {};
     }
 
