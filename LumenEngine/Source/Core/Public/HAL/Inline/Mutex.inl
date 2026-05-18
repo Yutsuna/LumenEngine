@@ -3,6 +3,8 @@
  * @brief Inline implementation for the FMutex class.
  */
 
+#pragma once
+
 #include "HAL/Mutex.hpp"
 
 #include <utility>
