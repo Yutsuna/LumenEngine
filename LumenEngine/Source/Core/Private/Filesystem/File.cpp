@@ -111,15 +111,15 @@ LumenEngine::Filesystem::FFile::Open ( const FPath &InPath, EFileMode InMode ) n
     {
         return MakeUnexpected( EErrorCode::InvalidArgument );
     }
+    FILE *RawHandle = nullptr;
 
 #if defined( LUMEN_ENGINE_PLATFORM_WINDOWS )
-    FILE *RawHandle = nullptr;
     if ( fopen_s( &RawHandle, InPath.ToString().c_str(), ModeStr.c_str() ) != 0 )
     {
         return MakeUnexpected( EErrorCode::NotFound );
     }
 #else
-    FILE *RawHandle = std::fopen( InPath.ToString().c_str(), ModeStr.c_str() );
+    RawHandle = std::fopen( InPath.ToString().c_str(), ModeStr.c_str() );
     if ( RawHandle == nullptr )
     {
         return MakeUnexpected( EErrorCode::NotFound );
@@ -273,7 +273,7 @@ LumenEngine::Filesystem::FFile::Copy ( const FPath &InSource, const FPath &InDes
     TExpected<TUniquePtr<Filesystem::FFile>, EErrorCode::Type> DestFile = Open( InDestination, EFileMode::Write );
     LUMEN_EXPECT_VALUE( DestFile );
 
-    TUniquePtr<Byte[]> Buffer = MakeUnique<Byte[]>( MaxBufferSize );
+    const TUniquePtr<Byte[]> Buffer = MakeUnique<Byte[]>( MaxBufferSize );
 
     USize TotalRead = 0;
     while ( TotalRead < FileSize )
