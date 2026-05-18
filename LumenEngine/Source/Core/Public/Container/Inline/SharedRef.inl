@@ -94,7 +94,7 @@ TSharedRef<Type>::TSharedRef( Type *InObject, SharedPtrInternal::FReferenceContr
 
 template <typename Type> void TSharedRef<Type>::Release ()
 {
-    if ( (Controller != nullptr) and Controller->SharedCount.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
+    if ( ( Controller != nullptr ) and Controller->SharedCount.fetch_sub( 1, std::memory_order_acq_rel ) == 1 )
     {
         Controller->DestroyObject();
         Controller->Deallocate();
@@ -115,7 +115,7 @@ template <typename ObjectType> static inline TSharedRef<ObjectType> MakeSharedRe
  * StaticCast
  */
 
- // NOLINTNEXTLINE(misc-use-anonymous-namespace)
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename CastToType, typename CastFromType> static inline TSharedRef<CastToType> StaticCastSharedRef ( TSharedRef<CastFromType> const &InSharedRef )
 {
     InSharedRef.Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );

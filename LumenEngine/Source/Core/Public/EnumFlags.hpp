@@ -56,17 +56,17 @@
         return Lhs;                                                                                                                                                      \
     }                                                                                                                                                                    \
     /** Logical comparison operators for enum flags */                                                                                                                   \
-    [[nodiscard]] static constexpr inline LumenEngine::Bool operator!( EnumType value ) noexcept                                                                                      \
+    [[nodiscard]] static constexpr inline LumenEngine::Bool operator!( EnumType value ) noexcept                                                                         \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<UnderlyingType>( value ) == 0;                                                                                                                \
     }                                                                                                                                                                    \
-    [[nodiscard]] static constexpr inline LumenEngine::Bool operator==( EnumType Lhs, int Rhs ) noexcept                                                                              \
+    [[nodiscard]] static constexpr inline LumenEngine::Bool operator==( EnumType Lhs, int Rhs ) noexcept                                                                 \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<UnderlyingType>( Lhs ) == Rhs;                                                                                                                \
     }                                                                                                                                                                    \
-    [[nodiscard]] static constexpr inline LumenEngine::Bool operator!=( EnumType Lhs, int Rhs ) noexcept                                                                              \
+    [[nodiscard]] static constexpr inline LumenEngine::Bool operator!=( EnumType Lhs, int Rhs ) noexcept                                                                 \
     {                                                                                                                                                                    \
         using UnderlyingType = std::underlying_type_t<EnumType>;                                                                                                         \
         return static_cast<UnderlyingType>( Lhs ) != Rhs;                                                                                                                \

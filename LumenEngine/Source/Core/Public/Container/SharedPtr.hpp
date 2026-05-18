@@ -131,7 +131,7 @@ public:
     TSharedRef ( const TSharedRef &Other );
 
     /** Move Constructor */
-    TSharedRef ( TSharedRef &&Other ) noexcept ;
+    TSharedRef ( TSharedRef &&Other ) noexcept;
 
     /** Proxy Constructor: Allows implicit conversion from MakeShareable to TSharedRef */
     template <typename OtherType>
@@ -148,7 +148,7 @@ public:
 
     /** Assignment Operators */
     TSharedRef &operator=( const TSharedRef &Other );
-    TSharedRef &operator=( TSharedRef &&Other ) noexcept ;
+    TSharedRef &operator=( TSharedRef &&Other ) noexcept;
 
     /** Accessors */
     Type &operator*() const;
@@ -222,7 +222,7 @@ public:
     TSharedPtr ( const TSharedPtr &Other );
 
     /** Move Constructor */
-    TSharedPtr ( TSharedPtr &&Other ) noexcept ;
+    TSharedPtr ( TSharedPtr &&Other ) noexcept;
 
     /** Proxy Constructor: Allows implicit conversion from MakeShareable to TSharedPtr */
     template <typename OtherType>
