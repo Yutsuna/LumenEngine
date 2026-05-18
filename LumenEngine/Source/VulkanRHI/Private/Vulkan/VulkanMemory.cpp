@@ -240,6 +240,7 @@ void LumenEngine::VulkanRHI::FVulkanMemory::DestroyVMA () noexcept
 void LumenEngine::VulkanRHI::FVulkanMemory::UpdateGlobalUniformData ( UInt32 InFrameIndex, const FGPUGlobalUniforms &InUniforms ) noexcept
 {
     std::memcpy( GlobalUniformBuffers[InFrameIndex].AllocationInfo.pMappedData, &InUniforms, sizeof( FGPUGlobalUniforms ) );
+    vmaFlushAllocation( Allocator, GlobalUniformBuffers[InFrameIndex].Allocation, 0, sizeof( FGPUGlobalUniforms ) );
 }
 
 void LumenEngine::VulkanRHI::FVulkanMemory::UpdateGlobalUniformData ( UInt32 InFrameIndex, const RHI::FGlobalUniformData &InUniforms ) noexcept

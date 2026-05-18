@@ -32,6 +32,7 @@ namespace RHI
 
         /** @brief Transfers ownership of the resource and returns a strictly typed handle */
         HandleType Insert ( ResourceType &&InResource );
+        HandleType Insert ( const ResourceType &InResource );
 
         /** @brief Marks the resource slot as free and increments its generation */
         void Remove ( HandleType InHandle );
@@ -50,6 +51,9 @@ namespace RHI
         template <typename Func> void ForEach ( Func InFunc );
 
     private:
+
+        /** @brief Internal helper to find or create a slot index. */
+        [[nodiscard]] UInt16 AllocateSlot ();
 
         struct FSlot
         {

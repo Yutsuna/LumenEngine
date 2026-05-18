@@ -53,11 +53,16 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
 
     LogicalDevice.WaitIdle();
 
+    DeferredDestructionQueue.Shutdown();
+
     PipelineRegistry.ForEach( [this] ( FVulkanPipeline &Pipeline ) { Pipeline.Cleanup( LogicalDevice.GetHandle() ); } );
     PipelineRegistry.Clear();
 
     MeshRegistry.ForEach( [this] ( FVulkanMesh &Mesh ) { Mesh.Cleanup( Memory.GetAllocator() ); } );
     MeshRegistry.Clear();
+
+    TextureRegistry.ForEach( [this] ( FVulkanImage &Image ) { Image.Cleanup( Memory.GetAllocator(), LogicalDevice.GetHandle() ); } );
+    TextureRegistry.Clear();
 
     ShutdownGpuDrivenResources();
 
@@ -166,7 +171,10 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ( const RHI::FG
         return false;
     }
 
-    const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
+    const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
+    DeferredDestructionQueue.Tick( AbsoluteFrame );
+
+    const LumenEngine::UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
 
     Memory.UpdateGlobalUniformData( CurrentFrame, InUniforms );
 
@@ -295,7 +303,42 @@ LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( c
     LumenEngine::VulkanRHI::FVulkanMesh NewMesh;
 
     NewMesh.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), InVertices, InIndices );
-    return MeshRegistry.Insert( std::move( NewMesh ) );
+    return MeshRegistry.Insert( NewMesh );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyMesh ( RHI::FMeshHandle InHandle )
+{
+    if ( not MeshRegistry.IsValid( InHandle ) )
+    {
+        return;
+    }
+
+    FVulkanMesh *Mesh                       = MeshRegistry.Get( InHandle );
+    const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
+
+    /** Capture the resource data to cleanup later */
+    FVulkanMesh MeshToDestroy = *Mesh;
+    MeshRegistry.Remove( InHandle );
+
+    DeferredDestructionQueue.Enqueue( [this, MeshToCleanup = MeshToDestroy] () mutable { MeshToCleanup.Cleanup( Memory.GetAllocator() ); }, AbsoluteFrame );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyTexture ( RHI::FTextureHandle InHandle )
+{
+    if ( not TextureRegistry.IsValid( InHandle ) )
+    {
+        return;
+    }
+
+    FVulkanImage *Image                     = TextureRegistry.Get( InHandle );
+    const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
+
+    /** Capture the resource data to cleanup later */
+    FVulkanImage ImageToDestroy = *Image;
+    TextureRegistry.Remove( InHandle );
+
+    DeferredDestructionQueue.Enqueue( [this, ImageToCleanup = ImageToDestroy] () mutable { ImageToCleanup.Cleanup( Memory.GetAllocator(), LogicalDevice.GetHandle() ); },
+                                      AbsoluteFrame );
 }
 
 LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath,
@@ -322,10 +365,29 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
 
     if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), Description, VResult.Shader->SpirV, FResult.Shader->SpirV ).has_value() )
     {
+        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to create graphics pipeline for shaders (Vertex: {}, Fragment: {}).", InVertexPath, InFragmentPath );
         return {};
     }
 
     return PipelineRegistry.Insert( std::move( NewPipeline ) );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyPipeline ( RHI::FPipelineHandle InHandle )
+{
+    if ( not PipelineRegistry.IsValid( InHandle ) )
+    {
+        return;
+    }
+
+    FVulkanPipeline *Pipeline               = PipelineRegistry.Get( InHandle );
+    const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
+
+    /** Capture the resource data to cleanup later */
+    FVulkanPipeline PipelineToDestroy = *Pipeline;
+    PipelineRegistry.Remove( InHandle );
+
+    DeferredDestructionQueue.Enqueue( [this, PipelineToCleanup = PipelineToDestroy] () mutable { PipelineToCleanup.Cleanup( LogicalDevice.GetHandle() ); },
+                                      AbsoluteFrame );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()

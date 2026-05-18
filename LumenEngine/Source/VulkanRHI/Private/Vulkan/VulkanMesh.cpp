@@ -53,12 +53,14 @@ void LumenEngine::VulkanRHI::FVulkanMesh::Initialize ( VmaAllocator InAllocator,
     VertexBuffer           = CreateStagedBuffer( InAllocator, VertexSize, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT );
 
     std::memcpy( VertexBuffer.AllocationInfo.pMappedData, InVertices.data(), VertexSize );
+    vmaFlushAllocation( InAllocator, VertexBuffer.Allocation, 0, VertexSize );
 
     /** Index buffer */
     const USize IndexSize = InIndices.size() * sizeof( UInt32 );
     IndexBuffer           = CreateStagedBuffer( InAllocator, IndexSize, VK_BUFFER_USAGE_INDEX_BUFFER_BIT );
 
     std::memcpy( IndexBuffer.AllocationInfo.pMappedData, InIndices.data(), IndexSize );
+    vmaFlushAllocation( InAllocator, IndexBuffer.Allocation, 0, IndexSize );
 
     /** AABB */
     ComputeAABB( InVertices );

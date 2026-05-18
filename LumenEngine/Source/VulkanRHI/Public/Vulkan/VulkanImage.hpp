@@ -40,11 +40,22 @@ namespace VulkanRHI
         Bool bIsCubemap  = false;
         FString DebugName;
 
+    public:
+
         [[nodiscard]] Maths::FVec2i GetSize2D () const noexcept;
         [[nodiscard]] VkExtent2D GetExtent2D () const noexcept;
         [[nodiscard]] UInt32 GetBindlessID () const noexcept;
         void SetBindlessID ( const UInt32 InID ) noexcept;
         [[nodiscard]] Bool IsInitialized () const noexcept;
+
+    public:
+
+        /**
+         * @brief Cleans up the Vulkan image resources.
+         * @param InAllocator The VMA allocator.
+         * @param InDevice    The Vulkan logical device.
+         */
+        void Cleanup ( VmaAllocator InAllocator, VkDevice InDevice ) noexcept;
 
     private:
 
