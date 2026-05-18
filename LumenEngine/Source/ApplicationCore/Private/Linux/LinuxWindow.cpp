@@ -89,7 +89,7 @@ SDL_WindowID LumenEngine::FLinuxWindow::GetOSWindowID () const
 void LumenEngine::FLinuxWindow::Initialize ( FLinuxApplication *const Application,
                                              const TSharedRef<FGenericWindowDescription> &InDescription,
                                              const TSharedPtr<FGenericWindow> &InParentWindow,
-                                             const bool bShowImmediately )
+                                             const Bool bShowImmediately )
 {
     Description      = InDescription;
     LinuxApplication = Application;
