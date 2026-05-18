@@ -5,8 +5,11 @@
 
 #pragma once
 
-#include "Container/Vector.hpp"
+#include "CoreTypes.hpp"
 #include "Definitions.hpp"
+
+#include "Container/Vector.hpp"
+
 #include "Maths/Vec.hpp"
 
 #include "Vulkan/VulkanCore.hpp"

@@ -47,7 +47,7 @@ VkSurfaceFormatKHR ChooseSwapSurfaceFormat ( const LumenEngine::TVector<VkSurfac
     return AvailableFormats[0];
 }
 
-VkPresentModeKHR ChooseSwapPresentMode ( const LumenEngine::TVector<VkPresentModeKHR> &AvailablePresentModes, Bool bVSync )
+VkPresentModeKHR ChooseSwapPresentMode ( const LumenEngine::TVector<VkPresentModeKHR> &AvailablePresentModes, LumenEngine::Bool bVSync ) noexcept
 {
     if ( bVSync )
     {
