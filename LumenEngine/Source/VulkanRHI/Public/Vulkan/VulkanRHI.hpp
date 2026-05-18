@@ -22,6 +22,7 @@
 #include "Vulkan/VulkanCommandList.hpp"
 #include "Vulkan/VulkanDeferredDestruction.hpp"
 #include "Vulkan/VulkanFrameContext.hpp"
+#include "Vulkan/VulkanImage.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanLogicalDevice.hpp"
 #include "Vulkan/VulkanMemory.hpp"
@@ -91,6 +92,12 @@ namespace VulkanRHI
         void DestroyMesh ( RHI::FMeshHandle InHandle ) override;
 
         /**
+         * @brief Destroys the given texture.
+         * @param InHandle The handle to the texture to destroy.
+         */
+        void DestroyTexture ( RHI::FTextureHandle InHandle ) override;
+
+        /**
          * @brief Creates a new graphics pipeline with the given vertex and fragment shaders.
          * @param InVertexPath The path to the vertex shader file.
          * @param InFragmentPath The path to the fragment shader file.
@@ -140,6 +147,7 @@ namespace VulkanRHI
 
         RHI::TResourceRegistry<FVulkanMesh, RHI::FMeshTag> MeshRegistry;
         RHI::TResourceRegistry<FVulkanPipeline, RHI::FPipelineTag> PipelineRegistry;
+        RHI::TResourceRegistry<FVulkanImage, RHI::FTextureTag> TextureRegistry;
         FVulkanCommandList CommandListImpl;
 
     private:

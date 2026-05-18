@@ -61,6 +61,9 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
     MeshRegistry.ForEach( [this] ( FVulkanMesh &Mesh ) { Mesh.Cleanup( Memory.GetAllocator() ); } );
     MeshRegistry.Clear();
 
+    TextureRegistry.ForEach( [this] ( FVulkanImage &Image ) { Image.Cleanup( Memory.GetAllocator(), LogicalDevice.GetHandle() ); } );
+    TextureRegistry.Clear();
+
     ShutdownGpuDrivenResources();
 
     FrameContext.Shutdown( LogicalDevice.GetHandle() );
@@ -320,6 +323,24 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroyMesh ( RHI::FMeshHandle InHandle
     DeferredDestructionQueue.Enqueue( [this, MeshToCleanup = MeshToDestroy] () mutable { MeshToCleanup.Cleanup( Memory.GetAllocator() ); }, AbsoluteFrame );
 }
 
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyTexture ( RHI::FTextureHandle InHandle )
+{
+    if ( not TextureRegistry.IsValid( InHandle ) )
+    {
+        return;
+    }
+
+    FVulkanImage *Image                     = TextureRegistry.Get( InHandle );
+    const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
+
+    /** Capture the resource data to cleanup later */
+    FVulkanImage ImageToDestroy = *Image;
+    TextureRegistry.Remove( InHandle );
+
+    DeferredDestructionQueue.Enqueue( [this, ImageToCleanup = ImageToDestroy] () mutable { ImageToCleanup.Cleanup( Memory.GetAllocator(), LogicalDevice.GetHandle() ); },
+                                      AbsoluteFrame );
+}
+
 LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath,
                                                                                        const LumenEngine::FString &InFragmentPath )
 {
@@ -348,7 +369,7 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
         return {};
     }
 
-    return PipelineRegistry.Insert( NewPipeline );
+    return PipelineRegistry.Insert( std::move( NewPipeline ) );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::DestroyPipeline ( RHI::FPipelineHandle InHandle )

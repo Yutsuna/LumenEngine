@@ -5,26 +5,27 @@
 
 #include "Vulkan/VulkanDeferredDestruction.hpp"
 
+#include <algorithm>
 #include <utility>
 
-void LumenEngine::VulkanRHI::FDeferredDestructionQueue::Enqueue ( LumenEngine::TFunction<void()> &&InDeletor, const LumenEngine::UInt64 InFrameIndex )
+void LumenEngine::VulkanRHI::FDeferredDestructionQueue::Enqueue ( LumenEngine::TFunction<void()> &&InDeleter, const LumenEngine::UInt64 InFrameIndex )
 {
-    Queue.push_back( { std::move( InDeletor ), InFrameIndex + MaxFramesInFlight } );
+    Queue.push_back( { std::move( InDeleter ), InFrameIndex + MaxFramesInFlight } );
 }
 
 void LumenEngine::VulkanRHI::FDeferredDestructionQueue::Tick ( const LumenEngine::UInt64 InFrameIndex )
 {
-    for ( auto It = Queue.begin(); It != Queue.end(); )
+    /** INFO: Since resources are enqueued with monotonically increasing frame indices, the queue is naturally sorted. */
+    auto It = Queue.begin();
+    while ( It != Queue.end() and InFrameIndex >= It->ReleaseFrameIndex )
     {
-        if ( InFrameIndex >= It->ReleaseFrameIndex )
-        {
-            It->Deletor();
-            It = Queue.erase( It );
-        }
-        else
-        {
-            ++It;
-        }
+        It->Deleter();
+        ++It;
+    }
+
+    if ( It != Queue.begin() )
+    {
+        Queue.erase( Queue.begin(), It );
     }
 }
 
@@ -32,7 +33,7 @@ void LumenEngine::VulkanRHI::FDeferredDestructionQueue::Shutdown ()
 {
     for ( auto &Item : Queue )
     {
-        Item.Deletor();
+        Item.Deleter();
     }
     Queue.clear();
 }
