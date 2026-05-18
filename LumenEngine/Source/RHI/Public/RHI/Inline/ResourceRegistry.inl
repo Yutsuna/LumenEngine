@@ -35,6 +35,29 @@ LumenEngine::RHI::TRenderResourceHandle<Tag> LumenEngine::RHI::TResourceRegistry
     return HandleType( Index, Slot.Generation );
 }
 
+template <typename ResourceType, typename Tag>
+LumenEngine::RHI::TRenderResourceHandle<Tag> LumenEngine::RHI::TResourceRegistry<ResourceType, Tag>::Insert ( const ResourceType &InResource )
+{
+    UInt16 Index = 0;
+
+    if ( not FreeIndices.empty() )
+    {
+        Index = FreeIndices.back();
+        FreeIndices.pop_back();
+    }
+    else
+    {
+        Index = static_cast<UInt16>( Slots.size() );
+        Slots.emplace_back();
+    }
+
+    FSlot &Slot    = Slots[Index];
+    Slot.Data      = InResource;
+    Slot.bIsActive = true;
+
+    return HandleType( Index, Slot.Generation );
+}
+
 template <typename ResourceType, typename Tag> void LumenEngine::RHI::TResourceRegistry<ResourceType, Tag>::Remove ( HandleType InHandle )
 {
     if ( not IsValid( InHandle ) )
