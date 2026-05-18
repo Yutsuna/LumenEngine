@@ -105,11 +105,11 @@ public:
     /** Accessors */
     Type &operator*() const;
     Type *operator->() const;
-    Type *Get () const;
+    [[nodiscard]] Type *Get () const;
 
     /** Deleter Accessors */
-    Deleter &GetDeleter ();
-    const Deleter &GetDeleter () const;
+    [[nodiscard]] Deleter &GetDeleter ();
+    [[nodiscard]] const Deleter &GetDeleter () const;
 
     /** Validity checks */
     [[nodiscard]] Bool IsValid () const;
