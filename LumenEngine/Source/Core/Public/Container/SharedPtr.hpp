@@ -153,7 +153,7 @@ public:
     /** Accessors */
     Type &operator*() const;
     Type *operator->() const;
-    Type *Get () const;
+    [[nodiscard]] Type *Get () const;
 
     /** Returns the current number of shared references. */
     [[nodiscard]] Int32 GetSharedReferenceCount () const;
@@ -239,7 +239,7 @@ public:
     /** Accessors */
     Type &operator*() const;
     Type *operator->() const;
-    Type *Get () const;
+    [[nodiscard]] Type *Get () const;
 
     /** Validity checks */
     [[nodiscard]] Bool IsValid () const;
