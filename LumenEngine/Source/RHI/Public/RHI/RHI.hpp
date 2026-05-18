@@ -44,6 +44,7 @@ namespace RHI
 
         virtual void DestroyPipeline ( FPipelineHandle InHandle ) = 0;
         virtual void DestroyMesh ( FMeshHandle InHandle )         = 0;
+        virtual void DestroyTexture ( FTextureHandle InHandle )   = 0;
 
     public:
 

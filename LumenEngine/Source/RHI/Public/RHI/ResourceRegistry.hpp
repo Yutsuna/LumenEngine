@@ -52,6 +52,9 @@ namespace RHI
 
     private:
 
+        /** @brief Internal helper to find or create a slot index. */
+        [[nodiscard]] UInt16 AllocateSlot ();
+
         struct FSlot
         {
             ResourceType Data;

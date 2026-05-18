@@ -12,8 +12,7 @@
 
 #include <utility>
 
-template <typename ResourceType, typename Tag>
-LumenEngine::RHI::TRenderResourceHandle<Tag> LumenEngine::RHI::TResourceRegistry<ResourceType, Tag>::Insert ( ResourceType &&InResource )
+template <typename ResourceType, typename Tag> LumenEngine::UInt16 LumenEngine::RHI::TResourceRegistry<ResourceType, Tag>::AllocateSlot ()
 {
     UInt16 Index = 0;
 
@@ -28,7 +27,15 @@ LumenEngine::RHI::TRenderResourceHandle<Tag> LumenEngine::RHI::TResourceRegistry
         Slots.emplace_back();
     }
 
-    FSlot &Slot    = Slots[Index];
+    return Index;
+}
+
+template <typename ResourceType, typename Tag>
+LumenEngine::RHI::TRenderResourceHandle<Tag> LumenEngine::RHI::TResourceRegistry<ResourceType, Tag>::Insert ( ResourceType &&InResource )
+{
+    const UInt16 Index = AllocateSlot();
+    FSlot &Slot        = Slots[Index];
+
     Slot.Data      = std::move( InResource );
     Slot.bIsActive = true;
 
@@ -38,20 +45,9 @@ LumenEngine::RHI::TRenderResourceHandle<Tag> LumenEngine::RHI::TResourceRegistry
 template <typename ResourceType, typename Tag>
 LumenEngine::RHI::TRenderResourceHandle<Tag> LumenEngine::RHI::TResourceRegistry<ResourceType, Tag>::Insert ( const ResourceType &InResource )
 {
-    UInt16 Index = 0;
+    const UInt16 Index = AllocateSlot();
+    FSlot &Slot        = Slots[Index];
 
-    if ( not FreeIndices.empty() )
-    {
-        Index = FreeIndices.back();
-        FreeIndices.pop_back();
-    }
-    else
-    {
-        Index = static_cast<UInt16>( Slots.size() );
-        Slots.emplace_back();
-    }
-
-    FSlot &Slot    = Slots[Index];
     Slot.Data      = InResource;
     Slot.bIsActive = true;
 
