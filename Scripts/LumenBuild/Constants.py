@@ -40,10 +40,11 @@ SANITIZER_ALIASES: dict[str, str] = {
 }
 
 # ---------------------------------------------------------------------------
-# Formatting
+# Clang utilities
 # ---------------------------------------------------------------------------
 
-CLANG_FORMAT_EXTENSIONS = ("*.cpp", "*.hpp", "*.inl", "*.frag", "*.vert", "*.comp")
+CLANG_EXTENSIONS = ("*.cpp", "*.hpp", "*.inl", "*.frag", "*.vert", "*.comp")
+TIDY_CACHE_FILE = BUILD_DIR / ".lumen_tidy_cache.json"
 
 # ---------------------------------------------------------------------------
 # Colours
