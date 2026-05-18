@@ -99,7 +99,7 @@ LumenEngine::Filesystem::FDirectoryIterator LumenEngine::Filesystem::FDirectoryI
     return *this;
 }
 
-LumenEngine::Filesystem::FDirectoryIterator LumenEngine::Filesystem::FDirectoryIterator::End () const noexcept
+LumenEngine::Filesystem::FDirectoryIterator LumenEngine::Filesystem::FDirectoryIterator::End () noexcept
 {
     FDirectoryIterator EndIterator;
 

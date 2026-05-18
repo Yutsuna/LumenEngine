@@ -53,7 +53,7 @@ namespace Filesystem
         [[nodiscard]] Bool operator!=( const FDirectoryIterator &Other ) const noexcept;
 
         [[nodiscard]] FDirectoryIterator Begin () const noexcept;
-        [[nodiscard]] FDirectoryIterator End () const noexcept;
+        [[nodiscard]] static FDirectoryIterator End () noexcept;
 
     private:
 
