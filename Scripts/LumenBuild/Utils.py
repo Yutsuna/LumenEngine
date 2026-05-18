@@ -117,12 +117,11 @@ def RunParallel(
     results: list[subprocess.CompletedProcess] = []
 
     with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as pool:
-        futures = {
-            pool.submit(Run, cmd, cwd=cwd, check=False, capture=True): cmd
+        future_list = [
+            pool.submit(Run, cmd, cwd=cwd, check=False, capture=True)
             for cmd in commands
-        }
-        for fut in concurrent.futures.as_completed(futures):
-            cmd = futures[fut]
+        ]
+        for cmd, fut in zip(commands, future_list):
             try:
                 res = fut.result()
                 results.append(res)
