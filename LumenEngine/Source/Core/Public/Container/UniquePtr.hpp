@@ -7,6 +7,7 @@
 
 #include "Concepts/ConvertibleTo.hpp"
 #include "CoreTypes.hpp"
+#include "NonCopyable.hpp"
 
 #include <cassert>
 #include <type_traits>
@@ -27,7 +28,7 @@ template <typename Type> struct TDefaultDelete
     /** Converting Constructor: Allows upcasting deleters from derived to base. */
     template <typename OtherType>
         requires Concepts::CConvertibleTo<OtherType *, Type *>
-    TDefaultDelete( const TDefaultDelete<OtherType> & ) noexcept
+    TDefaultDelete( const TDefaultDelete<OtherType> & /* DefaultDeleter */ ) noexcept
     {
         /* Empty */
     }
@@ -35,7 +36,7 @@ template <typename Type> struct TDefaultDelete
     /** Deletes the provided pointer. */
     void operator()( Type *Ptr ) const
     {
-        static_assert( sizeof( Type ) > 0, "Cannot delete an incomplete type." );
+        static_assert( sizeof( Type ), "Cannot delete an incomplete type." );
         delete Ptr;
     }
 };
@@ -52,7 +53,7 @@ template <typename Type> struct TDefaultDelete<Type[]>
     /** Deletes the provided array pointer. */
     void operator()( Type *Ptr ) const
     {
-        static_assert( sizeof( Type ) > 0, "Cannot delete an incomplete type." );
+        static_assert( sizeof( Type ), "Cannot delete an incomplete type." );
         delete[] Ptr;
     }
 };
@@ -63,7 +64,7 @@ template <typename Type> struct TDefaultDelete<Type[]>
  * @param Type The type of the managed object.
  * @param Deleter The functor type used to destroy the managed object.
  */
-template <typename Type, typename Deleter = TDefaultDelete<Type>> class TUniquePtr
+template <typename Type, typename Deleter = TDefaultDelete<Type>> class TUniquePtr : public FNonCopyable
 {
 public:
 
@@ -78,10 +79,6 @@ public:
 
     /** Explicit Constructor from a raw pointer and a custom deleter */
     TUniquePtr ( Type *InObject, Deleter InDeleter );
-
-    /** Copying is explicitly disabled to enforce unique ownership */
-    TUniquePtr ( const TUniquePtr & )           = delete;
-    TUniquePtr &operator=( const TUniquePtr & ) = delete;
 
     /** Move Constructor */
     TUniquePtr ( TUniquePtr &&Other ) noexcept;
@@ -175,11 +172,11 @@ public:
 
     /** Accessors */
     Type &operator[]( USize Index ) const;
-    Type *Get () const;
+    [[nodiscard]] Type *Get () const;
 
     /** Deleter Accessors */
     Deleter &GetDeleter ();
-    const Deleter &GetDeleter () const;
+    [[nodiscard]] const Deleter &GetDeleter () const;
 
     /** Validity checks */
     [[nodiscard]] Bool IsValid () const;
@@ -209,7 +206,7 @@ private:
  * @brief Creates a new TUniquePtr instance for a single object.
  */
 template <typename ObjectType, typename... Arguments>
-    requires( !std::is_array_v<ObjectType> )
+    requires( not std::is_array_v<ObjectType> )
 static inline TUniquePtr<ObjectType> MakeUnique ( Arguments &&...InArgs );
 
 /**

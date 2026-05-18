@@ -6,6 +6,7 @@
 #pragma once
 
 #include "Container/UniquePtr.hpp"
+#include <utility>
 
 namespace LumenEngine
 {
@@ -32,18 +33,18 @@ TUniquePtr<Type, Deleter>::TUniquePtr( Type *InObject, Deleter InDeleter ) : Obj
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type, Deleter>::TUniquePtr( TUniquePtr &&Other ) noexcept : Object( Other.Object ), DeleterInstance( std::move( Other.DeleterInstance ) )
+TUniquePtr<Type, Deleter>::TUniquePtr( TUniquePtr &&Other ) noexcept : Object( Other.Release() ), DeleterInstance( std::move( Other ).GetDeleter() )
 {
-    Other.Object = nullptr;
+    /* Empty */
 }
 
 template <typename Type, typename Deleter>
 template <typename OtherType, typename OtherDeleter>
     requires Concepts::CConvertibleTo<OtherType *, Type *>
 TUniquePtr<Type, Deleter>::TUniquePtr( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept
-    : Object( Other.Object ), DeleterInstance( std::move( Other.DeleterInstance ) )
+    : Object( Other.Release() ), DeleterInstance( std::move( Other ).GetDeleter() )
 {
-    Other.Object = nullptr;
+    /* Empty */
 }
 
 template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::~TUniquePtr()
@@ -56,7 +57,7 @@ template <typename Type, typename Deleter> TUniquePtr<Type, Deleter> &TUniquePtr
     if ( this != &Other )
     {
         Reset( Other.Release() );
-        DeleterInstance = std::move( Other.DeleterInstance );
+        DeleterInstance = std::move( Other ).GetDeleter();
     }
     return *this;
 }
@@ -67,7 +68,7 @@ template <typename OtherType, typename OtherDeleter>
 TUniquePtr<Type, Deleter> &TUniquePtr<Type, Deleter>::operator=( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept
 {
     Reset( Other.Release() );
-    DeleterInstance = std::move( Other.DeleterInstance );
+    DeleterInstance = std::move( Other ).GetDeleter();
     return *this;
 }
 
@@ -116,9 +117,7 @@ template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::operator B
 
 template <typename Type, typename Deleter> Type *TUniquePtr<Type, Deleter>::Release ()
 {
-    Type *TempObject = Object;
-    Object           = nullptr;
-    return TempObject;
+    return std::exchange<Type *>( Object, nullptr );
 }
 
 template <typename Type, typename Deleter> void TUniquePtr<Type, Deleter>::Reset ( Type *InObject )
@@ -152,9 +151,9 @@ template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::TUniqueP
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type[], Deleter>::TUniquePtr( TUniquePtr &&Other ) noexcept : Object( Other.Object ), DeleterInstance( std::move( Other.DeleterInstance ) )
+TUniquePtr<Type[], Deleter>::TUniquePtr( TUniquePtr &&Other ) noexcept : Object( Other.Release() ), DeleterInstance( std::move( Other ).GetDeleter() )
 {
-    Other.Object = nullptr;
+    /* Empty */
 }
 
 template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::~TUniquePtr()
@@ -167,7 +166,7 @@ template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter> &TUniqueP
     if ( this != &Other )
     {
         Reset( Other.Release() );
-        DeleterInstance = std::move( Other.DeleterInstance );
+        DeleterInstance = std::move( Other ).GetDeleter();
     }
     return *this;
 }
@@ -211,9 +210,7 @@ template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::operator
 
 template <typename Type, typename Deleter> Type *TUniquePtr<Type[], Deleter>::Release ()
 {
-    Type *TempObject = Object;
-    Object           = nullptr;
-    return TempObject;
+    return std::exchange<Type *>( Object, nullptr );
 }
 
 template <typename Type, typename Deleter> void TUniquePtr<Type[], Deleter>::Reset ( Type *InObject )
@@ -232,7 +229,8 @@ template <typename Type, typename Deleter> void TUniquePtr<Type[], Deleter>::Res
  */
 
 template <typename ObjectType, typename... Arguments>
-    requires( !std::is_array_v<ObjectType> )
+    requires( not std::is_array_v<ObjectType> )
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static inline TUniquePtr<ObjectType> MakeUnique ( Arguments &&...InArgs )
 {
     return TUniquePtr<ObjectType>( new ObjectType( std::forward<Arguments>( InArgs )... ) );
@@ -240,6 +238,7 @@ static inline TUniquePtr<ObjectType> MakeUnique ( Arguments &&...InArgs )
 
 template <typename ObjectType>
     requires std::is_array_v<ObjectType>
+// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 static inline TUniquePtr<ObjectType> MakeUnique ( USize Size )
 {
     using ElementType = std::remove_extent_t<ObjectType>;
