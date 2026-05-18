@@ -32,3 +32,19 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanImage::IsInitialized () const n
 {
     return BindlessID != NullBindlessID;
 }
+
+void LumenEngine::VulkanRHI::FVulkanImage::Cleanup ( VmaAllocator InAllocator, VkDevice InDevice ) noexcept
+{
+    if ( ImageView != VK_NULL_HANDLE )
+    {
+        vkDestroyImageView( InDevice, ImageView, nullptr );
+        ImageView = VK_NULL_HANDLE;
+    }
+
+    if ( Image != VK_NULL_HANDLE )
+    {
+        vmaDestroyImage( InAllocator, Image, Allocation );
+        Image      = VK_NULL_HANDLE;
+        Allocation = VK_NULL_HANDLE;
+    }
+}
