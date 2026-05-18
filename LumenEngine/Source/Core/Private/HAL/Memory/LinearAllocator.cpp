@@ -65,11 +65,10 @@ void *LumenEngine::HAL::FLinearAllocator::Allocate ( USize InSize, USize InAlign
         return nullptr;
     }
 
-    void *Pointer = Buffer + AlignedOffset;
     Offset        = AlignedOffset + InSize;
     HighWatermark = std::max( Offset, HighWatermark );
 
-    return Pointer;
+    return Buffer + AlignedOffset;
 }
 
 void LumenEngine::HAL::FLinearAllocator::Reset () noexcept
