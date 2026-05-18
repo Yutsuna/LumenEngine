@@ -20,6 +20,7 @@
 #include "Vulkan/GPUDriven/GPUSceneBuffer.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanCommandList.hpp"
+#include "Vulkan/VulkanDeferredDestruction.hpp"
 #include "Vulkan/VulkanFrameContext.hpp"
 #include "Vulkan/VulkanInstance.hpp"
 #include "Vulkan/VulkanLogicalDevice.hpp"
@@ -84,12 +85,24 @@ namespace VulkanRHI
         [[nodiscard]] RHI::FMeshHandle CreateMesh ( const TVector<Maths::FVertex> &InVertices, const TVector<UInt32> &InIndices ) override;
 
         /**
+         * @brief Destroys the given mesh.
+         * @param InHandle The handle to the mesh to destroy.
+         */
+        void DestroyMesh ( RHI::FMeshHandle InHandle ) override;
+
+        /**
          * @brief Creates a new graphics pipeline with the given vertex and fragment shaders.
          * @param InVertexPath The path to the vertex shader file.
          * @param InFragmentPath The path to the fragment shader file.
          * @return A strongly typed handle to the created pipeline.
          */
         [[nodiscard]] RHI::FPipelineHandle CreatePipeline ( const FString &InVertexPath, const FString &InFragmentPath ) override;
+
+        /**
+         * @brief Destroys the given pipeline.
+         * @param InHandle The handle to the pipeline to destroy.
+         */
+        void DestroyPipeline ( RHI::FPipelineHandle InHandle ) override;
 
     public:
 
@@ -137,6 +150,7 @@ namespace VulkanRHI
         FVulkanSwapChain SwapChain;
         FVulkanMemory Memory;
         FVulkanFrameContext FrameContext;
+        FDeferredDestructionQueue DeferredDestructionQueue;
 
         FGPUSceneBuffer SceneBuffer;
         FGPUIndirectBuffer IndirectBuffer;
