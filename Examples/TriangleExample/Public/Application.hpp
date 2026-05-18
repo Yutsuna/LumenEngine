@@ -33,6 +33,7 @@ private:
 
     void CreateResources ();
     void CreateActors ();
+    void HotReloadAssets ( const FString &InAssetPath, const Compiler::EAssetType::Type InAssetType );
 
 private:
 

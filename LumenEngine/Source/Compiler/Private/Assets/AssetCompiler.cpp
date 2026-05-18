@@ -8,6 +8,7 @@
 #include "Assets/HotReload.hpp"
 
 #include "Filesystem/Directory.hpp"
+#include "Filesystem/MemoryMappedFile.hpp"
 #include "Filesystem/Path.hpp"
 
 #include "Graphics/Renderer.hpp"
@@ -65,8 +66,6 @@ void LumenEngine::Compiler::FAssetCompiler::SetOnAssetReloadedCallback ( FOnAsse
 {
     OnAssetReloaded = std::move( InCallback );
 }
-
-#include "Filesystem/MemoryMappedFile.hpp"
 
 LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMesh> LumenEngine::Compiler::FAssetCompiler::LoadMesh ( const FString &InName ) noexcept
 {
