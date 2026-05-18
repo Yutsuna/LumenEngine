@@ -49,9 +49,10 @@ def _PrintTidyFailure(res: subprocess.CompletedProcess) -> None:
         "fix": "Apply suggested fixes (inplace)",
         "checks": "Override checks (e.g. --checks='bugprone-*')",
         "force": "Ignore cache and re-check all files",
+        "module": "Only check files in the specified module (e.g. --module=Core)",
     },
 )
-def Tidy(ctx, fix: bool = False, checks: str = "", force: bool = False) -> None:
+def Tidy(ctx, fix: bool = False, checks: str = "", force: bool = False, module: str = "") -> None:
     clang_tidy = RequireTool("clang-tidy")
 
     if not TIDY_COMPILE_DB.exists():
@@ -61,7 +62,17 @@ def Tidy(ctx, fix: bool = False, checks: str = "", force: bool = False) -> None:
         LogError("Failed to generate compile_commands.json")
         sys.exit(ERROR_CODE)
 
-    all_files: list[str] = GetAllFiles(TIDY_SEARCH_ROOTS, CLANG_EXTENSIONS)
+    if module:
+        module_path = ROOT_DIR / "LumenEngine" / "Source" / module
+        if not module_path.exists():
+            LogError(f"Module '{module}' not found at expected path: {module_path}")
+            sys.exit(ERROR_CODE)
+        search_roots = [module_path]
+        Log(f"Limiting tidy checks to module '{module}'")
+    else:
+        search_roots = TIDY_SEARCH_ROOTS
+
+    all_files: list[str] = GetAllFiles(search_roots, CLANG_EXTENSIONS)
 
     if not all_files:
         LogWarn("No C/C++ source files found to tidy.")
