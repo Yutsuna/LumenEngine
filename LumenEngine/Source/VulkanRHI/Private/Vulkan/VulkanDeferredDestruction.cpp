@@ -5,7 +5,6 @@
 
 #include "Vulkan/VulkanDeferredDestruction.hpp"
 
-#include <algorithm>
 #include <utility>
 
 void LumenEngine::VulkanRHI::FDeferredDestructionQueue::Enqueue ( LumenEngine::TFunction<void()> &&InDeleter, const LumenEngine::UInt64 InFrameIndex )
@@ -17,6 +16,7 @@ void LumenEngine::VulkanRHI::FDeferredDestructionQueue::Tick ( const LumenEngine
 {
     /** INFO: Since resources are enqueued with monotonically increasing frame indices, the queue is naturally sorted. */
     auto It = Queue.begin();
+
     while ( It != Queue.end() and InFrameIndex >= It->ReleaseFrameIndex )
     {
         It->Deleter();
@@ -31,7 +31,7 @@ void LumenEngine::VulkanRHI::FDeferredDestructionQueue::Tick ( const LumenEngine
 
 void LumenEngine::VulkanRHI::FDeferredDestructionQueue::Shutdown ()
 {
-    for ( auto &Item : Queue )
+    for ( FPendingDestruction &Item : Queue )
     {
         Item.Deleter();
     }
