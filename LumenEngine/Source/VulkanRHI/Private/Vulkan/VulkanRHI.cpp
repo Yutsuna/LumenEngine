@@ -53,6 +53,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
 
     LogicalDevice.WaitIdle();
 
+    DeferredDestructionQueue.Shutdown();
+
     PipelineRegistry.ForEach( [this] ( FVulkanPipeline &Pipeline ) { Pipeline.Cleanup( LogicalDevice.GetHandle() ); } );
     PipelineRegistry.Clear();
 
@@ -166,7 +168,10 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ( const RHI::FG
         return false;
     }
 
-    const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
+    const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
+    DeferredDestructionQueue.Tick( AbsoluteFrame );
+
+    const LumenEngine::UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
 
     Memory.UpdateGlobalUniformData( CurrentFrame, InUniforms );
 
@@ -298,6 +303,23 @@ LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( c
     return MeshRegistry.Insert( std::move( NewMesh ) );
 }
 
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyMesh ( RHI::FMeshHandle InHandle )
+{
+    if ( not MeshRegistry.IsValid( InHandle ) )
+    {
+        return;
+    }
+
+    FVulkanMesh *Mesh                       = MeshRegistry.Get( InHandle );
+    const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
+
+    /** Capture the resource data to cleanup later */
+    FVulkanMesh MeshToDestroy = *Mesh;
+    MeshRegistry.Remove( InHandle );
+
+    DeferredDestructionQueue.Enqueue( [this, MeshToCleanup = MeshToDestroy] () mutable { MeshToCleanup.Cleanup( Memory.GetAllocator() ); }, AbsoluteFrame );
+}
+
 LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath,
                                                                                        const LumenEngine::FString &InFragmentPath )
 {
@@ -325,7 +347,25 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
         return {};
     }
 
-    return PipelineRegistry.Insert( std::move( NewPipeline ) );
+    return PipelineRegistry.Insert( NewPipeline );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyPipeline ( RHI::FPipelineHandle InHandle )
+{
+    if ( not PipelineRegistry.IsValid( InHandle ) )
+    {
+        return;
+    }
+
+    FVulkanPipeline *Pipeline               = PipelineRegistry.Get( InHandle );
+    const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
+
+    /** Capture the resource data to cleanup later */
+    FVulkanPipeline PipelineToDestroy = *Pipeline;
+    PipelineRegistry.Remove( InHandle );
+
+    DeferredDestructionQueue.Enqueue( [this, PipelineToCleanup = PipelineToDestroy] () mutable { PipelineToCleanup.Cleanup( LogicalDevice.GetHandle() ); },
+                                      AbsoluteFrame );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
