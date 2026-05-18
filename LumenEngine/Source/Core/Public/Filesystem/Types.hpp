@@ -38,6 +38,7 @@ namespace Filesystem
         ReadWrite  = Read | Write | Binary,
         AppendText = Write | Append,
     };
+    // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
     LUMEN_ENUM_FLAGS( EFileMode );
 
     /**
@@ -66,6 +67,7 @@ namespace Filesystem
         SymLink   = 1 << 5,
         Temporary = 1 << 6,
     };
+    // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
     LUMEN_ENUM_FLAGS( EFileAttributes );
 
     /**
@@ -81,6 +83,7 @@ namespace Filesystem
         Renamed  = 1 << 3,
         All      = Created | Deleted | Modified | Renamed,
     };
+    // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
     LUMEN_ENUM_FLAGS( EWatchEvent );
 
     /**
@@ -98,6 +101,7 @@ namespace Filesystem
         SkipSymlinks       = 1 << 5,
         PreserveAttributes = 1 << 6,
     };
+    // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange)
     LUMEN_ENUM_FLAGS( ECopyOptions );
 
     /**
