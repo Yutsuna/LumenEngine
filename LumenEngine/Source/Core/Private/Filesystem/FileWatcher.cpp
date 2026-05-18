@@ -141,7 +141,7 @@ LumenEngine::Filesystem::FFileWatcher::~FFileWatcher () noexcept
 LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type>
 LumenEngine::Filesystem::FFileWatcher::Watch ( const FPath &InPath, EWatchEvent InEvents, const FWatchCallback &InCallback )
 {
-    TUniqueLock<FMutex> Lock( WatcherMutex );
+    const TUniqueLock<FMutex> Lock( WatcherMutex );
 
     if ( WorkerThread.joinable() )
     {
@@ -165,7 +165,7 @@ LumenEngine::Filesystem::FFileWatcher::Watch ( const FPath &InPath, EWatchEvent 
 
 void LumenEngine::Filesystem::FFileWatcher::Stop () noexcept
 {
-    TUniqueLock<FMutex> Lock( WatcherMutex );
+    const TUniqueLock<FMutex> Lock( WatcherMutex );
 
     if ( WorkerThread.joinable() )
     {
@@ -185,7 +185,7 @@ void LumenEngine::Filesystem::FFileWatcher::PollLoop ( std::stop_token &InToken 
     while ( not InToken.stop_requested() )
     {
         HAL::FPlatformTime::Sleep( 0.25 );
-        TUniqueLock<FMutex> Lock( WatcherMutex );
+        const TUniqueLock<FMutex> Lock( WatcherMutex );
 
         const TSnapshot Current = BuildSnapshot( TargetPath );
         const FDiff Diff        = ComputeDiff( LastKnownModifiedTimes, Current );
