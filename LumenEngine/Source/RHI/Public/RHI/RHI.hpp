@@ -42,10 +42,15 @@ namespace RHI
         virtual Bool BeginFrame ( const FGlobalUniformData &InUniforms ) = 0;
         virtual void EndFrame ()                                         = 0;
 
+        virtual void DestroyPipeline ( FPipelineHandle InHandle ) = 0;
+        virtual void DestroyMesh ( FMeshHandle InHandle )         = 0;
+
     public:
 
         /** @brief Returns the command list for the current frame */
         [[nodiscard]] virtual IRHICommandList &GetCommandList () noexcept = 0;
+
+    public:
 
         virtual FPipelineHandle CreatePipeline ( const FString &InVertexPath, const FString &InFragmentPath )          = 0;
         virtual FMeshHandle CreateMesh ( const TVector<Maths::FVertex> &InVertices, const TVector<UInt32> &InIndices ) = 0;
