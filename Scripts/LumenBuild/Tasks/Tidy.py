@@ -13,6 +13,7 @@ from LumenBuild.Constants import (
     ERROR_CODE,
     ROOT_DIR,
     TIDY_CACHE_FILE,
+    TIDY_HEADER_FILTER,
 )
 from LumenBuild.Utils import (
     Log,
@@ -124,7 +125,13 @@ def Tidy(ctx, fix: bool = False, checks: str = "", force: bool = False) -> None:
         prefix="TIDY ",
     )
 
-    base_cmd = [clang_tidy, "-p", str(ROOT_DIR)]
+    base_cmd = [
+        clang_tidy,
+        "-p",
+        str(ROOT_DIR),
+        f"--header-filter={TIDY_HEADER_FILTER}",
+        "--extra-arg=-Wno-unknown-warning-option",
+    ]
     if not fix:
         base_cmd.append("--quiet")
     else:
