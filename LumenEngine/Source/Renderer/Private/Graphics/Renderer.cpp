@@ -9,6 +9,13 @@
 #include "Logging/Logger.hpp"
 #include "RHI/RHI.hpp"
 
+#include "ShaderCompiler/ShaderCompiler.hpp"
+#include "ShaderCompiler/ShaderCompilerRequest.hpp"
+
+#ifndef LUMEN_GPU_CULL_SHADER_PATH
+    #define LUMEN_GPU_CULL_SHADER_PATH "Assets/Shaders/GpuCulling.comp"
+#endif
+
 namespace
 {
 
@@ -44,6 +51,25 @@ void LumenEngine::Renderer::FRenderer::Initialize ( TUniquePtr<RHI::IRHI> InRHI,
     }
 
     RHI->Initialize( InWindow );
+
+    /** Initialize Shader Compiler */
+    Compiler::FShaderCompilerConfig CompilerConfig;
+    ShaderCompiler = MakeUnique<Compiler::FShaderCompiler>( std::move( CompilerConfig ) );
+
+    /** Compile GPU Culling Shader */
+    Compiler::FShaderCompileRequestBuilder RequestBuilder;
+    RequestBuilder.Path( LUMEN_GPU_CULL_SHADER_PATH ).Compute().Macro( "MAX_INSTANCES", std::format( "{}U", RHI::MaxInstances ) );
+
+    const Compiler::FShaderCompileResult CompileResult = ShaderCompiler->CompileShader( RequestBuilder.Build() );
+
+    if ( CompileResult.IsSuccess() )
+    {
+        RHI->InitializeGpuDrivenResources( CompileResult.Shader->SpirV );
+    }
+    else
+    {
+        LUMEN_LOG_FATAL( LogRenderer, "Critical Failure: GPU Culling shader compilation failed!\nLog Output:\n{}", CompileResult.ErrorLog.c_str() );
+    }
 
     TUniquePtr<FBasePassFeature> BasePass = MakeUnique<FBasePassFeature>();
     BasePass->Initialize( RHI.Get() );
@@ -121,18 +147,37 @@ LumenEngine::RHI::FMeshHandle LumenEngine::Renderer::FRenderer::CreateMesh ( con
 
 LumenEngine::RHI::FPipelineHandle LumenEngine::Renderer::FRenderer::CreatePipeline ( const FString &InVertexPath, const FString &InFragmentPath )
 {
-    if ( RHI )
+    if ( not RHI or not ShaderCompiler )
     {
-        return RHI->CreatePipeline( InVertexPath, InFragmentPath );
+        return {};
     }
-    return {};
+
+    Compiler::FShaderCompileResult VResult = ShaderCompiler->CompileShader( Compiler::FShaderCompileRequestBuilder().Path( InVertexPath ).Vertex().Build() );
+    if ( not VResult.IsSuccess() )
+    {
+        LUMEN_LOG_ERROR( LogRenderer, "Failed to compile vertex shader (Path: {}, Log: {}).", InVertexPath, VResult.ErrorLog.c_str() );
+        return {};
+    }
+
+    Compiler::FShaderCompileResult FResult = ShaderCompiler->CompileShader( Compiler::FShaderCompileRequestBuilder().Path( InFragmentPath ).Fragment().Build() );
+    if ( not FResult.IsSuccess() )
+    {
+        LUMEN_LOG_ERROR( LogRenderer, "Failed to compile fragment shader (Path: {}, Log: {}).", InFragmentPath, FResult.ErrorLog.c_str() );
+        return {};
+    }
+
+    RHI::FGraphicsPipelineDesc Description;
+    Description.VertexShader   = std::move( VResult.Shader->SpirV );
+    Description.FragmentShader = std::move( FResult.Shader->SpirV );
+
+    return RHI->CreatePipeline( Description );
 }
 
 LumenEngine::RHI::FPipelineHandle LumenEngine::Renderer::FRenderer::CreateMaterial ( const TSharedPtr<FRenderShader> &InShader )
 {
     if ( RHI and InShader )
     {
-        return RHI->CreatePipeline( InShader->VertexPath, InShader->FragmentPath );
+        return CreatePipeline( InShader->VertexPath, InShader->FragmentPath );
     }
     return {};
 }
