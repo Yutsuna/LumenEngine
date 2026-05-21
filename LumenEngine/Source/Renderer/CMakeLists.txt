@@ -10,7 +10,7 @@ LumenModule(
 ########################################################
 
 target_compile_definitions(
-    VulkanRHI
+    Renderer
     PRIVATE
         LUMEN_GPU_CULL_SHADER_PATH="${CMAKE_SOURCE_DIR}/LumenEngine/Shaders/GpuCulling.comp"
 )

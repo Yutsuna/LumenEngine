@@ -13,7 +13,7 @@
 #include "ShaderCompiler/ShaderCompilerRequest.hpp"
 
 #ifndef LUMEN_GPU_CULL_SHADER_PATH
-    #define LUMEN_GPU_CULL_SHADER_PATH "Assets/Shaders/GpuCulling.comp"
+    #define LUMEN_GPU_CULL_SHADER_PATH "LumenEngine/Shaders/GpuCulling.comp"
 #endif
 
 namespace
