@@ -32,7 +32,6 @@ LumenModule(
     DEPS            Core
                     MathCore
                     RHI
-                    Renderer
     LINUX_LIBS      glslang::glslang
                     glslang::glslang-default-resource-limits
                     glslang::SPIRV
