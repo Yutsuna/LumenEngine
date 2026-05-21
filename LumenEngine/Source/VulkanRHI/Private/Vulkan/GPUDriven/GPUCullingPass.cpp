@@ -12,12 +12,10 @@
 
 #include "Logging/Logger.hpp"
 
-using namespace LumenEngine::Compiler;
-
 namespace
 {
 
-[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const FSpirVBlob &InSpirV )
+[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const LumenEngine::RHI::FShaderByteCode &InSpirV )
 {
     VkShaderModuleCreateInfo ShaderCI{ .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                                        .pNext    = nullptr,
@@ -64,8 +62,11 @@ void InsertFillToComputeBarrier ( VkCommandBuffer InCmd, VkBuffer InCountBuffer 
 
 } // namespace
 
-LumenEngine::Bool LumenEngine::VulkanRHI::FGPUCullingPass::Initialize (
-    VkDevice InDevice, VkDescriptorSetLayout InGlobalSetLayout, VkDescriptorSetLayout InSceneSetLayout, VkDescriptorSetLayout InCullSetLayout, const FSpirVBlob &InSpirV )
+LumenEngine::Bool LumenEngine::VulkanRHI::FGPUCullingPass::Initialize ( VkDevice InDevice,
+                                                                        VkDescriptorSetLayout InGlobalSetLayout,
+                                                                        VkDescriptorSetLayout InSceneSetLayout,
+                                                                        VkDescriptorSetLayout InCullSetLayout,
+                                                                        const RHI::FShaderByteCode &InSpirV )
 {
     if ( InSpirV.empty() )
     {

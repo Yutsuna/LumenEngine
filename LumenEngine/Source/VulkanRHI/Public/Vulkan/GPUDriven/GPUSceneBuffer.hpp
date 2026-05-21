@@ -42,7 +42,7 @@ namespace VulkanRHI
     public:
 
         /** Maximum instances supported without reallocation. */
-        static constexpr USize MaxInstances = 65536ULL;
+        static constexpr USize MaxInstances = RHI::MaxInstances;
 
         FGPUSceneBuffer () noexcept  = default;
         ~FGPUSceneBuffer () noexcept = default;

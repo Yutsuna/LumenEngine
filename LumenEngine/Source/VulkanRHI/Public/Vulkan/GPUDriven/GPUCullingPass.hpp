@@ -10,7 +10,7 @@
 
 #include "Vulkan/VulkanCore.hpp"
 
-#include "ShaderCompiler/ShaderCompilerTypes.hpp"
+#include "RHI/RHITypes.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -55,7 +55,7 @@ namespace VulkanRHI
                           VkDescriptorSetLayout InGlobalSetLayout,
                           VkDescriptorSetLayout InSceneSetLayout,
                           VkDescriptorSetLayout InCullSetLayout,
-                          const Compiler::FSpirVBlob &InSpirV );
+                          const RHI::FShaderByteCode &InSpirV );
 
         /**
          * @brief Destroys the compute pipeline and layout.

@@ -16,7 +16,7 @@
 namespace
 {
 
-[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const LumenEngine::Compiler::FSpirVBlob &InSpirV )
+[[nodiscard]] VkShaderModule CreateShaderModule ( VkDevice InDevice, const LumenEngine::RHI::FShaderByteCode &InSpirV )
 {
     VkShaderModuleCreateInfo ShaderCI{ .sType    = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
                                        .pNext    = nullptr,
@@ -361,16 +361,12 @@ void BuildPipelineState ( FPipelineBuildState &OutState,
 }
 } // namespace
 
-LumenEngine::VulkanRHI::FPipelineDescription LumenEngine::VulkanRHI::FVulkanPipeline::CreateDefaultDescription ( const LumenEngine::FString &InVertexPath,
-                                                                                                                 const LumenEngine::FString &InFragmentPath,
-                                                                                                                 const VkFormat InColorFormat,
+LumenEngine::VulkanRHI::FPipelineDescription LumenEngine::VulkanRHI::FVulkanPipeline::CreateDefaultDescription ( const VkFormat InColorFormat,
                                                                                                                  VkDescriptorSetLayout InGlobalSetLayout )
 {
     LumenEngine::VulkanRHI::FPipelineDescription Description;
-    Description.ColorFormat         = InColorFormat;
-    Description.GlobalSetLayout     = InGlobalSetLayout;
-    Description.Shader.VertexPath   = InVertexPath;
-    Description.Shader.FragmentPath = InFragmentPath;
+    Description.ColorFormat     = InColorFormat;
+    Description.GlobalSetLayout = InGlobalSetLayout;
 
     LumenEngine::VulkanRHI::FPipelinePushConstantRangeDescription PushConstant;
     PushConstant.StageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
@@ -383,8 +379,8 @@ LumenEngine::VulkanRHI::FPipelineDescription LumenEngine::VulkanRHI::FVulkanPipe
 
 LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanRHI::FVulkanPipeline::Initialize ( VkDevice InDevice,
                                                                                                                   const FPipelineDescription &InDescription,
-                                                                                                                  const Compiler::FSpirVBlob &InVertexSpirV,
-                                                                                                                  const Compiler::FSpirVBlob &InFragmentSpirV )
+                                                                                                                  const RHI::FShaderByteCode &InVertexSpirV,
+                                                                                                                  const RHI::FShaderByteCode &InFragmentSpirV )
 {
     Cleanup( InDevice );
 

@@ -20,7 +20,7 @@ LUMEN_LOG_DEFINE_CATEGORY( LogAssetCompiler, "AssetCompiler" );
  * FAssetCompileResult
  */
 
-LumenEngine::Bool LumenEngine::Compiler::FAssetCompileResult::IsSuccess () const noexcept
+LumenEngine::Bool LumenEngine::Engine::FAssetCompileResult::IsSuccess () const noexcept
 {
     return FailureCount == 0;
 }
@@ -29,15 +29,15 @@ LumenEngine::Bool LumenEngine::Compiler::FAssetCompileResult::IsSuccess () const
  * Ctor & Dtor
  */
 
-LumenEngine::Compiler::FAssetCompiler::FAssetCompiler () noexcept = default;
+LumenEngine::Engine::FAssetCompiler::FAssetCompiler () noexcept = default;
 
-LumenEngine::Compiler::FAssetCompiler::~FAssetCompiler () noexcept = default;
+LumenEngine::Engine::FAssetCompiler::~FAssetCompiler () noexcept = default;
 
 /**
  * Public
  */
 
-void LumenEngine::Compiler::FAssetCompiler::Initialize ( const FString &InAssetsPath ) noexcept
+void LumenEngine::Engine::FAssetCompiler::Initialize ( const FString &InAssetsPath ) noexcept
 {
     AssetsPath = InAssetsPath;
 
@@ -51,10 +51,11 @@ void LumenEngine::Compiler::FAssetCompiler::Initialize ( const FString &InAssets
     }
 
     HotReload = MakeUnique<FCompilerHotReload>( *this, AssetsPath );
-    HotReload->SetOnAssetReloadedCallback( [this] ( const FString &InPath, const EAssetType::Type InType ) -> void { AssetOnReloadCallback( InPath, InType ); } );
+    HotReload->SetOnAssetReloadedCallback( [this] ( const FString &InPath, const Compiler::EAssetType::Type InType ) -> void
+                                           { AssetOnReloadCallback( InPath, InType ); } );
 }
 
-void LumenEngine::Compiler::FAssetCompiler::Tick () noexcept
+void LumenEngine::Engine::FAssetCompiler::Tick () noexcept
 {
     if ( HotReload )
     {
@@ -62,12 +63,12 @@ void LumenEngine::Compiler::FAssetCompiler::Tick () noexcept
     }
 }
 
-void LumenEngine::Compiler::FAssetCompiler::SetOnAssetReloadedCallback ( FOnAssetReloaded InCallback ) noexcept
+void LumenEngine::Engine::FAssetCompiler::SetOnAssetReloadedCallback ( FOnAssetReloaded InCallback ) noexcept
 {
     OnAssetReloaded = std::move( InCallback );
 }
 
-LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMesh> LumenEngine::Compiler::FAssetCompiler::LoadMesh ( const FString &InName ) noexcept
+LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMesh> LumenEngine::Engine::FAssetCompiler::LoadMesh ( const FString &InName ) noexcept
 {
     if ( MeshCache.contains( InName ) )
     {
@@ -76,22 +77,22 @@ LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMesh> LumenEngine::Compile
 
     const FString FilePath = AssetsPath + "/Meshes/" + InName + ".lumen";
 
-    FLumenCompileRequest Request;
+    Compiler::FLumenCompileRequest Request;
     Request.SourcePath        = FilePath;
     Request.ExpectedBlockType = "Mesh";
     Request.TargetBlockName   = InName;
 
-    const FAssetHash Hash = FLumenCompiler::ComputeHash( "", Request );
+    const Compiler::FAssetHash Hash = Compiler::FLumenCompiler::ComputeHash( "", Request );
 
-    const FString CachePath = ( LumenCompiler.GetConfig().CacheDirectory / std::format( "{:016x}_{}.lumenbin", Hash, InName.c_str() ) ).ToString();
+    const FString CachePath = ( LumenCompiler.GetConfig().CacheDirectory / std::format( "{:016x}_{}.lumenbin", Hash, InName ) ).ToString();
 
     if ( auto MappedResult = Filesystem::FMemoryMappedFile::Open( CachePath ) )
     {
-        TUniquePtr<Filesystem::FMemoryMappedFile> MappedFile = std::move( MappedResult.value() );
+        TUniquePtr<Filesystem::FMemoryMappedFile> MappedFile = std::move( *MappedResult );
 
         if ( auto ViewResult = FAssetDeserializer::DeserializeMeshView( MappedFile->GetRegion() ) )
         {
-            const FMeshView &View = ViewResult.value();
+            const FMeshView &View = *ViewResult;
 
             TSharedPtr<Renderer::FRenderMesh> Mesh = MakeShared<Renderer::FRenderMesh>();
             Mesh->Vertices.assign( View.Vertices.begin(), View.Vertices.end() );
@@ -104,11 +105,11 @@ LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMesh> LumenEngine::Compile
         }
     }
 
-    if ( const FLumenCompileResult Result = LumenCompiler.CompileAsset( Request ); Result.IsSuccess() )
+    if ( const Compiler::FLumenCompileResult Result = LumenCompiler.CompileAsset( Request ); Result.IsSuccess() )
     {
         if ( auto DeserializedResult = FAssetDeserializer::DeserializeMesh( Result.Asset->BinaryBlob ) )
         {
-            const FDeserializedMesh &Deserialized  = DeserializedResult.value();
+            const FDeserializedMesh &Deserialized  = *DeserializedResult;
             TSharedPtr<Renderer::FRenderMesh> Mesh = MakeShared<Renderer::FRenderMesh>();
 
             Mesh->Vertices     = Deserialized.Vertices;
@@ -124,7 +125,7 @@ LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMesh> LumenEngine::Compile
     return nullptr;
 }
 
-LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMaterial> LumenEngine::Compiler::FAssetCompiler::LoadMaterial ( const FString &InName ) noexcept
+LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMaterial> LumenEngine::Engine::FAssetCompiler::LoadMaterial ( const FString &InName ) noexcept
 {
     if ( MaterialCache.contains( InName ) )
     {
@@ -148,7 +149,7 @@ LumenEngine::TSharedPtr<LumenEngine::Renderer::FRenderMaterial> LumenEngine::Com
     return Material;
 }
 
-LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler::CompileAll ( const FString &InAssetsPath ) noexcept
+LumenEngine::Engine::FAssetCompileResult LumenEngine::Engine::FAssetCompiler::CompileAll ( const FString &InAssetsPath ) noexcept
 {
     FAssetCompileResult Result;
     const Filesystem::FPath Root( InAssetsPath );
@@ -163,17 +164,17 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
 
     LUMEN_LOG_INFO( LogAssetCompiler, "Starting bulk compilation for Assets at: {}", InAssetsPath.c_str() );
 
-    const FAssetCompileResult MaterialsResult = CompileFolder( ( Root / "Materials" ).ToString(), EAssetType::Material );
+    const FAssetCompileResult MaterialsResult = CompileFolder( ( Root / "Materials" ).ToString(), Compiler::EAssetType::Material );
     Result.SuccessCount += MaterialsResult.SuccessCount;
     Result.FailureCount += MaterialsResult.FailureCount;
     Result.FailedFiles.insert( Result.FailedFiles.end(), MaterialsResult.FailedFiles.begin(), MaterialsResult.FailedFiles.end() );
 
-    const FAssetCompileResult MeshesResult = CompileFolder( ( Root / "Meshes" ).ToString(), EAssetType::Mesh );
+    const FAssetCompileResult MeshesResult = CompileFolder( ( Root / "Meshes" ).ToString(), Compiler::EAssetType::Mesh );
     Result.SuccessCount += MeshesResult.SuccessCount;
     Result.FailureCount += MeshesResult.FailureCount;
     Result.FailedFiles.insert( Result.FailedFiles.end(), MeshesResult.FailedFiles.begin(), MeshesResult.FailedFiles.end() );
 
-    const FAssetCompileResult ShadersResult = CompileFolder( ( Root / "Shaders" ).ToString(), EAssetType::Unknown );
+    const FAssetCompileResult ShadersResult = CompileFolder( ( Root / "Shaders" ).ToString(), Compiler::EAssetType::Unknown );
     Result.SuccessCount += ShadersResult.SuccessCount;
     Result.FailureCount += ShadersResult.FailureCount;
     Result.FailedFiles.insert( Result.FailedFiles.end(), ShadersResult.FailedFiles.begin(), ShadersResult.FailedFiles.end() );
@@ -183,7 +184,8 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
     return Result;
 }
 
-LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler::CompileFolder ( const FString &InFolderPath, EAssetType::Type InAssetType ) noexcept
+LumenEngine::Engine::FAssetCompileResult LumenEngine::Engine::FAssetCompiler::CompileFolder ( const FString &InFolderPath,
+                                                                                              Compiler::EAssetType::Type InAssetType ) noexcept
 {
     FAssetCompileResult Result;
     const Filesystem::FPath Path( InFolderPath );
@@ -199,7 +201,7 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
         return Result;
     }
 
-    for ( const auto &FileInfo : FilesResult.value() )
+    for ( const auto &FileInfo : *FilesResult )
     {
         if ( FileInfo.IsDirectory() )
         {
@@ -215,24 +217,24 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
     return Result;
 }
 
-LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler::CompileFile ( const FString &InFilePath, EAssetType::Type InAssetType ) noexcept
+LumenEngine::Engine::FAssetCompileResult LumenEngine::Engine::FAssetCompiler::CompileFile ( const FString &InFilePath, Compiler::EAssetType::Type InAssetType ) noexcept
 {
     FAssetCompileResult Result;
     const Filesystem::FPath Path( InFilePath );
     const FString Extension = Path.GetExtension();
 
-    if ( InAssetType == EAssetType::Material or InAssetType == EAssetType::Mesh )
+    if ( InAssetType == Compiler::EAssetType::Material or InAssetType == Compiler::EAssetType::Mesh )
     {
         if ( Extension != ".lumen" )
         {
             return Result;
         }
 
-        FLumenCompileRequest Request;
+        Compiler::FLumenCompileRequest Request;
         Request.SourcePath        = InFilePath;
-        Request.ExpectedBlockType = ( InAssetType == EAssetType::Material ) ? "Material" : "Mesh";
+        Request.ExpectedBlockType = ( InAssetType == Compiler::EAssetType::Material ) ? "Material" : "Mesh";
 
-        if ( const FLumenCompileResult CompileRes = LumenCompiler.CompileAsset( Request ); CompileRes.IsSuccess() )
+        if ( const Compiler::FLumenCompileResult CompileRes = LumenCompiler.CompileAsset( Request ); CompileRes.IsSuccess() )
         {
             ++Result.SuccessCount;
         }
@@ -243,31 +245,31 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
             LUMEN_LOG_ERROR( LogAssetCompiler, "Failed to compile Lumen Asset {}: {}", InFilePath.c_str(), CompileRes.ErrorLog.c_str() );
         }
     }
-    else if ( InAssetType == EAssetType::Shader or InAssetType == EAssetType::Unknown )
+    else if ( InAssetType == Compiler::EAssetType::Shader or InAssetType == Compiler::EAssetType::Unknown )
     {
-        EShaderStage::Type Stage = EShaderStage::Count;
+        Compiler::EShaderStage::Type Stage = Compiler::EShaderStage::Count;
         if ( Extension == ".vert" )
         {
-            Stage = EShaderStage::Vertex;
+            Stage = Compiler::EShaderStage::Vertex;
         }
         else if ( Extension == ".frag" )
         {
-            Stage = EShaderStage::Fragment;
+            Stage = Compiler::EShaderStage::Fragment;
         }
         else if ( Extension == ".comp" )
         {
-            Stage = EShaderStage::Compute;
+            Stage = Compiler::EShaderStage::Compute;
         }
         else
         {
             return Result;
         }
 
-        FShaderCompileRequest Request;
+        Compiler::FShaderCompileRequest Request;
         Request.SourcePath = InFilePath;
         Request.Stage      = Stage;
 
-        if ( const FShaderCompileResult CompileRes = ShaderCompiler.CompileShader( Request ); CompileRes.IsSuccess() )
+        if ( const Compiler::FShaderCompileResult CompileRes = ShaderCompiler.CompileShader( Request ); CompileRes.IsSuccess() )
         {
             ++Result.SuccessCount;
         }
@@ -286,19 +288,19 @@ LumenEngine::Compiler::FAssetCompileResult LumenEngine::Compiler::FAssetCompiler
  * Private
  */
 
-void LumenEngine::Compiler::FAssetCompiler::AssetOnReloadCallback ( const FString &InPath, const EAssetType::Type InType ) noexcept
+void LumenEngine::Engine::FAssetCompiler::AssetOnReloadCallback ( const FString &InPath, const Compiler::EAssetType::Type InType ) noexcept
 {
-    LUMEN_LOG_INFO( LogAssetCompiler, "Hot-Reloading asset: {} (Type: {})", InPath.c_str(), EAssetType::ToString( InType ) );
+    LUMEN_LOG_INFO( LogAssetCompiler, "Hot-Reloading asset: {} (Type: {})", InPath.c_str(), Compiler::EAssetType::ToString( InType ) );
 
     switch ( InType )
     {
-    case EAssetType::Mesh:
+    case Compiler::EAssetType::Mesh:
         MeshCache.clear();
         break;
-    case EAssetType::Material:
+    case Compiler::EAssetType::Material:
         MaterialCache.clear();
         break;
-    case EAssetType::Shader:
+    case Compiler::EAssetType::Shader:
         MaterialCache.clear();
         ShaderCache.clear();
         break;

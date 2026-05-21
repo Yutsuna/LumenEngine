@@ -14,7 +14,7 @@
 #include "Container/Expected.hpp"
 #include "ErrorCodes.hpp"
 
-#include "ShaderCompiler/ShaderCompilerTypes.hpp"
+#include "RHI/RHITypes.hpp"
 
 #include <vulkan/vulkan_core.h>
 
@@ -26,8 +26,9 @@ namespace VulkanRHI
 
     struct FPipelineShaderDescription final
     {
-        FString VertexPath;
-        FString FragmentPath;
+        /** Optional metadata for debugging */
+        FString VertexName;
+        FString FragmentName;
     };
 
     struct FPipelineVertexInputDescription final
@@ -130,12 +131,11 @@ namespace VulkanRHI
          */
         [[nodiscard]] TExpected<void, EErrorCode::Type> Initialize ( VkDevice InDevice,
                                                                      const FPipelineDescription &InDescription,
-                                                                     const Compiler::FSpirVBlob &InVertexSpirV,
-                                                                     const Compiler::FSpirVBlob &InFragmentSpirV );
+                                                                     const RHI::FShaderByteCode &InVertexSpirV,
+                                                                     const RHI::FShaderByteCode &InFragmentSpirV );
 
         /** @brief Convenience factory for a default pipeline description. */
-        [[nodiscard]] static FPipelineDescription
-        CreateDefaultDescription ( const FString &InVertexPath, const FString &InFragmentPath, VkFormat InColorFormat, VkDescriptorSetLayout InGlobalSetLayout );
+        [[nodiscard]] static FPipelineDescription CreateDefaultDescription ( VkFormat InColorFormat, VkDescriptorSetLayout InGlobalSetLayout );
 
         /**
          * @brief Cleans up the Vulkan pipeline.

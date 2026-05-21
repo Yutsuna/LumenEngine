@@ -20,7 +20,7 @@ LUMEN_LOG_DEFINE_CATEGORY( LogHotReload, "HotReload" );
  * Ctor
  */
 
-LumenEngine::Compiler::FCompilerHotReload::FCompilerHotReload ( FAssetCompiler &InAssetCompiler, FString InAssetsPath ) noexcept
+LumenEngine::Engine::FCompilerHotReload::FCompilerHotReload ( FAssetCompiler &InAssetCompiler, FString InAssetsPath ) noexcept
     : AssetCompiler( InAssetCompiler ), AssetsPath( std::move( InAssetsPath ) )
 {
     const Filesystem::FPath Root( AssetsPath );
@@ -36,7 +36,7 @@ LumenEngine::Compiler::FCompilerHotReload::FCompilerHotReload ( FAssetCompiler &
  * Public
  */
 
-void LumenEngine::Compiler::FCompilerHotReload::Tick () noexcept
+void LumenEngine::Engine::FCompilerHotReload::Tick () noexcept
 {
     const Float64 CurrentTime = HAL::FPlatformTime::Seconds();
 
@@ -47,7 +47,7 @@ void LumenEngine::Compiler::FCompilerHotReload::Tick () noexcept
     }
 }
 
-void LumenEngine::Compiler::FCompilerHotReload::SetOnAssetReloadedCallback ( TFunction<void( const FString &, EAssetType::Type )> InCallback ) noexcept
+void LumenEngine::Engine::FCompilerHotReload::SetOnAssetReloadedCallback ( TFunction<void( const FString &, Compiler::EAssetType::Type )> InCallback ) noexcept
 {
     OnAssetReloaded = std::move( InCallback );
 }
@@ -56,7 +56,7 @@ void LumenEngine::Compiler::FCompilerHotReload::SetOnAssetReloadedCallback ( TFu
  * Private
  */
 
-void LumenEngine::Compiler::FCompilerHotReload::Scan () noexcept
+void LumenEngine::Engine::FCompilerHotReload::Scan () noexcept
 {
     const Filesystem::FPath Root( AssetsPath );
 
@@ -65,12 +65,12 @@ void LumenEngine::Compiler::FCompilerHotReload::Scan () noexcept
         return;
     }
 
-    ScanFolder( Root / "Materials", EAssetType::Material );
-    ScanFolder( Root / "Meshes", EAssetType::Mesh );
-    ScanFolder( Root / "Shaders", EAssetType::Shader );
+    ScanFolder( Root / "Materials", Compiler::EAssetType::Material );
+    ScanFolder( Root / "Meshes", Compiler::EAssetType::Mesh );
+    ScanFolder( Root / "Shaders", Compiler::EAssetType::Shader );
 }
 
-void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const Filesystem::FPath &InPath, EAssetType::Type InAssetType )
+void LumenEngine::Engine::FCompilerHotReload::ScanFolder ( const Filesystem::FPath &InPath, Compiler::EAssetType::Type InAssetType )
 {
     if ( not Filesystem::FDirectory::Exists( InPath ) )
     {
@@ -83,7 +83,7 @@ void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const Filesystem::F
         return;
     }
 
-    for ( const auto &FileInfo : FilesResult.value() )
+    for ( const Filesystem::FFileInfo &FileInfo : *FilesResult )
     {
         if ( FileInfo.IsDirectory() )
         {
@@ -95,15 +95,15 @@ void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const Filesystem::F
 
         switch ( InAssetType )
         {
-        case EAssetType::Material:
-        case EAssetType::Mesh:
+        case Compiler::EAssetType::Material:
+        case Compiler::EAssetType::Mesh:
             if ( Extension != ".lumen" )
             {
                 continue;
             }
             break;
 
-        case EAssetType::Shader:
+        case Compiler::EAssetType::Shader:
             if ( Extension != ".vert" and Extension != ".frag" and Extension != ".comp" )
             {
                 continue;
@@ -124,7 +124,7 @@ void LumenEngine::Compiler::FCompilerHotReload::ScanFolder ( const Filesystem::F
         {
             LUMEN_LOG_INFO( LogHotReload, "Detected change in: {}. Re-compiling...", FilePath.c_str() );
 
-            const FAssetCompileResult Result = AssetCompiler.CompileFile( FilePath, InAssetType );
+            const Engine::FAssetCompileResult Result = AssetCompiler.CompileFile( FilePath, InAssetType );
 
             if ( Result.IsSuccess() )
             {

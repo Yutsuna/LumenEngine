@@ -30,6 +30,11 @@ namespace RHI
     class IRHI;
 }
 
+namespace Compiler
+{
+    class FShaderCompiler;
+}
+
 namespace Renderer
 {
 
@@ -88,6 +93,7 @@ namespace Renderer
     private:
 
         TUniquePtr<RHI::IRHI> RHI;
+        TUniquePtr<Compiler::FShaderCompiler> ShaderCompiler;
         TVector<TUniquePtr<IRenderFeature>> Features;
 
         Parallel::TTripleBuffer<FRenderPacket> RenderBuffer;

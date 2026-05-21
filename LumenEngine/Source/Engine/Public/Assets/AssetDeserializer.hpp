@@ -13,7 +13,7 @@
 namespace LumenEngine
 {
 
-namespace Compiler
+namespace Engine
 {
 
     /**
@@ -24,7 +24,7 @@ namespace Compiler
     {
         TVector<Maths::FVertex> Vertices;
         TVector<UInt32> Indices;
-        FLumenBinaryMeshHeader Header;
+        Compiler::FLumenBinaryMeshHeader Header;
     };
 
     /**
@@ -35,7 +35,7 @@ namespace Compiler
     {
         TSpan<const Maths::FVertex> Vertices;
         TSpan<const UInt32> Indices;
-        FLumenBinaryMeshHeader Header;
+        Compiler::FLumenBinaryMeshHeader Header;
     };
 
     /**
@@ -52,23 +52,24 @@ namespace Compiler
          * @param InBlob The raw binary blob.
          * @return A deserialized mesh, or an error code on failure.
          */
-        [[nodiscard]] static TExpected<FDeserializedMesh, ELumenCompilerError::Type> DeserializeMesh ( TSpan<const Byte> InBlob ) noexcept;
+        [[nodiscard]] static TExpected<FDeserializedMesh, Compiler::ELumenCompilerError::Type> DeserializeMesh ( TSpan<const Byte> InBlob ) noexcept;
 
         /**
          * @brief Deserializes a binary blob into a mesh view (Zero-copy version).
          * @param InBlob The raw binary blob.
          * @return A mesh view pointing into the provided blob, or an error code on failure.
          */
-        [[nodiscard]] static TExpected<FMeshView, ELumenCompilerError::Type> DeserializeMeshView ( TSpan<const Byte> InBlob ) noexcept;
+        [[nodiscard]] static TExpected<FMeshView, Compiler::ELumenCompilerError::Type> DeserializeMeshView ( TSpan<const Byte> InBlob ) noexcept;
 
         /**
          * @brief Deserializes a binary blob into a material header.
          * @param InBlob The raw binary blob.
          * @return A deserialized material header, or an error code on failure.
          */
-        [[nodiscard]] static TExpected<FLumenBinaryMaterialHeader, ELumenCompilerError::Type> DeserializeMaterial ( TSpan<const Byte> InBlob ) noexcept;
+        [[nodiscard]] static TExpected<Compiler::FLumenBinaryMaterialHeader, Compiler::ELumenCompilerError::Type>
+        DeserializeMaterial ( TSpan<const Byte> InBlob ) noexcept;
     };
 
-} // namespace Compiler
+} // namespace Engine
 
 } // namespace LumenEngine

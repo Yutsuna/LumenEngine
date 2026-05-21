@@ -20,7 +20,7 @@
 namespace LumenEngine
 {
 
-namespace Compiler
+namespace Engine
 {
 
     class FCompilerHotReload;
@@ -47,7 +47,7 @@ namespace Compiler
     public:
 
         /** Callback triggered when an asset is successfully recompiled. */
-        using FOnAssetReloaded = TFunction<void( const FString &InPath, EAssetType::Type InType )>;
+        using FOnAssetReloaded = TFunction<void( const FString &InPath, Compiler::EAssetType::Type InType )>;
 
         FAssetCompiler () noexcept;
         ~FAssetCompiler () noexcept;
@@ -99,7 +99,7 @@ namespace Compiler
          * @param InAssetType Expected asset type for files in this folder.
          * @return A result summary.
          */
-        [[nodiscard]] FAssetCompileResult CompileFolder ( const FString &InFolderPath, EAssetType::Type InAssetType ) noexcept;
+        [[nodiscard]] FAssetCompileResult CompileFolder ( const FString &InFolderPath, Compiler::EAssetType::Type InAssetType ) noexcept;
 
         /**
          * @brief Compiles a single asset file.
@@ -107,16 +107,16 @@ namespace Compiler
          * @param InAssetType The asset type (Shader, Mesh, or Material).
          * @return A result summary.
          */
-        [[nodiscard]] FAssetCompileResult CompileFile ( const FString &InFilePath, EAssetType::Type InAssetType ) noexcept;
+        [[nodiscard]] FAssetCompileResult CompileFile ( const FString &InFilePath, Compiler::EAssetType::Type InAssetType ) noexcept;
 
     private:
 
-        void AssetOnReloadCallback ( const FString &InPath, const EAssetType::Type InType ) noexcept;
+        void AssetOnReloadCallback ( const FString &InPath, const Compiler::EAssetType::Type InType ) noexcept;
 
     private:
 
-        FLumenCompiler LumenCompiler;
-        FShaderCompiler ShaderCompiler;
+        Compiler::FLumenCompiler LumenCompiler;
+        Compiler::FShaderCompiler ShaderCompiler;
         TUniquePtr<FCompilerHotReload> HotReload;
 
         FOnAssetReloaded OnAssetReloaded;
@@ -128,6 +128,6 @@ namespace Compiler
         TMap<FString, TSharedPtr<Renderer::FRenderShader>> ShaderCache;
     };
 
-} // namespace Compiler
+} // namespace Engine
 
 } // namespace LumenEngine

@@ -36,6 +36,8 @@ namespace Maths
 
 #endif
 
+        /** NOLINTBEGIN(cppcoreguidelines-pro-type-member-init, hicpp-member-init) */
+
         template <typename Type> struct TVecData<Type, 2>
         {
             union
@@ -99,6 +101,8 @@ namespace Maths
                 Type Data[4] = {};
             };
         };
+
+        /** NOLINTEND(cppcoreguidelines-pro-type-member-init, hicpp-member-init) */
 
 #if defined( LUMEN_ENGINE_COMPILER_CLANG )
     #pragma clang diagnostic pop

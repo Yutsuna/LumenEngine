@@ -65,6 +65,24 @@ namespace RHI
     using FPipelineHandle = TRenderResourceHandle<FPipelineTag>;
     using FTextureHandle  = TRenderResourceHandle<FTextureTag>;
 
+    /** Global limit for GPU instances in the scene */
+    static constexpr USize MaxInstances = 65536ULL;
+
+    /**
+     * @brief Raw shader bytecode container (SPIR-V)
+     */
+    using FShaderByteCode = TVector<UInt32>;
+
+    /**
+     * @struct FGraphicsPipelineDesc
+     * @brief Describes the state and shaders for a graphics pipeline.
+     */
+    struct FGraphicsPipelineDesc
+    {
+        FShaderByteCode VertexShader;
+        FShaderByteCode FragmentShader;
+    };
+
     /**
      * @struct FGlobalUniformData
      * @brief Global data sent from Game Thread to Render Thread via Triple Buffer.

@@ -8,7 +8,6 @@
 #include "CoreTypes.hpp"
 
 #include "Container/SharedPtr.hpp"
-#include "Container/String.hpp"
 #include "Container/Vector.hpp"
 
 #include "Maths/Vertex.hpp"
@@ -53,8 +52,11 @@ namespace RHI
 
     public:
 
-        virtual FPipelineHandle CreatePipeline ( const FString &InVertexPath, const FString &InFragmentPath )          = 0;
+        virtual FPipelineHandle CreatePipeline ( const FGraphicsPipelineDesc &InDescription )                          = 0;
         virtual FMeshHandle CreateMesh ( const TVector<Maths::FVertex> &InVertices, const TVector<UInt32> &InIndices ) = 0;
+
+        /** @brief Initializes GPU-driven resources with the provided compute shader bytecode */
+        virtual void InitializeGpuDrivenResources ( const FShaderByteCode &InComputeCode ) = 0;
     };
 
     extern LUMEN_ENGINE_API const FLogCategory LogRHI;

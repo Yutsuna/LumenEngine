@@ -33,12 +33,15 @@ private:
 
     void CreateResources ();
     void CreateActors ();
+
     void HotReloadAssets ( const FString &InAssetPath, const Compiler::EAssetType::Type InAssetType );
+    void UpdateTriangleMesh ();
+    void UpdateTriangleMaterial ();
 
 private:
 
     TUniquePtr<Engine::FWorld> World;
-    TUniquePtr<Compiler::FAssetCompiler> AssetCompiler;
+    TUniquePtr<Engine::FAssetCompiler> AssetCompiler;
     TSharedPtr<Renderer::FRenderMesh> TriangleMesh;
     TSharedPtr<Renderer::FRenderMaterial> TriangleMaterial;
 

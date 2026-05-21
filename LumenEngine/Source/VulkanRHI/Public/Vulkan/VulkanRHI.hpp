@@ -7,8 +7,6 @@
 
 #include "Definitions.hpp"
 
-#include "Container/SharedPtr.hpp"
-#include "Container/UniquePtr.hpp"
 #include "CoreTypes.hpp"
 
 #include "RHI/RHI.hpp"
@@ -30,8 +28,6 @@
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanPipeline.hpp"
 #include "Vulkan/VulkanSwapChain.hpp"
-
-#include "ShaderCompiler/ShaderCompiler.hpp"
 
 namespace LumenEngine
 {
@@ -99,17 +95,19 @@ namespace VulkanRHI
 
         /**
          * @brief Creates a new graphics pipeline with the given vertex and fragment shaders.
-         * @param InVertexPath The path to the vertex shader file.
-         * @param InFragmentPath The path to the fragment shader file.
+         * @param InDescription The description of the pipeline.
          * @return A strongly typed handle to the created pipeline.
          */
-        [[nodiscard]] RHI::FPipelineHandle CreatePipeline ( const FString &InVertexPath, const FString &InFragmentPath ) override;
+        [[nodiscard]] RHI::FPipelineHandle CreatePipeline ( const RHI::FGraphicsPipelineDesc &InDescription ) override;
 
         /**
          * @brief Destroys the given pipeline.
          * @param InHandle The handle to the pipeline to destroy.
          */
         void DestroyPipeline ( RHI::FPipelineHandle InHandle ) override;
+
+        /** @brief Initializes GPU-driven resources with the provided compute shader bytecode */
+        void InitializeGpuDrivenResources ( const RHI::FShaderByteCode &InComputeCode ) override;
 
     public:
 
@@ -140,7 +138,6 @@ namespace VulkanRHI
         void DestroyVulkanDevice () noexcept;
         void DestroySwapChain () noexcept;
 
-        void InitializeGpuDrivenResources ();
         void ShutdownGpuDrivenResources () noexcept;
 
     private:
@@ -163,8 +160,6 @@ namespace VulkanRHI
         FGPUSceneBuffer SceneBuffer;
         FGPUIndirectBuffer IndirectBuffer;
         FGPUCullingPass CullingPass;
-
-        TUniquePtr<Compiler::FShaderCompiler> RuntimeCompiler;
 
         Bool bIsInitialized = false;
     };

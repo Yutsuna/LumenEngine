@@ -15,7 +15,7 @@
 namespace LumenEngine
 {
 
-namespace Compiler
+namespace Engine
 {
 
     class FAssetCompiler;
@@ -29,7 +29,7 @@ namespace Compiler
     public:
 
         /** Callback triggered when an asset is successfully recompiled. */
-        using FOnAssetReloaded = TFunction<void( const FString &InFilePath, EAssetType::Type InAssetType )>;
+        using FOnAssetReloaded = TFunction<void( const FString &InFilePath, Compiler::EAssetType::Type InAssetType )>;
 
         FCompilerHotReload ( FAssetCompiler &InAssetCompiler, FString InAssetsPath ) noexcept;
         ~FCompilerHotReload () noexcept = default;
@@ -51,7 +51,7 @@ namespace Compiler
         void Scan () noexcept;
 
         /** Scans a specific folder and updates the watched files map. */
-        void ScanFolder ( const Filesystem::FPath &InPath, EAssetType::Type InAssetType );
+        void ScanFolder ( const Filesystem::FPath &InPath, Compiler::EAssetType::Type InAssetType );
 
     private:
 
@@ -61,8 +61,8 @@ namespace Compiler
 
         struct FFileState
         {
-            Float64 LastWriteTime      = 0.0;
-            EAssetType::Type AssetType = EAssetType::Unknown;
+            Float64 LastWriteTime                = 0.0;
+            Compiler::EAssetType::Type AssetType = Compiler::EAssetType::Unknown;
         };
 
         TMap<FString, FFileState> WatchedFiles;
@@ -72,6 +72,6 @@ namespace Compiler
         static constexpr Float64 ScanInterval = 1.0; //<< 1 second
     };
 
-} // namespace Compiler
+} // namespace Engine
 
 } // namespace LumenEngine

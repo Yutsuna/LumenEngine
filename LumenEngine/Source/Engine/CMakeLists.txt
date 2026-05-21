@@ -4,5 +4,5 @@ LumenModule(
     SOURCES         "Private/**/*.cpp"
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
-    DEPS            Core MathCore Parallel Renderer
+    DEPS            Core MathCore Parallel Renderer Compiler
 )

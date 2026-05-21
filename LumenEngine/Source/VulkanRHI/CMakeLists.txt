@@ -21,14 +21,6 @@ LumenModule(
     SOURCES         "Private/**/*.cpp"
     PUBLIC_INCLUDES "Public"
     DEFINES         LUMEN_ENGINE
-    DEPS            Core ApplicationCore MathCore RHI Compiler
+    DEPS            Core ApplicationCore MathCore RHI
     LINUX_LIBS      Vulkan::Vulkan GPUOpen::VulkanMemoryAllocator
-)
-
-###########################################################
-
-target_compile_definitions(
-    VulkanRHI
-    PRIVATE
-        LUMEN_GPU_CULL_SHADER_PATH="${CMAKE_SOURCE_DIR}/LumenEngine/Shaders/GpuCulling.comp"
-)
+    )
