@@ -7,8 +7,6 @@
 
 #include "Definitions.hpp"
 
-#include "Container/SharedPtr.hpp"
-#include "Container/UniquePtr.hpp"
 #include "CoreTypes.hpp"
 
 #include "RHI/RHI.hpp"
