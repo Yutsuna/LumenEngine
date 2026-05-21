@@ -12,10 +12,6 @@
 #include "Vulkan/VulkanCore.hpp"
 #include "Vulkan/VulkanSceneRenderer.hpp"
 
-#ifndef LUMEN_GPU_CULL_SHADER_PATH
-    #define LUMEN_GPU_CULL_SHADER_PATH ""
-#endif
-
 LumenEngine::VulkanRHI::FVulkanRHI::FVulkanRHI () noexcept : CommandListImpl( this )
 {
     /* Empty */
@@ -37,7 +33,6 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TShared
     Memory.Initialize( Instance.GetHandle(), PhysicalDevice.GetHandle(), LogicalDevice.GetHandle() );
     InitializeSwapChain( InWindow );
     FrameContext.Initialize( LogicalDevice.GetHandle(), LogicalDevice.GetGraphicsQueueFamily() );
-    InitializeGpuDrivenResources();
 
     bIsInitialized = true;
 
@@ -341,31 +336,16 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroyTexture ( RHI::FTextureHandle In
                                       AbsoluteFrame );
 }
 
-LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const LumenEngine::FString &InVertexPath,
-                                                                                       const LumenEngine::FString &InFragmentPath )
+LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipeline ( const RHI::FGraphicsPipelineDesc &InDescription )
 {
-    Compiler::FShaderCompileResult VResult = RuntimeCompiler->CompileShader( Compiler::FShaderCompileRequestBuilder().Path( InVertexPath ).Vertex().Build() );
-    if ( not VResult.IsSuccess() )
-    {
-        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to compile vertex shader (Path: {}, Log: {}).", InVertexPath, VResult.ErrorLog.c_str() );
-        return {};
-    }
-
-    Compiler::FShaderCompileResult FResult = RuntimeCompiler->CompileShader( Compiler::FShaderCompileRequestBuilder().Path( InFragmentPath ).Fragment().Build() );
-    if ( not FResult.IsSuccess() )
-    {
-        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to compile fragment shader (Path: {}, Log: {}).", InFragmentPath, FResult.ErrorLog.c_str() );
-        return {};
-    }
-
     FVulkanPipeline NewPipeline;
     VkFormat ImageFormat                   = SwapChain.GetImageFormat();
     VkDescriptorSetLayout GlobalSetLayout  = Memory.GetGlobalSetLayout();
-    const FPipelineDescription Description = FVulkanPipeline::CreateDefaultDescription( InVertexPath, InFragmentPath, ImageFormat, GlobalSetLayout );
+    const FPipelineDescription Description = FVulkanPipeline::CreateDefaultDescription( ImageFormat, GlobalSetLayout );
 
-    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), Description, VResult.Shader->SpirV, FResult.Shader->SpirV ).has_value() )
+    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), Description, InDescription.VertexShader, InDescription.FragmentShader ).has_value() )
     {
-        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to create graphics pipeline for shaders (Vertex: {}, Fragment: {}).", InVertexPath, InFragmentPath );
+        LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to create graphics pipeline from provided SPIR-V bytecode." );
         return {};
     }
 
@@ -390,41 +370,21 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroyPipeline ( RHI::FPipelineHandle 
                                       AbsoluteFrame );
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ()
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ( const RHI::FShaderByteCode &InComputeCode )
 {
     SceneBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetSceneSetLayout() );
     IndirectBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetCullSetLayout() );
 
-    Compiler::FShaderCompilerConfig CompilerConfig;
-    RuntimeCompiler = MakeUnique<Compiler::FShaderCompiler>( std::move( CompilerConfig ) );
+    const Bool bCullingPassReady =
+        CullingPass.Initialize( LogicalDevice.GetHandle(), Memory.GetGlobalSetLayout(), Memory.GetSceneSetLayout(), Memory.GetCullSetLayout(), InComputeCode );
 
-    Compiler::FShaderCompileRequestBuilder RequestBuilder;
-    RequestBuilder.Path( LUMEN_GPU_CULL_SHADER_PATH ).Compute().Macro( "MAX_INSTANCES", std::format( "{}U", FGPUSceneBuffer::MaxInstances ) );
-
-    const Compiler::FShaderCompileResult CompileResult = RuntimeCompiler->CompileShader( RequestBuilder.Build() );
-
-    if ( CompileResult.IsSuccess() )
+    if ( bCullingPassReady )
     {
-        const Compiler::FCompiledShader &CompiledShader = *CompileResult.Shader;
-
-        LUMEN_LOG_INFO( LogVulkanRHI, "GPU Culling shader JIT successful (Source: {}, Hash: {:016x}).", CompiledShader.bFromCache ? "Disk Cache" : "Freshly Compiled",
-                        CompiledShader.Hash );
-
-        const Bool bCullingPassReady =
-            CullingPass.Initialize( LogicalDevice.GetHandle(), Memory.GetGlobalSetLayout(), Memory.GetSceneSetLayout(), Memory.GetCullSetLayout(), CompiledShader.SpirV );
-
-        if ( bCullingPassReady )
-        {
-            LUMEN_LOG_INFO( LogVulkanRHI, "GPU-driven culling sub-system fully initialized." );
-        }
-        else
-        {
-            LUMEN_LOG_ERROR( LogVulkanRHI, "GPUCullingPass: Failed to create compute pipeline from SPIR-V bytecode." );
-        }
+        LUMEN_LOG_INFO( LogVulkanRHI, "GPU-driven culling sub-system fully initialized." );
     }
     else
     {
-        LUMEN_LOG_FATAL( LogVulkanRHI, "Critical Failure: GPU Culling shader compilation failed!\nLog Output:\n{}", CompileResult.ErrorLog.c_str() );
+        LUMEN_LOG_ERROR( LogVulkanRHI, "GPUCullingPass: Failed to create compute pipeline from SPIR-V bytecode." );
     }
 }
 
