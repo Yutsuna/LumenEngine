@@ -7,6 +7,8 @@
 
 #include "Vulkan/VulkanCore.hpp"
 #include "Vulkan/VulkanDescriptorWriter.hpp"
+
+#include <cassert>
 #include <cstring>
 #include <vulkan/vulkan_core.h>
 
@@ -157,6 +159,9 @@ CreateVmaAllocatorInfo ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevic
 
 void LumenEngine::VulkanRHI::FVulkanMemory::Initialize ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, const FDescriptorConfig &InConfig )
 {
+    assert( NumFramesInFlight == 0U and "FVulkanMemory is already initialized. Call Shutdown first." );
+    assert( InConfig.MaxFramesInFlight <= 8U and "Frames in flight configuration exceeds maximum allowed threshold." );
+
     NumFramesInFlight = InConfig.MaxFramesInFlight;
     InitializeVMA( InInstance, InPhysicalDevice, InDevice );
     InitializeDescriptors( InDevice );
