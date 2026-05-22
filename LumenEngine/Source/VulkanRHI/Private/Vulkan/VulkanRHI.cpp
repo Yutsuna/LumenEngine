@@ -30,7 +30,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TShared
 
     InitializeVulkanInstance( InWindow );
     InitializeVulkanDevice();
-    Memory.Initialize( Instance.GetHandle(), PhysicalDevice.GetHandle(), LogicalDevice.GetHandle() );
+    const FDescriptorConfig Config{ .MaxFramesInFlight = MaxFramesInFlight };
+    Memory.Initialize( Instance.GetHandle(), PhysicalDevice.GetHandle(), LogicalDevice.GetHandle(), Config );
     InitializeSwapChain( InWindow );
     FrameContext.Initialize( LogicalDevice.GetHandle(), LogicalDevice.GetGraphicsQueueFamily() );
 
@@ -169,7 +170,17 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ( const RHI::FG
     const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
     DeferredDestructionQueue.Tick( AbsoluteFrame );
 
+    const LumenEngine::UInt32 NumFrames = Memory.GetNumFramesInFlight();
+    if ( NumFrames == 0U )
+    {
+        return false;
+    }
+
     const LumenEngine::UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
+    if ( CurrentFrame >= NumFrames )
+    {
+        return false;
+    }
 
     Memory.UpdateGlobalUniformData( CurrentFrame, InUniforms );
 
@@ -234,6 +245,11 @@ void LumenEngine::VulkanRHI::FVulkanRHI::BindPipelineInternal ( VkCommandBuffer 
 
     const UInt32 CurrentFrame           = FrameContext.GetCurrentFrameIndex();
     VkDescriptorSet GlobalDescriptorSet = Memory.GetGlobalDescriptorSet( CurrentFrame );
+
+    if ( GlobalDescriptorSet == VK_NULL_HANDLE )
+    {
+        return;
+    }
 
     vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetLayout(), 0, 1, &GlobalDescriptorSet, 0, nullptr );
 }
@@ -372,6 +388,11 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroyPipeline ( RHI::FPipelineHandle 
 
 void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ( const RHI::FShaderByteCode &InComputeCode )
 {
+    if ( Memory.GetDescriptorPool() == VK_NULL_HANDLE )
+    {
+        return;
+    }
+
     SceneBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetSceneSetLayout() );
     IndirectBuffer.Initialize( Memory.GetAllocator(), LogicalDevice.GetHandle(), Memory.GetDescriptorPool(), Memory.GetCullSetLayout() );
 
