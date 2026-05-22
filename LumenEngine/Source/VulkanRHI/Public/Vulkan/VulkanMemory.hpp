@@ -10,6 +10,7 @@
 #include "CoreTypes.hpp"
 #include "RHI/RHITypes.hpp"
 
+#include "Container/Vector.hpp"
 #include "Vulkan/GPUDriven/GPUGlobalUniforms.hpp"
 #include "Vulkan/VulkanBuffer.hpp"
 #include "Vulkan/VulkanCore.hpp"
@@ -21,6 +22,15 @@ namespace LumenEngine
 
 namespace VulkanRHI
 {
+
+    /**
+     * @struct FDescriptorConfig
+     * @brief Runtime configuration for descriptors and uniform buffers.
+     */
+    struct FDescriptorConfig final
+    {
+        UInt32 MaxFramesInFlight = 0U;
+    };
 
     /**
      * @class FVulkanMemory
@@ -47,8 +57,9 @@ namespace VulkanRHI
          * @param InInstance       The Vulkan instance.
          * @param InPhysicalDevice The physical device.
          * @param InDevice         The logical device.
+         * @param InConfig         The descriptor configuration.
          */
-        void Initialize ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice );
+        void Initialize ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, const FDescriptorConfig &InConfig );
 
         /**
          * @brief Shuts down the Vulkan memory manager.
@@ -72,6 +83,7 @@ namespace VulkanRHI
 
         [[nodiscard]] VmaAllocator GetAllocator () const noexcept;
         [[nodiscard]] VkDescriptorPool GetDescriptorPool () const noexcept;
+        [[nodiscard]] UInt32 GetNumFramesInFlight () const noexcept;
 
         /* set=0 */
         [[nodiscard]] VkDescriptorSetLayout GetGlobalSetLayout () const noexcept;
@@ -95,9 +107,9 @@ namespace VulkanRHI
     private:
 
         /** set=0 — Global UBO */
-        VkDescriptorSetLayout GlobalSetLayout                   = VK_NULL_HANDLE;
-        VkDescriptorSet GlobalDescriptorSets[MaxFramesInFlight] = {};
-        FVulkanBuffer GlobalUniformBuffers[MaxFramesInFlight]   = {};
+        VkDescriptorSetLayout GlobalSetLayout = VK_NULL_HANDLE;
+        TVector<VkDescriptorSet> GlobalDescriptorSets;
+        TVector<FVulkanBuffer> GlobalUniformBuffers;
 
         /** set=1 — Scene SSBO layout (sets owned by FGPUSceneBuffer) */
         VkDescriptorSetLayout SceneSetLayout = VK_NULL_HANDLE;
@@ -109,6 +121,8 @@ namespace VulkanRHI
         VkDescriptorPool DescriptorPool = VK_NULL_HANDLE;
 
         VmaAllocator Allocator = VK_NULL_HANDLE;
+
+        UInt32 NumFramesInFlight = 0U;
     };
 
 } // namespace VulkanRHI

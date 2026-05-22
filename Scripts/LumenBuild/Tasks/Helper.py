@@ -9,7 +9,7 @@ def PrintHelp(ctx):
 
     print(f"""
 {C.BOLD}{C.CYAN}╔══════════════════════════════════════════════════════╗
-║           Lumen Build System  v0.1.0                ║
+║           Lumen Build System  v0.1.0                 ║
 ╚══════════════════════════════════════════════════════╝{C.RESET}
 
 {C.BOLD}USAGE{C.RESET}
@@ -61,4 +61,7 @@ def PrintHelp(ctx):
 
   {C.GREEN}lumen clean --release{C.RESET}
       Remove Release/ build artefacts only.
+
+  {C.GREEN}lumen tidy --module <Module>{C.RESET}
+      Run clang-tidy on a specific module (e.g. Core, Renderer).
 """)
