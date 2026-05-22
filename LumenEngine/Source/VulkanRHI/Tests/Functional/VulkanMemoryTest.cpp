@@ -1,7 +1,7 @@
 /**
  * @file VulkanMemoryTest.cpp
  * @brief Functional unit tests for LumenEngine::VulkanRHI::FVulkanMemory dynamic descriptor and buffer allocation.
- LumenEngine::VulkanRHI::*/
+ */
 
 #include "Vulkan/VulkanMemory.hpp"
 #include "Vulkan/GPUDriven/GPUGlobalUniforms.hpp"
