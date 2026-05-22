@@ -91,18 +91,24 @@ namespace
     return Layout;
 }
 
-void CreateDescriptorPool ( VkDevice InDevice, VkDescriptorPool &OutPool )
+void CreateDescriptorPool ( VkDevice InDevice, LumenEngine::UInt32 InMaxFramesInFlight, VkDescriptorPool &OutPool )
 {
+    if ( InMaxFramesInFlight == 0U )
+    {
+        OutPool = VK_NULL_HANDLE;
+        return;
+    }
+
     const VkDescriptorPoolSize PoolSizes[] = {
-        { .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = LumenEngine::VulkanRHI::MaxFramesInFlight },
-        { .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = LumenEngine::VulkanRHI::MaxFramesInFlight * 4U },
+        { .type = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, .descriptorCount = InMaxFramesInFlight },
+        { .type = VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, .descriptorCount = InMaxFramesInFlight * 4U },
     };
 
     VkDescriptorPoolCreateInfo PoolInfo{
         .sType         = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO,
         .pNext         = nullptr,
         .flags         = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT,
-        .maxSets       = LumenEngine::VulkanRHI::MaxFramesInFlight * 4U,
+        .maxSets       = InMaxFramesInFlight * 4U,
         .poolSizeCount = 2U,
         .pPoolSizes    = PoolSizes,
     };
@@ -149,8 +155,9 @@ CreateVmaAllocatorInfo ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevic
 
 } // namespace
 
-void LumenEngine::VulkanRHI::FVulkanMemory::Initialize ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice )
+void LumenEngine::VulkanRHI::FVulkanMemory::Initialize ( VkInstance InInstance, VkPhysicalDevice InPhysicalDevice, VkDevice InDevice, const FDescriptorConfig &InConfig )
 {
+    NumFramesInFlight = InConfig.MaxFramesInFlight;
     InitializeVMA( InInstance, InPhysicalDevice, InDevice );
     InitializeDescriptors( InDevice );
 }
@@ -177,12 +184,20 @@ void LumenEngine::VulkanRHI::FVulkanMemory::InitializeDescriptors ( VkDevice InD
     SceneSetLayout  = CreateSceneSetLayout( InDevice );
     CullSetLayout   = CreateCullSetLayout( InDevice );
 
-    CreateDescriptorPool( InDevice, DescriptorPool );
+    CreateDescriptorPool( InDevice, NumFramesInFlight, DescriptorPool );
+
+    if ( NumFramesInFlight == 0U )
+    {
+        return;
+    }
+
+    GlobalUniformBuffers.resize( NumFramesInFlight );
+    GlobalDescriptorSets.resize( NumFramesInFlight );
 
     VkBufferCreateInfo BufferInfo     = CreateBufferInfo( sizeof( FGPUGlobalUniforms ) );
     VmaAllocationCreateInfo AllocInfo = CreateVmaAllocationInfo();
 
-    for ( UInt32 Index = 0U; Index < MaxFramesInFlight; ++Index )
+    for ( UInt32 Index = 0U; Index < NumFramesInFlight; ++Index )
     {
         LUMEN_VK_CHECK( vmaCreateBuffer( Allocator, &BufferInfo, &AllocInfo, &GlobalUniformBuffers[Index].Buffer, &GlobalUniformBuffers[Index].Allocation,
                                          &GlobalUniformBuffers[Index].AllocationInfo ) );
@@ -206,27 +221,35 @@ void LumenEngine::VulkanRHI::FVulkanMemory::DestroyDescriptors ( VkDevice InDevi
     if ( DescriptorPool != VK_NULL_HANDLE )
     {
         vkDestroyDescriptorPool( InDevice, DescriptorPool, nullptr );
+        DescriptorPool = VK_NULL_HANDLE;
     }
     if ( GlobalSetLayout != VK_NULL_HANDLE )
     {
         vkDestroyDescriptorSetLayout( InDevice, GlobalSetLayout, nullptr );
+        GlobalSetLayout = VK_NULL_HANDLE;
     }
     if ( SceneSetLayout != VK_NULL_HANDLE )
     {
         vkDestroyDescriptorSetLayout( InDevice, SceneSetLayout, nullptr );
+        SceneSetLayout = VK_NULL_HANDLE;
     }
     if ( CullSetLayout != VK_NULL_HANDLE )
     {
         vkDestroyDescriptorSetLayout( InDevice, CullSetLayout, nullptr );
+        CullSetLayout = VK_NULL_HANDLE;
     }
 
-    for ( UInt32 Index = 0U; Index < MaxFramesInFlight; ++Index )
+    for ( UInt32 Index = 0U; Index < NumFramesInFlight; ++Index )
     {
         if ( GlobalUniformBuffers[Index].Buffer != VK_NULL_HANDLE )
         {
             vmaDestroyBuffer( Allocator, GlobalUniformBuffers[Index].Buffer, GlobalUniformBuffers[Index].Allocation );
         }
     }
+
+    GlobalUniformBuffers.clear();
+    GlobalDescriptorSets.clear();
+    NumFramesInFlight = 0U;
 }
 
 void LumenEngine::VulkanRHI::FVulkanMemory::DestroyVMA () noexcept
@@ -234,11 +257,16 @@ void LumenEngine::VulkanRHI::FVulkanMemory::DestroyVMA () noexcept
     if ( Allocator != VK_NULL_HANDLE )
     {
         vmaDestroyAllocator( Allocator );
+        Allocator = VK_NULL_HANDLE;
     }
 }
 
 void LumenEngine::VulkanRHI::FVulkanMemory::UpdateGlobalUniformData ( UInt32 InFrameIndex, const FGPUGlobalUniforms &InUniforms ) noexcept
 {
+    if ( InFrameIndex >= NumFramesInFlight or GlobalUniformBuffers[InFrameIndex].Buffer == VK_NULL_HANDLE )
+    {
+        return;
+    }
     std::memcpy( GlobalUniformBuffers[InFrameIndex].AllocationInfo.pMappedData, &InUniforms, sizeof( FGPUGlobalUniforms ) );
     vmaFlushAllocation( Allocator, GlobalUniformBuffers[InFrameIndex].Allocation, 0, sizeof( FGPUGlobalUniforms ) );
 }
@@ -260,6 +288,11 @@ VkDescriptorPool LumenEngine::VulkanRHI::FVulkanMemory::GetDescriptorPool () con
     return DescriptorPool;
 }
 
+LumenEngine::UInt32 LumenEngine::VulkanRHI::FVulkanMemory::GetNumFramesInFlight () const noexcept
+{
+    return NumFramesInFlight;
+}
+
 VkDescriptorSetLayout LumenEngine::VulkanRHI::FVulkanMemory::GetGlobalSetLayout () const noexcept
 {
     return GlobalSetLayout;
@@ -277,5 +310,9 @@ VkDescriptorSetLayout LumenEngine::VulkanRHI::FVulkanMemory::GetCullSetLayout ()
 
 VkDescriptorSet LumenEngine::VulkanRHI::FVulkanMemory::GetGlobalDescriptorSet ( UInt32 InFrameIndex ) const noexcept
 {
+    if ( InFrameIndex >= NumFramesInFlight )
+    {
+        return VK_NULL_HANDLE;
+    }
     return GlobalDescriptorSets[InFrameIndex];
 }
