@@ -25,7 +25,7 @@
 #include "Vulkan/VulkanLogicalDevice.hpp"
 #include "Vulkan/VulkanMemory.hpp"
 #include "Vulkan/VulkanMesh.hpp"
-#include "Vulkan/VulkanMsaaRenderTarget.hpp"
+#include "Vulkan/VulkanMsaaManager.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanPipeline.hpp"
 #include "Vulkan/VulkanSwapChain.hpp"
@@ -143,7 +143,6 @@ namespace VulkanRHI
         void DestroySwapChain () noexcept;
 
         void ShutdownGpuDrivenResources () noexcept;
-        void UpdateMsaaSamples ();
 
     private:
 
@@ -166,10 +165,9 @@ namespace VulkanRHI
         FGPUIndirectBuffer IndirectBuffer;
         FGPUCullingPass CullingPass;
 
-        /** Custom modular settings properties */
+        /** Custom modular settings properties & MSAA Subsystem */
         RHI::FVisualSettings CurrentSettings;
-        VkSampleCountFlagBits ActiveMsaaSamples = VK_SAMPLE_COUNT_1_BIT;
-        FVulkanMsaaRenderTarget MsaaRenderTarget;
+        FVulkanMsaaManager MsaaManager;
 
         Bool bIsInitialized = false;
     };
