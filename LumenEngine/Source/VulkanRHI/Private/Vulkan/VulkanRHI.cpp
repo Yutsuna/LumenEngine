@@ -461,11 +461,68 @@ void LumenEngine::VulkanRHI::FVulkanRHI::SetVisualSettings ( const RHI::FVisualS
     CurrentSettings = InSettings;
     UpdateMsaaSamples();
 
-    VkExtent2D Extent = SwapChain.GetExtent();
-    MsaaRenderTarget.RecreateIfNeeded( Memory.GetAllocator(), LogicalDevice.GetHandle(), SwapChain.GetImageFormat(), Extent, ActiveMsaaSamples );
+    const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
 
-    /** Iterate through pipeline registry and recreate all active pipelines dynamically to match the new sample count! */
-    PipelineRegistry.ForEach( [this] ( FVulkanPipeline &Pipeline ) { Pipeline.Recreate( LogicalDevice.GetHandle(), ActiveMsaaSamples ); } );
+    VkImage OldMsaaImage            = VK_NULL_HANDLE;
+    VkImageView OldMsaaView         = VK_NULL_HANDLE;
+    VmaAllocation OldMsaaAllocation = VK_NULL_HANDLE;
+
+    MsaaRenderTarget.ReleaseOwnership( OldMsaaImage, OldMsaaView, OldMsaaAllocation );
+
+    if ( OldMsaaImage != VK_NULL_HANDLE or OldMsaaView != VK_NULL_HANDLE )
+    {
+        DeferredDestructionQueue.Enqueue(
+            [this, OldMsaaImage, OldMsaaView, OldMsaaAllocation] ()
+            {
+                if ( OldMsaaView != VK_NULL_HANDLE )
+                {
+                    vkDestroyImageView( LogicalDevice.GetHandle(), OldMsaaView, nullptr );
+                }
+                if ( OldMsaaImage != VK_NULL_HANDLE )
+                {
+                    vmaDestroyImage( Memory.GetAllocator(), OldMsaaImage, OldMsaaAllocation );
+                }
+            },
+            AbsoluteFrame );
+    }
+
+    VkExtent2D Extent = SwapChain.GetExtent();
+    MsaaRenderTarget.Create( Memory.GetAllocator(), LogicalDevice.GetHandle(), SwapChain.GetImageFormat(), Extent, ActiveMsaaSamples );
+
+    PipelineRegistry.ForEach(
+        [this, AbsoluteFrame] ( FVulkanPipeline &Pipeline )
+        {
+            VkPipeline OldPipeline     = VK_NULL_HANDLE;
+            VkPipelineLayout OldLayout = VK_NULL_HANDLE;
+
+            if ( Pipeline.Recreate( LogicalDevice.GetHandle(), ActiveMsaaSamples, OldPipeline, OldLayout ) )
+            {
+                LUMEN_LOG_INFO( LogVulkanRHI, "Pipeline with handle {:#x} recreated successfully for new MSAA settings.",
+                                reinterpret_cast<uintptr_t>( Pipeline.GetPipelineHandle() ) );
+            }
+            else
+            {
+                LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to recreate pipeline with handle {:#x} for new MSAA settings. It will be destroyed.",
+                                 reinterpret_cast<uintptr_t>( Pipeline.GetPipelineHandle() ) );
+            }
+
+            if ( OldPipeline != VK_NULL_HANDLE or OldLayout != VK_NULL_HANDLE )
+            {
+                DeferredDestructionQueue.Enqueue(
+                    [this, OldPipeline, OldLayout] ()
+                    {
+                        if ( OldPipeline != VK_NULL_HANDLE )
+                        {
+                            vkDestroyPipeline( LogicalDevice.GetHandle(), OldPipeline, nullptr );
+                        }
+                        if ( OldLayout != VK_NULL_HANDLE )
+                        {
+                            vkDestroyPipelineLayout( LogicalDevice.GetHandle(), OldLayout, nullptr );
+                        }
+                    },
+                    AbsoluteFrame );
+            }
+        } );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::UpdateMsaaSamples ()
