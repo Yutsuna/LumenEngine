@@ -45,6 +45,9 @@ namespace RHI
         virtual void DestroyMesh ( FMeshHandle InHandle )         = 0;
         virtual void DestroyTexture ( FTextureHandle InHandle )   = 0;
 
+        /** @brief Updates visual settings on the active RHI. */
+        virtual void SetVisualSettings ( const FVisualSettings &InSettings ) = 0;
+
     public:
 
         /** @brief Returns the command list for the current frame */

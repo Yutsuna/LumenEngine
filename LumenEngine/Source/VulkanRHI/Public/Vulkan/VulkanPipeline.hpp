@@ -134,8 +134,15 @@ namespace VulkanRHI
                                                                      const RHI::FShaderByteCode &InVertexSpirV,
                                                                      const RHI::FShaderByteCode &InFragmentSpirV );
 
+        /** @brief Recreates the pipeline with a new sample count. */
+        TExpected<void, EErrorCode::Type> Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples );
+
+        /** @brief Recreates the pipeline with a new sample count and returns the old handles for deferred cleanup. */
+        TExpected<void, EErrorCode::Type> Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples, VkPipeline &OutOldPipeline, VkPipelineLayout &OutOldLayout );
+
         /** @brief Convenience factory for a default pipeline description. */
-        [[nodiscard]] static FPipelineDescription CreateDefaultDescription ( VkFormat InColorFormat, VkDescriptorSetLayout InGlobalSetLayout );
+        [[nodiscard]] static FPipelineDescription
+        CreateDefaultDescription ( VkFormat InColorFormat, VkDescriptorSetLayout InGlobalSetLayout, VkSampleCountFlagBits InSamples = VK_SAMPLE_COUNT_1_BIT );
 
         /**
          * @brief Cleans up the Vulkan pipeline.
@@ -154,10 +161,18 @@ namespace VulkanRHI
         /** @brief Retrieve the layout to bind descriptor sets. */
         [[nodiscard]] VkPipelineLayout GetLayout () const noexcept;
 
+        /** @brief Retrieve the Vulkan pipeline handle for drawing. */
+        [[nodiscard]] VkPipeline GetPipelineHandle () const noexcept;
+
     private:
 
         VkPipeline Pipeline             = VK_NULL_HANDLE;
         VkPipelineLayout PipelineLayout = VK_NULL_HANDLE;
+
+        /** Caching descriptors and shader bytecodes to support seamless on-demand recreation */
+        FPipelineDescription DescriptionCapped;
+        RHI::FShaderByteCode VertexSpirV;
+        RHI::FShaderByteCode FragmentSpirV;
     };
 
 } // namespace VulkanRHI

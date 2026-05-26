@@ -62,6 +62,9 @@ namespace Renderer
         /** @brief Submits global data from the Game Thread (Camera, Time). */
         void SubmitGlobalUniforms ( const RHI::FGlobalUniformData &InUniforms );
 
+        /** @brief Updates the visual quality and MSAA settings of the active RHI. */
+        void SetVisualSettings ( const RHI::FVisualSettings &InSettings );
+
         /** @brief Executes the render graph for the frame. */
         void RenderFrame ();
 

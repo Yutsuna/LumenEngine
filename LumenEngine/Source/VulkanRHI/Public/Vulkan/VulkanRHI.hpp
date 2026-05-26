@@ -25,6 +25,7 @@
 #include "Vulkan/VulkanLogicalDevice.hpp"
 #include "Vulkan/VulkanMemory.hpp"
 #include "Vulkan/VulkanMesh.hpp"
+#include "Vulkan/VulkanMsaaManager.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanPipeline.hpp"
 #include "Vulkan/VulkanSwapChain.hpp"
@@ -109,6 +110,9 @@ namespace VulkanRHI
         /** @brief Initializes GPU-driven resources with the provided compute shader bytecode */
         void InitializeGpuDrivenResources ( const RHI::FShaderByteCode &InComputeCode ) override;
 
+        /** @brief Updates visual settings on the active RHI. */
+        void SetVisualSettings ( const RHI::FVisualSettings &InSettings ) override;
+
     public:
 
         /**
@@ -160,6 +164,10 @@ namespace VulkanRHI
         FGPUSceneBuffer SceneBuffer;
         FGPUIndirectBuffer IndirectBuffer;
         FGPUCullingPass CullingPass;
+
+        /** Custom modular settings properties & MSAA Subsystem */
+        RHI::FVisualSettings CurrentSettings;
+        FVulkanMsaaManager MsaaManager;
 
         Bool bIsInitialized = false;
     };

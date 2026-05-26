@@ -10,16 +10,13 @@
 #include "Generic/GenericWindow.hpp"
 
 #include "Vulkan/VulkanCore.hpp"
+#include "Vulkan/VulkanRenderContextManager.hpp"
 #include "Vulkan/VulkanSceneRenderer.hpp"
 
 LumenEngine::VulkanRHI::FVulkanRHI::FVulkanRHI () noexcept : CommandListImpl( this )
 {
     /* Empty */
 }
-
-/**
- * Public Methods
- */
 
 void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
 {
@@ -34,6 +31,10 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TShared
     Memory.Initialize( Instance.GetHandle(), PhysicalDevice.GetHandle(), LogicalDevice.GetHandle(), Config );
     InitializeSwapChain( InWindow );
     FrameContext.Initialize( LogicalDevice.GetHandle(), LogicalDevice.GetGraphicsQueueFamily() );
+
+    /** Initialize MSAA Target and default parameters */
+    MsaaManager.Initialize( PhysicalDevice.GetHandle(), Memory.GetAllocator(), LogicalDevice.GetHandle(), SwapChain.GetImageFormat(), SwapChain.GetExtent(),
+                            CurrentSettings );
 
     bIsInitialized = true;
 
@@ -62,6 +63,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
 
     ShutdownGpuDrivenResources();
 
+    MsaaManager.Shutdown( Memory.GetAllocator(), LogicalDevice.GetHandle() );
+
     FrameContext.Shutdown( LogicalDevice.GetHandle() );
 
     DestroySwapChain();
@@ -74,14 +77,6 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
     bIsInitialized = false;
     LUMEN_LOG_INFO( LogVulkanRHI, "Vulkan RHI shut down." );
 }
-
-/**
- * Private Methods
- */
-
-/**
- * Vulkan Cleanup Methods
- */
 
 void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVulkanInstance () noexcept
 {
@@ -98,11 +93,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroySwapChain () noexcept
     SwapChain.Cleanup( LogicalDevice.GetHandle() );
 }
 
-/**
- * Vulkan Initialization Methods
- */
-
-void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanInstance ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanInstance ( const TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
 {
     Instance.Initialize( InWindow );
 }
@@ -115,7 +106,7 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanDevice ()
     LogicalDevice.Initialize( PhysicalDevice.GetHandle(), Instance.GetSurface(), DeviceExtensions );
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::InitializeSwapChain ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeSwapChain ( const TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
 {
     const VkPhysicalDevice &PhysicalDeviceHandle = PhysicalDevice.GetHandle();
     const VkDevice &LogicalDeviceHandle          = LogicalDevice.GetHandle();
@@ -184,7 +175,6 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ( const RHI::FG
 
     Memory.UpdateGlobalUniformData( CurrentFrame, InUniforms );
 
-    /** Inform the CommandList which command buffer to use for this frame */
     CommandListImpl.SetActiveCommandBuffer( FrameContext.GetCurrentCommandBuffer().GetHandle() );
 
     return true;
@@ -192,44 +182,13 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ( const RHI::FG
 
 void LumenEngine::VulkanRHI::FVulkanRHI::BeginRenderingInternal ( VkCommandBuffer InCmd, const LumenEngine::Float32 InClearColor[4] ) noexcept
 {
-    const VkImage &Image = SwapChain.GetImages()[FrameContext.GetCurrentImageIndex()];
+    const VkImage &Image    = SwapChain.GetImages()[FrameContext.GetCurrentImageIndex()];
+    const VkExtent2D Extent = SwapChain.GetExtent();
 
-    /** Transition swapchain image to color attachment layout for dynamic rendering */
-    FrameContext.GetCurrentCommandBuffer().TransitionImageLayout( Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT );
+    MsaaManager.RecreateRenderTargetIfNeeded( Memory.GetAllocator(), LogicalDevice.GetHandle(), SwapChain.GetImageFormat(), Extent );
 
-    VkRenderingAttachmentInfo ColorAttachment{};
-    ColorAttachment.sType            = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-    ColorAttachment.imageView        = SwapChain.GetImageView( FrameContext.GetCurrentImageIndex() );
-    ColorAttachment.imageLayout      = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    ColorAttachment.loadOp           = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    ColorAttachment.storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
-    ColorAttachment.clearValue.color = { { InClearColor[0], InClearColor[1], InClearColor[2], InClearColor[3] } };
-
-    VkRenderingInfo RenderInfo{};
-    RenderInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
-    RenderInfo.renderArea.extent    = SwapChain.GetExtent();
-    RenderInfo.layerCount           = 1;
-    RenderInfo.colorAttachmentCount = 1;
-    RenderInfo.pColorAttachments    = &ColorAttachment;
-
-    vkCmdBeginRendering( InCmd, &RenderInfo );
-
-    /** Set dynamic viewport and scissor */
-    const VkViewport Viewport{
-        .x        = 0.F,
-        .y        = 0.F,
-        .width    = static_cast<Float32>( RenderInfo.renderArea.extent.width ),
-        .height   = static_cast<Float32>( RenderInfo.renderArea.extent.height ),
-        .minDepth = 0.F,
-        .maxDepth = 1.F,
-    };
-    const VkRect2D Scissor{
-        .offset = VkOffset2D{ .x = 0, .y = 0 },
-        .extent = RenderInfo.renderArea.extent,
-    };
-
-    vkCmdSetViewport( InCmd, 0, 1, &Viewport );
-    vkCmdSetScissor( InCmd, 0, 1, &Scissor );
+    VulkanRenderContextManager::BeginRendering( InCmd, Image, SwapChain.GetImageView( FrameContext.GetCurrentImageIndex() ), SwapChain.GetImageFormat(), Extent,
+                                                MsaaManager, InClearColor );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::BindPipelineInternal ( VkCommandBuffer InCmd, const LumenEngine::RHI::FPipelineHandle InPipeline ) noexcept
@@ -283,27 +242,23 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InC
                                                              const LumenEngine::RHI::FSceneSnapshot &InSceneSnapshot,
                                                              const LumenEngine::Float32 InClearColor[4] ) noexcept
 {
-
-    /** INFO: Delegate actual rendering to the specialized SceneRenderer sub-system */
     const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
 
     VulkanSceneRenderer::PrepareScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, SceneBuffer, IndirectBuffer, CullingPass );
 
-    /** INFO: Start a dynamic rendering region */
     BeginRenderingInternal( InCmd, InClearColor );
 
     VulkanSceneRenderer::RenderScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, IndirectBuffer, CullingPass );
 
-    /** INFO: End dynamic rendering */
     vkCmdEndRendering( InCmd );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
 {
     const VkImage &Image = SwapChain.GetImages()[FrameContext.GetCurrentImageIndex()];
+    VkCommandBuffer Cmd  = FrameContext.GetCurrentCommandBuffer().GetHandle();
 
-    FrameContext.GetCurrentCommandBuffer().TransitionImageLayout( Image, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-                                                                  VK_IMAGE_ASPECT_COLOR_BIT );
+    VulkanRenderContextManager::TransitionPresentImageToPresentSource( Cmd, Image );
 
     FrameContext.SubmitAndPresent( SwapChain, LogicalDevice.GetGraphicsQueue() );
 }
@@ -327,7 +282,6 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroyMesh ( RHI::FMeshHandle InHandle
     FVulkanMesh *Mesh                       = MeshRegistry.Get( InHandle );
     const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
 
-    /** Capture the resource data to cleanup later */
     FVulkanMesh MeshToDestroy = *Mesh;
     MeshRegistry.Remove( InHandle );
 
@@ -344,7 +298,6 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroyTexture ( RHI::FTextureHandle In
     FVulkanImage *Image                     = TextureRegistry.Get( InHandle );
     const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
 
-    /** Capture the resource data to cleanup later */
     FVulkanImage ImageToDestroy = *Image;
     TextureRegistry.Remove( InHandle );
 
@@ -357,7 +310,7 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
     FVulkanPipeline NewPipeline;
     VkFormat ImageFormat                   = SwapChain.GetImageFormat();
     VkDescriptorSetLayout GlobalSetLayout  = Memory.GetGlobalSetLayout();
-    const FPipelineDescription Description = FVulkanPipeline::CreateDefaultDescription( ImageFormat, GlobalSetLayout );
+    const FPipelineDescription Description = FVulkanPipeline::CreateDefaultDescription( ImageFormat, GlobalSetLayout, MsaaManager.GetActiveSamples() );
 
     if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), Description, InDescription.VertexShader, InDescription.FragmentShader ).has_value() )
     {
@@ -378,7 +331,6 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DestroyPipeline ( RHI::FPipelineHandle 
     FVulkanPipeline *Pipeline               = PipelineRegistry.Get( InHandle );
     const LumenEngine::UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
 
-    /** Capture the resource data to cleanup later */
     FVulkanPipeline PipelineToDestroy = *Pipeline;
     PipelineRegistry.Remove( InHandle );
 
@@ -414,4 +366,14 @@ void LumenEngine::VulkanRHI::FVulkanRHI::ShutdownGpuDrivenResources () noexcept
     CullingPass.Shutdown( LogicalDevice.GetHandle() );
     IndirectBuffer.Shutdown( Memory.GetAllocator() );
     SceneBuffer.Shutdown( Memory.GetAllocator(), LogicalDevice.GetHandle() );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::SetVisualSettings ( const RHI::FVisualSettings &InSettings )
+{
+    const UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
+
+    MsaaManager.SetVisualSettings( InSettings, PhysicalDevice.GetHandle(), LogicalDevice.GetHandle(), Memory.GetAllocator(), SwapChain.GetImageFormat(),
+                                   SwapChain.GetExtent(), DeferredDestructionQueue, PipelineRegistry, AbsoluteFrame );
+
+    CurrentSettings = MsaaManager.GetCurrentSettings();
 }

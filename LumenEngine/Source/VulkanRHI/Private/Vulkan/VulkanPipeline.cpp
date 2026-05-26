@@ -4,6 +4,7 @@
  */
 
 #include "Vulkan/VulkanPipeline.hpp"
+#include "Container/Expected.hpp"
 #include "Vulkan/VulkanCore.hpp"
 
 #include "Container/Array.hpp"
@@ -12,6 +13,7 @@
 
 #include <cstddef>
 #include <span>
+#include <vulkan/vulkan_core.h>
 
 namespace
 {
@@ -362,11 +364,13 @@ void BuildPipelineState ( FPipelineBuildState &OutState,
 } // namespace
 
 LumenEngine::VulkanRHI::FPipelineDescription LumenEngine::VulkanRHI::FVulkanPipeline::CreateDefaultDescription ( const VkFormat InColorFormat,
-                                                                                                                 VkDescriptorSetLayout InGlobalSetLayout )
+                                                                                                                 VkDescriptorSetLayout InGlobalSetLayout,
+                                                                                                                 VkSampleCountFlagBits InSamples )
 {
     LumenEngine::VulkanRHI::FPipelineDescription Description;
-    Description.ColorFormat     = InColorFormat;
-    Description.GlobalSetLayout = InGlobalSetLayout;
+    Description.ColorFormat                      = InColorFormat;
+    Description.GlobalSetLayout                  = InGlobalSetLayout;
+    Description.Multisample.RasterizationSamples = InSamples;
 
     LumenEngine::VulkanRHI::FPipelinePushConstantRangeDescription PushConstant;
     PushConstant.StageFlags = VK_SHADER_STAGE_ALL_GRAPHICS;
@@ -389,6 +393,11 @@ LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanR
         return std::unexpected( LumenEngine::EErrorCode::InvalidArgument );
     }
 
+    // Cache state to support visual config shifts or context recreations
+    DescriptionCapped = InDescription;
+    VertexSpirV       = InVertexSpirV;
+    FragmentSpirV     = InFragmentSpirV;
+
     VkShaderModule VertexModule   = CreateShaderModule( InDevice, InVertexSpirV );
     VkShaderModule FragmentModule = CreateShaderModule( InDevice, InFragmentSpirV );
 
@@ -404,6 +413,28 @@ LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanR
     vkDestroyShaderModule( InDevice, FragmentModule, nullptr );
 
     return {};
+}
+
+LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanRHI::FVulkanPipeline::Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples )
+{
+    const RHI::FShaderByteCode TempVertex     = VertexSpirV;
+    const RHI::FShaderByteCode TempFragment   = FragmentSpirV;
+    FPipelineDescription TempDesc             = DescriptionCapped;
+    TempDesc.Multisample.RasterizationSamples = InSamples;
+
+    return Initialize( InDevice, TempDesc, TempVertex, TempFragment );
+}
+
+LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type>
+LumenEngine::VulkanRHI::FVulkanPipeline::Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples, VkPipeline &OutOldPipeline, VkPipelineLayout &OutOldLayout )
+{
+    OutOldPipeline = Pipeline;
+    OutOldLayout   = PipelineLayout;
+
+    Pipeline       = VK_NULL_HANDLE;
+    PipelineLayout = VK_NULL_HANDLE;
+
+    return Recreate( InDevice, InSamples );
 }
 
 void LumenEngine::VulkanRHI::FVulkanPipeline::Cleanup ( VkDevice InDevice ) noexcept
@@ -429,4 +460,9 @@ void LumenEngine::VulkanRHI::FVulkanPipeline::Bind ( VkCommandBuffer InCommandBu
 VkPipelineLayout LumenEngine::VulkanRHI::FVulkanPipeline::GetLayout () const noexcept
 {
     return PipelineLayout;
+}
+
+VkPipeline LumenEngine::VulkanRHI::FVulkanPipeline::GetPipelineHandle () const noexcept
+{
+    return Pipeline;
 }

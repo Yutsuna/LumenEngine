@@ -40,6 +40,27 @@ namespace RHI
     };
 
     /**
+     * @enum EMsaaLevel
+     * @brief Supported MSAA sample counts.
+     */
+    enum class EMsaaLevel : UInt8
+    {
+        None    = 1,
+        MSAA_2x = 2,
+        MSAA_4x = 4,
+        MSAA_8x = 8
+    };
+
+    /**
+     * @struct FVisualSettings
+     * @brief Graphics visual and quality configuration settings.
+     */
+    struct FVisualSettings
+    {
+        EMsaaLevel MsaaLevel = EMsaaLevel::None;
+    };
+
+    /**
      * @struct TRenderResourceHandle
      * @brief Strongly typed handle storing a Generational Index (16-bit Index, 16-bit Generation).
      */
