@@ -127,7 +127,7 @@ void LumenEngine::VulkanRHI::FVulkanMsaaManager::SetVisualSettings ( const RHI::
             VkPipeline OldPipeline     = VK_NULL_HANDLE;
             VkPipelineLayout OldLayout = VK_NULL_HANDLE;
 
-            if ( Pipeline.Recreate( InDevice, ActiveMsaaSamples, OldPipeline, OldLayout ) )
+            if ( Pipeline.Recreate( InDevice, ActiveMsaaSamples, OldPipeline, OldLayout ).has_value() )
             {
                 LUMEN_LOG_INFO( LogVulkanRHI, "Pipeline recreation succeeded for handle {:#x} with new MSAA samples.",
                                 reinterpret_cast<uintptr_t>( Pipeline.GetPipelineHandle() ) );
