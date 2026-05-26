@@ -12,15 +12,22 @@
 namespace
 {
 
-void TransitionImageLayoutInternal (
-    VkCommandBuffer InCmd, VkImage InImage, VkImageLayout InOldLayout, VkImageLayout InNewLayout, VkImageAspectFlags InAspectMask ) noexcept
+void TransitionImageLayoutInternal ( VkCommandBuffer InCmd,
+                                     VkImage InImage,
+                                     VkImageLayout InOldLayout,
+                                     VkImageLayout InNewLayout,
+                                     VkImageAspectFlags InAspectMask,
+                                     VkPipelineStageFlags2 InSrcStage,
+                                     VkAccessFlags2 InSrcAccess,
+                                     VkPipelineStageFlags2 InDstStage,
+                                     VkAccessFlags2 InDstAccess ) noexcept
 {
     VkImageMemoryBarrier2 Barrier{};
     Barrier.sType                           = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER_2;
-    Barrier.srcStageMask                    = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    Barrier.srcAccessMask                   = VK_ACCESS_2_MEMORY_WRITE_BIT;
-    Barrier.dstStageMask                    = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-    Barrier.dstAccessMask                   = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+    Barrier.srcStageMask                    = InSrcStage;
+    Barrier.srcAccessMask                   = InSrcAccess;
+    Barrier.dstStageMask                    = InDstStage;
+    Barrier.dstAccessMask                   = InDstAccess;
     Barrier.oldLayout                       = InOldLayout;
     Barrier.newLayout                       = InNewLayout;
     Barrier.image                           = InImage;
@@ -61,9 +68,13 @@ void LumenEngine::VulkanRHI::VulkanRenderContextManager::BeginRendering ( VkComm
 
     if ( ActiveMsaaSamples > VK_SAMPLE_COUNT_1_BIT )
     {
-        TransitionImageLayoutInternal( InCmd, MsaaTarget.GetImage(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT );
+        TransitionImageLayoutInternal( InCmd, MsaaTarget.GetImage(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT,
+                                       VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
+                                       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT );
 
-        TransitionImageLayoutInternal( InCmd, InPresentImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT );
+        TransitionImageLayoutInternal( InCmd, InPresentImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT,
+                                       VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
+                                       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT );
 
         ColorAttachment.imageView          = MsaaTarget.GetImageView();
         ColorAttachment.imageLayout        = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -75,7 +86,9 @@ void LumenEngine::VulkanRHI::VulkanRenderContextManager::BeginRendering ( VkComm
     }
     else
     {
-        TransitionImageLayoutInternal( InCmd, InPresentImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT );
+        TransitionImageLayoutInternal( InCmd, InPresentImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT,
+                                       VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
+                                       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT );
 
         ColorAttachment.imageView   = InPresentView;
         ColorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -112,5 +125,7 @@ void LumenEngine::VulkanRHI::VulkanRenderContextManager::BeginRendering ( VkComm
 
 void LumenEngine::VulkanRHI::VulkanRenderContextManager::TransitionPresentImageToPresentSource ( VkCommandBuffer InCmd, VkImage InPresentImage ) noexcept
 {
-    TransitionImageLayoutInternal( InCmd, InPresentImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_ASPECT_COLOR_BIT );
+    TransitionImageLayoutInternal( InCmd, InPresentImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_ASPECT_COLOR_BIT,
+                                   VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
+                                   VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, 0 );
 }
