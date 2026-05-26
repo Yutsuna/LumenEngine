@@ -69,12 +69,10 @@ void LumenEngine::VulkanRHI::VulkanRenderContextManager::BeginRendering ( VkComm
     if ( ActiveMsaaSamples > VK_SAMPLE_COUNT_1_BIT )
     {
         TransitionImageLayoutInternal( InCmd, MsaaTarget.GetImage(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT,
-                                       VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
-                                       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT );
+                                       VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT );
 
         TransitionImageLayoutInternal( InCmd, InPresentImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT,
-                                       VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
-                                       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT );
+                                       VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT );
 
         ColorAttachment.imageView          = MsaaTarget.GetImageView();
         ColorAttachment.imageLayout        = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -87,8 +85,7 @@ void LumenEngine::VulkanRHI::VulkanRenderContextManager::BeginRendering ( VkComm
     else
     {
         TransitionImageLayoutInternal( InCmd, InPresentImage, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT,
-                                       VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0,
-                                       VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT );
+                                       VK_PIPELINE_STAGE_2_TOP_OF_PIPE_BIT, 0, VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT );
 
         ColorAttachment.imageView   = InPresentView;
         ColorAttachment.imageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
@@ -126,6 +123,5 @@ void LumenEngine::VulkanRHI::VulkanRenderContextManager::BeginRendering ( VkComm
 void LumenEngine::VulkanRHI::VulkanRenderContextManager::TransitionPresentImageToPresentSource ( VkCommandBuffer InCmd, VkImage InPresentImage ) noexcept
 {
     TransitionImageLayoutInternal( InCmd, InPresentImage, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_LAYOUT_PRESENT_SRC_KHR, VK_IMAGE_ASPECT_COLOR_BIT,
-                                   VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT,
-                                   VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, 0 );
+                                   VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT, VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT, VK_PIPELINE_STAGE_2_BOTTOM_OF_PIPE_BIT, 0 );
 }
