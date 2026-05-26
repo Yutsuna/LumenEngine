@@ -39,7 +39,7 @@ void LumenEngine::VulkanRHI::FVulkanMsaaRenderTarget::Create (
     VmaAllocationCreateInfo AllocCI{ .flags          = 0,
                                      .usage          = VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
                                      .requiredFlags  = 0,
-                                     .preferredFlags = 0,
+                                     .preferredFlags = VK_MEMORY_PROPERTY_LAZILY_ALLOCATED_BIT,
                                      .memoryTypeBits = 0,
                                      .pool           = VK_NULL_HANDLE,
                                      .pUserData      = nullptr,
