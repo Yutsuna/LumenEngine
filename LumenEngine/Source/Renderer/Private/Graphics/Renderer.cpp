@@ -101,6 +101,14 @@ void LumenEngine::Renderer::FRenderer::SubmitGlobalUniforms ( const RHI::FGlobal
     GlobalUniformBuffer.WriteBuffer( InUniforms );
 }
 
+void LumenEngine::Renderer::FRenderer::SetVisualSettings ( const RHI::FVisualSettings &InSettings )
+{
+    if ( RHI )
+    {
+        RHI->SetVisualSettings( InSettings );
+    }
+}
+
 void LumenEngine::Renderer::FRenderer::RenderFrame ()
 {
     if ( not RHI )
