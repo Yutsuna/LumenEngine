@@ -35,6 +35,12 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TShared
     InitializeSwapChain( InWindow );
     FrameContext.Initialize( LogicalDevice.GetHandle(), LogicalDevice.GetGraphicsQueueFamily() );
 
+    /** Setup visual parameters and limits */
+    UpdateMsaaSamples();
+
+    /** Allocate MSAA resolve surface */
+    MsaaRenderTarget.Create( Memory.GetAllocator(), LogicalDevice.GetHandle(), SwapChain.GetImageFormat(), SwapChain.GetExtent(), ActiveMsaaSamples );
+
     bIsInitialized = true;
 
     LUMEN_LOG_INFO( LogVulkanRHI, "Vulkan RHI initialized successfully." );
@@ -61,6 +67,8 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
     TextureRegistry.Clear();
 
     ShutdownGpuDrivenResources();
+
+    MsaaRenderTarget.Destroy( Memory.GetAllocator(), LogicalDevice.GetHandle() );
 
     FrameContext.Shutdown( LogicalDevice.GetHandle() );
 
@@ -192,22 +200,50 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ( const RHI::FG
 
 void LumenEngine::VulkanRHI::FVulkanRHI::BeginRenderingInternal ( VkCommandBuffer InCmd, const LumenEngine::Float32 InClearColor[4] ) noexcept
 {
-    const VkImage &Image = SwapChain.GetImages()[FrameContext.GetCurrentImageIndex()];
+    const VkImage &Image    = SwapChain.GetImages()[FrameContext.GetCurrentImageIndex()];
+    const VkExtent2D Extent = SwapChain.GetExtent();
 
-    /** Transition swapchain image to color attachment layout for dynamic rendering */
-    FrameContext.GetCurrentCommandBuffer().TransitionImageLayout( Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL, VK_IMAGE_ASPECT_COLOR_BIT );
+    /** Auto-heals MSAA buffers dynamically if target dimension, formats, or samples shift */
+    MsaaRenderTarget.RecreateIfNeeded( Memory.GetAllocator(), LogicalDevice.GetHandle(), SwapChain.GetImageFormat(), Extent, ActiveMsaaSamples );
 
     VkRenderingAttachmentInfo ColorAttachment{};
     ColorAttachment.sType            = VK_STRUCTURE_TYPE_RENDERING_ATTACHMENT_INFO;
-    ColorAttachment.imageView        = SwapChain.GetImageView( FrameContext.GetCurrentImageIndex() );
-    ColorAttachment.imageLayout      = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-    ColorAttachment.loadOp           = VK_ATTACHMENT_LOAD_OP_CLEAR;
-    ColorAttachment.storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
     ColorAttachment.clearValue.color = { { InClearColor[0], InClearColor[1], InClearColor[2], InClearColor[3] } };
+
+    if ( ActiveMsaaSamples > VK_SAMPLE_COUNT_1_BIT )
+    {
+        /** Transition transient multisampled buffer layout */
+        FrameContext.GetCurrentCommandBuffer().TransitionImageLayout( MsaaRenderTarget.GetImage(), VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                                      VK_IMAGE_ASPECT_COLOR_BIT );
+
+        /** Transition presentation buffer layout */
+        FrameContext.GetCurrentCommandBuffer().TransitionImageLayout( Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                                      VK_IMAGE_ASPECT_COLOR_BIT );
+
+        ColorAttachment.imageView          = MsaaRenderTarget.GetImageView();
+        ColorAttachment.imageLayout        = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        ColorAttachment.loadOp             = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        ColorAttachment.storeOp            = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+        ColorAttachment.resolveMode        = VK_RESOLVE_MODE_AVERAGE_BIT;
+        ColorAttachment.resolveImageView   = SwapChain.GetImageView( FrameContext.GetCurrentImageIndex() );
+        ColorAttachment.resolveImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+    }
+    else
+    {
+        FrameContext.GetCurrentCommandBuffer().TransitionImageLayout( Image, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+                                                                      VK_IMAGE_ASPECT_COLOR_BIT );
+
+        ColorAttachment.imageView        = SwapChain.GetImageView( FrameContext.GetCurrentImageIndex() );
+        ColorAttachment.imageLayout      = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+        ColorAttachment.loadOp           = VK_ATTACHMENT_LOAD_OP_CLEAR;
+        ColorAttachment.storeOp          = VK_ATTACHMENT_STORE_OP_STORE;
+        ColorAttachment.resolveMode      = VK_RESOLVE_MODE_NONE;
+        ColorAttachment.resolveImageView = VK_NULL_HANDLE;
+    }
 
     VkRenderingInfo RenderInfo{};
     RenderInfo.sType                = VK_STRUCTURE_TYPE_RENDERING_INFO;
-    RenderInfo.renderArea.extent    = SwapChain.GetExtent();
+    RenderInfo.renderArea.extent    = Extent;
     RenderInfo.layerCount           = 1;
     RenderInfo.colorAttachmentCount = 1;
     RenderInfo.pColorAttachments    = &ColorAttachment;
@@ -283,7 +319,6 @@ void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InC
                                                              const LumenEngine::RHI::FSceneSnapshot &InSceneSnapshot,
                                                              const LumenEngine::Float32 InClearColor[4] ) noexcept
 {
-
     /** INFO: Delegate actual rendering to the specialized SceneRenderer sub-system */
     const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
 
@@ -357,7 +392,7 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
     FVulkanPipeline NewPipeline;
     VkFormat ImageFormat                   = SwapChain.GetImageFormat();
     VkDescriptorSetLayout GlobalSetLayout  = Memory.GetGlobalSetLayout();
-    const FPipelineDescription Description = FVulkanPipeline::CreateDefaultDescription( ImageFormat, GlobalSetLayout );
+    const FPipelineDescription Description = FVulkanPipeline::CreateDefaultDescription( ImageFormat, GlobalSetLayout, ActiveMsaaSamples );
 
     if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), Description, InDescription.VertexShader, InDescription.FragmentShader ).has_value() )
     {
@@ -414,4 +449,83 @@ void LumenEngine::VulkanRHI::FVulkanRHI::ShutdownGpuDrivenResources () noexcept
     CullingPass.Shutdown( LogicalDevice.GetHandle() );
     IndirectBuffer.Shutdown( Memory.GetAllocator() );
     SceneBuffer.Shutdown( Memory.GetAllocator(), LogicalDevice.GetHandle() );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::SetVisualSettings ( const RHI::FVisualSettings &InSettings )
+{
+    if ( CurrentSettings.MsaaLevel == InSettings.MsaaLevel )
+    {
+        return;
+    }
+
+    CurrentSettings = InSettings;
+    UpdateMsaaSamples();
+
+    VkExtent2D Extent = SwapChain.GetExtent();
+    MsaaRenderTarget.RecreateIfNeeded( Memory.GetAllocator(), LogicalDevice.GetHandle(), SwapChain.GetImageFormat(), Extent, ActiveMsaaSamples );
+
+    /** Iterate through pipeline registry and recreate all active pipelines dynamically to match the new sample count! */
+    PipelineRegistry.ForEach( [this] ( FVulkanPipeline &Pipeline ) { Pipeline.Recreate( LogicalDevice.GetHandle(), ActiveMsaaSamples ); } );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::UpdateMsaaSamples ()
+{
+    VkPhysicalDeviceProperties Props;
+    vkGetPhysicalDeviceProperties( PhysicalDevice.GetHandle(), &Props );
+
+    VkSampleCountFlags Counts        = Props.limits.framebufferColorSampleCounts & Props.limits.framebufferDepthSampleCounts;
+    VkSampleCountFlagBits MaxSamples = VK_SAMPLE_COUNT_1_BIT;
+
+    if ( Counts & VK_SAMPLE_COUNT_64_BIT )
+    {
+        MaxSamples = VK_SAMPLE_COUNT_64_BIT;
+    }
+    else if ( Counts & VK_SAMPLE_COUNT_32_BIT )
+    {
+        MaxSamples = VK_SAMPLE_COUNT_32_BIT;
+    }
+    else if ( Counts & VK_SAMPLE_COUNT_16_BIT )
+    {
+        MaxSamples = VK_SAMPLE_COUNT_16_BIT;
+    }
+    else if ( Counts & VK_SAMPLE_COUNT_8_BIT )
+    {
+        MaxSamples = VK_SAMPLE_COUNT_8_BIT;
+    }
+    else if ( Counts & VK_SAMPLE_COUNT_4_BIT )
+    {
+        MaxSamples = VK_SAMPLE_COUNT_4_BIT;
+    }
+    else if ( Counts & VK_SAMPLE_COUNT_2_BIT )
+    {
+        MaxSamples = VK_SAMPLE_COUNT_2_BIT;
+    }
+
+    VkSampleCountFlagBits RequestedSamples = VK_SAMPLE_COUNT_1_BIT;
+    switch ( CurrentSettings.MsaaLevel )
+    {
+    case RHI::EMsaaLevel::MSAA_2x:
+        RequestedSamples = VK_SAMPLE_COUNT_2_BIT;
+        break;
+    case RHI::EMsaaLevel::MSAA_4x:
+        RequestedSamples = VK_SAMPLE_COUNT_4_BIT;
+        break;
+    case RHI::EMsaaLevel::MSAA_8x:
+        RequestedSamples = VK_SAMPLE_COUNT_8_BIT;
+        break;
+    default:
+        RequestedSamples = VK_SAMPLE_COUNT_1_BIT;
+        break;
+    }
+
+    if ( static_cast<UInt32>( RequestedSamples ) > static_cast<UInt32>( MaxSamples ) )
+    {
+        ActiveMsaaSamples = MaxSamples;
+    }
+    else
+    {
+        ActiveMsaaSamples = RequestedSamples;
+    }
+
+    LUMEN_LOG_INFO( LogVulkanRHI, "Active MSAA samples refreshed to VK_SAMPLE_COUNT_{}_BIT.", static_cast<UInt32>( ActiveMsaaSamples ) );
 }
