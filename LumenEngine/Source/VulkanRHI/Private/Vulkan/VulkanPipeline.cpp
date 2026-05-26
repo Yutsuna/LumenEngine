@@ -4,6 +4,7 @@
  */
 
 #include "Vulkan/VulkanPipeline.hpp"
+#include "Container/Expected.hpp"
 #include "Vulkan/VulkanCore.hpp"
 
 #include "Container/Array.hpp"
@@ -12,6 +13,7 @@
 
 #include <cstddef>
 #include <span>
+#include <vulkan/vulkan_core.h>
 
 namespace
 {
@@ -415,13 +417,24 @@ LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanR
 
 LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanRHI::FVulkanPipeline::Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples )
 {
-    // Take dynamic local copies of the bytecode vectors to prevent self-overwriting
     const RHI::FShaderByteCode TempVertex     = VertexSpirV;
     const RHI::FShaderByteCode TempFragment   = FragmentSpirV;
     FPipelineDescription TempDesc             = DescriptionCapped;
     TempDesc.Multisample.RasterizationSamples = InSamples;
 
     return Initialize( InDevice, TempDesc, TempVertex, TempFragment );
+}
+
+LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type>
+LumenEngine::VulkanRHI::FVulkanPipeline::Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples, VkPipeline &OutOldPipeline, VkPipelineLayout &OutOldLayout )
+{
+    OutOldPipeline = Pipeline;
+    OutOldLayout   = PipelineLayout;
+
+    Pipeline       = VK_NULL_HANDLE;
+    PipelineLayout = VK_NULL_HANDLE;
+
+    return Recreate( InDevice, InSamples );
 }
 
 void LumenEngine::VulkanRHI::FVulkanPipeline::Cleanup ( VkDevice InDevice ) noexcept
@@ -447,4 +460,9 @@ void LumenEngine::VulkanRHI::FVulkanPipeline::Bind ( VkCommandBuffer InCommandBu
 VkPipelineLayout LumenEngine::VulkanRHI::FVulkanPipeline::GetLayout () const noexcept
 {
     return PipelineLayout;
+}
+
+VkPipeline LumenEngine::VulkanRHI::FVulkanPipeline::GetPipelineHandle () const noexcept
+{
+    return Pipeline;
 }
