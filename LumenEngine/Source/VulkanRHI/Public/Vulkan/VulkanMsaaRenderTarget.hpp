@@ -51,6 +51,11 @@ namespace VulkanRHI
          */
         void RecreateIfNeeded ( VmaAllocator InAllocator, VkDevice InDevice, VkFormat InFormat, VkExtent2D InExtent, VkSampleCountFlagBits InSamples );
 
+        /**
+         * @brief Releases ownership of internal handles to allow deferred destruction.
+         */
+        void ReleaseOwnership ( VkImage &OutImage, VkImageView &OutView, VmaAllocation &OutAllocation ) noexcept;
+
     public:
 
         [[nodiscard]] VkImage GetImage () const noexcept;

@@ -87,6 +87,20 @@ void LumenEngine::VulkanRHI::FVulkanMsaaRenderTarget::RecreateIfNeeded (
     }
 }
 
+void LumenEngine::VulkanRHI::FVulkanMsaaRenderTarget::ReleaseOwnership ( VkImage &OutImage, VkImageView &OutView, VmaAllocation &OutAllocation ) noexcept
+{
+    OutImage      = Image;
+    OutView       = ImageView;
+    OutAllocation = Allocation;
+
+    Image      = VK_NULL_HANDLE;
+    ImageView  = VK_NULL_HANDLE;
+    Allocation = VK_NULL_HANDLE;
+    Samples    = VK_SAMPLE_COUNT_1_BIT;
+    Format     = VK_FORMAT_UNDEFINED;
+    Extent     = {};
+}
+
 VkImage LumenEngine::VulkanRHI::FVulkanMsaaRenderTarget::GetImage () const noexcept
 {
     return Image;
