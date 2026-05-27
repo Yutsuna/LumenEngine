@@ -127,18 +127,24 @@ namespace VulkanRHI
          * @param InDescription Logical state description used to build the graphics pipeline.
          * @param InVertexSpirV The SPIR-V bytecode for the vertex shader.
          * @param InFragmentSpirV The SPIR-V bytecode for the fragment shader.
+         * @param InPipelineCache The optional pipeline cache.
          * @return Success or a detailed initialization error code.
          */
         [[nodiscard]] TExpected<void, EErrorCode::Type> Initialize ( VkDevice InDevice,
                                                                      const FPipelineDescription &InDescription,
                                                                      const RHI::FShaderByteCode &InVertexSpirV,
-                                                                     const RHI::FShaderByteCode &InFragmentSpirV );
+                                                                     const RHI::FShaderByteCode &InFragmentSpirV,
+                                                                     VkPipelineCache InPipelineCache = VK_NULL_HANDLE );
 
         /** @brief Recreates the pipeline with a new sample count. */
-        TExpected<void, EErrorCode::Type> Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples );
+        TExpected<void, EErrorCode::Type> Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples, VkPipelineCache InPipelineCache = VK_NULL_HANDLE );
 
         /** @brief Recreates the pipeline with a new sample count and returns the old handles for deferred cleanup. */
-        TExpected<void, EErrorCode::Type> Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples, VkPipeline &OutOldPipeline, VkPipelineLayout &OutOldLayout );
+        TExpected<void, EErrorCode::Type> Recreate ( VkDevice InDevice,
+                                                     VkSampleCountFlagBits InSamples,
+                                                     VkPipeline &OutOldPipeline,
+                                                     VkPipelineLayout &OutOldLayout,
+                                                     VkPipelineCache InPipelineCache = VK_NULL_HANDLE );
 
         /** @brief Convenience factory for a default pipeline description. */
         [[nodiscard]] static FPipelineDescription

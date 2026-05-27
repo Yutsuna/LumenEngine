@@ -28,6 +28,7 @@
 #include "Vulkan/VulkanMsaaManager.hpp"
 #include "Vulkan/VulkanPhysicalDevice.hpp"
 #include "Vulkan/VulkanPipeline.hpp"
+#include "Vulkan/VulkanPipelineCache.hpp"
 #include "Vulkan/VulkanSwapChain.hpp"
 
 namespace LumenEngine
@@ -168,6 +169,7 @@ namespace VulkanRHI
         /** Custom modular settings properties & MSAA Subsystem */
         RHI::FVisualSettings CurrentSettings;
         FVulkanMsaaManager MsaaManager;
+        FVulkanPipelineCache PipelineCache;
 
         Bool bIsInitialized = false;
     };
