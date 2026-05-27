@@ -13,12 +13,20 @@
 #include "Vulkan/VulkanRenderContextManager.hpp"
 #include "Vulkan/VulkanSceneRenderer.hpp"
 
+/**
+ * Ctor
+ */
+
 LumenEngine::VulkanRHI::FVulkanRHI::FVulkanRHI () noexcept : CommandListImpl( this )
 {
     /* Empty */
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
+/**
+ * Public
+ */
+
+void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const TSharedPtr<FGenericWindow> &InWindow )
 {
     if ( bIsInitialized )
     {
@@ -31,6 +39,9 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Initialize ( const LumenEngine::TShared
     Memory.Initialize( Instance.GetHandle(), PhysicalDevice.GetHandle(), LogicalDevice.GetHandle(), Config );
     InitializeSwapChain( InWindow );
     FrameContext.Initialize( LogicalDevice.GetHandle(), LogicalDevice.GetGraphicsQueueFamily() );
+
+    /** Initialize pipeline cache from disk file */
+    PipelineCache.Initialize( LogicalDevice.GetHandle(), "Data/VulkanCache/VulkanPipelineCache.cache" );
 
     /** Initialize MSAA Target and default parameters */
     MsaaManager.Initialize( PhysicalDevice.GetHandle(), Memory.GetAllocator(), LogicalDevice.GetHandle(), SwapChain.GetImageFormat(), SwapChain.GetExtent(),
@@ -51,6 +62,10 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
     LogicalDevice.WaitIdle();
 
     DeferredDestructionQueue.Shutdown();
+
+    /** Save current compiled state and destroy Vulkan handles */
+    PipelineCache.SaveToDisk( LogicalDevice.GetHandle() );
+    PipelineCache.Shutdown( LogicalDevice.GetHandle() );
 
     PipelineRegistry.ForEach( [this] ( FVulkanPipeline &Pipeline ) { Pipeline.Cleanup( LogicalDevice.GetHandle() ); } );
     PipelineRegistry.Clear();
@@ -76,74 +91,6 @@ void LumenEngine::VulkanRHI::FVulkanRHI::Shutdown ()
 
     bIsInitialized = false;
     LUMEN_LOG_INFO( LogVulkanRHI, "Vulkan RHI shut down." );
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVulkanInstance () noexcept
-{
-    Instance.Cleanup();
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVulkanDevice () noexcept
-{
-    LogicalDevice.Cleanup();
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::DestroySwapChain () noexcept
-{
-    SwapChain.Cleanup( LogicalDevice.GetHandle() );
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanInstance ( const TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
-{
-    Instance.Initialize( InWindow );
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanDevice ()
-{
-    const LumenEngine::TVector<const LumenEngine::AnsiChar *> DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
-
-    PhysicalDevice.Initialize( Instance.GetHandle(), Instance.GetSurface() );
-    LogicalDevice.Initialize( PhysicalDevice.GetHandle(), Instance.GetSurface(), DeviceExtensions );
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::InitializeSwapChain ( const TSharedPtr<LumenEngine::FGenericWindow> &InWindow )
-{
-    const VkPhysicalDevice &PhysicalDeviceHandle = PhysicalDevice.GetHandle();
-    const VkDevice &LogicalDeviceHandle          = LogicalDevice.GetHandle();
-    const LumenEngine::Maths::FVec2u WindowSize  = static_cast<LumenEngine::Maths::FVec2u>( InWindow->GetWindowSize() );
-
-    SwapChain.InitializeSynStructures( LogicalDeviceHandle );
-    SwapChain.Create( PhysicalDeviceHandle, LogicalDeviceHandle, Instance.GetSurface(), VK_FORMAT_B8G8R8A8_SRGB, WindowSize, true );
-}
-
-LumenEngine::VulkanRHI::FVulkanLogicalDevice LumenEngine::VulkanRHI::FVulkanRHI::GetLogicalDevice () const noexcept
-{
-    return LogicalDevice;
-}
-
-LumenEngine::VulkanRHI::FVulkanPhysicalDevice LumenEngine::VulkanRHI::FVulkanRHI::GetPhysicalDevice () const noexcept
-{
-    return PhysicalDevice;
-}
-
-LumenEngine::VulkanRHI::FVulkanInstance LumenEngine::VulkanRHI::FVulkanRHI::GetInstance () const noexcept
-{
-    return Instance;
-}
-
-VmaAllocator LumenEngine::VulkanRHI::FVulkanRHI::GetAllocator () const noexcept
-{
-    return Memory.GetAllocator();
-}
-
-LumenEngine::VulkanRHI::FVulkanSwapChain &LumenEngine::VulkanRHI::FVulkanRHI::GetSwapChain () noexcept
-{
-    return SwapChain;
-}
-
-LumenEngine::RHI::IRHICommandList &LumenEngine::VulkanRHI::FVulkanRHI::GetCommandList () noexcept
-{
-    return CommandListImpl;
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::WaitIdle () const noexcept
@@ -174,83 +121,9 @@ LumenEngine::Bool LumenEngine::VulkanRHI::FVulkanRHI::BeginFrame ( const RHI::FG
     }
 
     Memory.UpdateGlobalUniformData( CurrentFrame, InUniforms );
-
     CommandListImpl.SetActiveCommandBuffer( FrameContext.GetCurrentCommandBuffer().GetHandle() );
 
     return true;
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::BeginRenderingInternal ( VkCommandBuffer InCmd, const LumenEngine::Float32 InClearColor[4] ) noexcept
-{
-    const VkImage &Image    = SwapChain.GetImages()[FrameContext.GetCurrentImageIndex()];
-    const VkExtent2D Extent = SwapChain.GetExtent();
-
-    MsaaManager.RecreateRenderTargetIfNeeded( Memory.GetAllocator(), LogicalDevice.GetHandle(), SwapChain.GetImageFormat(), Extent );
-
-    VulkanRenderContextManager::BeginRendering( InCmd, Image, SwapChain.GetImageView( FrameContext.GetCurrentImageIndex() ), SwapChain.GetImageFormat(), Extent,
-                                                MsaaManager, InClearColor );
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::BindPipelineInternal ( VkCommandBuffer InCmd, const LumenEngine::RHI::FPipelineHandle InPipeline ) noexcept
-{
-    FVulkanPipeline *Pipeline = PipelineRegistry.Get( InPipeline );
-
-    if ( Pipeline == nullptr )
-    {
-        return;
-    }
-
-    Pipeline->Bind( InCmd );
-
-    const UInt32 CurrentFrame           = FrameContext.GetCurrentFrameIndex();
-    VkDescriptorSet GlobalDescriptorSet = Memory.GetGlobalDescriptorSet( CurrentFrame );
-
-    if ( GlobalDescriptorSet == VK_NULL_HANDLE )
-    {
-        return;
-    }
-
-    vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetLayout(), 0, 1, &GlobalDescriptorSet, 0, nullptr );
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::PushConstantsInternal (
-    VkCommandBuffer InCmd, const LumenEngine::RHI::FPipelineHandle InPipeline, const void *InData, UInt32 InSize, UInt32 InOffset ) noexcept
-{
-    FVulkanPipeline *Pipeline = PipelineRegistry.Get( InPipeline );
-
-    if ( Pipeline == nullptr )
-    {
-        return;
-    }
-
-    vkCmdPushConstants( InCmd, Pipeline->GetLayout(), VK_SHADER_STAGE_ALL_GRAPHICS, InOffset, InSize, InData );
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::DrawMeshInternal ( VkCommandBuffer InCmd, const LumenEngine::RHI::FMeshHandle InMesh ) noexcept
-{
-    FVulkanMesh *Mesh = MeshRegistry.Get( InMesh );
-
-    if ( Mesh == nullptr )
-    {
-        return;
-    }
-
-    Mesh->BindAndDraw( InCmd );
-}
-
-void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InCmd,
-                                                             const LumenEngine::RHI::FSceneSnapshot &InSceneSnapshot,
-                                                             const LumenEngine::Float32 InClearColor[4] ) noexcept
-{
-    const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
-
-    VulkanSceneRenderer::PrepareScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, SceneBuffer, IndirectBuffer, CullingPass );
-
-    BeginRenderingInternal( InCmd, InClearColor );
-
-    VulkanSceneRenderer::RenderScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, IndirectBuffer, CullingPass );
-
-    vkCmdEndRendering( InCmd );
 }
 
 void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
@@ -263,8 +136,12 @@ void LumenEngine::VulkanRHI::FVulkanRHI::EndFrame ()
     FrameContext.SubmitAndPresent( SwapChain, LogicalDevice.GetGraphicsQueue() );
 }
 
-LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( const LumenEngine::TVector<LumenEngine::Maths::FVertex> &InVertices,
-                                                                               const LumenEngine::TVector<LumenEngine::UInt32> &InIndices )
+LumenEngine::RHI::IRHICommandList &LumenEngine::VulkanRHI::FVulkanRHI::GetCommandList () noexcept
+{
+    return CommandListImpl;
+}
+
+LumenEngine::RHI::FMeshHandle LumenEngine::VulkanRHI::FVulkanRHI::CreateMesh ( const TVector<Maths::FVertex> &InVertices, const TVector<UInt32> &InIndices )
 {
     LumenEngine::VulkanRHI::FVulkanMesh NewMesh;
 
@@ -312,7 +189,8 @@ LumenEngine::RHI::FPipelineHandle LumenEngine::VulkanRHI::FVulkanRHI::CreatePipe
     VkDescriptorSetLayout GlobalSetLayout  = Memory.GetGlobalSetLayout();
     const FPipelineDescription Description = FVulkanPipeline::CreateDefaultDescription( ImageFormat, GlobalSetLayout, MsaaManager.GetActiveSamples() );
 
-    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), Description, InDescription.VertexShader, InDescription.FragmentShader ).has_value() )
+    if ( not NewPipeline.Initialize( LogicalDevice.GetHandle(), Description, InDescription.VertexShader, InDescription.FragmentShader, PipelineCache.GetHandle() )
+                 .has_value() )
     {
         LUMEN_LOG_ERROR( LogVulkanRHI, "Failed to create graphics pipeline from provided SPIR-V bytecode." );
         return {};
@@ -361,13 +239,6 @@ void LumenEngine::VulkanRHI::FVulkanRHI::InitializeGpuDrivenResources ( const RH
     }
 }
 
-void LumenEngine::VulkanRHI::FVulkanRHI::ShutdownGpuDrivenResources () noexcept
-{
-    CullingPass.Shutdown( LogicalDevice.GetHandle() );
-    IndirectBuffer.Shutdown( Memory.GetAllocator() );
-    SceneBuffer.Shutdown( Memory.GetAllocator(), LogicalDevice.GetHandle() );
-}
-
 void LumenEngine::VulkanRHI::FVulkanRHI::SetVisualSettings ( const RHI::FVisualSettings &InSettings )
 {
     const UInt64 AbsoluteFrame = FrameContext.GetAbsoluteFrameIndex();
@@ -376,4 +247,157 @@ void LumenEngine::VulkanRHI::FVulkanRHI::SetVisualSettings ( const RHI::FVisualS
                                    SwapChain.GetExtent(), DeferredDestructionQueue, PipelineRegistry, AbsoluteFrame );
 
     CurrentSettings = MsaaManager.GetCurrentSettings();
+}
+
+/**
+ * Internal
+ */
+
+void LumenEngine::VulkanRHI::FVulkanRHI::BeginRenderingInternal ( VkCommandBuffer InCmd, const Float32 InClearColor[4] ) noexcept
+{
+    const VkImage &Image    = SwapChain.GetImages()[FrameContext.GetCurrentImageIndex()];
+    const VkExtent2D Extent = SwapChain.GetExtent();
+
+    MsaaManager.RecreateRenderTargetIfNeeded( Memory.GetAllocator(), LogicalDevice.GetHandle(), SwapChain.GetImageFormat(), Extent );
+
+    VulkanRenderContextManager::BeginRendering( InCmd, Image, SwapChain.GetImageView( FrameContext.GetCurrentImageIndex() ), SwapChain.GetImageFormat(), Extent,
+                                                MsaaManager, InClearColor );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::BindPipelineInternal ( VkCommandBuffer InCmd, const RHI::FPipelineHandle InPipeline ) noexcept
+{
+    FVulkanPipeline *Pipeline = PipelineRegistry.Get( InPipeline );
+
+    if ( Pipeline == nullptr )
+    {
+        return;
+    }
+
+    Pipeline->Bind( InCmd );
+
+    const UInt32 CurrentFrame           = FrameContext.GetCurrentFrameIndex();
+    VkDescriptorSet GlobalDescriptorSet = Memory.GetGlobalDescriptorSet( CurrentFrame );
+
+    if ( GlobalDescriptorSet == VK_NULL_HANDLE )
+    {
+        return;
+    }
+
+    vkCmdBindDescriptorSets( InCmd, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetLayout(), 0, 1, &GlobalDescriptorSet, 0, nullptr );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::PushConstantsInternal (
+    VkCommandBuffer InCmd, const RHI::FPipelineHandle InPipeline, const void *InData, UInt32 InSize, UInt32 InOffset ) noexcept
+{
+    FVulkanPipeline *Pipeline = PipelineRegistry.Get( InPipeline );
+
+    if ( Pipeline == nullptr )
+    {
+        return;
+    }
+
+    vkCmdPushConstants( InCmd, Pipeline->GetLayout(), VK_SHADER_STAGE_ALL_GRAPHICS, InOffset, InSize, InData );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DrawMeshInternal ( VkCommandBuffer InCmd, const RHI::FMeshHandle InMesh ) noexcept
+{
+    FVulkanMesh *Mesh = MeshRegistry.Get( InMesh );
+
+    if ( Mesh == nullptr )
+    {
+        return;
+    }
+
+    Mesh->BindAndDraw( InCmd );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DrawSceneInternal ( VkCommandBuffer InCmd, const RHI::FSceneSnapshot &InSceneSnapshot, const Float32 InClearColor[4] ) noexcept
+{
+    const UInt32 CurrentFrame = FrameContext.GetCurrentFrameIndex();
+
+    VulkanSceneRenderer::PrepareScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, SceneBuffer, IndirectBuffer, CullingPass );
+
+    BeginRenderingInternal( InCmd, InClearColor );
+
+    VulkanSceneRenderer::RenderScene( InCmd, InSceneSnapshot, CurrentFrame, MeshRegistry, PipelineRegistry, Memory, IndirectBuffer, CullingPass );
+
+    vkCmdEndRendering( InCmd );
+}
+
+/**
+ * Getters
+ */
+
+LumenEngine::VulkanRHI::FVulkanLogicalDevice LumenEngine::VulkanRHI::FVulkanRHI::GetLogicalDevice () const noexcept
+{
+    return LogicalDevice;
+}
+
+LumenEngine::VulkanRHI::FVulkanPhysicalDevice LumenEngine::VulkanRHI::FVulkanRHI::GetPhysicalDevice () const noexcept
+{
+    return PhysicalDevice;
+}
+
+LumenEngine::VulkanRHI::FVulkanInstance LumenEngine::VulkanRHI::FVulkanRHI::GetInstance () const noexcept
+{
+    return Instance;
+}
+
+VmaAllocator LumenEngine::VulkanRHI::FVulkanRHI::GetAllocator () const noexcept
+{
+    return Memory.GetAllocator();
+}
+
+LumenEngine::VulkanRHI::FVulkanSwapChain &LumenEngine::VulkanRHI::FVulkanRHI::GetSwapChain () noexcept
+{
+    return SwapChain;
+}
+
+/**
+ * Private
+ */
+
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanInstance ( const TSharedPtr<FGenericWindow> &InWindow )
+{
+    Instance.Initialize( InWindow );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeVulkanDevice ()
+{
+    const TVector<const AnsiChar *> DeviceExtensions = { VK_KHR_SWAPCHAIN_EXTENSION_NAME };
+
+    PhysicalDevice.Initialize( Instance.GetHandle(), Instance.GetSurface() );
+    LogicalDevice.Initialize( PhysicalDevice.GetHandle(), Instance.GetSurface(), DeviceExtensions );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::InitializeSwapChain ( const TSharedPtr<FGenericWindow> &InWindow )
+{
+    const VkPhysicalDevice &PhysicalDeviceHandle = PhysicalDevice.GetHandle();
+    const VkDevice &LogicalDeviceHandle          = LogicalDevice.GetHandle();
+    const Maths::FVec2u WindowSize               = static_cast<Maths::FVec2u>( InWindow->GetWindowSize() );
+
+    SwapChain.InitializeSynStructures( LogicalDeviceHandle );
+    SwapChain.Create( PhysicalDeviceHandle, LogicalDeviceHandle, Instance.GetSurface(), VK_FORMAT_B8G8R8A8_SRGB, WindowSize, true );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVulkanInstance () noexcept
+{
+    Instance.Cleanup();
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroyVulkanDevice () noexcept
+{
+    LogicalDevice.Cleanup();
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::DestroySwapChain () noexcept
+{
+    SwapChain.Cleanup( LogicalDevice.GetHandle() );
+}
+
+void LumenEngine::VulkanRHI::FVulkanRHI::ShutdownGpuDrivenResources () noexcept
+{
+    CullingPass.Shutdown( LogicalDevice.GetHandle() );
+    IndirectBuffer.Shutdown( Memory.GetAllocator() );
+    SceneBuffer.Shutdown( Memory.GetAllocator(), LogicalDevice.GetHandle() );
 }
