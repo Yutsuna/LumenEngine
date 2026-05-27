@@ -384,16 +384,19 @@ LumenEngine::VulkanRHI::FPipelineDescription LumenEngine::VulkanRHI::FVulkanPipe
 LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanRHI::FVulkanPipeline::Initialize ( VkDevice InDevice,
                                                                                                                   const FPipelineDescription &InDescription,
                                                                                                                   const RHI::FShaderByteCode &InVertexSpirV,
-                                                                                                                  const RHI::FShaderByteCode &InFragmentSpirV )
+                                                                                                                  const RHI::FShaderByteCode &InFragmentSpirV,
+                                                                                                                  VkPipelineCache InPipelineCache )
 {
     Cleanup( InDevice );
 
-    if ( InDevice == VK_NULL_HANDLE or InDescription.GlobalSetLayout == VK_NULL_HANDLE or InVertexSpirV.empty() or InFragmentSpirV.empty() )
-    {
-        return std::unexpected( LumenEngine::EErrorCode::InvalidArgument );
-    }
+    const Bool bValidDevice         = InDevice != VK_NULL_HANDLE;
+    const Bool bValidSetLayout      = InDescription.GlobalSetLayout != VK_NULL_HANDLE;
+    const Bool bValidVertexShader   = not InVertexSpirV.empty();
+    const Bool bValidFragmentShader = not InFragmentSpirV.empty();
+    const Bool bIsValid             = bValidDevice and bValidSetLayout and bValidVertexShader and bValidFragmentShader;
 
-    // Cache state to support visual config shifts or context recreations
+    LUMEN_EXPECT( bIsValid, EErrorCode::InvalidArgument );
+
     DescriptionCapped = InDescription;
     VertexSpirV       = InVertexSpirV;
     FragmentSpirV     = InFragmentSpirV;
@@ -407,7 +410,7 @@ LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanR
     LUMEN_VK_CHECK( vkCreatePipelineLayout( InDevice, &PipelineState.PipelineLayoutInfo, nullptr, &PipelineLayout ) );
 
     const VkGraphicsPipelineCreateInfo PipelineInfo = CreateGraphicsPipelineInfoFromState( PipelineState, PipelineLayout, PipelineState.RenderingInfo );
-    LUMEN_VK_CHECK( vkCreateGraphicsPipelines( InDevice, VK_NULL_HANDLE, 1, &PipelineInfo, nullptr, &Pipeline ) );
+    LUMEN_VK_CHECK( vkCreateGraphicsPipelines( InDevice, InPipelineCache, 1, &PipelineInfo, nullptr, &Pipeline ) );
 
     vkDestroyShaderModule( InDevice, VertexModule, nullptr );
     vkDestroyShaderModule( InDevice, FragmentModule, nullptr );
@@ -415,18 +418,19 @@ LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanR
     return {};
 }
 
-LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanRHI::FVulkanPipeline::Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples )
+LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type>
+LumenEngine::VulkanRHI::FVulkanPipeline::Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples, VkPipelineCache InPipelineCache )
 {
     const RHI::FShaderByteCode TempVertex     = VertexSpirV;
     const RHI::FShaderByteCode TempFragment   = FragmentSpirV;
     FPipelineDescription TempDesc             = DescriptionCapped;
     TempDesc.Multisample.RasterizationSamples = InSamples;
 
-    return Initialize( InDevice, TempDesc, TempVertex, TempFragment );
+    return Initialize( InDevice, TempDesc, TempVertex, TempFragment, InPipelineCache );
 }
 
-LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type>
-LumenEngine::VulkanRHI::FVulkanPipeline::Recreate ( VkDevice InDevice, VkSampleCountFlagBits InSamples, VkPipeline &OutOldPipeline, VkPipelineLayout &OutOldLayout )
+LumenEngine::TExpected<void, LumenEngine::EErrorCode::Type> LumenEngine::VulkanRHI::FVulkanPipeline::Recreate (
+    VkDevice InDevice, VkSampleCountFlagBits InSamples, VkPipeline &OutOldPipeline, VkPipelineLayout &OutOldLayout, VkPipelineCache InPipelineCache )
 {
     OutOldPipeline = Pipeline;
     OutOldLayout   = PipelineLayout;
@@ -434,7 +438,7 @@ LumenEngine::VulkanRHI::FVulkanPipeline::Recreate ( VkDevice InDevice, VkSampleC
     Pipeline       = VK_NULL_HANDLE;
     PipelineLayout = VK_NULL_HANDLE;
 
-    return Recreate( InDevice, InSamples );
+    return Recreate( InDevice, InSamples, InPipelineCache );
 }
 
 void LumenEngine::VulkanRHI::FVulkanPipeline::Cleanup ( VkDevice InDevice ) noexcept
