@@ -8,7 +8,7 @@
 #include "Thread/SPMCQueue.hpp"
 
 template <typename Type>
-LumenEngine::Parallel::TSPMCQueue<Type>::TSPMCQueue ( USize InCapacity )
+LumenEngine::Parallel::TSPMCQueue<Type>::TSPMCQueue( USize InCapacity )
     : OwnedBuffer( LumenEngine::MakeUnique<FCell[]>( InCapacity ) ),
       /* */
       CapacityMask( InCapacity - 1ULL ),
