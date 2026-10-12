@@ -1,7 +1,5 @@
-///
-/// @file Core/Private/Filesystem/Directory.cpp
-/// @brief FDirectory helper implementations.
-///
+/// @file Directory.cpp
+/// @brief Monadic FDirectory helper implementations.
 
 #include <Filesystem/Directory.hpp>
 #include <Filesystem/IFileSystem.hpp>
@@ -12,24 +10,22 @@ namespace Lumen
 namespace Filesystem
 {
 
-    IFileSystem &GetDefaultFileSystem () noexcept;
-
     Bool FDirectory::Exists ( const FPath &InPath ) noexcept
     {
         return GetDefaultFileSystem().DirectoryExists( InPath );
     }
 
-    Bool FDirectory::Create ( const FPath &InPath ) noexcept
+    TExpected<void, EFileError> FDirectory::Create ( const FPath &InPath ) noexcept
     {
         return GetDefaultFileSystem().CreateDirectory( InPath );
     }
 
-    Bool FDirectory::CreateDirectories ( const FPath &InPath ) noexcept
+    TExpected<void, EFileError> FDirectory::CreateDirectories ( const FPath &InPath ) noexcept
     {
         return GetDefaultFileSystem().CreateDirectories( InPath );
     }
 
-    Bool FDirectory::Delete ( const FPath &InPath, Bool bRecursive ) noexcept
+    TExpected<void, EFileError> FDirectory::Delete ( const FPath &InPath, const Bool bRecursive ) noexcept
     {
         return GetDefaultFileSystem().DeleteDirectory( InPath, bRecursive );
     }

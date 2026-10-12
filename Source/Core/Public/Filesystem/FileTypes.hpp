@@ -63,6 +63,10 @@ namespace Filesystem
         DiskFull,
         InvalidHandle,
         PathTooLong,
+        SharingViolation,
+        NotADirectory,
+        IsADirectory,
+        IoError,
         Unknown
     };
 

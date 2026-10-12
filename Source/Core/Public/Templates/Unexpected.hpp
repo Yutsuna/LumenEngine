@@ -4,6 +4,7 @@
 #pragma once
 
 #include <type_traits>
+#include <utility>
 
 namespace Lumen
 {
@@ -14,7 +15,7 @@ namespace Lumen
 ///
 struct FUnexpect
 {
-    constexpr explicit FUnexpect() = default;
+    constexpr explicit FUnexpect () = default;
 };
 
 inline constexpr FUnexpect Unexpect{};
@@ -28,31 +29,31 @@ template <class ErrorType> class TUnexpected
 
 public:
 
-    constexpr explicit TUnexpected(const ErrorType &InError) noexcept : Err(InError)
+    constexpr explicit TUnexpected ( const ErrorType &InError ) noexcept : Err( InError )
     {
         /// Empty
     }
 
-    constexpr explicit TUnexpected(ErrorType &&InError) noexcept : Err(std::move(InError))
+    constexpr explicit TUnexpected ( ErrorType &&InError ) noexcept : Err( std::move( InError ) )
     {
         /// Empty
     }
 
     template <class... Args>
         requires std::is_constructible_v<ErrorType, Args...>
-    constexpr explicit TUnexpected(std::in_place_t, Args &&... InArgs) noexcept : Err(std::forward<Args>(InArgs)...)
+    constexpr explicit TUnexpected( std::in_place_t, Args &&...InArgs ) noexcept : Err( std::forward<Args>( InArgs )... )
     {
         /// Empty
     }
 
-    constexpr decltype( auto ) Error(this auto &&Self) noexcept
+    constexpr decltype( auto ) Error ( this auto &&Self ) noexcept
     {
-        return std::forward<decltype( Self )>(Self).Err;
+        return std::forward<decltype( Self )>( Self ).Err;
     }
 
-    constexpr decltype( auto ) Value(this auto &&Self) noexcept
+    constexpr decltype( auto ) Value ( this auto &&Self ) noexcept
     {
-        return std::forward<decltype( Self )>(Self).Err;
+        return std::forward<decltype( Self )>( Self ).Err;
     }
 
 private:
@@ -61,13 +62,13 @@ private:
 };
 
 /// @brief Deduction guide for TUnexpected
-template <class ErrorType> TUnexpected(ErrorType) noexcept -> TUnexpected<ErrorType>;
+template <class ErrorType> TUnexpected( ErrorType ) noexcept -> TUnexpected<ErrorType>;
 
 /// @brief Helper function to create a TUnexpected
 template <class ErrorType>
-[[nodiscard]] constexpr TUnexpected<std::decay_t<ErrorType>> MakeUnexpected(ErrorType &&InError) noexcept
+[[nodiscard]] constexpr TUnexpected<std::decay_t<ErrorType>> MakeUnexpected ( ErrorType &&InError ) noexcept
 {
-    return TUnexpected<std::decay_t<ErrorType>>(std::forward<ErrorType>(InError));
+    return TUnexpected<std::decay_t<ErrorType>>( std::forward<ErrorType>( InError ) );
 }
 
 } // namespace Lumen

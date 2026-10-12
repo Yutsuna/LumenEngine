@@ -8,7 +8,7 @@ let
   version = builtins.head (builtins.split "\n" (builtins.readFile ../VERSION.md));
 in
 gccStdenv.mkDerivation {
-  pname = "TrafficEngine";
+  pname = "Lumen";
   inherit version;
   src = pkgs.lib.cleanSource ../.;
 
@@ -16,7 +16,7 @@ gccStdenv.mkDerivation {
   buildInputs = deps.buildInputs ++ [ pkgs.gcc16.cc.lib ];
 
   meta = {
-    description = "TrafficEngine simulation library";
+    description = "Lumen Rendering Engine";
     platforms = pkgs.lib.platforms.all;
   };
 }

@@ -1,5 +1,5 @@
 {
-  description = "Simulation Rendering Engine";
+  description = "Lumen Rendering Engine";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
   };

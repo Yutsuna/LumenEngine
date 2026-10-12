@@ -12,7 +12,6 @@
 
 namespace Lumen
 {
-
 inline Filesystem::FPath::FPath ( const FStringView InPath ) noexcept : PathString( InPath )
 {
     Normalize();
@@ -23,7 +22,7 @@ inline Filesystem::FPath::FPath ( FString InPath ) noexcept : PathString( std::m
     Normalize();
 }
 
-inline Filesystem::FPath::FPath ( const AnsiChar *InPath ) noexcept : PathString( InPath ? InPath : "" )
+inline Filesystem::FPath::FPath ( const AnsiChar *InPath ) noexcept : PathString( ( InPath != nullptr ) ? InPath : "" )
 {
     Normalize();
 }
@@ -35,13 +34,13 @@ inline void Filesystem::FPath::Normalize () noexcept
         return;
     }
 
-    std::replace( PathString.begin(), PathString.end(), '\\', '/' );
+    std::ranges::replace( PathString, '\\', '/' );
 
-    const auto NewEnd = std::unique( PathString.begin(), PathString.end(),
-                                     [] ( const AnsiChar A, const AnsiChar B ) { return A == '/' && B == '/'; } );
-    PathString.erase( NewEnd, PathString.end() );
+    const auto NewEnd =
+        std::ranges::unique( PathString, [] ( const AnsiChar A, const AnsiChar B ) { return A == '/' and B == '/'; } );
+    PathString.erase( NewEnd.begin(), PathString.end() );
 
-    if ( PathString.size() > 1 && PathString.back() == '/' )
+    if ( PathString.size() > 1 and PathString.back() == '/' )
     {
         PathString.pop_back();
     }
@@ -52,7 +51,7 @@ inline FStringView Filesystem::FPath::GetExtension () const noexcept
     const FStringView Filename = GetFilename();
     const USize DotPosition    = Filename.find_last_of( '.' );
 
-    if ( DotPosition == FStringView::npos || DotPosition == 0 )
+    if ( DotPosition == FStringView::npos or DotPosition == 0 )
     {
         return {};
     }
@@ -77,7 +76,7 @@ inline FStringView Filesystem::FPath::GetStem () const noexcept
     const FStringView Filename = GetFilename();
     const USize DotPosition    = Filename.find_last_of( '.' );
 
-    if ( DotPosition == FStringView::npos || DotPosition == 0 )
+    if ( DotPosition == FStringView::npos or DotPosition == 0 )
     {
         return Filename;
     }
@@ -112,17 +111,17 @@ inline Bool Filesystem::FPath::HasExtension () const noexcept
     const FStringView Filename = GetFilename();
     const USize DotPosition    = Filename.find_last_of( '.' );
 
-    return DotPosition != FStringView::npos && DotPosition > 0;
+    return DotPosition != FStringView::npos and DotPosition > 0;
 }
 
 inline Bool Filesystem::FPath::IsRelative () const noexcept
 {
-    return !IsAbsolute();
+    return not IsAbsolute();
 }
 
 inline Bool Filesystem::FPath::IsAbsolute () const noexcept
 {
-    return !PathString.empty() && PathString.front() == '/';
+    return not PathString.empty() and PathString.front() == '/';
 }
 
 inline Bool Filesystem::FPath::IsEmpty () const noexcept
@@ -141,7 +140,7 @@ inline Filesystem::FPath &Filesystem::FPath::Append ( FStringView InPart ) noexc
     {
         PathString = InPart;
     }
-    else if ( !InPart.empty() )
+    else if ( not InPart.empty() )
     {
         PathString += '/';
         PathString += InPart;
@@ -175,5 +174,4 @@ inline const AnsiChar *Filesystem::FPath::ToCString () const noexcept
 {
     return PathString.c_str();
 }
-
 } // namespace Lumen
