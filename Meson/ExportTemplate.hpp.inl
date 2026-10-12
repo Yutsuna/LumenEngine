@@ -1,0 +1,20 @@
+#pragma once
+//clang-format off
+#if defined( _WIN32 ) || defined( __CYGWIN__ )
+    #if defined( @MODULE@_BUILD_SHARED )
+        #define @MODULE@_EXPORT __declspec( dllexport )
+    #elif defined( @MODULE@_USE_SHARED )
+        #define @MODULE@_EXPORT __declspec( dllimport )
+    #else
+        #define @MODULE@_EXPORT
+    #endif
+#elif defined( __GNUC__ ) || defined( __clang__ )
+    #if defined( @MODULE@_BUILD_SHARED )
+        #define @MODULE@_EXPORT __attribute__( ( visibility( "default" ) ) )
+    #else
+        #define @MODULE@_EXPORT
+    #endif
+#else
+    #define @MODULE@_EXPORT
+#endif
+//clang-format on
