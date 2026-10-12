@@ -54,7 +54,7 @@ Checks: >
   -cert-err33-c
 
 WarningsAsErrors: "*"
-HeaderFilterRegex: "LumenEngine/Source/.*"
+HeaderFilterRegex: "Source/.*"
 SystemHeaders: false
 
 CheckOptions:
