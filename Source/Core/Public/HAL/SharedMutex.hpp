@@ -22,8 +22,8 @@ class CORE_EXPORT FSharedMutex final : public FNonCopyable, public FNonMovable
 {
 public:
 
-    FSharedMutex() noexcept  = default;
-    ~FSharedMutex() noexcept = default;
+    FSharedMutex () noexcept  = default;
+    ~FSharedMutex () noexcept = default;
 
 public:
 
@@ -31,55 +31,55 @@ public:
     /// @brief Acquires the exclusive (write) lock.
     /// @details Blocks until all readers have drained and no other writer holds the lock.
     ///
-    void Lock() noexcept;
+    void Lock () noexcept;
 
     ///
     /// @brief Attempts to acquire the exclusive (write) lock without blocking.
     /// @returns True if the lock was acquired (no readers, no other writer), false otherwise
     ///
-    [[nodiscard]] Bool TryLock() noexcept;
+    [[nodiscard]] Bool TryLock () noexcept;
 
     ///
     /// @brief Releases the exclusive (write) lock and wakes waiting threads.
     /// @pre   The calling thread must currently hold the exclusive lock.
     ///
-    void Unlock() noexcept;
+    void Unlock () noexcept;
 
     ///
     /// @brief Acquires a shared (read) lock.
     /// @details Multiple threads may hold the shared lock concurrently.
     ///          Blocks while a writer holds or is waiting for the exclusive lock.
     ///
-    void LockShared() noexcept;
+    void LockShared () noexcept;
 
     ///
     /// @brief Attempts to acquire the shared (read) lock without blocking.
     /// @returns `true`  if the shared lock was acquired (no active writer).
     /// @returns `false` if a writer is currently active.
     ///
-    [[nodiscard]] Bool TryLockShared() noexcept;
+    [[nodiscard]] Bool TryLockShared () noexcept;
 
     ///
     /// @brief Releases a shared (read) lock.
     /// @pre   The calling thread must currently hold a shared lock.
     ///
-    void UnlockShared() noexcept;
+    void UnlockShared () noexcept;
 
 public:
 
     /// @returns `true` if the exclusive lock is currently held.
-    [[nodiscard]] Bool IsWriteLocked() const noexcept;
+    [[nodiscard]] Bool IsWriteLocked () const noexcept;
 
     /// @returns The number of threads currently holding the shared lock.
-    [[nodiscard]] UInt32 SharedLockCount() const noexcept;
+    [[nodiscard]] UInt32 SharedLockCount () const noexcept;
 
 private:
 
     /// @brief Spins (with backoff + wait) until WriterFlag equals InExpected.
-    void WaitForWriterFlag(UInt32 InExpected) noexcept;
+    void WaitForWriterFlag ( UInt32 InExpected ) noexcept;
 
     /// @brief Spins (with backoff + wait) until ReaderCount reaches zero.
-    void WaitForReadersTodrain() noexcept;
+    void WaitForReadersTodrain () noexcept;
 
 private:
 
@@ -87,12 +87,12 @@ private:
     /// @brief Non-zero while a writer is waiting for or holds the exclusive lock.
     /// @details `0` = unlocked, `1` = writer active.
     ///
-    TAtomic<UInt32> WriterFlag{0U};
+    TAtomic<UInt32> WriterFlag{ 0U };
 
     ///
     /// @brief Count of threads currently holding a shared (read) lock.
     ///
-    TAtomic<UInt32> ReaderCount{0U};
+    TAtomic<UInt32> ReaderCount{ 0U };
 };
 
 ///
@@ -108,7 +108,7 @@ private:
 /// ```cpp
 /// FSharedMutex Mutex;
 /// {
-///     TSharedLock< LumenEngine::FSharedMutex > Guard( Mutex );   //< shared lock acquired
+///     TSharedLock< FSharedMutex > Guard( Mutex );   //< shared lock acquired
 ///     //< ... read shared state ...
 /// }                                    //< shared lock released
 /// ```
@@ -121,10 +121,10 @@ public:
     /// @brief Constructs the guard and acquires the shared lock.
     /// @param InMutex  The mutex to lock.  Must outlive this guard.
     ///
-    explicit TSharedLock(MutexType &InMutex) noexcept;
+    explicit TSharedLock ( MutexType &InMutex ) noexcept;
 
     /// @brief Releases the shared lock.
-    ~TSharedLock() noexcept;
+    ~TSharedLock () noexcept;
 
 private:
 
@@ -156,46 +156,46 @@ template <typename MutexType> class TSharedUniqueLock final : public FNonCopyabl
 {
 public:
 
-    TSharedUniqueLock() noexcept = default;
+    TSharedUniqueLock () noexcept = default;
 
     ///
     /// @brief Constructs the wrapper and immediately acquires the exclusive lock.
     /// @param InMutex  The mutex to lock.  Must outlive this wrapper.
     ///
-    explicit TSharedUniqueLock(MutexType &InMutex) noexcept;
+    explicit TSharedUniqueLock ( MutexType &InMutex ) noexcept;
 
     /// @brief Releases the exclusive lock if currently held.
-    ~TSharedUniqueLock() noexcept;
+    ~TSharedUniqueLock () noexcept;
 
-    TSharedUniqueLock(TSharedUniqueLock &&InOther) noexcept;
-    TSharedUniqueLock &operator=(TSharedUniqueLock &&InOther) noexcept;
+    TSharedUniqueLock ( TSharedUniqueLock &&InOther ) noexcept;
+    TSharedUniqueLock &operator=( TSharedUniqueLock &&InOther ) noexcept;
 
 public:
 
     /// @brief Acquires the exclusive lock.  No-op if the mutex pointer is null.
-    void Lock() noexcept;
+    void Lock () noexcept;
 
     /// @brief Releases the exclusive lock.  No-op if not currently locked.
-    void Unlock() noexcept;
+    void Unlock () noexcept;
 
     ///
     /// @brief Attempts to acquire the exclusive lock without blocking.
     /// @returns `true` if the lock was acquired, `false` otherwise.
     ///
-    [[nodiscard]] Bool TryLock() noexcept;
+    [[nodiscard]] Bool TryLock () noexcept;
 
     ///
     /// @brief Releases ownership of the mutex without unlocking it.
     /// @returns A pointer to the managed mutex, or `nullptr` if none.
     /// @note After this call the wrapper no longer manages any mutex.
     ///
-    [[nodiscard]] MutexType *Release() noexcept;
+    [[nodiscard]] MutexType *Release () noexcept;
 
     /// @returns `true` if the exclusive lock is currently held by this wrapper.
-    [[nodiscard]] Bool IsLocked() const noexcept;
+    [[nodiscard]] Bool IsLocked () const noexcept;
 
     /// @brief Implicit conversion to `Bool`; equivalent to `IsLocked()`.
-    [[nodiscard]] explicit operator Bool() const noexcept;
+    [[nodiscard]] explicit operator Bool () const noexcept;
 
 private:
 
@@ -203,6 +203,6 @@ private:
     Bool bIsLocked   = false;
 };
 
-}
+} // namespace Lumen
 
 #include "Inline/SharedMutex.inl"

@@ -16,7 +16,7 @@ namespace Lumen
 /// TSharedLock
 ///
 
-template <typename MutexType> TSharedLock<MutexType>::TSharedLock(MutexType &InMutex) noexcept : Mutex(InMutex)
+template <typename MutexType> TSharedLock<MutexType>::TSharedLock( MutexType &InMutex ) noexcept : Mutex( InMutex )
 {
     Mutex.LockShared();
 }
@@ -30,38 +30,38 @@ template <typename MutexType> TSharedLock<MutexType>::~TSharedLock() noexcept
 /// TSharedUniqueLock
 ///
 
-template <typename MutexType> TSharedUniqueLock<MutexType>::TSharedUniqueLock(MutexType &InMutex) noexcept : Mutex(&InMutex)
+template <typename MutexType> TSharedUniqueLock<MutexType>::TSharedUniqueLock( MutexType &InMutex ) noexcept : Mutex( &InMutex )
 {
     Lock();
 }
 
 template <typename MutexType> TSharedUniqueLock<MutexType>::~TSharedUniqueLock() noexcept
 {
-    if (bIsLocked)
+    if ( bIsLocked )
     {
         Unlock();
     }
 }
 
 template <typename MutexType>
-TSharedUniqueLock<MutexType>::TSharedUniqueLock(TSharedUniqueLock &&InOther) noexcept
-    : Mutex(std::exchange<MutexType>(InOther.Mutex, nullptr)), bIsLocked(std::exchange<Bool>(InOther.bIsLocked, false))
+TSharedUniqueLock<MutexType>::TSharedUniqueLock( TSharedUniqueLock &&InOther ) noexcept
+    : Mutex( std::exchange<MutexType>( InOther.Mutex, nullptr ) ), bIsLocked( std::exchange<Bool>( InOther.bIsLocked, false ) )
 {
     /* Empty */
 }
 
-template <typename MutexType> TSharedUniqueLock<MutexType> &TSharedUniqueLock<MutexType>::operator=(
-    TSharedUniqueLock &&InOther) noexcept
+template <typename MutexType>
+TSharedUniqueLock<MutexType> &TSharedUniqueLock<MutexType>::operator=( TSharedUniqueLock &&InOther ) noexcept
 {
-    if (this != &InOther)
+    if ( this != &InOther )
     {
-        if (bIsLocked)
+        if ( bIsLocked )
         {
             Unlock();
         }
 
-        Mutex             = std::exchange<MutexType>(InOther.Mutex, nullptr);
-        bIsLocked         = std::exchange<Bool>(InOther.bIsLocked, false);
+        Mutex             = std::exchange<MutexType>( InOther.Mutex, nullptr );
+        bIsLocked         = std::exchange<Bool>( InOther.bIsLocked, false );
         InOther.Mutex     = nullptr;
         InOther.bIsLocked = false;
     }
@@ -69,27 +69,27 @@ template <typename MutexType> TSharedUniqueLock<MutexType> &TSharedUniqueLock<Mu
     return *this;
 }
 
-template <typename MutexType> void TSharedUniqueLock<MutexType>::Lock() noexcept
+template <typename MutexType> void TSharedUniqueLock<MutexType>::Lock () noexcept
 {
-    if (Mutex)
+    if ( Mutex )
     {
         Mutex->Lock();
         bIsLocked = true;
     }
 }
 
-template <typename MutexType> void TSharedUniqueLock<MutexType>::Unlock() noexcept
+template <typename MutexType> void TSharedUniqueLock<MutexType>::Unlock () noexcept
 {
-    if (Mutex and bIsLocked)
+    if ( Mutex and bIsLocked )
     {
         Mutex->Unlock();
         bIsLocked = false;
     }
 }
 
-template <typename MutexType> Bool TSharedUniqueLock<MutexType>::TryLock() noexcept
+template <typename MutexType> Bool TSharedUniqueLock<MutexType>::TryLock () noexcept
 {
-    if (Mutex)
+    if ( Mutex )
     {
         bIsLocked = Mutex->TryLock();
         return bIsLocked;
@@ -98,20 +98,20 @@ template <typename MutexType> Bool TSharedUniqueLock<MutexType>::TryLock() noexc
     return false;
 }
 
-template <typename MutexType> MutexType *TSharedUniqueLock<MutexType>::Release() noexcept
+template <typename MutexType> MutexType *TSharedUniqueLock<MutexType>::Release () noexcept
 {
     bIsLocked = false;
-    return std::exchange<MutexType>(Mutex, nullptr);
+    return std::exchange<MutexType>( Mutex, nullptr );
 }
 
-template <typename MutexType> Bool TSharedUniqueLock<MutexType>::IsLocked() const noexcept
+template <typename MutexType> Bool TSharedUniqueLock<MutexType>::IsLocked () const noexcept
 {
     return bIsLocked;
 }
 
-template <typename MutexType> TSharedUniqueLock<MutexType>::operator Bool() const noexcept
+template <typename MutexType> TSharedUniqueLock<MutexType>::operator Bool () const noexcept
 {
     return IsLocked();
 }
 
-}
+} // namespace Lumen
