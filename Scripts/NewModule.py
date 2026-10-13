@@ -25,6 +25,7 @@ ModuleDefinition = {
     'SourceDir' : meson.current_source_dir(),
     'Private' : 'Private',
     'Public' : 'Public',
+    'Tests' : 'Tests',
     'Depends' : []
 }
 """

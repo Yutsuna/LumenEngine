@@ -11,14 +11,13 @@ foreach ModuleDefinition : ModuleDefinitions
     ModuleSourceDirRel = ModuleDefinition.get('SourceDirRel')
     PrivateDirectory = ModuleDefinition.get('Private', 'Private')
     PublicDirectory = ModuleDefinition.get('Public', 'Public')
+    TestsDirectory = ModuleDefinition.get('Tests', 'Tests')
     ModuleDependencies = ModuleDefinition.get('Depends', [])
 
     PrivateSources = []
-    # Relative path from ModuleBuilder (Source/Meson/ModuleBuilder/) to module private dir
     RelPrivatePath = '../../@0@/@1@'.format(ModuleSourceDirRel, PrivateDirectory)
 
     if FileSystem.is_dir(RelPrivatePath)
-        # find returns paths relative to CWD when given a relative input path
         FindResult = run_command(
             'find', RelPrivatePath, '-type', 'f', '(', '-name', '*.cpp', '-o', '-name', '*.c', ')',
             check : false
@@ -27,7 +26,6 @@ foreach ModuleDefinition : ModuleDefinitions
         if RawPaths != ''
             foreach FilePath : RawPaths.split('\n')
                 if FilePath != ''
-                    # FilePath is already relative to current source dir (ModuleBuilder)
                     PrivateSources += files(FilePath)
                 endif
             endforeach
@@ -109,4 +107,58 @@ foreach ModuleDefinition : ModuleDefinitions
     endif
 
     GlobalModules += { ModuleName : ModuleDependency }
+
+    # Discover and build test suite if enabled
+    TestSources = []
+    RelTestsPath = '../../@0@/@1@'.format(ModuleSourceDirRel, TestsDirectory)
+
+    if TestsDirectory != '' and FileSystem.is_dir(RelTestsPath)
+        FindTestResult = run_command(
+            'find', RelTestsPath, '-type', 'f', '(', '-name', '*.cpp', '-o', '-name', '*.c', ')',
+            check : false
+        )
+        RawTestPaths = FindTestResult.stdout().strip()
+        if RawTestPaths != ''
+            foreach FilePath : RawTestPaths.split('\n')
+                if FilePath != ''
+                    TestSources += files(FilePath)
+                endif
+            endforeach
+        endif
+    endif
+
+    if get_option('enable_testing') and TestSources.length() > 0
+        HasCustomTestMain = FileSystem.is_file(RelTestsPath / 'Main.cpp') or FileSystem.is_file(RelTestsPath / 'TestMain.cpp')
+        if not HasCustomTestMain
+            TestSources += files(meson.project_source_root() / 'Meson' / 'TestRunner.cpp')
+        endif
+
+        TestIncludeDirectories = IncludeDirectories
+        TestIncludeDirectories += include_directories(RelTestsPath)
+        if FileSystem.is_dir(RelPrivatePath)
+            TestIncludeDirectories += include_directories(RelPrivatePath)
+        endif
+
+        TestDependencies = [ModuleDependency]
+        if ModuleName != 'Core' and GlobalModules.has_key('Core') and not ModuleDependencies.contains('Core')
+            TestDependencies += GlobalModules.get('Core')
+        endif
+
+        TestTarget = executable(
+            '@0@Tests'.format(ModuleName),
+            TestSources,
+            include_directories : TestIncludeDirectories,
+            dependencies : TestDependencies,
+            cpp_args : CompileArguments,
+            c_args : CompileArguments,
+            build_by_default : false
+        )
+
+        test(
+            '@0@Tests'.format(ModuleName),
+            TestTarget,
+            workdir : meson.project_source_root(),
+            suite : ModuleName
+        )
+    endif
 endforeach

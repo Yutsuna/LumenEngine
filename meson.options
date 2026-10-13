@@ -3,7 +3,7 @@
 # Meson build options.
 #}
 
-option( 'enable_testing', type : 'boolean', value : false, description : 'Enable the CTest test suite' )
+option( 'enable_testing', type : 'boolean', value : true, description : 'Enable unit test suites' )
 option( 'enable_asan', type : 'boolean', value : false, description : 'AddressSanitizer, debug-like buildtypes only' )
 option( 'enable_ubsan', type : 'boolean', value : false, description : 'UndefinedBehaviorSanitizer, debug-like buildtypes only' )
 option( 'enable_tsan', type : 'boolean', value : false, description : 'ThreadSanitizer, debug-like buildtypes only' )
