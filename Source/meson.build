@@ -1,13 +1,9 @@
 #{
 # Source/meson.build
-# Automatically lists and builds all modules
+# Automatically lists and builds all modules.
 #}
 
 subdir('Meson/')
-
-GlobalModules = {}
-ExcludedDirectories = ['Meson']
-ModuleDefinitions = []
 
 ModuleNames = [
     'Core',
@@ -15,13 +11,15 @@ ModuleNames = [
     'Launch',
 ]
 
+ModuleDefinitions = []
+
 foreach ModuleName : ModuleNames
-    ModulePath = ModuleName
-    if FileSystem.is_file(ModulePath / 'meson.build')
-        subdir(ModulePath)
-        ModuleDefinition = ModuleDefinition + { 'SourceDirRel' : ModuleName }
-        ModuleDefinitions += [ModuleDefinition]
+    if FileSystem.is_file(ModuleName / 'meson.build')
+        subdir(ModuleName)
+        ModuleDefinitions += [ModuleDefinition + { 'SourceDirRel' : ModuleName }]
     endif
 endforeach
 
-subdir('Meson/ModuleBuilder')
+subdir('Meson/Public')
+subdir('Meson/Private')
+subdir('Meson/Tests')

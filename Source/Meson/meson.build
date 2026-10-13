@@ -1,6 +1,6 @@
 #{
-# Meson/meson.build
-# Common project meson definitions
+# Source/Meson/meson.build
+# Common project meson definitions.
 #}
 
 ALL_WARNINGS = [
@@ -25,7 +25,7 @@ ALL_WARNINGS = [
     '-fvisibility-inlines-hidden',
     '-MMD',
     '-Wno-uninitialized',
-    '-Wno-error=cpp'
+    '-Wno-error=cpp',
 ]
 
 # glibc emits a noisy #warning when _FORTIFY_SOURCE is active without optimization.
@@ -35,4 +35,10 @@ if get_option('optimization') == '0'
 endif
 
 FileSystem = import('fs')
+
 GlobalModules = {}
+PublicIncludes = {}
+
+SourceRoot = meson.project_source_root() / 'Source'
+
+ModuleDefinitions = []
