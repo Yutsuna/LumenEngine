@@ -5,14 +5,11 @@
 
 #include <Core/CoreTypes.hpp>
 #include <CoreExport.hpp>
-
-#include <Memory/UniquePtr.hpp>
-
-#include <Templates/Expected.hpp>
-
 #include <Filesystem/FileTypes.hpp>
 #include <Filesystem/IFileHandle.hpp>
 #include <Filesystem/Path.hpp>
+#include <Memory/UniquePtr.hpp>
+#include <Templates/Expected.hpp>
 
 namespace Lumen
 {
@@ -32,7 +29,6 @@ namespace Filesystem
 
     public:
 
-        /// @brief Opens a file with specified access and mode.
         [[nodiscard]] virtual TExpected<TUniquePtr<IFileHandle>, EFileError>
         OpenFile ( const FPath &InPath, EFileAccess InAccess, EFileMode InMode ) noexcept = 0;
 
@@ -43,14 +39,16 @@ namespace Filesystem
 
     public:
 
-        virtual Bool DeleteFile ( const FPath &InPath ) noexcept                               = 0;
-        virtual Bool DeleteDirectory ( const FPath &InPath, Bool bRecursive = false ) noexcept = 0;
+        virtual TExpected<void, EFileError> DeleteFile ( const FPath &InPath ) noexcept                               = 0;
+        virtual TExpected<void, EFileError> DeleteDirectory ( const FPath &InPath, Bool bRecursive = false ) noexcept = 0;
 
-        virtual Bool CreateDirectory ( const FPath &InPath ) noexcept   = 0;
-        virtual Bool CreateDirectories ( const FPath &InPath ) noexcept = 0;
+        virtual TExpected<void, EFileError> CreateDirectory ( const FPath &InPath ) noexcept   = 0;
+        virtual TExpected<void, EFileError> CreateDirectories ( const FPath &InPath ) noexcept = 0;
 
-        virtual Bool CopyFile ( const FPath &InSource, const FPath &InDestination, Bool bOverwrite = true ) noexcept = 0;
-        virtual Bool MoveFile ( const FPath &InSource, const FPath &InDestination, Bool bOverwrite = true ) noexcept = 0;
+        virtual TExpected<void, EFileError>
+        CopyFile ( const FPath &InSource, const FPath &InDestination, Bool bOverwrite = true ) noexcept = 0;
+        virtual TExpected<void, EFileError>
+        MoveFile ( const FPath &InSource, const FPath &InDestination, Bool bOverwrite = true ) noexcept = 0;
 
     public:
 

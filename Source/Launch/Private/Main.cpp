@@ -3,11 +3,9 @@
 /// @brief App module entry-point.
 ///
 
-#include <Core/CoreTypes.hpp>
+#include <Engine/LaunchEngineLoop.hpp>
 
 Lumen::Int32 main ( const Lumen::Int32 Argc, const Lumen::AnsiChar *Argv[] )
 {
-    ( void )Argc;
-    ( void )Argv;
-    return 0;
+    return Lumen::Launch::FLaunchEngineLoop::GuardedMain( Argc, Argv );
 }

@@ -1,17 +1,10 @@
-///
 /// @file Directory.inl
-/// @brief Inline implementation of FDirectory helpers.
-///
+/// @brief Inline directory traversal implementation.
 
 #pragma once
 
-#include <Filesystem/Directory.hpp>
-
-#include <dirent.h>
-#include <sys/stat.h>
-
+#include <functional>
 #include <type_traits>
-#include <utility>
 
 namespace Lumen
 {
@@ -19,69 +12,29 @@ namespace Lumen
 namespace Filesystem
 {
 
-    namespace Detail
+    namespace Internal
     {
+        CORE_EXPORT TExpected<void, EFileError> PlatformEnumerateEntries (
+            const FPath &InPath, Bool bRecursive, const std::function<Bool( const FPath &, Bool )> &InCallback );
+    }
 
-        template <typename FCallback, typename = void> struct TDirectoryCallbackReturnsBool : std::false_type
-        {
-            /// Empty
-        };
-
-        template <typename FCallback>
-        struct TDirectoryCallbackReturnsBool<FCallback, std::void_t<std::invoke_result_t<FCallback, const FPath &, Bool>>>
-            : std::is_same<std::invoke_result_t<FCallback, const FPath &, Bool>, Bool>
-        {
-            /// Empty
-        };
-
-        template <typename FCallback>
-        constexpr Bool bDirectoryCallbackReturnsBool = TDirectoryCallbackReturnsBool<FCallback>::value;
-
-    } // namespace Detail
-
-    template <typename FCallback> void FDirectory::ForEachEntry ( const FPath &InPath, Bool bRecursive, FCallback &&Callback )
+    template <typename FCallback>
+    TExpected<void, EFileError> FDirectory::ForEachEntry ( const FPath &InPath, const Bool bRecursive, FCallback &&Callback )
     {
-        DIR *const DirectoryStream = opendir( InPath.ToCString() );
-        if ( DirectoryStream == nullptr )
-        {
-            return;
-        }
-
-        while ( const dirent *const Entry = readdir( DirectoryStream ) )
-        {
-            const AnsiChar *const Name = Entry->d_name;
-
-            if ( Name[0] == '.' && ( Name[1] == '\0' || ( Name[1] == '.' && Name[2] == '\0' ) ) )
+        return Internal::PlatformEnumerateEntries(
+            InPath, bRecursive,
+            [&Callback] ( const FPath &EntryPath, const Bool bIsDir ) -> Bool
             {
-                continue;
-            }
-
-            FPath EntryPath = InPath;
-            EntryPath /= FStringView( Name );
-
-            struct stat StatBuffer{};
-            const Bool bIsDirectory = stat( EntryPath.ToCString(), &StatBuffer ) == 0 && S_ISDIR( StatBuffer.st_mode );
-
-            if constexpr ( Detail::bDirectoryCallbackReturnsBool<FCallback> )
-            {
-                if ( !Callback( EntryPath, bIsDirectory ) )
+                if constexpr ( std::is_invocable_r_v<Bool, FCallback, const FPath &, Bool> )
                 {
-                    closedir( DirectoryStream );
-                    return;
+                    return Callback( EntryPath, bIsDir );
                 }
-            }
-            else
-            {
-                Callback( EntryPath, bIsDirectory );
-            }
-
-            if ( bRecursive && bIsDirectory )
-            {
-                ForEachEntry( EntryPath, bRecursive, std::forward<FCallback>( Callback ) );
-            }
-        }
-
-        closedir( DirectoryStream );
+                else
+                {
+                    Callback( EntryPath, bIsDir );
+                    return true;
+                }
+            } );
     }
 
 } // namespace Filesystem

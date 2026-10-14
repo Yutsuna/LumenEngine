@@ -3,6 +3,7 @@
 
 #pragma once
 
+#include <CoreExport.hpp>
 #include <Templates/MonadicDetails.hpp>
 
 #include <concepts>
@@ -11,10 +12,8 @@
 
 namespace Lumen
 {
-
 namespace Concepts
 {
-
     /// @concept CMonadic
     /// @brief Test the 3 monadic state
     template <class Container>
@@ -52,16 +51,14 @@ namespace Concepts
                                } -> CSameAs<MonadicDetail::TSelfType<Self>>;
                                ///
                            };
-
 } // namespace Concepts
 
 ///
 /// @struct FMonadic
 /// @brief Monadic mixin with 0 CRTP
 ///
-struct FMonadic
+struct CORE_EXPORT FMonadic
 {
-
 public:
 
     /// @brief T -> U TOptional<T>.Transform(T->U) = TOptional<U>
@@ -160,5 +157,4 @@ public:
         return static_cast<R>( std::forward<U>( Fallback ) );
     }
 };
-
 } // namespace Lumen
