@@ -22,24 +22,24 @@ class CORE_EXPORT FMutex final : public FNonCopyable, public FNonMovable, public
 {
 public:
 
-    FMutex() noexcept           = default;
-    ~FMutex() noexcept override = default;
+    FMutex () noexcept           = default;
+    ~FMutex () noexcept override = default;
 
 public:
 
     /// @brief Acquires the mutex. Spins & then waits if the mutex is unavailable
-    void Lock() noexcept override;
+    void Lock () noexcept override;
 
     /// @brief Attempts to acquire the mutex without blocking.
-    [[nodiscard]] Bool TryLock() noexcept override;
+    [[nodiscard]] Bool TryLock () noexcept override;
 
     /// @brief Releases the mutex.
-    void Unlock() noexcept override;
+    void Unlock () noexcept override;
 
     /// @brief Checks if the mutex is locked.
-    [[nodiscard]] Bool IsLocked() const noexcept override;
+    [[nodiscard]] Bool IsLocked () const noexcept override;
 
-    [[nodiscard]] explicit operator Bool() const noexcept override;
+    [[nodiscard]] explicit operator Bool () const noexcept override;
 
 private:
 
@@ -51,8 +51,8 @@ template <typename MutexType> class TLockGuard final : public FNonCopyable, publ
 {
 public:
 
-    explicit TLockGuard(MutexType &InMutex) noexcept;
-    ~TLockGuard() noexcept;
+    explicit TLockGuard ( MutexType &InMutex ) noexcept;
+    ~TLockGuard () noexcept;
 
 private:
 
@@ -67,24 +67,24 @@ template <typename MutexType> class TUniqueLock final : public FNonCopyable, pub
 {
 public:
 
-    TUniqueLock() noexcept = default;
-    explicit TUniqueLock(MutexType &InMutex) noexcept;
-    ~TUniqueLock() noexcept override;
+    TUniqueLock () noexcept = default;
+    explicit TUniqueLock ( MutexType &InMutex ) noexcept;
+    ~TUniqueLock () noexcept override;
 
-    TUniqueLock(TUniqueLock &&InOther) noexcept;
-    TUniqueLock &operator=(TUniqueLock &&InOther) noexcept;
+    TUniqueLock ( TUniqueLock &&InOther ) noexcept;
+    TUniqueLock &operator=( TUniqueLock &&InOther ) noexcept;
 
 public:
 
-    void Lock() noexcept override;
-    void Unlock() noexcept override;
-    [[nodiscard]] Bool TryLock() noexcept override;
+    void Lock () noexcept override;
+    void Unlock () noexcept override;
+    [[nodiscard]] Bool TryLock () noexcept override;
 
     /// @brief Releases the mutex ownership without unlocking it.
-    MutexType *Release() noexcept;
+    MutexType *Release () noexcept;
 
-    [[nodiscard]] Bool IsLocked() const noexcept override;
-    [[nodiscard]] explicit operator Bool() const noexcept override;
+    [[nodiscard]] Bool IsLocked () const noexcept override;
+    [[nodiscard]] explicit operator Bool () const noexcept override;
 
 private:
 

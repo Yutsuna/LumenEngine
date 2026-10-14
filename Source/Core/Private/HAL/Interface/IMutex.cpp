@@ -5,17 +5,17 @@
 
 #include <HAL/Interface/IMutex.hpp>
 
-void Lumen::Internal::IMutex::lock() noexcept
+void Lumen::Internal::IMutex::lock () noexcept
 {
     Lock();
 }
 
-void Lumen::Internal::IMutex::unlock() noexcept
+void Lumen::Internal::IMutex::unlock () noexcept
 {
     Unlock();
 }
 
-[[nodiscard]] Lumen::Bool Lumen::Internal::IMutex::try_lock() noexcept
+[[nodiscard]] Lumen::Bool Lumen::Internal::IMutex::try_lock () noexcept
 {
     return TryLock();
 }

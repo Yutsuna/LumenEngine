@@ -7,31 +7,31 @@
 
 #include <atomic>
 
-void Lumen::FMutex::Lock() noexcept
+void Lumen::FMutex::Lock () noexcept
 {
-    while (MutexFlag.test_and_set(std::memory_order::acquire))
+    while ( MutexFlag.test_and_set( std::memory_order::acquire ) )
     {
-        MutexFlag.wait(true, std::memory_order::relaxed);
+        MutexFlag.wait( true, std::memory_order::relaxed );
     }
 }
 
-Lumen::Bool Lumen::FMutex::TryLock() noexcept
+Lumen::Bool Lumen::FMutex::TryLock () noexcept
 {
-    return not MutexFlag.test_and_set(std::memory_order::acquire);
+    return not MutexFlag.test_and_set( std::memory_order::acquire );
 }
 
-void Lumen::FMutex::Unlock() noexcept
+void Lumen::FMutex::Unlock () noexcept
 {
-    MutexFlag.clear(std::memory_order::release);
+    MutexFlag.clear( std::memory_order::release );
     MutexFlag.notify_one();
 }
 
-Lumen::Bool Lumen::FMutex::IsLocked() const noexcept
+Lumen::Bool Lumen::FMutex::IsLocked () const noexcept
 {
-    return MutexFlag.test(std::memory_order::relaxed);
+    return MutexFlag.test( std::memory_order::relaxed );
 }
 
-Lumen::FMutex::operator Bool() const noexcept
+Lumen::FMutex::operator Bool () const noexcept
 {
     return IsLocked();
 }
