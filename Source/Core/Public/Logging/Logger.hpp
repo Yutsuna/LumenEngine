@@ -29,9 +29,11 @@ public:
     void TLog ( const FLogCategory &Category, ELogVerbosity::Type Verbosity, FStringView Format, Args &&...InArgs ) noexcept;
 
     /// @brief Initializes the logger and starts the worker thread.
+    /// @note Until this is called (or if the thread cannot be created), messages are written synchronously.
     void Initialize () noexcept;
 
     /// @brief Shuts down the logger and flushes all pending log messages.
+    /// @note Thread-safe. After this call, messages are written synchronously.
     void Shutdown () noexcept;
 
 public:
@@ -65,12 +67,13 @@ private:
 
 private:
 
-    FMutex QueueMutex;
+    FMutex QueueMutex;    ///< Guards LogMessageQueue, WorkerThread and the writes to bIsAsync.
+    FMutex ShutdownMutex; ///< Serializes concurrent Shutdown() calls.
     std::condition_variable_any Condition;
     TQueue<FLogMessage> LogMessageQueue;
 
-    std::jthread WorkerThread;
-    TAtomic<Bool> bIsAsync;
+    std::jthread WorkerThread; ///< Only access under QueueMutex.
+    TAtomic<Bool> bIsAsync{ false };
 };
 
 } // namespace Lumen
@@ -80,7 +83,10 @@ private:
 #define LUMEN_LOG( Category, Verbosity, Format, ... )                                                                            \
     Lumen::FLogger::GetInstance().TLog( Category, Verbosity, Format __VA_OPT__(, ) __VA_ARGS__ )
 
-#define LUMEN_LOG_DEFINE_CATEGORY( CategoryVar, CategoryName ) static const ::Lumen::FLogCategory CategoryVar( CategoryName );
+/// @note The name is converted to FStringView explicitly: FLogCategory has both an FStringView and an FString
+///       constructor, so passing a string literal directly is ambiguous.
+#define LUMEN_LOG_DEFINE_CATEGORY( CategoryVar, CategoryName )                                                                   \
+    static const ::Lumen::FLogCategory CategoryVar( static_cast<::Lumen::FStringView>( CategoryName ) );
 
 #define LUMEN_LOG_FATAL( Category, Format, ... )                                                                                 \
     LUMEN_LOG( Category, Lumen::ELogVerbosity::Fatal, Format __VA_OPT__(, ) __VA_ARGS__ )
