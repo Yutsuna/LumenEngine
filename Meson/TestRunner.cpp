@@ -3,7 +3,7 @@
 
 #include <Tests/UnitTest.hpp>
 
-int main ( const int argc, const char *argv[] )
+Lumen::Int32 main ( const Lumen::Int32 argc, const Lumen::AnsiChar *argv[] )
 {
     Lumen::FStringView SuiteFilter{};
     if ( argc > 1 )
