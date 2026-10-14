@@ -82,7 +82,7 @@ void Lumen::FLogger::FlushLogMessages(std::stop_token &StopToken)
 {
     while (not StopToken.stop_requested() or not LogMessageQueue.empty())
     {
-        TUniqueLock<FMute> Lock(QueueMutex);
+        TUniqueLock<FMutex> Lock(QueueMutex);
 
         Condition.wait(Lock, StopToken, [this]
         {
