@@ -26,21 +26,21 @@ public:
 
     /// @brief Logs a message to the console
     template <typename... Args>
-    void TLog(const FLogCategory &Category, ELogVerbosity::Type Verbosity, FStringView Format, Args &&... InArgs) noexcept;
+    void TLog ( const FLogCategory &Category, ELogVerbosity::Type Verbosity, FStringView Format, Args &&...InArgs ) noexcept;
 
     /// @brief Initializes the logger and starts the worker thread.
-    void Initialize() noexcept;
+    void Initialize () noexcept;
 
     /// @brief Shuts down the logger and flushes all pending log messages.
-    void Shutdown() noexcept;
+    void Shutdown () noexcept;
 
 public:
 
     /// @brief Gets the singleton instance of the logger.
-    static FLogger &GetInstance() noexcept;
+    static FLogger &GetInstance () noexcept;
 
     /// @brief Flushes a message to the console immediately without enqueuing it.
-    static void Flush(const AnsiChar *const String) noexcept;
+    static void Flush ( const AnsiChar *const String ) noexcept;
 
 public:
 
@@ -54,14 +54,14 @@ public:
 
 private:
 
-    void EnqueueLogMessage(const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message);
-    void FlushLogMessages(std::stop_token &StopToken);
-    void CoutMessage(const FLogMessage &LogMessage) const noexcept;
+    void EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message );
+    void FlushLogMessages ( std::stop_token &StopToken );
+    void CoutMessage ( const FLogMessage &LogMessage ) const noexcept;
 
 private:
 
-    FLogger() noexcept = default;
-    ~FLogger();
+    FLogger () noexcept = default;
+    ~FLogger ();
 
 private:
 
@@ -98,7 +98,7 @@ private:
     LUMEN_LOG( Category, Lumen::ELogVerbosity::VeryVerbose, Format __VA_OPT__(, ) __VA_ARGS__ )
 
 #ifdef LUMEN_SHOW_LOG_SHADER_TRACE
-#define LUMEN_LOG_SHADER_TRACE( Category, Format, ... ) LUMEN_LOG_VERBOSE( Category, Format __VA_OPT__(, ) __VA_ARGS__ )
+    #define LUMEN_LOG_SHADER_TRACE( Category, Format, ... ) LUMEN_LOG_VERBOSE( Category, Format __VA_OPT__(, ) __VA_ARGS__ )
 #else
-#define LUMEN_LOG_SHADER_TRACE( Category, Format, ... ) ( ( void )0 )
+    #define LUMEN_LOG_SHADER_TRACE( Category, Format, ... ) ( ( void )0 )
 #endif
