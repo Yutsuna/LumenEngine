@@ -20,8 +20,6 @@
 namespace Lumen
 {
 
-LUMEN_LOG_DEFINE_CATEGORY( LogLaunch, "Launch" )
-
 namespace
 {
     TAtomic<Bool> GExitRequested{ false };
@@ -139,47 +137,26 @@ namespace
         }
     }
 
-    /// @return Return the exit code for a successful run.
-    [[nodiscard]] constexpr Int32 ToExitCode ( const Launch::FRunSummary & ) noexcept
-    {
-        return LUMEN_EXIT_SUCCESS;
-    }
-
-    /// @brief Report a Fatal failure
-    /// @param InError The error to report
-    [[nodiscard]] Launch::TLaunchResult<Int32> ReportFatalError ( const Launch::FLaunchError &InError ) noexcept
-    {
-        LUMEN_LOG_ERROR( LogLaunch, "Fatal error during {}: {:.{}} (code {})", ToCString( InError.Stage ), InError.Message.data(),
-                         static_cast<int>( InError.Message.size() ), InError.ToExitCode() );
-
-        return Launch::TLaunchResult<Int32>( InError.ToExitCode() );
-    }
 } // namespace
 
-Int32 Launch::FLaunchEngineLoop::GuardedMain ( const Int32 InArgc, const AnsiChar *const *InArgv ) noexcept
-{
-    const Int32 ExitCode = PreInit( FCommandLine( InArgc, InArgv ) )
-                               .AndThen( &FLaunchEngineLoop::Init )
-                               .AndThen( &FLaunchEngineLoop::Run )
-                               .Transform( &ToExitCode )
-                               .OrElse( &ReportFatalError )
-                               .ValueOr( LUMEN_EXIT_FAILURE );
-
-    FLogger::GetInstance().Shutdown();
-
-    return ExitCode;
-}
-
-Launch::TLaunchResult<Launch::FPreInitState>
-Launch::FLaunchEngineLoop::PreInit ( const FCommandLine &InCommandLine ) noexcept
+Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit ( const FCommandLine &InCommandLine ) noexcept
 {
     std::set_new_handler( &OnOutOfMemory );
 
     FSignal::Bind( ESystemSignal::Interrupt, &OnSignal );
     FSignal::Bind( ESystemSignal::Terminate, &OnSignal );
 
-    /// INOF: Falls back to synchronous logging if the worker thread cannot be created.
-    FLogger::GetInstance().Initialize();
+    static const struct FRaiiGuardScope
+    {
+        FRaiiGuardScope () noexcept
+        {
+            FLogger::GetInstance().Initialize();
+        }
+        ~FRaiiGuardScope () noexcept
+        {
+            FLogger::GetInstance().Shutdown();
+        }
+    } RaiiGuardedScope;
 
     ( void )HAL::FPlatformTime::Seconds();
 
