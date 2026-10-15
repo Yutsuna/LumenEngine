@@ -4,17 +4,12 @@
 ///
 
 #include <Engine/LaunchEngineLoop.hpp>
-
 #include <Engine/LaunchEngineConfigParser.hpp>
+#include <Engine/LaunchFrameTiming.hpp>
 
 #include <Logging/Logger.hpp>
 
 #include <HAL/PlatformTime.hpp>
-#include <HAL/Signal.hpp>
-
-#include <algorithm>
-#include <memory>
-#include <thread>
 
 namespace Lumen
 {
@@ -76,29 +71,20 @@ Launch::TLaunchResult<Launch::FRunSummary> Launch::FLaunchEngineLoop::Run ( FIni
     FInitState State = std::move( InInitState );
 
     const FLaunchEngineConfig &Config = State.Config;
-    const Float64 FrameBudget         = Config.MaxFPS > 0.0 ? 1.0 / Config.MaxFPS : 0.0;
-    const Float64 StartTime           = HAL::FPlatformTime::Seconds();
 
-    Float64 PreviousTime = StartTime;
-    Float64 NextDeadline = StartTime;
-    Float64 Accumulator  = 0.0;
-    UInt64 FrameCount    = 0;
+    FFrameClock Clock( Config.FixedTimeStep, Config.MaxFrameTime );
+    FFrameLimiter Limiter( Config.MaxFPS );
+    UInt64 FrameCount = 0;
 
     while ( not IsExitRequested() ) [[likely]]
     {
-        const Float64 FrameStart = HAL::FPlatformTime::Seconds();
-        const Float64 Delta      = std::clamp( FrameStart - PreviousTime, 0.0, Config.MaxFrameTime );
+        const auto [DeltaSeconds, FixedSteps, Alpha] = Clock.BeginFrame();
 
-        PreviousTime = FrameStart;
-        Accumulator += Delta;
-
-        while ( Accumulator >= Config.FixedTimeStep )
+        for ( UInt32 Index = 0; Index < FixedSteps; ++Index )
         {
             State.Modules.FixedTick( Config.FixedTimeStep );
-            Accumulator -= Config.FixedTimeStep;
         }
-
-        State.Modules.Tick( Delta, Accumulator / Config.FixedTimeStep );
+        State.Modules.Tick( DeltaSeconds, Alpha );
 
         ++FrameCount;
         if ( Config.MaxFrames != 0 and FrameCount >= Config.MaxFrames ) [[unlikely]]
@@ -106,20 +92,12 @@ Launch::TLaunchResult<Launch::FRunSummary> Launch::FLaunchEngineLoop::Run ( FIni
             break;
         }
 
-        if ( FrameBudget > 0.0 )
-        {
-            NextDeadline += FrameBudget;
-
-            if ( const Float64 WokeAt = WaitUntil( NextDeadline ); WokeAt - NextDeadline > FrameBudget ) [[unlikely]]
-            {
-                NextDeadline = WokeAt;
-            }
-        }
+        Limiter.Wait();
     }
 
     return FRunSummary{
         .FrameCount     = FrameCount,
-        .ElapsedSeconds = HAL::FPlatformTime::Seconds() - StartTime,
+        .ElapsedSeconds = Clock.ElapsedSeconds(),
         .bInterrupted   = IsExitRequested(),
     };
 }
