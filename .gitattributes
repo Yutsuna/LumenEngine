@@ -1,0 +1,7 @@
+* text=auto
+
+*.{hpp,h,c,cpp,inl} text eol=lf
+*.py text eol=lf
+*.build text eol=lf
+
+.gitattributes binary
