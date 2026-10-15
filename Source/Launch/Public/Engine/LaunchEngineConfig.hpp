@@ -12,6 +12,7 @@
 
 namespace Lumen
 {
+
 namespace Launch
 {
     ///
@@ -34,12 +35,10 @@ namespace Launch
 
         /// @brief No window / no presentation (`-headless`).
         Bool bHeadless = false;
-
-        [[nodiscard]] Bool IsValid () const noexcept
-        {
-            return std::isfinite( FixedTimeStep ) and FixedTimeStep > 0.0 and std::isfinite( MaxFrameTime ) and
-                   MaxFrameTime >= FixedTimeStep and std::isfinite( MaxFPS ) and MaxFPS >= 0.0;
-        }
     };
+
+    static_assert( std::is_trivially_copyable_v<FLaunchEngineConfig>, "Modules copy the config out of the factory call." );
+
 } // namespace Launch
+
 } // namespace Lumen

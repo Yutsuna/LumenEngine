@@ -73,10 +73,11 @@ namespace Launch
     public:
 
         /// @brief Thread-safe and async-signal-safe. The loop exits at the end of the current frame.
-        static void RequestExit () noexcept;
+        /// @return True if the exit request was successful, otherwise false.
+        static Bool RequestExit () noexcept;
 
+        /// @return True if an exit request has been made, otherwise false.
         [[nodiscard]] static Bool IsExitRequested () noexcept;
-
     };
 } // namespace Launch
 } // namespace Lumen
