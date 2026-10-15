@@ -6,7 +6,6 @@
 #pragma once
 
 #include <Core/CoreTypes.hpp>
-
 #include <type_traits>
 
 namespace Lumen
@@ -20,8 +19,8 @@ namespace Launch
     struct FFrameStep
     {
         Float64 DeltaSeconds = 0.0;
-        UInt32 FixedSteps = 0;
-        Float64 Alpha = 0.0;
+        UInt32 FixedSteps    = 0;
+        Float64 Alpha        = 0.0;
     };
 
     static_assert( std::is_trivially_copyable_v<FFrameStep>, "FFrameStep is returned by value every frame." );

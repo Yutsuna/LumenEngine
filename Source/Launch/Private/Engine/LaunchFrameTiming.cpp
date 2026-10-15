@@ -46,7 +46,8 @@ Launch::FFrameClock::FFrameClock ( const Float64 InFixedTimeStep, const Float64 
     /// Empty
 }
 
-Launch::FFrameClock::FFrameClock ( const Float64 InFixedTimeStep, const Float64 InMaxFrameTime,
+Launch::FFrameClock::FFrameClock ( const Float64 InFixedTimeStep,
+                                   const Float64 InMaxFrameTime,
                                    const Float64 InStartSeconds ) noexcept
     : FixedTimeStep( InFixedTimeStep ), MaxFrameTime( InMaxFrameTime ), StartTime( InStartSeconds ),
       PreviousTime( InStartSeconds )
