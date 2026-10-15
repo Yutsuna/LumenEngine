@@ -67,7 +67,7 @@ namespace Launch
     public:
 
         /// @brief Process-level setup (signals, OOM policy, clock epoch) + configuration parsing / validation.
-        [[nodiscard]] static TLaunchResult<FPreInitState> PreInit ( FCommandLine InCommandLine ) noexcept;
+        [[nodiscard]] static TLaunchResult<FPreInitState> PreInit ( const FCommandLine &InCommandLine ) noexcept;
 
         /// @brief Starts every registered module. On failure, already-started modules are torn down by RAII.
         [[nodiscard]] static TLaunchResult<FInitState> Init ( FPreInitState &&InPreInitState ) noexcept;
