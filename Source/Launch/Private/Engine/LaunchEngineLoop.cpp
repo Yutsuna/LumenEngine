@@ -18,29 +18,6 @@ namespace
 {
     TAtomic<Bool> GExitRequested{ false };
     static_assert( TAtomic<Bool>::is_always_lock_free, "Lock-free atomics are required to be async-signal-safe." );
-
-    /// @brief Sleep until the specified deadline.
-    /// @param InDeadline The deadline to sleep until.
-    /// @return The current time in seconds.
-    [[nodiscard]] Float64 WaitUntil ( const Float64 InDeadline ) noexcept
-    {
-        static constexpr Float64 SpinMargin = 0.0015;
-        Float64 NowSeconds                  = HAL::FPlatformTime::Seconds();
-
-        if ( const Float64 Remaining = InDeadline - NowSeconds; Remaining > SpinMargin )
-        {
-            HAL::FPlatformTime::Sleep( Remaining - SpinMargin );
-            NowSeconds = HAL::FPlatformTime::Seconds();
-        }
-
-        while ( NowSeconds < InDeadline )
-        {
-            std::this_thread::yield();
-            NowSeconds = HAL::FPlatformTime::Seconds();
-        }
-        return NowSeconds;
-    }
-
 } // namespace
 
 Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit ( const FCommandLine &InCommandLine ) noexcept
