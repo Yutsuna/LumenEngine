@@ -1,0 +1,37 @@
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main, CI/109-Lumen-Add-CI/CD-with-functional-scripts-to-manage-github ]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-test:
+    name: Build & Test
+    runs-on: ubuntu-latest
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+     steps:
+       - name: Checkout repository
+         uses: actions/checkout@v4
+
+       - name: Install Nix (Determinate)
+         uses: DeterminateSystems/determinate-nix-action@v3
+
+       - name: Magic Nix Cache
+         uses: DeterminateSystems/magic-nix-cache-action@v8
+
+       - name: Meson setup
+         run: nix develop --command meson setup Build
+
+       - name: Meson Build
+         run: nix develop --command meson compile -C Build
+
+       - name: Meson tests
+         run: nix develop --command meson test -C Build
