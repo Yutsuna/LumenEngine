@@ -1,10 +1,13 @@
 /// @file PlatformFileSystem.cpp
 /// @brief High-performance, cross-platform POSIX and Win32 IFileSystem backend.
 
+#include <Core/CoreDefinitions.hpp>
+
 #include <Filesystem/FileTypes.hpp>
 #include <Filesystem/IFileHandle.hpp>
 #include <Filesystem/IFileSystem.hpp>
 #include <Filesystem/Path.hpp>
+
 #include <Memory/UniquePtr.hpp>
 #include <Templates/Vector.hpp>
 
@@ -13,7 +16,7 @@
 #include <functional>
 #include <limits>
 
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
     #endif
@@ -29,7 +32,7 @@
     #include <sys/stat.h>
     #include <unistd.h>
 
-    #if defined( __APPLE__ )
+    #if defined( LUMEN_PLATFORM_MACOS )
         #include <copyfile.h>
         #include <sys/clonefile.h>
     #endif
@@ -50,7 +53,7 @@ namespace Filesystem
 
     namespace
     {
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
         [[nodiscard]] EFileError MapPlatformError ( const DWORD ErrorCode ) noexcept
         {
             switch ( ErrorCode )
@@ -139,11 +142,7 @@ namespace Filesystem
 #endif
     } // namespace
 
-    // =========================================================================
-    // Native File Handle Implementations
-    // =========================================================================
-
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
 
     class FPlatformFileHandle final : public IFileHandle
     {
@@ -484,10 +483,6 @@ namespace Filesystem
 
 #endif
 
-    // =========================================================================
-    // Native File System Implementation
-    // =========================================================================
-
     class FPlatformFileSystem final : public IFileSystem
     {
     public:
@@ -497,7 +492,7 @@ namespace Filesystem
         [[nodiscard]] TExpected<TUniquePtr<IFileHandle>, EFileError>
         OpenFile ( const FPath &InPath, const EFileAccess InAccess, const EFileMode InMode ) noexcept override
         {
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
             DWORD DesiredAccess = 0;
             if ( HasAnyFlags( InAccess, EFileAccess::Read ) )
             {
@@ -583,7 +578,7 @@ namespace Filesystem
 
         [[nodiscard]] Bool FileExists ( const FPath &InPath ) const noexcept override
         {
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
             const DWORD Attr = ::GetFileAttributesW( Utf8ToWide( InPath.ToString() ).c_str() );
             return ( Attr != INVALID_FILE_ATTRIBUTES ) and not( Attr & FILE_ATTRIBUTE_DIRECTORY );
 #else
@@ -594,7 +589,7 @@ namespace Filesystem
 
         [[nodiscard]] Bool DirectoryExists ( const FPath &InPath ) const noexcept override
         {
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
             const DWORD Attr = ::GetFileAttributesW( Utf8ToWide( InPath.ToString() ).c_str() );
             return ( Attr != INVALID_FILE_ATTRIBUTES ) and ( Attr & FILE_ATTRIBUTE_DIRECTORY );
 #else
@@ -605,7 +600,7 @@ namespace Filesystem
 
         TExpected<void, EFileError> DeleteFile ( const FPath &InPath ) noexcept override
         {
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
             if ( not ::DeleteFileW( Utf8ToWide( InPath.ToString() ).c_str() ) )
             {
                 return MakeUnexpected( MapPlatformError( ::GetLastError() ) );
@@ -648,7 +643,7 @@ namespace Filesystem
                 }
             }
 
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
             if ( not ::RemoveDirectoryW( Utf8ToWide( InPath.ToString() ).c_str() ) )
             {
                 return MakeUnexpected( MapPlatformError( ::GetLastError() ) );
@@ -664,7 +659,7 @@ namespace Filesystem
 
         TExpected<void, EFileError> CreateDirectory ( const FPath &InPath ) noexcept override
         {
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
             if ( not ::CreateDirectoryW( Utf8ToWide( InPath.ToString() ).c_str(), nullptr ) )
             {
                 const DWORD Err = ::GetLastError();
@@ -705,14 +700,14 @@ namespace Filesystem
         TExpected<void, EFileError>
         CopyFile ( const FPath &InSource, const FPath &InDestination, const Bool bOverwrite ) noexcept override
         {
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
             if ( not ::CopyFileExW( Utf8ToWide( InSource.ToString() ).c_str(), Utf8ToWide( InDestination.ToString() ).c_str(),
                                     nullptr, nullptr, nullptr, bOverwrite ? 0 : COPY_FILE_FAIL_IF_EXISTS ) )
             {
                 return MakeUnexpected( MapPlatformError( ::GetLastError() ) );
             }
             return {};
-#elif defined( __APPLE__ )
+#elif defined( LUMEN_PLATFORM_MACOS )
             // macOS Fast path: CoW (clonefile APFS)
             if ( ::clonefile( InSource.ToCString(), InDestination.ToCString(), bOverwrite ? 0 : CLONE_NOFOLLOW ) == 0 )
             {
@@ -764,7 +759,7 @@ namespace Filesystem
         TExpected<void, EFileError>
         MoveFile ( const FPath &InSource, const FPath &InDestination, const Bool bOverwrite ) noexcept override
         {
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
             DWORD Flags = MOVEFILE_COPY_ALLOWED;
             if ( bOverwrite )
             {
@@ -804,7 +799,7 @@ namespace Filesystem
 
         [[nodiscard]] TExpected<FFileStat, EFileError> GetStat ( const FPath &InPath ) const noexcept override
         {
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
             WIN32_FILE_ATTRIBUTE_DATA Data;
             if ( not ::GetFileAttributesExW( Utf8ToWide( InPath.ToString() ).c_str(), GetFileExInfoStandard, &Data ) )
             {
@@ -834,7 +829,7 @@ namespace Filesystem
             Stat.bIsDirectory = S_ISDIR( St.st_mode );
             Stat.bIsReadOnly  = ( St.st_mode & S_IWUSR ) == 0;
             Stat.FileSize     = static_cast<UInt64>( St.st_size );
-    #if defined( __APPLE__ )
+    #if defined( LUMEN_PLATFORM_MACOS )
             Stat.LastModifiedTime = static_cast<UInt64>( St.st_mtimespec.tv_sec ) * 1000ULL +
                                     static_cast<UInt64>( St.st_mtimespec.tv_nsec ) / 1000000ULL;
     #else
@@ -846,17 +841,13 @@ namespace Filesystem
         }
     };
 
-    // =========================================================================
-    // Cross-Platform Directory Traversal
-    // =========================================================================
-
     namespace Internal
     {
         TExpected<void, EFileError> PlatformEnumerateEntries ( const FPath &InPath,
                                                                const Bool bRecursive,
                                                                const std::function<Bool( const FPath &, Bool )> &InCallback )
         {
-#if defined( _WIN32 )
+#if defined( LUMEN_PLATFORM_WINDOWS )
             FPath SearchPattern = InPath / "*";
             WIN32_FIND_DATAW FindData;
             const HANDLE Handle = ::FindFirstFileW( Utf8ToWide( SearchPattern.ToString() ).c_str(), &FindData );

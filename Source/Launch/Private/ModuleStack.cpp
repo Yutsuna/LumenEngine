@@ -5,90 +5,109 @@
 
 #include <Launch/ModuleStack.hpp>
 
+#include <Logging/Logger.hpp>
+
 #include <utility>
+
+namespace
+{
+
+LUMEN_LOG_DEFINE_CATEGORY( LogModuleStack, "ModuleStack" )
+
+}
 
 namespace Lumen
 {
-namespace Launch
+Launch::FModuleStack::FModuleStack ( FModuleStack &&Other ) noexcept
+    : Modules( std::move( Other.Modules ) ), FixedTickList( std::move( Other.FixedTickList ) ),
+      TickList( std::move( Other.TickList ) )
 {
-    FModuleStack::FModuleStack ( FModuleStack &&Other ) noexcept
-        : Modules( std::move( Other.Modules ) ), FixedTickList( std::move( Other.FixedTickList ) ),
-          TickList( std::move( Other.TickList ) )
-    {
-        Other.Modules.clear();
-        Other.FixedTickList.clear();
-        Other.TickList.clear();
-    }
+    Other.Modules.clear();
+    Other.FixedTickList.clear();
+    Other.TickList.clear();
+}
 
-    FModuleStack::~FModuleStack () noexcept
-    {
-        ShutdownAll();
-    }
+Launch::FModuleStack::~FModuleStack () noexcept
+{
+    ShutdownAll();
+}
 
-    TLaunchResult<void> FModuleStack::StartAll ( const TSpan<const FModuleDescriptor> InDescriptors,
-                                                 const FLaunchEngineConfig &InConfig ) noexcept
-    {
-        /// Reserve once: the push_back calls below can no longer allocate.
-        Modules.reserve( Modules.size() + InDescriptors.size() );
-        FixedTickList.reserve( FixedTickList.size() + InDescriptors.size() );
-        TickList.reserve( TickList.size() + InDescriptors.size() );
+Launch::TLaunchResult<void> Launch::FModuleStack::StartAll ( const TSpan<const FModuleDescriptor> InDescriptors,
+                                                             const FLaunchEngineConfig &InConfig ) noexcept
+{
+    /// Reserve once: the push_back calls below can no longer allocate.
+    Modules.reserve( Modules.size() + InDescriptors.size() );
+    FixedTickList.reserve( FixedTickList.size() + InDescriptors.size() );
+    TickList.reserve( TickList.size() + InDescriptors.size() );
 
-        for ( const FModuleDescriptor &Descriptor : InDescriptors )
+    for ( const FModuleDescriptor &Descriptor : InDescriptors )
+    {
+        if ( Descriptor.Create == nullptr ) [[unlikely]]
         {
-            auto Created = Descriptor.Create( InConfig );
-            if ( not Created ) [[unlikely]]
-            {
-                return MakeUnexpected( Created.Error() );
-            }
-
-            TUniquePtr<IEngineModule> Module = std::move( *Created );
-            if ( not Module ) [[unlikely]]
-            {
-                return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::ModuleCreationFailed,
-                                      "A module factory returned a null module" );
-            }
-
-            const EModuleTraits Traits = Module->GetTraits();
-            if ( HasAnyFlags( Traits, EModuleTraits::FixedTick ) )
-            {
-                FixedTickList.push_back( Module.Get() );
-            }
-            if ( HasAnyFlags( Traits, EModuleTraits::Tick ) )
-            {
-                TickList.push_back( Module.Get() );
-            }
-
-            Modules.push_back( std::move( Module ) );
+            LUMEN_LOG_ERROR( LogModuleStack, "Module '{}' has no factory", Descriptor.Name );
+            return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::ModuleCreationFailed,
+                                  "A module descriptor has no factory" );
         }
 
-        return {};
-    }
-
-    void FModuleStack::ShutdownAll () noexcept
-    {
-        FixedTickList.clear();
-        TickList.clear();
-
-        while ( not Modules.empty() )
+        auto Created = Descriptor.Create( InConfig );
+        if ( not Created ) [[unlikely]]
         {
-            Modules.pop_back(); /// Destroys the last element first.
+            /// The error message is a static literal and cannot carry the module name: log it here.
+            LUMEN_LOG_ERROR( LogModuleStack, "Module '{}' failed to start", Descriptor.Name );
+            return MakeUnexpected( Created.Error() );
         }
+
+        TUniquePtr<IEngineModule> Module = std::move( *Created );
+        if ( not Module ) [[unlikely]]
+        {
+            LUMEN_LOG_ERROR( LogModuleStack, "Module '{}': factory returned a null module", Descriptor.Name );
+            return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::ModuleCreationFailed,
+                                  "A module factory returned a null module" );
+        }
+
+        const EModuleTraits Traits = Module->GetTraits();
+        if ( HasAnyFlags( Traits, EModuleTraits::FixedTick ) )
+        {
+            FixedTickList.push_back( Module.Get() );
+        }
+        if ( HasAnyFlags( Traits, EModuleTraits::Tick ) )
+        {
+            TickList.push_back( Module.Get() );
+        }
+
+        Modules.push_back( std::move( Module ) );
     }
 
-    void FModuleStack::FixedTick ( const Float64 InFixedDeltaSeconds ) noexcept
-    {
-        for ( IEngineModule *const Module : FixedTickList )
-        {
-            Module->FixedTick( InFixedDeltaSeconds );
-        }
-    }
+    return {};
+}
 
-    void FModuleStack::Tick ( const Float64 InDeltaSeconds, const Float64 InAlpha ) noexcept
+void Launch::FModuleStack::ShutdownAll () noexcept
+{
+    FixedTickList.clear();
+    TickList.clear();
+
+    while ( not Modules.empty() )
     {
-        for ( IEngineModule *const Module : TickList )
-        {
-            Module->Tick( InDeltaSeconds, InAlpha );
-        }
+        Modules.pop_back();
     }
-} // namespace Launch
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void Launch::FModuleStack::FixedTick ( const Float64 InFixedDeltaSeconds ) noexcept
+{
+    for ( IEngineModule *const Module : FixedTickList )
+    {
+        Module->FixedTick( InFixedDeltaSeconds );
+    }
+}
+
+// ReSharper disable once CppMemberFunctionMayBeConst
+void Launch::FModuleStack::Tick ( const Float64 InDeltaSeconds, const Float64 InAlpha ) noexcept
+{
+    for ( IEngineModule *const Module : TickList )
+    {
+        Module->Tick( InDeltaSeconds, InAlpha );
+    }
+}
+
 } // namespace Lumen

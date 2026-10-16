@@ -29,7 +29,7 @@ namespace Launch
     };
 
     ///
-    /// @struct FPInitState
+    /// @struct FInitState
     /// @brief Output -> Modules Alive, destructing it tears them down in reverse order.
     ///
     struct FInitState
@@ -61,13 +61,8 @@ namespace Launch
 
     public:
 
-        /// @brief Whole pipeline in one expression. Never throws, always returns a process exit code.
-        [[nodiscard]] static Int32 GuardedMain ( Int32 InArgc, const AnsiChar *const *InArgv ) noexcept;
-
-    public:
-
         /// @brief Process-level setup (signals, OOM policy, clock epoch) + configuration parsing / validation.
-        [[nodiscard]] static TLaunchResult<FPreInitState> PreInit ( FCommandLine InCommandLine ) noexcept;
+        [[nodiscard]] static TLaunchResult<FPreInitState> PreInit ( const FCommandLine &InCommandLine ) noexcept;
 
         /// @brief Starts every registered module. On failure, already-started modules are torn down by RAII.
         [[nodiscard]] static TLaunchResult<FInitState> Init ( FPreInitState &&InPreInitState ) noexcept;
@@ -78,8 +73,10 @@ namespace Launch
     public:
 
         /// @brief Thread-safe and async-signal-safe. The loop exits at the end of the current frame.
-        static void RequestExit () noexcept;
+        /// @return True if the exit request was successful, otherwise false.
+        static Bool RequestExit () noexcept;
 
+        /// @return True if an exit request has been made, otherwise false.
         [[nodiscard]] static Bool IsExitRequested () noexcept;
     };
 } // namespace Launch

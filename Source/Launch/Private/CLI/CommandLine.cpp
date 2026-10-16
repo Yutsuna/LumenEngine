@@ -8,6 +8,19 @@
 
 namespace Lumen
 {
+
+namespace
+{
+    [[nodiscard]] FStringView AsOption ( const AnsiChar *const InRawCString ) noexcept
+    {
+        if ( InRawCString == nullptr or InRawCString[0] != '-' )
+        {
+            return {};
+        }
+        return StripDashes( FStringView( InRawCString ) );
+    }
+} // namespace
+
 Launch::FCommandLine::FCommandLine ( const Int32 InArgc, const AnsiChar *const *InArgv ) noexcept
 {
     if ( InArgv == nullptr or InArgc <= 0 )
@@ -15,8 +28,12 @@ Launch::FCommandLine::FCommandLine ( const Int32 InArgc, const AnsiChar *const *
         return;
     }
 
-    ProgramName = FStringView( InArgv[0] );
-    Arguments   = TSpan<const AnsiChar *const>( InArgv + 1, static_cast<USize>( InArgc - 1 ) );
+    if ( InArgv[0] != nullptr )
+    {
+        ProgramName = FStringView( InArgv[0] );
+    }
+
+    Arguments = TSpan<const AnsiChar *const>( InArgv + 1, static_cast<USize>( InArgc - 1 ) );
 }
 
 FStringView Launch::FCommandLine::GetProgramName () const noexcept
@@ -26,27 +43,23 @@ FStringView Launch::FCommandLine::GetProgramName () const noexcept
 
 Bool Launch::FCommandLine::HasSwitch ( const FStringView InName ) const noexcept
 {
-    for ( const AnsiChar *const Raw : Arguments )
-    {
-        if ( Raw != nullptr and EqualsIgnoreCase( StripDashes( FStringView( Raw ) ), InName ) )
-        {
-            return true;
-        }
-    }
-
-    return false;
+    return std::ranges::any_of( Arguments,
+                                [InName] ( const AnsiChar *const Raw ) noexcept -> Bool
+                                {
+                                    if ( const FStringView Option = AsOption( Raw );
+                                         not Option.empty() and EqualsIgnoreCase( Option, InName ) )
+                                    {
+                                        return true;
+                                    }
+                                    return false;
+                                } );
 }
 
-Launch::TLaunchResult<FStringView> Launch::FCommandLine::GetValue ( const FStringView InKey ) const noexcept
+Launch::TLaunchResult<std::string_view> Launch::FCommandLine::GetValue ( const FStringView InKey ) const noexcept
 {
     for ( const AnsiChar *const Raw : Arguments )
     {
-        if ( Raw == nullptr )
-        {
-            continue;
-        }
-
-        const FStringView Option = StripDashes( FStringView( Raw ) );
+        const FStringView Option = AsOption( Raw );
 
         if ( const USize SeparatorIndex = Option.find( '=' );
              SeparatorIndex != FStringView::npos and EqualsIgnoreCase( Option.substr( 0, SeparatorIndex ), InKey ) )
@@ -57,4 +70,5 @@ Launch::TLaunchResult<FStringView> Launch::FCommandLine::GetValue ( const FStrin
 
     return LaunchFailure( ELaunchStage::PreInit, ELaunchErrorCode::MissingArgument, "Command-line key not found" );
 }
+
 } // namespace Lumen
