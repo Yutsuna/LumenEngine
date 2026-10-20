@@ -3,6 +3,7 @@
 /// @brief Module registration table.
 ///
 
+#include <Core/CoreDefinitions.hpp>
 #include <Engine/LaunchEngineModule.hpp>
 
 #include <Memory/Span.hpp>
@@ -16,13 +17,13 @@ Launch::EModuleTraits Launch::IEngineModule::GetTraits () const noexcept
     return EModuleTraits::None;
 }
 
-void Launch::IEngineModule::FixedTick ( Float64 __attribute__( ( unused ) ) InFixedDeltaSeconds ) noexcept
+void Launch::IEngineModule::FixedTick ( Float64 LUMEN_UNUSED InFixedDeltaSeconds ) noexcept
 {
     /// Empty
 }
 
-void Launch::IEngineModule::Tick ( Float64 __attribute__( ( unused ) ) InDeltaSeconds,
-                                   Float64 __attribute__( ( unused ) ) InAlpha ) noexcept
+void Launch::IEngineModule::Tick ( Float64 LUMEN_UNUSED InDeltaSeconds,
+                                   Float64 LUMEN_UNUSED InAlpha ) noexcept
 {
     /// Empty
 }
