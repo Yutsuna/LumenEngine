@@ -22,8 +22,7 @@ void Launch::IEngineModule::FixedTick ( Float64 LUMEN_UNUSED InFixedDeltaSeconds
     /// Empty
 }
 
-void Launch::IEngineModule::Tick ( Float64 LUMEN_UNUSED InDeltaSeconds,
-                                   Float64 LUMEN_UNUSED InAlpha ) noexcept
+void Launch::IEngineModule::Tick ( Float64 LUMEN_UNUSED InDeltaSeconds, Float64 LUMEN_UNUSED InAlpha ) noexcept
 {
     /// Empty
 }

@@ -21,8 +21,7 @@ LUMEN_LOG_DEFINE_CATEGORY( LogLaunch, "Launch" )
     return InError.ToExitCode();
 }
 
-[[nodiscard]] constexpr Lumen::Int32 ToExitCode ( const Lumen::Launch::FRunSummary LUMEN_UNUSED &
-                                                  RunSummary ) noexcept
+[[nodiscard]] constexpr Lumen::Int32 ToExitCode ( const Lumen::Launch::FRunSummary LUMEN_UNUSED &RunSummary ) noexcept
 {
     return LUMEN_EXIT_SUCCESS;
 }
