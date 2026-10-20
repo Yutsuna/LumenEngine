@@ -8,6 +8,7 @@
 #include <CoreExport.hpp>
 
 #include <Logging/LoggingVerbosity.hpp>
+
 #include <String/String.hpp>
 #include <String/StringView.hpp>
 
@@ -20,7 +21,7 @@ struct CORE_EXPORT FLogCategory
     FString CategoryName;
     ELogVerbosity::Type DefaultVerbosity;
 
-    FLogCategory ( FString &InCategoryName, ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info ) noexcept;
+    FLogCategory ( const FString &InCategoryName, ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info ) noexcept;
     FLogCategory ( FStringView InCategoryName, ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info ) noexcept;
 };
 

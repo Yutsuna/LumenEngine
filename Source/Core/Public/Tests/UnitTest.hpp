@@ -67,11 +67,13 @@ namespace Tests
                                 void ( *InFn )(),
                                 const std::source_location InLocation = std::source_location::current() ) noexcept
         {
-            FUnitTestRegistry::GetInstance().Register( FUnitTestMetadata{ .SuiteName         = InSuite,
-                                                                          .TestName          = InName,
-                                                                          .Kind              = InKind,
-                                                                          .ExecutionFunction = InFn,
-                                                                          .DeclaredLocation  = InLocation } );
+            FUnitTestRegistry::GetInstance().Register( FUnitTestMetadata{
+                .SuiteName         = InSuite,
+                .TestName          = InName,
+                .Kind              = InKind,
+                .ExecutionFunction = InFn,
+                .DeclaredLocation  = InLocation,
+            } );
         }
     };
 
