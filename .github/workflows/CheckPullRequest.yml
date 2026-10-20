@@ -1,0 +1,38 @@
+name: PR Title Check
+
+on:
+  pull_request:
+    branches: [ main ]
+    types: [ opened, edited, reopened, synchronize ]
+
+permissions:
+  contents: read        # checkout + lecture de Source/
+  issues: read          # vérification de l'Issue référencée
+  pull-requests: read
+
+concurrency:
+  group: pr-title-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  validate-pr-title:
+    name: Validate PR title
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+
+      - name: Validate PR title
+        id: check
+        env:
+          PR_TITLE: ${{ github.event.pull_request.title }}
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_API_URL: ${{ github.api_url }}
+        run: python Scripts/CheckPullRequest.py
