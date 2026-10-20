@@ -7,6 +7,7 @@ subdir('Meson/')
 
 ModuleNames = [
     'Core',
+    'Maths',
     'AppCore',
     'Launch',
 ]
