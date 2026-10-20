@@ -75,12 +75,12 @@ void Lumen::FGenericWindow::EnableInput ( Bool LUMEN_UNUSED bEnable ) noexcept
 
 Lumen::Bool Lumen::FGenericWindow::IsPointInWindow ( const Int32 InX, const Int32 InY ) const noexcept
 {
-    const Maths::FVec2i &WindowPosition = GetWindowPosition ();
-    const Maths::FVec2i &WindowSize = GetWindowSize ();
+    const Maths::FVec2i &WindowPosition = GetWindowPosition();
+    const Maths::FVec2i &WindowSize     = GetWindowSize();
 
-    const Int32 Left = WindowPosition.X;
-    const Int32 Top = WindowPosition.Y;
-    const Int32 Right = WindowPosition.X + WindowSize.X;
+    const Int32 Left   = WindowPosition.X;
+    const Int32 Top    = WindowPosition.Y;
+    const Int32 Right  = WindowPosition.X + WindowSize.X;
     const Int32 Bottom = WindowPosition.Y + WindowSize.Y;
 
     const Bool bIsInsideX = ( InX >= Left ) and ( InX < Right );
