@@ -1,29 +1,29 @@
 from __future__ import annotations
 
-import re
+import json
 import urllib.error
 import urllib.request
 from dataclasses import dataclass
 from pathlib import Path
 
-from .Configuration import (GLOBAL_BASE_SCOPES, GLOBAL_SOURCE_ROOT, GLOBAL_TITLE_RE)
+from .Configuration import GLOBAL_BASE_SCOPES, GLOBAL_SOURCE_ROOT, GLOBAL_TITLE_RE
+from .Errors import TitleError, ScopeError, IssueNotFound, IssueLookupError
 
-__all__ = [  "LumenScopes", "GitHubPullRequest", "GitHubIssue" ]
+__all__ = [ "LumenScopes", "GitHubPullRequest", "GitHubIssue" ]
 
-def _starts_with_capital(cstring: str) -> bool:
+
+def _starts_with_capital( cstring : str ) -> bool:
     return "A" <= cstring[0] <= "Z"
+
 
 @dataclass(frozen=True)
 class LumenScopes:
 
     values: tuple[str, ...]
 
-    def __init__(self):
-        pass
-
     @classmethod
     def discover(cls, root: Path = GLOBAL_SOURCE_ROOT ) -> "LumenScopes":
-        directories : list[str]= []
+        directories : list[str] = []
         if root.is_dir():
             directories = [
                 path.name
@@ -44,13 +44,10 @@ class LumenScopes:
 class GitHubPullRequest:
 
     raw: str
-    pr_type:str
-    scope:str
-    issue:int
-    description:str
-
-    def __init__(self):
-        pass
+    pr_type: str
+    scope: str
+    issue: int
+    description: str
 
     @classmethod
     def parse(cls, raw: str, scopes: LumenScopes ) -> "GitHubPullRequest":
@@ -84,9 +81,6 @@ class GitHubIssue:
     repository: str
     token: str
     api_url: str = "https://api.github.com"
-
-    def __init__(self):
-        pass
 
     def get(self, number: int ) -> dict:
         request = urllib.request.Request(

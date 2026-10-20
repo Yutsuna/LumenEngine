@@ -1,6 +1,6 @@
 import os
 
-__all__ = [ "_append", "_set_output", "set_multiline_output", "write_summary", "annotate_error" ]
+__all__ = [ "set_output", "set_multiline_output", "write_summary", "annotate_error" ]
 
 def _append( env_var : str, text: str ) -> None:
     path = os.environ.get( env_var )
@@ -10,7 +10,7 @@ def _append( env_var : str, text: str ) -> None:
         stream.write(text)
 
 
-def _set_output( name: str, value: object ) -> None:
+def set_output( name: str, value: object ) -> None:
     _append("GITHUB_OUTPUT", f"{name}={value}\n")
 
 

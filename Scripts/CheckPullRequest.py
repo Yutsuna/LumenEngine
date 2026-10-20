@@ -2,15 +2,13 @@ from __future__ import annotations
 
 import os
 import sys
-from Github.Configuration import *
-from Github.Models import GitHubIssue
 from argparse import ArgumentParser, Namespace
+from pathlib import Path
 
-from Scripts.GitHub import annotate_error
+from GitHub import *
 
-GLOBAL_EXAMPLE = "Feat(AppCore): #142 Add SDL3 window support"
 
-def _verify_issue(number: int) -> int:
+def _verify_issue( number: int ) -> int:
     repository = os.environ.get("GITHUB_REPOSITORY")
     if not repository:
         annotate_error("Missing configuration", "Need: GITHUB_REPOSITORY environment variable to be set.")
@@ -30,7 +28,7 @@ def _verify_issue(number: int) -> int:
     try:
         issue = client.get(number)
     except IssueNotFound:
-        annotate_error("Unknown issue", f"{number} is not found in {repository}.")
+        annotate_error("Unknown issue", f"#{number} is not found in {repository}.")
         return 1
     except IssueLookupError as exc:
         annotate_error("Issue lookup failed", f"Unable to read #{number}: {exc}")
@@ -44,7 +42,7 @@ def _verify_issue(number: int) -> int:
     return 0
 
 
-def _report_invalid_title(title: str, reason: str) -> int:
+def _report_invalid_title( title: str, reason: str ) -> int:
     annotate_error("Invalid PR title", reason)
     write_summary(
         "\n".join(
@@ -62,7 +60,7 @@ def _report_invalid_title(title: str, reason: str) -> int:
                 "- `IssueNumber` 形如 `#123`，必须是关联的 Issue 编号",
                 "- `Description` 首字母大写",
                 "",
-                f"**Example:** `{EXAMPLE}`",
+                f"**Example:** `{GLOBAL_EXAMPLE}`",
                 "",
             ]
         )
@@ -75,29 +73,36 @@ def _parse_arguments( argv: list[str] ) -> Namespace:
     parser.add_argument(
         "--skip-issue-check",
         action="store_true",
-        help="Skip checking the existence of the associated issue."
+        help="Skip checking the existence of the associated issue.",
     )
     parser.add_argument(
-        "--skip-title-check",
-        action="store_true",
-        help="Skip checking the format of the PR title."
+        "--source-root",
+        type=Path,
+        default=GLOBAL_SOURCE_ROOT,
+        help="Root directory containing scope subdirectories (default: Source).",
     )
     return parser.parse_args(argv)
 
 
-def _scope_error(scopes: LumenScopes, title : str, exception : str)->None:
-    print("Allowed Scopes: ")
+def _scope_error( scopes: LumenScopes, title: str, exception: str ) -> int:
+    print("Allowed Scopes:")
     for scope in scopes:
         print(f"  - {scope}")
-    return _report_invalid_title(title, str(exception))
+    return _report_invalid_title(title, exception)
 
-def main(argv: list[str] ) -> int:
+
+def main( argv: list[str] ) -> int:
     args = _parse_arguments(argv)
     title = os.environ.get("PR_TITLE", "")
     scopes = LumenScopes.discover(args.source_root)
 
+    print("Allowed Scopes:")
+    for scope in scopes:
+        print(f"  - {scope}")
+    set_multiline_output("list", "\n".join(scopes))
+
     try:
-        parsed = PRTitle.parse(title, scopes)
+        parsed = GitHubPullRequest.parse(title, scopes)
     except ScopeError as exception:
         return _scope_error(scopes, title, str(exception))
     except TitleError as exception:
@@ -122,4 +127,4 @@ Description = {parsed.description}
 
 
 if __name__ == "__main__":
-    sys.exit(main( sys.argv[1:] ))
+    sys.exit(main(sys.argv[1:]))
