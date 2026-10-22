@@ -15,5 +15,6 @@
   ];
 
   buildInputs = with pkgs; [
+    sdl3
   ];
 }
