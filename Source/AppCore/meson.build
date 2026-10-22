@@ -3,6 +3,16 @@
 # Source/AppCore meson entry-point
 #}
 
+PlatformDeps = []
+
+if OSName == 'linux'
+    PlatformDeps += 'SDL3'
+elif OSName == 'darwin'
+    PlatformDeps += 'Cocoa'
+elif OSName == 'windows'
+    PlatformDeps += 'Win32'
+endif
+
 ModuleDefinition = {
     'Name' : 'AppCore',
     'Type' : 'SharedLibrary',
@@ -10,5 +20,5 @@ ModuleDefinition = {
     'Private' : 'Private',
     'Public' : 'Public',
     'Tests' : 'Tests',
-    'Depends' : ['Core', 'Maths']
+    'Depends' : ['Core', 'Maths'] + PlatformDeps
 }
