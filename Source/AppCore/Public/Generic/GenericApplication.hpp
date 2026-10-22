@@ -31,10 +31,10 @@ public:
     [[nodiscard]] TSharedPtr<FGenericApplicationMessageHandler> GetMessageHandler () const noexcept;
 
     /// @brief Initializes a window for the application.
-    virtual void InitializeWindow ( const TSharedRef<FGenericWindow>            &InWindow,
-                                                    const TSharedRef<FGenericWindowDescription>  &InDescription,
-                                                    const TSharedPtr<FGenericWindow>             &InParentWindow,
-                                                     Bool  bShowImmediately ) noexcept;
+    virtual void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
+                                    const TSharedRef<FGenericWindowDescription> &InDescription,
+                                    const TSharedPtr<FGenericWindow> &InParentWindow,
+                                    Bool bShowImmediately ) noexcept;
 
     /// @return The main window for the application.
     [[nodiscard]] virtual TSharedPtr<FGenericWindow> GetMainWindow () const noexcept;
@@ -44,7 +44,7 @@ public:
 
 public:
 
-    static TSharedRef<FGenericWindow> MakeWindow() ;
+    static TSharedRef<FGenericWindow> MakeWindow ();
 
 protected:
 
