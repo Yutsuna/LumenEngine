@@ -11,24 +11,19 @@
 /// public
 ///
 
-Lumen::FGenericApplication::FGenericApplication () : MessageHandler( MakeShared<FGenericApplicationMessageHandler>() )
+Lumen::FGenericApplication::FGenericApplication ()noexcept : MessageHandler( MakeShared<FGenericApplicationMessageHandler>() )
 {
     /// Ctor
 }
 
-void Lumen::FGenericApplication::SetMessageHandler ( const TSharedRef<FGenericApplicationMessageHandler> &InMessageHandler )
+void Lumen::FGenericApplication::SetMessageHandler ( const TSharedRef<FGenericApplicationMessageHandler> &InMessageHandler ) noexcept
 {
     MessageHandler = InMessageHandler;
 }
 
-Lumen::TSharedPtr<Lumen::FGenericApplicationMessageHandler> Lumen::FGenericApplication::GetMessageHandler () const
+Lumen::TSharedPtr<Lumen::FGenericApplicationMessageHandler> Lumen::FGenericApplication::GetMessageHandler () const noexcept
 {
     return MessageHandler;
-}
-
-void Lumen::FGenericApplication::PumpMessages ( const Float64 __attribute__( ( unused ) ) DeltaTime )
-{
-    /// Empty
 }
 
 Lumen::TSharedRef<Lumen::FGenericWindow> Lumen::FGenericApplication::MakeWindow ()
@@ -36,11 +31,10 @@ Lumen::TSharedRef<Lumen::FGenericWindow> Lumen::FGenericApplication::MakeWindow 
     return MakeShareable( new FGenericWindow() );
 }
 
-void Lumen::FGenericApplication::InitializeWindow ( const TSharedRef<FGenericWindow> __attribute__( ( unused ) ) & InWindow,
-                                                    const TSharedRef<FGenericWindowDescription> __attribute__( ( unused ) ) &
-                                                        InDescription,
-                                                    const TSharedPtr<FGenericWindow> __attribute__( ( unused ) ) & InParentWindow,
-                                                    const Bool __attribute__( ( unused ) ) bShowImmediately )
+void Lumen::FGenericApplication::InitializeWindow ( const TSharedRef<FGenericWindow>            LUMEN_UNUSED &InWindow,
+                                                    const TSharedRef<FGenericWindowDescription> LUMEN_UNUSED &InDescription,
+                                                    const TSharedPtr<FGenericWindow>            LUMEN_UNUSED &InParentWindow,
+                                                    const Bool LUMEN_UNUSED bShowImmediately ) noexcept
 
 {
     if ( not MainWindow.IsValid() )

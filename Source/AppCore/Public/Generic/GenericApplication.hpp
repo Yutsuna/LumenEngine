@@ -25,22 +25,26 @@ public:
 public:
 
     /// @brief Sets the message handler for the application.
-    void SetMessageHandler ( const TSharedRef<FGenericApplicationMessageHandler> &MessageHandler ) noexcept;
+    void SetMessageHandler ( const TSharedRef<FGenericApplicationMessageHandler> &InMessageHandler ) noexcept;
 
     /// @return The message handler for the application.
-    [[nodiscard]] TSharedRef<FGenericApplicationMessageHandler> &GetMessageHandler () const noexcept;
+    [[nodiscard]] TSharedPtr<FGenericApplicationMessageHandler> GetMessageHandler () const noexcept;
 
     /// @brief Initializes a window for the application.
-    virtual void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
-                                    const TSharedRef<FGenericWindowDescription> &InDescription,
-                                    const TSharedRef<FGenericWindow> &InParentWindow,
-                                    Bool bShowImmediately ) noexcept;
+    virtual void InitializeWindow ( const TSharedRef<FGenericWindow>            &InWindow,
+                                                    const TSharedRef<FGenericWindowDescription>  &InDescription,
+                                                    const TSharedPtr<FGenericWindow>             &InParentWindow,
+                                                     Bool  bShowImmediately ) noexcept;
 
     /// @return The main window for the application.
     [[nodiscard]] virtual TSharedPtr<FGenericWindow> GetMainWindow () const noexcept;
 
     /// @brief Shuts down the application.
     virtual void Shutdown () noexcept;
+
+public:
+
+    static TSharedRef<FGenericWindow> MakeWindow() ;
 
 protected:
 
