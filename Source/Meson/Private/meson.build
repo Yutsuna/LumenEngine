@@ -44,6 +44,8 @@ foreach ModuleDefinition : ModuleDefinitions
         ResolvedDependencies += GlobalModules.get(DependencyName)
     endforeach
 
+    ResolvedDependencies += ModuleDefinition.get('ExternalDeps', [])
+
     CompileArguments = ALL_WARNINGS
 
     if ModuleType == 'Executable'

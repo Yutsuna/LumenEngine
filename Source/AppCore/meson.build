@@ -6,11 +6,7 @@
 PlatformDeps = []
 
 if OSName == 'linux'
-    PlatformDeps += 'SDL3'
-elif OSName == 'darwin'
-    PlatformDeps += 'Cocoa'
-elif OSName == 'windows'
-    PlatformDeps += 'Win32'
+    PlatformDeps += dependency('sdl3', required : true)
 endif
 
 ModuleDefinition = {
@@ -20,5 +16,6 @@ ModuleDefinition = {
     'Private' : 'Private',
     'Public' : 'Public',
     'Tests' : 'Tests',
-    'Depends' : ['Core', 'Maths'] + PlatformDeps
+    'Depends' : ['Core', 'Maths'],
+    'ExternalDeps' : PlatformDeps,
 }
