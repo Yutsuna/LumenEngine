@@ -20,27 +20,24 @@ void Lumen::FGenericApplicationMessageHandler::OnQuit () noexcept
 
 /// Window
 
-void Lumen::FGenericApplicationMessageHandler::OnOSPaint ( const TSharedRef<FGenericWindow> &LUMEN_UNUSED InWindow ) noexcept
+void Lumen::FGenericApplicationMessageHandler::OnOSPaint ( const TSharedRef<FGenericWindow> LUMEN_UNUSED &InWindow ) noexcept
 {
     /// Empty
 }
 
-void Lumen::FGenericApplicationMessageHandler::OnWindowMoved ( const TSharedRef<FGenericWindow> &LUMEN_UNUSED InWindow,
-                                                               Int32 LUMEN_UNUSED InX,
-                                                               Int32 LUMEN_UNUSED InY ) noexcept
+void Lumen::FGenericApplicationMessageHandler::OnWindowMoved ( const TSharedRef<FGenericWindow> LUMEN_UNUSED &InWindow ) noexcept
 {
     /// Empty
 }
 
-void Lumen::FGenericApplicationMessageHandler::OnWindowResized ( const TSharedRef<FGenericWindow> &LUMEN_UNUSED InWindow,
-                                                                 Int32 LUMEN_UNUSED InX,
-                                                                 Int32 LUMEN_UNUSED InY ) noexcept
+void Lumen::FGenericApplicationMessageHandler::OnWindowResized (
+    const TSharedRef<FGenericWindow> LUMEN_UNUSED &InWindow ) noexcept
 {
     /// Empty
 }
 
-void Lumen::FGenericApplicationMessageHandler::OnWindowActivationChanged (  const TSharedRef<FGenericWindow> &LUMEN_UNUSED InWindow ) noexcept,
-                                                                            Bool LUMEN_UNUSED bIsRepeated ) noexcept
+void Lumen::FGenericApplicationMessageHandler::OnWindowActivationChanged (
+    const TSharedRef<FGenericWindow> LUMEN_UNUSED &InWindow ) noexcept
 {
     /// Empty
 }
@@ -57,7 +54,7 @@ void Lumen::FGenericApplicationMessageHandler::OnMouseUp ( EMouseButton::Type LU
     /// Empty
 }
 
-void Lumen::FGenericApplicationMessageHandler::OnMouseMove ( Int32 LUMEN_UNUSED InX, Int32 LUMEN_UNUSED IntY ) noexcept
+void Lumen::FGenericApplicationMessageHandler::OnMouseMove ( Int32 LUMEN_UNUSED InX, Int32 LUMEN_UNUSED InY ) noexcept
 {
     /// Empty
 }

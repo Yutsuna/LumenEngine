@@ -329,7 +329,7 @@ namespace EKeys
 
     #include <SDL3/SDL.h>
 
-static Lumen::EKeys::Type TranslateSDLKeyCodeToEKeys ( const SDL_Keycode KeyCode )
+static inline Lumen::EKeys::Type TranslateSDLKeyCodeToEKeys ( const SDL_Keycode KeyCode ) noexcept
 {
     switch ( KeyCode )
     {
@@ -850,7 +850,7 @@ static Lumen::EKeys::Type TranslateSDLKeyCodeToEKeys ( const SDL_Keycode KeyCode
     }
 }
 
-static Lumen::EMouseButton::Type TranslateSDLMouseButtonToEMouseButton ( const Lumen::UInt8 Button )
+static inline Lumen::EMouseButton::Type TranslateSDLMouseButtonToEMouseButton ( const Lumen::UInt8 Button ) noexcept
 {
     switch ( Button )
     {
