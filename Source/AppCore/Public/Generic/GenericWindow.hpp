@@ -65,7 +65,7 @@ public:
     virtual void EnableInput ( Bool bEnable ) noexcept;
 
     /// @return True if the native window exists underneath the coordinates
-    virtual Bool IsPointInWindow ( const Int32 InX, const Int32 InY ) const noexcept;
+    virtual Bool IsPointInWindow ( Int32 InX, Int32 InY ) const noexcept;
 
     /// @brief Gets the OS Window border size
     virtual Int32 GetOSWindowBorderSize () const noexcept;
