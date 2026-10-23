@@ -22,10 +22,11 @@ class APPCORE_EXPORT FLinuxWindow : public FGenericWindow
 {
 public:
 
-    ~FLinuxWindow() noexcept override;
+    ~FLinuxWindow () noexcept override;
 
 public:
-    [[nodiscard]] TSharedRef<FLinuxWindow>Make();
+
+    [[nodiscard]] static TSharedRef<FLinuxWindow> Make ();
 
 public:
 
@@ -51,16 +52,13 @@ public:
     void SetWindowMode ( EWindowMode::Type InWindowMode ) noexcept override;
 
     /// @return The current window mode
-    EWindowMode::Type GetWindowMode () const noexcept override;
+    [[nodiscard]] EWindowMode::Type GetWindowMode () const noexcept override;
 
     /// @return True if the window is maximized
-    Bool IsMaximized () const noexcept override;
+    [[nodiscard]] Bool IsMaximized () const noexcept override;
 
     /// @return True if the window is minimized
-    Bool IsMinimized () const noexcept override;
-
-    /// @return True if the window is visible on screen
-    Bool IsVisible () const noexcept override;
+    [[nodiscard]] Bool IsMinimized () const noexcept override;
 
     /// @brief Let the OS know that a window has taken focus
     void SetWindowFocus () noexcept override;
@@ -74,29 +72,35 @@ public:
     void EnableInput ( Bool bEnable ) noexcept override;
 
     /// @brief Gets the OS Window border size
-    Int32 GetOSWindowBorderSize () const noexcept override;
+    [[nodiscard]] Int32 GetOSWindowBorderSize () const noexcept override;
 
     /// @brief Gets the  OS Window title bar size
-    Int32 GetOSWindowTitleBarSize () const noexcept override;
+    [[nodiscard]] Int32 GetOSWindowTitleBarSize () const noexcept override;
 
     /// @return True if the window is in foreground
-    Bool IsForegroundWindow () const noexcept override;
+    [[nodiscard]] Bool IsForegroundWindow () const noexcept override;
 
     /// @brief Sets the window text-title
     /// @param InText the new text-title of the window
     void SetWindowTitle ( const AnsiChar *InText ) noexcept override;
 
-private:
-    FLinuxWindow()noexcept=default;
+    /// @return The SDL Window ID
+    [[nodiscard]] SDL_WindowID GetOSWindowID () const noexcept;
+
+    /// @return The SDL Window Handle pointer
+    [[nodiscard]] SDL_Window *GetOSWindowHandle () const noexcept;
 
 private:
 
-    FLinuxApplication *LinuxApplication = nullptr;
-    SDL_Window *WindowHandle = nullptr;
+    FLinuxWindow () noexcept = default;
+
+private:
+
+    FLinuxApplication *LinuxApplication     = nullptr;
+    SDL_Window *WindowHandle                = nullptr;
     TSharedPtr<FGenericWindow> ParentWindow = nullptr;
-
 };
 
-}
+} // namespace Lumen
 
 #endif
