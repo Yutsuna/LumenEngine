@@ -5,27 +5,26 @@
 
 #if defined( LUMEN_PLATFORM_LINUX )
 
-#include <SDL3/SDL.h>
+    #include <SDL3/SDL.h>
 
-#include <Logging/Logger.hpp>
+    #include <Logging/Logger.hpp>
 
 namespace
 {
 
-    Lumen::Bool GInitializedSDL = false;
-    const Lumen::FLogCategory LogLinuxBackend("LinuxBackend");
+Lumen::Bool GInitializedSDL = false;
+const Lumen::FLogCategory LogLinuxBackend( "LinuxBackend" );
 
-
-    void FlushEventQueue() noexcept
+void FlushEventQueue () noexcept
+{
+    SDL_Event Event;
+    while ( SDL_PollEvent( &Event ) )
     {
-        SDL_Event Event;
-        while ( SDL_PollEvent(&Event))
-        {
-            /// Discard
-        }
+        /// Discard
     }
-
 }
+
+} // namespace
 
 Lumen::Bool Lumen::FLinuxBackend::InitializeSDL () noexcept
 {
@@ -33,7 +32,7 @@ Lumen::Bool Lumen::FLinuxBackend::InitializeSDL () noexcept
     {
         return true;
     }
-    if ( not SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS ))
+    if ( not SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS ) )
     {
         return false;
     }
@@ -43,7 +42,7 @@ Lumen::Bool Lumen::FLinuxBackend::InitializeSDL () noexcept
     return true;
 }
 
-void Lumen::FLinuxBackend::ShutdownSDL() noexcept
+void Lumen::FLinuxBackend::ShutdownSDL () noexcept
 {
 
     if ( GInitializedSDL )
@@ -51,7 +50,6 @@ void Lumen::FLinuxBackend::ShutdownSDL() noexcept
         SDL_Quit();
         GInitializedSDL = false;
     }
-
 }
 
 void Lumen::FLinuxBackend::PumpSDLMessagesQueue () noexcept
@@ -65,12 +63,12 @@ void Lumen::FLinuxBackend::PumpSDLMessagesQueue () noexcept
     if ( not GLinuxApplication )
     {
         FlushEventQueue();
-        LUMEN_LOG_WARNING(LogLinuxBackend, "Attempted to pump messages without a valid Linux Application instance.");
+        LUMEN_LOG_WARNING( LogLinuxBackend, "Attempted to pump messages without a valid Linux Application instance." );
         return;
     }
 
     SDL_Event Event;
-    while ( SDL_PollEvent( &Event ))
+    while ( SDL_PollEvent( &Event ) )
     {
         GLinuxApplication->AddPendingEvent( Event );
     }
