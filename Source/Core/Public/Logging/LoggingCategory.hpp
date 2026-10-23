@@ -18,10 +18,12 @@ namespace Lumen
 struct CORE_EXPORT FLogCategory
 {
 
-    const AnsiChar *const CategoryName;
+    FString CategoryName;
     ELogVerbosity::Type DefaultVerbosity;
 
-    FLogCategory ( const AnsiChar * InCategoryName, ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info ) noexcept;
+    FLogCategory ( const AnsiChar *InCategoryName, ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info ) noexcept;
+    FLogCategory ( FStringView InCategoryName, ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info ) noexcept;
+    FLogCategory ( const FString &InCategoryName, ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info ) noexcept;
 };
 
 } // namespace Lumen
