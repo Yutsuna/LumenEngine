@@ -18,8 +18,8 @@
     #include <Logging/Logger.hpp>
     #include <Logging/LoggingCategory.hpp>
 
-    #include <SDL3/SDL_events.h>
     #include <SDL3/SDL.h>
+    #include <SDL3/SDL_events.h>
 
 Lumen::FLinuxApplication *Lumen::GLinuxApplication = nullptr;
 
@@ -88,7 +88,8 @@ namespace Lumen
 namespace
 {
 
-    inline void SendKeyDownEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_KeyboardEvent &KeyboardEvent )
+    inline void SendKeyDownEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler,
+                                   const SDL_KeyboardEvent &KeyboardEvent )
     {
         const SDL_Keycode KeyCode = KeyboardEvent.key;
         const EKeys::Type KeyType = TranslateSDLKeyCodeToEKeys( KeyCode );
@@ -97,7 +98,8 @@ namespace
         MessageHandler->OnKeyDown( KeyType, bIsRepeated );
     }
 
-    inline void SendKeyUpEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_KeyboardEvent &KeyboardEvent )
+    inline void SendKeyUpEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler,
+                                 const SDL_KeyboardEvent &KeyboardEvent )
     {
         const SDL_Keycode KeyCode = KeyboardEvent.key;
         const EKeys::Type KeyType = TranslateSDLKeyCodeToEKeys( KeyCode );
@@ -105,14 +107,16 @@ namespace
         MessageHandler->OnKeyUp( KeyType, KeyboardEvent.repeat != 0 );
     }
 
-    inline void SendMouseButtonDownEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
+    inline void SendMouseButtonDownEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler,
+                                           const SDL_MouseButtonEvent &MouseButtonEvent )
     {
         const EMouseButton::Type ButtonType = TranslateSDLMouseButtonToEMouseButton( MouseButtonEvent.button );
 
         MessageHandler->OnMouseDown( ButtonType );
     }
 
-    inline void SendMouseButtonUpEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
+    inline void SendMouseButtonUpEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler,
+                                         const SDL_MouseButtonEvent &MouseButtonEvent )
     {
         const EMouseButton::Type ButtonType = TranslateSDLMouseButtonToEMouseButton( MouseButtonEvent.button );
 

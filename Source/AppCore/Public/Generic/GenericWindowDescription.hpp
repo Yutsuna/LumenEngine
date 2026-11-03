@@ -28,7 +28,6 @@ namespace EWindowMode
         WindowedFullscreen,
         /// Standard windowed mode
         Windowed,
-
         /// Number of window modes
         NumWindowModes
     };
