@@ -28,10 +28,13 @@ public:
 
     [[nodiscard]] static TSharedRef<FLinuxWindow> Make ();
 
-public:
+    /// @brief Creates the native SDL window and applies the given description.
+    void Initialize ( FLinuxApplication *InApplication,
+                      const TSharedRef<FGenericWindowDescription> &InDescription,
+                      const TSharedPtr<FGenericWindow> &InParentWindow,
+                      Bool bShowImmediately ) noexcept;
 
-    /// @brief Clear the window's content
-    void Clear () noexcept override;
+public:
 
     /// @brief Ask the OS to destroy OS-specific resource associated with the window
     void Destroy () noexcept override;

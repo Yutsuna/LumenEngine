@@ -7,6 +7,42 @@
 
     #include <Logging/Logger.hpp>
 
+namespace
+{
+
+const Lumen::FLogCategory LogLinuxWindow( "LinuxWindow" );
+
+inline SDL_WindowFlags GetSDLWindowFlags( const TSharedRef<FGenericWindowDescription> &InDescription, const Lumen::Bool bShowImmediately ) noexcept
+{
+    /// TODO: check if this is OK because the backend might not always be Vulkan
+    SDL_WindowFlags WindowFlags = SDL_WINDOW_VULKAN;
+
+    if ( not( InDescription->bIsVisible and bShowImmediately ) )
+    {
+        WindowFlags |= SDL_WINDOW_HIDDEN;
+    }
+
+    if ( InDescription->bIsResizable )
+    {
+        WindowFlags |= SDL_WINDOW_RESIZABLE;
+    }
+
+    if ( InDescription->WindowMode == EWindowMode::Fullscreen )
+    {
+        WindowFlags |= SDL_WINDOW_FULLSCREEN;
+    }
+    else if ( InDescription->WindowMode == EWindowMode::WindowedFullscreen )
+    {
+        /// TODO: Implement windowed fullscreen mode
+        WindowFlags |= SDL_WINDOW_FULLSCREEN;
+    }
+
+    return WindowFlags;
+
+}
+
+} // namespace
+
 ///
 /// Public
 ///
@@ -25,19 +61,38 @@ Lumen::TSharedRef<Lumen::FLinuxWindow> Lumen::FLinuxWindow::Make ()
     return MakeShareable<FLinuxWindow>( new FLinuxWindow() );
 }
 
+void Lumen::FLinuxWindow::Initialize ( FLinuxApplication *InApplication,
+                                       const TSharedRef<FGenericWindowDescription> &InDescription,
+                                       const TSharedPtr<FGenericWindow> &InParentWindow,
+                                       const Bool bShowImmediately ) noexcept
+{
+    LinuxApplication = InApplication;
+    Description      = InDescription;
+    ParentWindow     = InParentWindow;
+
+    const SDL_WindowFlags WindowFlags = GetSDLWindowFlags( InDescription, bShowImmediately );
+
+    WindowHandle = SDL_CreateWindow( InDescription->Title.c_str(), InDescription->Size.X, InDescription->Size.Y, WindowFlags );
+
+    if ( WindowHandle == nullptr )
+    {
+        LUMEN_LOG_ERROR( LogLinuxWindow, "Failed to create SDL window: {}", SDL_GetError() );
+        return;
+    }
+
+    SDL_SetWindowPosition( WindowHandle, InDescription->Position.X, InDescription->Position.Y );
+}
+
 ///
 /// Public
 ///
-
-void Lumen::FLinuxWindow::Clear () noexcept
-{
-}
 
 void Lumen::FLinuxWindow::Destroy () noexcept
 {
     if ( WindowHandle != nullptr )
     {
         SDL_DestroyWindow( WindowHandle );
+        WindowHandle = nullptr;
     }
 }
 
@@ -52,17 +107,27 @@ void Lumen::FLinuxWindow::Show () noexcept
 
 void Lumen::FLinuxWindow::Minimize () noexcept
 {
+    if ( WindowHandle != nullptr )
+    {
+        SDL_MinimizeWindow( WindowHandle );
+        Description->bIsVisible = false;
+    }
 }
 
 void Lumen::FLinuxWindow::Maximize () noexcept
 {
+    if ( WindowHandle != nullptr )
+    {
+        SDL_MaximizeWindow( WindowHandle );
+        Description->bIsVisible = true;
+    }
 }
 
 void Lumen::FLinuxWindow::Hide () noexcept
 {
     if ( WindowHandle != nullptr )
     {
-        SDL_ShowWindow( WindowHandle );
+        SDL_HideWindow( WindowHandle );
         Description->bIsVisible = false;
     }
 }
