@@ -200,7 +200,7 @@ template <typename Type> class TSharedPtr final
 {
 public:
 
-    /// @brief Default Constructor */
+    /// @brief Default Constructor
     TSharedPtr () noexcept;
 
     /// @brief NullPtrType Constructor

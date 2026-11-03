@@ -383,9 +383,9 @@ LUMEN_TEST( Expected_Rebind, TypeAlias )
         std::is_same_v<TExpected<Int32, EExpectedTestError>::Rebind<FString>, TExpected<FString, EExpectedTestError>> );
 }
 
-/*---------------------------------------------------------------------------------------------------------------------------------------*/
-/*  TExpected<void, ErrorType> specialization tests */
-/*---------------------------------------------------------------------------------------------------------------------------------------*/
+///
+/// TExpected<void, ErrorType> specialization tests
+///
 
 LUMEN_TEST( ExpectedVoid_Constructor, Default )
 {
