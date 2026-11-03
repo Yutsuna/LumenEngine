@@ -12,8 +12,7 @@ gccStdenv.mkDerivation {
   inherit version;
   src = pkgs.lib.cleanSource ../.;
 
-  nativeBuildInputs = deps.nativeBuildInputs;
-  buildInputs = deps.buildInputs ++ [ pkgs.gcc16.cc.lib ];
+  inherit (deps) nativeBuildInputs buildInputs;
 
   meta = {
     description = "Lumen Rendering Engine";
