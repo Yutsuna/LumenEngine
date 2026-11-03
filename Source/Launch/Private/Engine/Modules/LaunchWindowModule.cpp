@@ -10,7 +10,7 @@
 #include <Generic/GenericWindow.hpp>
 #include <Generic/GenericWindowDescription.hpp>
 
-Lumen::Launch::FLaunchWindowModule::FLaunchWindowModule ( Lumen::TSharedPtr<Lumen::FGenericWindow> &InWindow ) noexcept
+Lumen::Launch::FLaunchWindowModule::FLaunchWindowModule ( Lumen::TSharedPtr<Lumen::FGenericWindow> InWindow ) noexcept
     : Window( std::move( InWindow ) )
 {
     /// Empty

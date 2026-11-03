@@ -25,7 +25,7 @@ namespace Launch
     {
     public:
 
-        explicit FLaunchWindowModule ( TSharedPtr<FGenericWindow> &InWindow ) noexcept;
+        explicit FLaunchWindowModule ( TSharedPtr<FGenericWindow> InWindow ) noexcept;
         ~FLaunchWindowModule () noexcept override = default;
 
     public:

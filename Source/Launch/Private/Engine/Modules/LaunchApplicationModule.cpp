@@ -3,6 +3,7 @@
 /// @brief FLaunchApplicationModule implementation.
 ///
 
+#include <Engine/LaunchEngineLoop.hpp>
 #include <Engine/Modules/LaunchApplicationModule.hpp>
 #include <Generic/GenericApplication.hpp>
 
@@ -33,7 +34,7 @@ void Lumen::Launch::FLaunchMessageHandler::OnQuit () noexcept
 /// FLaunchApplicationModule
 ///
 
-Lumen::Launch::FLaunchApplicationModule::FLaunchApplicationModule ( TSharedPtr<FGenericApplication> &InApplication ) noexcept
+Lumen::Launch::FLaunchApplicationModule::FLaunchApplicationModule ( TSharedPtr<FGenericApplication> InApplication ) noexcept
     : Application( std::move( InApplication ) ), MessageHandler( MakeShared<FLaunchMessageHandler>() )
 {
     if ( Application.IsValid() )

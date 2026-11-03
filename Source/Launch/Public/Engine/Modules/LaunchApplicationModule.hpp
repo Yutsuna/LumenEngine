@@ -38,7 +38,7 @@ namespace Launch
     {
     public:
 
-        explicit FLaunchApplicationModule ( TSharedPtr<FGenericApplication> &InApplication ) noexcept;
+        explicit FLaunchApplicationModule ( TSharedPtr<FGenericApplication> InApplication ) noexcept;
         ~FLaunchApplicationModule () noexcept override;
 
     public:
@@ -51,7 +51,7 @@ namespace Launch
     private:
 
         TSharedPtr<FGenericApplication> Application;
-        TSharedPtr<FLaunchMessageHandler> MessageHandler;
+        TSharedRef<FLaunchMessageHandler> MessageHandler;
     };
 
     /// @brief Accessor for modules created after this one.
