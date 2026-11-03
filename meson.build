@@ -13,8 +13,6 @@ project(
         'c_std=c23',
         'default_library=shared',
         'warning_level=0',
-        'cpp_ccache=enabled',
-        'c_ccache=enabled',
     ],
     meson_version : '>=1.10',
 )
