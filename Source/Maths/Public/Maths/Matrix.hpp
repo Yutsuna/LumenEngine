@@ -1,4 +1,4 @@
-/// @file Mat.hpp
+/// @file Matrix.hpp
 /// @brief Lumen column-major matrix
 
 #pragma once
