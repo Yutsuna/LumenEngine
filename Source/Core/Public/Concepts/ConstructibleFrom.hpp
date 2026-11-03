@@ -9,6 +9,7 @@
 
 namespace Lumen
 {
+
 namespace Concepts
 {
     ///
@@ -21,4 +22,5 @@ namespace Concepts
     concept CConstructibleFrom = std::is_constructible_v<From, To...>;
 
 } // namespace Concepts
+
 } // namespace Lumen
