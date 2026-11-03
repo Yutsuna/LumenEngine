@@ -17,4 +17,6 @@ project(
     meson_version : '>=1.10',
 )
 
+add_project_arguments('-freflection', language : 'cpp')
+
 subdir('Source/')
