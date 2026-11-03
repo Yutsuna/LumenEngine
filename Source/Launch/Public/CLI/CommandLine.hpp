@@ -59,6 +59,13 @@ namespace Launch
         template <Concepts::CCommandLineNumber NumberType>
         [[nodiscard]] TLaunchResult<NumberType> GetNumberOr ( FStringView InKey, NumberType InFallback ) const noexcept;
 
+        /// @return Raw argv (excluding the program name).
+        [[nodiscard]] TSpan<const AnsiChar *const> GetArguments () const noexcept;
+
+        /// @brief Every option's name with dashes and `=value` stripped, in argv order.
+        ///        Non-option arguments (no leading `-`) are reported as empty views.
+        template <typename TFunction> void ForEachOption ( TFunction &&InCallback ) const noexcept;
+
     private:
 
         FStringView ProgramName;

@@ -7,6 +7,8 @@
 
 #include <CLI/CommandLine.hpp>
 
+#include <String/StringUtils.hpp>
+
 #include <charconv>
 #include <system_error>
 
@@ -48,6 +50,20 @@ Launch::TLaunchResult<NumberType> Launch::FCommandLine::GetNumberOr ( const FStr
 
             return MakeUnexpected( InError );
         } );
+}
+
+template <typename TFunction> void Launch::FCommandLine::ForEachOption ( TFunction &&InCallback ) const noexcept
+{
+    for ( const AnsiChar *const Raw : Arguments )
+    {
+        FStringView Option = AsOption( Raw );
+
+        if ( const USize Eq = Option.find( '=' ); Eq != FStringView::npos )
+        {
+            Option = Option.substr( 0, Eq );
+        }
+        InCallback( Raw, Option );
+    }
 }
 
 } // namespace Lumen
