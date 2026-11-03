@@ -7,6 +7,7 @@
 
     #include <SDL3/SDL.h>
 
+    #include <Linux/LinuxApplication.hpp>
     #include <Logging/Logger.hpp>
 
 namespace
@@ -60,7 +61,7 @@ void Lumen::FLinuxBackend::PumpSDLMessagesQueue () noexcept
         return;
     }
 
-    if ( not GLinuxApplication )
+    if ( GLinuxApplication == nullptr )
     {
         FlushEventQueue();
         LUMEN_LOG_WARNING( LogLinuxBackend, "Attempted to pump messages without a valid Linux Application instance." );
