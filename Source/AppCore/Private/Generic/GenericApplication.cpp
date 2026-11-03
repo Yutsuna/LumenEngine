@@ -49,6 +49,11 @@ Lumen::TSharedPtr<Lumen::FGenericWindow> Lumen::FGenericApplication::GetMainWind
     return MainWindow;
 }
 
+void Lumen::FGenericApplication::PumpMessages ( const Float64 LUMEN_UNUSED DeltaTime ) noexcept
+{
+    /// Empty
+}
+
 void Lumen::FGenericApplication::Shutdown () noexcept
 {
     /// Empty
