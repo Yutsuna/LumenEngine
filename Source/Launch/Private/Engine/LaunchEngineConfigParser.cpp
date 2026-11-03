@@ -49,7 +49,7 @@ namespace
     [[nodiscard]] auto WithSwitch ( const Launch::FCommandLine &InCommandLine, const FStringView InName ) noexcept
     {
         static_assert(
-            Concepts::CIsSame<std::remove_cvref_t<decltype( std::declval<Launch::FLaunchEngineConfig &>().*Member )>, Bool>,
+            Concepts::CSameAs<std::remove_cvref_t<decltype( std::declval<Launch::FLaunchEngineConfig &>().*Member )>, Bool>,
             "WithSwitch only sets Bool members: use WithOption for numbers." );
 
         return [&InCommandLine,
