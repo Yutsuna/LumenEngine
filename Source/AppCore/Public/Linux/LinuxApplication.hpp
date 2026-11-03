@@ -50,7 +50,7 @@ public:
 public:
 
     /// @brief Factory to create the Application instance
-    [[nodiscard]] static TSharedPtr<FGenericApplication> CreateLinuxApplication () noexcept;
+    [[nodiscard]] static TSharedPtr<FGenericApplication> MakeLinuxApplication () noexcept;
 
 private:
 

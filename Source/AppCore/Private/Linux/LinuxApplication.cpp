@@ -45,7 +45,7 @@ Lumen::TSharedRef<Lumen::FGenericWindow> Lumen::FLinuxApplication::MakeWindow ()
     return FLinuxWindow::Make();
 }
 
-Lumen::TSharedPtr<Lumen::FGenericApplication> Lumen::FLinuxApplication::CreateLinuxApplication () noexcept
+Lumen::TSharedPtr<Lumen::FGenericApplication> Lumen::FLinuxApplication::MakeLinuxApplication () noexcept
 {
     if ( not FLinuxBackend::InitializeSDL() )
     {
