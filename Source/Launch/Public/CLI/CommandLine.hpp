@@ -11,6 +11,7 @@
 #include <Memory/Span.hpp>
 #include <String/StringView.hpp>
 
+#include <Concepts/SameAs.hpp>
 #include <type_traits>
 
 namespace Lumen
@@ -18,12 +19,15 @@ namespace Lumen
 
 namespace Launch
 {
+
     namespace Concepts
     {
+
         /// @concept CCommandLineNumber
         /// @brief Numeric types FCommandLine can parse.
         template <typename Type>
-        concept CCommandLineNumber = std::is_arithmetic_v<Type> and not std::is_same_v<Type, Bool>;
+        concept CCommandLineNumber = std::is_arithmetic_v<Type> and not ::Lumen::Concepts::CSameAs<Type, Bool>;
+
     } // namespace Concepts
 
     ///
