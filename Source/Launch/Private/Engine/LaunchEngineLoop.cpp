@@ -16,8 +16,10 @@ namespace Lumen
 
 namespace
 {
+
     TAtomic<Bool> GExitRequested{ false };
     static_assert( TAtomic<Bool>::is_always_lock_free, "Lock-free atomics are required to be async-signal-safe." );
+
 } // namespace
 
 Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit ( const FCommandLine &InCommandLine ) noexcept
