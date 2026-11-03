@@ -5,9 +5,8 @@
 
 #pragma once
 
+#include <Concepts/SameAs.hpp>
 #include <Core/CoreTypes.hpp>
-
-#include <type_traits>
 
 namespace Lumen
 {
@@ -22,7 +21,7 @@ namespace Maths
         {
 
             template <typename Type>
-            concept CSIMDType = std::is_same_v<Type, Float32> or std::is_same_v<Type, Int32>;
+            concept CSIMDType = ::Lumen::Concepts::CSameAs<Type, Float32> or ::Lumen::Concepts::CSameAs<Type, Int32>;
 
         } // namespace Concepts
 
