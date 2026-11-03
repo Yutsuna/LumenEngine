@@ -1,6 +1,7 @@
 /// @file ExpectedTests.cpp
 /// @brief Unit tests for TExpected class
 
+#include <Concepts/SameAs.hpp>
 #include <String/String.hpp>
 #include <Templates/Expected.hpp>
 #include <Tests/UnitTest.hpp>
@@ -380,7 +381,7 @@ LUMEN_TEST( Expected_ValueOr, ErrorReturnsFallback )
 LUMEN_TEST( Expected_Rebind, TypeAlias )
 {
     static_assert(
-        std::is_same_v<TExpected<Int32, EExpectedTestError>::Rebind<FString>, TExpected<FString, EExpectedTestError>> );
+        Concepts::CSameAs<TExpected<Int32, EExpectedTestError>::Rebind<FString>, TExpected<FString, EExpectedTestError>> );
 }
 
 ///
@@ -562,7 +563,7 @@ LUMEN_TEST( ExpectedVoid_Operators, ExplicitBool )
 
 LUMEN_TEST( ExpectedVoid_Rebind, TypeAlias )
 {
-    static_assert( std::is_same_v<TExpected<void, EExpectedTestError>::Rebind<Int32>, TExpected<Int32, EExpectedTestError>> );
+    static_assert( Concepts::CSameAs<TExpected<void, EExpectedTestError>::Rebind<Int32>, TExpected<Int32, EExpectedTestError>> );
 }
 
 } // namespace Lumen
