@@ -20,7 +20,7 @@ namespace EWindowMode
     ///
     /// @brief Enumeration of possible window modes.
     ///
-    enum Type : Int32
+    enum Type : Int32 /// NOLINT(performance-enum-size)
     {
         /// True fullscreen window mode
         Fullscreen,
@@ -53,7 +53,7 @@ namespace EWindowMode
 
 } // namespace EWindowMode
 
-namespace
+namespace /// NOLINT(cert-dcl59-cpp)
 {
 
     constexpr const AnsiChar *const DefaultWindowTitle = "Lumen Engine";
