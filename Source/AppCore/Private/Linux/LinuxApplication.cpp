@@ -93,7 +93,7 @@ namespace
     {
         const SDL_Keycode KeyCode = KeyboardEvent.key;
         const EKeys::Type KeyType = TranslateSDLKeyCodeToEKeys( KeyCode );
-        const Bool bIsRepeated    = KeyboardEvent.repeat != 0;
+        const Bool bIsRepeated    = KeyboardEvent.repeat;
 
         MessageHandler->OnKeyDown( KeyType, bIsRepeated );
     }
@@ -104,7 +104,7 @@ namespace
         const SDL_Keycode KeyCode = KeyboardEvent.key;
         const EKeys::Type KeyType = TranslateSDLKeyCodeToEKeys( KeyCode );
 
-        MessageHandler->OnKeyUp( KeyType, KeyboardEvent.repeat != 0 );
+        MessageHandler->OnKeyUp( KeyType, KeyboardEvent.repeat );
     }
 
     inline void SendMouseButtonDownEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler,
