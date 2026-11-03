@@ -3,6 +3,8 @@
 
 #include <Meta/Reflection.hpp>
 
+#include <Core/CoreDefinitions.hpp>
+
 #include <String/String.hpp>
 #include <String/StringView.hpp>
 
@@ -14,27 +16,39 @@ namespace Lumen
 namespace Meta
 {
 
-    /// @brief Formatted "{ TypeName { field=value, ... } }" of an aggregate.
+    namespace Detail
+    {
+
+        /// @brief Write one field value to Out, picking the format from the type.
+        template <typename TOut, typename TValue> TOut FormatField ( TOut Out, const TValue &Value )
+        {
+            using Bare = std::remove_cvref_t<TValue>;
+
+            if constexpr ( std::is_floating_point_v<Bare> )
+            {
+                return std::format_to( Out, "{:.6g}", Value );
+            }
+            else if constexpr ( std::is_enum_v<Bare> )
+            {
+                const std::string_view Name = EnumName( Value );
+                if ( Name == "<unknown>" )
+                {
+                    return std::format_to( Out, "{}", static_cast<std::underlying_type_t<Bare>>( Value ) );
+                }
+                return std::format_to( Out, "{}", Name );
+            }
+            else
+            {
+                return std::format_to( Out, "{}", Value );
+            }
+        }
+
+    } // namespace Detail
+
     template <CReflected TObject> [[nodiscard]] FString SerializeToString ( const TObject &Object )
     {
 #if LUMEN_HAS_REFLECTION
-        FString Buffer;
-        Buffer += std::format( "{} {{ ", TypeName<TObject>() );
-
-        bool bFirst = true;
-        ForEachMember( Object,
-                       [&Buffer, &bFirst] ( const FStringView InName, const auto &InValue )
-                       {
-                           if ( not bFirst )
-                           {
-                               Buffer += ", ";
-                           }
-                           bFirst = false;
-                           Buffer += std::format( "{}={}", InName, InValue );
-                       } );
-        Buffer += " }";
-
-        return FString{ FStringView( Buffer ) };
+        return std::format( "{}", Object );
 #else
         static_cast<void>( Object );
         return FString{};
@@ -44,3 +58,39 @@ namespace Meta
 } // namespace Meta
 
 } // namespace Lumen
+
+// NOLINTBEGIN(cert-dcl58-cpp, bugprone-std-namespace-modification, readability-identifier-naming)
+namespace std
+{
+
+/// @brief Formatter for any reflected aggregate.
+template <Lumen::Meta::CReflected TObject> struct formatter<TObject, char>
+{
+    constexpr auto parse ( format_parse_context &Ctx )
+    {
+        return Ctx.begin();
+    }
+
+    template <typename FormatContext> auto format ( const TObject &Object, FormatContext &Ctx ) const
+    {
+        auto Out = Ctx.out();
+        Out      = std::format_to( Out, "{}{}{{", LUMEN_NEWLINE, Lumen::Meta::TypeName<TObject>() );
+
+        Lumen::Bool bFirst = true;
+        Lumen::Meta::ForEachMember( Object,
+                                    [&Out, &bFirst] ( const Lumen::FStringView InName, const auto &InValue )
+                                    {
+                                        Out    = std::format_to( Out,
+                                                                 "{}{}=", bFirst ? LUMEN_NEWLINE "    " : "," LUMEN_NEWLINE "    ",
+                                                                 std::string_view( InName ) );
+                                        Out    = Lumen::Meta::Detail::FormatField( Out, InValue );
+                                        bFirst = false;
+                                    } );
+
+        Out = std::format_to( Out, "{}", LUMEN_NEWLINE );
+        return std::format_to( Out, "}}" );
+    }
+};
+
+} // namespace std
+// NOLINTEND(cert-dcl58-cpp, bugprone-std-namespace-modification, readability-identifier-naming)
