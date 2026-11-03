@@ -100,7 +100,7 @@ namespace
         const HANDLE Handle = ::GetStdHandle( STD_OUTPUT_HANDLE );
         DWORD Mode          = 0;
 
-        if ( Handle != nullptr && Handle != INVALID_HANDLE_VALUE && ::GetConsoleMode( Handle, &Mode ) )
+        if ( Handle != nullptr and Handle != INVALID_HANDLE_VALUE and ::GetConsoleMode( Handle, &Mode ) )
         {
             ::SetConsoleMode( Handle, Mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING );
         }
