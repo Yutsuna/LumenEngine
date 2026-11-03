@@ -56,7 +56,6 @@ namespace MonadicDetail
     template <class Self> using TConstElementRef = const std::remove_reference_t<TValueRef<Self>> &;
 
     /// @brief True if `*Self` has type `void` (i.e. `TExpected<void, E>`).
-    ///        Utilisé pour dispatcher AndThen entre `Func()` et `Func(TValueRef)`.
     template <class Self> inline constexpr Bool CIsVoidValue = std::is_void_v<std::remove_cvref_t<TValueRef<Self>>>;
 
     template <class MonadicType>
