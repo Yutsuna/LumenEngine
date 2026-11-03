@@ -87,21 +87,16 @@ namespace Maths
         [[nodiscard]] static constexpr TMatrix<Type, 4, 4> RotateZ ( Type InAngleRadians ) noexcept
             requires Concepts::CSquareMatrix<4, 4>;
 
-        [[nodiscard]] static constexpr TMatrix<Type, 4, 4> Perspective ( Type InFieldOfViewRadians,
-                                                                          Type InAspectRatio,
-                                                                          Type InNearPlane,
-                                                                          Type InFarPlane ) noexcept
+        [[nodiscard]] static constexpr TMatrix<Type, 4, 4>
+        Perspective ( Type InFieldOfViewRadians, Type InAspectRatio, Type InNearPlane, Type InFarPlane ) noexcept
             requires Concepts::CSquareMatrix<4, 4>;
 
-        [[nodiscard]] static constexpr TMatrix<Type, 4, 4> Orthographic ( Type InWidth,
-                                                                            Type InHeight,
-                                                                            Type InNearPlane,
-                                                                            Type InFarPlane ) noexcept
+        [[nodiscard]] static constexpr TMatrix<Type, 4, 4>
+        Orthographic ( Type InWidth, Type InHeight, Type InNearPlane, Type InFarPlane ) noexcept
             requires Concepts::CSquareMatrix<4, 4>;
 
-        [[nodiscard]] static constexpr TMatrix<Type, 4, 4> LookAt ( const TVec<Type, 3> &InEye,
-                                                                     const TVec<Type, 3> &InTarget,
-                                                                     const TVec<Type, 3> &InUp ) noexcept
+        [[nodiscard]] static constexpr TMatrix<Type, 4, 4>
+        LookAt ( const TVec<Type, 3> &InEye, const TVec<Type, 3> &InTarget, const TVec<Type, 3> &InUp ) noexcept
             requires Concepts::CSquareMatrix<4, 4>;
     };
 

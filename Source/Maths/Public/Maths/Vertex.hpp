@@ -28,7 +28,10 @@ namespace Maths
         Maths::FVec3f Tangent;
 
         constexpr FVertex () noexcept = default;
-        constexpr FVertex ( const Maths::FVec3f &InPosition, const Maths::FVec3f &InNormal, const Maths::FVec2f &InUV, const Maths::FVec3f &InTangent ) noexcept;
+        constexpr FVertex ( const Maths::FVec3f &InPosition,
+                            const Maths::FVec3f &InNormal,
+                            const Maths::FVec2f &InUV,
+                            const Maths::FVec3f &InTangent ) noexcept;
         constexpr FVertex ( const Maths::FVec3f &InPosition ) noexcept;
 
         constexpr Lumen::Bool operator==( const FVertex &Other ) const noexcept;

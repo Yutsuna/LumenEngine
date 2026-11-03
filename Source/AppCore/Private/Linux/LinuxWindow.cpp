@@ -2,6 +2,7 @@
 /// @brief Implementation of the FLinuxWindow class for Linux-specific window management.
 
 #include <Linux/LinuxWindow.hpp>
+#include <SDL3/SDL_video.h>
 
 #if defined( LUMEN_PLATFORM_LINUX )
 
@@ -12,33 +13,47 @@ namespace
 
 const Lumen::FLogCategory LogLinuxWindow( "LinuxWindow" );
 
-inline SDL_WindowFlags GetSDLWindowFlags( const TSharedRef<FGenericWindowDescription> &InDescription, const Lumen::Bool bShowImmediately ) noexcept
+inline SDL_WindowFlags GetSDLWindowFlags ( const Lumen::TSharedRef<Lumen::FGenericWindowDescription> &InDescription,
+                                           const Lumen::Bool bShowImmediately,
+                                           const SDL_WindowFlags InGraphicsFlags = static_cast<SDL_WindowFlags>( 0 ) ) noexcept
 {
-    /// TODO: check if this is OK because the backend might not always be Vulkan
-    SDL_WindowFlags WindowFlags = SDL_WINDOW_VULKAN;
+    SDL_WindowFlags WindowFlags = InGraphicsFlags;
 
     if ( not( InDescription->bIsVisible and bShowImmediately ) )
     {
-        WindowFlags |= SDL_WINDOW_HIDDEN;
+        WindowFlags = static_cast<SDL_WindowFlags>( WindowFlags | SDL_WINDOW_HIDDEN );
     }
 
     if ( InDescription->bIsResizable )
     {
-        WindowFlags |= SDL_WINDOW_RESIZABLE;
+        WindowFlags = static_cast<SDL_WindowFlags>( WindowFlags | SDL_WINDOW_RESIZABLE );
     }
 
-    if ( InDescription->WindowMode == EWindowMode::Fullscreen )
+    switch ( InDescription->WindowMode )
     {
-        WindowFlags |= SDL_WINDOW_FULLSCREEN;
+    case Lumen::EWindowMode::Windowed:
+    {
+        /// NOTE: Default SDL window mode. No additional flag required.
+        break;
     }
-    else if ( InDescription->WindowMode == EWindowMode::WindowedFullscreen )
+
+    case Lumen::EWindowMode::Fullscreen: /// NOLINT(bugprone-branch-clone)
     {
-        /// TODO: Implement windowed fullscreen mode
-        WindowFlags |= SDL_WINDOW_FULLSCREEN;
+        WindowFlags = static_cast<SDL_WindowFlags>( WindowFlags | SDL_WINDOW_FULLSCREEN );
+        break;
+    }
+
+    case Lumen::EWindowMode::WindowedFullscreen:
+    {
+        WindowFlags = static_cast<SDL_WindowFlags>( WindowFlags | SDL_WINDOW_FULLSCREEN );
+        break;
+    }
+
+    default:
+        break;
     }
 
     return WindowFlags;
-
 }
 
 } // namespace
@@ -70,7 +85,9 @@ void Lumen::FLinuxWindow::Initialize ( FLinuxApplication *InApplication,
     Description      = InDescription;
     ParentWindow     = InParentWindow;
 
-    const SDL_WindowFlags WindowFlags = GetSDLWindowFlags( InDescription, bShowImmediately );
+    /// TODO: make this parametrable
+    const SDL_WindowFlags WindowBackendAPI = SDL_WINDOW_VULKAN;
+    const SDL_WindowFlags WindowFlags      = GetSDLWindowFlags( InDescription, bShowImmediately, WindowBackendAPI );
 
     WindowHandle = SDL_CreateWindow( InDescription->Title.c_str(), InDescription->Size.X, InDescription->Size.Y, WindowFlags );
 
