@@ -113,7 +113,7 @@ namespace Maths
     } // namespace Private
 
     template <typename Type, USize Dimension>
-    concept CVecDimension = Dimension > 0 && Dimension <= 4;
+    concept CVecDimension = Dimension > 0 and Dimension <= 4;
 
     template <typename Type, USize Dimension>
         requires CVecDimension<Type, Dimension>
@@ -146,7 +146,7 @@ namespace Maths
         template <typename OtherType> constexpr explicit TVec( const TVec<OtherType, Dimension> &Other ) noexcept;
 
         template <typename... Arguments>
-            requires( sizeof...( Arguments ) == Dimension && ( std::is_convertible_v<Arguments, Type> && ... ) )
+            requires( sizeof...( Arguments ) == Dimension and ( std::is_convertible_v<Arguments, Type> and ... ) )
         constexpr TVec( Arguments &&...Args ) noexcept;
 
         /// Operators
