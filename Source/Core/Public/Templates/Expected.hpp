@@ -6,6 +6,9 @@
 #include <Templates/Monadic.hpp>
 #include <Templates/Unexpected.hpp>
 
+#include <Concepts/ConstructibleFrom.hpp>
+#include <Concepts/SameAs.hpp>
+
 namespace Lumen
 {
 
@@ -50,7 +53,7 @@ public:
 
     /// @brief Constructs TExpected with a TUnexpected
     template <class OtherErrorType>
-        requires std::is_constructible_v<ErrorType, OtherErrorType>
+        requires Concepts::CConstructibleFrom<ErrorType, OtherErrorType>
     constexpr TExpected( TUnexpected<OtherErrorType> InUnexpected ) noexcept
         : Err( std::move( InUnexpected ).Value() ), bHasValue( false )
     {
@@ -68,7 +71,7 @@ public:
 public:
 
     /// @brief Copy constructor
-    constexpr explicit TExpected ( const TExpected &Other ) noexcept : bHasValue( Other.bHasValue )
+    constexpr TExpected ( const TExpected &Other ) noexcept : bHasValue( Other.bHasValue )
     {
         if ( bHasValue )
         {
@@ -93,6 +96,16 @@ public:
         {
             std::construct_at( std::addressof( Err ), std::move( Other.Err ) );
         }
+    }
+
+    /// @brief Constructs TExpected with a value convertible to ValueType (e.g. upcasting smart pointers).
+    template <class OtherValueType>
+        requires( not Concepts::CSameAs<std::remove_cvref_t<OtherValueType>, TExpected> and
+                  Concepts::CConstructibleFrom<ValueType, OtherValueType> )
+    constexpr TExpected( OtherValueType &&InValue ) noexcept( std::is_nothrow_constructible_v<ValueType, OtherValueType> )
+        : Val( std::forward<OtherValueType>( InValue ) ), bHasValue( true )
+    {
+        /// Empty
     }
 
     /// @brief Copy assignment operator
@@ -256,7 +269,7 @@ public:
     }
 
     template <class OtherErrorType>
-        requires std::is_constructible_v<ErrorType, OtherErrorType>
+        requires Concepts::CConstructibleFrom<ErrorType, OtherErrorType>
     constexpr TExpected( TUnexpected<OtherErrorType> InUnexpected ) noexcept
         : Err( std::move( InUnexpected ).Value() ), bHasValue( false )
     {

@@ -3,7 +3,8 @@
 
 #pragma once
 
-#include <type_traits>
+#include <Concepts/ConstructibleFrom.hpp>
+
 #include <utility>
 
 namespace Lumen
@@ -40,7 +41,7 @@ public:
     }
 
     template <class... Args>
-        requires std::is_constructible_v<ErrorType, Args...>
+        requires Concepts::CConstructibleFrom<ErrorType, Args...>
     constexpr explicit TUnexpected( std::in_place_t, Args &&...InArgs ) noexcept : Err( std::forward<Args>( InArgs )... )
     {
         /// Empty
