@@ -39,12 +39,15 @@ public:
     /// @return The main window for the application.
     [[nodiscard]] virtual TSharedPtr<FGenericWindow> GetMainWindow () const noexcept;
 
+    /// @brief Polls the messages events
+    virtual void PumpMessages ( Float64 DeltaTime ) noexcept;
+
     /// @brief Shuts down the application.
     virtual void Shutdown () noexcept;
 
 public:
 
-    static TSharedRef<FGenericWindow> MakeWindow ();
+    virtual TSharedRef<FGenericWindow> MakeWindow ();
 
 protected:
 
