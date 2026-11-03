@@ -5,6 +5,7 @@
 
 #include <Engine/LaunchEngine.hpp>
 #include <Engine/LaunchEngineLoop.hpp>
+#include <Engine/LaunchProcessGuard.hpp>
 
 #include <Logging/Logger.hpp>
 
@@ -30,6 +31,7 @@ LUMEN_LOG_DEFINE_CATEGORY( LogLaunch, "Launch" )
 
 Lumen::Int32 Lumen::Launch::GuardedMain ( const Int32 InArgc, const AnsiChar *const *InArgv ) noexcept
 {
+    const FLaunchProcessGuard ProcessGuard;
     const Int32 ExitCode = FLaunchEngineLoop::PreInit( FCommandLine( InArgc, InArgv ) )
                                .AndThen( &FLaunchEngineLoop::Init )
                                .AndThen( &FLaunchEngineLoop::Run )

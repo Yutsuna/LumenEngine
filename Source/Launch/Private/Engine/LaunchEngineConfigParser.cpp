@@ -4,6 +4,8 @@
 #include <Engine/LaunchEngineConfig.hpp>
 #include <Engine/LaunchEngineConfigParser.hpp>
 
+#include <Logging/Logger.hpp>
+
 #include <cmath>
 #include <type_traits>
 #include <utility>
@@ -13,8 +15,46 @@ namespace Lumen
 
 namespace
 {
+
+    LUMEN_LOG_DEFINE_CATEGORY( LogEngineConfigParser, "EngineConfigParser" );
+
     /// @brief Prevents `-fixedstep=1e-9` from freezing the engine in the catch-up loop.
     constexpr Float64 MaxFixedStepsPerFrame = 1024.0;
+
+    constexpr FStringView KnownOptions[] = {
+        "fixedstep", "maxframetime", "fps", "maxframes", "headless", "help",
+    };
+
+    [[nodiscard]] Bool IsKnownOption ( const FStringView InName ) noexcept
+    {
+        return std::ranges::any_of( KnownOptions, [InName] ( const FStringView Known ) noexcept -> Bool
+                                    { return EqualsIgnoreCase( InName, Known ); } );
+    }
+
+    [[nodiscard]] Launch::TLaunchResult<void> ValidateOptions ( const Launch::FCommandLine &InCommandLine ) noexcept
+    {
+        Launch::TLaunchResult<void> Result{};
+        InCommandLine.ForEachOption(
+            [&Result] ( const AnsiChar *const Raw, const FStringView Option ) noexcept
+            {
+                if ( not Result )
+                {
+                    return;
+                }
+                if ( Option.empty() )
+                {
+                    LUMEN_LOG_WARNING( LogEngineConfigParser, "Ignoring positional argument '{}'", Raw );
+                    return;
+                }
+                if ( not IsKnownOption( Option ) )
+                {
+                    LUMEN_LOG_ERROR( LogEngineConfigParser, "Unknown command-line option '{}'", Option );
+                    Result = LaunchFailure( Launch::ELaunchStage::PreInit, Launch::ELaunchErrorCode::InvalidArgument,
+                                            "Unknown command-line option" );
+                }
+            } );
+        return Result;
+    }
 
     [[nodiscard]] constexpr TUnexpected<Launch::FLaunchError> InvalidConfig ( const FStringView InMessage ) noexcept
     {
@@ -88,7 +128,8 @@ Launch::TLaunchResult<Launch::FLaunchEngineConfig> Launch::ValidateEngineConfig 
 
 Launch::TLaunchResult<Launch::FLaunchEngineConfig> Launch::ParseEngineConfig ( const FCommandLine &InCommandLine ) noexcept
 {
-    return TLaunchResult( FLaunchEngineConfig{} )
+    return ValidateOptions( InCommandLine )
+        .AndThen( [] noexcept { return TLaunchResult( FLaunchEngineConfig{} ); } )
         .AndThen( WithOption<&FLaunchEngineConfig::FixedTimeStep>( InCommandLine, "fixedstep" ) )
         .AndThen( WithOption<&FLaunchEngineConfig::MaxFrameTime>( InCommandLine, "maxframetime" ) )
         .AndThen( WithOption<&FLaunchEngineConfig::MaxFPS>( InCommandLine, "fps" ) )
