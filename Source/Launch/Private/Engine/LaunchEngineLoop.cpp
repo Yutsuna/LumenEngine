@@ -7,6 +7,8 @@
 #include <Engine/LaunchEngineLoop.hpp>
 #include <Engine/LaunchFrameTiming.hpp>
 
+#include <Meta/Serialize.hpp>
+
 #include <Logging/Logger.hpp>
 
 #include <HAL/PlatformTime.hpp>
@@ -20,6 +22,8 @@ namespace
     TAtomic<Bool> GExitRequested{ false };
     static_assert( TAtomic<Bool>::is_always_lock_free, "Lock-free atomics are required to be async-signal-safe." );
 
+    LUMEN_LOG_DEFINE_CATEGORY( LogEngineLoop, "EngineLoop" );
+
 } // namespace
 
 Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit ( const FCommandLine &InCommandLine ) noexcept
@@ -28,8 +32,15 @@ Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit 
     ( void )HAL::FPlatformTime::Seconds();
 
     return ParseEngineConfig( InCommandLine )
-        .Transform( [&InCommandLine] ( FLaunchEngineConfig &&InConfig ) noexcept -> FPreInitState
-                    { return FPreInitState{ .CommandLine = InCommandLine, .Config = std::move( InConfig ) }; } );
+        .Transform(
+            [&InCommandLine] ( FLaunchEngineConfig &&InConfig ) noexcept -> FPreInitState
+            {
+                const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move( InConfig ) };
+
+                LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:\n{}", Meta::SerializeToString( InConfig ) );
+
+                return PreInitState;
+            } );
 }
 
 Launch::TLaunchResult<Launch::FInitState> Launch::FLaunchEngineLoop::Init ( FPreInitState &&InPreInitState ) noexcept

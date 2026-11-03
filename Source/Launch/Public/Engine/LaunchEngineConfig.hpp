@@ -6,9 +6,9 @@
 #pragma once
 
 #include <Core/CoreTypes.hpp>
-#include <HAL/PlatformTime.hpp>
 
-#include <cmath>
+#include <HAL/PlatformTime.hpp>
+#include <String/String.hpp>
 
 namespace Lumen
 {

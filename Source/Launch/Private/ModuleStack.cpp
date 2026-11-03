@@ -42,6 +42,8 @@ Launch::TLaunchResult<void> Launch::FModuleStack::StartAll ( const TSpan<const F
 
     for ( const FModuleDescriptor &Descriptor : InDescriptors )
     {
+        LUMEN_LOG_INFO( LogModuleStack, "Starting module '{}'", Descriptor.Name );
+
         if ( Descriptor.Create == nullptr ) [[unlikely]]
         {
             LUMEN_LOG_ERROR( LogModuleStack, "Module '{}' has no factory", Descriptor.Name );
