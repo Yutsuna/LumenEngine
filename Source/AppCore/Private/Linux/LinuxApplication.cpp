@@ -5,12 +5,12 @@
 
 #include <Linux/LinuxApplication.hpp>
 
-#if defined( LUMEN_ENGINE_PLATFORM_LINUX )
+#if defined( LUMEN_PLATFORM_LINUX )
 
     #include <Linux/LinuxBackend.hpp>
     #include <Linux/LinuxWindow.hpp>
 
-    #include "Container/Signal.hpp"
+    #include <HAL/Signal.hpp>
 
     #include <Generic/GenericApplicationInput.hpp>
     #include <Generic/GenericApplicationMessageHandler.hpp>
@@ -30,7 +30,7 @@ const Lumen::FLogCategory LogLinuxApplication( "LinuxApplication" );
 
 }
 
-Lumen::FLinuxApplication::~FLinuxApplication ()
+Lumen::FLinuxApplication::~FLinuxApplication () noexcept
 {
     Shutdown();
 
@@ -45,7 +45,7 @@ Lumen::TSharedRef<Lumen::FGenericWindow> Lumen::FLinuxApplication::MakeWindow ()
     return FLinuxWindow::Make();
 }
 
-Lumen::TSharedPtr<Lumen::FGenericApplication> Lumen::FLinuxApplication::CreateLinuxApplication ()
+Lumen::TSharedPtr<Lumen::FGenericApplication> Lumen::FLinuxApplication::CreateLinuxApplication () noexcept
 {
     if ( not FLinuxBackend::InitializeSDL() )
     {
@@ -62,9 +62,9 @@ Lumen::TSharedPtr<Lumen::FGenericApplication> Lumen::FLinuxApplication::CreateLi
 }
 
 void Lumen::FLinuxApplication::InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
-                                                        const TSharedRef<FGenericWindowDescription> &InDescription,
-                                                        const TSharedPtr<FGenericWindow> &InParentWindow,
-                                                        const Bool bShowImmediately )
+                                                  const TSharedRef<FGenericWindowDescription> &InDescription,
+                                                  const TSharedPtr<FGenericWindow> &InParentWindow,
+                                                  const Bool bShowImmediately ) noexcept
 {
     const TSharedRef<FLinuxWindow> LinuxWindow  = StaticCastSharedRef<FLinuxWindow>( InWindow );
     const TSharedPtr<FLinuxWindow> ParentWindow = StaticCastSharedPtr<FLinuxWindow>( InParentWindow );
@@ -102,7 +102,7 @@ namespace
         const SDL_Keycode KeyCode = KeyboardEvent.key;
         const EKeys::Type KeyType = TranslateSDLKeyCodeToEKeys( KeyCode );
 
-        MessageHandler->OnKeyUp( KeyType );
+        MessageHandler->OnKeyUp( KeyType, KeyboardEvent.repeat != 0 );
     }
 
     inline void SendMouseButtonDownEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler, const SDL_MouseButtonEvent &MouseButtonEvent )
@@ -134,7 +134,7 @@ namespace
 
 } // namespace Lumen
 
-void Lumen::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent )
+void Lumen::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent ) noexcept
 {
     TSharedPtr<FLinuxWindow> CurrentWindow = FindWindowByID( InEvent.window.windowID );
 
@@ -180,12 +180,12 @@ void Lumen::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent )
     }
 }
 
-void Lumen::FLinuxApplication::PumpMessages ( const Float64 __attribute__( ( unused ) ) DeltaTime )
+void Lumen::FLinuxApplication::PumpMessages ( const Float64 LUMEN_UNUSED DeltaTime ) noexcept
 {
-    FLinuxBackend::PumpMessages();
+    FLinuxBackend::PumpSDLMessagesQueue();
 }
 
-Lumen::TSharedPtr<Lumen::FLinuxWindow> Lumen::FLinuxApplication::FindWindowByID ( const SDL_WindowID InWindowID ) const
+Lumen::TSharedPtr<Lumen::FLinuxWindow> Lumen::FLinuxApplication::FindWindowByID ( const SDL_WindowID InWindowID ) const noexcept
 {
     for ( const TSharedRef<FLinuxWindow> &Window : Windows )
     {

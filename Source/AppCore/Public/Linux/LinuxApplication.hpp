@@ -55,7 +55,7 @@ public:
 private:
 
     /// @brief helper function to find a window by its SDL Window ID
-    [[nodiscard]] TSharedPtr<FLinuxApplication> FindWindowByID ( SDL_WindowID InWindowID ) const noexcept;
+    [[nodiscard]] TSharedPtr<FLinuxWindow> FindWindowByID ( SDL_WindowID InWindowID ) const noexcept;
 
 private:
 
