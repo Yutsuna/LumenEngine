@@ -15,27 +15,31 @@ namespace Lumen
 namespace Internal
 {
 
-    ///
-    /// @class FActorRegistry
-    /// @brief Thread-safe registry for actor lookups.
-    ///
     class FActorRegistry
     {
+    private:
+
+        struct FActorIDHash
+        {
+            [[nodiscard]] USize operator()( const ActorID InId ) const noexcept
+            {
+                const UInt64 Key = ( static_cast<UInt64>( InId.Generation ) << 32U ) | InId.Index;
+                return static_cast<USize>( Key ^ ( Key >> 32U ) );
+            }
+        };
+
     public:
 
-        /// @brief Registers an actor. Called from AActor constructor.
-        static void Register ( AActor *InActor ) noexcept;
-
-        /// @brief Unregisters an actor. Called from AActor destructor.
+        static EActorRegistrationResult Register ( AActor *InActor ) noexcept;
         static void Unregister ( AActor *InActor ) noexcept;
-
-        /// @brief Enqueues a message to the actor with the given ID.
-        static void EnqueueMessage ( ActorID InId, const FMessage &InMessage ) noexcept;
+        static EEnqueueResult EnqueueMessage ( ActorID InId, const FMessage &InMessage ) noexcept;
 
     private:
 
         static FSharedMutex RegistryMutex;
-        static TMap<ActorID, AActor *> Actors;
+        static TMap<ActorID, AActor *, FActorIDHash> Actors;
+        static TMap<UInt32, UInt32> Generations;
+        static UInt32 NextIndex;
     };
 
 } // namespace Internal
