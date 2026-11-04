@@ -42,11 +42,18 @@ public:
         /// Empty
     }
 
-    /// @brief Value constructor
-    constexpr explicit TOptional ( ValueType InValue ) noexcept( std::is_nothrow_move_constructible_v<ValueType> )
+    /// @brief Copy constructor from value
+    constexpr explicit TOptional ( const ValueType &InValue ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> )
+        : Value( InValue ), bHasValue( true )
+    {
+        ///
+    }
+
+    /// @brief Move constructor from value
+    constexpr explicit TOptional ( ValueType &&InValue ) noexcept( std::is_nothrow_move_constructible_v<ValueType> )
         : Value( std::move( InValue ) ), bHasValue( true )
     {
-        /// Empty
+        ///
     }
 
     /// @brief Emplace construction from a function
@@ -83,20 +90,6 @@ public:
             std::construct_at( std::addressof( Value ), std::move( InOptional.Value ) );
             bHasValue = true;
         }
-    }
-
-    /// @brief Copy constructor
-    constexpr explicit TOptional ( const ValueType &InValue ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> )
-        : Value( InValue ), bHasValue( true )
-    {
-        /// Empty
-    }
-
-    /// @brief Move constructor
-    constexpr explicit TOptional ( ValueType &&InValue ) noexcept( std::is_nothrow_move_constructible_v<ValueType> )
-        : Value( std::move( InValue ) ), bHasValue( true )
-    {
-        /// Empty
     }
 
     /// @brief Assignment operator deleted
