@@ -40,6 +40,12 @@ template <Launch::Concepts::CCommandLineNumber NumberType>
 Launch::TLaunchResult<NumberType> Launch::FCommandLine::GetNumberOr ( const FStringView InKey,
                                                                       const NumberType InFallback ) const noexcept
 {
+    if ( HasSwitch( InKey ) ) [[unlikely]]
+    {
+        return LaunchFailure( ELaunchStage::PreInit, ELaunchErrorCode::MissingArgument,
+                              "Numeric command-line option requires a value" );
+    }
+
     return GetNumber<NumberType>( InKey ).OrElse(
         [InFallback] ( const FLaunchError &InError ) noexcept -> TLaunchResult<NumberType>
         {

@@ -217,8 +217,7 @@ Launch::TLaunchResult<Launch::FLaunchEngineConfig> Launch::ParseEngineConfig ( c
         return LaunchFailure( ELaunchStage::PreInit, ELaunchErrorCode::None, "help requested" );
     }
 
-    return BindOptions( InCommandLine, FLaunchEngineConfig{} )
-        .AndThen( &ValidateEngineConfig );
+    return BindOptions( InCommandLine, FLaunchEngineConfig{} ).AndThen( &ValidateEngineConfig );
 }
 
 } // namespace Lumen

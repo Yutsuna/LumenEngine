@@ -14,8 +14,7 @@ namespace
 {
 
 /// @brief Handles Signals received
-template <typename TMessage>
-void OnSignal ( const Lumen::ESystemSignal::Type InSignal, const TMessage &InMessage ) noexcept
+template <typename TMessage> void OnSignal ( const Lumen::ESystemSignal::Type InSignal, const TMessage &InMessage ) noexcept
 {
     if ( Lumen::Launch::FLaunchEngineLoop::RequestExit() )
     {
