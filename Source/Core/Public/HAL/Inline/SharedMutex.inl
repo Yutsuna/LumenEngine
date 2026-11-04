@@ -47,7 +47,7 @@ template <typename MutexType>
 TSharedUniqueLock<MutexType>::TSharedUniqueLock( TSharedUniqueLock &&InOther ) noexcept
     : Mutex( std::exchange<MutexType>( InOther.Mutex, nullptr ) ), bIsLocked( std::exchange<Bool>( InOther.bIsLocked, false ) )
 {
-    /* Empty */
+    ///
 }
 
 template <typename MutexType>

@@ -1,6 +1,7 @@
 .direnv/
 .idea/
-cache/
+.cache/
+.zed/
 Build/
 __pycache__/
 ThirdParty/

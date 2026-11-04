@@ -35,6 +35,7 @@ if get_option('optimization') == '0'
 endif
 
 FileSystem = import('fs')
+OSName = host_machine.system()
 
 GlobalModules = {}
 PublicIncludes = {}

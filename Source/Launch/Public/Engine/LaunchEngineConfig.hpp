@@ -6,9 +6,9 @@
 #pragma once
 
 #include <Core/CoreTypes.hpp>
-#include <HAL/PlatformTime.hpp>
 
-#include <cmath>
+#include <HAL/PlatformTime.hpp>
+#include <String/String.hpp>
 
 namespace Lumen
 {
@@ -22,7 +22,7 @@ namespace Launch
     struct FLaunchEngineConfig
     {
         /// @brief Fixed simulation step in seconds (`-fixedstep=`).
-        Float64 FixedTimeStep = HAL::FPlatformTime::DefaultTickRate;
+        Float64 FixedStep = HAL::FPlatformTime::DefaultTickRate;
 
         /// @brief Upper bound on a single frame delta, protects against the "spiral of death" (`-maxframetime=`).
         Float64 MaxFrameTime = HAL::FPlatformTime::MaxTickRate;

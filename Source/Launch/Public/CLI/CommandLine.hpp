@@ -11,6 +11,7 @@
 #include <Memory/Span.hpp>
 #include <String/StringView.hpp>
 
+#include <Concepts/SameAs.hpp>
 #include <type_traits>
 
 namespace Lumen
@@ -18,12 +19,15 @@ namespace Lumen
 
 namespace Launch
 {
+
     namespace Concepts
     {
+
         /// @concept CCommandLineNumber
         /// @brief Numeric types FCommandLine can parse.
         template <typename Type>
-        concept CCommandLineNumber = std::is_arithmetic_v<Type> and not std::is_same_v<Type, Bool>;
+        concept CCommandLineNumber = std::is_arithmetic_v<Type> and not ::Lumen::Concepts::CSameAs<Type, Bool>;
+
     } // namespace Concepts
 
     ///
@@ -54,6 +58,13 @@ namespace Launch
         /// @brief Like GetNumber, but an absent key yields `InFallback`. A malformed value is still an error.
         template <Concepts::CCommandLineNumber NumberType>
         [[nodiscard]] TLaunchResult<NumberType> GetNumberOr ( FStringView InKey, NumberType InFallback ) const noexcept;
+
+        /// @return Raw argv (excluding the program name).
+        [[nodiscard]] TSpan<const AnsiChar *const> GetArguments () const noexcept;
+
+        /// @brief Every option's name with dashes and `=value` stripped, in argv order.
+        ///        Non-option arguments (no leading `-`) are reported as empty views.
+        template <typename TFunction> void ForEachOption ( TFunction &&InCallback ) const noexcept;
 
     private:
 

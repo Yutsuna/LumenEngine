@@ -3,6 +3,12 @@
 # Source/AppCore meson entry-point
 #}
 
+PlatformDeps = []
+
+if OSName == 'linux'
+    PlatformDeps += dependency('sdl3', required : true)
+endif
+
 ModuleDefinition = {
     'Name' : 'AppCore',
     'Type' : 'SharedLibrary',
@@ -10,5 +16,6 @@ ModuleDefinition = {
     'Private' : 'Private',
     'Public' : 'Public',
     'Tests' : 'Tests',
-    'Depends' : ['Core', 'Maths']
+    'Depends' : ['Core', 'Maths'],
+    'ExternalDeps' : PlatformDeps,
 }

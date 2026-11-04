@@ -65,9 +65,9 @@ namespace Lumen
 /// @brief In-place conversion to lower-case (Zero allocations).
 constexpr CORE_EXPORT void ToLowerInline ( FString &InOutString ) noexcept
 {
-    for ( AnsiChar &c : InOutString )
+    for ( AnsiChar &Char : InOutString )
     {
-        c = ToLower( c );
+        Char = ToLower( Char );
     }
 }
 
@@ -110,4 +110,15 @@ constexpr CORE_EXPORT void ToLowerInline ( FString &InOutString ) noexcept
 
     return {};
 }
+
+/// @brief Converts a raw C-string to an option string view (Strips leading dashes).
+[[nodiscard]] constexpr FStringView AsOption ( const AnsiChar *const InRawCString ) noexcept
+{
+    if ( InRawCString == nullptr or InRawCString[0] != '-' )
+    {
+        return {};
+    }
+    return StripDashes( FStringView( InRawCString ) );
+}
+
 } // namespace Lumen

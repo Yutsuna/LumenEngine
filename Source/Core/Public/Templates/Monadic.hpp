@@ -7,49 +7,43 @@
 #include <Templates/MonadicDetails.hpp>
 
 #include <concepts>
-#include <functional>
 #include <utility>
 
 namespace Lumen
 {
+
 namespace Concepts
 {
+
     /// @concept CMonadic
     /// @brief Test the 3 monadic state
     template <class Container>
     concept CMonadic = ( CHasValueMember<std::remove_cvref_t<Container>> or CBoolTestable<std::remove_cvref_t<Container>> ) and
-                       requires( Container &&InContainer ) {
-                           ///
-                           *std::forward<Container>( InContainer );
-                           ///
-                       };
+                       requires( Container &&InContainer ) { *std::forward<Container>( InContainer ); };
 
     /// @concept CTransformable
-    /// @brief Test the transformable state
+    /// @brief Test the transformable state (T -> U).
     template <class Self, class Func>
     concept CTransformable = CMonadic<Self> and std::invocable<Func, MonadicDetail::TValueRef<Self>> and
-                             ( not std::is_void_v<MonadicDetail::TTransformResult<Self, Func>> ) and requires {
-                                 ///
-                                 typename MonadicDetail::TTransformOut<Self, Func>;
-                                 ///
-                             };
+                             ( not std::is_void_v<MonadicDetail::TTransformResult<Self, Func>> ) and
+                             requires { typename MonadicDetail::TTransformOut<Self, Func>; };
 
     /// @concept CBindable
     /// @brief Test the bindable state
     template <class Self, class Func>
     concept CBindable =
-        CMonadic<Self> and std::invocable<Func, MonadicDetail::TValueRef<Self>> and CMonadic<MonadicDetail::TBindOut<Self, Func>>;
+        CMonadic<Self> and
+        ( MonadicDetail::CIsVoidValue<Self> ? std::invocable<Func> : std::invocable<Func, MonadicDetail::TValueRef<Self>> ) and
+        CMonadic<MonadicDetail::TBindOut<Self, Func>>;
 
     /// @concept CRecoverable
     /// @brief Test the recoverable state
     template <class Self, class Func>
     concept CRecoverable = CMonadic<Self> and std::constructible_from<MonadicDetail::TSelfType<Self>, Self> and
                            requires( Self &&Container, Func &&InFunc ) {
-                               ///
                                {
                                    MonadicDetail::InvokeRecover( std::forward<Self>( Container ), std::forward<Func>( InFunc ) )
                                } -> CSameAs<MonadicDetail::TSelfType<Self>>;
-                               ///
                            };
 } // namespace Concepts
 
@@ -88,7 +82,9 @@ public:
         requires Concepts::CBindable<Self, Func>
     [[nodiscard]] constexpr auto AndThen ( this Self &&InSelf, Func &&InFunc ) noexcept(
         noexcept( MonadicDetail::Has( std::declval<const MonadicDetail::TSelfType<Self> &>() ) ) and
-        noexcept( *std::declval<Self>() ) and std::is_nothrow_invocable_v<Func, MonadicDetail::TValueRef<Self>> and
+        noexcept( *std::declval<Self>() ) and
+        ( MonadicDetail::CIsVoidValue<Self> ? std::is_nothrow_invocable_v<Func>
+                                            : std::is_nothrow_invocable_v<Func, MonadicDetail::TValueRef<Self>> ) and
         noexcept( MonadicDetail::MakeFailure<MonadicDetail::TBindOut<Self, Func>>( std::declval<Self>() ) ) )
         -> MonadicDetail::TBindOut<Self, Func>
     {
@@ -96,7 +92,14 @@ public:
 
         if ( MonadicDetail::Has( InSelf ) ) [[likely]]
         {
-            return std::invoke( std::forward<Func>( InFunc ), *std::forward<Self>( InSelf ) );
+            if constexpr ( MonadicDetail::CIsVoidValue<Self> )
+            {
+                return std::invoke( std::forward<Func>( InFunc ) );
+            }
+            else
+            {
+                return std::invoke( std::forward<Func>( InFunc ), *std::forward<Self>( InSelf ) );
+            }
         }
         return MonadicDetail::MakeFailure<Out>( std::forward<Self>( InSelf ) );
     }
@@ -138,7 +141,7 @@ public:
 
 public:
 
-    /// @brief Return the value of the container, or the fallback value if the container is empty.
+    /// @brief ValueOr.  Pas disponible pour void (pas de valeur) — SFINAE silencieuse.
     template <class Self, class U>
         requires Concepts::CMonadic<Self> and std::convertible_to<U, std::remove_cvref_t<MonadicDetail::TValueRef<Self>>> and
                  std::convertible_to<MonadicDetail::TValueRef<Self>, std::remove_cvref_t<MonadicDetail::TValueRef<Self>>>
@@ -157,4 +160,5 @@ public:
         return static_cast<R>( std::forward<U>( Fallback ) );
     }
 };
+
 } // namespace Lumen

@@ -32,8 +32,8 @@ namespace Launch
     {
     public:
 
-        FFrameClock ( Float64 InFixedTimeStep, Float64 InMaxFrameTime ) noexcept;
-        FFrameClock ( Float64 InFixedTimeStep, Float64 InMaxFrameTime, Float64 InStartSeconds ) noexcept;
+        FFrameClock ( Float64 InFixedStep, Float64 InMaxFrameTime ) noexcept;
+        FFrameClock ( Float64 InFixedStep, Float64 InMaxFrameTime, Float64 InStartSeconds ) noexcept;
 
     public:
 
@@ -43,7 +43,7 @@ namespace Launch
 
     private:
 
-        Float64 FixedTimeStep;
+        Float64 FixedStep;
         Float64 MaxFrameTime;
         Float64 StartTime;
         Float64 PreviousTime;

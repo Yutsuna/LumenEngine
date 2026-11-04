@@ -1,86 +1,204 @@
 /// @file LaunchEngineConfigParser.cpp
 /// @brief Parse the Command Line then Validate the configuration.
 
+#include "Launch/LaunchError.hpp"
 #include <Engine/LaunchEngineConfig.hpp>
 #include <Engine/LaunchEngineConfigParser.hpp>
 
+#include <Meta/Overloaded.hpp>
+#include <Meta/Reflection.hpp>
+
+#include <Logging/Logger.hpp>
+#include <Templates/Array.hpp>
+
 #include <cmath>
+#include <string_view>
 #include <type_traits>
-#include <utility>
+
+static_assert( LUMEN_HAS_REFLECTION == 1, "LaunchEngineConfigParser requires C++26 static reflection." );
 
 namespace Lumen
 {
 
 namespace
 {
+
+    LUMEN_LOG_DEFINE_CATEGORY( LogEngineConfigParser, "EngineConfigParser" );
+
     /// @brief Prevents `-fixedstep=1e-9` from freezing the engine in the catch-up loop.
     constexpr Float64 MaxFixedStepsPerFrame = 1024.0;
+
+    /// @brief Inline buffer for a lowercased option key.
+    struct FOptionKey
+    {
+        TArray<AnsiChar, 32> Buffer{};
+        USize Length = 0;
+
+        [[nodiscard]] FStringView View () const noexcept
+        {
+            return FStringView{ Buffer.data(), Length };
+        }
+    };
+
+    /// @brief "MaxFrameTime" -> "maxframetime", "bHeadless" -> "headless".
+    [[nodiscard]] FOptionKey ToOptionKey ( const std::string_view InName, const Bool bIsBool ) noexcept
+    {
+        FOptionKey Key;
+
+        const USize Begin   = ( bIsBool and not InName.empty() and InName.front() == 'b' ) ? 1 : 0;
+        const USize Count   = std::min( InName.size() - Begin, Key.Buffer.size() );
+        const AnsiChar *Src = InName.data() + Begin;
+        AnsiChar *Dest      = Key.Buffer.data();
+
+        for ( USize Index = 0; Index < Count; ++Index )
+        {
+            Dest[Index] = Lumen::ToLower( Src[Index] );
+        }
+        Key.Length = Count;
+
+        return Key;
+    }
+
+    /// @brief Meta::ForEachMember, but the callback receives the CLI key instead of the raw member name.
+    template <Meta::CReflected TObject, typename TFunc>
+    void ForEachConfigOption ( TObject &InObject, TFunc &&InCallback ) noexcept
+    {
+        Meta::ForEachMember( InObject,
+                             [&InCallback] ( const std::string_view InName, auto &InField ) noexcept
+                             {
+                                 using FValue = std::remove_cvref_t<decltype( InField )>;
+                                 InCallback( ToOptionKey( InName, Concepts::CSameAs<FValue, Bool> ), InField );
+                             } );
+    }
+
+    [[nodiscard]] Bool IsKnownOption ( const FStringView InName ) noexcept
+    {
+        if ( EqualsIgnoreCase( InName, "help" ) )
+        {
+            return true;
+        }
+
+        Bool bKnown = false;
+        const Launch::FLaunchEngineConfig Defaults{};
+        ForEachConfigOption( Defaults, [&bKnown, InName] ( const FOptionKey &InKey, const auto & ) noexcept
+                             { bKnown = bKnown or EqualsIgnoreCase( InName, InKey.View() ); } );
+        return bKnown;
+    }
+
+    [[nodiscard]] Launch::TLaunchResult<void> ValidateOptions ( const Launch::FCommandLine &InCommandLine ) noexcept
+    {
+        Launch::TLaunchResult<void> Result{};
+        InCommandLine.ForEachOption(
+            [&Result] ( const AnsiChar *const Raw, const FStringView Option ) noexcept
+            {
+                if ( not Result )
+                {
+                    return;
+                }
+                if ( Option.empty() )
+                {
+                    LUMEN_LOG_WARNING( LogEngineConfigParser, "Ignoring positional argument '{}'", Raw );
+                    return;
+                }
+                if ( not IsKnownOption( Option ) )
+                {
+                    LUMEN_LOG_ERROR( LogEngineConfigParser, "Unknown command-line option '{}'", Option );
+                    Result = LaunchFailure( Launch::ELaunchStage::PreInit, Launch::ELaunchErrorCode::InvalidArgument,
+                                            "Unknown command-line option" );
+                }
+            } );
+        return Result;
+    }
 
     [[nodiscard]] constexpr TUnexpected<Launch::FLaunchError> InvalidConfig ( const FStringView InMessage ) noexcept
     {
         return Launch::LaunchFailure( Launch::ELaunchStage::PreInit, Launch::ELaunchErrorCode::InvalidConfiguration, InMessage );
     }
 
-    /// @brief -Key=Value -> Config.*Member. Absent key keeps the current value, malformed fails.
-    /// @tparam Member The numeric member of FLaunchEngineConfig to set.
-    template <auto Member>
-    [[nodiscard]] auto WithOption ( const Launch::FCommandLine &InCommandLine, const FStringView InKey ) noexcept
+    /// @brief Bind each member Bool -> -switch, arithmetic -> -key=value.
+    [[nodiscard]] Launch::TLaunchResult<Launch::FLaunchEngineConfig>
+    BindOptions ( const Launch::FCommandLine &InCommandLine, const Launch::FLaunchEngineConfig &InDefaults ) noexcept
     {
-        using FValue = std::remove_cvref_t<decltype( std::declval<Launch::FLaunchEngineConfig &>().*Member )>;
-        static_assert( Launch::Concepts::CCommandLineNumber<FValue>,
-                       "WithOption only sets numeric members: use WithSwitch for Bool." );
+        Launch::FLaunchEngineConfig Config = InDefaults;
+        Launch::TLaunchResult<void> Result{};
 
-        return [&InCommandLine,
-                InKey] ( Launch::FLaunchEngineConfig InConfig ) noexcept -> Launch::TLaunchResult<Launch::FLaunchEngineConfig>
-        {
-            return InCommandLine.GetNumberOr<FValue>( InKey, InConfig.*Member )
-                .Transform(
-                    [&InConfig] ( const FValue InValue ) noexcept -> Launch::FLaunchEngineConfig
+        ForEachConfigOption(
+            Config,
+            [&InCommandLine, &Result] ( const FOptionKey &InKey, auto &InField ) noexcept
+            {
+                if ( not Result )
+                {
+                    return; ///<< First error -> stop
+                }
+
+                const Meta::FOverloaded Bind{
+                    [&] ( Bool &InSwitch ) noexcept { InSwitch = InSwitch or InCommandLine.HasSwitch( InKey.View() ); },
+                    [&]<Launch::Concepts::CCommandLineNumber TNumber>( TNumber &InValue ) noexcept
                     {
-                        InConfig.*Member = InValue;
-                        return InConfig;
-                    } );
-        };
-    }
+                        const Launch::TLaunchResult<TNumber> Parsed = InCommandLine.GetNumberOr( InKey.View(), InValue );
+                        if ( not Parsed ) [[unlikely]]
+                        {
+                            Result = MakeUnexpected( Parsed.Error() );
+                            return;
+                        }
+                        InValue = *Parsed;
+                    },
+                };
 
-    /// @brief -Name -> Config.*Member = true. Can only be used for Bool members.
-    /// @tparam Member The Bool member of FLaunchEngineConfig to set.
-    template <auto Member>
-    [[nodiscard]] auto WithSwitch ( const Launch::FCommandLine &InCommandLine, const FStringView InName ) noexcept
-    {
-        static_assert(
-            Concepts::CIsSame<std::remove_cvref_t<decltype( std::declval<Launch::FLaunchEngineConfig &>().*Member )>, Bool>,
-            "WithSwitch only sets Bool members: use WithOption for numbers." );
+                Bind( InField );
+            } );
 
-        return [&InCommandLine,
-                InName] ( Launch::FLaunchEngineConfig InConfig ) noexcept -> Launch::TLaunchResult<Launch::FLaunchEngineConfig>
+        if ( not Result ) [[unlikely]]
         {
-            InConfig.*Member = InConfig.*Member or InCommandLine.HasSwitch( InName );
-            return InConfig;
-        };
+            return MakeUnexpected( Result.Error() );
+        }
+        return Config;
     }
+
+    void PrintUsage ( const Launch::FCommandLine &InCommandLine ) noexcept
+    {
+        LUMEN_LOG_DISPLAY( LogEngineConfigParser, "Usage: {} [-help]", InCommandLine.GetProgramName() );
+
+        const Launch::FLaunchEngineConfig Defaults{};
+        ForEachConfigOption( Defaults,
+                             [] ( const FOptionKey &InKey, const auto &InField ) noexcept
+                             {
+                                 using FValue = std::remove_cvref_t<decltype( InField )>;
+
+                                 if constexpr ( Concepts::CSameAs<FValue, Bool> )
+                                 {
+                                     LUMEN_LOG_DISPLAY( LogEngineConfigParser, "  -{}", InKey.View() );
+                                 }
+                                 else
+                                 {
+                                     LUMEN_LOG_DISPLAY( LogEngineConfigParser, "  -{}=<{}>", InKey.View(),
+                                                        Meta::TypeName<FValue>() );
+                                 }
+                             } );
+    }
+
 } // namespace
 
 Launch::TLaunchResult<Launch::FLaunchEngineConfig> Launch::ValidateEngineConfig ( const FLaunchEngineConfig &InConfig ) noexcept
 {
-    if ( not std::isfinite( InConfig.FixedTimeStep ) or InConfig.FixedTimeStep <= 0.0 ) [[unlikely]]
+    if ( not std::isfinite( InConfig.FixedStep ) or InConfig.FixedStep <= 0.0 ) [[unlikely]]
     {
         return InvalidConfig( "-fixedstep must be a finite value greater than 0" );
     }
 
-    if ( not std::isfinite( InConfig.MaxFrameTime ) or InConfig.MaxFrameTime < InConfig.FixedTimeStep ) [[unlikely]]
+    if ( not std::isfinite( InConfig.MaxFrameTime ) or InConfig.MaxFrameTime < InConfig.FixedStep ) [[unlikely]]
     {
         return InvalidConfig( "-maxframetime must be finite and not lower than -fixedstep" );
     }
 
-    if ( InConfig.MaxFrameTime > InConfig.FixedTimeStep * MaxFixedStepsPerFrame ) [[unlikely]]
+    if ( InConfig.MaxFrameTime > InConfig.FixedStep * MaxFixedStepsPerFrame ) [[unlikely]]
     {
         return InvalidConfig( "-maxframetime / -fixedstep exceeds the allowed number of fixed steps per frame" );
     }
 
     if ( not std::isfinite( InConfig.MaxFPS ) or InConfig.MaxFPS < 0.0 ) [[unlikely]]
     {
-        return InvalidConfig( "-fps must be a finite value greater than or equal to 0" );
+        return InvalidConfig( "-maxfps must be a finite value greater than or equal to 0" );
     }
 
     return InConfig;
@@ -88,13 +206,18 @@ Launch::TLaunchResult<Launch::FLaunchEngineConfig> Launch::ValidateEngineConfig 
 
 Launch::TLaunchResult<Launch::FLaunchEngineConfig> Launch::ParseEngineConfig ( const FCommandLine &InCommandLine ) noexcept
 {
-    return TLaunchResult( FLaunchEngineConfig{} )
-        .AndThen( WithOption<&FLaunchEngineConfig::FixedTimeStep>( InCommandLine, "fixedstep" ) )
-        .AndThen( WithOption<&FLaunchEngineConfig::MaxFrameTime>( InCommandLine, "maxframetime" ) )
-        .AndThen( WithOption<&FLaunchEngineConfig::MaxFPS>( InCommandLine, "fps" ) )
-        .AndThen( WithOption<&FLaunchEngineConfig::MaxFrames>( InCommandLine, "maxframes" ) )
-        .AndThen( WithSwitch<&FLaunchEngineConfig::bHeadless>( InCommandLine, "headless" ) )
-        .AndThen( &ValidateEngineConfig );
+    if ( TLaunchResult<void> Validated = ValidateOptions( InCommandLine ); not Validated )
+    {
+        return MakeUnexpected( Validated.Error() );
+    }
+
+    if ( InCommandLine.HasSwitch( "help" ) )
+    {
+        PrintUsage( InCommandLine );
+        return LaunchFailure( ELaunchStage::PreInit, ELaunchErrorCode::None, "help requested" );
+    }
+
+    return BindOptions( InCommandLine, FLaunchEngineConfig{} ).AndThen( &ValidateEngineConfig );
 }
 
 } // namespace Lumen

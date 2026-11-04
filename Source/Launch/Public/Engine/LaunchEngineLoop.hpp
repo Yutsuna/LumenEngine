@@ -16,6 +16,7 @@
 
 namespace Lumen
 {
+
 namespace Launch
 {
     ///
@@ -79,5 +80,7 @@ namespace Launch
         /// @return True if an exit request has been made, otherwise false.
         [[nodiscard]] static Bool IsExitRequested () noexcept;
     };
+
 } // namespace Launch
+
 } // namespace Lumen

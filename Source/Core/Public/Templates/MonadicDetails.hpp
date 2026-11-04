@@ -10,8 +10,6 @@
 
 #include <functional>
 
-#pragma once
-
 namespace Lumen
 {
 
@@ -57,6 +55,9 @@ namespace MonadicDetail
     template <class Self> using TValueRef        = decltype( *std::declval<Self>() );
     template <class Self> using TConstElementRef = const std::remove_reference_t<TValueRef<Self>> &;
 
+    /// @brief True if `*Self` has type `void` (i.e. `TExpected<void, E>`).
+    template <class Self> inline constexpr Bool CIsVoidValue = std::is_void_v<std::remove_cvref_t<TValueRef<Self>>>;
+
     template <class MonadicType>
     inline constexpr Bool bNothrowHas = []
     {
@@ -84,8 +85,7 @@ namespace MonadicDetail
     }
 
     template <class Out, class Source>
-    inline constexpr Bool bNothrowMakeFailure =
-        []
+    inline constexpr Bool bNothrowMakeFailure = []
     {
         if constexpr ( Concepts::CHasFailHook<Out, Source> )
         {
@@ -95,9 +95,7 @@ namespace MonadicDetail
         {
             return std::is_nothrow_default_constructible_v<Out>;
         }
-    }
-
-    ();
+    }();
 
     template <class Out, class Source>
     [[nodiscard]] constexpr Out MakeFailure ( Source &&Failed ) noexcept( bNothrowMakeFailure<Out, Source> )
@@ -146,7 +144,22 @@ namespace MonadicDetail
     template <class Self, class Func> using TTransformOut    = TSelfType<Self>::template Rebind<TTransformResult<Self, Func>>;
 
     /// @brief AndThen : Bind a value into another value if it is valid.
-    template <class Self, class Func> using TBindOut = std::remove_cvref_t<std::invoke_result_t<Func, TValueRef<Self>>>;
+    namespace Detail
+    {
+        template <class Self, class Func, bool = CIsVoidValue<Self>> struct TBindOutImpl;
+
+        template <class Self, class Func> struct TBindOutImpl<Self, Func, true>
+        {
+            using Type = std::remove_cvref_t<std::invoke_result_t<Func>>;
+        };
+
+        template <class Self, class Func> struct TBindOutImpl<Self, Func, false>
+        {
+            using Type = std::remove_cvref_t<std::invoke_result_t<Func, TValueRef<Self>>>;
+        };
+    } // namespace Detail
+
+    template <class Self, class Func> using TBindOut = typename Detail::TBindOutImpl<Self, Func>::Type;
 
     /// @brief OrElse : f() or f(Error()) if the host has an error.
     template <class Self, class Func>

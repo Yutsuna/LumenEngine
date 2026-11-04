@@ -78,6 +78,34 @@ template <typename Type> Type *TSharedRef<Type>::operator->() const noexcept
     return Object;
 }
 
+template <typename Type>
+template <typename OtherType>
+Bool TSharedPtr<Type>::operator==( const TSharedRef<OtherType> &Other ) const noexcept
+{
+    return Object == Other.Get();
+}
+
+template <typename Type>
+template <typename OtherType>
+Bool TSharedPtr<Type>::operator!=( const TSharedRef<OtherType> &Other ) const noexcept
+{
+    return Object != Other.Get();
+}
+
+template <typename Type>
+template <typename OtherType>
+Bool TSharedPtr<Type>::operator==( const TSharedPtr<OtherType> &Other ) const noexcept
+{
+    return Object == Other.Object;
+}
+
+template <typename Type>
+template <typename OtherType>
+Bool TSharedPtr<Type>::operator!=( const TSharedPtr<OtherType> &Other ) const noexcept
+{
+    return Object != Other.Object;
+}
+
 template <typename Type> Type *TSharedRef<Type>::Get () const noexcept
 {
     return Object;

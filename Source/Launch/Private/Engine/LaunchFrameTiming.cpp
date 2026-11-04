@@ -40,17 +40,16 @@ namespace
 
 } // namespace
 
-Launch::FFrameClock::FFrameClock ( const Float64 InFixedTimeStep, const Float64 InMaxFrameTime ) noexcept
-    : FFrameClock( InFixedTimeStep, InMaxFrameTime, HAL::FPlatformTime::Seconds() )
+Launch::FFrameClock::FFrameClock ( const Float64 InFixedStep, const Float64 InMaxFrameTime ) noexcept
+    : FFrameClock( InFixedStep, InMaxFrameTime, HAL::FPlatformTime::Seconds() )
 {
     /// Empty
 }
 
-Launch::FFrameClock::FFrameClock ( const Float64 InFixedTimeStep,
+Launch::FFrameClock::FFrameClock ( const Float64 InFixedStep,
                                    const Float64 InMaxFrameTime,
                                    const Float64 InStartSeconds ) noexcept
-    : FixedTimeStep( InFixedTimeStep ), MaxFrameTime( InMaxFrameTime ), StartTime( InStartSeconds ),
-      PreviousTime( InStartSeconds )
+    : FixedStep( InFixedStep ), MaxFrameTime( InMaxFrameTime ), StartTime( InStartSeconds ), PreviousTime( InStartSeconds )
 {
     /// Empty
 }
@@ -67,14 +66,14 @@ Launch::FFrameStep Launch::FFrameClock::BeginFrame ( const Float64 InNowSeconds 
     PreviousTime = InNowSeconds;
     Accumulator += Delta;
 
-    UInt32 FixedSteps = 0;
-    while ( Accumulator >= FixedTimeStep )
+    UInt32 CurrentFixedSteps = 0;
+    while ( Accumulator >= FixedStep )
     {
-        Accumulator -= FixedTimeStep;
-        ++FixedSteps;
+        Accumulator -= FixedStep;
+        ++CurrentFixedSteps;
     }
 
-    return FFrameStep{ .DeltaSeconds = Delta, .FixedSteps = FixedSteps, .Alpha = Accumulator / FixedTimeStep };
+    return FFrameStep{ .DeltaSeconds = Delta, .FixedSteps = CurrentFixedSteps, .Alpha = Accumulator / FixedStep };
 }
 
 Float64 Launch::FFrameClock::ElapsedSeconds () const noexcept

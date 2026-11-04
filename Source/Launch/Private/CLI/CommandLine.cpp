@@ -9,18 +9,6 @@
 namespace Lumen
 {
 
-namespace
-{
-    [[nodiscard]] FStringView AsOption ( const AnsiChar *const InRawCString ) noexcept
-    {
-        if ( InRawCString == nullptr or InRawCString[0] != '-' )
-        {
-            return {};
-        }
-        return StripDashes( FStringView( InRawCString ) );
-    }
-} // namespace
-
 Launch::FCommandLine::FCommandLine ( const Int32 InArgc, const AnsiChar *const *InArgv ) noexcept
 {
     if ( InArgv == nullptr or InArgc <= 0 )
@@ -39,6 +27,11 @@ Launch::FCommandLine::FCommandLine ( const Int32 InArgc, const AnsiChar *const *
 FStringView Launch::FCommandLine::GetProgramName () const noexcept
 {
     return ProgramName;
+}
+
+TSpan<const AnsiChar *const> Launch::FCommandLine::GetArguments () const noexcept
+{
+    return Arguments;
 }
 
 Bool Launch::FCommandLine::HasSwitch ( const FStringView InName ) const noexcept

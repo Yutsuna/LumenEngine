@@ -1,31 +1,20 @@
 {
   pkgs,
-  inputs,
   ...
 }:
 let
   deps = import ./deps.nix { inherit pkgs; };
-  stdenv = pkgs.overrideCC pkgs.stdenv pkgs.ccacheWrapper;
+  ldLibraryPath = pkgs.lib.makeLibraryPath deps.buildInputs;
 in
-pkgs.mkShell.override { inherit stdenv; } {
-  nativeBuildInputs =
-    deps.nativeBuildInputs
-    ++ deps.buildInputs
-    ++ (with pkgs; [
-      gcc16
-      valgrind
-      gdb
-      gtest
-      clang-tools
-      jq
-    ]);
+pkgs.mkShell {
+  inherit (deps) nativeBuildInputs buildInputs;
+
+  packages = deps.devInputs;
 
   shellHook = ''
-    mkdir -p $PWD/cache/
-    export CCACHE_DIR="$PWD/cache/.ccache"
-    export CCACHE_SLOPPINESS="pch_defines,time_macros,file_stat_matches,file_macro"
-    #export CC="ccache gcc"
-    #export CXX="ccache g++"
+    export LD_LIBRARY_PATH="${ldLibraryPath}:$LD_LIBRARY_PATH"
+    export VK_LAYER_PATH="${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d"
+
     ${pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
       export NIX_CFLAGS_LINK="-fuse-ld=mold"
     ''}

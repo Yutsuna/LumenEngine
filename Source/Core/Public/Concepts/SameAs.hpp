@@ -9,6 +9,7 @@
 
 namespace Lumen
 {
+
 namespace Concepts
 {
     ///
@@ -30,4 +31,5 @@ namespace Concepts
     concept CSameAs = std::is_same_v<T1, T2>;
 
 } // namespace Concepts
+
 } // namespace Lumen
