@@ -74,7 +74,7 @@ template <Lumen::Meta::CReflected TObject> struct formatter<TObject, char>
     template <typename FormatContext> auto format ( const TObject &Object, FormatContext &Ctx ) const
     {
         auto Out = Ctx.out();
-        Out      = std::format_to( Out, "{}{}{}{{", LUMEN_NEWLINE, Lumen::Meta::TypeName<TObject>(), LUMEN_NEWLINE );
+        Out      = std::format_to( Out, "{}" LUMEN_NEWLINE "{{", Lumen::Meta::TypeName<TObject>() );
 
         Lumen::Bool bFirst = true;
         Lumen::Meta::ForEachMember( Object,
@@ -87,8 +87,7 @@ template <Lumen::Meta::CReflected TObject> struct formatter<TObject, char>
                                         bFirst = false;
                                     } );
 
-        Out = std::format_to( Out, "{}", LUMEN_NEWLINE );
-        return std::format_to( Out, "}}" );
+        return std::format_to( Out, LUMEN_NEWLINE "}}" );
     }
 };
 
