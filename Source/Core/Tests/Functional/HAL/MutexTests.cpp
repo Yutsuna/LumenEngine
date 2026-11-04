@@ -302,7 +302,7 @@ LUMEN_TEST( Mutex_Threading, LockBlocksSecondThread )
     Mutex.Lock();
 
     std::thread Other(
-        [&]()
+        [&] ()
         {
             SecondStarted.store( true, std::memory_order_release );
             Mutex.Lock();
@@ -330,7 +330,7 @@ LUMEN_TEST( Mutex_Threading, CounterMutationUnderLock )
     FMutex Mutex;
     Int32 SharedCounter = 0;
 
-    auto Increment = [&]()
+    auto Increment = [&] ()
     {
         for ( Int32 Index = 0; Index < 1000; ++Index )
         {
@@ -348,4 +348,4 @@ LUMEN_TEST( Mutex_Threading, CounterMutationUnderLock )
     LUMEN_CHECK_EQ( SharedCounter, 2000 );
 }
 
-} /// namespace Lumen
+} // namespace Lumen

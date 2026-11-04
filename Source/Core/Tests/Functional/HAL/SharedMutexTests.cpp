@@ -310,7 +310,7 @@ LUMEN_TEST( SharedMutex_Threading, WriterBlocksReader )
     TAtomic<Bool> WriterRelease{ false };
 
     std::thread Writer(
-        [&]()
+        [&] ()
         {
             Mutex.Lock();
             WriterReady.store( true, std::memory_order_release );
@@ -327,7 +327,7 @@ LUMEN_TEST( SharedMutex_Threading, WriterBlocksReader )
     }
 
     std::thread Reader(
-        [&]()
+        [&] ()
         {
             ReaderStarted.store( true, std::memory_order_release );
             Mutex.LockShared();
@@ -364,7 +364,7 @@ LUMEN_TEST( SharedMutex_Threading, ReaderBlocksWriter )
     TAtomic<Bool> ReaderRelease{ false };
 
     std::thread Reader(
-        [&]()
+        [&] ()
         {
             Mutex.LockShared();
             ReaderReady.store( true, std::memory_order_release );
@@ -381,7 +381,7 @@ LUMEN_TEST( SharedMutex_Threading, ReaderBlocksWriter )
     }
 
     std::thread Writer(
-        [&]()
+        [&] ()
         {
             WriterStarted.store( true, std::memory_order_release );
             Mutex.Lock();
