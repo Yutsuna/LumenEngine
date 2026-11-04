@@ -42,11 +42,13 @@ namespace Thread
         /// @brief Attempts to push an element to the queue.
         /// @param InData The element to copy.
         /// @return True if successful, false if the queue is full.
+        /// @pre Push calls must be serialized. The producer thread may change only with external happens-before ordering.
         [[nodiscard]] Bool Push ( const Type &InData ) noexcept;
 
         /// @brief Attempts to push an element to the queue via move semantics.
         /// @param InData The element to move.
         /// @return True if successful, false if the queue is full.
+        /// @pre Push calls must be serialized. The producer thread may change only with external happens-before ordering.
         [[nodiscard]] Bool Push ( Type &&InData ) noexcept;
 
         /// @brief Attempts to pop an element from the queue. Multi-thread safe.
