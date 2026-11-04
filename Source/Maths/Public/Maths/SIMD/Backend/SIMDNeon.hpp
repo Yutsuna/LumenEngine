@@ -7,6 +7,7 @@
 
 #if defined( __aarch64__ ) || defined( _M_ARM64 )
     #include <Maths/SIMD/SIMDTypes.hpp>
+    #include <MathsExport.hpp>
 
     #include <arm_neon.h>
 
@@ -49,7 +50,7 @@ namespace Maths
         ///
         /// @brief Multiplies two 4x4 column-major matrices A and B, storing the result in Out.
         ///
-        void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept;
+        MATHS_EXPORT void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept;
 
         ///
         /// @brief Multiplies a 4x4 column-major matrix by a scalar.

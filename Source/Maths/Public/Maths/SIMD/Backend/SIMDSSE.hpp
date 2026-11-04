@@ -7,6 +7,7 @@
 
 #if defined( __x86_64__ ) || defined( _M_X64 ) || defined( __i386__ )
     #include "Maths/SIMD/SIMDTypes.hpp"
+    #include <MathsExport.hpp>
 
     #include <immintrin.h>
 
@@ -52,7 +53,7 @@ namespace Maths
         /// @param InRight A pointer to the first element of the second 4x4 matrix (16 Float32 values, 16-byte aligned).
         /// @param OutResult A pointer to the output 4x4 matrix (16 Float32 values, 16-byte aligned).
         ///
-        void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept;
+        MATHS_EXPORT void MatrixMul4x4 ( const Float32 *InLeft, const Float32 *InRight, Float32 *OutResult ) noexcept;
 
         ///
         /// @brief Multiplies a 4x4 column-major matrix by a scalar, storing the result in Out.
