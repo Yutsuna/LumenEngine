@@ -34,7 +34,7 @@ Lumen::FMailBox::~FMailBox () noexcept
     }
 
     /// INFO: Clear the internal free list cache
-    while ( TOptional<FNode *> PooledNode = FreeNodes.Pop() )
+    while ( TOptional<FNode *> PooledNode = FreeNodes.Pop(); PooledNode.HasValue() )
     {
         delete *PooledNode;
     }
@@ -45,7 +45,7 @@ void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
     FNode *NewNode = nullptr;
 
     /// INFO: Try taking an existing node lock-free, allocate only if pool is depleted
-    if ( TOptional<FNode *> PooledNode = FreeNodes.Pop() )
+    if ( TOptional<FNode *> PooledNode = FreeNodes.Pop(); PooledNode.HasValue() )
     {
         NewNode = *PooledNode;
     }
@@ -61,7 +61,9 @@ void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
     }
 
     NewNode->Next.store( nullptr, std::memory_order_relaxed );
-    NewNode->Message = InMessage;
+
+    /// INFO: Emplace handles destroy-then-construct in place, no assignment needed.
+    NewNode->Message.Emplace( InMessage );
 
     ///
     /// INFO: exchange is the wait-free heart of Vyukov's algorithm.
@@ -102,9 +104,10 @@ Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
 
     if ( OldHead != &Stub )
     {
-        OldHead->Message.reset();
+        /// INFO: Release the message before recycling the node.
+        OldHead->Message.Reset();
 
-        /// Return node to pool, fallback to OS deallocation if the queue is full
+        /// INFO: Return node to pool, fallback to OS deallocation if the queue is full
         if ( not FreeNodes.Push( OldHead ) )
         {
             delete OldHead;
