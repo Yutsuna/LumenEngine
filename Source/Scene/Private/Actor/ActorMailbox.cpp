@@ -6,7 +6,6 @@
 #include <Actor/ActorMailbox.hpp>
 #include <Logging/Logger.hpp>
 
-#include <memory>
 #include <new>
 
 Lumen::FMailBox::FMailBox () noexcept : FreeNodes( 256ULL ), Head( &Stub )
@@ -35,8 +34,7 @@ Lumen::FMailBox::~FMailBox () noexcept
     }
 
     /// INFO: Clear the internal free list cache
-    /// NOTE: TOptional has no implicit bool conversion in the new API — use HasValue().
-    while ( TOptional<FNode *> PooledNode = FreeNodes.Pop(); PooledNode.HasValue() )
+    while ( TOptional<FNode *> PooledNode = FreeNodes.Pop() )
     {
         delete *PooledNode;
     }
@@ -47,7 +45,7 @@ void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
     FNode *NewNode = nullptr;
 
     /// INFO: Try taking an existing node lock-free, allocate only if pool is depleted
-    if ( TOptional<FNode *> PooledNode = FreeNodes.Pop(); PooledNode.HasValue() )
+    if ( TOptional<FNode *> PooledNode = FreeNodes.Pop() )
     {
         NewNode = *PooledNode;
     }
@@ -63,13 +61,7 @@ void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
     }
 
     NewNode->Next.store( nullptr, std::memory_order_relaxed );
-
-    ///
-    /// INFO: TOptional has no assignment operator in the new API.
-    ///   Destruct then placement-reconstruct in place (same pattern as the copy ctor).
-    ///
-    std::destroy_at( &NewNode->Message );
-    ::new ( static_cast<void *>( &NewNode->Message ) ) TOptional<FMessage>( InMessage );
+    NewNode->Message = InMessage;
 
     ///
     /// INFO: exchange is the wait-free heart of Vyukov's algorithm.
@@ -110,12 +102,7 @@ Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
 
     if ( OldHead != &Stub )
     {
-        ///
-        /// INFO: TOptional has no reset() in the new API.
-        ///   Destruct then default-reconstruct in place to release the message's resources.
-        ///
-        std::destroy_at( &OldHead->Message );
-        ::new ( static_cast<void *>( &OldHead->Message ) ) TOptional<FMessage>();
+        OldHead->Message.reset();
 
         /// Return node to pool, fallback to OS deallocation if the queue is full
         if ( not FreeNodes.Push( OldHead ) )
