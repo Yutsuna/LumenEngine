@@ -188,7 +188,7 @@ void FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbos
         return;
     }
 
-    const bool bQueued = [&] -> bool
+    const Bool bQueued = [&] -> Bool
     {
         const TLockGuard<FMutex> Lock( QueueMutex );
 
