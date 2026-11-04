@@ -12,31 +12,75 @@
 
 #include <Logging/LoggingCategory.hpp>
 
+#include <concepts>
+
 namespace Lumen
 {
 
-using ActorID = UInt64;
+struct FActorID
+{
+    UInt32 Index      = 0U;
+    UInt32 Generation = 0U;
+
+    [[nodiscard]] constexpr Bool IsValid () const noexcept
+    {
+        return Index != 0U && Generation != 0U;
+    }
+
+    auto operator<=>( const FActorID & ) const = default;
+};
+
+using ActorID = FActorID;
 struct FMessage;
 class AActor;
+
+template <typename PayloadType> struct TMessageTraits
+{
+    static constexpr Bool bEnabled = false;
+};
+
+enum class EActorRegistrationResult : UInt8
+{
+    Success,
+    InvalidID,
+    AlreadyRegistered,
+    ActorStopped,
+    GenerationExhausted,
+};
+
+enum class EEnqueueResult : UInt8
+{
+    Success,
+    Full,
+    AllocationFailure,
+    ActorUnavailable,
+    Closed,
+};
 
 namespace Concepts
 {
 
     ///
     /// @concept CActor
-    /// @brief Ensures that the object is an Actor
+    /// @brief Ensures that the object is an Actor with non-throwing message processing.
     ///
     template <typename Type>
     concept CActor = requires( Type InActor, FMessage InMessage ) {
         { InActor.Receive( InMessage ) } -> std::same_as<void>;
+        requires noexcept( InActor.Receive( InMessage ) );
     };
 
-    ///
-    /// @concept CTriviallyCopyablePayload
-    /// @brief Ensures that a type is safe to be sent as a message payload.
-    ///
     template <typename Type>
     concept CTriviallyCopyablePayload = Concepts::CTriviallyCopyable<Type>;
+
+    template <typename Type>
+    concept CMessagePayload = Concepts::CTriviallyCopyable<Type> && TMessageTraits<Type>::bEnabled;
+
+    template <typename Type>
+    concept CIdentifiedMessagePayload = CMessagePayload<Type> && requires {
+        { TMessageTraits<Type>::Type } -> std::convertible_to<UInt32>;
+        { TMessageTraits<Type>::Version } -> std::convertible_to<UInt16>;
+    };
 
 } // namespace Concepts
 
@@ -65,10 +109,8 @@ public:                                                                         
 
 ///
 /// @class FActorRef
-/// @brief Lightweight handle to an actor.
-/// @details Used for communication instead of TSharedPtr to avoid keeping actors alive
-///          indefinitely and to prevent memory cycles.
-/// @note Use FActorRef for cross-actor object references inside message payloads instead of raw pointers.
+/// @brief Lightweight handle containing both the actor index and its generation.
+/// @details A generation mismatch makes an enqueue fail instead of targeting a replacement actor.
 ///
 class SCENE_EXPORT FActorRef
 {
@@ -89,14 +131,19 @@ public:
     /// @brief Enqueues a message to the referenced actor.
     /// @param InMessage The message to deliver.
     ///
-    void EnqueueMessage ( const FMessage &InMessage ) const noexcept;
+    [[nodiscard]] EEnqueueResult EnqueueMessage ( const FMessage &InMessage ) const noexcept;
 
     /// @brief Comparison Operators
     auto operator<=>( const FActorRef & ) const = default;
 
 private:
 
-    ActorID Id = 0ULL;
+    ActorID Id = {};
+};
+
+template <> struct TMessageTraits<FActorRef>
+{
+    static constexpr Bool bEnabled = true;
 };
 
 extern const FLogCategory LogActor;

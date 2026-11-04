@@ -8,14 +8,12 @@
 
 const Lumen::FLogCategory Lumen::LogActor( "Actor" );
 
-Lumen::FActorRef::FActorRef ( ActorID InId ) noexcept : Id( InId )
+Lumen::FActorRef::FActorRef ( const ActorID InId ) noexcept : Id( InId )
 {
-    /// Empty
 }
 
-Lumen::FActorRef::FActorRef ( AActor *InActor ) noexcept : Id( InActor != nullptr ? InActor->GetId() : 0ULL )
+Lumen::FActorRef::FActorRef ( AActor *InActor ) noexcept : Id( InActor != nullptr ? InActor->GetId() : ActorID{} )
 {
-    /// Empty
 }
 
 Lumen::ActorID Lumen::FActorRef::GetId () const noexcept
@@ -25,10 +23,10 @@ Lumen::ActorID Lumen::FActorRef::GetId () const noexcept
 
 Lumen::Bool Lumen::FActorRef::IsValid () const noexcept
 {
-    return Id != 0ULL;
+    return Id.IsValid();
 }
 
-void Lumen::FActorRef::EnqueueMessage ( const FMessage &InMessage ) const noexcept
+Lumen::EEnqueueResult Lumen::FActorRef::EnqueueMessage ( const FMessage &InMessage ) const noexcept
 {
-    Internal::FActorRegistry::EnqueueMessage( Id, InMessage );
+    return Internal::FActorRegistry::EnqueueMessage( Id, InMessage );
 }
