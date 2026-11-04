@@ -15,7 +15,7 @@ namespace Lumen
 {
 
 FSharedMutex Internal::FActorRegistry::RegistryMutex;
-TMap<ActorID, AActor *, Internal::FActorRegistry::FActorIDHash>Internal::FActorRegistry::Actors;
+TMap<ActorID, AActor *, Internal::FActorRegistry::FActorIDHash> Internal::FActorRegistry::Actors;
 TMap<UInt32, UInt32> Internal::FActorRegistry::Generations;
 UInt32 Internal::FActorRegistry::NextIndex = 1U;
 
@@ -117,4 +117,4 @@ EEnqueueResult Internal::FActorRegistry::EnqueueMessage ( const ActorID InId, co
     return Result;
 }
 
-}
+} // namespace Lumen
