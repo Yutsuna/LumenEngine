@@ -96,10 +96,13 @@ namespace Meta
     }
 
     /// @brief Unqualified type name of T ("FLaunchEngineConfig", "FString"), aliases resolved.
-    template <typename TType> [[nodiscard]] constexpr std::string_view TypeName ()
+    template <typename TType> [[nodiscard]] consteval std::string_view TypeName ()
     {
 #if LUMEN_HAS_REFLECTION
-        return std::meta::identifier_of( std::meta::dealias( ^^std::remove_cvref_t<TType> ) );
+        constexpr std::meta::info Type = std::meta::dealias( ^^std::remove_cvref_t<TType> );
+        constexpr std::string_view Name =
+            std::meta::has_identifier( Type ) ? std::meta::identifier_of( Type ) : std::meta::display_string_of( Type );
+        return Name;
 #else
         return "Unknown";
 #endif
@@ -112,14 +115,14 @@ namespace Meta
         return std::visit(
             [] ( const auto &Alt ) -> std::string_view
             {
-                using T = std::remove_cvref_t<decltype( Alt )>;
-                if constexpr ( Concepts::CSameAs<T, std::monostate> )
+                using TObject = std::remove_cvref_t<decltype( Alt )>;
+                if constexpr ( Concepts::CSameAs<TObject, std::monostate> )
                 {
                     return "None";
                 }
                 else
                 {
-                    return std::meta::identifier_of( std::meta::dealias( ^^T ) );
+                    return TypeName<TObject>();
                 }
             },
             Node );
