@@ -68,7 +68,7 @@ static_assert( offsetof( FMessage, PayloadData ) == 16ULL );
 namespace
 {
 
-    template <typename PayloadType> void CheckRoundTrip ( PayloadType InPayload )
+    template <typename PayloadType> void CheckRoundTrip ( const PayloadType &InPayload )
     {
         constexpr UInt32 Type =
             3000U + static_cast<UInt32>( sizeof( PayloadType ) ) + static_cast<UInt32>( alignof( PayloadType ) );

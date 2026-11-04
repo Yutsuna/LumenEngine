@@ -53,6 +53,47 @@ LUMEN_TEST( ActorMailbox_Queue, PreservesMessagesAcrossPoolFallback )
     Mailbox.Close();
 }
 
+LUMEN_TEST( ActorMailbox_Pool, AllowsSynchronizedProducerThreadHandoffs )
+{
+    FMailBox Mailbox( 0ULL, 2ULL );
+
+    LUMEN_CHECK_EQ( Mailbox.Push( MakeMailboxMessage( 0U, 1U ) ), EEnqueueResult::Success );
+    LUMEN_CHECK_EQ( Mailbox.Push( MakeMailboxMessage( 0U, 2U ) ), EEnqueueResult::Success );
+
+    UInt32 FirstSequence  = 0U;
+    UInt32 SecondSequence = 0U;
+
+    std::thread Consumer(
+        [&]
+        {
+            TOptional<FMessage> First  = Mailbox.Pop();
+            TOptional<FMessage> Second = Mailbox.Pop();
+
+            if ( First.HasValue() )
+            {
+                FirstSequence = ( *First ).GetPayload<FMailboxTestPayload>( 1U ).Sequence;
+            }
+
+            if ( Second.HasValue() )
+            {
+                SecondSequence = ( *Second ).GetPayload<FMailboxTestPayload>( 1U ).Sequence;
+            }
+        } );
+
+    Consumer.join();
+
+    LUMEN_CHECK_EQ( FirstSequence, 1U );
+    LUMEN_CHECK_EQ( SecondSequence, 2U );
+    LUMEN_CHECK_EQ( Mailbox.Push( MakeMailboxMessage( 0U, 3U ) ), EEnqueueResult::Success );
+
+    TOptional<FMessage> Third = Mailbox.Pop();
+
+    LUMEN_CHECK_HAS_VALUE( Third );
+    LUMEN_CHECK_EQ( ( *Third ).GetPayload<FMailboxTestPayload>( 1U ).Sequence, 3U );
+
+    Mailbox.Close();
+}
+
 LUMEN_TEST( ActorMailbox_Backpressure, RejectsWhenFullAndRecoversAfterPop )
 {
     FMailBox Mailbox( 1ULL, 1ULL );
