@@ -15,77 +15,84 @@
 #include <Core/NonCopyable.hpp>
 #include <Core/NonMovable.hpp>
 
+#include <HAL/Mutex.hpp>
 #include <Thread/SPMCQueue.hpp>
-
-#include <cassert>
 
 namespace Lumen
 {
 
 ///
 /// @class FMailBox
-/// @brief Wait-free Dmitry Vyukov MPSC queue
+/// @brief MPSC queue with lock-free publication, node pooling, and a potentially blocking allocation fallback.
+/// @details Push is multi-producer. Pop, Reserve, and IsEmpty are single-consumer operations.
 ///
 class SCENE_EXPORT FMailBox final : public FNonCopyable, public FNonMovable
 {
 private:
 
-    ///
-    /// @struct FNode
-    /// @brief Intrusive linked-list node for the Vyukov MPSC queue.
-    ///
     struct alignas( 64 ) FNode
     {
         TAtomic<FNode *> Next = { nullptr };
         TOptional<FMessage> Message;
     };
 
+    static_assert( TAtomic<FNode *>::is_always_lock_free );
+    static_assert( TAtomic<UInt32>::is_always_lock_free );
+    static_assert( TAtomic<USize>::is_always_lock_free );
+
 public:
 
-    FMailBox () noexcept;
+    static constexpr USize PoolCapacity = 256ULL;
+
+    explicit FMailBox ( USize InMaxMessages = 0ULL, USize InPreallocatedNodes = 0ULL ) noexcept;
     ~FMailBox () noexcept;
 
 public:
 
-    ///
-    /// @brief Enqueues a message. Safe to call from any thread simultaneously.
-    /// @param InMessage The message to send.
-    ///
-    void Push ( const FMessage &InMessage ) noexcept;
+    /// @brief Enqueues a message, or reports why delivery did not occur.
+    /// @note Node publication is lock-free; the allocation fallback may block.
+    [[nodiscard]] EEnqueueResult Push ( const FMessage &InMessage ) noexcept;
 
-    ///
-    /// @brief Attempts to dequeue the front message.
-    /// @return The message if one is available, TOptional<FMessage>{} otherwise.
-    /// @note Must be called from a single consumer thread only.
-    ///
+    /// @brief Attempts to dequeue the front message. Single-consumer only.
     [[nodiscard]] TOptional<FMessage> Pop () noexcept;
 
-    ///
-    /// @brief Pre-allocates nodes in the free-list pool.
-    /// @param InCapacity The number of nodes to pre-allocate.
-    /// @note Should be called from the consumer thread or during initialization.
-    ///
+    /// @brief Pre-allocates up to PoolCapacity free nodes, coordinated with Close.
+    /// @note For allocation-free steady-state delivery, preallocate during initialization and bound capacity accordingly.
     void Reserve ( USize InCapacity ) noexcept;
 
-    ///
-    /// @brief Returns true if no messages are pending.
-    /// @note May transiently return true during a producer gap. Single-consumer only.
-    ///
+    /// @brief Rejects new operations, waits for active ones, and discards all pending messages.
+    /// @note The owner must stop the consumer before destruction. Close itself is safe to call repeatedly.
+    void Close () noexcept;
+
+    /// @brief Returns true if no messages are currently visible to the consumer, or if the mailbox is closed.
+    /// @note May transiently return true during a producer gap. Single-consumer and coordinated with Close.
     [[nodiscard]] Bool IsEmpty () const noexcept;
+
+    [[nodiscard]] Bool IsClosed () const noexcept;
 
 private:
 
-    /// @brief Lock-free pool of nodes to eliminate dynamic allocations in hot paths.
+    [[nodiscard]] Bool TryBeginOperation () const noexcept;
+    void EndOperation () const noexcept;
+
+private:
+
+    static constexpr UInt32 ClosedFlag         = 1U;
+    static constexpr UInt32 OperationIncrement = 2U;
+
+    /// The bounded SPMC buffer holds pointers; nodes are allocated separately by Reserve.
     alignas( 64 ) Thread::TSPMCQueue<FNode *> FreeNodes;
 
-    /// @brief Stub sentinel — Head always points to the node *before* the first real message.
-    alignas( 64 ) FNode Stub = {};
-
-    /// @brief Head: the node whose Next holds the next message to consume. Consumer-owned.
-    alignas( 64 ) FNode *Head = nullptr;
-
-    /// @brief Tail: last node inserted. Written by producers via atomic exchange.
+    alignas( 64 ) FNode Stub            = {};
+    FNode *Head                         = nullptr;
     alignas( 64 ) TAtomic<FNode *> Tail = { nullptr };
+
+    alignas( 64 ) mutable TAtomic<UInt32> OperationState = { 0U };
+    TAtomic<USize> MessageCount                          = { 0ULL };
+    USize MaxMessages                                    = 0ULL;
+
+    FMutex CloseMutex;
+    Bool bResourcesReleased = false;
 };
 
 } // namespace Lumen
