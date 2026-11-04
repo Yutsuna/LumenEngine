@@ -31,13 +31,11 @@ namespace Meta
         inline constexpr std::string_view HiddenField = "Loc";
     } // namespace Detail
 
-    /// @brief A type is Reflected when field iteration can walk it: any aggregate.
+    /// @brief A type is Reflected when field iteration can walk it: an aggregate class.
     template <typename TObject>
-    concept CReflected = std::is_aggregate_v<std::remove_cvref_t<TObject>>;
+    concept CReflected = std::is_class_v<std::remove_cvref_t<TObject>> && std::is_aggregate_v<std::remove_cvref_t<TObject>>;
 
     /// @brief Invoke Callback( Name, FieldRef ) for each semantic field, in declaration order.
-    /// @details Skips the `Loc` member (source range plumbing). No `noexcept` : Callback
-    ///          may allocate (FString, std::format).
     template <CReflected TObject, typename TFunc> constexpr void ForEachMember ( TObject &Object, TFunc &&Callback )
     {
 #if LUMEN_HAS_REFLECTION

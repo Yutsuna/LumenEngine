@@ -30,7 +30,7 @@ namespace Meta
             }
             else if constexpr ( std::is_enum_v<Bare> )
             {
-                const std::string_view Name = EnumName( Value );
+                const FStringView Name = EnumName( Value );
                 if ( Name == "<unknown>" )
                 {
                     return std::format_to( Out, "{}", static_cast<std::underlying_type_t<Bare>>( Value ) );
@@ -74,7 +74,7 @@ template <Lumen::Meta::CReflected TObject> struct formatter<TObject, char>
     template <typename FormatContext> auto format ( const TObject &Object, FormatContext &Ctx ) const
     {
         auto Out = Ctx.out();
-        Out      = std::format_to( Out, "{}{}{{", LUMEN_NEWLINE, Lumen::Meta::TypeName<TObject>() );
+        Out      = std::format_to( Out, "{}{}{}{{", LUMEN_NEWLINE, Lumen::Meta::TypeName<TObject>(), LUMEN_NEWLINE );
 
         Lumen::Bool bFirst = true;
         Lumen::Meta::ForEachMember( Object,
@@ -82,7 +82,7 @@ template <Lumen::Meta::CReflected TObject> struct formatter<TObject, char>
                                     {
                                         Out    = std::format_to( Out,
                                                                  "{}{}=", bFirst ? LUMEN_NEWLINE "    " : "," LUMEN_NEWLINE "    ",
-                                                                 std::string_view( InName ) );
+                                                                 Lumen::FStringView( InName ) );
                                         Out    = Lumen::Meta::Detail::FormatField( Out, InValue );
                                         bFirst = false;
                                     } );
