@@ -1,7 +1,7 @@
-/**
- * @file SPMCQueue.hpp
- * @brief Lock-free Single-Producer Multi-Consumer queue for Lumen Engine.
- */
+///
+/// @file SPMCQueue.hpp
+/// @brief Lock-free Single-Producer Multi-Consumer queue for Lumen Engine.
+///
 
 #pragma once
 

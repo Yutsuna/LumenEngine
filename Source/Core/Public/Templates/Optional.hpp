@@ -93,6 +93,26 @@ public:
         return bHasValue;
     }
 
+    /// @brief Destroy the contained value, making the optional empty.
+    void Reset () noexcept( std::is_nothrow_destructible_v<ValueType> )
+    {
+        if ( bHasValue )
+        {
+            Value.~ValueType();
+            bHasValue = false;
+        }
+    }
+
+    /// @brief Emplace a value in place (destroys any existing value first).
+    template <class... Args>
+    ValueType &Emplace ( Args &&...InArgs ) noexcept( std::is_nothrow_constructible_v<ValueType, Args...> )
+    {
+        Reset();
+        ::new ( static_cast<void *>( std::addressof( Value ) ) ) ValueType( std::forward<Args>( InArgs )... );
+        bHasValue = true;
+        return Value;
+    }
+
     /// @return Reference to value
     decltype( auto ) operator*( this auto &&Self ) noexcept
     {

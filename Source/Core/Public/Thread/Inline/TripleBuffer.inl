@@ -53,9 +53,9 @@ constexpr Lumen::Thread::Internal::FBufferFlag::Type Lumen::Thread::Internal::FB
     return ReaderBit | WriterBit | TempBit | DirtyBit;
 }
 
-/**
- * TTripleBuffer
- */
+///
+/// TTripleBuffer
+///
 
 template <typename BufferType>
 Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer()
