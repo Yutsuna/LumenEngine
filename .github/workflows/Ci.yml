@@ -7,8 +7,6 @@ on:
     workflows: [ "PR Title Check" ]
     types:
       - completed
-    branches:
-      - main
 
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
