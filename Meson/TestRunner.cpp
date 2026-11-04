@@ -5,12 +5,12 @@
 
 #include <Logging/Logger.hpp>
 
-Lumen::Int32 main ( const Lumen::Int32 argc, const Lumen::AnsiChar *argv[] )
+Lumen::Int32 main ( const Lumen::Int32 Argc, const Lumen::AnsiChar *Argv[] )
 {
     Lumen::FStringView SuiteFilter{};
-    if ( argc > 1 )
+    if ( Argc > 1 )
     {
-        SuiteFilter = argv[1];
+        SuiteFilter = Argv[1];
     }
 
     struct FGuardedScope final
