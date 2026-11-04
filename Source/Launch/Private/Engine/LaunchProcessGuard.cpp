@@ -13,7 +13,7 @@
 namespace
 {
 
-/// @brief  Handles Signals received
+/// @brief Handles Signals received
 void OnSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
 {
     if ( Lumen::Launch::FLaunchEngineLoop::RequestExit() )
@@ -21,6 +21,20 @@ void OnSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
         Lumen::FSignal::Unbind( InSignal );
         Lumen::FSignal::Raise( InSignal );
     }
+}
+
+/// @brief Handles Interrupt Signal
+void OnInterruptSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
+{
+    Lumen::FLogger::Flush("\rInterrupt signal trapped: exiting gracefully..." LUMEN_NEWLINE);
+    OnSignal( InSignal );
+}
+
+/// @brief Handles Terminate Signal
+void OnTerminateSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
+{
+    Lumen::FLogger::Flush("\rTerminate signal trapped: exiting gracefully..." LUMEN_NEWLINE);
+    OnSignal( InSignal );
 }
 
 /// @brief Handles Out Of Memory
@@ -34,8 +48,8 @@ void OnOutOfMemory () noexcept
 
 Lumen::Launch::FLaunchProcessGuard::FLaunchProcessGuard () noexcept : PreviousNewHandler( std::set_new_handler( &OnOutOfMemory ) )
 {
-    FSignal::Bind( ESystemSignal::Interrupt, &OnSignal );
-    FSignal::Bind( ESystemSignal::Terminate, &OnSignal );
+    FSignal::Bind( ESystemSignal::Interrupt, &OnInterruptSignal );
+    FSignal::Bind( ESystemSignal::Terminate, &OnTerminateSignal );
 
     FLogger::GetInstance().Initialize();
 }
