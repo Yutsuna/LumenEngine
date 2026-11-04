@@ -26,14 +26,14 @@ void OnSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
 /// @brief Handles Interrupt Signal
 void OnInterruptSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
 {
-    Lumen::FLogger::Flush("\rInterrupt signal trapped: exiting gracefully..." LUMEN_NEWLINE);
+    Lumen::FLogger::Flush( "\rInterrupt signal trapped: exiting gracefully..." LUMEN_NEWLINE );
     OnSignal( InSignal );
 }
 
 /// @brief Handles Terminate Signal
 void OnTerminateSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
 {
-    Lumen::FLogger::Flush("\rTerminate signal trapped: exiting gracefully..." LUMEN_NEWLINE);
+    Lumen::FLogger::Flush( "\rTerminate signal trapped: exiting gracefully..." LUMEN_NEWLINE );
     OnSignal( InSignal );
 }
 
