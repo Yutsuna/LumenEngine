@@ -113,7 +113,7 @@ Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
     {
         OldHead->Message.Reset();
 
-        // Only the consumer produces pool nodes; producers and the consumer may concurrently pop them.
+        // Reserve and Pop are serialized pool producers; message producers and the consumer may concurrently pop nodes.
         if ( not FreeNodes.Push( OldHead ) )
         {
             delete OldHead;

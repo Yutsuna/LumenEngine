@@ -24,7 +24,8 @@ namespace Lumen
 ///
 /// @class FMailBox
 /// @brief MPSC queue with lock-free publication, node pooling, and a potentially blocking allocation fallback.
-/// @details Push is multi-producer. Pop, Reserve, and IsEmpty are single-consumer operations.
+/// @details Push is multi-producer. Pop and IsEmpty are single-consumer operations. Reserve and Pop are the only
+/// producers of free nodes and must never run concurrently. Producer-thread handoffs require external ordering.
 ///
 class SCENE_EXPORT FMailBox final : public FNonCopyable, public FNonMovable
 {
@@ -54,10 +55,13 @@ public:
     [[nodiscard]] EEnqueueResult Push ( const FMessage &InMessage ) noexcept;
 
     /// @brief Attempts to dequeue the front message. Single-consumer only.
+    /// @pre Must not run concurrently with Reserve, which also produces free nodes.
     [[nodiscard]] TOptional<FMessage> Pop () noexcept;
 
     /// @brief Pre-allocates up to PoolCapacity free nodes, coordinated with Close.
     /// @note For allocation-free steady-state delivery, preallocate during initialization and bound capacity accordingly.
+    /// @pre Call before publication or from the consumer thread. Never concurrent with Pop or another Reserve; serialize
+    /// any producer-thread handoff externally. The constructor's initial reservation precedes mailbox publication.
     void Reserve ( USize InCapacity ) noexcept;
 
     /// @brief Rejects new operations, waits for active ones, and discards all pending messages.
