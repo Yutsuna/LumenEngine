@@ -3,7 +3,7 @@
 /// @brief Implementation of FSharedMutex
 ///
 
-#include "HAL/SharedMutex.hpp"
+#include <HAL/SharedMutex.hpp>
 
 /// @brief Maximum number of busy-spin iterations before falling back to atomic::wait.
 static constexpr Lumen::UInt32 GMaxSpinCount = 64U;
@@ -58,7 +58,7 @@ void Lumen::FSharedMutex::LockShared () noexcept
 
         ReaderCount.fetch_add( 1U, std::memory_order::acquire );
 
-        if ( WriterFlag.load( std::memory_order::relaxed ) == 0U )
+        if ( WriterFlag.load( std::memory_order::acquire ) == 0U )
         {
             return;
         }
@@ -77,7 +77,7 @@ Lumen::Bool Lumen::FSharedMutex::TryLockShared () noexcept
 
     ReaderCount.fetch_add( 1U, std::memory_order::acquire );
 
-    if ( WriterFlag.load( std::memory_order::relaxed ) != 0U )
+    if ( WriterFlag.load( std::memory_order::acquire ) != 0U )
     {
         ReaderCount.fetch_sub( 1U, std::memory_order::release );
         ReaderCount.notify_all();
