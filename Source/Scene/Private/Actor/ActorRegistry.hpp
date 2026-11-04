@@ -15,6 +15,9 @@ namespace Lumen
 namespace Internal
 {
 
+    /// @details Generation history is retained for every index ever used so stale references cannot target a replacement.
+    /// Consequently, memory scales with distinct historical indices rather than active actors. Bounded slot reuse with
+    /// per-slot generations remains future scalability work.
     class FActorRegistry
     {
     private:
