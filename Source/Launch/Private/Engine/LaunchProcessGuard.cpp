@@ -14,10 +14,12 @@ namespace
 {
 
 /// @brief Handles Signals received
-void OnSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
+template <typename TMessage>
+void OnSignal ( const Lumen::ESystemSignal::Type InSignal, const TMessage &InMessage ) noexcept
 {
     if ( Lumen::Launch::FLaunchEngineLoop::RequestExit() )
     {
+        Lumen::FLogger::Flush( InMessage );
         Lumen::FSignal::Unbind( InSignal );
         Lumen::FSignal::Raise( InSignal );
     }
@@ -26,15 +28,13 @@ void OnSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
 /// @brief Handles Interrupt Signal
 void OnInterruptSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
 {
-    Lumen::FLogger::Flush( "\rInterrupt signal trapped: exiting gracefully..." LUMEN_NEWLINE );
-    OnSignal( InSignal );
+    OnSignal( InSignal, "\rInterrupt signal trapped: exiting gracefully..." LUMEN_NEWLINE );
 }
 
 /// @brief Handles Terminate Signal
 void OnTerminateSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
 {
-    Lumen::FLogger::Flush( "\rTerminate signal trapped: exiting gracefully..." LUMEN_NEWLINE );
-    OnSignal( InSignal );
+    OnSignal( InSignal, "\rTerminate signal trapped: exiting gracefully..." LUMEN_NEWLINE );
 }
 
 /// @brief Handles Out Of Memory
