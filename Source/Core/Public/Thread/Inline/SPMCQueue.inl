@@ -90,5 +90,5 @@ template <typename Type> Lumen::TOptional<Type> Lumen::Thread::TSPMCQueue<Type>:
     Type Result = std::move( Cell->Data );
     Cell->Sequence.store( Pos + CapacityMask + 1ULL, std::memory_order_release );
 
-    return Result;
+    return TOptional<Type>( std::move( Result ) );
 }
