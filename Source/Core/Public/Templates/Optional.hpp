@@ -85,6 +85,20 @@ public:
         }
     }
 
+    /// @brief Copy constructor
+    constexpr explicit TOptional ( const ValueType &InValue ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> )
+        : Value( InValue ), bHasValue( true )
+    {
+        /// Empty
+    }
+
+    /// @brief Move constructor
+    constexpr explicit TOptional ( ValueType &&InValue ) noexcept( std::is_nothrow_move_constructible_v<ValueType> )
+        : Value( std::move( InValue ) ), bHasValue( true )
+    {
+        /// Empty
+    }
+
     /// @brief Assignment operator deleted
     TOptional &operator=( const TOptional & ) = delete;
 
