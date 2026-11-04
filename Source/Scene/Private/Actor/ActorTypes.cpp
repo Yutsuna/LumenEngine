@@ -3,8 +3,8 @@
 /// @brief Implementation of actor types for parallel processing in Lumen.
 ///
 
-#include <Actor/Actor.hpp>
 #include "ActorRegistry.hpp"
+#include <Actor/Actor.hpp>
 
 const Lumen::FLogCategory Lumen::LogActor( "Actor" );
 

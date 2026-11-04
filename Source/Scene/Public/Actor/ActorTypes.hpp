@@ -6,6 +6,7 @@
 #pragma once
 
 #include <Core/CoreTypes.hpp>
+#include <SceneExport.hpp>
 
 #include <Concepts/TriviallyCopyable.hpp>
 
@@ -69,7 +70,7 @@ public:                                                                         
 ///          indefinitely and to prevent memory cycles.
 /// @note Use FActorRef for cross-actor object references inside message payloads instead of raw pointers.
 ///
-class FActorRef
+class SCENE_EXPORT FActorRef
 {
 public:
 
