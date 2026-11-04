@@ -13,6 +13,7 @@ pkgs.mkShell {
 
   shellHook = ''
     export LD_LIBRARY_PATH="${ldLibraryPath}:$LD_LIBRARY_PATH"
+    export VK_LAYER_PATH="${pkgs.vulkan-validation-layers}/share/vulkan/explicit_layer.d"
 
     ${pkgs.lib.optionalString pkgs.stdenv.hostPlatform.isLinux ''
       export NIX_CFLAGS_LINK="-fuse-ld=mold"

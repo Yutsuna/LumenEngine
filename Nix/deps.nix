@@ -13,10 +13,13 @@
     ]
     ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
       mold
+      mesa
     ];
 
   buildInputs = with pkgs; [
     sdl3
+    vulkan-loader
+    vulkan-headers
   ];
 
   devInputs = with pkgs; [
@@ -26,5 +29,7 @@
     jq
     nil
     nixd
+    vulkan-tools
+    vulkan-validation-layers
   ];
 }
