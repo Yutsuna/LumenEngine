@@ -21,7 +21,7 @@ template <USize Size, USize Alignment = 1ULL> struct alignas( Alignment ) TTestP
 template <USize Size, USize Alignment> struct TMessageTraits<TTestPayload<Size, Alignment>>
 {
     static constexpr Bool bEnabled  = true;
-    static constexpr UInt32 Type    = 73U;
+    static constexpr UInt32 Type    = 1000U + static_cast<UInt32>( Size ) + static_cast<UInt32>( Alignment );
     static constexpr UInt16 Version = 4U;
 };
 
@@ -35,7 +35,7 @@ struct FOtherTestPayload
 template <> struct TMessageTraits<FOtherTestPayload>
 {
     static constexpr Bool bEnabled  = true;
-    static constexpr UInt32 Type    = 74U;
+    static constexpr UInt32 Type    = 2000U;
     static constexpr UInt16 Version = 4U;
 };
 
@@ -49,7 +49,7 @@ struct FNewerTestPayload
 template <> struct TMessageTraits<FNewerTestPayload>
 {
     static constexpr Bool bEnabled  = true;
-    static constexpr UInt32 Type    = 73U;
+    static constexpr UInt32 Type    = 1009U;
     static constexpr UInt16 Version = 5U;
 };
 
@@ -70,14 +70,16 @@ namespace
 
     template <typename PayloadType> void CheckRoundTrip ( PayloadType InPayload )
     {
-        const FMessage Message = FMessage::Make( 91U, ActorID{ 12U, 3U }, InPayload );
+        constexpr UInt32 Type =
+            3000U + static_cast<UInt32>( sizeof( PayloadType ) ) + static_cast<UInt32>( alignof( PayloadType ) );
+        const FMessage Message = FMessage::Make( Type, ActorID{ 12U, 3U }, InPayload );
 
-        LUMEN_CHECK_EQ( Message.Type, 91U );
+        LUMEN_CHECK_EQ( Message.Type, Type );
         LUMEN_CHECK_EQ( Message.PayloadSize, sizeof( PayloadType ) );
         LUMEN_CHECK_EQ( Message.Version, 0U );
-        LUMEN_CHECK_EQ( Message.GetPayload<PayloadType>( 91U ), InPayload );
+        LUMEN_CHECK_EQ( Message.GetPayload<PayloadType>( Type ), InPayload );
 
-        const TOptional<PayloadType> Result = Message.TryGetPayload<PayloadType>( 91U );
+        const TOptional<PayloadType> Result = Message.TryGetPayload<PayloadType>( Type );
         LUMEN_CHECK_HAS_VALUE( Result );
         LUMEN_CHECK_EQ( *Result, InPayload );
     }
@@ -133,8 +135,10 @@ LUMEN_TEST( ActorMessage_Payload, OverAlignedTypes )
 
 LUMEN_TEST( ActorMessage_Payload, SizeMismatchIsRecoverable )
 {
-    const FMessage Message                      = FMessage::Make( ActorID{}, MakePayload<8ULL>() );
-    const TOptional<TTestPayload<16ULL>> Result = Message.TryGetPayload<TTestPayload<16ULL>>();
+    using ExpectedPayload  = TTestPayload<16ULL>;
+    const FMessage Message = FMessage::Make( TMessageTraits<ExpectedPayload>::Type, TMessageTraits<ExpectedPayload>::Version,
+                                             ActorID{}, MakePayload<8ULL>() );
+    const TOptional<ExpectedPayload> Result = Message.TryGetPayload<ExpectedPayload>();
 
     LUMEN_CHECK_FALSE( Result.HasValue() );
 }
@@ -164,7 +168,7 @@ LUMEN_TEST( ActorMessage_Payload, ManualAndTraitIdentitiesAreDistinct )
     LUMEN_CHECK_EQ( Message.Version, 7U );
     LUMEN_CHECK_FALSE( Message.TryGetPayload<TTestPayload<8ULL>>().HasValue() );
     LUMEN_CHECK_FALSE( Message.TryGetPayload<TTestPayload<8ULL>>( 91U, 6U ).HasValue() );
-    LUMEN_CHECK_FALSE( Message.TryGetPayload<TTestPayload<8ULL>>( 73U, 7U ).HasValue() );
+    LUMEN_CHECK_FALSE( Message.TryGetPayload<TTestPayload<8ULL>>( 1009U, 7U ).HasValue() );
 
     const TOptional<TTestPayload<8ULL>> Result = Message.TryGetPayload<TTestPayload<8ULL>>( 91U, 7U );
     LUMEN_CHECK_HAS_VALUE( Result );
@@ -176,7 +180,7 @@ LUMEN_TEST( ActorMessage_Payload, TraitsProvideTypeAndVersion )
     const auto Payload     = MakePayload<8ULL>();
     const FMessage Message = FMessage::Make( ActorID{ 4U, 2U }, Payload );
 
-    LUMEN_CHECK_EQ( Message.Type, 73U );
+    LUMEN_CHECK_EQ( Message.Type, 1009U );
     LUMEN_CHECK_EQ( Message.Version, 4U );
     LUMEN_CHECK_EQ( Message.Sender, ( ActorID{ 4U, 2U } ) );
     LUMEN_CHECK_EQ( Message.GetPayload<std::remove_cv_t<decltype( Payload )>>(), Payload );
