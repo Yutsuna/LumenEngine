@@ -34,6 +34,10 @@ using ActorID = FActorID;
 struct FMessage;
 class AActor;
 
+/// @brief Opt-in payload traits; enabling a type is an assertion by its author, not a compiler-verified guarantee.
+/// @details Any storage referenced by an enabled payload must remain valid through delivery. When Type and Version are
+/// provided, their pair must identify one unique payload schema. Different C++ types may share that identity only when
+/// they intentionally represent the same data schema.
 template <typename PayloadType> struct TMessageTraits
 {
     static constexpr Bool bEnabled = false;

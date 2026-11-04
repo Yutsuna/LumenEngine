@@ -43,20 +43,26 @@ public:
 
     /// @brief Unpublishes the actor, closes its mailbox, and waits for active sends and Receive calls.
     /// @note Must be called before a derived destructor runs, and must not be called from Receive.
+    /// @note Calls that have not yet entered EnqueueMessage or ProcessMailbox are not protected by this wait.
     void Shutdown () noexcept;
 
     /// @brief Explicit heap-actor destruction entry point. Calls Shutdown while the derived object is still complete.
     /// @note Only for dynamically allocated actors. Must not be called from Receive or more than once.
+    /// @pre The owner must quiesce the scheduler and prevent every new raw-pointer call before destruction.
     void Destroy () noexcept;
 
     /// @brief Core logic entry point. Implementations must not throw exceptions.
     virtual void Receive ( const FMessage &InMessage ) noexcept = 0;
 
+    /// @brief Enqueues directly without acquiring the registry lifetime pin used by FActorRef.
+    /// @pre The caller must guarantee the actor's lifetime for the entire call and prevent concurrent destruction.
     [[nodiscard]] EEnqueueResult EnqueueMessage ( const FMessage &InMessage ) noexcept;
 
     /// @brief Processes at most InMaxMessages messages with exclusive Receive execution.
     /// @param InMaxMessages A finite budget, or zero to explicitly drain until no message is visible.
     /// @return The number of messages processed.
+    /// @pre The scheduler must keep the actor alive before entry and throughout the call. Before destruction, it must
+    /// prevent new calls from starting; Shutdown waits only for processing that already acquired its processing flag.
     UInt32 ProcessMailbox ( UInt32 InMaxMessages = DefaultProcessingBudget ) noexcept;
 
 public:

@@ -15,6 +15,8 @@ namespace Lumen
 /// @struct FMessage
 /// @brief Represents a message sent between actors in the Lumen Engine.
 /// @details Sized to exactly 128 bytes and aligned to 64 bytes to fit perfectly in 2 CPU cache lines.
+/// Type, Version, and PayloadSize validate a payload schema, not C++ type identity. Callers providing manual identifiers
+/// must maintain the same unique {Type, Version} schema mapping required from TMessageTraits specializations.
 ///
 struct alignas( 64 ) FMessage
 {
