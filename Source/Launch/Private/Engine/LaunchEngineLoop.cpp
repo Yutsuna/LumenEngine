@@ -32,7 +32,7 @@ namespace
 
         for ( UInt32 Index = 0; Index < FixedSteps; ++Index )
         {
-            State.Modules.FixedTick( Config.FixedTimeStep );
+            State.Modules.FixedTick( Config.FixedStep );
         }
         State.Modules.Tick( DeltaSeconds, Alpha );
     }
@@ -85,7 +85,7 @@ Launch::TLaunchResult<Launch::FRunSummary> Launch::FLaunchEngineLoop::Run ( FIni
 
     LUMEN_LOG_DISPLAY( LogEngineLoop, "Entering main loop..." );
 
-    FFrameClock Clock( Config.FixedTimeStep, Config.MaxFrameTime );
+    FFrameClock Clock( Config.FixedStep, Config.MaxFrameTime );
     FFrameLimiter Limiter( Config.MaxFPS );
     UInt64 FrameCount = 0;
 
