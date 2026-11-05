@@ -8,25 +8,25 @@
 #include <Actor/Actor.hpp>
 
 #include <HAL/Mutex.hpp>
+#include <Memory/UniquePtr.hpp>
 
 #include <limits>
 
-namespace Lumen
+Lumen::Internal::FActorRegistry::FRegistryState &Lumen::Internal::FActorRegistry::GetState () noexcept
 {
+    static TUniquePtr<FRegistryState> State = MakeUnique<FRegistryState>();
+    return *State;
+}
 
-FSharedMutex Internal::FActorRegistry::RegistryMutex;
-TMap<ActorID, AActor *, Internal::FActorRegistry::FActorIDHash> Internal::FActorRegistry::Actors;
-TMap<UInt32, UInt32> Internal::FActorRegistry::Generations;
-UInt32 Internal::FActorRegistry::NextIndex = 1U;
-
-EActorRegistrationResult Internal::FActorRegistry::Register ( AActor *InActor ) noexcept
+Lumen::EActorRegistrationResult Lumen::Internal::FActorRegistry::Register ( AActor *InActor ) noexcept
 {
     if ( InActor == nullptr )
     {
         return EActorRegistrationResult::InvalidID;
     }
 
-    TUniqueLock<FSharedMutex> Lock( RegistryMutex );
+    FRegistryState &State = GetState();
+    TUniqueLock<FSharedMutex> Lock( State.RegistryMutex );
 
     const UInt32 InitialState = InActor->Lifecycle.load( std::memory_order_acquire );
     if ( ( InitialState & AActor::ShutdownFlag ) != 0U )
@@ -41,14 +41,14 @@ EActorRegistrationResult Internal::FActorRegistry::Register ( AActor *InActor ) 
     UInt32 Index = InActor->Id.Index;
     if ( Index == 0U )
     {
-        Index = NextIndex++;
-        if ( NextIndex == 0U )
+        Index = State.NextIndex++;
+        if ( State.NextIndex == 0U )
         {
-            NextIndex = 1U;
+            State.NextIndex = 1U;
         }
     }
 
-    UInt32 &LastGeneration = Generations[Index];
+    UInt32 &LastGeneration = State.Generations[Index];
     if ( LastGeneration == std::numeric_limits<UInt32>::max() )
     {
         return EActorRegistrationResult::GenerationExhausted;
@@ -58,49 +58,57 @@ EActorRegistrationResult Internal::FActorRegistry::Register ( AActor *InActor ) 
     LastGeneration          = Generation;
 
     const ActorID NewId{ Index, Generation };
-    auto [It, bInserted] = Actors.emplace( NewId, InActor );
+    auto [It, bInserted] = State.Actors.emplace( NewId, InActor );
     if ( not bInserted )
     {
         return EActorRegistrationResult::AlreadyRegistered;
     }
 
-    InActor->Id = NewId;
     if ( not InActor->TryActivate() )
     {
-        Actors.erase( It );
+        State.Actors.erase( It );
         return EActorRegistrationResult::ActorStopped;
     }
+    InActor->Id = NewId;
 
     return EActorRegistrationResult::Success;
 }
 
-void Internal::FActorRegistry::Unregister ( AActor *InActor ) noexcept
+void Lumen::Internal::FActorRegistry::Unregister ( AActor *InActor ) noexcept
 {
-    if ( InActor == nullptr || not InActor->GetId().IsValid() )
+    if ( InActor == nullptr )
     {
         return;
     }
 
-    TUniqueLock<FSharedMutex> Lock( RegistryMutex );
-    auto It = Actors.find( InActor->GetId() );
-    if ( It != Actors.end() && It->second == InActor )
+    FRegistryState &State = GetState();
+    TUniqueLock<FSharedMutex> Lock( State.RegistryMutex );
+    const ActorID Id = InActor->Id;
+    if ( not Id.IsValid() )
     {
-        Actors.erase( It );
+        return;
+    }
+
+    auto It = State.Actors.find( Id );
+    if ( It != State.Actors.end() && It->second == InActor )
+    {
+        State.Actors.erase( It );
     }
 }
 
-EEnqueueResult Internal::FActorRegistry::EnqueueMessage ( const ActorID InId, const FMessage &InMessage ) noexcept
+Lumen::EEnqueueResult Lumen::Internal::FActorRegistry::EnqueueMessage ( const ActorID InId, const FMessage &InMessage ) noexcept
 {
     if ( not InId.IsValid() )
     {
         return EEnqueueResult::ActorUnavailable;
     }
 
-    AActor *Target = nullptr;
+    FRegistryState &State = GetState();
+    AActor *Target        = nullptr;
     {
-        TSharedLock<FSharedMutex> Lock( RegistryMutex );
-        auto It = Actors.find( InId );
-        if ( It != Actors.end() && It->second->TryAcquireSender() )
+        TSharedLock<FSharedMutex> Lock( State.RegistryMutex );
+        auto It = State.Actors.find( InId );
+        if ( It != State.Actors.end() && It->second->TryAcquireSender() )
         {
             Target = It->second;
         }
@@ -111,10 +119,9 @@ EEnqueueResult Internal::FActorRegistry::EnqueueMessage ( const ActorID InId, co
         return EEnqueueResult::ActorUnavailable;
     }
 
-    /// INFO: The sender pin keeps the actor alive after releasing the registry lock; Shutdown waits for it before destruction.
+    /// INFO: The sender pin is acquired under the registry lock, which orders it before Shutdown's exclusive lock and sender
+    /// drain.
     const EEnqueueResult Result = Target->EnqueueMessage( InMessage );
     Target->ReleaseSender();
     return Result;
 }
-
-} // namespace Lumen
