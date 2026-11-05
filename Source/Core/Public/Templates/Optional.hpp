@@ -156,4 +156,7 @@ private:
     Bool bHasValue = false;
 };
 
+template <typename Type> inline constexpr Bool IsOptionalV                  = false;
+template <typename Type> inline constexpr Bool IsOptionalV<TOptional<Type>> = true;
+
 } // namespace Lumen

@@ -44,12 +44,26 @@
 #elif defined( __GNUC__ )
     #define LUMEN_COMPILER_GCC
 
+#elif defined( _MSC_VER )
+    #define LUMEN_COMPILER_MSVC
+
 #endif
 
 #if defined( __clang__ ) || defined( __GNUC__ )
     #define LUMEN_DISABLE_UBSAN __attribute__( ( no_sanitize( "undefined" ) ) )
 #else
     #define LUMEN_DISABLE_UBSAN
+#endif
+
+#if defined( LUMEN_COMPILER_CLANG ) || defined( LUMEN_COMPILER_GCC )
+    #define LUMEN_FORCE_INLINE inline __attribute__( ( always_inline ) )
+    #define LUMEN_NO_INLINE __attribute__( ( noinline ) )
+#elif defined( LUMEN_COMPILER_MSVC )
+    #define LUMEN_FORCE_INLINE __forceinline
+    #define LUMEN_NO_INLINE __declspec( noinline )
+#else
+    #define LUMEN_FORCE_INLINE inline
+    #define LUMEN_NO_INLINE
 #endif
 
 #define LUMEN_EXIT_SUCCESS 0

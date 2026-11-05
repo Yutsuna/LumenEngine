@@ -25,11 +25,11 @@ namespace Lumen
 namespace Meta
 {
 
-    namespace Detail
+    namespace Internal
     {
         /// @brief The one field name reflection skips: source-location plumbing.
         inline constexpr std::string_view HiddenField = "Loc";
-    } // namespace Detail
+    } // namespace Internal
 
     /// @brief A type is Reflected when field iteration can walk it: an aggregate class.
     template <typename TObject>
@@ -45,7 +45,7 @@ namespace Meta
 
         template for ( constexpr auto Member : Members )
         {
-            if constexpr ( std::meta::identifier_of( Member ) != Detail::HiddenField )
+            if constexpr ( std::meta::identifier_of( Member ) != Internal::HiddenField )
             {
                 Callback( std::define_static_string( std::meta::identifier_of( Member ) ), Object.[:Member:] );
             }
@@ -64,7 +64,7 @@ namespace Meta
         for ( const auto Member :
               std::meta::nonstatic_data_members_of( ^^std::remove_cvref_t<TObject>, std::meta::access_context::unchecked() ) )
         {
-            if ( std::meta::identifier_of( Member ) != Detail::HiddenField )
+            if ( std::meta::identifier_of( Member ) != Internal::HiddenField )
             {
                 ++Count;
             }

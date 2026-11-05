@@ -1,4 +1,4 @@
-/// @file MonadicDetails.hpp
+/// @file MonadicInternals.hpp
 /// @brief Monadic details implementation
 
 #pragma once
@@ -48,7 +48,7 @@ namespace Concepts
 
 } // namespace Concepts
 
-namespace MonadicDetail
+namespace MonadicInternal
 {
 
     template <class Self> using TSelfType        = std::remove_cvref_t<Self>;
@@ -144,7 +144,7 @@ namespace MonadicDetail
     template <class Self, class Func> using TTransformOut    = TSelfType<Self>::template Rebind<TTransformResult<Self, Func>>;
 
     /// @brief AndThen : Bind a value into another value if it is valid.
-    namespace Detail
+    namespace Internal
     {
         template <class Self, class Func, bool = CIsVoidValue<Self>> struct TBindOutImpl;
 
@@ -157,9 +157,9 @@ namespace MonadicDetail
         {
             using Type = std::remove_cvref_t<std::invoke_result_t<Func, TValueRef<Self>>>;
         };
-    } // namespace Detail
+    } // namespace Internal
 
-    template <class Self, class Func> using TBindOut = typename Detail::TBindOutImpl<Self, Func>::Type;
+    template <class Self, class Func> using TBindOut = typename Internal::TBindOutImpl<Self, Func>::Type;
 
     /// @brief OrElse : f() or f(Error()) if the host has an error.
     template <class Self, class Func>
@@ -177,6 +177,6 @@ namespace MonadicDetail
         return std::invoke( std::forward<Func>( InFunc ) );
     }
 
-} // namespace MonadicDetail
+} // namespace MonadicInternal
 
 } // namespace Lumen

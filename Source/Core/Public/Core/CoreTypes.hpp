@@ -50,4 +50,6 @@ using UPtr = unsigned int;
 using IPtr = int;
 #endif
 
+template <typename TObject> inline constexpr Bool AlwaysFalseV = false;
+
 } // namespace Lumen

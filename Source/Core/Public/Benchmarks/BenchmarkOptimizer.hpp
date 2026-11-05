@@ -3,8 +3,8 @@
 
 #pragma once
 
-#include <Core/CoreTypes.hpp>
 #include <Core/CoreDefinitions.hpp>
+#include <Core/CoreTypes.hpp>
 
 namespace Lumen
 {
@@ -24,9 +24,9 @@ namespace Benchmarks
     template <typename T> LUMEN_FORCE_INLINE void DoNotOptimize ( T &Value ) noexcept
     {
     #if defined( LUMEN_COMPILER_CLANG )
-        __asm__ volatile( "" : "+r,m"( Value ) : : "memory" );/// NOLINT(hicpp-no-assembler)
+        __asm__ volatile( "" : "+r,m"( Value ) : : "memory" ); /// NOLINT(hicpp-no-assembler)
     #elif defined( LUMEN_COMPILER_GCC )
-        __asm__ volatile( "" : "+m,r"( Value ) : : "memory" );/// NOLINT(hicpp-no-assembler)
+        __asm__ volatile( "" : "+m,r"( Value ) : : "memory" ); /// NOLINT(hicpp-no-assembler)
     #endif
     }
 
@@ -38,14 +38,14 @@ namespace Benchmarks
 
 #else
 
-    namespace Detail
+    namespace Internal
     {
         inline const volatile void *volatile GBenchmarkSink = nullptr;
-    } // namespace Detail
+    } // namespace Internal
 
     template <typename T> LUMEN_FORCE_INLINE void DoNotOptimize ( T &&Value ) noexcept
     {
-        Detail::GBenchmarkSink = std::addressof( Value );
+        Internal::GBenchmarkSink = std::addressof( Value );
         std::atomic_signal_fence( std::memory_order_seq_cst );
     }
 

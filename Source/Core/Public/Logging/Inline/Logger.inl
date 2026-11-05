@@ -23,8 +23,6 @@ void Lumen::FLogger::TLog ( const FLogCategory &Category,
     {
         FString FormattedMessage = std::vformat( Format, std::make_format_args( InArgs... ) );
 
-        // Only a hint: EnqueueLogMessage re-checks under the queue mutex and falls back to synchronous
-        // output if the worker is gone. WorkerThread must not be read here, it is guarded by QueueMutex.
         const Bool bAsync = bIsAsync.load( std::memory_order_relaxed );
 
         if ( not bAsync )
@@ -45,7 +43,6 @@ void Lumen::FLogger::TLog ( const FLogCategory &Category,
     }
     catch ( const std::exception &Exception )
     {
-        // This function is noexcept: bad_alloc (formatting / queueing) must not end in std::terminate.
         Flush( "Failed to log message: " );
         Flush( Exception.what() );
         Flush( "\n" );
