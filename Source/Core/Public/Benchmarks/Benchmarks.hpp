@@ -3,13 +3,14 @@
 ///
 /// @code
 /// #include <Benchmarks/Benchmarks.hpp>
+/// #include <cstring>
 ///
 /// using namespace Lumen::Benchmarks;
 ///
 /// // Micro: auto-calibrated, setup before the loop is not timed.
 /// LUMEN_BENCHMARK( Vector, PushBack )
 /// {
-///     std::vector<int> Values;
+///     Lumen::TVector<int> Values;
 ///     Values.reserve( 1024 );
 ///     for ( auto _ : State )
 ///     {
@@ -22,7 +23,8 @@
 /// // Parameterized: one run per argument, with throughput.
 /// LUMEN_BENCHMARK_RANGE( Memory, Copy, 64, 1 << 20 )
 /// {
-///     std::vector<char> Source( State.GetArgument() ), Dest( State.GetArgument() );
+///     const Lumen::USize Size = static_cast<Lumen::USize>( State.GetArgument() );
+///     Lumen::TVector<char> Source( Size ), Dest( Size );
 ///     State.SetBytesPerIteration( Source.size() );
 ///     for ( auto _ : State )
 ///     {
@@ -43,7 +45,7 @@
 #pragma once
 
 #include <Benchmarks/Benchmark.hpp>
-#include <Benchmarks/BenchmarkClobber.hpp>
+#include <Benchmarks/BenchmarkOptimizer.hpp>
 #include <Benchmarks/BenchmarkReporter.hpp>
 #include <Benchmarks/BenchmarkState.hpp>
 #include <Benchmarks/BenchmarkTypes.hpp>
