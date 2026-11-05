@@ -17,7 +17,7 @@ Lumen::Thread::TSPMCQueue<Type>::TSPMCQueue( USize InCapacity )
       ///
       DequeuePosition( 0ULL )
 {
-    [[assume( InCapacity >= 2ULL && ( ( InCapacity & ( InCapacity - 1ULL ) ) == 0ULL ) )]];
+    [[assume( InCapacity >= 2ULL and ( ( InCapacity & ( InCapacity - 1ULL ) ) == 0ULL ) )]];
 
     for ( USize Index = 0ULL; Index < InCapacity; ++Index )
     {

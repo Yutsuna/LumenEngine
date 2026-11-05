@@ -41,9 +41,9 @@ constexpr Lumen::Thread::Internal::FBufferFlag::Type Lumen::Thread::Internal::FB
                                                                                                   FBufferFlag::Type TempIndex,
                                                                                                   Bool bIsDirty ) noexcept
 {
-    assert( ReaderIndex < 3 && "ReaderIndex must designate one of the 3 triple-buffer slots [0, 2]" );
-    assert( WriterIndex < 3 && "WriterIndex must designate one of the 3 triple-buffer slots [0, 2]" );
-    assert( TempIndex < 3 && "TempIndex must designate one of the 3 triple-buffer slots [0, 2]" );
+    assert( ReaderIndex < 3 and "ReaderIndex must designate one of the 3 triple-buffer slots [0, 2]" );
+    assert( WriterIndex < 3 and "WriterIndex must designate one of the 3 triple-buffer slots [0, 2]" );
+    assert( TempIndex < 3 and "TempIndex must designate one of the 3 triple-buffer slots [0, 2]" );
 
     const FBufferFlag::Type ReaderBit = ReaderIndex << ReaderShift;
     const FBufferFlag::Type WriterBit = WriterIndex << WriterShift;
