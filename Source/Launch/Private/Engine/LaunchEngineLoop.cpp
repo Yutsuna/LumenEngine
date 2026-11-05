@@ -3,12 +3,13 @@
 /// @brief Launch::FLaunchEngineLoop implementation.
 ///
 
-#include "Engine/LaunchEngineConfig.hpp"
+#include <Engine/LaunchEngineConfig.hpp>
 #include <Engine/LaunchEngineConfigParser.hpp>
 #include <Engine/LaunchEngineLoop.hpp>
 #include <Engine/LaunchFrameTiming.hpp>
 
-#include <Meta/Serialize.hpp>
+#include <Core/CoreDefinitions.hpp>
+#include <Meta/SerializeToJSON.hpp>
 
 #include <Logging/Logger.hpp>
 
@@ -54,7 +55,7 @@ Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit 
                 const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move( InConfig ) };
 
                 LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}",
-                                   Meta::SerializeToString( InConfig ) );
+                                   Meta::SerializeToJSON( InConfig ) );
 
                 return PreInitState;
             } );
@@ -109,7 +110,7 @@ Launch::TLaunchResult<Launch::FRunSummary> Launch::FLaunchEngineLoop::Run ( FIni
     };
 
     LUMEN_LOG_INFO( LogEngineLoop, "Main loop exited." );
-    LUMEN_LOG_DISPLAY( LogEngineLoop, "Run summary:" LUMEN_NEWLINE "{}", Meta::SerializeToString( RunSummary ) );
+    LUMEN_LOG_DISPLAY( LogEngineLoop, "Run summary:" LUMEN_NEWLINE "{}", Meta::SerializeToJSON( RunSummary ) );
     return RunSummary;
 }
 
