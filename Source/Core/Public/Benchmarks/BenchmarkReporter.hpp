@@ -7,8 +7,7 @@
 
 #include <Benchmarks/BenchmarkTypes.hpp>
 
-#include <string>
-#include <vector>
+#include <Templates/Vector.hpp>
 
 namespace Lumen
 {
@@ -16,18 +15,25 @@ namespace Lumen
 namespace Benchmarks
 {
 
-    class IBenchmarkReporter
+    ///
+    /// @class IBenchmarkReporter
+    /// @brief Receives the events emitted by a benchmark run.
+    ///
+    class CORE_EXPORT IBenchmarkReporter
     {
     public:
 
-        virtual ~IBenchmarkReporter () = default;
+        virtual ~IBenchmarkReporter () noexcept = default;
 
         virtual void OnRunStarted ( const FBenchmarkRunInfo &Info )         = 0;
         virtual void OnBenchmarkFinished ( const FBenchmarkResult &Result ) = 0;
         virtual void OnRunFinished ( const FBenchmarkRunSummary &Summary )  = 0;
     };
 
+    ///
+    /// @class FConsoleBenchmarkReporter
     /// @brief Prints an aligned table on stdout, one row per finished benchmark.
+    ///
     class CORE_EXPORT FConsoleBenchmarkReporter final : public IBenchmarkReporter
     {
     public:
@@ -41,14 +47,15 @@ namespace Benchmarks
         USize NameColumnWidth{ 40 };
     };
 
+    ///
+    /// @class FJsonBenchmarkReporter
     /// @brief Writes every result to a JSON file when the run ends.
-    /// @details Schema is hand-written (not Meta::SerializeToJSON) to stay stable across
-    ///          field reorderings and to omit non-applicable keys (argument, throughput).
+    ///
     class CORE_EXPORT FJsonBenchmarkReporter final : public IBenchmarkReporter
     {
     public:
 
-        explicit FJsonBenchmarkReporter ( std::string InOutputPath );
+        explicit FJsonBenchmarkReporter ( FString InOutputPath );
 
         void OnRunStarted ( const FBenchmarkRunInfo &Info ) override;
         void OnBenchmarkFinished ( const FBenchmarkResult &Result ) override;
@@ -56,12 +63,15 @@ namespace Benchmarks
 
     private:
 
-        std::string OutputPath;
-        std::vector<FBenchmarkResult> Results;
+        FString OutputPath;
+        TVector<FBenchmarkResult> Results;
         Bool bOptimized{ true };
     };
 
+    ///
+    /// @class FDebugBenchmarkReporter
     /// @brief Dumps every event as JSON via Meta::SerializeToJSON. Debug/CI only.
+    ///
     class CORE_EXPORT FDebugBenchmarkReporter final : public IBenchmarkReporter
     {
     public:
