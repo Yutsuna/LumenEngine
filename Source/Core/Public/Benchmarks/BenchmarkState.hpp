@@ -3,10 +3,13 @@
 
 #pragma once
 
-#include "Core/NonCopyable.hpp"
 #include <Core/CoreTypes.hpp>
+#include <Core/NonCopyable.hpp>
+#include <Core/NonMovable.hpp>
+#include <CoreExport.hpp>
 
-#include <chrono>
+#include <Templates/Optional.hpp>
+
 #include <iterator>
 
 namespace Lumen
@@ -19,24 +22,31 @@ namespace Benchmarks
     /// @class FBenchmarkState
     /// @brief Controls the measured loop of a benchmark.
     ///
-    class FBenchmarkState final : public FNonCopyable
+    /// @code
+    /// for ( auto _ : State )
+    /// {
+    ///     // measured body
+    /// }
+    /// @endcode
+    ///
+    class CORE_EXPORT FBenchmarkState final : public FNonCopyable, public FNonMovable
     {
     public:
 
-        using FClock = std::chrono::steady_clock;
-
         /// @brief Dummy value yielded by the loop (`for ( auto _ : State )`).
-        struct [[maybe_unused]] FIterationToken
+        struct FIterationToken
         {
         };
 
+        ///
         /// @class FIterator
         /// @brief Loop iterator. Stops the timer when the loop ends, breaks, or throws.
-        class FIterator final : public FNonCopyable
+        ///
+        class CORE_EXPORT FIterator final : public FNonCopyable, public FNonMovable
         {
         public:
 
-            FIterator ( FBenchmarkState &InState, const UInt64 InRemaining ) noexcept;
+            FIterator ( FBenchmarkState &InState, UInt64 InRemaining ) noexcept;
             ~FIterator () noexcept;
 
             [[nodiscard]] FIterationToken operator*() const noexcept;
@@ -52,9 +62,7 @@ namespace Benchmarks
     public:
 
         /// @note Constructed by the benchmark runner, not by user code.
-        explicit FBenchmarkState ( const UInt64 InIterations,
-                                   const Bool bInHasArgument = false,
-                                   const Int64 InArgument    = 0 ) noexcept;
+        explicit FBenchmarkState ( UInt64 InIterations, TOptional<Int64> InArgument = {} ) noexcept;
 
     public:
 
@@ -70,10 +78,10 @@ namespace Benchmarks
         void ResumeTiming () noexcept;
 
         /// @brief Declares how many logical items one iteration processes.
-        void SetItemsPerIteration ( const UInt64 InItems ) noexcept;
+        void SetItemsPerIteration ( UInt64 InItems ) noexcept;
 
         /// @brief Declares how many bytes one iteration processes.
-        void SetBytesPerIteration ( const UInt64 InBytes ) noexcept;
+        void SetBytesPerIteration ( UInt64 InBytes ) noexcept;
 
         /// @brief Called by the runner once the body returned.
         void Finish () noexcept;
@@ -92,20 +100,19 @@ namespace Benchmarks
 
         void StartTimer () noexcept;
         void StopTimer () noexcept;
-        void EndLoop ( const UInt64 InRemaining ) noexcept;
+        void EndLoop ( UInt64 InRemaining ) noexcept;
 
     private:
 
         UInt64 Iterations;
         UInt64 Executed{ 0 };
-        Int64 Argument;
-        Bool bHasArgument;
+        TOptional<Int64> Argument;
 
         UInt64 ItemsPerIteration{ 0 };
         UInt64 BytesPerIteration{ 0 };
 
-        FClock::time_point StartPoint;
-        FClock::duration Accumulated{ FClock::duration::zero() };
+        Float64 StartTime{ 0.0 };
+        Float64 Accumulated{ 0.0 };
         Bool bTimerRunning{ false };
     };
 
