@@ -4,7 +4,7 @@
 #pragma once
 
 #include <CoreExport.hpp>
-#include <Templates/MonadicInternals.hpp>
+#include <Templates/MonadicDetails.hpp>
 
 #include <concepts>
 #include <utility>
