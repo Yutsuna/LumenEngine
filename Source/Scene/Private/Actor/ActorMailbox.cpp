@@ -70,12 +70,12 @@ Lumen::EEnqueueResult Lumen::FMailBox::Push ( const FMessage &InMessage ) noexce
     NewNode->Next.store( nullptr, std::memory_order_relaxed );
     NewNode->Message.Emplace( InMessage );
 
-    // The acquire half synchronizes with the previous producer's exchange, publishing that node's initialization.
-    // The release half passes the initialized node to the next producer. The consumer never accesses an unlinked tail.
+    /// The acquire half synchronizes with the previous producer's exchange, publishing that node's initialization.
+    /// The release half passes the initialized node to the next producer. The consumer never accesses an unlinked tail.
     FNode *const PrevTail = Tail.exchange( NewNode, std::memory_order_acq_rel );
 
-    // This release publishes the complete node and links it to the consumer's acquire load below.
-    // Until this store, Head stops at PrevTail, so no consumer can recycle PrevTail during the store.
+    /// This release publishes the complete node and links it to the consumer's acquire load below.
+    /// Until this store, Head stops at PrevTail, so no consumer can recycle PrevTail during the store.
     PrevTail->Next.store( NewNode, std::memory_order_release );
 
     EndOperation();
@@ -112,7 +112,7 @@ Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
     {
         OldHead->Message.Reset();
 
-        // Reserve and Pop are serialized pool producers; message producers and the consumer may concurrently pop nodes.
+        /// Reserve and Pop are serialized pool producers; message producers and the consumer may concurrently pop nodes.
         if ( not FreeNodes.Push( OldHead ) )
         {
             delete OldHead;
@@ -166,8 +166,8 @@ void Lumen::FMailBox::Close () noexcept
         std::this_thread::yield();
     }
 
-    // Closed prevents new operations and the wait above includes both node publication and consumer recycling.
-    // The linked list and the free list are therefore exclusively owned here.
+    /// Closed prevents new operations and the wait above includes both node publication and consumer recycling.
+    /// The linked list and the free list are therefore exclusively owned here.
     FNode *CurrentNode = Head;
     while ( CurrentNode != nullptr )
     {

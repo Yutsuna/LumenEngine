@@ -4,6 +4,7 @@
 ///
 
 #include "ActorRegistry.hpp"
+#include "Templates/Map.hpp"
 
 #include <Actor/Actor.hpp>
 
@@ -11,6 +12,22 @@
 #include <Memory/UniquePtr.hpp>
 
 #include <limits>
+
+///
+/// FActorIDHash
+///
+
+Lumen::USize Lumen::Internal::FActorRegistry::FActorIDHash::operator()( const ActorID InId ) const noexcept
+{
+    UInt64 Key = ( static_cast<UInt64>( InId.Generation ) << 32U ) | InId.Index;
+    Key        = ( Key ^ ( Key >> 30U ) ) * 0xbf58476d1ce4e5b9ULL;
+    Key        = ( Key ^ ( Key >> 27U ) ) * 0x94d049bb133111ebULL;
+    return static_cast<USize>( Key ^ ( Key >> 31U ) );
+}
+
+///
+/// FActorRegistry
+///
 
 Lumen::Internal::FActorRegistry::FRegistryState &Lumen::Internal::FActorRegistry::GetState () noexcept
 {
@@ -89,8 +106,10 @@ void Lumen::Internal::FActorRegistry::Unregister ( AActor *InActor ) noexcept
         return;
     }
 
-    auto It = State.Actors.find( Id );
-    if ( It != State.Actors.end() && It->second == InActor )
+    using FIterator = TMap<ActorID, AActor *, FActorIDHash>::iterator;
+    FIterator It    = State.Actors.find( Id );
+
+    if ( It != State.Actors.end() and It->second == InActor )
     {
         State.Actors.erase( It );
     }
@@ -108,7 +127,7 @@ Lumen::EEnqueueResult Lumen::Internal::FActorRegistry::EnqueueMessage ( const Ac
     {
         TSharedLock<FSharedMutex> Lock( State.RegistryMutex );
         auto It = State.Actors.find( InId );
-        if ( It != State.Actors.end() && It->second->TryAcquireSender() )
+        if ( It != State.Actors.end() and It->second->TryAcquireSender() )
         {
             Target = It->second;
         }
