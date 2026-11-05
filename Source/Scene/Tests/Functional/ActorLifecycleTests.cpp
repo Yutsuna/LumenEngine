@@ -2,7 +2,6 @@
 /// @brief Unit and concurrency tests for actor registration and lifetime.
 
 #include <Actor/Actor.hpp>
-#include <Actor/ActorRegistry.hpp>
 #include <Tests/UnitTest.hpp>
 
 #include <atomic>
@@ -37,7 +36,7 @@ public:
     {
         const UInt32 Active = ActiveReceives.fetch_add( 1U, std::memory_order_acq_rel ) + 1U;
         UInt32 ObservedMax  = MaxActiveReceives.load( std::memory_order_relaxed );
-        while ( ObservedMax < Active && not MaxActiveReceives.compare_exchange_weak( ObservedMax, Active ) )
+        while ( ObservedMax < Active and not MaxActiveReceives.compare_exchange_weak( ObservedMax, Active ) )
         {
         }
 
@@ -68,7 +67,27 @@ private:
     TAtomic<Bool> *DestroyedNotification = nullptr;
 };
 
+class FOtherTestActor final : public AActor
+{
+    LUMEN_ACTOR_BODY( FOtherTestActor )
+
+public:
+
+    void Receive ( const FMessage & ) noexcept override
+    {
+    }
+};
+
 static_assert( Concepts::CActor<FTestActor> );
+
+LUMEN_TEST( ActorLifecycle_Registration, ActorTypesHaveDistinctIds )
+{
+    FTestActor Actor;
+    FOtherTestActor OtherActor;
+
+    LUMEN_CHECK_NE( Actor.GetTypeID(), OtherActor.GetTypeID() );
+    LUMEN_CHECK_EQ( Actor.GetTypeID(), FTestActor().GetTypeID() );
+}
 
 LUMEN_TEST( ActorLifecycle_Generation, GenerationsCanCoexistAtSameIndex )
 {
@@ -138,6 +157,45 @@ LUMEN_TEST( ActorLifecycle_Generation, StaleReferenceCannotTargetReplacement )
     LUMEN_CHECK_EQ( Replacement->ReceivedCount.load(), 1U );
 
     Replacement->Destroy();
+}
+
+LUMEN_TEST( ActorLifecycle_Registration, ConcurrentInitializeAndShutdown )
+{
+    constexpr UInt32 IterationCount = 256U;
+    for ( UInt32 Iteration = 0U; Iteration < IterationCount; ++Iteration )
+    {
+        FTestActor Actor;
+        TAtomic<Bool> bStart{ false };
+        EActorRegistrationResult Registration = EActorRegistrationResult::AlreadyRegistered;
+
+        std::thread Initializer(
+            [&]
+            {
+                while ( not bStart.load( std::memory_order_acquire ) )
+                {
+                    std::this_thread::yield();
+                }
+                Registration = Actor.Initialize();
+            } );
+        std::thread Stopper(
+            [&]
+            {
+                while ( not bStart.load( std::memory_order_acquire ) )
+                {
+                    std::this_thread::yield();
+                }
+                Actor.Shutdown();
+            } );
+
+        bStart.store( true, std::memory_order_release );
+        Initializer.join();
+        Stopper.join();
+
+        LUMEN_CHECK_TRUE( Registration == EActorRegistrationResult::Success ||
+                          Registration == EActorRegistrationResult::ActorStopped );
+        LUMEN_CHECK_EQ( Actor.GetId().IsValid(), Registration == EActorRegistrationResult::Success );
+        LUMEN_CHECK_FALSE( Actor.IsActive() );
+    }
 }
 
 LUMEN_TEST( ActorLifecycle_Registration, StoppedActorCannotRestart )
@@ -215,6 +273,36 @@ LUMEN_TEST( ActorLifecycle_Processing, ReceiveIsExclusive )
     Actor.Shutdown();
 }
 
+LUMEN_TEST( ActorLifecycle_Processing, ShutdownWaitsForActiveReceive )
+{
+    FTestActor Actor;
+    LUMEN_CHECK_EQ( Actor.Initialize(), EActorRegistrationResult::Success );
+    Actor.bBlockReceive.store( true );
+    LUMEN_CHECK_EQ( Actor.EnqueueMessage( FMessage::Make( 1U, ActorID{} ) ), EEnqueueResult::Success );
+
+    std::thread Processor( [&] { Actor.ProcessMailbox( 0U ); } );
+    while ( not Actor.bEnteredReceive.load( std::memory_order_acquire ) )
+    {
+        std::this_thread::yield();
+    }
+
+    TAtomic<Bool> bShutdownReturned{ false };
+    std::thread Stopper(
+        [&]
+        {
+            Actor.Shutdown();
+            bShutdownReturned.store( true, std::memory_order_release );
+        } );
+
+    LUMEN_CHECK_FALSE( bShutdownReturned.load( std::memory_order_acquire ) );
+    Actor.bReleaseReceive.store( true, std::memory_order_release );
+    Processor.join();
+    Stopper.join();
+
+    LUMEN_CHECK_TRUE( bShutdownReturned.load( std::memory_order_acquire ) );
+    LUMEN_CHECK_EQ( Actor.ReceivedCount.load(), 1U );
+}
+
 LUMEN_TEST( ActorLifecycle_Destruction, WaitsForActiveReceiveBeforeDeletingDerivedActor )
 {
     TAtomic<Bool> bDestroyed{ false };
@@ -238,7 +326,7 @@ LUMEN_TEST( ActorLifecycle_Destruction, WaitsForActiveReceiveBeforeDeletingDeriv
             bDestroyReturned.store( true, std::memory_order_release );
         } );
 
-    while ( Ref.EnqueueMessage( FMessage::Make( 1U, ActorID{} ) ) == EEnqueueResult::Success )
+    while ( Ref.EnqueueMessage( FMessage::Make( 1U, ActorID{} ) ) != EEnqueueResult::ActorUnavailable )
     {
         std::this_thread::yield();
     }
@@ -263,6 +351,7 @@ LUMEN_TEST( ActorLifecycle_Destruction, ConcurrentSendersAreDrainedBeforeDeletio
 
     constexpr UInt32 SenderCount = 4U;
     TAtomic<Bool> bStart{ false };
+    TAtomic<UInt32> StartedSenders{ 0U };
     TAtomic<Bool> bUnexpectedFailure{ false };
     std::vector<std::thread> Senders;
 
@@ -288,12 +377,19 @@ LUMEN_TEST( ActorLifecycle_Destruction, ConcurrentSendersAreDrainedBeforeDeletio
                         bUnexpectedFailure.store( true, std::memory_order_release );
                         break;
                     }
+                    if ( Index == 0U )
+                    {
+                        StartedSenders.fetch_add( 1U, std::memory_order_acq_rel );
+                    }
                 }
             } );
     }
 
     bStart.store( true, std::memory_order_release );
-    std::this_thread::yield();
+    while ( StartedSenders.load( std::memory_order_acquire ) < SenderCount )
+    {
+        std::this_thread::yield();
+    }
     Actor->Destroy();
 
     for ( std::thread &Sender : Senders )

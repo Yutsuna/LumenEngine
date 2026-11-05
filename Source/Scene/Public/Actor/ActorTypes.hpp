@@ -78,10 +78,10 @@ namespace Concepts
     concept CTriviallyCopyablePayload = Concepts::CTriviallyCopyable<Type>;
 
     template <typename Type>
-    concept CMessagePayload = Concepts::CTriviallyCopyable<Type> && TMessageTraits<Type>::bEnabled;
+    concept CMessagePayload = Concepts::CTriviallyCopyable<Type> and TMessageTraits<Type>::bEnabled;
 
     template <typename Type>
-    concept CIdentifiedMessagePayload = CMessagePayload<Type> && requires {
+    concept CIdentifiedMessagePayload = CMessagePayload<Type> and requires {
         { TMessageTraits<Type>::Type } -> std::convertible_to<UInt32>;
         { TMessageTraits<Type>::Version } -> std::convertible_to<UInt16>;
     };
@@ -97,7 +97,7 @@ namespace Internal
     ///
     template <typename ActorType> struct TActorTypeRegistry
     {
-        static void GetID () noexcept {};
+        static inline char Tag = 0;
     };
 
 } // namespace Internal
@@ -108,7 +108,7 @@ public:                                                                         
                                                                                                                                  \
     [[nodiscard]] ::Lumen::USize GetTypeID() const noexcept override                                                             \
     {                                                                                                                            \
-        return reinterpret_cast<::Lumen::USize>( &::Lumen::Internal::TActorTypeRegistry<ActorClassName>::GetID );                \
+        return reinterpret_cast<::Lumen::USize>( &::Lumen::Internal::TActorTypeRegistry<ActorClassName>::Tag );                  \
     }
 
 ///
@@ -150,6 +150,6 @@ template <> struct TMessageTraits<FActorRef>
     static constexpr Bool bEnabled = true;
 };
 
-extern const FLogCategory LogActor;
+extern SCENE_EXPORT const FLogCategory LogActor;
 
 } // namespace Lumen

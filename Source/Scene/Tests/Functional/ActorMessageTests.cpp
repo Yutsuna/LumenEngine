@@ -21,7 +21,7 @@ template <USize Size, USize Alignment = 1ULL> struct alignas( Alignment ) TTestP
 template <USize Size, USize Alignment> struct TMessageTraits<TTestPayload<Size, Alignment>>
 {
     static constexpr Bool bEnabled  = true;
-    static constexpr UInt32 Type    = 1000U + static_cast<UInt32>( Size ) + static_cast<UInt32>( Alignment );
+    static constexpr UInt32 Type    = 1000U + static_cast<UInt32>( ( Size * 128ULL ) + Alignment );
     static constexpr UInt16 Version = 4U;
 };
 
@@ -49,7 +49,7 @@ struct FNewerTestPayload
 template <> struct TMessageTraits<FNewerTestPayload>
 {
     static constexpr Bool bEnabled  = true;
-    static constexpr UInt32 Type    = 1009U;
+    static constexpr UInt32 Type    = TMessageTraits<TTestPayload<8ULL>>::Type;
     static constexpr UInt16 Version = 5U;
 };
 
@@ -58,6 +58,7 @@ struct FUnregisteredPayload
     UInt32 Value = 0U;
 };
 
+static_assert( TMessageTraits<TTestPayload<32ULL, 16ULL>>::Type != TMessageTraits<TTestPayload<16ULL, 32ULL>>::Type );
 static_assert( Concepts::CMessagePayload<TTestPayload<16ULL>> );
 static_assert( not Concepts::CMessagePayload<FUnregisteredPayload> );
 static_assert( not Concepts::CMessagePayload<const void *> );
@@ -70,8 +71,7 @@ namespace
 
     template <typename PayloadType> void CheckRoundTrip ( const PayloadType &InPayload )
     {
-        constexpr UInt32 Type =
-            3000U + static_cast<UInt32>( sizeof( PayloadType ) ) + static_cast<UInt32>( alignof( PayloadType ) );
+        constexpr UInt32 Type  = 3000U + sizeof( PayloadType ) + alignof( PayloadType );
         const FMessage Message = FMessage::Make( Type, ActorID{ 12U, 3U }, InPayload );
 
         LUMEN_CHECK_EQ( Message.Type, Type );
@@ -180,7 +180,7 @@ LUMEN_TEST( ActorMessage_Payload, TraitsProvideTypeAndVersion )
     const auto Payload     = MakePayload<8ULL>();
     const FMessage Message = FMessage::Make( ActorID{ 4U, 2U }, Payload );
 
-    LUMEN_CHECK_EQ( Message.Type, 1009U );
+    LUMEN_CHECK_EQ( Message.Type, TMessageTraits<std::remove_cv_t<decltype( Payload )>>::Type );
     LUMEN_CHECK_EQ( Message.Version, 4U );
     LUMEN_CHECK_EQ( Message.Sender, ( ActorID{ 4U, 2U } ) );
     LUMEN_CHECK_EQ( Message.GetPayload<std::remove_cv_t<decltype( Payload )>>(), Payload );

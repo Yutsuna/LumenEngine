@@ -213,7 +213,7 @@ LUMEN_TEST( ActorMailbox_MPSC, ConcurrentProducersDeliverEveryMessageOnce )
         else
         {
             if ( bProducerFailure.load( std::memory_order_acquire ) ||
-                 ( FinishedProducers.load( std::memory_order_acquire ) == ProducerCount && Mailbox.IsEmpty() ) )
+                 ( FinishedProducers.load( std::memory_order_acquire ) == ProducerCount and Mailbox.IsEmpty() ) )
             {
                 break;
             }
