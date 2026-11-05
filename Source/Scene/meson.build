@@ -10,5 +10,6 @@ ModuleDefinition = {
     'Private' : 'Private',
     'Public' : 'Public',
     'Tests' : 'Tests',
+    'Benchmarks' : 'Benchmarks',
     'Depends' : ['Core']
 }
