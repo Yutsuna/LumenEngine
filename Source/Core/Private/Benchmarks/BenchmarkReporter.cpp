@@ -3,66 +3,65 @@
 
 #include <Benchmarks/BenchmarkReporter.hpp>
 
-#include <Meta/SerializeJSON.hpp>
+#include <Core/CoreDefinitions.hpp>
+
+#include <Filesystem/File.hpp>
+#include <Filesystem/Path.hpp>
+#include <Logging/Logger.hpp>
+
+#include <Meta/Reflection.hpp>
+#include <Meta/SerializeToJSON.hpp>
 
 #include <algorithm>
-#include <cstdio>
 #include <format>
-#include <fstream>
-#include <string>
 #include <utility>
 
 namespace Lumen
 {
+
+LUMEN_LOG_DEFINE_CATEGORY( LogBenchmarks, "Benchmarks" )
 
 namespace Benchmarks
 {
 
     namespace
     {
-        void Print ( const std::string &Text )
-        {
-            std::fwrite( Text.data(), 1, Text.size(), stdout );
-            std::fflush( stdout );
-        }
 
-        // ---- human-readable layout helpers (NOT serialization) ----
-
-        [[nodiscard]] std::string FormatDuration ( const Float64 Nanoseconds )
+        [[nodiscard]] FString FormatDuration ( const Float64 Nanoseconds )
         {
-            if ( Nanoseconds < 1.0e3 )
+            if ( Nanoseconds < 1.0E3 )
             {
                 return std::format( "{:.2f} ns", Nanoseconds );
             }
-            if ( Nanoseconds < 1.0e6 )
+            if ( Nanoseconds < 1.0E6 )
             {
-                return std::format( "{:.2f} us", Nanoseconds / 1.0e3 );
+                return std::format( "{:.2f} us", Nanoseconds / 1.0E3 );
             }
-            if ( Nanoseconds < 1.0e9 )
+            if ( Nanoseconds < 1.0E9 )
             {
-                return std::format( "{:.2f} ms", Nanoseconds / 1.0e6 );
+                return std::format( "{:.2f} ms", Nanoseconds / 1.0E6 );
             }
-            return std::format( "{:.2f} s", Nanoseconds / 1.0e9 );
+            return std::format( "{:.2f} s", Nanoseconds / 1.0E9 );
         }
 
-        [[nodiscard]] std::string FormatItemsRate ( const Float64 PerSecond )
+        [[nodiscard]] FString FormatItemsRate ( const Float64 PerSecond )
         {
-            if ( PerSecond >= 1.0e9 )
+            if ( PerSecond >= 1.0E9 )
             {
-                return std::format( "{:.2f} G items/s", PerSecond / 1.0e9 );
+                return std::format( "{:.2f} G items/s", PerSecond / 1.0E9 );
             }
-            if ( PerSecond >= 1.0e6 )
+            if ( PerSecond >= 1.0E6 )
             {
-                return std::format( "{:.2f} M items/s", PerSecond / 1.0e6 );
+                return std::format( "{:.2f} M items/s", PerSecond / 1.0E6 );
             }
-            if ( PerSecond >= 1.0e3 )
+            if ( PerSecond >= 1.0E3 )
             {
-                return std::format( "{:.2f} k items/s", PerSecond / 1.0e3 );
+                return std::format( "{:.2f} k items/s", PerSecond / 1.0E3 );
             }
             return std::format( "{:.2f} items/s", PerSecond );
         }
 
-        [[nodiscard]] std::string FormatBytesRate ( const Float64 PerSecond )
+        [[nodiscard]] FString FormatBytesRate ( const Float64 PerSecond )
         {
             constexpr Float64 KiB = 1024.0;
             constexpr Float64 MiB = KiB * 1024.0;
@@ -83,62 +82,83 @@ namespace Benchmarks
             return std::format( "{:.2f} B/s", PerSecond );
         }
 
-    } // namespace
+        [[nodiscard]] FString FormatThroughput ( const FBenchmarkResult &Result )
+        {
+            FString Throughput;
+            if ( Result.ItemsPerSecond > 0.0 )
+            {
+                Throughput += FormatItemsRate( Result.ItemsPerSecond );
+            }
+            if ( Result.BytesPerSecond > 0.0 )
+            {
+                if ( not Throughput.empty() )
+                {
+                    Throughput += "  ";
+                }
+                Throughput += FormatBytesRate( Result.BytesPerSecond );
+            }
+            if ( Result.NanosecondsPerIteration.CoefficientOfVariation > 10.0 )
+            {
+                if ( not Throughput.empty() )
+                {
+                    Throughput += "  ";
+                }
+                Throughput += "(noisy)";
+            }
+            return Throughput;
+        }
 
-    // -------------------------------------------------------------------- console
-    // Unchanged: this is layout (columns, units, padding), not serialization.
+        ///
+        /// @struct FBenchmarkReport
+        /// @brief Stable top-level JSON document written by FJsonBenchmarkReporter.
+        ///
+        struct FBenchmarkReport
+        {
+            Bool bOptimized{ true };
+            FBenchmarkRunSummary Summary;
+            TVector<FBenchmarkResult> Benchmarks;
+        };
+
+    } // namespace
 
     void FConsoleBenchmarkReporter::OnRunStarted ( const FBenchmarkRunInfo &Info )
     {
         if ( Info.BenchmarkCount == 0 )
         {
-            Print( "No benchmark matched the given filter.\n" );
+            LUMEN_LOG_WARNING( LogBenchmarks, "No benchmark matched the given filter." );
             return;
         }
 
         if ( Info.bContainsUnoptimizedBenchmarks )
         {
-            Print( "[!] Some benchmarks were compiled WITHOUT optimizations: the numbers below are not representative.\n"
-                   "    Reconfigure with --buildtype=release (or debugoptimized).\n\n" );
+            LUMEN_LOG_WARNING( LogBenchmarks, "Some benchmarks were compiled WITHOUT optimizations: the numbers below are not "
+                                              "representative. Reconfigure with --buildtype=release (or debugoptimized)." );
         }
 
         NameColumnWidth = std::max<USize>( Info.LongestNameLength, 9 );
 
-        Print( std::format( "{:<{}}  {:>12}  {:>12}  {:>7}  {:>22}  {}\n", "Benchmark", NameColumnWidth, "Median/op", "Min/op",
-                            "CV", "Iterations x Samples", "Throughput" ) );
-        Print( std::string( NameColumnWidth + 80, '-' ) + "\n" );
+        FLogger::Flush( std::format( "{:<{}}  {:>12}  {:>12}  {:>7}  {:>22}  {}" LUMEN_NEWLINE, "Benchmark", NameColumnWidth,
+                                     "Median/op", "Min/op", "CV", "Iterations x Samples", "Throughput" ) );
+        FLogger::Flush( std::format( "{:-<{}}" LUMEN_NEWLINE, "", NameColumnWidth + 80 ) );
     }
 
     void FConsoleBenchmarkReporter::OnBenchmarkFinished ( const FBenchmarkResult &Result )
     {
-        const std::string Name =
-            FormatBenchmarkName( Result.SuiteName, Result.BenchmarkName, Result.bHasArgument, Result.Argument );
+        const FString Name = FormatBenchmarkName( Result.SuiteName, Result.BenchmarkName, Result.Argument );
 
-        if ( Result.bFailed )
+        if ( not Result.Succeeded() )
         {
-            Print( std::format( "{:<{}}  FAILED: {}\n", Name, NameColumnWidth, Result.FailureMessage ) );
+            const FString Failure = Result.Failure.ValueOr( "unknown failure" );
+            FLogger::Flush( std::format( "{:<{}}  FAILED: {}" LUMEN_NEWLINE, Name, NameColumnWidth, Failure ) );
             return;
         }
 
         const FBenchmarkStatistics &Stats = Result.NanosecondsPerIteration;
 
-        std::string Throughput;
-        if ( Result.ItemsPerSecond > 0.0 )
-        {
-            Throughput += FormatItemsRate( Result.ItemsPerSecond );
-        }
-        if ( Result.BytesPerSecond > 0.0 )
-        {
-            Throughput += ( Throughput.empty() ? "" : "  " ) + FormatBytesRate( Result.BytesPerSecond );
-        }
-        if ( Stats.CoefficientOfVariation > 10.0 )
-        {
-            Throughput += ( Throughput.empty() ? "" : "  " ) + std::string{ "(noisy)" };
-        }
-
-        Print( std::format( "{:<{}}  {:>12}  {:>12}  {:>6.1f}%  {:>22}  {}\n", Name, NameColumnWidth,
-                            FormatDuration( Stats.Median ), FormatDuration( Stats.Min ), Stats.CoefficientOfVariation,
-                            std::format( "{} x {}", Result.IterationsPerSample, Result.SampleCount ), Throughput ) );
+        FLogger::Flush( std::format( "{:<{}}  {:>12}  {:>12}  {:>6.1f}%  {:>22}  {}" LUMEN_NEWLINE, Name, NameColumnWidth,
+                                     FormatDuration( Stats.Median ), FormatDuration( Stats.Min ), Stats.CoefficientOfVariation,
+                                     std::format( "{} x {}", Result.IterationsPerSample, Result.SampleCount ),
+                                     FormatThroughput( Result ) ) );
     }
 
     void FConsoleBenchmarkReporter::OnRunFinished ( const FBenchmarkRunSummary &Summary )
@@ -148,14 +168,21 @@ namespace Benchmarks
             return;
         }
 
-        Print( std::format( "\n{} benchmark(s): {} passed, {} failed in {:.2f}s\n", Summary.TotalExecuted, Summary.PassedCount,
-                            Summary.FailedCount, Summary.DurationSeconds ) );
+        if ( Summary.IsSuccessful() )
+        {
+            LUMEN_LOG_DISPLAY( LogBenchmarks, "{} benchmark(s): {} passed in {:.2f}s", Summary.TotalExecuted, Summary.PassedCount,
+                               Summary.DurationSeconds );
+        }
+        else
+        {
+            LUMEN_LOG_ERROR( LogBenchmarks, "{} benchmark(s): {} passed, {} failed in {:.2f}s", Summary.TotalExecuted,
+                             Summary.PassedCount, Summary.FailedCount, Summary.DurationSeconds );
+        }
     }
 
-    // -------------------------------------------------------------------- json
-
-    FJsonBenchmarkReporter::FJsonBenchmarkReporter ( std::string InOutputPath ) : OutputPath{ std::move( InOutputPath ) }
+    FJsonBenchmarkReporter::FJsonBenchmarkReporter ( FString InOutputPath ) : OutputPath{ std::move( InOutputPath ) }
     {
+        ///
     }
 
     void FJsonBenchmarkReporter::OnRunStarted ( const FBenchmarkRunInfo &Info )
@@ -172,74 +199,38 @@ namespace Benchmarks
 
     void FJsonBenchmarkReporter::OnRunFinished ( const FBenchmarkRunSummary &Summary )
     {
-        // Hand-written schema: stable key order, conditional omission, fixed naming.
-        // Meta::SerializeToJSON would tie the schema to FBenchmarkResult's field declaration order.
-        std::string Json = "{\n";
-        Json += std::format( "  \"optimized\": {},\n", bOptimized ? "true" : "false" );
-        Json += std::format( "  \"duration_seconds\": {:.3f},\n", Summary.DurationSeconds );
-        Json += "  \"benchmarks\": [\n";
+        const FBenchmarkReport Report{
+            .bOptimized = bOptimized,
+            .Summary    = Summary,
+            .Benchmarks = std::move( Results ),
+        };
 
-        for ( USize Index = 0; Index < Results.size(); ++Index )
+        const FString Json     = Meta::SerializeToJSON( Report );
+        const auto WriteResult = Filesystem::FFile::WriteAllText( Filesystem::FPath{ OutputPath }, Json );
+
+        if ( WriteResult )
         {
-            const FBenchmarkResult &Result = Results[Index];
-
-            Json += "    {\n";
-            Json += std::format( "      \"name\": \"{}\",\n",
-                                 ToStdView( FormatBenchmarkName( Result.SuiteName, Result.BenchmarkName, Result.bHasArgument,
-                                                                 Result.Argument ) ) );
-            Json += std::format( "      \"suite\": \"{}\",\n", ToStdView( Result.SuiteName ) );
-            Json += std::format( "      \"benchmark\": \"{}\",\n", ToStdView( Result.BenchmarkName ) );
-            Json += std::format( "      \"kind\": \"{}\",\n", Meta::EnumName( Result.Kind ) );
-            if ( Result.bHasArgument )
-            {
-                Json += std::format( "      \"argument\": {},\n", Result.Argument );
-            }
-            Json += std::format( "      \"failed\": {},\n", Result.bFailed ? "true" : "false" );
-            if ( Result.bFailed )
-            {
-                Json += std::format( "      \"error\": \"{}\"\n", ToStdView( Result.FailureMessage ) );
-            }
-            else
-            {
-                Json += std::format( "      \"iterations_per_sample\": {},\n", Result.IterationsPerSample );
-                Json += std::format( "      \"samples\": {},\n", Result.SampleCount );
-
-                // Sub-object: let Meta own the statistics schema (stable, no conditional omission).
-                Json += std::format( "      \"ns_per_iteration\": {},\n",
-                                     Meta::SerializeToJSON( Result.NanosecondsPerIteration, { .bPretty = false } ) );
-
-                Json += std::format( "      \"items_per_second\": {:.3f},\n", Result.ItemsPerSecond );
-                Json += std::format( "      \"bytes_per_second\": {:.3f}\n", Result.BytesPerSecond );
-            }
-            Json += ( Index + 1 < Results.size() ) ? "    },\n" : "    }\n";
+            LUMEN_LOG_INFO( LogBenchmarks, "Wrote {} benchmark result(s) to '{}'.", Report.Benchmarks.size(), OutputPath );
         }
-
-        Json += "  ]\n}\n";
-
-        std::ofstream File( OutputPath, std::ios::binary | std::ios::trunc );
-        if ( not File )
+        else
         {
-            std::fprintf( stderr, "[Benchmarks] Unable to open '%s' for writing.\n", OutputPath.c_str() );
-            return;
+            LUMEN_LOG_ERROR( LogBenchmarks, "Unable to write '{}': {}.", OutputPath, Meta::EnumName( WriteResult.Error() ) );
         }
-        File << Json;
     }
-
-    // -------------------------------------------------------------------- debug
 
     void FDebugBenchmarkReporter::OnRunStarted ( const FBenchmarkRunInfo &Info )
     {
-        Print( std::format( "{}\n", Meta::SerializeToJSON( Info ) ) );
+        LUMEN_LOG_VERY_VERBOSE( LogBenchmarks, "{}", Meta::SerializeToJSON( Info, { .bPretty = false } ) );
     }
 
     void FDebugBenchmarkReporter::OnBenchmarkFinished ( const FBenchmarkResult &Result )
     {
-        Print( std::format( "{}\n", Meta::SerializeToJSON( Result ) ) );
+        LUMEN_LOG_VERY_VERBOSE( LogBenchmarks, "{}", Meta::SerializeToJSON( Result, { .bPretty = false } ) );
     }
 
     void FDebugBenchmarkReporter::OnRunFinished ( const FBenchmarkRunSummary &Summary )
     {
-        Print( std::format( "{}\n", Meta::SerializeToJSON( Summary ) ) );
+        LUMEN_LOG_VERY_VERBOSE( LogBenchmarks, "{}", Meta::SerializeToJSON( Summary, { .bPretty = false } ) );
     }
 
 } // namespace Benchmarks
