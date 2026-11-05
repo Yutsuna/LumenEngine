@@ -1,9 +1,8 @@
 /// @file Benchmarks.hpp
-/// @brief Umbrella header of the Lumen benchmark library.
+/// @brief Lumen benchmark all included.
 ///
 /// @code
 /// #include <Benchmarks/Benchmarks.hpp>
-/// #include <cstring>
 ///
 /// using namespace Lumen::Benchmarks;
 ///
