@@ -320,7 +320,7 @@ namespace Benchmarks
         {
             if ( Metadata->Arguments.empty() )
             {
-                Plan.push_back( FPlannedRun{ .Metadata = Metadata } );
+                Plan.push_back( FPlannedRun{ .Metadata = Metadata, .Argument = TOptional<Int64>{} } );
                 continue;
             }
 
