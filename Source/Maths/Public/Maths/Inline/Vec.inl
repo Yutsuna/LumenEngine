@@ -61,7 +61,7 @@ namespace Maths
         requires( sizeof...( Arguments ) == Dimension && ( std::is_convertible_v<Arguments, Type> && ... ) )
 
     constexpr TVec<Type, Dimension>::TVec( Arguments &&...Args ) noexcept
-        : Private::TVecData<Type, Dimension>{ { static_cast<Type>( Args )... } }
+        : Internal::TVecData<Type, Dimension>{ { static_cast<Type>( Args )... } }
     {
         /// Empty
     }

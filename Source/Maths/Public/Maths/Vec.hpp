@@ -18,7 +18,7 @@ namespace Lumen
 namespace Maths
 {
 
-    namespace Private
+    namespace Internal
     {
 
         template <typename Type, USize Dimension> struct TVecData
@@ -110,14 +110,14 @@ namespace Maths
 
 #endif
 
-    } // namespace Private
+    } // namespace Internal
 
     template <typename Type, USize Dimension>
     concept CVecDimension = Dimension > 0 and Dimension <= 4;
 
     template <typename Type, USize Dimension>
         requires CVecDimension<Type, Dimension>
-    struct MATHS_EXPORT TVec final : Private::TVecData<Type, Dimension>
+    struct MATHS_EXPORT TVec final : Internal::TVecData<Type, Dimension>
     {
         constexpr TVec () noexcept = default;
 
