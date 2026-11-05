@@ -1,19 +1,21 @@
 /// @file BenchmarkTypes.hpp
-/// @brief Defines types and structures used for benchmarking.
+/// @brief Types and structures shared by the benchmark framework.
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 #include <CoreExport.hpp>
 
 #include <String/String.hpp>
 #include <String/StringView.hpp>
 
+#include <Templates/Optional.hpp>
 #include <Templates/Vector.hpp>
 
 #include <source_location>
 
-#if defined( __OPTIMIZE__ ) || ( defined( _MSC_VER ) && !defined( _DEBUG ) )
+#if defined( __OPTIMIZE__ ) || ( defined( LUMEN_COMPILER_MSVC ) && !defined( _DEBUG ) )
     #define LUMEN_BENCHMARK_OPTIMIZED_BUILD 1
 #else
     #define LUMEN_BENCHMARK_OPTIMIZED_BUILD 0
@@ -35,11 +37,11 @@ namespace Benchmarks
     /// @enum EBenchmarkKind
     /// @brief The scale of a benchmark.
     ///
-    enum class EBenchmarkKind : UInt8
+    enum class CORE_EXPORT EBenchmarkKind : UInt8
     {
-        /// Fast -> Function, Loop, Container... Iteration is auto-calibrated.
+        /// Fast code (function, loop, container). Iterations are auto-calibrated.
         Micro,
-        /// Heavy -> Asset load, level build, frame... One iteration per sample.
+        /// Heavy code (asset load, level build, full frame). One iteration per sample.
         Macro
     };
 
@@ -47,7 +49,7 @@ namespace Benchmarks
     /// @struct FBenchmarkConfig
     /// @brief Measuring strategy of a benchmark.
     ///
-    struct FBenchmarkConfig
+    struct CORE_EXPORT FBenchmarkConfig
     {
         /// A sample must run at least this long. 0 disables calibration and uses FixedIterations.
         Float64 MinTimeSeconds{ 0.1 };
@@ -57,13 +59,14 @@ namespace Benchmarks
         UInt64 MaxIterations{ 1'000'000'000 };
         /// Number of timed samples (statistics are computed across them).
         USize Repetitions{ 10 };
-        /// Untimed runs executed before sampling (the calibration already warms Micro benchmarks up).
+        /// Untimed runs executed before sampling (calibration already warms Micro benchmarks up).
         USize WarmupRuns{ 0 };
 
-        [[nodiscard]] static constexpr FBenchmarkConfig MakeDefaultConfig ( const EBenchmarkKind Kind ) noexcept
+        /// @return The default configuration for the given benchmark kind.
+        [[nodiscard]] static constexpr FBenchmarkConfig MakeDefault ( const EBenchmarkKind InKind ) noexcept
         {
             FBenchmarkConfig Config{};
-            if ( Kind == EBenchmarkKind::Macro )
+            if ( InKind == EBenchmarkKind::Macro )
             {
                 Config.MinTimeSeconds  = 0.0;
                 Config.FixedIterations = 1;
@@ -76,9 +79,9 @@ namespace Benchmarks
 
     ///
     /// @struct FBenchmarkMetadata
-    /// @brief Descriptor holding metadata for a benchmark.
+    /// @brief Descriptor holding the registration data of a benchmark.
     ///
-    struct FBenchmarkMetadata
+    struct CORE_EXPORT FBenchmarkMetadata
     {
         FStringView SuiteName;
         FStringView BenchmarkName;
@@ -93,7 +96,7 @@ namespace Benchmarks
     /// @struct FBenchmarkStatistics
     /// @brief Distribution of the per-iteration time, across samples, in nanoseconds.
     ///
-    struct FBenchmarkStatistics
+    struct CORE_EXPORT FBenchmarkStatistics
     {
         Float64 Min{ 0.0 };
         Float64 Max{ 0.0 };
@@ -104,25 +107,24 @@ namespace Benchmarks
     };
 
     /// @brief Computes min/max/mean/median/stddev of the given samples.
+    /// @note Samples is taken by value because it is sorted in place.
     [[nodiscard]] CORE_EXPORT FBenchmarkStatistics ComputeStatistics ( TVector<Float64> Samples );
 
     /// @brief Builds "Suite.Name" or "Suite.Name/Argument".
     [[nodiscard]] CORE_EXPORT FString FormatBenchmarkName ( FStringView SuiteName,
                                                             FStringView BenchmarkName,
-                                                            Bool bHasArgument,
-                                                            Int64 Argument );
+                                                            TOptional<Int64> Argument = {} );
 
     ///
     /// @struct FBenchmarkResult
     /// @brief Outcome of one benchmark.
     ///
-    struct FBenchmarkResult
+    struct CORE_EXPORT FBenchmarkResult
     {
-        FStringView SuiteName;
-        FStringView BenchmarkName;
+        FString SuiteName;
+        FString BenchmarkName;
         EBenchmarkKind Kind{ EBenchmarkKind::Micro };
-        Bool bHasArgument{ false };
-        Int64 Argument{ 0 };
+        TOptional<Int64> Argument;
 
         /// Iterations executed inside each timed sample.
         UInt64 IterationsPerSample{ 0 };
@@ -133,15 +135,20 @@ namespace Benchmarks
         Float64 ItemsPerSecond{ 0.0 };
         Float64 BytesPerSecond{ 0.0 };
 
-        Bool bFailed{ false };
-        FString FailureMessage;
+        /// Empty when the benchmark completed successfully.
+        TOptional<FString> Failure;
+
+        [[nodiscard]] Bool Succeeded () const noexcept
+        {
+            return not Failure.HasValue();
+        }
     };
 
     ///
     /// @struct FBenchmarkRunInfo
     /// @brief Describes a run before it starts (handed to reporters).
     ///
-    struct FBenchmarkRunInfo
+    struct CORE_EXPORT FBenchmarkRunInfo
     {
         USize BenchmarkCount{ 0 };
         USize LongestNameLength{ 0 };
@@ -152,7 +159,7 @@ namespace Benchmarks
     /// @struct FBenchmarkRunSummary
     /// @brief Aggregate result of a benchmark execution pass.
     ///
-    struct FBenchmarkRunSummary
+    struct CORE_EXPORT FBenchmarkRunSummary
     {
         USize TotalExecuted{ 0 };
         USize PassedCount{ 0 };
@@ -169,18 +176,17 @@ namespace Benchmarks
     /// @struct FBenchmarkRunOptions
     /// @brief Knobs of a benchmark run.
     ///
-    struct FBenchmarkRunOptions
+    struct CORE_EXPORT FBenchmarkRunOptions
     {
         /// Wildcard (`*`, `?`) or substring filter, matched against "Suite.Name".
         FStringView SuiteFilter;
 
-        Bool bFilterByKind{ false };
-        EBenchmarkKind KindFilter{ EBenchmarkKind::Micro };
-
-        /// 0 keeps each benchmark's own repetition count.
-        USize RepetitionsOverride{ 0 };
-        /// Negative keeps each benchmark's own min time. Handy to speed up CI (e.g. 0.01).
-        Float64 MinTimeOverrideSeconds{ -1.0 };
+        /// When unset, both Micro and Macro benchmarks are executed.
+        TOptional<EBenchmarkKind> KindFilter;
+        /// When unset, each benchmark uses its own repetition count.
+        TOptional<USize> RepetitionsOverride;
+        /// When unset, each benchmark uses its own minimum sample duration.
+        TOptional<Float64> MinTimeOverrideSeconds;
 
         /// When empty, a FConsoleBenchmarkReporter is used.
         TVector<IBenchmarkReporter *> Reporters;
