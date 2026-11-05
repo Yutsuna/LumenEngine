@@ -7,6 +7,7 @@
 #include <Meta/SerializeToJSON.hpp>
 #include <Templates/Variant.hpp>
 
+#include <cmath>
 #include <format>
 #include <source_location>
 
