@@ -28,11 +28,7 @@ Lumen::EEnqueueResult Lumen::FMailBox::Push ( const FMessage &InMessage ) noexce
         return EEnqueueResult::Closed;
     }
 
-    if ( MaxMessages == 0ULL )
-    {
-        MessageCount.fetch_add( 1ULL, std::memory_order_relaxed );
-    }
-    else
+    if ( MaxMessages != 0ULL )
     {
         USize Count = MessageCount.load( std::memory_order_relaxed );
         for ( ;; )
@@ -62,7 +58,10 @@ Lumen::EEnqueueResult Lumen::FMailBox::Push ( const FMessage &InMessage ) noexce
 
     if ( NewNode == nullptr )
     {
-        MessageCount.fetch_sub( 1ULL, std::memory_order_relaxed );
+        if ( MaxMessages != 0ULL )
+        {
+            MessageCount.fetch_sub( 1ULL, std::memory_order_relaxed );
+        }
         EndOperation();
         LUMEN_LOG_ERROR( LogActor, "FMailBox::Push: failed to allocate node for new message" );
         return EEnqueueResult::AllocationFailure;
@@ -120,7 +119,10 @@ Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
         }
     }
 
-    MessageCount.fetch_sub( 1ULL, std::memory_order_relaxed );
+    if ( MaxMessages != 0ULL )
+    {
+        MessageCount.fetch_sub( 1ULL, std::memory_order_relaxed );
+    }
     EndOperation();
     return Result;
 }
