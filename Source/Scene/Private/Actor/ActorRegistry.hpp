@@ -15,34 +15,49 @@ namespace Lumen
 namespace Internal
 {
 
-    /// @details Generation history is retained for every index ever used so stale references cannot target a replacement.
-    /// Consequently, memory scales with distinct historical indices rather than active actors. Bounded slot reuse with
-    /// per-slot generations remains future scalability work.
+    ///
+    /// @class FActorRegistry
+    /// @brief Internal registry for mapping ActorIDs to AActor pointers.
+    ///
     class FActorRegistry
     {
     private:
 
+        /// @struct FActorIDHash
+        /// @brief Hash function for ActorID keys in the registry.
         struct FActorIDHash
         {
-            [[nodiscard]] USize operator()( const ActorID InId ) const noexcept
-            {
-                const UInt64 Key = ( static_cast<UInt64>( InId.Generation ) << 32U ) | InId.Index;
-                return static_cast<USize>( Key ^ ( Key >> 32U ) );
-            }
+            [[nodiscard]] USize operator()( const ActorID InId ) const noexcept;
         };
 
     public:
 
+        /// @brief Registers an AActor with the registry.
+        /// @param InActor The AActor to register.
+        /// @return The result of the registration attempt.
         static EActorRegistrationResult Register ( AActor *InActor ) noexcept;
+
+        /// @brief Unregisters an AActor from the registry.
+        /// @param InActor The AActor to unregister.
         static void Unregister ( AActor *InActor ) noexcept;
+
+        /// @brief Enqueues a message for an ActorID.
+        /// @param InId The ActorID to enqueue the message for.
+        /// @param InMessage The message to enqueue.
+        /// @return The result of the enqueue attempt.
         static EEnqueueResult EnqueueMessage ( ActorID InId, const FMessage &InMessage ) noexcept;
 
     private:
 
-        static FSharedMutex RegistryMutex;
-        static TMap<ActorID, AActor *, FActorIDHash> Actors;
-        static TMap<UInt32, UInt32> Generations;
-        static UInt32 NextIndex;
+        struct FRegistryState
+        {
+            FSharedMutex RegistryMutex;
+            TMap<ActorID, AActor *, FActorIDHash> Actors;
+            TMap<UInt32, UInt32> Generations;
+            UInt32 NextIndex = 1U;
+        };
+
+        [[nodiscard]] static FRegistryState &GetState () noexcept;
     };
 
 } // namespace Internal
