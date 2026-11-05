@@ -75,6 +75,7 @@ public:
 
     void Receive ( const FMessage & ) noexcept override
     {
+        ///
     }
 };
 
