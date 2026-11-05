@@ -23,7 +23,7 @@ constexpr Lumen::Maths::FVertex::FVertex ( const FVec3f &InPosition ) noexcept :
 
 constexpr Lumen::Bool Lumen::Maths::FVertex::operator==( const FVertex &Other ) const noexcept
 {
-    return Position == Other.Position && Normal == Other.Normal && UV == Other.UV && Tangent == Other.Tangent;
+    return Position == Other.Position and Normal == Other.Normal and UV == Other.UV and Tangent == Other.Tangent;
 }
 
 constexpr Lumen::Bool Lumen::Maths::FVertex::operator!=( const FVertex &Other ) const noexcept
