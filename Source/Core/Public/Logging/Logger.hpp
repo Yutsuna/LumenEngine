@@ -43,6 +43,7 @@ public:
 
     /// @brief Flushes a message to the console immediately without enqueuing it.
     static void Flush ( const AnsiChar *const String ) noexcept;
+    static void Flush ( const FString &String ) noexcept;
 
 public:
 

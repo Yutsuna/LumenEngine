@@ -148,6 +148,11 @@ void FLogger::Flush ( const AnsiChar *const String ) noexcept
     WriteStdout( String, std::char_traits<AnsiChar>::length( String ) );
 }
 
+void FLogger::Flush ( const FString &String ) noexcept
+{
+    Flush( String.c_str() );
+}
+
 FLogger::~FLogger ()
 {
     Shutdown();
