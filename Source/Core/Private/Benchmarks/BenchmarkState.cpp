@@ -103,7 +103,7 @@ Lumen::UInt64 Lumen::Benchmarks::FBenchmarkState::GetExecutedIterations () const
     return Executed;
 }
 
-Int64 Lumen::Benchmarks::FBenchmarkState::GetArgument () const noexcept
+Lumen::Int64 Lumen::Benchmarks::FBenchmarkState::GetArgument () const noexcept
 {
     return Argument.ValueOr( 0 );
 }
