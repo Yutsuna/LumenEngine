@@ -3,6 +3,10 @@
 
 #include <Benchmarks/BenchmarkState.hpp>
 
+#include <HAL/PlatformTime.hpp>
+
+#include <utility>
+
 ///
 /// FIterator
 ///
@@ -38,12 +42,10 @@ Lumen::Bool Lumen::Benchmarks::FBenchmarkState::FIterator::operator!=( std::defa
 /// FBenchmarkState
 ///
 
-Lumen::Benchmarks::FBenchmarkState::FBenchmarkState ( const UInt64 InIterations,
-                                                      const Bool bInHasArgument,
-                                                      const Int64 InArgument ) noexcept
-    : Iterations{ InIterations }, Argument{ InArgument }, bHasArgument{ bInHasArgument }
+Lumen::Benchmarks::FBenchmarkState::FBenchmarkState ( const UInt64 InIterations, TOptional<Int64> InArgument ) noexcept
+    : Iterations{ InIterations }, Argument{ std::move( InArgument ) }
 {
-    /// Empty
+    ///
 }
 
 Lumen::Benchmarks::FBenchmarkState::FIterator
@@ -53,7 +55,7 @@ Lumen::Benchmarks::FBenchmarkState::begin () noexcept /// NOLINT(readability-ide
     return FIterator{ *this, Iterations };
 }
 
-std::default_sentinel_t Lumen::Benchmarks::FBenchmarkState::end () const noexcept /// NOLINT(readability-*)
+std::default_sentinel_t Lumen::Benchmarks::FBenchmarkState::end () const noexcept /// NOLINT(readability-identifier-naming)
 {
     return {};
 }
@@ -101,19 +103,19 @@ Lumen::UInt64 Lumen::Benchmarks::FBenchmarkState::GetExecutedIterations () const
     return Executed;
 }
 
-Lumen::Int64 Lumen::Benchmarks::FBenchmarkState::GetArgument () const noexcept
+Int64 Lumen::Benchmarks::FBenchmarkState::GetArgument () const noexcept
 {
-    return Argument;
+    return Argument.ValueOr( 0 );
 }
 
 Lumen::Bool Lumen::Benchmarks::FBenchmarkState::HasArgument () const noexcept
 {
-    return bHasArgument;
+    return Argument.HasValue();
 }
 
 Lumen::Float64 Lumen::Benchmarks::FBenchmarkState::GetElapsedSeconds () const noexcept
 {
-    return std::chrono::duration<Float64>( Accumulated ).count();
+    return Accumulated;
 }
 
 Lumen::UInt64 Lumen::Benchmarks::FBenchmarkState::GetItemsPerIteration () const noexcept
@@ -134,7 +136,7 @@ void Lumen::Benchmarks::FBenchmarkState::StartTimer () noexcept
 {
     if ( not bTimerRunning )
     {
-        StartPoint    = FClock::now();
+        StartTime     = HAL::FPlatformTime::Seconds();
         bTimerRunning = true;
     }
 }
@@ -143,7 +145,7 @@ void Lumen::Benchmarks::FBenchmarkState::StopTimer () noexcept
 {
     if ( bTimerRunning )
     {
-        Accumulated += FClock::now() - StartPoint;
+        Accumulated += HAL::FPlatformTime::Seconds() - StartTime;
         bTimerRunning = false;
     }
 }
@@ -151,5 +153,5 @@ void Lumen::Benchmarks::FBenchmarkState::StopTimer () noexcept
 void Lumen::Benchmarks::FBenchmarkState::EndLoop ( const UInt64 InRemaining ) noexcept
 {
     StopTimer();
-    Executed = Iterations - InRemaining;
+    Executed = InRemaining <= Iterations ? Iterations - InRemaining : 0;
 }
