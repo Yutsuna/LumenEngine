@@ -25,15 +25,17 @@ void Lumen::AActor::ProcessMailbox ( const UInt32 InMaxMessages ) noexcept
 {
     UInt32 ProcessedCount = 0U;
 
-    for ( TOptional<FMessage> Message = Mailbox.Pop(); Message.HasValue(); Message.Emplace( *Mailbox.Pop() ) )
+    while ( InMaxMessages == 0U or ProcessedCount < InMaxMessages )
     {
-        Receive( *Message );
-        ++ProcessedCount;
+        TOptional<FMessage> Message = Mailbox.Pop();
 
-        if ( InMaxMessages > 0U and ProcessedCount >= InMaxMessages )
+        if ( not Message.HasValue() )
         {
             break;
         }
+
+        Receive( *Message );
+        ++ProcessedCount;
     }
 }
 
