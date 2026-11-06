@@ -118,9 +118,9 @@ template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::Sw
     - INFO:
     -   Acquire -> synchronizes with the writer's release CAS
     -              Buffers[new ReaderIndex] is fully visible
-    
+
     -   Release -> publishes that this reader is done with its old slot
-    
+
      */
     while ( not BufferFlags.compare_exchange_weak( CurrentFlags, SwapReadWithTempFlags( CurrentFlags ), std::memory_order_acq_rel,
                                                    std::memory_order_relaxed ) )

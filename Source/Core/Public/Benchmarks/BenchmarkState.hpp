@@ -23,7 +23,7 @@ namespace Benchmarks
     /**
     - @class FBenchmarkState
     - @brief Controls the measured loop of a benchmark.
-    
+
     - @code
     - for ( auto _ : State )
     - {
