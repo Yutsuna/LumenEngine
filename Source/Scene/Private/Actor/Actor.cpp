@@ -3,8 +3,8 @@
  * @brief AActor base class implementation for Lumen.
  */
 
-#include "ActorRegistry.hpp"
 #include <Actor/Actor.hpp>
+#include <Actor/ActorRegistry.hpp>
 
 Lumen::AActor::AActor ( ActorID InId ) noexcept : Id( InId )
 {
