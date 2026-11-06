@@ -3,8 +3,8 @@
  * @brief Implementation of actor types.
  */
 
-#include "ActorRegistry.hpp"
 #include <Actor/Actor.hpp>
+#include <Actor/ActorRegistry.hpp>
 
 const Lumen::FLogCategory Lumen::LogActor( "Actor" );
 
