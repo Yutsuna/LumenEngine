@@ -1,5 +1,7 @@
-/// @file TestRunner.cpp
-/// @brief Standard entry-point for Lumen module unit test suites.
+/*
+- @file TestRunner.cpp
+- @brief Standard entry-point for Lumen module unit test suites.
+ */
 
 #include <Tests/UnitTest.hpp>
 

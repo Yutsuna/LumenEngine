@@ -1,7 +1,7 @@
-///
-/// @file LoggingCategory.hpp
-/// @brief Definition of the FLogCategory struct, which represents a logging category.
-///
+/**
+- @file LoggingCategory.hpp
+- @brief Definition of the FLogCategory struct, which represents a logging category.
+ */
 
 #pragma once
 

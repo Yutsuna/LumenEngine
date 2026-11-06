@@ -1,6 +1,6 @@
-///
-/// @file SPMCQueue.cpp
-/// @brief SPMC Queue implementation.
-///
+/**
+- @file SPMCQueue.cpp
+- @brief SPMC Queue implementation.
+ */
 
 #include <Thread/SPMCQueue.hpp>

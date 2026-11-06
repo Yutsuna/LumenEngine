@@ -1,5 +1,7 @@
-/// @file ExpectedTests.cpp
-/// @brief Unit tests for TExpected class
+/*
+- @file ExpectedTests.cpp
+- @brief Unit tests for TExpected class
+ */
 
 #include <Concepts/SameAs.hpp>
 #include <String/String.hpp>
@@ -384,9 +386,9 @@ LUMEN_TEST( Expected_Rebind, TypeAlias )
         Concepts::CSameAs<TExpected<Int32, EExpectedTestError>::Rebind<FString>, TExpected<FString, EExpectedTestError>> );
 }
 
-///
-/// TExpected<void, ErrorType> specialization tests
-///
+/**
+- TExpected<void, ErrorType> specialization tests
+ */
 
 LUMEN_TEST( ExpectedVoid_Constructor, Default )
 {

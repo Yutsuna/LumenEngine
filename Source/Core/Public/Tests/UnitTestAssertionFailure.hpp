@@ -1,5 +1,7 @@
-/// @file UnitTestAssertionFailure.hpp
-/// @brief Exception raised upon an unrecoverable assertion checkpoint failure.
+/*
+- @file UnitTestAssertionFailure.hpp
+- @brief Exception raised upon an unrecoverable assertion checkpoint failure.
+ */
 
 #pragma once
 
@@ -16,10 +18,10 @@ namespace Lumen
 
 namespace Tests
 {
-    ///
-    /// @class FUnitTestAssertionFailure
-    /// @brief Exception raised upon an unrecoverable assertion checkpoint failure.
-    ///
+    /**
+    - @class FUnitTestAssertionFailure
+    - @brief Exception raised upon an unrecoverable assertion checkpoint failure.
+     */
     class CORE_EXPORT FUnitTestAssertionFailure final : public std::exception
     {
     public:

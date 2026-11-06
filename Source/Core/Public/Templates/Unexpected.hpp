@@ -1,5 +1,7 @@
-/// @file Unexpected.hpp
-/// @brief Definition of TUnexpected class
+/*
+- @file Unexpected.hpp
+- @brief Definition of TUnexpected class
+ */
 
 #pragma once
 
@@ -10,10 +12,10 @@
 namespace Lumen
 {
 
-///
-/// @struct FUnexpect
-/// @brief Wrapper to encapsulate explicit error
-///
+/**
+- @struct FUnexpect
+- @brief Wrapper to encapsulate explicit error
+ */
 struct FUnexpect
 {
     constexpr explicit FUnexpect () = default;
@@ -21,10 +23,10 @@ struct FUnexpect
 
 inline constexpr FUnexpect Unexpect{};
 
-///
-/// @class TUnexpected
-/// @brief Wrapper to encapsulate explicit error
-///
+/**
+- @class TUnexpected
+- @brief Wrapper to encapsulate explicit error
+ */
 template <class ErrorType> class TUnexpected
 {
 
@@ -32,19 +34,19 @@ public:
 
     constexpr explicit TUnexpected ( const ErrorType &InError ) noexcept : Err( InError )
     {
-        /// Empty
+        /** Empty */
     }
 
     constexpr explicit TUnexpected ( ErrorType &&InError ) noexcept : Err( std::move( InError ) )
     {
-        /// Empty
+        /** Empty */
     }
 
     template <class... Args>
         requires Concepts::CConstructibleFrom<ErrorType, Args...>
     constexpr explicit TUnexpected( std::in_place_t, Args &&...InArgs ) noexcept : Err( std::forward<Args>( InArgs )... )
     {
-        /// Empty
+        /** Empty */
     }
 
     constexpr decltype( auto ) Error ( this auto &&Self ) noexcept
@@ -62,10 +64,10 @@ private:
     ErrorType Err;
 };
 
-/// @brief Deduction guide for TUnexpected
+/** @brief Deduction guide for TUnexpected */
 template <class ErrorType> TUnexpected( ErrorType ) noexcept -> TUnexpected<ErrorType>;
 
-/// @brief Helper function to create a TUnexpected
+/** @brief Helper function to create a TUnexpected */
 template <class ErrorType>
 [[nodiscard]] constexpr TUnexpected<std::decay_t<ErrorType>> MakeUnexpected ( ErrorType &&InError ) noexcept
 {

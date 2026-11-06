@@ -1,5 +1,7 @@
-/// @file MutexTests.cpp
-/// @brief Functional tests for FMutex, TLockGuard, TUniqueLock.
+/*
+- @file MutexTests.cpp
+- @brief Functional tests for FMutex, TLockGuard, TUniqueLock.
+ */
 
 #include <HAL/Mutex.hpp>
 #include <Tests/UnitTest.hpp>
@@ -14,9 +16,9 @@ using namespace std::chrono_literals;
 namespace Lumen
 {
 
-///
-/// initial state
-///
+/**
+- initial state
+ */
 
 LUMEN_TEST( Mutex_State, DefaultUnlocked )
 {
@@ -26,9 +28,9 @@ LUMEN_TEST( Mutex_State, DefaultUnlocked )
     LUMEN_CHECK_FALSE( static_cast<Bool>( Mutex ) );
 }
 
-///
-/// Lock / Unlock
-///
+/**
+- Lock / Unlock
+ */
 
 LUMEN_TEST( Mutex_LockUnlock, BasicRoundTrip )
 {
@@ -68,9 +70,9 @@ LUMEN_TEST( Mutex_LockUnlock, OperatorBoolReflectsState )
     LUMEN_CHECK_FALSE( static_cast<Bool>( Mutex ) );
 }
 
-///
-/// TryLock
-///
+/**
+- TryLock
+ */
 
 LUMEN_TEST( Mutex_TryLock, SucceedsWhenFree )
 {
@@ -103,9 +105,9 @@ LUMEN_TEST( Mutex_TryLock, SucceedsAfterUnlock )
     Mutex.Unlock();
 }
 
-///
-/// FMutex IMutex lowercase compatibility surface
-///
+/**
+- FMutex IMutex lowercase compatibility surface
+ */
 
 LUMEN_TEST( Mutex_IMutex, LowercaseLockUnlock )
 {
@@ -129,9 +131,9 @@ LUMEN_TEST( Mutex_IMutex, LowercaseTryLock )
     LUMEN_CHECK_FALSE( Mutex.IsLocked() );
 }
 
-///
-/// TLockGuard RAII
-///
+/**
+- TLockGuard RAII
+ */
 
 LUMEN_TEST( LockGuard_RAII, LocksOnConstructionReleasesOnDestruction )
 {
@@ -167,9 +169,9 @@ LUMEN_TEST( LockGuard_RAII, NestedGuardsOnDifferentMutexes )
     LUMEN_CHECK_FALSE( MutexB.IsLocked() );
 }
 
-///
-/// TUniqueLock construction
-///
+/**
+- TUniqueLock construction
+ */
 
 LUMEN_TEST( UniqueLock, DefaultConstructionIsEmpty )
 {
@@ -200,9 +202,9 @@ LUMEN_TEST( UniqueLock, DestructorReleases )
     LUMEN_CHECK_FALSE( Mutex.IsLocked() );
 }
 
-///
-/// TUniqueLock manual control
-///
+/**
+- TUniqueLock manual control
+ */
 
 LUMEN_TEST( UniqueLock, ManualUnlock )
 {
@@ -238,9 +240,9 @@ LUMEN_TEST( UniqueLock, LockOnNullIsNoOp )
     LUMEN_CHECK_FALSE( Lock.IsLocked() );
 }
 
-///
-/// TUniqueLock TryLock
-///
+/**
+- TUniqueLock TryLock
+ */
 
 LUMEN_TEST( UniqueLock, TryLockWithoutMutexFails )
 {
@@ -274,9 +276,9 @@ LUMEN_TEST( UniqueLock, TryLockFailsWhenAlreadyHeld )
     Mutex.Unlock();
 }
 
-///
-/// TUniqueLock operator Bool
-///
+/**
+- TUniqueLock operator Bool
+ */
 
 LUMEN_TEST( UniqueLock, OperatorBool )
 {
@@ -289,9 +291,9 @@ LUMEN_TEST( UniqueLock, OperatorBool )
     LUMEN_CHECK_FALSE( static_cast<Bool>( Lock ) );
 }
 
-///
-/// Multithreading
-///
+/**
+- Multithreading
+ */
 
 LUMEN_TEST( Mutex_Threading, LockBlocksSecondThread )
 {

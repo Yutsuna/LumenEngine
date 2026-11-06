@@ -1,5 +1,7 @@
-/// @file SerializeToJSON.inl
-/// @brief Inline implementations for SerializeToJSON.
+/*
+- @file SerializeToJSON.inl
+- @brief Inline implementations for SerializeToJSON.
+ */
 
 #pragma once
 

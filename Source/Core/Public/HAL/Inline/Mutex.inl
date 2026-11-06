@@ -1,7 +1,7 @@
-///
-/// @file Mutex.inl
-/// @brief Inline implementation for the FMutex class.
-///
+/**
+- @file Mutex.inl
+- @brief Inline implementation for the FMutex class.
+ */
 
 #pragma once
 
@@ -22,9 +22,9 @@ template <typename MutexType> TLockGuard<MutexType>::~TLockGuard() noexcept
     Mutex.Unlock();
 }
 
-///
-/// TUniqueLock Implementation
-///
+/**
+- TUniqueLock Implementation
+ */
 
 template <typename MutexType> TUniqueLock<MutexType>::TUniqueLock( MutexType &InMutex ) noexcept : Mutex( &InMutex )
 {
@@ -43,7 +43,7 @@ template <typename MutexType>
 TUniqueLock<MutexType>::TUniqueLock( TUniqueLock &&InOther ) noexcept
     : Mutex( std::exchange<MutexType>( InOther.Mutex, nullptr ) ), bIsLocked( std::exchange<Bool>( InOther.bIsLocked, false ) )
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename MutexType> TUniqueLock<MutexType> &TUniqueLock<MutexType>::operator=( TUniqueLock &&InOther ) noexcept

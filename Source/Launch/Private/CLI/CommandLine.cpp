@@ -1,7 +1,7 @@
-///
-/// @file CommandLine.cpp
-/// @brief FCommandLine implementation.
-///
+/**
+- @file CommandLine.cpp
+- @brief FCommandLine implementation.
+ */
 
 #include <CLI/CommandLine.hpp>
 #include <String/StringUtils.hpp>

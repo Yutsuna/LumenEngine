@@ -1,5 +1,7 @@
-/// @file LinuxWindow.cpp
-/// @brief Implementation of the FLinuxWindow class for Linux-specific window management.
+/*
+- @file LinuxWindow.cpp
+- @brief Implementation of the FLinuxWindow class for Linux-specific window management.
+ */
 
 #include <Linux/LinuxWindow.hpp>
 #include <SDL3/SDL_video.h>
@@ -33,7 +35,7 @@ inline SDL_WindowFlags GetSDLWindowFlags ( const Lumen::TSharedRef<Lumen::FGener
     {
     case Lumen::EWindowMode::Windowed:
     {
-        /// NOTE: Default SDL window mode. No additional flag required.
+        /** NOTE: Default SDL window mode. No additional flag required. */
         break;
     }
 
@@ -58,18 +60,18 @@ inline SDL_WindowFlags GetSDLWindowFlags ( const Lumen::TSharedRef<Lumen::FGener
 
 } // namespace
 
-///
-/// Public
-///
+/**
+- Public
+ */
 
 Lumen::FLinuxWindow::~FLinuxWindow () noexcept
 {
     this->FLinuxWindow::Destroy();
 }
 
-///
-/// Static
-///
+/**
+- Static
+ */
 
 Lumen::TSharedRef<Lumen::FLinuxWindow> Lumen::FLinuxWindow::Make ()
 {
@@ -85,7 +87,7 @@ void Lumen::FLinuxWindow::Initialize ( FLinuxApplication *InApplication,
     Description      = InDescription;
     ParentWindow     = InParentWindow;
 
-    /// TODO: make this parametrable
+    /** TODO: make this parametrable */
     const SDL_WindowFlags WindowBackendAPI = SDL_WINDOW_VULKAN;
     const SDL_WindowFlags WindowFlags      = GetSDLWindowFlags( InDescription, bShowImmediately, WindowBackendAPI );
 
@@ -100,9 +102,9 @@ void Lumen::FLinuxWindow::Initialize ( FLinuxApplication *InApplication,
     SDL_SetWindowPosition( WindowHandle, InDescription->Position.X, InDescription->Position.Y );
 }
 
-///
-/// Public
-///
+/**
+- Public
+ */
 
 void Lumen::FLinuxWindow::Destroy () noexcept
 {
@@ -151,51 +153,51 @@ void Lumen::FLinuxWindow::Hide () noexcept
 
 void Lumen::FLinuxWindow::SetWindowMode ( EWindowMode::Type LUMEN_UNUSED InWindowMode ) noexcept
 {
-    /// TODO
+    /** TODO */
 }
 
 Lumen::EWindowMode::Type Lumen::FLinuxWindow::GetWindowMode () const noexcept
 {
-    /// TODO
+    /** TODO */
     return EWindowMode::Windowed;
 }
 
 Lumen::Bool Lumen::FLinuxWindow::IsMaximized () const noexcept
 {
-    /// TODO
+    /** TODO */
     return false;
 }
 
 Lumen::Bool Lumen::FLinuxWindow::IsMinimized () const noexcept
 {
-    /// TODO
+    /** TODO */
     return false;
 }
 
 void Lumen::FLinuxWindow::SetWindowFocus () noexcept
 {
-    /// TODO
+    /** TODO */
 }
 
 void Lumen::FLinuxWindow::SetOpacity ( Float32 LUMEN_UNUSED InOpacity ) noexcept
 {
-    /// TODO
+    /** TODO */
 }
 
 void Lumen::FLinuxWindow::EnableInput ( Bool LUMEN_UNUSED bEnable ) noexcept
 {
-    /// TODO
+    /** TODO */
 }
 
 Lumen::Int32 Lumen::FLinuxWindow::GetOSWindowBorderSize () const noexcept
 {
-    /// TODO
+    /** TODO */
     return 0;
 }
 
 Lumen::Int32 Lumen::FLinuxWindow::GetOSWindowTitleBarSize () const noexcept
 {
-    /// TODO
+    /** TODO */
     return 0;
 }
 
@@ -217,13 +219,13 @@ SDL_Window *Lumen::FLinuxWindow::GetOSWindowHandle () const noexcept
 
 Lumen::Bool Lumen::FLinuxWindow::IsForegroundWindow () const noexcept
 {
-    /// TODO
+    /** TODO */
     return false;
 }
 
 void Lumen::FLinuxWindow::SetWindowTitle ( LUMEN_UNUSED const AnsiChar *const InText ) noexcept
 {
-    /// TODO
+    /** TODO */
 }
 
 #endif

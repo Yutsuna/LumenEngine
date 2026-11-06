@@ -1,5 +1,7 @@
-/// @file UnitTestsAssert.hpp
-/// @brief Assertion functions and macros for Lumen unit tests.
+/*
+- @file UnitTestsAssert.hpp
+- @brief Assertion functions and macros for Lumen unit tests.
+ */
 
 #pragma once
 
@@ -42,9 +44,9 @@ namespace Tests
         }
     }
 
-    ///
-    /// @brief Asserts that two expressions are equal.
-    ///
+    /**
+    - @brief Asserts that two expressions are equal.
+     */
     template <typename TLeft, typename TRight>
     void AssertEqual ( const TLeft &Left,
                        const TRight &Right,
@@ -69,9 +71,9 @@ namespace Tests
         }
     }
 
-    ///
-    /// @brief Asserts that two expressions are not equal.
-    ///
+    /**
+    - @brief Asserts that two expressions are not equal.
+     */
     template <typename TLeft, typename TRight>
     void AssertNotEqual ( const TLeft &Left,
                           const TRight &Right,

@@ -1,5 +1,7 @@
-/// @file BenchmarkReporter.cpp
-/// @brief Console, JSON and debug benchmark reporters.
+/*
+- @file BenchmarkReporter.cpp
+- @brief Console, JSON and debug benchmark reporters.
+ */
 
 #include <Benchmarks/BenchmarkReporter.hpp>
 
@@ -108,10 +110,10 @@ namespace Benchmarks
             return Throughput;
         }
 
-        ///
-        /// @struct FBenchmarkReport
-        /// @brief Stable top-level JSON document written by FJsonBenchmarkReporter.
-        ///
+        /**
+        - @struct FBenchmarkReport
+        - @brief Stable top-level JSON document written by FJsonBenchmarkReporter.
+         */
         struct FBenchmarkReport
         {
             Bool bOptimized{ true };
@@ -182,7 +184,7 @@ namespace Benchmarks
 
     FJsonBenchmarkReporter::FJsonBenchmarkReporter ( FString InOutputPath ) : OutputPath{ std::move( InOutputPath ) }
     {
-        ///
+        /** */
     }
 
     void FJsonBenchmarkReporter::OnRunStarted ( const FBenchmarkRunInfo &Info )

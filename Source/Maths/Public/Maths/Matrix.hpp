@@ -1,7 +1,7 @@
-///
-/// @file Matrix.hpp
-/// @brief Lumen column-major matrix
-///
+/**
+- @file Matrix.hpp
+- @brief Lumen column-major matrix
+ */
 
 #pragma once
 
@@ -28,13 +28,13 @@ namespace Maths
 
     } // namespace Concepts
 
-    ///
-    /// @struct TMatrix
-    /// @brief A column-major matrix template
-    /// @tparam Type The scalar type (Float32, Float64...)
-    /// @tparam Rows Number of rows
-    /// @tparam Columns Number of columns
-    ///
+    /**
+    - @struct TMatrix
+    - @brief A column-major matrix template
+    - @tparam Type The scalar type (Float32, Float64...)
+    - @tparam Rows Number of rows
+    - @tparam Columns Number of columns
+     */
     template <typename Type, USize Rows, USize Columns>
         requires Concepts::CMatrixDimension<Rows, Columns>
     struct TMatrix final
@@ -100,9 +100,9 @@ namespace Maths
             requires Concepts::CSquareMatrix<4, 4>;
     };
 
-    ///
-    /// Operators
-    ///
+    /**
+    - Operators
+     */
 
     template <typename Type, USize Rows, USize Inner, USize Columns>
     [[nodiscard]] constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Inner> &Left,
@@ -124,9 +124,9 @@ namespace Maths
     [[nodiscard]] constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Columns> &Left,
                                                                     const Type Scalar ) noexcept;
 
-    ///
-    /// Aliases
-    ///
+    /**
+    - Aliases
+     */
 
     using FMatrix2x2f = TMatrix<Float32, 2, 2>;
     using FMatrix3x3f = TMatrix<Float32, 3, 3>;
@@ -136,14 +136,14 @@ namespace Maths
     using FMatrix3x3d = TMatrix<Float64, 3, 3>;
     using FMatrix4x4d = TMatrix<Float64, 4, 4>;
 
-    ///
-    /// @brief Transform an axis-aligned bounding box by a matrix using Arvo's method.
-    /// @param LocalMin The minimum corner of the local-space AABB.
-    /// @param LocalMax The maximum corner of the local-space AABB.
-    /// @param Transform The transform to apply.
-    /// @param OutWorldMin The minimum corner of the transformed AABB.
-    /// @param OutWorldMax The maximum corner of the transformed AABB.
-    ///
+    /**
+    - @brief Transform an axis-aligned bounding box by a matrix using Arvo's method.
+    - @param LocalMin The minimum corner of the local-space AABB.
+    - @param LocalMax The maximum corner of the local-space AABB.
+    - @param Transform The transform to apply.
+    - @param OutWorldMin The minimum corner of the transformed AABB.
+    - @param OutWorldMax The maximum corner of the transformed AABB.
+     */
     MATHS_EXPORT void TransformAABB ( const FVec3f &LocalMin,
                                       const FVec3f &LocalMax,
                                       const FMatrix4x4f &Transform,

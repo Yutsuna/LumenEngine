@@ -1,7 +1,7 @@
-///
-/// @file LaunchEngineLoop.cpp
-/// @brief Launch::FLaunchEngineLoop implementation.
-///
+/**
+- @file LaunchEngineLoop.cpp
+- @brief Launch::FLaunchEngineLoop implementation.
+ */
 
 #include <Engine/LaunchEngineConfig.hpp>
 #include <Engine/LaunchEngineConfigParser.hpp>
@@ -42,7 +42,7 @@ namespace
 
 Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit ( const FCommandLine &InCommandLine ) noexcept
 {
-    /// INFO: Initialize the clock epoch now so that no later measurement pays for its lazy initialization.
+    /** INFO: Initialize the clock epoch now so that no later measurement pays for its lazy initialization. */
     ( void )HAL::FPlatformTime::Seconds();
 
     LUMEN_LOG_VERBOSE( LogEngineLoop, "Starting '{}' ({} arguments)", InCommandLine.GetProgramName(),

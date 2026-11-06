@@ -1,5 +1,7 @@
-/// @file String.hpp
-/// @brief FString class declaration
+/*
+- @file String.hpp
+- @brief FString class declaration
+ */
 
 #pragma once
 
@@ -7,7 +9,7 @@
 
 namespace Lumen
 {
-/// TODO: Implement real FString
+/** TODO: Implement real FString */
 using FString = std::string;
 
 } // namespace Lumen

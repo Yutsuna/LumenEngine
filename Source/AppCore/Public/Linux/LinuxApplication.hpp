@@ -1,5 +1,7 @@
-/// @file LinuxApplication.hpp
-/// @brief Declaration of the FLinuxApplication class for Linux-specific application management.
+/*
+- @file LinuxApplication.hpp
+- @brief Declaration of the FLinuxApplication class for Linux-specific application management.
+ */
 
 #pragma once
 
@@ -30,13 +32,13 @@ public:
 
 public:
 
-    /// @brief Polls SDL Messages
+    /** @brief Polls SDL Messages */
     void PumpMessages ( Float64 DeltaTime ) noexcept override;
 
-    /// @brief Creates a new Linux window
+    /** @brief Creates a new Linux window */
     [[nodiscard]] TSharedRef<FGenericWindow> MakeWindow () override;
 
-    /// @brief Initialize a Linux window with the given parameters
+    /** @brief Initialize a Linux window with the given parameters */
     void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
                             const TSharedRef<FGenericWindowDescription> &InDescription,
                             const TSharedPtr<FGenericWindow> &InParentWindow,
@@ -44,17 +46,17 @@ public:
 
     void AddPendingEvent ( const SDL_Event &InEvent ) noexcept;
 
-    /// @brief Shuts down the application.
+    /** @brief Shuts down the application. */
     void Shutdown () noexcept override;
 
 public:
 
-    /// @brief Factory to create the Application instance
+    /** @brief Factory to create the Application instance */
     [[nodiscard]] static TSharedPtr<FGenericApplication> MakeLinuxApplication () noexcept;
 
 private:
 
-    /// @brief helper function to find a window by its SDL Window ID
+    /** @brief helper function to find a window by its SDL Window ID */
     [[nodiscard]] TSharedPtr<FLinuxWindow> FindWindowByID ( SDL_WindowID InWindowID ) const noexcept;
 
 private:

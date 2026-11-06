@@ -1,5 +1,7 @@
-/// @file BenchmarkOptimizer.hpp
-/// @brief Optimizer barriers keeping the compiler from deleting the code under measurement.
+/*
+- @file BenchmarkOptimizer.hpp
+- @brief Optimizer barriers keeping the compiler from deleting the code under measurement.
+ */
 
 #pragma once
 
@@ -14,13 +16,13 @@ namespace Benchmarks
 
 #if defined( LUMEN_COMPILER_CLANG ) || defined( LUMEN_COMPILER_GCC )
 
-    /// @brief Forces Value to be considered "used".
+    /** @brief Forces Value to be considered "used". */
     template <typename TObject> LUMEN_FORCE_INLINE void DoNotOptimize ( const TObject &Value ) noexcept
     {
         __asm__ volatile( "" : : "r,m"( Value ) : "memory" ); /// NOLINT(hicpp-no-assembler)
     }
 
-    /// @brief Forces Value to be considered "used" and potentially modified.
+    /** @brief Forces Value to be considered "used" and potentially modified. */
     template <typename TObject> LUMEN_FORCE_INLINE void DoNotOptimize ( TObject &Value ) noexcept
     {
     #if defined( LUMEN_COMPILER_CLANG )
@@ -30,7 +32,7 @@ namespace Benchmarks
     #endif
     }
 
-    /// @brief Forces all pending memory writes to be considered visible.
+    /** @brief Forces all pending memory writes to be considered visible. */
     LUMEN_FORCE_INLINE void ClobberMemory () noexcept
     {
         __asm__ volatile( "" : : : "memory" ); /// NOLINT(hicpp-no-assembler)
@@ -43,14 +45,14 @@ namespace Benchmarks
         inline const volatile void *volatile GBenchmarkSink = nullptr;
     } // namespace Internal
 
-    /// @brief Forces Value to be considered "used".
+    /** @brief Forces Value to be considered "used". */
     template <typename TObject> LUMEN_FORCE_INLINE void DoNotOptimize ( TObject &&Value ) noexcept
     {
         Internal::GBenchmarkSink = std::addressof( Value );
         std::atomic_signal_fence( std::memory_order_seq_cst );
     }
 
-    /// @brief Forces all pending memory writes to be considered visible.
+    /** @brief Forces all pending memory writes to be considered visible. */
     LUMEN_FORCE_INLINE void ClobberMemory () noexcept
     {
         std::atomic_signal_fence( std::memory_order_seq_cst );

@@ -1,7 +1,7 @@
-///
-/// @file Mutex.hpp
-/// @brief Mutex class definition for thread synchronization.
-///
+/**
+- @file Mutex.hpp
+- @brief Mutex class definition for thread synchronization.
+ */
 
 #pragma once
 
@@ -14,10 +14,10 @@
 namespace Lumen
 {
 
-///
-/// @class FMutex
-/// @brief A highly optimized lightweight spin-mutex.
-///
+/**
+- @class FMutex
+- @brief A highly optimized lightweight spin-mutex.
+ */
 class CORE_EXPORT FMutex final : public FNonCopyable, public FNonMovable, public Internal::IMutex
 {
 public:
@@ -27,23 +27,23 @@ public:
 
 public:
 
-    /// @brief Acquires the mutex. Spins & then waits if the mutex is unavailable
+    /** @brief Acquires the mutex. Spins & then waits if the mutex is unavailable */
     void Lock () noexcept override;
 
-    /// @brief Attempts to acquire the mutex without blocking.
+    /** @brief Attempts to acquire the mutex without blocking. */
     [[nodiscard]] Bool TryLock () noexcept override;
 
-    /// @brief Releases the mutex.
+    /** @brief Releases the mutex. */
     void Unlock () noexcept override;
 
-    /// @brief Checks if the mutex is locked.
+    /** @brief Checks if the mutex is locked. */
     [[nodiscard]] Bool IsLocked () const noexcept override;
 
     [[nodiscard]] explicit operator Bool () const noexcept override;
 
 private:
 
-    /// @brief The underlying atomic flag used for locking
+    /** @brief The underlying atomic flag used for locking */
     FAtomicFlag MutexFlag = ATOMIC_FLAG_INIT;
 };
 
@@ -59,10 +59,10 @@ private:
     MutexType &Mutex;
 };
 
-///
-/// @class TUniqueLock
-/// @brief A move-only mutex ownership wrapper.
-///
+/**
+- @class TUniqueLock
+- @brief A move-only mutex ownership wrapper.
+ */
 template <typename MutexType> class TUniqueLock final : public FNonCopyable, public Internal::IMutex
 {
 public:
@@ -80,7 +80,7 @@ public:
     void Unlock () noexcept override;
     [[nodiscard]] Bool TryLock () noexcept override;
 
-    /// @brief Releases the mutex ownership without unlocking it.
+    /** @brief Releases the mutex ownership without unlocking it. */
     MutexType *Release () noexcept;
 
     [[nodiscard]] Bool IsLocked () const noexcept override;

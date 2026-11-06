@@ -1,5 +1,7 @@
-/// @file File.cpp
-/// @brief Monadic FFile helper implementations.
+/*
+- @file File.cpp
+- @brief Monadic FFile helper implementations.
+ */
 
 #include <Filesystem/File.hpp>
 #include <Filesystem/IFileSystem.hpp>

@@ -1,5 +1,7 @@
-/// @file Benchmark.cpp
-/// @brief Benchmark registry, calibration and statistics.
+/*
+- @file Benchmark.cpp
+- @brief Benchmark registry, calibration and statistics.
+ */
 
 #include <Benchmarks/Benchmark.hpp>
 

@@ -1,5 +1,7 @@
-/// @file SharedMutexTests.cpp
-/// @brief Functional tests for FSharedMutex, TSharedLock, TSharedUniqueLock.
+/*
+- @file SharedMutexTests.cpp
+- @brief Functional tests for FSharedMutex, TSharedLock, TSharedUniqueLock.
+ */
 
 #include <Core/CoreDefinitions.hpp>
 
@@ -14,9 +16,9 @@ using namespace std::chrono_literals;
 namespace Lumen
 {
 
-///
-/// initial state
-///
+/**
+- initial state
+ */
 
 LUMEN_TEST( SharedMutex_State, DefaultUnlocked )
 {
@@ -351,9 +353,9 @@ LUMEN_TEST( SharedMutex_Threading, WriterBlocksReader )
     LUMEN_CHECK_TRUE( ReaderAcquired.load( std::memory_order_acquire ) );
 }
 
-///
-/// Multithreading - readers block writer
-///
+/**
+- Multithreading - readers block writer
+ */
 
 LUMEN_TEST( SharedMutex_Threading, ReaderBlocksWriter )
 {

@@ -1,5 +1,7 @@
-/// @file LaunchEngine.hpp
-/// Launches the Lumen Engine
+/*
+- @file LaunchEngine.hpp
+- Launches the Lumen Engine
+ */
 
 #pragma once
 

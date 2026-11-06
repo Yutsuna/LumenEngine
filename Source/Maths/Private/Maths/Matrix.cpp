@@ -1,7 +1,7 @@
-///
-/// @file Matrix.cpp
-/// @brief Implementation of the Matrix struct.
-///
+/**
+- @file Matrix.cpp
+- @brief Implementation of the Matrix struct.
+ */
 
 #include <Maths/Matrix.hpp>
 
@@ -16,7 +16,7 @@ void Lumen::Maths::TransformAABB ( const FVec3f &LocalMin,
     OutWorldMin = T;
     OutWorldMax = T;
 
-    /// INFO: Use Arvo's method to compute the transformed AABB
+    /** INFO: Use Arvo's method to compute the transformed AABB */
     for ( USize Col = 0; Col < 3; ++Col )
     {
         const Float32 A = Transform[Col].Data[0] * LocalMin.Data[Col];

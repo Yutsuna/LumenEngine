@@ -1,7 +1,7 @@
-///
-/// @file Logger.inl
-/// @brief Implementation of the inline functions of the Logger class
-///
+/**
+- @file Logger.inl
+- @brief Implementation of the inline functions of the Logger class
+ */
 
 #pragma once
 

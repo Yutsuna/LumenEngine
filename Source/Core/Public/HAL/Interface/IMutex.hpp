@@ -1,7 +1,7 @@
-///
-/// @file IMutex.hpp
-/// @brief Interface for mutex types in Lumen Engine.
-///
+/**
+- @file IMutex.hpp
+- @brief Interface for mutex types in Lumen Engine.
+ */
 
 #pragma once
 
@@ -14,10 +14,10 @@ namespace Lumen
 namespace Internal
 {
 
-    ///
-    /// @interface IMutex
-    /// @brief Interface for mutex types in Lumen Engine.
-    ///
+    /**
+    - @interface IMutex
+    - @brief Interface for mutex types in Lumen Engine.
+     */
     class CORE_EXPORT IMutex
     {
     public:
@@ -26,28 +26,28 @@ namespace Internal
 
     public:
 
-        /// @brief Lock the mutex
+        /** @brief Lock the mutex */
         virtual void Lock () noexcept = 0;
 
-        /// @brief Unlock the mutex
+        /** @brief Unlock the mutex */
         virtual void Unlock () noexcept = 0;
 
     public:
 
-        /// @return True if successfully lock, otherwise false
+        /** @return True if successfully lock, otherwise false */
         [[nodiscard]] virtual Bool TryLock () noexcept = 0;
 
-        /// @brief True if the mutex is locked, otherwise false
+        /** @brief True if the mutex is locked, otherwise false */
         [[nodiscard]] virtual Bool IsLocked () const noexcept          = 0;
         [[nodiscard]] virtual explicit operator Bool () const noexcept = 0;
 
     public:
 
-        /// @brief Lock for API
+        /** @brief Lock for API */
         void lock () noexcept;
-        /// @brief Unlock for API
+        /** @brief Unlock for API */
         void unlock () noexcept;
-        /// @brief Try lock for API
+        /** @brief Try lock for API */
         [[nodiscard]] Bool try_lock () noexcept;
     };
 

@@ -1,7 +1,7 @@
-///
-/// @file Matrix.inl
-/// @brief Inline implementation of the TMatrix struct.
-///
+/**
+- @file Matrix.inl
+- @brief Inline implementation of the TMatrix struct.
+ */
 
 #pragma once
 
@@ -16,9 +16,9 @@ namespace Lumen
 namespace Maths
 {
 
-    ///
-    /// Ctors
-    ///
+    /**
+    - Ctors
+     */
 
     template <typename Type, USize Rows, USize Columns>
         requires Concepts::CMatrixDimension<Rows, Columns>
@@ -50,9 +50,9 @@ namespace Maths
         }
     }
 
-    ///
-    /// Operators
-    ///
+    /**
+    - Operators
+     */
 
     template <typename Type, USize Rows, USize Columns>
         requires Concepts::CMatrixDimension<Rows, Columns>

@@ -1,5 +1,7 @@
-/// @file UnitTest.cpp
-/// @brief Unit test framework implementation.
+/*
+- @file UnitTest.cpp
+- @brief Unit test framework implementation.
+ */
 
 #include <Tests/UnitTest.hpp>
 #include <Tests/UnitTestAssertionFailure.hpp>
@@ -24,9 +26,9 @@ namespace
 
 } // namespace
 
-///
-/// Public
-///
+/**
+- Public
+ */
 
 Tests::FUnitTestRegistry &Tests::FUnitTestRegistry::GetInstance () noexcept
 {
@@ -81,9 +83,9 @@ USize Tests::FUnitTestRegistry::GetRegisteredCount () const noexcept
     return RegisteredTests.size();
 }
 
-///
-/// Private
-///
+/**
+- Private
+ */
 
 namespace
 {

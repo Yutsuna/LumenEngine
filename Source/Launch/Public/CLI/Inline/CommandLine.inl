@@ -1,7 +1,7 @@
-///
-/// @file CommandLine.inl
-/// @brief Template definitions of FCommandLine.
-///
+/**
+- @file CommandLine.inl
+- @brief Template definitions of FCommandLine.
+ */
 
 #pragma once
 

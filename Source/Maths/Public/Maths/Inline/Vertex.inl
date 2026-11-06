@@ -1,7 +1,7 @@
-///
-/// @file Vertex.inl
-/// @brief Implementation of the FVertex struct
-///
+/**
+- @file Vertex.inl
+- @brief Implementation of the FVertex struct
+ */
 
 #pragma once
 
@@ -13,12 +13,12 @@ constexpr Lumen::Maths::FVertex::FVertex ( const FVec3f &InPosition,
                                            const FVec3f &InTangent ) noexcept
     : Position( InPosition ), Normal( InNormal ), UV( InUV ), Tangent( InTangent )
 {
-    ///
+    /** */
 }
 
 constexpr Lumen::Maths::FVertex::FVertex ( const FVec3f &InPosition ) noexcept : Position( InPosition )
 {
-    ///
+    /** */
 }
 
 constexpr Lumen::Bool Lumen::Maths::FVertex::operator==( const FVertex &Other ) const noexcept

@@ -1,7 +1,7 @@
-///
-/// @file CoreDefinitions.hpp
-/// @brief Macros and platform definitions
-///
+/**
+- @file CoreDefinitions.hpp
+- @brief Macros and platform definitions
+ */
 
 #pragma once
 

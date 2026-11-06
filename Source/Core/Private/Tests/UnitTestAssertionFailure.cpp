@@ -1,5 +1,7 @@
-/// @file UnitTestAssertionFailure.cpp
-/// @brief Unit test assertion failure implementation.
+/*
+- @file UnitTestAssertionFailure.cpp
+- @brief Unit test assertion failure implementation.
+ */
 
 #include <Tests/UnitTestAssertionFailure.hpp>
 
@@ -7,7 +9,7 @@ Lumen::Tests::FUnitTestAssertionFailure::FUnitTestAssertionFailure ( FString InM
                                                                      const std::source_location &InLocation ) noexcept
     : Message( std::move( InMessage ) ), Location( InLocation )
 {
-    /// Empty
+    /** Empty */
 }
 
 [[nodiscard]] const Lumen::AnsiChar *Lumen::Tests::FUnitTestAssertionFailure::what () const noexcept

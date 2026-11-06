@@ -1,5 +1,7 @@
-/// @file BenchmarkState.hpp
-/// @brief Benchmark state definition.
+/*
+- @file BenchmarkState.hpp
+- @brief Benchmark state definition.
+ */
 
 #pragma once
 
@@ -18,30 +20,30 @@ namespace Lumen
 namespace Benchmarks
 {
 
-    ///
-    /// @class FBenchmarkState
-    /// @brief Controls the measured loop of a benchmark.
-    ///
-    /// @code
-    /// for ( auto _ : State )
-    /// {
-    ///     // measured body
-    /// }
-    /// @endcode
-    ///
+    /**
+    - @class FBenchmarkState
+    - @brief Controls the measured loop of a benchmark.
+    
+    - @code
+    - for ( auto _ : State )
+    - {
+    -     // measured body
+    - }
+    - @endcode
+     */
     class CORE_EXPORT FBenchmarkState final : public FNonCopyable, public FNonMovable
     {
     public:
 
-        /// @brief Dummy value yielded by the loop (`for ( auto _ : State )`).
+        /** @brief Dummy value yielded by the loop (`for ( auto _ : State )`). */
         struct FIterationToken
         {
         };
 
-        ///
-        /// @class FIterator
-        /// @brief Loop iterator. Stops the timer when the loop ends, breaks, or throws.
-        ///
+        /**
+        - @class FIterator
+        - @brief Loop iterator. Stops the timer when the loop ends, breaks, or throws.
+         */
         class CORE_EXPORT FIterator final : public FNonCopyable, public FNonMovable
         {
         public:
@@ -61,7 +63,7 @@ namespace Benchmarks
 
     public:
 
-        /// @note Constructed by the benchmark runner, not by user code.
+        /** @note Constructed by the benchmark runner, not by user code. */
         explicit FBenchmarkState ( UInt64 InIterations, TOptional<Int64> InArgument = {} ) noexcept;
 
     public:
@@ -71,19 +73,19 @@ namespace Benchmarks
 
     public:
 
-        /// @brief Stops the clock.
+        /** @brief Stops the clock. */
         void PauseTiming () noexcept;
 
-        /// @brief Restarts the clock after PauseTiming().
+        /** @brief Restarts the clock after PauseTiming(). */
         void ResumeTiming () noexcept;
 
-        /// @brief Declares how many logical items one iteration processes.
+        /** @brief Declares how many logical items one iteration processes. */
         void SetItemsPerIteration ( UInt64 InItems ) noexcept;
 
-        /// @brief Declares how many bytes one iteration processes.
+        /** @brief Declares how many bytes one iteration processes. */
         void SetBytesPerIteration ( UInt64 InBytes ) noexcept;
 
-        /// @brief Called by the runner once the body returned.
+        /** @brief Called by the runner once the body returned. */
         void Finish () noexcept;
 
     public:

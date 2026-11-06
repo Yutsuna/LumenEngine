@@ -1,5 +1,7 @@
-/// @file GenericApplicationMessageHandler.hpp
-/// @brief Declaration of the FGenericApplicationMessageHandler class for handling application messages.
+/*
+- @file GenericApplicationMessageHandler.hpp
+- @brief Declaration of the FGenericApplicationMessageHandler class for handling application messages.
+ */
 
 #pragma once
 
@@ -22,54 +24,54 @@ public:
 
 public:
 
-    /// Application message handler
+    /** Application message handler */
 
-    /// @brief Called when the application is requested to exit
+    /** @brief Called when the application is requested to exit */
     virtual void OnRequestExit () noexcept;
 
-    /// @brief Called when the application is quitting
+    /** @brief Called when the application is quitting */
     virtual void OnQuit () noexcept;
 
 public:
 
-    /// Window message
+    /** Window message */
 
-    /// @brief Called when a window needs to be repainted
+    /** @brief Called when a window needs to be repainted */
     virtual void OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow ) noexcept;
 
-    /// @brief Called when a window is moved
+    /** @brief Called when a window is moved */
     virtual void OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow ) noexcept;
 
-    /// @brief Called when a window is resized
+    /** @brief Called when a window is resized */
     virtual void OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow ) noexcept;
 
-    /// @brief Called when a window activation state changes
+    /** @brief Called when a window activation state changes */
     virtual void OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow ) noexcept;
 
 public:
 
-    /// Mouse message handler
+    /** Mouse message handler */
 
-    /// @brief Called when a mouse button is pressed
+    /** @brief Called when a mouse button is pressed */
     virtual void OnMouseDown ( EMouseButton::Type InMouseButton ) noexcept;
 
-    /// @brief Called when a mouse button is released
+    /** @brief Called when a mouse button is released */
     virtual void OnMouseUp ( EMouseButton::Type InMouseButton ) noexcept;
 
-    /// @brief Called when a mouse is moved
+    /** @brief Called when a mouse is moved */
     virtual void OnMouseMove ( Int32 InX, Int32 InY ) noexcept;
 
-    /// @brief Called when the mouse wheel is scrolled
+    /** @brief Called when the mouse wheel is scrolled */
     virtual void OnMouseWheel ( Int32 InDelta ) noexcept;
 
 public:
 
-    /// Keyboard message handler
+    /** Keyboard message handler */
 
-    /// @brief Called when a key is pressed
+    /** @brief Called when a key is pressed */
     virtual void OnKeyDown ( EKeys::Type InKey, Bool bIsRepeated ) noexcept;
 
-    /// @brief Called when a key is released
+    /** @brief Called when a key is released */
     virtual void OnKeyUp ( EKeys::Type InKey, Bool bIsRepeated ) noexcept;
 };
 

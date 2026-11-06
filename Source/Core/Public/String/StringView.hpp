@@ -1,5 +1,7 @@
-/// @file StringView.hpp
-/// @brief FStringView class declaration
+/*
+- @file StringView.hpp
+- @brief FStringView class declaration
+ */
 
 #pragma once
 
@@ -8,7 +10,7 @@
 namespace Lumen
 {
 
-/// TODO: Implement real FStringView
+/** TODO: Implement real FStringView */
 using FStringView = std::string_view;
 
 } // namespace Lumen

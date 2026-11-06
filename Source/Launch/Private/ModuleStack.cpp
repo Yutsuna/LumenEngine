@@ -1,7 +1,7 @@
-///
-/// @file ModuleStack.cpp
-/// @brief FModuleStack implementation.
-///
+/**
+- @file ModuleStack.cpp
+- @brief FModuleStack implementation.
+ */
 
 #include <Launch/ModuleStack.hpp>
 
@@ -35,7 +35,7 @@ Launch::FModuleStack::~FModuleStack () noexcept
 Launch::TLaunchResult<void> Launch::FModuleStack::StartAll ( const TSpan<const FModuleDescriptor> InDescriptors,
                                                              const FLaunchEngineConfig &InConfig ) noexcept
 {
-    /// Reserve once: the push_back calls below can no longer allocate.
+    /** Reserve once: the push_back calls below can no longer allocate. */
     Modules.reserve( Modules.size() + InDescriptors.size() );
     FixedTickList.reserve( FixedTickList.size() + InDescriptors.size() );
     TickList.reserve( TickList.size() + InDescriptors.size() );
@@ -54,7 +54,7 @@ Launch::TLaunchResult<void> Launch::FModuleStack::StartAll ( const TSpan<const F
         auto Created = Descriptor.Create( InConfig );
         if ( not Created ) [[unlikely]]
         {
-            /// The error message is a static literal and cannot carry the module name: log it here.
+            /** The error message is a static literal and cannot carry the module name: log it here. */
             LUMEN_LOG_ERROR( LogModuleStack, "Module '{}' failed to start", Descriptor.Name );
             return MakeUnexpected( Created.Error() );
         }

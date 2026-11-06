@@ -1,5 +1,7 @@
-/// @file UniquePtrInternal.inl
-/// @brief Inline implementation of UniquePtrInternal namespace
+/*
+- @file UniquePtrInternal.inl
+- @brief Inline implementation of UniquePtrInternal namespace
+ */
 
 #pragma once
 
@@ -17,7 +19,7 @@ namespace UniquePtrInternal
         requires Concepts::CConvertibleTo<OtherType *, Type *>
     TDefaultDelete<Type>::TDefaultDelete( const TDefaultDelete<OtherType> & ) noexcept
     {
-        /// Empty
+        /** Empty */
     }
 
     template <typename Type> void TDefaultDelete<Type>::operator()( const Type *Ptr ) const noexcept
@@ -35,33 +37,33 @@ namespace UniquePtrInternal
 
 template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::TUniquePtr() noexcept : Object( nullptr ), DeleterInstance()
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type, typename Deleter>
 TUniquePtr<Type, Deleter>::TUniquePtr( NullPtrType ) noexcept : Object( nullptr ), DeleterInstance()
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type, typename Deleter>
 TUniquePtr<Type, Deleter>::TUniquePtr( Type *InObject ) noexcept : Object( InObject ), DeleterInstance()
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type, typename Deleter>
 TUniquePtr<Type, Deleter>::TUniquePtr( Type *InObject, Deleter InDeleter ) noexcept
     : Object( InObject ), DeleterInstance( std::move( InDeleter ) )
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type, typename Deleter>
 TUniquePtr<Type, Deleter>::TUniquePtr( TUniquePtr &&Other ) noexcept
     : Object( Other.Release() ), DeleterInstance( std::move( Other ).GetDeleter() )
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type, typename Deleter>
@@ -70,7 +72,7 @@ template <typename OtherType, typename OtherDeleter>
 TUniquePtr<Type, Deleter>::TUniquePtr( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept
     : Object( Other.Release() ), DeleterInstance( std::move( Other.DeleterInstance ) )
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::~TUniquePtr() noexcept
@@ -158,33 +160,33 @@ template <typename Type, typename Deleter> void TUniquePtr<Type, Deleter>::Reset
     }
 }
 
-///
-/// TUniquePtr<Type[]> implementation
-///
+/**
+- TUniquePtr<Type[]> implementation
+ */
 
 template <typename Type, typename Deleter>
 TUniquePtr<Type[], Deleter>::TUniquePtr() noexcept : Object( nullptr ), DeleterInstance()
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type, typename Deleter>
 TUniquePtr<Type[], Deleter>::TUniquePtr( NullPtrType ) noexcept : Object( nullptr ), DeleterInstance()
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type, typename Deleter>
 TUniquePtr<Type[], Deleter>::TUniquePtr( Type *InObject ) noexcept : Object( InObject ), DeleterInstance()
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type, typename Deleter>
 TUniquePtr<Type[], Deleter>::TUniquePtr( TUniquePtr &&Other ) noexcept
     : Object( Other.Release() ), DeleterInstance( std::move( Other ).GetDeleter() )
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::~TUniquePtr() noexcept
@@ -257,9 +259,9 @@ template <typename Type, typename Deleter> void TUniquePtr<Type[], Deleter>::Res
     }
 }
 
-///
-/// UniquePtr Builder
-///
+/**
+- UniquePtr Builder
+ */
 
 template <typename ObjectType, typename... Arguments>
     requires( not std::is_array_v<ObjectType> )

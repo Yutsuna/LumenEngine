@@ -1,5 +1,7 @@
-/// @file BenchmarkState.cpp
-/// @brief Benchmark state implementation.
+/*
+- @file BenchmarkState.cpp
+- @brief Benchmark state implementation.
+ */
 
 #include <Benchmarks/BenchmarkState.hpp>
 
@@ -7,14 +9,14 @@
 
 #include <utility>
 
-///
-/// FIterator
-///
+/**
+- FIterator
+ */
 
 Lumen::Benchmarks::FBenchmarkState::FIterator::FIterator ( FBenchmarkState &InState, const UInt64 InRemaining ) noexcept
     : State{ InState }, Remaining{ InRemaining }
 {
-    ///
+    /** */
 }
 
 Lumen::Benchmarks::FBenchmarkState::FIterator::~FIterator () noexcept
@@ -38,14 +40,14 @@ Lumen::Bool Lumen::Benchmarks::FBenchmarkState::FIterator::operator!=( std::defa
     return Remaining != 0;
 }
 
-///
-/// FBenchmarkState
-///
+/**
+- FBenchmarkState
+ */
 
 Lumen::Benchmarks::FBenchmarkState::FBenchmarkState ( const UInt64 InIterations, TOptional<Int64> InArgument ) noexcept
     : Iterations{ InIterations }, Argument{ std::move( InArgument ) }
 {
-    ///
+    /** */
 }
 
 Lumen::Benchmarks::FBenchmarkState::FIterator
@@ -60,9 +62,9 @@ std::default_sentinel_t Lumen::Benchmarks::FBenchmarkState::end () const noexcep
     return {};
 }
 
-///
-/// Timer
-///
+/**
+- Timer
+ */
 
 void Lumen::Benchmarks::FBenchmarkState::PauseTiming () noexcept
 {
@@ -89,9 +91,9 @@ void Lumen::Benchmarks::FBenchmarkState::Finish () noexcept
     StopTimer();
 }
 
-///
-/// Getters
-///
+/**
+- Getters
+ */
 
 Lumen::UInt64 Lumen::Benchmarks::FBenchmarkState::GetIterations () const noexcept
 {
@@ -128,9 +130,9 @@ Lumen::UInt64 Lumen::Benchmarks::FBenchmarkState::GetBytesPerIteration () const 
     return BytesPerIteration;
 }
 
-///
-/// Private
-///
+/**
+- Private
+ */
 
 void Lumen::Benchmarks::FBenchmarkState::StartTimer () noexcept
 {

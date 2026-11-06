@@ -1,5 +1,7 @@
-/// @file LaunchEngineConfigParser.cpp
-/// @brief Parse the Command Line then Validate the configuration.
+/*
+- @file LaunchEngineConfigParser.cpp
+- @brief Parse the Command Line then Validate the configuration.
+ */
 
 #include "Launch/LaunchError.hpp"
 #include <Engine/LaunchEngineConfig.hpp>
@@ -25,10 +27,10 @@ namespace
 
     LUMEN_LOG_DEFINE_CATEGORY( LogEngineConfigParser, "EngineConfigParser" );
 
-    /// @brief Prevents `-fixedstep=1e-9` from freezing the engine in the catch-up loop.
+    /** @brief Prevents `-fixedstep=1e-9` from freezing the engine in the catch-up loop. */
     constexpr Float64 MaxFixedStepsPerFrame = 1024.0;
 
-    /// @brief Inline buffer for a lowercased option key.
+    /** @brief Inline buffer for a lowercased option key. */
     struct FOptionKey
     {
         TArray<AnsiChar, 32> Buffer{};
@@ -40,7 +42,7 @@ namespace
         }
     };
 
-    /// @brief "MaxFrameTime" -> "maxframetime", "bHeadless" -> "headless".
+    /** @brief "MaxFrameTime" -> "maxframetime", "bHeadless" -> "headless". */
     [[nodiscard]] FOptionKey ToOptionKey ( const std::string_view InName, const Bool bIsBool ) noexcept
     {
         FOptionKey Key;
@@ -59,7 +61,7 @@ namespace
         return Key;
     }
 
-    /// @brief Meta::ForEachMember, but the callback receives the CLI key instead of the raw member name.
+    /** @brief Meta::ForEachMember, but the callback receives the CLI key instead of the raw member name. */
     template <Meta::CReflected TObject, typename TFunc>
     void ForEachConfigOption ( TObject &InObject, TFunc &&InCallback ) noexcept
     {
@@ -115,7 +117,7 @@ namespace
         return Launch::LaunchFailure( Launch::ELaunchStage::PreInit, Launch::ELaunchErrorCode::InvalidConfiguration, InMessage );
     }
 
-    /// @brief Bind each member Bool -> -switch, arithmetic -> -key=value.
+    /** @brief Bind each member Bool -> -switch, arithmetic -> -key=value. */
     [[nodiscard]] Launch::TLaunchResult<Launch::FLaunchEngineConfig>
     BindOptions ( const Launch::FCommandLine &InCommandLine, const Launch::FLaunchEngineConfig &InDefaults ) noexcept
     {

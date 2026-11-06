@@ -1,5 +1,7 @@
-/// @file Optional.hpp
-/// @brief TOptional type declaration
+/*
+- @file Optional.hpp
+- @brief TOptional type declaration
+ */
 
 #pragma once
 
@@ -15,19 +17,19 @@
 namespace Lumen
 {
 
-///
-/// @tag FEmplaceTag
-/// @brief Emplace Tag
-///
+/**
+- @tag FEmplaceTag
+- @brief Emplace Tag
+ */
 struct FEmplaceTag
 {
 };
 
-///
-/// @class TOptional
-/// @brief Optional type
-/// @tparam ValueType Type of the optional value
-///
+/**
+- @class TOptional
+- @brief Optional type
+- @tparam ValueType Type of the optional value
+ */
 template <class ValueType> class TOptional : public FMonadic
 {
 public:
@@ -36,39 +38,39 @@ public:
 
 public:
 
-    /// @brief Default constructor
+    /** @brief Default constructor */
     constexpr TOptional () noexcept : Dummy( 0 )
     {
-        /// Empty
+        /** Empty */
     }
 
-    /// @brief Copy constructor from value
+    /** @brief Copy constructor from value */
     constexpr explicit TOptional ( const ValueType &InValue ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> )
         : Value( InValue ), bHasValue( true )
     {
-        ///
+        /** */
     }
 
-    /// @brief Move constructor from value
+    /** @brief Move constructor from value */
     constexpr explicit TOptional ( ValueType &&InValue ) noexcept( std::is_nothrow_move_constructible_v<ValueType> )
         : Value( std::move( InValue ) ), bHasValue( true )
     {
-        ///
+        /** */
     }
 
-    /// @brief Emplace construction from a function
+    /** @brief Emplace construction from a function */
     template <class Function, class Arguments>
     constexpr TOptional( FEmplaceTag,
                          Function &&Func,
                          Arguments &&Args ) noexcept( std::is_nothrow_invocable_v<Function, Arguments> )
         : Value( std::invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ), bHasValue( true )
     {
-        /// Empty
+        /** Empty */
     }
 
 public:
 
-    /// @brief Copy constructor
+    /** @brief Copy constructor */
     constexpr TOptional ( const TOptional &InOptional ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> )
         requires std::copy_constructible<ValueType>
         : Dummy( 0 )
@@ -80,7 +82,7 @@ public:
         }
     }
 
-    /// @brief Move constructor
+    /** @brief Move constructor */
     constexpr TOptional ( TOptional &&InOptional ) noexcept( std::is_nothrow_move_constructible_v<ValueType> )
         requires std::move_constructible<ValueType>
         : Dummy( 0 )
@@ -92,12 +94,12 @@ public:
         }
     }
 
-    /// @brief Assignment operator deleted
+    /** @brief Assignment operator deleted */
     TOptional &operator=( const TOptional & ) = delete;
 
 public:
 
-    /// @brief Destructor
+    /** @brief Destructor */
     constexpr ~TOptional () noexcept( std::is_nothrow_destructible_v<ValueType> )
     {
         Reset();
@@ -105,13 +107,13 @@ public:
 
 public:
 
-    /// @return True if has value otherwise false
+    /** @return True if has value otherwise false */
     [[nodiscard]] constexpr Bool HasValue () const noexcept
     {
         return bHasValue;
     }
 
-    /// @brief Destroy the contained value, making the optional empty.
+    /** @brief Destroy the contained value, making the optional empty. */
     constexpr void Reset () noexcept( std::is_nothrow_destructible_v<ValueType> )
     {
         if ( bHasValue )
@@ -121,7 +123,7 @@ public:
         }
     }
 
-    /// @brief Emplace a value in place (destroys any existing value first).
+    /** @brief Emplace a value in place (destroys any existing value first). */
     template <class... Args>
     constexpr ValueType &Emplace ( Args &&...InArgs ) noexcept( std::is_nothrow_constructible_v<ValueType, Args...> )
     {
@@ -131,13 +133,13 @@ public:
         return Value;
     }
 
-    /// @return Reference to value
+    /** @return Reference to value */
     constexpr decltype( auto ) operator*( this auto &&Self ) noexcept
     {
         return ( std::forward<decltype( Self )>( Self ).Value );
     }
 
-    /// @brief Monadic Hook
+    /** @brief Monadic Hook */
     template <class Function, class Arguments>
     constexpr static TOptional MonadicEmplace ( Function &&Func,
                                                 Arguments &&Args ) noexcept( std::is_nothrow_invocable_v<Function, Arguments> )

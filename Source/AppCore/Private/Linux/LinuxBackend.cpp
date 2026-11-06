@@ -1,5 +1,7 @@
-/// @file LinuxBackend.cpp
-/// @brief Implementation of the FLinuxBackend struct for Linux-specific backend management
+/*
+- @file LinuxBackend.cpp
+- @brief Implementation of the FLinuxBackend struct for Linux-specific backend management
+ */
 
 #include <Linux/LinuxBackend.hpp>
 
@@ -21,7 +23,7 @@ void FlushEventQueue () noexcept
     SDL_Event Event;
     while ( SDL_PollEvent( &Event ) )
     {
-        /// Discard
+        /** Discard */
     }
 }
 

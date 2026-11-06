@@ -1,5 +1,7 @@
-/// @file Path.hpp
-/// @brief Filesystem definition of the FPath class.
+/*
+- @file Path.hpp
+- @brief Filesystem definition of the FPath class.
+ */
 
 #pragma once
 
@@ -15,10 +17,10 @@ namespace Lumen
 namespace Filesystem
 {
 
-    ///
-    /// @class FPath
-    /// @brief Represents a normalized filesystem path.
-    ///
+    /**
+    - @class FPath
+    - @brief Represents a normalized filesystem path.
+     */
     class CORE_EXPORT FPath
     {
     public:

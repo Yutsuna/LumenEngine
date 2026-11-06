@@ -1,7 +1,7 @@
-///
-/// @file SIMDNeon.inl
-/// @brief Implementation of Neon utilities for mathematical operations.
-///
+/**
+- @file SIMDNeon.inl
+- @brief Implementation of Neon utilities for mathematical operations.
+ */
 
 #pragma once
 
@@ -18,12 +18,12 @@ namespace Maths
 
         inline FNeonFloat32x4::FNeonFloat32x4 () noexcept : Internal( vdupq_n_f32( 0.0F ) )
         {
-            ///
+            /** */
         }
 
         inline FNeonFloat32x4::FNeonFloat32x4 ( const float32x4_t InInternal ) noexcept : Internal( InInternal )
         {
-            ///
+            /** */
         }
 
         inline FNeonFloat32x4 FNeonFloat32x4::Load ( const Float32 *const InAddress ) noexcept

@@ -1,5 +1,7 @@
-/// @file Variant.hpp
-/// @brief Defines the Variant template.
+/*
+- @file Variant.hpp
+- @brief Defines the Variant template.
+ */
 
 #pragma once
 

@@ -1,5 +1,7 @@
-/// @file MonadicTests.cpp
-/// @brief Functional tests for the FMonadic mixin: Transform, AndThen, OrElse, Inspect, ValueOr.
+/*
+- @file MonadicTests.cpp
+- @brief Functional tests for the FMonadic mixin: Transform, AndThen, OrElse, Inspect, ValueOr.
+ */
 
 #include <Core/CoreDefinitions.hpp>
 
@@ -50,12 +52,12 @@ namespace
 
     void NoOpInspect ( Int32 LUMEN_UNUSED NoOp ) noexcept
     {
-        ///
+        /** */
     }
 
-    ///
-    /// @brief Compile-time invariants: result types of the monadic operations.
-    ///
+    /**
+    - @brief Compile-time invariants: result types of the monadic operations.
+     */
     static_assert( Concepts::CSameAs<decltype( std::declval<TExpected<Int32, EMonadicTestError> &>().Transform( &IntToFString ) ),
                                      TExpected<FString, EMonadicTestError>> );
     static_assert( Concepts::CSameAs<decltype( std::declval<TExpected<void, EMonadicTestError> &>().AndThen( &Return42 ) ),
@@ -65,9 +67,9 @@ namespace
 
 } // namespace
 
-///
-/// Transform
-///
+/**
+- Transform
+ */
 
 LUMEN_TEST( Monadic_Transform, ExpectedValue )
 {
@@ -157,9 +159,9 @@ LUMEN_TEST( Monadic_Transform, RvalueOptional )
     LUMEN_CHECK_EQ( *Result, 6 );
 }
 
-///
-/// AndThen
-///
+/**
+- AndThen
+ */
 
 LUMEN_TEST( Monadic_AndThen, ExpectedValue )
 {
@@ -252,9 +254,9 @@ LUMEN_TEST( Monadic_AndThen, OptionalInnerEmpty )
     LUMEN_CHECK_FALSE( Result.HasValue() );
 }
 
-///
-/// AndThen on TExpected<void, E>
-///
+/**
+- AndThen on TExpected<void, E>
+ */
 
 LUMEN_TEST( Monadic_AndThenVoid, SuccessInvokesFunction )
 {
@@ -284,9 +286,9 @@ LUMEN_TEST( Monadic_AndThenVoid, ChainWithValue )
     LUMEN_CHECK_EQ( *Result, 2 );
 }
 
-///
-/// OrElse
-///
+/**
+- OrElse
+ */
 
 LUMEN_TEST( Monadic_OrElse, ExpectedValueSkipsFunction )
 {
@@ -362,9 +364,9 @@ LUMEN_TEST( Monadic_OrElse, OptionalEmptyInvokesFunction )
     LUMEN_CHECK_EQ( *Result, 99 );
 }
 
-///
-/// Inspect
-///
+/**
+- Inspect
+ */
 
 LUMEN_TEST( Monadic_Inspect, ExpectedValueInvokesCallback )
 {
@@ -427,9 +429,9 @@ LUMEN_TEST( Monadic_Inspect, Chained )
     LUMEN_CHECK_EQ( Total, 84 );
 }
 
-///
-/// ValueOr
-///
+/**
+- ValueOr
+ */
 
 LUMEN_TEST( Monadic_ValueOr, ExpectedValue )
 {

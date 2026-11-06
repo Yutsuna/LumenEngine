@@ -1,7 +1,7 @@
-///
-/// @file LaunchWindowModule.cpp
-/// @brief FLaunchWindowModule implementation.
-///
+/**
+- @file LaunchWindowModule.cpp
+- @brief FLaunchWindowModule implementation.
+ */
 
 #include <Engine/Modules/LaunchApplicationModule.hpp>
 #include <Engine/Modules/LaunchWindowModule.hpp>
@@ -13,7 +13,7 @@
 Lumen::Launch::FLaunchWindowModule::FLaunchWindowModule ( Lumen::TSharedPtr<Lumen::FGenericWindow> InWindow ) noexcept
     : Window( std::move( InWindow ) )
 {
-    /// Empty
+    /** Empty */
 }
 
 Lumen::Launch::TLaunchResult<Lumen::TUniquePtr<Lumen::Launch::IEngineModule>>
@@ -31,7 +31,7 @@ Lumen::Launch::MakeWindowModule ( const FLaunchEngineConfig &InConfig ) noexcept
                               "Window module requires the Application module to be started first" );
     }
 
-    /// TODO: expose -width/-height/-windowmode CLI options into FLaunchEngineConfig.
+    /** TODO: expose -width/-height/-windowmode CLI options into FLaunchEngineConfig. */
     const TSharedRef<FGenericWindow> Window                 = Application->MakeWindow();
     const TSharedRef<FGenericWindowDescription> Description = MakeShared<FGenericWindowDescription>();
 

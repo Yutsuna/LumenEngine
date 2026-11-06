@@ -1,5 +1,7 @@
-/// @file Span.hpp
-/// @brief Span is a non-owning view of a contiguous sequence of objects.
+/*
+- @file Span.hpp
+- @brief Span is a non-owning view of a contiguous sequence of objects.
+ */
 
 #pragma once
 

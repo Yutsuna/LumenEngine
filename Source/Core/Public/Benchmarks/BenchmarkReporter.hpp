@@ -1,5 +1,7 @@
-/// @file BenchmarkReporter.hpp
-/// @brief Reporter interface and built-in reporters (console table, JSON file, debug dump).
+/*
+- @file BenchmarkReporter.hpp
+- @brief Reporter interface and built-in reporters (console table, JSON file, debug dump).
+ */
 
 #pragma once
 
@@ -15,10 +17,10 @@ namespace Lumen
 namespace Benchmarks
 {
 
-    ///
-    /// @class IBenchmarkReporter
-    /// @brief Receives the events emitted by a benchmark run.
-    ///
+    /**
+    - @class IBenchmarkReporter
+    - @brief Receives the events emitted by a benchmark run.
+     */
     class CORE_EXPORT IBenchmarkReporter
     {
     public:
@@ -30,10 +32,10 @@ namespace Benchmarks
         virtual void OnRunFinished ( const FBenchmarkRunSummary &Summary )  = 0;
     };
 
-    ///
-    /// @class FConsoleBenchmarkReporter
-    /// @brief Prints an aligned table on stdout, one row per finished benchmark.
-    ///
+    /**
+    - @class FConsoleBenchmarkReporter
+    - @brief Prints an aligned table on stdout, one row per finished benchmark.
+     */
     class CORE_EXPORT FConsoleBenchmarkReporter final : public IBenchmarkReporter
     {
     public:
@@ -47,10 +49,10 @@ namespace Benchmarks
         USize NameColumnWidth{ 40 };
     };
 
-    ///
-    /// @class FJsonBenchmarkReporter
-    /// @brief Writes every result to a JSON file when the run ends.
-    ///
+    /**
+    - @class FJsonBenchmarkReporter
+    - @brief Writes every result to a JSON file when the run ends.
+     */
     class CORE_EXPORT FJsonBenchmarkReporter final : public IBenchmarkReporter
     {
     public:
@@ -68,10 +70,10 @@ namespace Benchmarks
         Bool bOptimized{ true };
     };
 
-    ///
-    /// @class FDebugBenchmarkReporter
-    /// @brief Dumps every event as JSON via Meta::SerializeToJSON. Debug/CI only.
-    ///
+    /**
+    - @class FDebugBenchmarkReporter
+    - @brief Dumps every event as JSON via Meta::SerializeToJSON. Debug/CI only.
+     */
     class CORE_EXPORT FDebugBenchmarkReporter final : public IBenchmarkReporter
     {
     public:

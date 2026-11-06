@@ -1,5 +1,7 @@
-/// @file Monadic.hpp
-/// @brief Auto Monadic Mixin operations
+/*
+- @file Monadic.hpp
+- @brief Auto Monadic Mixin operations
+ */
 
 #pragma once
 
@@ -15,29 +17,37 @@ namespace Lumen
 namespace Concepts
 {
 
-    /// @concept CMonadic
-    /// @brief Test the 3 monadic state
+    /*
+    - @concept CMonadic
+    - @brief Test the 3 monadic state
+     */
     template <class Container>
     concept CMonadic = ( CHasValueMember<std::remove_cvref_t<Container>> or CBoolTestable<std::remove_cvref_t<Container>> ) and
                        requires( Container &&InContainer ) { *std::forward<Container>( InContainer ); };
 
-    /// @concept CTransformable
-    /// @brief Test the transformable state (T -> U).
+    /*
+    - @concept CTransformable
+    - @brief Test the transformable state (T -> U).
+     */
     template <class Self, class Func>
     concept CTransformable = CMonadic<Self> and std::invocable<Func, MonadicInternal::TValueRef<Self>> and
                              ( not std::is_void_v<MonadicInternal::TTransformResult<Self, Func>> ) and
                              requires { typename MonadicInternal::TTransformOut<Self, Func>; };
 
-    /// @concept CBindable
-    /// @brief Test the bindable state
+    /*
+    - @concept CBindable
+    - @brief Test the bindable state
+     */
     template <class Self, class Func>
     concept CBindable = CMonadic<Self> and
                         ( MonadicInternal::CIsVoidValue<Self> ? std::invocable<Func>
                                                               : std::invocable<Func, MonadicInternal::TValueRef<Self>> ) and
                         CMonadic<MonadicInternal::TBindOut<Self, Func>>;
 
-    /// @concept CRecoverable
-    /// @brief Test the recoverable state
+    /*
+    - @concept CRecoverable
+    - @brief Test the recoverable state
+     */
     template <class Self, class Func>
     concept CRecoverable = CMonadic<Self> and std::constructible_from<MonadicInternal::TSelfType<Self>, Self> and
                            requires( Self &&Container, Func &&InFunc ) {
@@ -47,15 +57,15 @@ namespace Concepts
                            };
 } // namespace Concepts
 
-///
-/// @struct FMonadic
-/// @brief Monadic mixin with 0 CRTP
-///
+/**
+- @struct FMonadic
+- @brief Monadic mixin with 0 CRTP
+ */
 struct CORE_EXPORT FMonadic
 {
 public:
 
-    /// @brief T -> U TOptional<T>.Transform(T->U) = TOptional<U>
+    /** @brief T -> U TOptional<T>.Transform(T->U) = TOptional<U> */
     template <class Self, class Func>
         requires Concepts::CTransformable<Self, Func>
     [[nodiscard]] constexpr auto Transform ( this Self &&InSelf, Func &&InFunc ) noexcept(
@@ -77,7 +87,7 @@ public:
 
 public:
 
-    /// @brief T -> TContainer<U>
+    /** @brief T -> TContainer<U> */
     template <class Self, class Func>
         requires Concepts::CBindable<Self, Func>
     [[nodiscard]] constexpr auto AndThen ( this Self &&InSelf, Func &&InFunc ) noexcept(
@@ -106,7 +116,7 @@ public:
 
 public:
 
-    /// @brief Func() -> TSelfType
+    /** @brief Func() -> TSelfType */
     template <class Self, class Func>
         requires Concepts::CRecoverable<Self, Func>
     [[nodiscard]] constexpr auto OrElse ( this Self &&InSelf, Func &&InFunc ) noexcept(
@@ -124,7 +134,7 @@ public:
 
 public:
 
-    /// @brief Inspect the container, calling the given function if the container is not empty.
+    /** @brief Inspect the container, calling the given function if the container is not empty. */
     template <class Self, class Func>
         requires Concepts::CMonadic<Self> && std::invocable<Func, MonadicInternal::TConstElementRef<Self>>
     constexpr auto Inspect ( this Self &&InSelf, Func &&InFunc ) noexcept(
@@ -142,7 +152,7 @@ public:
 
 public:
 
-    /// @brief ValueOr.  Pas disponible pour void (pas de valeur) — SFINAE silencieuse.
+    /** @brief ValueOr.  Pas disponible pour void (pas de valeur) — SFINAE silencieuse. */
     template <class Self, class U>
         requires Concepts::CMonadic<Self> and std::convertible_to<U, std::remove_cvref_t<MonadicInternal::TValueRef<Self>>> and
                  std::convertible_to<MonadicInternal::TValueRef<Self>, std::remove_cvref_t<MonadicInternal::TValueRef<Self>>>

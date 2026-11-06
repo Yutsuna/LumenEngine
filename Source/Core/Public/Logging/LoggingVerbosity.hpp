@@ -1,7 +1,7 @@
-///
-/// @file LoggingVerbosity.hpp
-/// @brief Definition of the logging verbosity levels.
-///
+/**
+- @file LoggingVerbosity.hpp
+- @brief Definition of the logging verbosity levels.
+ */
 
 #pragma once
 
@@ -15,19 +15,19 @@ namespace ELogVerbosity
 
     enum Type : UInt8
     {
-        /// Crashes the engine immediately after logging the message.
+        /** Crashes the engine immediately after logging the message. */
         Fatal,
-        /// Red
+        /** Red */
         Error,
-        /// Yellow
+        /** Yellow */
         Warning,
-        /// White
+        /** White */
         Display,
-        /// Grey
+        /** Grey */
         Info,
-        /// Blue
+        /** Blue */
         Verbose,
-        /// Cyan
+        /** Cyan */
         VeryVerbose
     };
 

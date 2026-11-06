@@ -1,5 +1,7 @@
-/// @file FileTypes.hpp
-/// @brief Contains file-related enumerations and structures.
+/*
+- @file FileTypes.hpp
+- @brief Contains file-related enumerations and structures.
+ */
 
 #pragma once
 
@@ -13,10 +15,10 @@ namespace Lumen
 namespace Filesystem
 {
 
-    ///
-    /// @enum EFileAccess
-    /// @brief Specifies the access mode for a file.
-    ///
+    /**
+    - @enum EFileAccess
+    - @brief Specifies the access mode for a file.
+     */
     enum class EFileAccess : UInt8
     {
         None      = 0,
@@ -27,10 +29,10 @@ namespace Filesystem
 
     LUMEN_ENUM_FLAGS( EFileAccess )
 
-    ///
-    /// @enum EFileMode
-    /// @brief Specifies the handling mode for opening or creating a file.
-    ///
+    /**
+    - @enum EFileMode
+    - @brief Specifies the handling mode for opening or creating a file.
+     */
     enum class EFileMode : UInt8
     {
         OpenExisting, /// Opens the file if it exists, otherwise fails
@@ -39,10 +41,10 @@ namespace Filesystem
         Append,       /// Opens or creates and sets cursor at the end
     };
 
-    ///
-    /// @enum ESeekOrigin
-    /// @brief Specifies the origin for seeking within a file.
-    ///
+    /**
+    - @enum ESeekOrigin
+    - @brief Specifies the origin for seeking within a file.
+     */
     enum class ESeekOrigin : UInt8
     {
         Begin,
@@ -50,10 +52,10 @@ namespace Filesystem
         End
     };
 
-    ///
-    /// @enum EFileError
-    /// @brief List of different file errors.
-    ///
+    /**
+    - @enum EFileError
+    - @brief List of different file errors.
+     */
     enum class EFileError : UInt8
     {
         None = 0,
@@ -70,10 +72,10 @@ namespace Filesystem
         Unknown
     };
 
-    ///
-    /// @struct FFileStat
-    /// @brief File stat mapping (size, permissions, timestamps).
-    ///
+    /**
+    - @struct FFileStat
+    - @brief File stat mapping (size, permissions, timestamps).
+     */
     struct CORE_EXPORT FFileStat
     {
         UInt64 FileSize         = 0;

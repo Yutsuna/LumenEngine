@@ -1,7 +1,7 @@
-///
-/// @file LaunchEngineModule.cpp
-/// @brief Module registration table.
-///
+/**
+- @file LaunchEngineModule.cpp
+- @brief Module registration table.
+ */
 
 #include <Core/CoreDefinitions.hpp>
 #include <Engine/LaunchEngineModule.hpp>
@@ -19,12 +19,12 @@ Lumen::Launch::EModuleTraits Lumen::Launch::IEngineModule::GetTraits () const no
 
 void Lumen::Launch::IEngineModule::FixedTick ( Float64 LUMEN_UNUSED InFixedDeltaSeconds ) noexcept
 {
-    /// Empty
+    /** Empty */
 }
 
 void Lumen::Launch::IEngineModule::Tick ( Float64 LUMEN_UNUSED InDeltaSeconds, Float64 LUMEN_UNUSED InAlpha ) noexcept
 {
-    /// Empty
+    /** Empty */
 }
 
 Lumen::TSpan<const Lumen::Launch::FModuleDescriptor> Lumen::Launch::GetEngineModules () noexcept

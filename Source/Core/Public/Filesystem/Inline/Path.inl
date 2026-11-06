@@ -1,7 +1,7 @@
-///
-/// @file CorPath.inl
-/// @brief Inline implementation of FPath helpers.
-///
+/**
+- @file CorPath.inl
+- @brief Inline implementation of FPath helpers.
+ */
 
 #pragma once
 

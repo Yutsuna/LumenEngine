@@ -1,5 +1,7 @@
-/// @file BenchRunner.cpp
-/// @brief Standard entry-point for Lumen module benchmark suites.
+/*
+- @file BenchRunner.cpp
+- @brief Standard entry-point for Lumen module benchmark suites.
+ */
 
 #include <Benchmarks/Benchmarks.hpp>
 

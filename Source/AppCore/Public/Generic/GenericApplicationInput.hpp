@@ -1,7 +1,7 @@
-///
-/// @file GenericApplicationInput.hpp
-/// @brief Declaration of the FGenericApplicationInput struct for generic application input handling.
-///
+/**
+- @file GenericApplicationInput.hpp
+- @brief Declaration of the FGenericApplicationInput struct for generic application input handling.
+ */
 
 #pragma once
 
@@ -107,7 +107,7 @@ namespace EKeys
         F11,
         F12,
 
-        /// Punctuation & Symbols
+        /** Punctuation & Symbols */
         Exclamation,
         DoubleApostrophe,
         Hash,
@@ -141,7 +141,7 @@ namespace EKeys
         RightBrace,
         Tilde,
 
-        /// Editing & Navigation
+        /** Editing & Navigation */
         Delete,
         PlusMinus,
         CapsLock,
@@ -155,7 +155,7 @@ namespace EKeys
         PageDown,
         NumLock,
 
-        /// Numpad
+        /** Numpad */
         NumPadDivide,
         NumPadMultiply,
         NumPadMinus,
@@ -218,7 +218,7 @@ namespace EKeys
         NumPadDecimal,
         NumPadHexadecimal,
 
-        /// Function Keys 13-24
+        /** Function Keys 13-24 */
         F13,
         F14,
         F15,
@@ -232,7 +232,7 @@ namespace EKeys
         F23,
         F24,
 
-        /// Modifiers
+        /** Modifiers */
         LeftControl,
         LeftShift,
         LeftAlt,
@@ -247,7 +247,7 @@ namespace EKeys
         RightHyper,
         Level5Shift,
 
-        /// Application / Multimedia / System
+        /** Application / Multimedia / System */
         Application,
         Power,
         Execute,
