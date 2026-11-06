@@ -78,7 +78,7 @@ void Lumen::FSpatialRegistry::UnregisterSpatialEntity ( ActorID InId )
 
         WorkingData.EntityIDs[IndexToRemove]  = WorkingData.EntityIDs[LastIndex];
         WorkingData.Transforms[IndexToRemove] = WorkingData.Transforms[LastIndex];
-        WorkingData.IDToIndex[LastActorID] = IndexToRemove;
+        WorkingData.IDToIndex[LastActorID]    = IndexToRemove;
     }
 
     WorkingData.EntityIDs.pop_back();
