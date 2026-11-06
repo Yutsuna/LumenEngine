@@ -1,19 +1,21 @@
-///
-/// @file ActorTypes.cpp
-/// @brief Implementation of actor types for parallel processing in Lumen.
-///
+/**
+ * @file ActorTypes.cpp
+ * @brief Implementation of actor types.
+ */
 
-#include "ActorRegistry.hpp"
 #include <Actor/Actor.hpp>
+#include "ActorRegistry.hpp"
 
 const Lumen::FLogCategory Lumen::LogActor( "Actor" );
 
-Lumen::FActorRef::FActorRef ( const ActorID InId ) noexcept : Id( InId )
+Lumen::FActorRef::FActorRef ( ActorID InId ) noexcept : Id( InId )
 {
+    /* */
 }
 
-Lumen::FActorRef::FActorRef ( AActor *InActor ) noexcept : Id( InActor != nullptr ? InActor->GetId() : ActorID{} )
+Lumen::FActorRef::FActorRef ( AActor *InActor ) noexcept : Id( InActor != nullptr ? InActor->GetId() : 0ULL )
 {
+    /* */
 }
 
 Lumen::ActorID Lumen::FActorRef::GetId () const noexcept
@@ -23,10 +25,10 @@ Lumen::ActorID Lumen::FActorRef::GetId () const noexcept
 
 Lumen::Bool Lumen::FActorRef::IsValid () const noexcept
 {
-    return Id.IsValid();
+    return Id != 0ULL;
 }
 
-Lumen::EEnqueueResult Lumen::FActorRef::EnqueueMessage ( const FMessage &InMessage ) const noexcept
+void Lumen::FActorRef::EnqueueMessage ( const FMessage &InMessage ) const noexcept
 {
-    return Internal::FActorRegistry::EnqueueMessage( Id, InMessage );
+    Lumen::Internal::FActorRegistry::EnqueueMessage( Id, InMessage );
 }
