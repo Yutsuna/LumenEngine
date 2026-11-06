@@ -5,11 +5,12 @@
 
 #pragma once
 
+#include <Actor/ActorRegistry.hpp>
 #include <World/World.hpp>
 
 template <typename ActorType, typename... Args> Lumen::TSharedRef<ActorType> Lumen::FWorld::SpawnActor ( Args &&...InArgs )
 {
-    ActorID NewId                  = NextActorId++;
+    ActorID NewId                  = Internal::FActorRegistry::AllocateId();
     TSharedRef<ActorType> NewActor = MakeShared<ActorType>( NewId, std::forward<Args>( InArgs )... );
     TSharedPtr<AActor> StoredActor = NewActor;
 
