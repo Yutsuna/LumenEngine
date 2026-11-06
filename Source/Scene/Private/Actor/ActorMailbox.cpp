@@ -75,13 +75,12 @@ void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
     NewNode->Message.Emplace( InMessage );
 
     /**
-     * INFO: exchange is the wait-free heart of Vyukov's algorithm.
-     *   release -> synchronises with the consumer's acquire on Next.
+     * INFO: the exchange synchronises with the consumer's acquire on Next
      */
-    FNode *const PrevTail = Tail.exchange( NewNode, std::memory_order_release );
+    FNode *const PrevTail = Tail.exchange( NewNode, std::memory_order_acq_rel );
 
     /**
-     * INFO: This store must be release to synchronize with the consumer's acquire on Next.
+     * INFO: this store must be release to synchronize with the consumer's acquire on Next
      */
     PrevTail->Next.store( NewNode, std::memory_order_release );
 }
