@@ -34,9 +34,16 @@ Lumen::FMailBox::~FMailBox () noexcept
     }
 
     /** Clear the internal free list cache */
-    for ( TOptional<FNode *> PooledNode = FreeNodes.Pop(); PooledNode.HasValue(); PooledNode.Emplace( *FreeNodes.Pop() ) )
+    for ( ;; )
     {
-        delete *PooledNode;
+        TOptional<FNode *> Pooled = FreeNodes.Pop();
+
+        if ( not Pooled.HasValue() )
+        {
+            break;
+        }
+
+        delete *Pooled;
     }
 }
 
