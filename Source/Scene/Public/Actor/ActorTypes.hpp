@@ -9,8 +9,8 @@
 
 #include <Core/CoreTypes.hpp>
 
-#include <Concepts/TriviallyCopyable.hpp>
 #include <Concepts/SameAs.hpp>
+#include <Concepts/TriviallyCopyable.hpp>
 
 #include <Logging/LoggingCategory.hpp>
 
@@ -25,8 +25,7 @@ namespace Concepts
 {
 
     template <typename Type>
-    concept CActor = requires( Type InActor, FMessage InMessage )
-    {
+    concept CActor = requires( Type InActor, FMessage InMessage ) {
         { InActor.Receive( InMessage ) } -> CSameAs<void>;
     };
 
@@ -56,13 +55,13 @@ namespace Internal
 
 } // namespace Internal
 
-#define LUMEN_ACTOR_BODY( ActorClassName )                                                                                                                               \
-                                                                                                                                                                         \
-public:                                                                                                                                                                  \
-                                                                                                                                                                         \
-    [[nodiscard]] Lumen::USize GetTypeID() const noexcept override                                                                                                 \
-    {                                                                                                                                                                    \
-        return reinterpret_cast<Lumen::USize>( &Lumen::Internal::TActorTypeRegistry<ActorClassName>::GetID );                                                \
+#define LUMEN_ACTOR_BODY( ActorClassName )                                                                                       \
+                                                                                                                                 \
+public:                                                                                                                          \
+                                                                                                                                 \
+    [[nodiscard]] Lumen::USize GetTypeID() const noexcept override                                                               \
+    {                                                                                                                            \
+        return reinterpret_cast<Lumen::USize>( &Lumen::Internal::TActorTypeRegistry<ActorClassName>::GetID );                    \
     }
 
 /**

@@ -5,11 +5,11 @@
 
 #include "ActorRegistry.hpp"
 
-#include <Templates/Map.hpp>
 #include <Actor/Actor.hpp>
+#include <Templates/Map.hpp>
 
-#include <HAL/SharedMutex.hpp>
 #include <HAL/Mutex.hpp>
+#include <HAL/SharedMutex.hpp>
 
 namespace
 {
@@ -17,7 +17,7 @@ namespace
 Lumen::FSharedMutex RegistryMutex;
 Lumen::TMap<Lumen::ActorID, Lumen::AActor *> Actors;
 
-}
+} // namespace
 
 void Lumen::Internal::FActorRegistry::Register ( AActor *InActor ) noexcept
 {

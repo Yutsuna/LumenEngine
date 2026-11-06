@@ -92,4 +92,4 @@ private:
 
 }; // class FMailBox
 
-} // namespace Lumen///
+} // namespace Lumen

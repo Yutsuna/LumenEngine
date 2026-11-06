@@ -34,7 +34,7 @@ Lumen::FMailBox::~FMailBox () noexcept
     }
 
     /** Clear the internal free list cache */
-    while ( TOptional<FNode *> PooledNode = FreeNodes.Pop() )
+    for ( TOptional<FNode *> PooledNode = FreeNodes.Pop(); PooledNode.HasValue(); PooledNode.Emplace( *FreeNodes.Pop() ) )
     {
         delete *PooledNode;
     }
@@ -42,17 +42,21 @@ Lumen::FMailBox::~FMailBox () noexcept
 
 void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
 {
-    FNode *NewNode = nullptr;
-
-    /** Try taking an existing node lock-free, allocate only if pool is depleted */
-    if ( TOptional<FNode *> PooledNode = FreeNodes.Pop() )
-    {
-        NewNode = *PooledNode;
-    }
-    else
-    {
-        NewNode = new ( std::nothrow ) FNode();
-    }
+    /**
+     * INFO: Try taking an existing node lock-free, allocate only if pool is depleted.
+     * OrElse performs the allocation as a monadic recovery when Pop() is empty.
+     */
+    FNode *const NewNode = FreeNodes.Pop()
+                               .OrElse(
+                                   [] () noexcept -> TOptional<FNode *>
+                                   {
+                                       if ( FNode *const Allocated = new ( std::nothrow ) FNode() )
+                                       {
+                                           return TOptional<FNode *>( Allocated );
+                                       }
+                                       return TOptional<FNode *>{};
+                                   } )
+                               .ValueOr( nullptr );
 
     if ( NewNode == nullptr )
     {
@@ -61,7 +65,7 @@ void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
     }
 
     NewNode->Next.store( nullptr, std::memory_order_relaxed );
-    NewNode->Message = InMessage;
+    NewNode->Message.Emplace( InMessage );
 
     /**
      * INFO: exchange is the wait-free heart of Vyukov's algorithm.
@@ -88,13 +92,14 @@ Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
         return {};
     }
 
-    if ( not NextNode->Message.has_value() )
+    if ( not NextNode->Message.HasValue() )
     {
         LUMEN_LOG_ERROR( LogActor, "FMailBox::Pop: node has no message (stub leaked?)" );
         return {};
     }
 
-    TOptional<FMessage> Result = NextNode->Message;
+    /** INFO: Transfer ownership of the message out of the node into the result. */
+    TOptional<FMessage> Result = std::move( NextNode->Message );
 
     /** INFO: The old Head becomes the new stub; delete it unless it is the original stub. */
     FNode *const OldHead = Head;
@@ -102,7 +107,7 @@ Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
 
     if ( OldHead != &Stub )
     {
-        OldHead->Message.reset();
+        OldHead->Message.Reset();
 
         /** Return node to pool, fallback to OS deallocation if the queue is full */
         if ( not FreeNodes.Push( OldHead ) )

@@ -3,8 +3,8 @@
  * @brief AActor base class implementation for Lumen.
  */
 
-#include <Actor/Actor.hpp>
 #include "ActorRegistry.hpp"
+#include <Actor/Actor.hpp>
 
 Lumen::AActor::AActor ( ActorID InId ) noexcept : Id( InId )
 {
@@ -25,7 +25,7 @@ void Lumen::AActor::ProcessMailbox ( const UInt32 InMaxMessages ) noexcept
 {
     UInt32 ProcessedCount = 0U;
 
-    while ( TOptional<FMessage> Message = Mailbox.Pop() )
+    for ( TOptional<FMessage> Message = Mailbox.Pop(); Message.HasValue(); Message.Emplace( *Mailbox.Pop() ) )
     {
         Receive( *Message );
         ++ProcessedCount;
