@@ -11,5 +11,5 @@ ModuleDefinition = {
     'Public' : 'Public',
     'Tests' : 'Tests',
     'Benchmarks' : 'Benchmarks',
-    'Depends' : ['Core']
+    'Depends' : ['Core','Maths']
 }
