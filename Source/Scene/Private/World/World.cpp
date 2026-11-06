@@ -13,6 +13,22 @@
 #include <algorithm>
 #include <execution>
 
+namespace
+{
+
+LUMEN_FORCE_INLINE Lumen::Bool SortActiveActors ( const Lumen::TSharedPtr<Lumen::AActor> &A,
+                                                  const Lumen::TSharedPtr<Lumen::AActor> &B ) noexcept
+{
+    return A->GetTypeID() < B->GetTypeID();
+}
+
+LUMEN_FORCE_INLINE void ProcessActorMessages ( const Lumen::TSharedPtr<Lumen::AActor> &InActor ) noexcept
+{
+    InActor->ProcessMailbox( Lumen::FWorld::MaxMessagesPerTick );
+}
+
+} // namespace
+
 void Lumen::FWorld::Broadcast ( const FMessage &InMessage )
 {
     for ( const TSharedPtr<AActor> &Actor : ActiveActors )
@@ -38,19 +54,19 @@ void Lumen::FWorld::Tick ( const Float64 InDeltaTime )
      */
     if ( bNeedsSorting ) [[unlikely]]
     {
-        std::ranges::sort( ActiveActors, [] ( const TSharedPtr<AActor> &A, const TSharedPtr<AActor> &B ) { return A->GetTypeID() < B->GetTypeID(); } );
+        std::ranges::sort( ActiveActors, &SortActiveActors );
         bNeedsSorting = false;
     }
 
-    using ActorIterator            = TVector<TSharedPtr<AActor>>::iterator;
-    const ActorIterator ActorBegin = ActiveActors.begin();
-    const ActorIterator ActorEnd   = ActiveActors.end();
+    using FActorIterator            = TVector<TSharedPtr<AActor>>::iterator;
+    const FActorIterator ActorBegin = ActiveActors.begin();
+    const FActorIterator ActorEnd   = ActiveActors.end();
 
     /**
      * NOTE: Core parallel Mailbox evaluation of the Active Actors.
      * Throttled to 100 messages per tick to prevent "Long Tail" latency from busy actors.
      */
-    std::for_each( std::execution::par_unseq, ActorBegin, ActorEnd, [] ( const TSharedPtr<AActor> &InActor ) -> void { InActor->ProcessMailbox( MaxMessagesPerTick ); } );
+    std::for_each( std::execution::par, ActorBegin, ActorEnd, &ProcessActorMessages );
 
     /** NOTE: Publish the spatial changes to the lock-free snapshot buffer */
     FSpatialRegistry::Get().Publish();
