@@ -56,3 +56,5 @@ private:
 };
 
 } // namespace Lumen
+
+#include "Inline/World.inl"
