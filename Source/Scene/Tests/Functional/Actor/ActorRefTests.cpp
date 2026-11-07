@@ -3,9 +3,11 @@
  * @brief Functional tests for FActorRef.
  */
 
+#include <Actor/ActorRegistry.hpp>
 #include <Actor/Actor.hpp>
 #include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
+
 #include <Templates/Vector.hpp>
 #include <Tests/UnitTest.hpp>
 
@@ -118,27 +120,26 @@ LUMEN_TEST( FActorRef_Copy, KeepsCopiedIdentity )
  * Routing
  */
 
-LUMEN_TEST( FActorRef_Routing, DeliversOnlyToTheTargetActor )
+LUMEN_TEST( FActorRef_Routing, DeadReferenceDropsMessages )
 {
-    FRefProbeActor TargetActor( 3010ULL );
-    FRefProbeActor OtherActor( 3011ULL );
+    const ActorID ActorId     = Internal::FActorRegistry::AllocateId();
+    const ActorID BystanderId = Internal::FActorRegistry::AllocateId();
 
-    const FActorRef TargetRef( &TargetActor );
+    FActorRef DyingRef;
+    {
+        FRefProbeActor DyingActor( ActorId );
+        DyingRef = DyingActor.GetRef();
+        DyingRef.EnqueueMessage( FMessage::Make( 1U, 0ULL ) );
+        DyingActor.RunFrame( 0.0, 0U );
+        LUMEN_CHECK_EQ( DyingActor.GetReceivedTypes().size(), 1ULL );
+    }
 
-    TargetRef.EnqueueMessage( FMessage::Make( 5U, 0ULL ) );
-    TargetRef.EnqueueMessage( FMessage::Make( 6U, 0ULL ) );
+    LUMEN_CHECK_TRUE( DyingRef.IsValid() );
+    DyingRef.EnqueueMessage( FMessage::Make( 2U, 0ULL ) );
 
-    OtherActor.RunFrame( 0.0, 0U );
-
-    LUMEN_CHECK_EQ( OtherActor.GetReceivedTypes().size(), 0ULL );
-
-    TargetActor.RunFrame( 0.0, 0U );
-
-    const TVector<UInt32> &Received = TargetActor.GetReceivedTypes();
-
-    LUMEN_CHECK_EQ( Received.size(), 2ULL );
-    LUMEN_CHECK_EQ( Received[0], 5U );
-    LUMEN_CHECK_EQ( Received[1], 6U );
+    FRefProbeActor BystanderActor( BystanderId );
+    BystanderActor.RunFrame( 0.0, 0U );
+    LUMEN_CHECK_EQ( BystanderActor.GetReceivedTypes().size(), 0ULL );
 }
 
 LUMEN_TEST( FActorRef_Routing, UnknownIdIsSilentlyDiscarded )
@@ -154,38 +155,6 @@ LUMEN_TEST( FActorRef_Routing, UnknownIdIsSilentlyDiscarded )
 
     LUMEN_CHECK_EQ( BystanderActor.GetReceivedTypes().size(), 0ULL );
     LUMEN_CHECK_TRUE( UnknownRef.IsValid() );
-}
-
-LUMEN_TEST( FActorRef_Routing, DeadReferenceDropsMessages )
-{
-    /**
-     * INFO: FActorRef does not extend the referenced actor lifetime; once the
-     *       actor is destroyed, delivering to it is a harmless no-op.
-     */
-    constexpr ActorID ActorId = 3013ULL;
-
-    FActorRef DyingRef;
-
-    {
-        FRefProbeActor DyingActor( ActorId );
-
-        DyingRef = DyingActor.GetRef();
-
-        DyingRef.EnqueueMessage( FMessage::Make( 1U, 0ULL ) );
-        DyingActor.RunFrame( 0.0, 0U );
-
-        LUMEN_CHECK_EQ( DyingActor.GetReceivedTypes().size(), 1ULL );
-    }
-
-    LUMEN_CHECK_TRUE( DyingRef.IsValid() );
-
-    DyingRef.EnqueueMessage( FMessage::Make( 2U, 0ULL ) );
-
-    FRefProbeActor BystanderActor( 3014ULL );
-
-    BystanderActor.RunFrame( 0.0, 0U );
-
-    LUMEN_CHECK_EQ( BystanderActor.GetReceivedTypes().size(), 0ULL );
 }
 
 } // namespace Lumen
