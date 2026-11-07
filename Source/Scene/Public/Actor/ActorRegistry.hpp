@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <SceneExport.hpp>
 #include <Actor/ActorTypes.hpp>
 
 namespace Lumen
@@ -16,7 +17,7 @@ namespace Internal
      * @class FActorRegistry
      * @brief Thread-safe registry for actor lookups.
      */
-    class FActorRegistry
+    class SCENE_EXPORT FActorRegistry
     {
     public:
 
