@@ -1,6 +1,6 @@
-/*
-- @file LaunchProcessGuard.cpp
-- @brief Implementation of Launch Process Guard
+/**
+ * @file LaunchProcessGuard.cpp
+ * @brief Implementation of Launch Process Guard
  */
 
 #include <Engine/LaunchEngineLoop.hpp>

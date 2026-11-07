@@ -1,6 +1,6 @@
 /**
-- @file LaunchError.hpp
-- @brief Error type shared by every stage of the launch pipeline.
+ * @file LaunchError.hpp
+ * @brief Error type shared by every stage of the launch pipeline.
  */
 
 #pragma once
@@ -16,8 +16,8 @@ namespace Lumen
 namespace Launch
 {
     /**
-    - @enum ELaunchStage
-    - @brief Pipeline stage that produced an error.
+     * @enum ELaunchStage
+     * @brief Pipeline stage that produced an error.
      */
     enum class ELaunchStage : UInt8
     {
@@ -27,8 +27,8 @@ namespace Launch
     };
 
     /**
-    - @enum ELaunchErrorCode
-    - @brief Stable error codes. The numeric value doubles as the process exit code.
+     * @enum ELaunchErrorCode
+     * @brief Stable error codes. The numeric value doubles as the process exit code.
      */
     enum class ELaunchErrorCode : UInt8
     {
@@ -42,9 +42,9 @@ namespace Launch
     };
 
     /**
-    - @struct FLaunchError
-    - @brief Trivially copyable error payload: no heap, no ownership.
-    - @warning `Message` must point to storage with static duration (string literal).
+     * @struct FLaunchError
+     * @brief Trivially copyable error payload: no heap, no ownership.
+     * @warning `Message` must point to storage with static duration (string literal).
      */
     struct FLaunchError
     {
@@ -70,9 +70,9 @@ namespace Launch
         return TUnexpected<FLaunchError>( { .Stage = InStage, .Code = InCode, .Message = InMessage } );
     }
 
-    /*
-    - @brief Converts a launch stage to a string.
-    - @param InStage The launch stage to convert.
+    /**
+     * @brief Converts a launch stage to a string.
+     * @param InStage The launch stage to convert.
      */
     [[nodiscard]] constexpr const AnsiChar *ToCString ( const ELaunchStage InStage ) noexcept
     {

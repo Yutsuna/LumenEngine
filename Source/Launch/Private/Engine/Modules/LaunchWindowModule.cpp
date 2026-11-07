@@ -1,6 +1,6 @@
 /**
-- @file LaunchWindowModule.cpp
-- @brief FLaunchWindowModule implementation.
+ * @file LaunchWindowModule.cpp
+ * @brief FLaunchWindowModule implementation.
  */
 
 #include <Engine/Modules/LaunchApplicationModule.hpp>

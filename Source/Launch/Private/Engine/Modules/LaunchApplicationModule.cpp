@@ -1,6 +1,6 @@
 /**
-- @file LaunchApplicationModule.cpp
-- @brief FLaunchApplicationModule implementation.
+ * @file LaunchApplicationModule.cpp
+ * @brief FLaunchApplicationModule implementation.
  */
 
 #include <Engine/LaunchEngineLoop.hpp>
@@ -17,7 +17,7 @@ Lumen::TSharedPtr<Lumen::FGenericApplication> GApplication = nullptr;
 }
 
 /**
-- FLaunchMessageHandler
+ * FLaunchMessageHandler
  */
 
 void Lumen::Launch::FLaunchMessageHandler::OnRequestExit () noexcept
@@ -31,7 +31,7 @@ void Lumen::Launch::FLaunchMessageHandler::OnQuit () noexcept
 }
 
 /**
-- FLaunchApplicationModule
+ * FLaunchApplicationModule
  */
 
 Lumen::Launch::FLaunchApplicationModule::FLaunchApplicationModule ( TSharedPtr<FGenericApplication> InApplication ) noexcept
@@ -77,7 +77,7 @@ Lumen::Launch::EModuleTraits Lumen::Launch::FLaunchApplicationModule::GetTraits 
 }
 
 /**
-- Accessors
+ * Accessors
  */
 
 Lumen::TSharedPtr<Lumen::FGenericApplication> Lumen::Launch::GetApplication () noexcept

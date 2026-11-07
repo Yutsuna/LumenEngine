@@ -1,6 +1,6 @@
 /**
-- @file LaunchFrameTiming.cpp
-- @brief FFrameClock / FFrameLimiter implementation.
+ * @file LaunchFrameTiming.cpp
+ * @brief FFrameClock / FFrameLimiter implementation.
  */
 
 #include <Engine/LaunchFrameTiming.hpp>
@@ -16,10 +16,10 @@ namespace Lumen
 namespace
 {
 
-    /*
-    - @brief Sleep until the specified deadline.
-    - @param InDeadline The deadline to sleep until.
-    - @return The current time in seconds.
+    /**
+     * @brief Sleep until the specified deadline.
+     * @param InDeadline The deadline to sleep until.
+     * @return The current time in seconds.
      */
     [[nodiscard]] Float64 WaitUntil ( const Float64 InDeadline ) noexcept
     {

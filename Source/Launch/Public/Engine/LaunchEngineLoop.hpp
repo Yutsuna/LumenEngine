@@ -1,6 +1,6 @@
 /**
-- @file LaunchEngineLoop.hpp
-- @brief Engine entry pipeline: PreInit -> Init -> Run, chained monadically.
+ * @file LaunchEngineLoop.hpp
+ * @brief Engine entry pipeline: PreInit -> Init -> Run, chained monadically.
  */
 
 #pragma once
@@ -20,8 +20,8 @@ namespace Lumen
 namespace Launch
 {
     /**
-    - @struct FPreInitState
-    - @brief Output -> Argument Parsed, Configuration Validated.
+     * @struct FPreInitState
+     * @brief Output -> Argument Parsed, Configuration Validated.
      */
     struct FPreInitState
     {
@@ -30,8 +30,8 @@ namespace Launch
     };
 
     /**
-    - @struct FInitState
-    - @brief Output -> Modules Alive, destructing it tears them down in reverse order.
+     * @struct FInitState
+     * @brief Output -> Modules Alive, destructing it tears them down in reverse order.
      */
     struct FInitState
     {
@@ -40,8 +40,8 @@ namespace Launch
     };
 
     /**
-    - @struct FRunSummary
-    - @brief Output -> Run.
+     * @struct FRunSummary
+     * @brief Output -> Run.
      */
     struct FRunSummary
     {
@@ -51,8 +51,8 @@ namespace Launch
     };
 
     /**
-    - @class FLaunchEngineLoop
-    - @brief Static facade of the launch pipeline.
+     * @class FLaunchEngineLoop
+     * @brief Static facade of the launch pipeline.
      */
     class FLaunchEngineLoop final
     {
@@ -73,9 +73,9 @@ namespace Launch
 
     public:
 
-        /*
-        - @brief Thread-safe and async-signal-safe. The loop exits at the end of the current frame.
-        - @return True if the exit request was successful, otherwise false.
+        /**
+         * @brief Thread-safe and async-signal-safe. The loop exits at the end of the current frame.
+         * @return True if the exit request was successful, otherwise false.
          */
         static Bool RequestExit () noexcept;
 

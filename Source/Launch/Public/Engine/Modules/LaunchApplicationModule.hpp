@@ -1,6 +1,6 @@
-/*
-- @file LaunchApplicationModule.hpp
-- @brief Launch the application module
+/**
+ * @file LaunchApplicationModule.hpp
+ * @brief Launch the application module
  */
 
 #pragma once
@@ -21,8 +21,8 @@ namespace Launch
 {
 
     /**
-    - @class FLaunchMessageHandler
-    - @brief Routes OS-level requests to the engine loop.
+     * @class FLaunchMessageHandler
+     * @brief Routes OS-level requests to the engine loop.
      */
     class FLaunchMessageHandler : public FGenericApplicationMessageHandler
     {
@@ -33,8 +33,8 @@ namespace Launch
     };
 
     /**
-    - @class FLaunchApplicationModule
-    - @brief Launches the application module.
+     * @class FLaunchApplicationModule
+     * @brief Launches the application module.
      */
     class FLaunchApplicationModule final : public IEngineModule
     {

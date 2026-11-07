@@ -1,6 +1,6 @@
 /**
-- @file LaunchWindowModule.hpp
-- @brief Launch the main window. Requires the Application module.
+ * @file LaunchWindowModule.hpp
+ * @brief Launch the main window. Requires the Application module.
  */
 
 #pragma once
@@ -18,8 +18,8 @@ namespace Launch
 {
 
     /**
-    - @class FLaunchWindowModule
-    - @brief Owns the main OS window. Dies before the Application module.
+     * @class FLaunchWindowModule
+     * @brief Owns the main OS window. Dies before the Application module.
      */
     class FLaunchWindowModule final : public IEngineModule
     {

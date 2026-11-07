@@ -1,6 +1,6 @@
 /**
-- @file CommandLine.hpp
-- @brief Zero-allocation, non-owning view over `argv`.
+ * @file CommandLine.hpp
+ * @brief Zero-allocation, non-owning view over `argv`.
  */
 
 #pragma once
@@ -23,9 +23,9 @@ namespace Launch
     namespace Concepts
     {
 
-        /*
-        - @concept CCommandLineNumber
-        - @brief Numeric types FCommandLine can parse.
+        /**
+         * @concept CCommandLineNumber
+         * @brief Numeric types FCommandLine can parse.
          */
         template <typename Type>
         concept CCommandLineNumber = std::is_arithmetic_v<Type> and not ::Lumen::Concepts::CSameAs<Type, Bool>;
@@ -33,8 +33,8 @@ namespace Launch
     } // namespace Concepts
 
     /**
-    - @class FCommandLine
-    - @brief Parses `-Switch`, `-Key=Value` and `--Key=Value` (keys are ASCII case-insensitive).
+     * @class FCommandLine
+     * @brief Parses `-Switch`, `-Key=Value` and `--Key=Value` (keys are ASCII case-insensitive).
      */
     class FCommandLine
     {
@@ -64,9 +64,9 @@ namespace Launch
         /** @return Raw argv (excluding the program name). */
         [[nodiscard]] TSpan<const AnsiChar *const> GetArguments () const noexcept;
 
-        /*
-        - @brief Every option's name with dashes and `=value` stripped, in argv order.
-        -        Non-option arguments (no leading `-`) are reported as empty views.
+        /**
+         * @brief Every option's name with dashes and `=value` stripped, in argv order.
+         *        Non-option arguments (no leading `-`) are reported as empty views.
          */
         template <typename TFunction> void ForEachOption ( TFunction &&InCallback ) const noexcept;
 

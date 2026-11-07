@@ -1,6 +1,6 @@
-/*
-- @file LaunchEngineConfigParser.cpp
-- @brief Parse the Command Line then Validate the configuration.
+/**
+ * @file LaunchEngineConfigParser.cpp
+ * @brief Parse the Command Line then Validate the configuration.
  */
 
 #include "Launch/LaunchError.hpp"

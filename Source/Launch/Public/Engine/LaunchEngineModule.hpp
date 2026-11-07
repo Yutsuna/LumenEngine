@@ -1,6 +1,6 @@
 /**
-- @file LaunchEngineModule.hpp
-- @brief Contract between the launcher (composition root) and the engine modules.
+ * @file LaunchEngineModule.hpp
+ * @brief Contract between the launcher (composition root) and the engine modules.
  */
 
 #pragma once
@@ -22,8 +22,8 @@ namespace Lumen
 namespace Launch
 {
     /**
-    - @enum EModuleTraits
-    - @brief Declares which per-frame hooks a module actually implements.
+     * @enum EModuleTraits
+     * @brief Declares which per-frame hooks a module actually implements.
      */
     enum class EModuleTraits : UInt8
     {
@@ -35,8 +35,8 @@ namespace Launch
     LUMEN_ENUM_FLAGS( EModuleTraits )
 
     /**
-    - @class IEngineModule
-    - @brief A subsystem whose lifetime is bound to its C++ lifetime.
+     * @class IEngineModule
+     * @brief A subsystem whose lifetime is bound to its C++ lifetime.
      */
     class IEngineModule
     {
@@ -52,16 +52,16 @@ namespace Launch
         /** @return The traits of the module. */
         [[nodiscard]] virtual EModuleTraits GetTraits () const noexcept;
 
-        /*
-        - @brief Fixed Tick simulation hook (gameplay, physics...).
-        - @param InFixedDeltaSeconds The fixed delta time in seconds.
+        /**
+         * @brief Fixed Tick simulation hook (gameplay, physics...).
+         * @param InFixedDeltaSeconds The fixed delta time in seconds.
          */
         virtual void FixedTick ( Float64 InFixedDeltaSeconds ) noexcept;
 
-        /*
-        - @brief Tick once per frame.
-        - @param InDeltaSeconds The delta time in seconds.
-        - @param InAlpha The interpolation factor value.
+        /**
+         * @brief Tick once per frame.
+         * @param InDeltaSeconds The delta time in seconds.
+         * @param InAlpha The interpolation factor value.
          */
         virtual void Tick ( Float64 InDeltaSeconds, Float64 InAlpha ) noexcept;
     };
@@ -70,8 +70,8 @@ namespace Launch
     using FModuleFactory = TLaunchResult<TUniquePtr<IEngineModule>> ( * )( const FLaunchEngineConfig & ) noexcept;
 
     /**
-    - @struct FModuleDescriptor
-    - @brief Static registration entry. Order in the table is startup order; shutdown is the exact reverse.
+     * @struct FModuleDescriptor
+     * @brief Static registration entry. Order in the table is startup order; shutdown is the exact reverse.
      */
     struct FModuleDescriptor
     {

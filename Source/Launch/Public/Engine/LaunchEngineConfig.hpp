@@ -1,6 +1,6 @@
 /**
-- @file LaunchEngineConfig.hpp
-- @brief Launch-time configuration, filled during PreInit and immutable afterwards.
+ * @file LaunchEngineConfig.hpp
+ * @brief Launch-time configuration, filled during PreInit and immutable afterwards.
  */
 
 #pragma once
@@ -16,8 +16,8 @@ namespace Lumen
 namespace Launch
 {
     /**
-    - @struct FLaunchEngineConfig
-    - @brief Plain data, trivially copyable. Passed by const reference to every module factory.
+     * @struct FLaunchEngineConfig
+     * @brief Plain data, trivially copyable. Passed by const reference to every module factory.
      */
     struct FLaunchEngineConfig
     {

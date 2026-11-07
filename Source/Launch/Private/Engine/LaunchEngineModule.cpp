@@ -1,6 +1,6 @@
 /**
-- @file LaunchEngineModule.cpp
-- @brief Module registration table.
+ * @file LaunchEngineModule.cpp
+ * @brief Module registration table.
  */
 
 #include <Core/CoreDefinitions.hpp>

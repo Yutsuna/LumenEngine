@@ -1,6 +1,6 @@
 /**
-- @file ModuleStack.cpp
-- @brief FModuleStack implementation.
+ * @file ModuleStack.cpp
+ * @brief FModuleStack implementation.
  */
 
 #include <Launch/ModuleStack.hpp>

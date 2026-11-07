@@ -1,6 +1,6 @@
 /**
-- @file LaunchEngineLoop.cpp
-- @brief Launch::FLaunchEngineLoop implementation.
+ * @file LaunchEngineLoop.cpp
+ * @brief Launch::FLaunchEngineLoop implementation.
  */
 
 #include <Engine/LaunchEngineConfig.hpp>

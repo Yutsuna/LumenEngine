@@ -1,6 +1,6 @@
 /**
-- @file Main.cpp
-- @brief App module entry-point.
+ * @file Main.cpp
+ * @brief App module entry-point.
  */
 
 #include <Engine/LaunchEngine.hpp>

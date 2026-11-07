@@ -1,6 +1,6 @@
 /**
-- @file ModuleStack.hpp
-- @brief Owns running modules, guarantees reverse-order teardown.
+ * @file ModuleStack.hpp
+ * @brief Owns running modules, guarantees reverse-order teardown.
  */
 
 #pragma once
@@ -14,8 +14,8 @@ namespace Lumen
 namespace Launch
 {
     /**
-    - @class FModuleStack
-    - @brief Move-only owner of the live modules. Last started, first destroyed.
+     * @class FModuleStack
+     * @brief Move-only owner of the live modules. Last started, first destroyed.
      */
     class FModuleStack final : public FNonCopyable
     {
@@ -48,16 +48,16 @@ namespace Launch
 
     public:
 
-        /*
-        - @brief Fixed tick, called at every fixed tick.
-        - @param InFixedDeltaSeconds Fixed delta time in seconds.
+        /**
+         * @brief Fixed tick, called at every fixed tick.
+         * @param InFixedDeltaSeconds Fixed delta time in seconds.
          */
         void FixedTick ( Float64 InFixedDeltaSeconds ) noexcept;
 
-        /*
-        - @brief Tick at every frame.
-        - @param InDeltaSeconds Delta time in seconds.
-        - @param InAlpha Alpha value.
+        /**
+         * @brief Tick at every frame.
+         * @param InDeltaSeconds Delta time in seconds.
+         * @param InAlpha Alpha value.
          */
         void Tick ( Float64 InDeltaSeconds, Float64 InAlpha ) noexcept;
 
