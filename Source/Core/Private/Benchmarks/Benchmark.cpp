@@ -296,26 +296,25 @@ namespace Benchmarks
         }
 
         // Static initialization order across translation units is unspecified: sort for a deterministic report.
-        std::ranges::stable_sort( SelectedBenchmarks,
-                                  [] ( const FBenchmarkMetadata *A, const FBenchmarkMetadata *B )
-                                  {
-                                      if ( A->SuiteName != B->SuiteName )
-                                      {
-                                          return A->SuiteName < B->SuiteName;
-                                      }
-                                      if ( A->BenchmarkName != B->BenchmarkName )
-                                      {
-                                          return A->BenchmarkName < B->BenchmarkName;
-                                      }
+        std::ranges::stable_sort( SelectedBenchmarks, [] ( const FBenchmarkMetadata *A, const FBenchmarkMetadata *B )
+        {
+            if ( A->SuiteName != B->SuiteName )
+            {
+                return A->SuiteName < B->SuiteName;
+            }
+            if ( A->BenchmarkName != B->BenchmarkName )
+            {
+                return A->BenchmarkName < B->BenchmarkName;
+            }
 
-                                      const FStringView FileA = A->DeclaredLocation.file_name();
-                                      const FStringView FileB = B->DeclaredLocation.file_name();
-                                      if ( FileA != FileB )
-                                      {
-                                          return FileA < FileB;
-                                      }
-                                      return A->DeclaredLocation.line() < B->DeclaredLocation.line();
-                                  } );
+            const FStringView FileA = A->DeclaredLocation.file_name();
+            const FStringView FileB = B->DeclaredLocation.file_name();
+            if ( FileA != FileB )
+            {
+                return FileA < FileB;
+            }
+            return A->DeclaredLocation.line() < B->DeclaredLocation.line();
+        } );
 
         TVector<FPlannedRun> Plan;
         for ( const FBenchmarkMetadata *Metadata : SelectedBenchmarks )

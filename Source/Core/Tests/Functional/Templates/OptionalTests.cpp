@@ -153,7 +153,10 @@ LUMEN_TEST( Optional_Lifetime, EmptyCopyAndMoveDoNotConstructValue )
 LUMEN_TEST( Optional_Monadic, Transform )
 {
     TOptional<Int32> Optional( 21 );
-    auto Result = Optional.Transform( [] ( const Int32 InValue ) { return InValue * 2; } );
+    auto Result = Optional.Transform( [] ( const Int32 InValue )
+    {
+        return InValue * 2;
+    } );
 
     LUMEN_CHECK_TRUE( Result.HasValue() );
     LUMEN_CHECK_EQ( *Result, 42 );
@@ -163,12 +166,11 @@ LUMEN_TEST( Optional_Monadic, EmptyTransformSkipsFunction )
 {
     TOptional<Int32> Optional;
     Int32 Calls = 0;
-    auto Result = Optional.Transform(
-        [&Calls] ( const Int32 InValue )
-        {
-            ++Calls;
-            return InValue;
-        } );
+    auto Result = Optional.Transform( [&Calls] ( const Int32 InValue )
+    {
+        ++Calls;
+        return InValue;
+    } );
 
     LUMEN_CHECK_FALSE( Result.HasValue() );
     LUMEN_CHECK_EQ( Calls, 0 );
@@ -177,7 +179,10 @@ LUMEN_TEST( Optional_Monadic, EmptyTransformSkipsFunction )
 LUMEN_TEST( Optional_Constructor, Constexpr )
 {
     constexpr TOptional<Int32> Optional( 42 );
-    constexpr auto Result = Optional.Transform( [] ( const Int32 InValue ) { return InValue * 2; } );
+    constexpr auto Result = Optional.Transform( [] ( const Int32 InValue )
+    {
+        return InValue * 2;
+    } );
 
     static_assert( Optional.HasValue() );
     static_assert( *Optional == 42 );

@@ -42,7 +42,10 @@ namespace Lumen
 /** @brief Checks if the given string view contains only space characters. */
 [[nodiscard]] constexpr CORE_EXPORT Bool IsSpace ( FStringView InStringView ) noexcept
 {
-    return std::ranges::all_of( InStringView, [] ( const AnsiChar c ) noexcept { return IsSpace( c ); } );
+    return std::ranges::all_of( InStringView, [] ( const AnsiChar c ) noexcept
+    {
+        return IsSpace( c );
+    } );
 }
 
 /** @brief To lower ASCII (Branchless-friendly single comparison) */
@@ -61,7 +64,10 @@ namespace Lumen
     FString Result;
     Result.resize( InString.length() );
 
-    std::ranges::transform( InString, Result.begin(), [] ( const AnsiChar c ) noexcept { return ToLower( c ); } );
+    std::ranges::transform( InString, Result.begin(), [] ( const AnsiChar c ) noexcept
+    {
+        return ToLower( c );
+    } );
 
     return Result;
 }
@@ -83,8 +89,10 @@ constexpr CORE_EXPORT void ToLowerInline ( FString &InOutString ) noexcept
         return false;
     }
 
-    return std::ranges::equal( InStringA, InStringB,
-                               [] ( const AnsiChar A, const AnsiChar B ) noexcept { return ToLower( A ) == ToLower( B ); } );
+    return std::ranges::equal( InStringA, InStringB, [] ( const AnsiChar A, const AnsiChar B ) noexcept
+    {
+        return ToLower( A ) == ToLower( B );
+    } );
 }
 
 /** @brief Strips leading spaces */

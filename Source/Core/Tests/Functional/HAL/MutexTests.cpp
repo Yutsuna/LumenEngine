@@ -303,14 +303,13 @@ LUMEN_TEST( Mutex_Threading, LockBlocksSecondThread )
 
     Mutex.Lock();
 
-    std::thread Other(
-        [&] ()
-        {
-            SecondStarted.store( true, std::memory_order_release );
-            Mutex.Lock();
-            SecondAcquired.store( true, std::memory_order_release );
-            Mutex.Unlock();
-        } );
+    std::thread Other( [&] ()
+    {
+        SecondStarted.store( true, std::memory_order_release );
+        Mutex.Lock();
+        SecondAcquired.store( true, std::memory_order_release );
+        Mutex.Unlock();
+    } );
 
     while ( !SecondStarted.load( std::memory_order_acquire ) )
     {

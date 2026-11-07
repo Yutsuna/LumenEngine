@@ -114,20 +114,18 @@ namespace Meta
     template <typename... Alts> [[nodiscard]] constexpr std::string_view ActiveName ( const std::variant<Alts...> &Node )
     {
 #if LUMEN_HAS_REFLECTION
-        return std::visit(
-            [] ( const auto &Alt ) -> std::string_view
+        return std::visit( [] ( const auto &Alt ) -> std::string_view
+        {
+            using TObject = std::remove_cvref_t<decltype( Alt )>;
+            if constexpr ( Concepts::CSameAs<TObject, std::monostate> )
             {
-                using TObject = std::remove_cvref_t<decltype( Alt )>;
-                if constexpr ( Concepts::CSameAs<TObject, std::monostate> )
-                {
-                    return "None";
-                }
-                else
-                {
-                    return TypeName<TObject>();
-                }
-            },
-            Node );
+                return "None";
+            }
+            else
+            {
+                return TypeName<TObject>();
+            }
+        }, Node );
 #else
         static_cast<void>( Node );
         return "Unknown";

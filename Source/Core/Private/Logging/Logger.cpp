@@ -127,7 +127,10 @@ void FLogger::Initialize () noexcept
         {
             return;
         }
-        WorkerThread = std::jthread( [this] ( std::stop_token Token ) { FlushLogMessages( Token ); } );
+        WorkerThread = std::jthread( [this] ( std::stop_token Token )
+        {
+            FlushLogMessages( Token );
+        } );
         bIsAsync.store( true );
     }
     catch ( std::system_error &SystemError )
@@ -223,7 +226,10 @@ void FLogger::FlushLogMessages ( std::stop_token &StopToken )
         {
             TUniqueLock<FMutex> Lock( QueueMutex );
 
-            Condition.wait( Lock, StopToken, [this] { return !LogMessageQueue.empty(); } );
+            Condition.wait( Lock, StopToken, [this]
+            {
+                return !LogMessageQueue.empty();
+            } );
 
             if ( LogMessageQueue.empty() )
             {

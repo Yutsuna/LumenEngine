@@ -141,7 +141,10 @@ void Lumen::Meta::Detail::WriteJSONValue ( FString &Out, const TValue &Value, co
             WriteBreak( Out, Options, Depth + 1 );
             Out.append( "\"Value\"" );
             Out.append( Options.bPretty ? ": " : ":" );
-            std::visit( [&] ( const auto &Alt ) { WriteJSONValue( Out, Alt, Options, Depth + 1 ); }, Value );
+            std::visit( [&] ( const auto &Alt )
+            {
+                WriteJSONValue( Out, Alt, Options, Depth + 1 );
+            }, Value );
             WriteBreak( Out, Options, Depth );
             Out.push_back( '}' );
         }
@@ -170,17 +173,16 @@ void Lumen::Meta::Detail::WriteJSONValue ( FString &Out, const TValue &Value, co
     {
         Out.push_back( '{' );
         Bool bFirst = true;
-        ForEachMember( Value,
-                       [&] ( const FStringView Name, const auto &Field )
-                       {
-                           if ( not bFirst )
-                           {
-                               Out.push_back( ',' );
-                           }
-                           WriteBreak( Out, Options, Depth + 1 );
-                           WriteJSONMember( Out, Name, Field, Options, Depth + 1 );
-                           bFirst = false;
-                       } );
+        ForEachMember( Value, [&] ( const FStringView Name, const auto &Field )
+        {
+            if ( not bFirst )
+            {
+                Out.push_back( ',' );
+            }
+            WriteBreak( Out, Options, Depth + 1 );
+            WriteJSONMember( Out, Name, Field, Options, Depth + 1 );
+            bFirst = false;
+        } );
         if ( not bFirst )
         {
             WriteBreak( Out, Options, Depth );

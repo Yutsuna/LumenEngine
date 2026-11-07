@@ -241,7 +241,10 @@ LUMEN_TEST( Expected_Transform, Value )
 {
     constexpr TExpected<Int32, EExpectedTestError> Exp( 21 );
 
-    constexpr auto Result = Exp.Transform( [] ( Int32 Value ) { return Value * 2; } );
+    constexpr auto Result = Exp.Transform( [] ( Int32 Value )
+    {
+        return Value * 2;
+    } );
 
     LUMEN_CHECK_TRUE( Result.HasValue() );
     LUMEN_CHECK_EQ( *Result, 42 );
@@ -251,7 +254,10 @@ LUMEN_TEST( Expected_Transform, ErrorPropagates )
 {
     constexpr TExpected<Int32, EExpectedTestError> Exp( FUnexpect{}, EExpectedTestError::ErrorA );
 
-    constexpr auto Result = Exp.Transform( [] ( Int32 Value ) { return Value * 2; } );
+    constexpr auto Result = Exp.Transform( [] ( Int32 Value )
+    {
+        return Value * 2;
+    } );
 
     LUMEN_CHECK_FALSE( Result.HasValue() );
     LUMEN_CHECK_EQ( Result.Error(), EExpectedTestError::ErrorA );
@@ -261,7 +267,10 @@ LUMEN_TEST( Expected_Transform, TypeChange )
 {
     TExpected<Int32, EExpectedTestError> Exp( 42 );
 
-    auto Result = Exp.Transform( [] ( Int32 Value ) { return FString( std::to_string( Value ) ); } );
+    auto Result = Exp.Transform( [] ( Int32 Value )
+    {
+        return FString( std::to_string( Value ) );
+    } );
 
     LUMEN_CHECK_TRUE( Result.HasValue() );
     LUMEN_CHECK_EQ( *Result, "42" );
@@ -271,7 +280,10 @@ LUMEN_TEST( Expected_AndThen, Value )
 {
     constexpr TExpected<Int32, EExpectedTestError> Exp( 21 );
 
-    constexpr auto Result = Exp.AndThen( [] ( Int32 Value ) { return TExpected<Int32, EExpectedTestError>( Value * 2 ); } );
+    constexpr auto Result = Exp.AndThen( [] ( Int32 Value )
+    {
+        return TExpected<Int32, EExpectedTestError>( Value * 2 );
+    } );
 
     LUMEN_CHECK_TRUE( Result.HasValue() );
     LUMEN_CHECK_EQ( *Result, 42 );
@@ -281,8 +293,10 @@ LUMEN_TEST( Expected_AndThen, InnerError )
 {
     constexpr TExpected<Int32, EExpectedTestError> Exp( 21 );
 
-    constexpr auto Result =
-        Exp.AndThen( [] ( Int32 ) { return TExpected<Int32, EExpectedTestError>( FUnexpect{}, EExpectedTestError::ErrorA ); } );
+    constexpr auto Result = Exp.AndThen( [] ( Int32 )
+    {
+        return TExpected<Int32, EExpectedTestError>( FUnexpect{}, EExpectedTestError::ErrorA );
+    } );
 
     LUMEN_CHECK_FALSE( Result.HasValue() );
     LUMEN_CHECK_EQ( Result.Error(), EExpectedTestError::ErrorA );
@@ -292,7 +306,10 @@ LUMEN_TEST( Expected_AndThen, ErrorPropagates )
 {
     constexpr TExpected<Int32, EExpectedTestError> Exp( FUnexpect{}, EExpectedTestError::ErrorA );
 
-    constexpr auto Result = Exp.AndThen( [] ( Int32 Value ) { return TExpected<Int32, EExpectedTestError>( Value * 2 ); } );
+    constexpr auto Result = Exp.AndThen( [] ( Int32 Value )
+    {
+        return TExpected<Int32, EExpectedTestError>( Value * 2 );
+    } );
 
     LUMEN_CHECK_FALSE( Result.HasValue() );
     LUMEN_CHECK_EQ( Result.Error(), EExpectedTestError::ErrorA );
@@ -302,8 +319,15 @@ LUMEN_TEST( Expected_AndThen, Chained )
 {
     constexpr TExpected<Int32, EExpectedTestError> Exp( 1 );
 
-    constexpr auto Result = Exp.AndThen( [] ( Int32 V ) { return TExpected<Int32, EExpectedTestError>( V + 1 ); } )
-                                .AndThen( [] ( Int32 V ) { return TExpected<Int32, EExpectedTestError>( V * 2 ); } );
+    constexpr auto Result = Exp.AndThen(
+                                   [] ( Int32 V )
+    {
+        return TExpected<Int32, EExpectedTestError>( V + 1 );
+    } )
+                                .AndThen( [] ( Int32 V )
+    {
+        return TExpected<Int32, EExpectedTestError>( V * 2 );
+    } );
 
     LUMEN_CHECK_TRUE( Result.HasValue() );
     LUMEN_CHECK_EQ( *Result, 4 );
@@ -313,7 +337,10 @@ LUMEN_TEST( Expected_OrElse, ValueSkipsFunc )
 {
     TExpected<Int32, EExpectedTestError> Exp( 42 );
 
-    auto Result = std::move( Exp ).OrElse( [] ( EExpectedTestError ) { return TExpected<Int32, EExpectedTestError>( 0 ); } );
+    auto Result = std::move( Exp ).OrElse( [] ( EExpectedTestError )
+    {
+        return TExpected<Int32, EExpectedTestError>( 0 );
+    } );
 
     LUMEN_CHECK_TRUE( Result.HasValue() );
     LUMEN_CHECK_EQ( *Result, 42 );
@@ -323,7 +350,10 @@ LUMEN_TEST( Expected_OrElse, ErrorCallsFunc )
 {
     TExpected<Int32, EExpectedTestError> Exp( FUnexpect{}, EExpectedTestError::ErrorA );
 
-    auto Result = std::move( Exp ).OrElse( [] ( EExpectedTestError ) { return TExpected<Int32, EExpectedTestError>( 99 ); } );
+    auto Result = std::move( Exp ).OrElse( [] ( EExpectedTestError )
+    {
+        return TExpected<Int32, EExpectedTestError>( 99 );
+    } );
 
     LUMEN_CHECK_TRUE( Result.HasValue() );
     LUMEN_CHECK_EQ( *Result, 99 );
@@ -333,8 +363,10 @@ LUMEN_TEST( Expected_OrElse, ErrorPropagatesFromFunc )
 {
     TExpected<Int32, EExpectedTestError> Exp( FUnexpect{}, EExpectedTestError::ErrorA );
 
-    auto Result = std::move( Exp ).OrElse(
-        [] ( EExpectedTestError ) { return TExpected<Int32, EExpectedTestError>( FUnexpect{}, EExpectedTestError::ErrorB ); } );
+    auto Result = std::move( Exp ).OrElse( [] ( EExpectedTestError )
+    {
+        return TExpected<Int32, EExpectedTestError>( FUnexpect{}, EExpectedTestError::ErrorB );
+    } );
 
     LUMEN_CHECK_FALSE( Result.HasValue() );
     LUMEN_CHECK_EQ( Result.Error(), EExpectedTestError::ErrorB );
@@ -345,7 +377,10 @@ LUMEN_TEST( Expected_Inspect, ValueCallsFunc )
     TExpected<Int32, EExpectedTestError> Exp( 42 );
     Int32 Captured = 0;
 
-    auto Result = std::move( Exp ).Inspect( [&] ( Int32 Value ) { Captured = Value; } );
+    auto Result = std::move( Exp ).Inspect( [&] ( Int32 Value )
+    {
+        Captured = Value;
+    } );
 
     LUMEN_CHECK_EQ( Captured, 42 );
     LUMEN_CHECK_TRUE( Result.HasValue() );
@@ -356,7 +391,10 @@ LUMEN_TEST( Expected_Inspect, ErrorSkipsFunc )
     TExpected<Int32, EExpectedTestError> Exp( FUnexpect{}, EExpectedTestError::ErrorA );
     Int32 Captured = 0;
 
-    auto Result = std::move( Exp ).Inspect( [&] ( Int32 Value ) { Captured = Value; } );
+    auto Result = std::move( Exp ).Inspect( [&] ( Int32 Value )
+    {
+        Captured = Value;
+    } );
 
     LUMEN_CHECK_EQ( Captured, 0 );
     LUMEN_CHECK_FALSE( Result.HasValue() );

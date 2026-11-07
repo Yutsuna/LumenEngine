@@ -311,31 +311,29 @@ LUMEN_TEST( SharedMutex_Threading, WriterBlocksReader )
     TAtomic<Bool> ReaderAcquired{ false };
     TAtomic<Bool> WriterRelease{ false };
 
-    std::thread Writer(
-        [&] ()
+    std::thread Writer( [&] ()
+    {
+        Mutex.Lock();
+        WriterReady.store( true, std::memory_order_release );
+        while ( not WriterRelease.load( std::memory_order_acquire ) )
         {
-            Mutex.Lock();
-            WriterReady.store( true, std::memory_order_release );
-            while ( not WriterRelease.load( std::memory_order_acquire ) )
-            {
-                std::this_thread::sleep_for( 1ms );
-            }
-            Mutex.Unlock();
-        } );
+            std::this_thread::sleep_for( 1ms );
+        }
+        Mutex.Unlock();
+    } );
 
     while ( not WriterReady.load( std::memory_order_acquire ) )
     {
         std::this_thread::sleep_for( 1ms );
     }
 
-    std::thread Reader(
-        [&] ()
-        {
-            ReaderStarted.store( true, std::memory_order_release );
-            Mutex.LockShared();
-            ReaderAcquired.store( true, std::memory_order_release );
-            Mutex.UnlockShared();
-        } );
+    std::thread Reader( [&] ()
+    {
+        ReaderStarted.store( true, std::memory_order_release );
+        Mutex.LockShared();
+        ReaderAcquired.store( true, std::memory_order_release );
+        Mutex.UnlockShared();
+    } );
 
     while ( not ReaderStarted.load( std::memory_order_acquire ) )
     {
@@ -365,31 +363,29 @@ LUMEN_TEST( SharedMutex_Threading, ReaderBlocksWriter )
     TAtomic<Bool> WriterAcquired{ false };
     TAtomic<Bool> ReaderRelease{ false };
 
-    std::thread Reader(
-        [&] ()
+    std::thread Reader( [&] ()
+    {
+        Mutex.LockShared();
+        ReaderReady.store( true, std::memory_order_release );
+        while ( not ReaderRelease.load( std::memory_order_acquire ) )
         {
-            Mutex.LockShared();
-            ReaderReady.store( true, std::memory_order_release );
-            while ( not ReaderRelease.load( std::memory_order_acquire ) )
-            {
-                std::this_thread::sleep_for( 1ms );
-            }
-            Mutex.UnlockShared();
-        } );
+            std::this_thread::sleep_for( 1ms );
+        }
+        Mutex.UnlockShared();
+    } );
 
     while ( not ReaderReady.load( std::memory_order_acquire ) )
     {
         std::this_thread::sleep_for( 1ms );
     }
 
-    std::thread Writer(
-        [&] ()
-        {
-            WriterStarted.store( true, std::memory_order_release );
-            Mutex.Lock();
-            WriterAcquired.store( true, std::memory_order_release );
-            Mutex.Unlock();
-        } );
+    std::thread Writer( [&] ()
+    {
+        WriterStarted.store( true, std::memory_order_release );
+        Mutex.Lock();
+        WriterAcquired.store( true, std::memory_order_release );
+        Mutex.Unlock();
+    } );
 
     while ( not WriterStarted.load( std::memory_order_acquire ) )
     {

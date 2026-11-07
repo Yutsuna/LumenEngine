@@ -36,8 +36,10 @@ inline void Filesystem::FPath::Normalize () noexcept
 
     std::ranges::replace( PathString, '\\', '/' );
 
-    const auto NewEnd =
-        std::ranges::unique( PathString, [] ( const AnsiChar A, const AnsiChar B ) { return A == '/' and B == '/'; } );
+    const auto NewEnd = std::ranges::unique( PathString, [] ( const AnsiChar A, const AnsiChar B )
+    {
+        return A == '/' and B == '/';
+    } );
     PathString.erase( NewEnd.begin(), PathString.end() );
 
     if ( PathString.size() > 1 and PathString.back() == '/' )
