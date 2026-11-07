@@ -21,18 +21,22 @@ namespace Internal
     {
     public:
 
-        /** @brief Allocates a new actor ID. */
-        static ActorID AllocateId () noexcept;
+        /** @brief Allocates a fresh ActorID. Safe from any thread. */
+        [[nodiscard]] static ActorID AllocateId () noexcept;
 
-        /** @brief Registers an actor. Called from AActor constructor. */
+        /** @brief Registers the actor in its slot. Serial phase only. */
         static void Register ( AActor *InActor ) noexcept;
 
-        /** @brief Unregisters an actor. Called from AActor destructor. */
+        /** @brief Nulls the slot and bumps its generation. Serial phase only. */
         static void Unregister ( AActor *InActor ) noexcept;
 
-        /** @brief Enqueues a message to the actor with the given ID. */
+        /** @brief Lock-free lookup; returns nullptr if the id is stale or unknown. */
+        [[nodiscard]] static AActor *Lookup ( ActorID InId ) noexcept;
+
+        /** @brief Lock-free lookup + deliver. */
         static void EnqueueMessage ( ActorID InId, const FMessage &InMessage ) noexcept;
     };
+
 } // namespace Internal
 
 } // namespace Lumen

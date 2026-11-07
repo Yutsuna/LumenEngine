@@ -19,13 +19,42 @@
 namespace Lumen
 {
 
+/**
+ * @typedef ActorID
+ * @brief A unique identifier for an actor.
+ */
 using ActorID = UInt64;
+
+/**
+ * @brief The invalid actor ID value.
+ */
+inline constexpr ActorID InvalidActorID = 0ULL;
+
+/**
+ * @brief Computes the slot index from an actor ID.
+ */
+[[nodiscard]] constexpr UInt32 ActorIdSlotIndex ( ActorID InId ) noexcept;
+
+/**
+ * @brief Computes the generation from an actor ID.
+ */
+[[nodiscard]] constexpr UInt32 ActorIdGeneration ( ActorID InId ) noexcept;
+
+/**
+ * @brief Constructs an actor ID from a slot index and generation.
+ */
+[[nodiscard]] constexpr ActorID MakeActorId ( UInt32 InSlotIndex, UInt32 InGeneration ) noexcept;
+
 struct FMessage;
 class AActor;
 
 namespace Concepts
 {
 
+    /**
+     * @concept CActor
+     * @brief Concept for an actor type that can receive messages.
+     */
     template <typename Type>
     concept CActor = requires( Type InActor, FMessage InMessage ) {
         { InActor.Receive( InMessage ) } -> CSameAs<void>;
@@ -105,3 +134,5 @@ private:
 extern const FLogCategory LogActor;
 
 } // namespace Lumen
+
+#include "Inline/ActorTypes.inl"
