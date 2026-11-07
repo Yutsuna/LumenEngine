@@ -5,6 +5,10 @@
 
 #include <Actor/Actor.hpp>
 #include <Actor/ActorRegistry.hpp>
+#include <Actor/ActorTypes.hpp>
+
+#include <Core/CoreDefinitions.hpp>
+#include <Logging/Logger.hpp>
 
 Lumen::AActor::AActor ( ActorID InId ) noexcept : Id( InId )
 {
@@ -16,10 +20,55 @@ Lumen::AActor::~AActor () noexcept
     Lumen::Internal::FActorRegistry::Unregister( this );
 }
 
+void Lumen::AActor::OnTick ( const Float64 LUMEN_UNUSED InDeltaTime ) noexcept
+{
+    /* */
+}
+
+void Lumen::AActor::RunFrame ( const Float64 InDeltaTime, const UInt32 InMaxMessages ) noexcept
+{
+    try
+    {
+        ProcessMailbox( InMaxMessages );
+        OnTick( InDeltaTime );
+    }
+    catch ( const std::exception &Exception )
+    {
+        LUMEN_LOG_ERROR( LogActor, "Actor {} threw: {}", Id, Exception.what() );
+    }
+    catch ( ... )
+    {
+        LUMEN_LOG_ERROR( LogActor, "Actor {} threw: unknown exception", Id );
+    }
+}
+
 void Lumen::AActor::EnqueueMessage ( const FMessage &InMessage ) noexcept
 {
     Mailbox.Push( InMessage );
 }
+
+Lumen::ActorID Lumen::AActor::GetId () const noexcept
+{
+    return Id;
+}
+
+Lumen::FActorRef Lumen::AActor::GetRef () const noexcept
+{
+    return FActorRef{ Id };
+}
+
+/**
+ * Protected
+ */
+
+Lumen::FMailBox &Lumen::AActor::GetMailbox () noexcept
+{
+    return Mailbox;
+}
+
+/**
+ * Private
+ */
 
 void Lumen::AActor::ProcessMailbox ( const UInt32 InMaxMessages ) noexcept
 {
@@ -37,19 +86,4 @@ void Lumen::AActor::ProcessMailbox ( const UInt32 InMaxMessages ) noexcept
         Receive( *Message );
         ++ProcessedCount;
     }
-}
-
-Lumen::ActorID Lumen::AActor::GetId () const noexcept
-{
-    return Id;
-}
-
-Lumen::FActorRef Lumen::AActor::GetRef () const noexcept
-{
-    return FActorRef( Id );
-}
-
-Lumen::FMailBox &Lumen::AActor::GetMailbox () noexcept
-{
-    return Mailbox;
 }

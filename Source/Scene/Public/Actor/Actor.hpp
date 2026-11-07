@@ -29,17 +29,21 @@ public:
 public:
 
     /** @brief Core logic entry point. Must be implemented by derived actors. */
-    virtual void Receive ( const FMessage &InMessage ) = 0;
+    virtual void Receive ( const FMessage &InMessage ) noexcept = 0;
+
+    /** @brief Called every tick with the elapsed time since the last tick. */
+    virtual void OnTick ( Float64 InDeltaTime ) noexcept;
 
     /** @brief Lock-free message enqueueing. */
     void EnqueueMessage ( const FMessage &InMessage ) noexcept;
 
     /**
-     * @brief Single-consumer mailbox processing.
+     * @brief Runs a single frame of the actor, processing messages and ticking.
+     * @param InDeltaTime The elapsed time since the last frame.
      * @param InMaxMessages Maximum number of messages to process in a single call.
      *                      If 0, all pending messages are processed.
      */
-    void ProcessMailbox ( UInt32 InMaxMessages = 0U ) noexcept;
+    void RunFrame ( Float64 InDeltaTime, UInt32 InMaxMessages = 0U ) noexcept;
 
     /**
      * @brief Retrieves the unique type ID for this actor instance.
@@ -72,6 +76,15 @@ protected:
 
     /** @brief Provides access to the mailbox for subclasses (e.g. for Reserve()). */
     [[nodiscard]] FMailBox &GetMailbox () noexcept;
+
+private:
+
+    /**
+     * @brief Single-consumer mailbox processing.
+     * @param InMaxMessages Maximum number of messages to process in a single call.
+     *                      If 0, all pending messages are processed.
+     */
+    void ProcessMailbox ( UInt32 InMaxMessages ) noexcept;
 
 private:
 
