@@ -49,16 +49,14 @@ Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit 
                        InCommandLine.GetArguments().size() );
 
     return ParseEngineConfig( InCommandLine )
-        .Transform(
-            [&InCommandLine] ( FLaunchEngineConfig &&InConfig ) noexcept -> FPreInitState
-            {
-                const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move( InConfig ) };
+        .Transform( [&InCommandLine] ( FLaunchEngineConfig &&InConfig ) noexcept -> FPreInitState
+    {
+        const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move( InConfig ) };
 
-                LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}",
-                                   Meta::SerializeToJSON( InConfig ) );
+        LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}", Meta::SerializeToJSON( InConfig ) );
 
-                return PreInitState;
-            } );
+        return PreInitState;
+    } );
 }
 
 Launch::TLaunchResult<Launch::FInitState> Launch::FLaunchEngineLoop::Init ( FPreInitState &&InPreInitState ) noexcept
