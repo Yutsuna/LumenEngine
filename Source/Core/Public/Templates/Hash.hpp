@@ -10,22 +10,21 @@
 namespace Lumen
 {
 
+/**
+ * @namespace FHash
+ * @brief Hash functions helpers.
+ */
+namespace FHash
+{
+
     /**
-     * @namespace FHash
-     * @brief Hash functions helpers.
+     * @brief Computes a stable hash value for a given type.
+     * @tparam TObjectType The type to compute the hash for.
      */
-    namespace FHash
-    {
+    template <class TObjectType> consteval UInt64 TypeHash () noexcept;
 
-        /**
-         * @brief Computes a stable hash value for a given type.
-         * @tparam TObjectType The type to compute the hash for.
-         */
-        template<class TObjectType>
-        consteval UInt64 TypeHash() noexcept;
+} // namespace FHash
 
-    }
-
-}
+} // namespace Lumen
 
 #include "Inline/Hash.inl"

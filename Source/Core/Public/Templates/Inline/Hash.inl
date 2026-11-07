@@ -7,8 +7,7 @@
 
 #include <Templates/Hash.hpp>
 
-template<class TObjectType>
-consteval Lumen::UInt64 Lumen::FHash::TypeHash() noexcept
+template <class TObjectType> consteval Lumen::UInt64 Lumen::FHash::TypeHash () noexcept
 {
 
     /**
@@ -16,14 +15,14 @@ consteval Lumen::UInt64 Lumen::FHash::TypeHash() noexcept
      * because it is stable across TUs, modules, and runs for a given compiler.
      */
     constexpr auto PrettyName = __PRETTY_FUNCTION__;
-    UInt64 ULHash = 0XCBF29CE484222325ULL;
+    UInt64 ULHash             = 0XCBF29CE484222325ULL;
 
     /**
      * INFO: FNV-1a hash over the pretty-printed type signature.
      */
     for ( const AnsiChar Char : PrettyName )
     {
-        ULHash ^= static_cast<UInt64>(Char);
+        ULHash ^= static_cast<UInt64>( Char );
         ULHash *= 0X100000001B3ULL;
     }
     return ULHash;

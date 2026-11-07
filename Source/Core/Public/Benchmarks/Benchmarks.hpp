@@ -36,13 +36,13 @@
 - // Macro: heavy, one iteration per sample.
 - LUMEN_MACRO_BENCHMARK( Assets, LoadLevel )
 - {
--     for ( auto _ : State ) { /* ... */ }
+-     for ( auto _ : State ) { /// }
 -
-}
+- }
 - @endcode
-
-    -
-    Run: `BenchRunner[filter][results.json]` - the filter supports `*`, `?` or a plain substring on "Suite.Name".*/
+-
+- Run: `BenchRunner[filter][results.json]` - the filter supports `*`, `?` or a plain substring on "Suite.Name".
+*/
 
 #pragma once
 
