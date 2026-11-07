@@ -110,7 +110,7 @@ LUMEN_TEST( Optional_Lifetime, CopyConstructsIndependentValue )
         LUMEN_CHECK_TRUE( Copy.HasValue() );
         LUMEN_CHECK_EQ( State.Alive, 2 );
         LUMEN_CHECK_EQ( State.Copies, 1 );
-        LUMEN_CHECK_NE( std::addressof( *Copy ), std::addressof( *Source ) );
+        LUMEN_CHECK_NOT_EQ( std::addressof( *Copy ), std::addressof( *Source ) );
     }
 
     LUMEN_CHECK_EQ( State.Alive, 1 );

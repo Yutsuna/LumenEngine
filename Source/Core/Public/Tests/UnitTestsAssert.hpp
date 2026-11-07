@@ -126,7 +126,7 @@ namespace Tests
     ::Lumen::Tests::AssertEqual( ( LeftExpression ), ( RightExpression ), #LeftExpression, #RightExpression,                     \
                                  ::std::source_location::current() )
 
-#define LUMEN_CHECK_NE( LeftExpression, RightExpression )                                                                        \
+#define LUMEN_CHECK_NOT_EQ( LeftExpression, RightExpression )                                                                    \
     ::Lumen::Tests::AssertNotEqual( ( LeftExpression ), ( RightExpression ), #LeftExpression, #RightExpression,                  \
                                     ::std::source_location::current() )
 
