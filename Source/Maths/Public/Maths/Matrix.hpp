@@ -1,6 +1,6 @@
 /**
-- @file Matrix.hpp
-- @brief Lumen column-major matrix
+ * @file Matrix.hpp
+ * @brief Lumen column-major matrix
  */
 
 #pragma once
@@ -29,11 +29,11 @@ namespace Maths
     } // namespace Concepts
 
     /**
-    - @struct TMatrix
-    - @brief A column-major matrix template
-    - @tparam Type The scalar type (Float32, Float64...)
-    - @tparam Rows Number of rows
-    - @tparam Columns Number of columns
+     * @struct TMatrix
+     * @brief A column-major matrix template
+     * @tparam Type The scalar type (Float32, Float64...)
+     * @tparam Rows Number of rows
+     * @tparam Columns Number of columns
      */
     template <typename Type, USize Rows, USize Columns>
         requires Concepts::CMatrixDimension<Rows, Columns>
@@ -101,7 +101,7 @@ namespace Maths
     };
 
     /**
-    - Operators
+     * Operators
      */
 
     template <typename Type, USize Rows, USize Inner, USize Columns>
@@ -125,7 +125,7 @@ namespace Maths
                                                                     const Type Scalar ) noexcept;
 
     /**
-    - Aliases
+     * Aliases
      */
 
     using FMatrix2x2f = TMatrix<Float32, 2, 2>;
@@ -137,12 +137,12 @@ namespace Maths
     using FMatrix4x4d = TMatrix<Float64, 4, 4>;
 
     /**
-    - @brief Transform an axis-aligned bounding box by a matrix using Arvo's method.
-    - @param LocalMin The minimum corner of the local-space AABB.
-    - @param LocalMax The maximum corner of the local-space AABB.
-    - @param Transform The transform to apply.
-    - @param OutWorldMin The minimum corner of the transformed AABB.
-    - @param OutWorldMax The maximum corner of the transformed AABB.
+     * @brief Transform an axis-aligned bounding box by a matrix using Arvo's method.
+     * @param LocalMin The minimum corner of the local-space AABB.
+     * @param LocalMax The maximum corner of the local-space AABB.
+     * @param Transform The transform to apply.
+     * @param OutWorldMin The minimum corner of the transformed AABB.
+     * @param OutWorldMax The maximum corner of the transformed AABB.
      */
     MATHS_EXPORT void TransformAABB ( const FVec3f &LocalMin,
                                       const FVec3f &LocalMax,

@@ -1,6 +1,6 @@
 /**
-- @file SIMDSEE.cpp
-- @brief Implementation of SSE utilities for mathematical operations.
+ * @file SIMDSEE.cpp
+ * @brief Implementation of SSE utilities for mathematical operations.
  */
 
 #include <Maths/SIMD/SIMD.hpp>
@@ -19,7 +19,7 @@ void Lumen::Maths::SIMD::MatrixMul4x4 ( const Float32 *InLeft, const Float32 *In
     for ( USize Idx = 0; Idx < 4; ++Idx )
     {
         /**
-        - Load the current column of the right matrix
+         * Load the current column of the right matrix
          */
         const __m128 RCol = _mm_loadu_ps( InRight + ( Idx * 4 ) );
 
@@ -29,7 +29,7 @@ void Lumen::Maths::SIMD::MatrixMul4x4 ( const Float32 *InLeft, const Float32 *In
         const __m128 V3 = _mm_shuffle_ps( RCol, RCol, _MM_SHUFFLE( 3, 3, 3, 3 ) );
 
         /**
-        - Compute the linear combination: Res = (L0 * V0) + (L1 * V1) + (L2 * V2) + (L3 * V3)
+         * Compute the linear combination: Res = (L0 * V0) + (L1 * V1) + (L2 * V2) + (L3 * V3)
          */
         __m128 Res = _mm_mul_ps( V0, L0 );
         Res        = _mm_add_ps( Res, _mm_mul_ps( V1, L1 ) );

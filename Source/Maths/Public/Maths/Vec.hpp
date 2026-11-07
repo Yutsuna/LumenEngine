@@ -1,6 +1,6 @@
 /**
-- @file Vec.hpp
-- @brief Declaration of the Vec struct for mathematical vector operations.
+ * @file Vec.hpp
+ * @brief Declaration of the Vec struct for mathematical vector operations.
  */
 
 #pragma once
@@ -122,16 +122,16 @@ namespace Maths
         constexpr TVec () noexcept = default;
 
         /**
-        - @brief Construct a Vec with all components set to the same value
-        - @param Value The value to set all components to
-        - @return A vector with all components set to Value
+         * @brief Construct a Vec with all components set to the same value
+         * @param Value The value to set all components to
+         * @return A vector with all components set to Value
          */
         constexpr TVec ( const Type &Value ) noexcept;
 
         /**
-        - @brief Construct a Vec by copying from another Vec of the same type and dimension
-        - @param Other The Vec to copy from
-        - @return A new Vec with the same component values as Other
+         * @brief Construct a Vec by copying from another Vec of the same type and dimension
+         * @param Other The Vec to copy from
+         * @return A new Vec with the same component values as Other
          */
         constexpr TVec ( const TVec<Type, Dimension> &Other ) noexcept = default;
 
@@ -139,9 +139,9 @@ namespace Maths
         constexpr TVec &operator=( TVec &&Other ) noexcept      = default;
 
         /**
-        - @brief Construct a Vec by converting from another Vec of a different type but the same dimension
-        - @param Other The Vec to convert from
-        - @return A new Vec with component values converted from Other
+         * @brief Construct a Vec by converting from another Vec of a different type but the same dimension
+         * @param Other The Vec to convert from
+         * @return A new Vec with component values converted from Other
          */
         template <typename OtherType> constexpr explicit TVec( const TVec<OtherType, Dimension> &Other ) noexcept;
 
@@ -200,9 +200,9 @@ namespace Maths
     using FVec4u = TVec<UInt32, 4>;
 
     /**
-    - @brief Normalize a plane represented as a vec4 (Normal.xyz, Distance)
-    - @param InPlane The input plane to normalize
-    - @return A new plane with the normal vector normalized and distance adjusted accordingly
+     * @brief Normalize a plane represented as a vec4 (Normal.xyz, Distance)
+     * @param InPlane The input plane to normalize
+     * @return A new plane with the normal vector normalized and distance adjusted accordingly
      */
     template <typename Type> [[nodiscard]] constexpr TVec<Type, 4> NormalizePlane ( const TVec<Type, 4> &InPlane ) noexcept;
 

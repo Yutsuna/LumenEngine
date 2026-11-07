@@ -1,6 +1,6 @@
 /**
-- @file Vertex.hpp
-- @brief Definition of the FVertex struct
+ * @file Vertex.hpp
+ * @brief Definition of the FVertex struct
  */
 
 #pragma once
@@ -17,8 +17,8 @@ namespace Maths
 {
 
     /**
-    - @struct FVertex
-    - @brief Represents a vertex in 3D space, containing position, normal, UV coordinates, and tangent information.
+     * @struct FVertex
+     * @brief Represents a vertex in 3D space, containing position, normal, UV coordinates, and tangent information.
      */
     struct MATHS_EXPORT FVertex final
     {

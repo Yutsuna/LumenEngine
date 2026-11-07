@@ -1,6 +1,6 @@
 /**
-- @file Matrix.inl
-- @brief Inline implementation of the TMatrix struct.
+ * @file Matrix.inl
+ * @brief Inline implementation of the TMatrix struct.
  */
 
 #pragma once
@@ -17,7 +17,7 @@ namespace Maths
 {
 
     /**
-    - Ctors
+     * Ctors
      */
 
     template <typename Type, USize Rows, USize Columns>
@@ -51,7 +51,7 @@ namespace Maths
     }
 
     /**
-    - Operators
+     * Operators
      */
 
     template <typename Type, USize Rows, USize Columns>

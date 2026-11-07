@@ -1,6 +1,6 @@
 /**
-- @file SIMDNeon.cpp
-- @brief Implementation of Neon utilities for mathematical operations.
+ * @file SIMDNeon.cpp
+ * @brief Implementation of Neon utilities for mathematical operations.
  */
 
 #include <Maths/SIMD/SIMD.hpp>
