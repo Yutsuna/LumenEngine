@@ -25,11 +25,13 @@ struct alignas( 64 ) FMessage
     static constexpr USize MaxPayloadSize   = 112;
     static constexpr USize PayloadAlignment = 16;
 
-    ActorID Sender                                               = 0ULL;
-    UInt32 Type                                                  = 0U;
-    UInt16 PayloadSize                                           = 0U; //<< sizeof(PayloadType) when Make<T> was used, 0 otherwise
-    UInt16 Flags                                                 = 0U;
-    alignas( PayloadAlignment ) Byte PayloadData[MaxPayloadSize] = {};
+    ActorID Sender     = 0ULL;
+    UInt32 Type        = 0U;
+    UInt16 PayloadSize = 0U; //<< sizeof(PayloadType) when Make<T> was used, 0 otherwise
+    UInt16 Flags       = 0U;
+
+    /** INFO: mutable because std::start_lifetime_as<const T> requires a const pointer as an asm output */
+    alignas( PayloadAlignment ) mutable Byte PayloadData[MaxPayloadSize] = {};
 
     /**
      * @brief Creates a message with the given type, sender, and payload.
@@ -73,7 +75,7 @@ struct alignas( 64 ) FMessage
     [[nodiscard]] const TPayloadType &GetPayload () const noexcept
     {
 #if defined( __cpp_lib_start_lifetime_as ) && __cpp_lib_start_lifetime_as >= 202207L
-        return *std::start_lifetime_as<const TPayloadType>( PayloadData );
+        return *std::start_lifetime_as<TPayloadType>( PayloadData );
 #else
         thread_local TPayloadType Storage;
         std::memcpy( &Storage, PayloadData, sizeof( TPayloadType ) );
