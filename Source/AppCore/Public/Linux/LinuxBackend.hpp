@@ -1,6 +1,6 @@
-/*
-- @file LinuxBackend.hpp
-- @brief Declaration of the FLinuxBackend struct for Linux-specific backend management
+/**
+ * @file LinuxBackend.hpp
+ * @brief Declaration of the FLinuxBackend struct for Linux-specific backend management
  */
 
 #pragma once

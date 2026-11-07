@@ -1,6 +1,6 @@
-/*
-- @file LinuxWindow.hpp
-- @brief Declaration of the FLinuxWindow class for Linux-specific window management
+/**
+ * @file LinuxWindow.hpp
+ * @brief Declaration of the FLinuxWindow class for Linux-specific window management
  */
 
 #pragma once
@@ -17,8 +17,8 @@ namespace Lumen
 class FLinuxApplication;
 
 /**
-- @class FLinuxWindow
-- @brief A class that represents a window in the Linux environment
+ * @class FLinuxWindow
+ * @brief A class that represents a window in the Linux environment
  */
 class APPCORE_EXPORT FLinuxWindow : public FGenericWindow
 {
@@ -68,15 +68,15 @@ public:
     /** @brief Let the OS know that a window has taken focus */
     void SetWindowFocus () noexcept override;
 
-    /*
-    - @brief Sets the opacity of this window
-    - @param InOpacity The new opacity of the window as floating Point Scalar
+    /**
+     * @brief Sets the opacity of this window
+     * @param InOpacity The new opacity of the window as floating Point Scalar
      */
     void SetOpacity ( Float32 InOpacity ) noexcept override;
 
-    /*
-    - / @brief Enables or disable  the window's ability to accept input
-    - @param bEnable true to enable input, false to disable it.
+    /**
+     * / @brief Enables or disable  the window's ability to accept input
+     * @param bEnable true to enable input, false to disable it.
      */
     void EnableInput ( Bool bEnable ) noexcept override;
 
@@ -89,9 +89,9 @@ public:
     /** @return True if the window is in foreground */
     [[nodiscard]] Bool IsForegroundWindow () const noexcept override;
 
-    /*
-    - @brief Sets the window text-title
-    - @param InText the new text-title of the window
+    /**
+     * @brief Sets the window text-title
+     * @param InText the new text-title of the window
      */
     void SetWindowTitle ( const AnsiChar *InText ) noexcept override;
 

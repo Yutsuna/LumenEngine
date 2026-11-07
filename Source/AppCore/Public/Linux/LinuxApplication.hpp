@@ -1,6 +1,6 @@
-/*
-- @file LinuxApplication.hpp
-- @brief Declaration of the FLinuxApplication class for Linux-specific application management.
+/**
+ * @file LinuxApplication.hpp
+ * @brief Declaration of the FLinuxApplication class for Linux-specific application management.
  */
 
 #pragma once

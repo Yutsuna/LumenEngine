@@ -1,6 +1,6 @@
 /**
-- @file GenericWindowDescription.hpp
-- @brief Declaration of the FGenericWindowDescription struct for window configuration.
+ * @file GenericWindowDescription.hpp
+ * @brief Declaration of the FGenericWindowDescription struct for window configuration.
  */
 
 #pragma once
@@ -18,7 +18,7 @@ namespace EWindowMode
 {
 
     /**
-    - @brief Enumeration of possible window modes.
+     * @brief Enumeration of possible window modes.
      */
     enum Type : Int32 /// NOLINT(performance-enum-size)
     {
@@ -33,7 +33,7 @@ namespace EWindowMode
     };
 
     /**
-    - @brief Convert a window mode enum value to its string representation.
+     * @brief Convert a window mode enum value to its string representation.
      */
     static constexpr const AnsiChar *ToString ( const Type InWindowMode )
     {
@@ -66,7 +66,7 @@ namespace /// NOLINT(cert-dcl59-cpp)
 } // namespace
 
 /**
-- @brief Structure describing the properties of a generic window.
+ * @brief Structure describing the properties of a generic window.
  */
 struct FGenericWindowDescription
 {

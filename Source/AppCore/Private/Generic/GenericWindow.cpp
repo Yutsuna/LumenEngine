@@ -1,6 +1,6 @@
-/*
-- @file GenericWindow.cpp
-- @brief Implementation of the FGenericWindow class for cross-platform window management.
+/**
+ * @file GenericWindow.cpp
+ * @brief Implementation of the FGenericWindow class for cross-platform window management.
  */
 
 #include <Generic/GenericWindow.hpp>

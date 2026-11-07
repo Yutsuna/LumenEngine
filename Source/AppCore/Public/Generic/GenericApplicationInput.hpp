@@ -1,6 +1,6 @@
 /**
-- @file GenericApplicationInput.hpp
-- @brief Declaration of the FGenericApplicationInput struct for generic application input handling.
+ * @file GenericApplicationInput.hpp
+ * @brief Declaration of the FGenericApplicationInput struct for generic application input handling.
  */
 
 #pragma once

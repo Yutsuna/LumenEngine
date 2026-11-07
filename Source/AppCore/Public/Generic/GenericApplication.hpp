@@ -1,6 +1,6 @@
-/*
-- @file GenericApplication.hpp
-- @brief Base class for platform-independent application management.
+/**
+ * @file GenericApplication.hpp
+ * @brief Base class for platform-independent application management.
  */
 
 #pragma once

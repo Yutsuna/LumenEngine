@@ -1,6 +1,6 @@
 /**
-- @file GenericApplicationMessageHandler.cpp
-- @brief Default Implementation of the FGenericApplicationMessageHandler class for handling application messages.
+ * @file GenericApplicationMessageHandler.cpp
+ * @brief Default Implementation of the FGenericApplicationMessageHandler class for handling application messages.
  */
 
 #include <Core/CoreDefinitions.hpp>

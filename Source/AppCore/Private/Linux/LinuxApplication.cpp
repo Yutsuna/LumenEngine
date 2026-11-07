@@ -1,6 +1,6 @@
 /**
-- @file LinuxApplication.cpp
-- @brief Implementation of the FLinuxApplication class for Linux-specific application management.
+ * @file LinuxApplication.cpp
+ * @brief Implementation of the FLinuxApplication class for Linux-specific application management.
  */
 
 #include <Linux/LinuxApplication.hpp>

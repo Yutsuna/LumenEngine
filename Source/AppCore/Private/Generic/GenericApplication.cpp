@@ -1,6 +1,6 @@
 /**
-- @file GenericApplication.cpp
-- @brief Implementation of the FGenericApplication class for cross-platform application management.
+ * @file GenericApplication.cpp
+ * @brief Implementation of the FGenericApplication class for cross-platform application management.
  */
 
 #include <Generic/GenericApplication.hpp>
@@ -8,7 +8,7 @@
 #include <Generic/GenericWindow.hpp>
 
 /**
-- public
+ * public
  */
 
 Lumen::FGenericApplication::FGenericApplication () noexcept : MessageHandler( MakeShared<FGenericApplicationMessageHandler>() )

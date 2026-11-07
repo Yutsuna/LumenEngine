@@ -1,6 +1,6 @@
-/*
-- @file LinuxWindow.cpp
-- @brief Implementation of the FLinuxWindow class for Linux-specific window management.
+/**
+ * @file LinuxWindow.cpp
+ * @brief Implementation of the FLinuxWindow class for Linux-specific window management.
  */
 
 #include <Linux/LinuxWindow.hpp>
@@ -61,7 +61,7 @@ inline SDL_WindowFlags GetSDLWindowFlags ( const Lumen::TSharedRef<Lumen::FGener
 } // namespace
 
 /**
-- Public
+ * Public
  */
 
 Lumen::FLinuxWindow::~FLinuxWindow () noexcept
@@ -70,7 +70,7 @@ Lumen::FLinuxWindow::~FLinuxWindow () noexcept
 }
 
 /**
-- Static
+ * Static
  */
 
 Lumen::TSharedRef<Lumen::FLinuxWindow> Lumen::FLinuxWindow::Make ()
@@ -103,7 +103,7 @@ void Lumen::FLinuxWindow::Initialize ( FLinuxApplication *InApplication,
 }
 
 /**
-- Public
+ * Public
  */
 
 void Lumen::FLinuxWindow::Destroy () noexcept

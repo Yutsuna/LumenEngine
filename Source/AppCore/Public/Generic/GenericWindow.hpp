@@ -1,6 +1,6 @@
-/*
-- AppCore/Generic/GenericWindow.hpp
-- Declaration of the FGenericWindow class for cross-platform window management.
+/**
+ * AppCore/Generic/GenericWindow.hpp
+ * Declaration of the FGenericWindow class for cross-platform window management.
  */
 
 #pragma once
@@ -58,15 +58,15 @@ public:
     /** @brief Let the OS know that a window has taken focus */
     virtual void SetWindowFocus () noexcept;
 
-    /*
-    - @brief Sets the opacity of this window
-    - @param InOpacity The new opacity of the window as floating Point Scalar
+    /**
+     * @brief Sets the opacity of this window
+     * @param InOpacity The new opacity of the window as floating Point Scalar
      */
     virtual void SetOpacity ( Float32 InOpacity ) noexcept;
 
-    /*
-    - / @brief Enables or disable  the window's ability to accept input
-    - @param bEnable true to enable input, false to disable it.
+    /**
+     * / @brief Enables or disable  the window's ability to accept input
+     * @param bEnable true to enable input, false to disable it.
      */
     virtual void EnableInput ( Bool bEnable ) noexcept;
 
@@ -82,9 +82,9 @@ public:
     /** @return True if the window is in foreground */
     virtual Bool IsForegroundWindow () const noexcept;
 
-    /*
-    - @brief Sets the window text-title
-    - @param InText the new text-title of the window
+    /**
+     * @brief Sets the window text-title
+     * @param InText the new text-title of the window
      */
     virtual void SetWindowTitle ( const AnsiChar *InText ) noexcept;
 

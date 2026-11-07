@@ -1,6 +1,6 @@
-/*
-- @file GenericApplicationMessageHandler.hpp
-- @brief Declaration of the FGenericApplicationMessageHandler class for handling application messages.
+/**
+ * @file GenericApplicationMessageHandler.hpp
+ * @brief Declaration of the FGenericApplicationMessageHandler class for handling application messages.
  */
 
 #pragma once
