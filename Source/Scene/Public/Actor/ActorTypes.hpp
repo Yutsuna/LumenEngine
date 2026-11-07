@@ -12,6 +12,8 @@
 #include <Concepts/SameAs.hpp>
 #include <Concepts/TriviallyCopyable.hpp>
 
+#include <Templates/Hash.hpp>
+
 #include <Logging/LoggingCategory.hpp>
 
 namespace Lumen
@@ -48,9 +50,9 @@ namespace Internal
      * @trait TActorTypeRegistry
      * @brief Compile-time registry for actor types, associating each type with a unique ID.
      */
-    template <typename ActorType> struct TActorTypeRegistry
+    template <typename TActorType> struct TActorTypeRegistry
     {
-        static void GetID () noexcept {};
+        static constexpr USize ID = static_cast<USize>( FHash::TypeHash<TActorType>() );
     };
 
 } // namespace Internal
@@ -59,9 +61,9 @@ namespace Internal
                                                                                                                                  \
 public:                                                                                                                          \
                                                                                                                                  \
-    [[nodiscard]] Lumen::USize GetTypeID() const noexcept override                                                               \
+    [[nodiscard]] inline ::Lumen::USize GetTypeID() const noexcept override                                                      \
     {                                                                                                                            \
-        return reinterpret_cast<Lumen::USize>( &Lumen::Internal::TActorTypeRegistry<ActorClassName>::GetID );                    \
+        return ::Lumen::Internal::TActorTypeRegistry<ActorClassName>::ID;                                                        \
     }
 
 /**
