@@ -22,9 +22,9 @@ LUMEN_FORCE_INLINE Lumen::Bool SortActiveActors ( const Lumen::TSharedPtr<Lumen:
     return A->GetTypeID() < B->GetTypeID();
 }
 
-LUMEN_FORCE_INLINE void ProcessActorMessages ( const Lumen::TSharedPtr<Lumen::AActor> &InActor ) noexcept
+LUMEN_FORCE_INLINE void RunActorFrames ( const Lumen::TSharedPtr<Lumen::AActor> &InActor ) noexcept
 {
-    InActor->ProcessMailbox( Lumen::FWorld::MaxMessagesPerTick );
+    InActor->RunFrame( Lumen::FWorld::MaxMessagesPerTick );
 }
 
 } // namespace
@@ -66,7 +66,7 @@ void Lumen::FWorld::Tick ( const Float64 InDeltaTime )
      * NOTE: Core parallel Mailbox evaluation of the Active Actors.
      * Throttled to 100 messages per tick to prevent "Long Tail" latency from busy actors.
      */
-    std::for_each( std::execution::par, ActorBegin, ActorEnd, &ProcessActorMessages );
+    std::for_each( std::execution::par, ActorBegin, ActorEnd, &RunActorFrames );
 
     /** NOTE: Publish the spatial changes to the lock-free snapshot buffer */
     FSpatialRegistry::Get().Publish();
