@@ -5,8 +5,8 @@
 
 #pragma once
 
+#include <String/StringView.hpp>
 #include <Templates/Hash.hpp>
-
 template <class TObjectType> consteval Lumen::UInt64 Lumen::FHash::TypeHash () noexcept
 {
 
@@ -14,8 +14,8 @@ template <class TObjectType> consteval Lumen::UInt64 Lumen::FHash::TypeHash () n
      * INFO: Use pretty function name as the basis for the hash.
      * because it is stable across TUs, modules, and runs for a given compiler.
      */
-    constexpr auto PrettyName = __PRETTY_FUNCTION__;
-    UInt64 ULHash             = 0XCBF29CE484222325ULL;
+    constexpr FStringView PrettyName = __PRETTY_FUNCTION__;
+    UInt64 ULHash                    = 0XCBF29CE484222325ULL;
 
     /**
      * INFO: FNV-1a hash over the pretty-printed type signature.
