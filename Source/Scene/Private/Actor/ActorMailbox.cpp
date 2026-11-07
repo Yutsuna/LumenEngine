@@ -58,16 +58,14 @@ void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
      * OrElse performs the allocation as a monadic recovery when Pop() is empty.
      */
     FNode *const NewNode = FreeNodes.Pop()
-                               .OrElse(
-                                   [] () noexcept -> TOptional<FNode *>
-                                   {
-                                       if ( FNode *const Allocated = new ( std::nothrow ) FNode() )
-                                       {
-                                           return TOptional<FNode *>( Allocated );
-                                       }
-                                       return TOptional<FNode *>{};
-                                   } )
-                               .ValueOr( nullptr );
+                               .OrElse( [] () noexcept -> TOptional<FNode *>
+    {
+        if ( FNode *const Allocated = new ( std::nothrow ) FNode() )
+        {
+            return TOptional<FNode *>( Allocated );
+        }
+        return TOptional<FNode *>{};
+    } ).ValueOr( nullptr );
 
     if ( NewNode == nullptr )
     {
