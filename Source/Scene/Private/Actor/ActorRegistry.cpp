@@ -70,7 +70,7 @@ struct FActorRegistryState
     {
         const Lumen::UInt32 ChunkIndex = InSlotIndex >> FActorChunk::ChunkBits;
 
-        if ( InSlotIndex == 0U or ChunkIndex >= FActorChunk::MaxChunks )
+        if ( InSlotIndex == 0U or ChunkIndex >= FActorChunk::MaxChunks ) [[unlikely]]
         {
             return nullptr;
         }
@@ -104,7 +104,7 @@ struct FActorRegistryState
         if ( ChunkPointer.load( std::memory_order_relaxed ) == nullptr )
         {
             FActorChunk *const NewChunk = new ( std::nothrow ) FActorChunk();
-            if ( NewChunk == nullptr )
+            if ( NewChunk == nullptr ) [[unlikely]]
             {
                 return 0U;
             }
@@ -137,7 +137,7 @@ Lumen::ActorID Lumen::Internal::FActorRegistry::AllocateId () noexcept
 {
     const UInt32 SlotIndex = GRegistry.AcquireSlot();
 
-    if ( SlotIndex == 0U )
+    if ( SlotIndex == 0U ) [[unlikely]]
     {
         LUMEN_LOG_ERROR( LogActor, "FActorRegistry::AllocateId: failed to acquire slot, registry exhausted." );
         return InvalidActorID;
@@ -149,15 +149,22 @@ Lumen::ActorID Lumen::Internal::FActorRegistry::AllocateId () noexcept
 
 void Lumen::Internal::FActorRegistry::Register ( AActor *InActor ) noexcept
 {
-    if ( InActor == nullptr )
+    if ( InActor == nullptr ) [[unlikely]]
     {
+        LUMEN_LOG_WARNING( LogActor, "FActorRegistry::Register: Actor is null." );
         return;
     }
 
     const ActorID Id       = InActor->GetId();
     FActorSlot *const Slot = GRegistry.FindSlot( ActorIdSlotIndex( Id ) );
 
-    if ( Slot == nullptr or GenerationOf( *Slot, std::memory_order_relaxed ) != ActorIdGeneration( Id ) )
+    if ( Slot == nullptr ) [[unlikely]]
+    {
+        LUMEN_LOG_ERROR( LogActor, "FActorRegistry::Register: ActorID '{}' maps to an unallocated chunk (was AllocateId() called?).", Id );
+        return;
+    }
+
+    if ( GenerationOf( *Slot, std::memory_order_relaxed ) != ActorIdGeneration( Id ) ) [[unlikely]]
     {
         LUMEN_LOG_ERROR( LogActor, "FActorRegistry::Register: ActorID '{}' generation mismatch.", Id );
         return;
@@ -165,7 +172,7 @@ void Lumen::Internal::FActorRegistry::Register ( AActor *InActor ) noexcept
 
     AActor *Expected = nullptr;
 
-    if ( not Slot->Actor.compare_exchange_strong( Expected, InActor, std::memory_order_release, std::memory_order_relaxed ) )
+    if ( not Slot->Actor.compare_exchange_strong( Expected, InActor, std::memory_order_release, std::memory_order_relaxed ) ) [[unlikely]]
     {
         LUMEN_LOG_ERROR( LogActor, "FActorRegistry::Register: ActorID '{}' already registered.", Id );
     }
@@ -173,8 +180,9 @@ void Lumen::Internal::FActorRegistry::Register ( AActor *InActor ) noexcept
 
 void Lumen::Internal::FActorRegistry::Unregister ( AActor *InActor ) noexcept
 {
-    if ( InActor == nullptr )
+    if ( InActor == nullptr ) [[unlikely]]
     {
+        LUMEN_LOG_WARNING( LogActor, "FActorRegistry::Unregister: Actor is null." );
         return;
     }
 
@@ -219,16 +227,17 @@ void Lumen::Internal::FActorRegistry::EnqueueMessage ( ActorID InId, const FMess
     const UInt32 Generation = ActorIdGeneration( InId );
 
     /** INFO: Keep stale senders from pinning a retiring slot. */
-    if ( GenerationOf( *Slot, std::memory_order_relaxed ) != Generation )
+    if ( GenerationOf( *Slot, std::memory_order_relaxed ) != Generation ) [[unlikely]]
     {
+        LUMEN_LOG_WARNING( LogActor, "FActorRegistry::EnqueueMessage: ActorID '{}' generation mismatch.", InId );
         return;
     }
 
     /** INFO: Pin + generation check in one RMW operation. */
     const UInt64 Previous = Slot->State.fetch_add( ReaderUnit, std::memory_order_acquire );
-    if ( static_cast<UInt32>( Previous ) == Generation )
+    if ( static_cast<UInt32>( Previous ) == Generation ) [[likely]]
     {
-        if ( AActor *const Target = Slot->Actor.load( std::memory_order_acquire ) )
+        if ( AActor *const Target = Slot->Actor.load( std::memory_order_acquire ) ) [[likely]]
         {
             Target->EnqueueMessage( InMessage );
         }
