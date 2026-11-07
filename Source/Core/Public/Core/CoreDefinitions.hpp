@@ -8,27 +8,35 @@
 #if defined( __unix__ )
     #define LUMEN_PLATFORM_UNIX
 #endif
-#if defined( _WIN32 ) || defined( _WIN64 )
-    #define LUMEN_PLATFORM_WINDOWS
 
+/* */
+
+#if defined( _WIN32 ) or defined( _WIN64 )
+    #define LUMEN_PLATFORM_WINDOWS
 #elif defined( __linux__ )
     #define LUMEN_PLATFORM_LINUX
-
-#elif defined( __APPLE__ ) && defined( __MACH__ )
+#elif defined( __APPLE__ ) and defined( __MACH__ )
     #define LUMEN_PLATFORM_MACOS
-
-#else
-    #define LUMEN_PATH_SEPARATOR "/"
-    #define LUMEN_NEWLINE "\n"
-    #define LUMEN_SHARED_LIB_EXTENSION ""
 #endif
+
+/* */
+
+#if defined( __x86_64__ ) or defined( _M_X64 )
+    #define LUMEN_ARCH_X64
+
+#elif defined( __arm64__ ) or defined( _M_ARM64 )
+    #define LUMEN_ARCH_ARM64
+
+#endif
+
+/* */
 
 #if defined( LUMEN_PLATFORM_WINDOWS )
     #define LUMEN_PATH_SEPARATOR "\\"
     #define LUMEN_NEWLINE "\r\n"
     #define LUMEN_SHARED_LIB_EXTENSION ".dll"
 
-#elif defined( LUMEN_PLATFORM_LINUX ) || defined( LUMEN_PLATFORM_MACOS )
+#elif defined( LUMEN_PLATFORM_LINUX ) or defined( LUMEN_PLATFORM_MACOS )
     #define LUMEN_PATH_SEPARATOR "/"
     #define LUMEN_NEWLINE "\n"
     #define LUMEN_SHARED_LIB_EXTENSION ".so"
@@ -37,6 +45,8 @@
 #else
 
 #endif
+
+/* */
 
 #if defined( __clang__ )
     #define LUMEN_COMPILER_CLANG
@@ -49,13 +59,17 @@
 
 #endif
 
-#if defined( __clang__ ) || defined( __GNUC__ )
+/* */
+
+#if defined( __clang__ ) or defined( __GNUC__ )
     #define LUMEN_DISABLE_UBSAN __attribute__( ( no_sanitize( "undefined" ) ) )
 #else
     #define LUMEN_DISABLE_UBSAN
 #endif
 
-#if defined( LUMEN_COMPILER_CLANG ) || defined( LUMEN_COMPILER_GCC )
+/* */
+
+#if defined( LUMEN_COMPILER_CLANG ) or defined( LUMEN_COMPILER_GCC )
     #define LUMEN_FORCE_INLINE inline __attribute__( ( always_inline ) )
     #define LUMEN_NO_INLINE __attribute__( ( noinline ) )
 #elif defined( LUMEN_COMPILER_MSVC )
@@ -65,6 +79,8 @@
     #define LUMEN_FORCE_INLINE inline
     #define LUMEN_NO_INLINE
 #endif
+
+/* */
 
 #define LUMEN_EXIT_SUCCESS 0
 #define LUMEN_EXIT_FAILURE 84
