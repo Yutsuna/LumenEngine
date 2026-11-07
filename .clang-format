@@ -10,6 +10,7 @@ AlignConsecutiveDeclarations: false
 
 AlignAfterOpenBracket: Align
 BinPackParameters: false
+BinPackArguments: true
 
 BreakBeforeBraces: Allman
 
@@ -37,6 +38,8 @@ AccessModifierOffset: -4
 EmptyLineBeforeAccessModifier: Always
 EmptyLineAfterAccessModifier: Always
 AllowShortFunctionsOnASingleLine: None
+AllowShortLambdasOnASingleLine: false
+LambdaBodyIndentation: OuterScope
 KeepEmptyLinesAtTheStartOfBlocks: true
 
 IndentPPDirectives: BeforeHash
