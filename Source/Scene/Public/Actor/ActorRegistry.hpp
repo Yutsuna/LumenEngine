@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <SceneExport.hpp>
 #include <Actor/ActorTypes.hpp>
+#include <SceneExport.hpp>
 
 namespace Lumen
 {
