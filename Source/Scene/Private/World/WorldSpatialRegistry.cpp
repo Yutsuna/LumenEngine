@@ -118,25 +118,27 @@ void Lumen::FSpatialRegistry::Publish () noexcept
 {
     TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
 
-    SnapshotBuffer.WriteBuffer(
-        [this] ( FSpatialRegistryData &OutData )
+    SnapshotBuffer.WriteBuffer( [this] ( FSpatialRegistryData &OutData )
+    {
+        /** INFO: Identify which of the 3 buffers we are currently writing to */
+        const USize BufferIdx  = static_cast<USize>( &OutData - SnapshotBuffer.GetBuffers() );
+        FDeltaTracker &Tracker = DeltaTrackers[BufferIdx];
+
+        if ( Tracker.bMetadataDirty )
         {
-            /** INFO: Identify which of the 3 buffers we are currently writing to */
-            const USize BufferIdx  = static_cast<USize>( &OutData - SnapshotBuffer.GetBuffers() );
-            FDeltaTracker &Tracker = DeltaTrackers[BufferIdx];
+            OutData                = WorkingData;
+            Tracker.bMetadataDirty = false;
+            Tracker.ClearAll();
+            return;
+        }
 
-            if ( Tracker.bMetadataDirty )
-            {
-                OutData                = WorkingData;
-                Tracker.bMetadataDirty = false;
-                Tracker.ClearAll();
-                return;
-            }
-
-            /** INFO: Granular Sync: Only copy what changed for THIS buffer instance */
-            Tracker.ComponentDirtyStates[static_cast<USize>( ESpatialComponentType::Transform )].ForEachSetBitAndClear(
-                [&] ( USize Index ) { OutData.Transforms[Index] = WorkingData.Transforms[Index]; } );
+        /** INFO: Granular Sync: Only copy what changed for THIS buffer instance */
+        Tracker.ComponentDirtyStates[static_cast<USize>( ESpatialComponentType::Transform )].ForEachSetBitAndClear(
+            [&] ( USize Index )
+        {
+            OutData.Transforms[Index] = WorkingData.Transforms[Index];
         } );
+    } );
 }
 
 void Lumen::FSpatialRegistry::SwapReadBuffers () noexcept
