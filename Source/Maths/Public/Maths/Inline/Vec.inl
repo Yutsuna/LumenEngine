@@ -12,10 +12,10 @@ namespace Maths
 {
 
     /**
-    - @brief Construct a Vec by converting from another Vec of a different type but the same dimension
+     * @brief Construct a Vec by converting from another Vec of a different type but the same dimension
 
-    - @param Other The Vec to convert from
-    - @return A new Vec with component values converted from Other
+     * @param Other The Vec to convert from
+     * @return A new Vec with component values converted from Other
      */
 
     template <typename Type, USize Dimension>
@@ -31,10 +31,10 @@ namespace Maths
     }
 
     /**
-    - Construct a Vec with all components set to the same value
+     * Construct a Vec with all components set to the same value
 
-    - @param Value The value to set all components to
-    - @return A vector with all components set to Value
+     * @param Value The value to set all components to
+     * @return A vector with all components set to Value
      */
 
     template <typename Type, USize Dimension>
@@ -49,10 +49,10 @@ namespace Maths
     }
 
     /**
-    - Construct a Vec with the given component values
+     * Construct a Vec with the given component values
 
-    - @param Args The values to set each component to
-    - @return A vector with components set to the given values
+     * @param Args The values to set each component to
+     * @return A vector with components set to the given values
      */
     template <typename Type, USize Dimension>
         requires CVecDimension<Type, Dimension>
