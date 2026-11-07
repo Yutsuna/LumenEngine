@@ -8,7 +8,11 @@
 
 #include <new>
 
-Lumen::FMailBox::FMailBox () noexcept : FreeNodes( 256ULL ), Head( &Stub )
+/**
+ * Public
+ */
+
+Lumen::FMailBox::FMailBox () noexcept : FreeNodes( 32ULL ), Head( &Stub )
 {
     Tail.store( &Stub, std::memory_order_relaxed );
 }
@@ -98,9 +102,11 @@ Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
         return {};
     }
 
-    if ( not NextNode->Message.HasValue() )
+    if ( not NextNode->Message.HasValue() ) [[unlikely]]
     {
-        LUMEN_LOG_ERROR( LogActor, "FMailBox::Pop: node has no message (stub leaked?)" );
+        FNode *const OldHead = std::exchange( Head, NextNode );
+        RecycleHead( OldHead );
+        LUMEN_LOG_ERROR( LogActor, "FMailBox::Pop: message-less non-stub node (advanced to avoid wedge)" );
         return {};
     }
 
@@ -108,19 +114,8 @@ Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
     TOptional<FMessage> Result = std::move( NextNode->Message );
 
     /** INFO: The old Head becomes the new stub; delete it unless it is the original stub. */
-    FNode *const OldHead = Head;
-    Head                 = NextNode;
-
-    if ( OldHead != &Stub )
-    {
-        OldHead->Message.Reset();
-
-        /** Return node to pool, fallback to OS deallocation if the queue is full */
-        if ( not FreeNodes.Push( OldHead ) )
-        {
-            delete OldHead;
-        }
-    }
+    FNode *const OldHead = std::exchange( Head, NextNode );
+    RecycleHead( OldHead );
 
     return Result;
 }
@@ -147,4 +142,24 @@ void Lumen::FMailBox::Reserve ( USize InCapacity ) noexcept
 Lumen::Bool Lumen::FMailBox::IsEmpty () const noexcept
 {
     return Head->Next.load( std::memory_order_acquire ) == nullptr;
+}
+
+/*
+ * Private
+ */
+
+void Lumen::FMailBox::RecycleHead ( FNode *const InOldHead ) noexcept
+{
+    if ( InOldHead == &Stub ) [[unlikely]]
+    {
+        return;
+    }
+
+    InOldHead->Message.Reset();
+
+    /** Return node to pool, fallback to OS deallocation if the queue is full */
+    if ( not FreeNodes.Push( InOldHead ) )
+    {
+        delete InOldHead;
+    }
 }
