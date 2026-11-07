@@ -1,6 +1,6 @@
 /**
-- @file Queue.hpp
-- @brief Declaration of the Queue container class.
+ * @file Queue.hpp
+ * @brief Declaration of the Queue container class.
  */
 
 #pragma once

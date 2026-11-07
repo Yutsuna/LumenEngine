@@ -1,6 +1,6 @@
-/*
-- @file UniquePtrInternal.inl
-- @brief Inline implementation of UniquePtrInternal namespace
+/**
+ * @file UniquePtrInternal.inl
+ * @brief Inline implementation of UniquePtrInternal namespace
  */
 
 #pragma once
@@ -161,7 +161,7 @@ template <typename Type, typename Deleter> void TUniquePtr<Type, Deleter>::Reset
 }
 
 /**
-- TUniquePtr<Type[]> implementation
+ * TUniquePtr<Type[]> implementation
  */
 
 template <typename Type, typename Deleter>
@@ -260,7 +260,7 @@ template <typename Type, typename Deleter> void TUniquePtr<Type[], Deleter>::Res
 }
 
 /**
-- UniquePtr Builder
+ * UniquePtr Builder
  */
 
 template <typename ObjectType, typename... Arguments>

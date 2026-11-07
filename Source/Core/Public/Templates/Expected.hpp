@@ -1,6 +1,6 @@
-/*
-- @file Expected.hpp
-- @brief Wrapper for encapsulating explicit values and errors
+/**
+ * @file Expected.hpp
+ * @brief Wrapper for encapsulating explicit values and errors
  */
 
 #pragma once
@@ -15,10 +15,10 @@ namespace Lumen
 {
 
 /**
-- @class TExpected
-- @brief Wrapper for encapsulating explicit values and errors
-- @tparam ValueType The type of the value stored in the expected
-- @tparam ErrorType The type of the error stored in the expected
+ * @class TExpected
+ * @brief Wrapper for encapsulating explicit values and errors
+ * @tparam ValueType The type of the value stored in the expected
+ * @tparam ErrorType The type of the error stored in the expected
  */
 template <class ValueType, class ErrorType> class TExpected : public FMonadic
 {
@@ -243,8 +243,8 @@ private:
 };
 
 /**
-- @class TExpected<void, ErrorType>
-- @brief Specialization of TExpected for void value type
+ * @class TExpected<void, ErrorType>
+ * @brief Specialization of TExpected for void value type
  */
 template <class ErrorType> class TExpected<void, ErrorType> : public FMonadic
 {

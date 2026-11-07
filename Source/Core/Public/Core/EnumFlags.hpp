@@ -1,6 +1,6 @@
 /**
-- @file EnumFlags.hpp
-- @brief Defines macros for handling enum flags.
+ * @file EnumFlags.hpp
+ * @brief Defines macros for handling enum flags.
  */
 
 #pragma once

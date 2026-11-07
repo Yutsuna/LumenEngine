@@ -1,6 +1,6 @@
 /**
-- @file CoreTypes.hpp
-- @brief Core type definitions for Lumen
+ * @file CoreTypes.hpp
+ * @brief Core type definitions for Lumen
  */
 
 #pragma once
@@ -33,15 +33,15 @@ using FAtomicFlag                      = std::atomic_flag;
 
 using NullPtrType = decltype( nullptr );
 
-/*
-- @brief Unsigned Integer type used for sizes & indexing
-- @details calculated using compile intrinsics
+/**
+ * @brief Unsigned Integer type used for sizes & indexing
+ * @details calculated using compile intrinsics
  */
 using USize = decltype( sizeof( 0 ) );
 
-/*
-- @brief Signed integer type used for pointer arithmetic and offsets
-- @details Calculated using compiler intrinsics
+/**
+ * @brief Signed integer type used for pointer arithmetic and offsets
+ * @details Calculated using compiler intrinsics
  */
 using ISize = decltype( static_cast<AnsiChar *>( nullptr ) - static_cast<AnsiChar *>( nullptr ) );
 

@@ -1,6 +1,6 @@
-/*
-- @file Reflection.hpp
-- @brief C++26 static reflection helpers over aggregates.
+/**
+ * @file Reflection.hpp
+ * @brief C++26 static reflection helpers over aggregates.
  */
 
 #pragma once

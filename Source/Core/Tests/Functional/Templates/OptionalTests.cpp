@@ -1,6 +1,6 @@
-/*
-- @file OptionalTests.cpp
-- @brief Unit tests for TOptional lifetime and monadic operations.
+/**
+ * @file OptionalTests.cpp
+ * @brief Unit tests for TOptional lifetime and monadic operations.
  */
 
 #include <Templates/Optional.hpp>

@@ -1,6 +1,6 @@
 /**
-- @file Logger.cpp
-- @brief Implementation of the Logger class.
+ * @file Logger.cpp
+ * @brief Implementation of the Logger class.
  */
 
 #include <Core/CoreDefinitions.hpp>
@@ -40,8 +40,8 @@ namespace
 {
 
     /**
-    - @brief Writes the whole buffer to stdout, bypassing stdio buffering. Never allocates.
-    - @return false on an unrecoverable I/O error.
+     * @brief Writes the whole buffer to stdout, bypassing stdio buffering. Never allocates.
+     * @return false on an unrecoverable I/O error.
      */
     Bool WriteStdout ( const AnsiChar *Data, USize Size ) noexcept
     {
@@ -87,8 +87,8 @@ namespace
     }
 
     /**
-    - @brief Legacy Windows consoles print ANSI escape sequences as garbage unless virtual terminal
-    -        processing is enabled. No-op on other platforms and when stdout is redirected.
+     * @brief Legacy Windows consoles print ANSI escape sequences as garbage unless virtual terminal
+     *        processing is enabled. No-op on other platforms and when stdout is redirected.
      */
     Bool EnableAnsiEscapeCodes () noexcept
     {

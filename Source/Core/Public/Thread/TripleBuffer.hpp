@@ -1,6 +1,6 @@
-/*
-- @file TripleBuffer.hpp
-- @brief TripleBuffer declaration.
+/**
+ * @file TripleBuffer.hpp
+ * @brief TripleBuffer declaration.
  */
 
 #pragma once
@@ -27,8 +27,8 @@ namespace Thread
     {
 
         /**
-        - @struct FBufferFlag
-        - @brief Packed atomic state for TTripleBuffer slot indices and dirty flag.
+         * @struct FBufferFlag
+         * @brief Packed atomic state for TTripleBuffer slot indices and dirty flag.
          */
         struct FBufferFlag
         {
@@ -91,7 +91,7 @@ namespace Thread
         TTripleBuffer ();
 
         /**
-        - @brief Initializes all three slots with a copy of @p InData.
+         * @brief Initializes all three slots with a copy of @p InData.
          */
         explicit TTripleBuffer ( const BufferType &InData );
 
@@ -113,9 +113,9 @@ namespace Thread
         /** @return True if the writer has published new data not yet consumed by the reader. */
         [[nodiscard]] Bool IsDirty () const noexcept;
 
-        /*
-        - @return Immutable reference to the current reader snapshot.
-        - @note Call SwapReadBuffers() first to expose the freshest published snapshot.
+        /**
+         * @return Immutable reference to the current reader snapshot.
+         * @note Call SwapReadBuffers() first to expose the freshest published snapshot.
          */
         [[nodiscard]] const BufferType &ReadBuffer () const noexcept;
 
@@ -125,29 +125,29 @@ namespace Thread
         /** @brief Writes @p InData to the writer slot and publishes it atomically. */
         void WriteBuffer ( const BufferType &InData );
 
-        /*
-        - @brief Writes @p InData to the writer slot via move and publishes it atomically.
-        - Safe to call from multiple producer threads simultaneously.
+        /**
+         * @brief Writes @p InData to the writer slot via move and publishes it atomically.
+         * Safe to call from multiple producer threads simultaneously.
          */
         void WriteBuffer ( BufferType &&InData ) noexcept( std::is_nothrow_move_assignable_v<BufferType> );
 
-        /*
-        - @brief Accesses the writer slot directly for in-place modifications, avoiding allocations.
-        - @param InEditor A callable taking a reference to the mutable BufferType.
+        /**
+         * @brief Accesses the writer slot directly for in-place modifications, avoiding allocations.
+         * @param InEditor A callable taking a reference to the mutable BufferType.
          */
         template <typename Callable>
             requires std::is_invocable_v<Callable, BufferType &>
         void WriteBuffer ( Callable &&InEditor );
 
-        /*
-        - @brief Publishes the current writer slot without writing.
-        - Safe to call from multiple producer threads simultaneously.
+        /**
+         * @brief Publishes the current writer slot without writing.
+         * Safe to call from multiple producer threads simultaneously.
          */
         void SwapWriteBuffers () noexcept;
 
-        /*
-        - @brief Returns a pointer to the internal array of 3 buffers.
-        - Useful for identifying the index of a buffer reference.
+        /**
+         * @brief Returns a pointer to the internal array of 3 buffers.
+         * Useful for identifying the index of a buffer reference.
          */
         [[nodiscard]] const BufferType *GetBuffers () const noexcept;
 

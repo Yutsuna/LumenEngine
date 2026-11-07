@@ -1,6 +1,6 @@
-/*
-- @file Vector.hpp
-- @brief Definition of the TVector class
+/**
+ * @file Vector.hpp
+ * @brief Definition of the TVector class
  */
 
 #pragma once

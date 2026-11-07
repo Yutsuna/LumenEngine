@@ -1,6 +1,6 @@
 /**
-- @file NonMovable.hpp
-- @brief Base class to prevent moving of derived classes
+ * @file NonMovable.hpp
+ * @brief Base class to prevent moving of derived classes
  */
 
 #pragma once
@@ -9,8 +9,8 @@ namespace Lumen
 {
 
 /**
-- @class FNonMovable
-- @brief Base class to prevent moving of derived classes
+ * @class FNonMovable
+ * @brief Base class to prevent moving of derived classes
  */
 class FNonMovable
 {

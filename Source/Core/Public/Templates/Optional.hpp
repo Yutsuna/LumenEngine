@@ -1,6 +1,6 @@
-/*
-- @file Optional.hpp
-- @brief TOptional type declaration
+/**
+ * @file Optional.hpp
+ * @brief TOptional type declaration
  */
 
 #pragma once
@@ -18,17 +18,17 @@ namespace Lumen
 {
 
 /**
-- @tag FEmplaceTag
-- @brief Emplace Tag
+ * @tag FEmplaceTag
+ * @brief Emplace Tag
  */
 struct FEmplaceTag
 {
 };
 
 /**
-- @class TOptional
-- @brief Optional type
-- @tparam ValueType Type of the optional value
+ * @class TOptional
+ * @brief Optional type
+ * @tparam ValueType Type of the optional value
  */
 template <class ValueType> class TOptional : public FMonadic
 {
@@ -48,14 +48,18 @@ public:
     constexpr explicit TOptional ( const ValueType &InValue ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> )
         : Value( InValue ), bHasValue( true )
     {
-        /** */
+        /**
+         *
+         */
     }
 
     /** @brief Move constructor from value */
     constexpr explicit TOptional ( ValueType &&InValue ) noexcept( std::is_nothrow_move_constructible_v<ValueType> )
         : Value( std::move( InValue ) ), bHasValue( true )
     {
-        /** */
+        /**
+         *
+         */
     }
 
     /** @brief Emplace construction from a function */

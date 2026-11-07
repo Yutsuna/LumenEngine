@@ -1,6 +1,6 @@
 /**
-- @file SharedPtrInternal.inl
-- @brief Inline implementations for Shared Pointer Internal classes.
+ * @file SharedPtrInternal.inl
+ * @brief Inline implementations for Shared Pointer Internal classes.
  */
 
 #pragma once
@@ -25,7 +25,7 @@ namespace SharedPtrInternal
     }
 
     /**
-    - TIntrusiveReferenceController
+     * TIntrusiveReferenceController
      */
 
     template <typename Type>
@@ -51,7 +51,7 @@ namespace SharedPtrInternal
     }
 
     /**
-    - TDefaultReferenceController
+     * TDefaultReferenceController
      */
 
     template <typename Type>
@@ -71,7 +71,7 @@ namespace SharedPtrInternal
     }
 
     /**
-    - TRawPtrProxy
+     * TRawPtrProxy
      */
     template <typename Type> TRawPtrProxy<Type>::TRawPtrProxy( Type *InObject ) noexcept : Object( InObject )
     {

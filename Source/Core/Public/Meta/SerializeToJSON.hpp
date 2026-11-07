@@ -1,6 +1,6 @@
-/*
-- @file SerializeJSON.hpp
-- @brief Serialize reflected objects to JSON.
+/**
+ * @file SerializeJSON.hpp
+ * @brief Serialize reflected objects to JSON.
  */
 
 #pragma once
@@ -52,12 +52,12 @@ namespace Meta
 
     } // namespace Detail
 
-    /*
-    - @brief Serialize a reflected aggregate to JSON.
-    - @details bool -> true/false, numbers -> numbers (NaN/Inf -> null), enums -> enumerator name,
-    -          strings -> escaped strings, source_location -> "file:line", ranges -> arrays,
-    -          TOptional/monostate -> null when empty, variant -> { "Type", "Value" },
-    -          nested aggregates -> objects.
+    /**
+     * @brief Serialize a reflected aggregate to JSON.
+     * @details bool -> true/false, numbers -> numbers (NaN/Inf -> null), enums -> enumerator name,
+     *          strings -> escaped strings, source_location -> "file:line", ranges -> arrays,
+     *          TOptional/monostate -> null when empty, variant -> { "Type", "Value" },
+     *          nested aggregates -> objects.
      */
     template <CReflected TObject>
     [[nodiscard]] FString SerializeToJSON ( const TObject &Object, const FJSONOptions &Options = {} )

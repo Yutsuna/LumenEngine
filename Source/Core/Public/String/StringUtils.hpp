@@ -1,6 +1,6 @@
-/*
-- @file StringUtils.hpp
-- @brief String utilities functions.
+/**
+ * @file StringUtils.hpp
+ * @brief String utilities functions.
  */
 
 #pragma once
@@ -52,9 +52,9 @@ namespace Lumen
     return ( static_cast<UInt8>( U - 'A' ) < 26u ) ? static_cast<AnsiChar>( U | 0x20 ) : InChar;
 }
 
-/*
-- @brief Converts a StringView to a lower-case FString (Allocates).
-- Note: Handles both FString and FStringView via implicit conversion.
+/**
+ * @brief Converts a StringView to a lower-case FString (Allocates).
+ * Note: Handles both FString and FStringView via implicit conversion.
  */
 [[nodiscard]] constexpr CORE_EXPORT FString ToLower ( FStringView InString )
 {

@@ -1,6 +1,6 @@
-/*
-- @file BenchmarkTypes.hpp
-- @brief Types and structures shared by the benchmark framework.
+/**
+ * @file BenchmarkTypes.hpp
+ * @brief Types and structures shared by the benchmark framework.
  */
 
 #pragma once
@@ -36,8 +36,8 @@ namespace Benchmarks
     using FBenchmarkFunction = void ( * )( FBenchmarkState & );
 
     /**
-    - @enum EBenchmarkKind
-    - @brief The scale of a benchmark.
+     * @enum EBenchmarkKind
+     * @brief The scale of a benchmark.
      */
     enum class CORE_EXPORT EBenchmarkKind : UInt8
     {
@@ -48,8 +48,8 @@ namespace Benchmarks
     };
 
     /**
-    - @struct FBenchmarkConfig
-    - @brief Measuring strategy of a benchmark.
+     * @struct FBenchmarkConfig
+     * @brief Measuring strategy of a benchmark.
      */
     struct CORE_EXPORT FBenchmarkConfig
     {
@@ -80,8 +80,8 @@ namespace Benchmarks
     };
 
     /**
-    - @struct FBenchmarkMetadata
-    - @brief Descriptor holding the registration data of a benchmark.
+     * @struct FBenchmarkMetadata
+     * @brief Descriptor holding the registration data of a benchmark.
      */
     struct CORE_EXPORT FBenchmarkMetadata
     {
@@ -95,8 +95,8 @@ namespace Benchmarks
     };
 
     /**
-    - @struct FBenchmarkStatistics
-    - @brief Distribution of the per-iteration time, across samples, in nanoseconds.
+     * @struct FBenchmarkStatistics
+     * @brief Distribution of the per-iteration time, across samples, in nanoseconds.
      */
     struct CORE_EXPORT FBenchmarkStatistics
     {
@@ -108,9 +108,9 @@ namespace Benchmarks
         Float64 CoefficientOfVariation{ 0.0 };
     };
 
-    /*
-    - @brief Computes min/max/mean/median/stddev of the given samples.
-    - @note Samples is taken by value because it is sorted in place.
+    /**
+     * @brief Computes min/max/mean/median/stddev of the given samples.
+     * @note Samples is taken by value because it is sorted in place.
      */
     [[nodiscard]] CORE_EXPORT FBenchmarkStatistics ComputeStatistics ( TVector<Float64> Samples );
 
@@ -120,8 +120,8 @@ namespace Benchmarks
                                                             TOptional<Int64> Argument = {} );
 
     /**
-    - @struct FBenchmarkResult
-    - @brief Outcome of one benchmark.
+     * @struct FBenchmarkResult
+     * @brief Outcome of one benchmark.
      */
     struct CORE_EXPORT FBenchmarkResult
     {
@@ -149,8 +149,8 @@ namespace Benchmarks
     };
 
     /**
-    - @struct FBenchmarkRunInfo
-    - @brief Describes a run before it starts (handed to reporters).
+     * @struct FBenchmarkRunInfo
+     * @brief Describes a run before it starts (handed to reporters).
      */
     struct CORE_EXPORT FBenchmarkRunInfo
     {
@@ -160,8 +160,8 @@ namespace Benchmarks
     };
 
     /**
-    - @struct FBenchmarkRunSummary
-    - @brief Aggregate result of a benchmark execution pass.
+     * @struct FBenchmarkRunSummary
+     * @brief Aggregate result of a benchmark execution pass.
      */
     struct CORE_EXPORT FBenchmarkRunSummary
     {
@@ -177,8 +177,8 @@ namespace Benchmarks
     };
 
     /**
-    - @struct FBenchmarkRunOptions
-    - @brief Knobs of a benchmark run.
+     * @struct FBenchmarkRunOptions
+     * @brief Knobs of a benchmark run.
      */
     struct CORE_EXPORT FBenchmarkRunOptions
     {

@@ -1,6 +1,6 @@
 /**
-- @file SPMCQueue.hpp
-- @brief Lock-free Single-Producer Multi-Consumer queue for Lumen Engine.
+ * @file SPMCQueue.hpp
+ * @brief Lock-free Single-Producer Multi-Consumer queue for Lumen Engine.
  */
 
 #pragma once
@@ -22,17 +22,17 @@ namespace Thread
 {
 
     /**
-    - @class TSPMCQueue
-    - @brief Lock-free Single-Producer Multi-Consumer bounded queue based on Dmitry Vyukov's array queue.
-    - @tparam Type The payload type. Must be default constructible and movable.
+     * @class TSPMCQueue
+     * @brief Lock-free Single-Producer Multi-Consumer bounded queue based on Dmitry Vyukov's array queue.
+     * @tparam Type The payload type. Must be default constructible and movable.
      */
     template <typename Type> class TSPMCQueue final : public FNonCopyable, public FNonMovable
     {
     public:
 
-        /*
-        - @brief Initializes the queue with a fixed capacity.
-        - @param InCapacity The maximum number of elements. Must be a power of two.
+        /**
+         * @brief Initializes the queue with a fixed capacity.
+         * @param InCapacity The maximum number of elements. Must be a power of two.
          */
         explicit TSPMCQueue ( USize InCapacity );
 
@@ -41,25 +41,25 @@ namespace Thread
 
     public:
 
-        /*
-        - @brief Attempts to push an element to the queue.
-        - @param InData The element to copy.
-        - @return True if successful, false if the queue is full.
-        - @pre Push calls must be serialized. The producer thread may change only with external happens-before ordering.
+        /**
+         * @brief Attempts to push an element to the queue.
+         * @param InData The element to copy.
+         * @return True if successful, false if the queue is full.
+         * @pre Push calls must be serialized. The producer thread may change only with external happens-before ordering.
          */
         [[nodiscard]] Bool Push ( const Type &InData ) noexcept;
 
-        /*
-        - @brief Attempts to push an element to the queue via move semantics.
-        - @param InData The element to move.
-        - @return True if successful, false if the queue is full.
-        - @pre Push calls must be serialized. The producer thread may change only with external happens-before ordering.
+        /**
+         * @brief Attempts to push an element to the queue via move semantics.
+         * @param InData The element to move.
+         * @return True if successful, false if the queue is full.
+         * @pre Push calls must be serialized. The producer thread may change only with external happens-before ordering.
          */
         [[nodiscard]] Bool Push ( Type &&InData ) noexcept;
 
-        /*
-        - @brief Attempts to pop an element from the queue. Multi-thread safe.
-        - @return A valid optional containing the element if successful, or an empty optional if empty.
+        /**
+         * @brief Attempts to pop an element from the queue. Multi-thread safe.
+         * @return A valid optional containing the element if successful, or an empty optional if empty.
          */
         [[nodiscard]] TOptional<Type> Pop () noexcept;
 

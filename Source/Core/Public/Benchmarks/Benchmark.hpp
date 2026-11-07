@@ -1,6 +1,6 @@
-/*
-- @file Benchmark.hpp
-- @brief FBenchmarkRegistry definition and registration macros.
+/**
+ * @file Benchmark.hpp
+ * @brief FBenchmarkRegistry definition and registration macros.
  */
 
 #pragma once
@@ -23,8 +23,8 @@ namespace Benchmarks
 {
 
     /**
-    - @class FBenchmarkRegistry
-    - @brief Registry collecting and executing all statically declared benchmarks.
+     * @class FBenchmarkRegistry
+     * @brief Registry collecting and executing all statically declared benchmarks.
      */
     class CORE_EXPORT FBenchmarkRegistry final
     {
@@ -36,10 +36,10 @@ namespace Benchmarks
         /** @brief Registers a benchmark with the registry. */
         void Register ( FBenchmarkMetadata Metadata );
 
-        /*
-        - @brief Runs the benchmarks with the default console reporter.
-        - @param InSuiteFilter Wildcard or substring filter applied to "Suite.Name".
-        - @return Benchmark run summary.
+        /**
+         * @brief Runs the benchmarks with the default console reporter.
+         * @param InSuiteFilter Wildcard or substring filter applied to "Suite.Name".
+         * @return Benchmark run summary.
          */
         [[nodiscard]] FBenchmarkRunSummary Run ( FStringView InSuiteFilter = {} ) const;
 
@@ -78,8 +78,8 @@ namespace Benchmarks
     }
 
     /**
-    - @struct FAutoRegisterBenchmark
-    - @brief Helper registering a benchmark at dynamic startup.
+     * @struct FAutoRegisterBenchmark
+     * @brief Helper registering a benchmark at dynamic startup.
      */
     struct FAutoRegisterBenchmark
     {

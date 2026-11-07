@@ -1,6 +1,6 @@
-/*
-- @file StringView.hpp
-- @brief FStringView class declaration
+/**
+ * @file StringView.hpp
+ * @brief FStringView class declaration
  */
 
 #pragma once

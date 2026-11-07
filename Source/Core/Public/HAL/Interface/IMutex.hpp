@@ -1,6 +1,6 @@
 /**
-- @file IMutex.hpp
-- @brief Interface for mutex types in Lumen Engine.
+ * @file IMutex.hpp
+ * @brief Interface for mutex types in Lumen Engine.
  */
 
 #pragma once
@@ -15,8 +15,8 @@ namespace Internal
 {
 
     /**
-    - @interface IMutex
-    - @brief Interface for mutex types in Lumen Engine.
+     * @interface IMutex
+     * @brief Interface for mutex types in Lumen Engine.
      */
     class CORE_EXPORT IMutex
     {

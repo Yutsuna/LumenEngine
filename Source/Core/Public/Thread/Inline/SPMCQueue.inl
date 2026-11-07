@@ -1,6 +1,6 @@
 /**
-- @file SPMCQueue.inl
-- @brief Inline implementation for TSPMCQueue.
+ * @file SPMCQueue.inl
+ * @brief Inline implementation for TSPMCQueue.
  */
 
 #pragma once
@@ -10,11 +10,17 @@
 template <typename Type>
 Lumen::Thread::TSPMCQueue<Type>::TSPMCQueue( USize InCapacity )
     : OwnedBuffer( Lumen::MakeUnique<FCell[]>( InCapacity ) ),
-      /** */
+      /**
+       *
+       */
       CapacityMask( InCapacity - 1ULL ),
-      /** */
+      /**
+       *
+       */
       Buffer( OwnedBuffer.Get() ),
-      /** */
+      /**
+       *
+       */
       DequeuePosition( 0ULL )
 {
     [[assume( InCapacity >= 2ULL and ( ( InCapacity & ( InCapacity - 1ULL ) ) == 0ULL ) )]];

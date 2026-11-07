@@ -1,6 +1,6 @@
-/*
-- @file UnitTest.hpp
-- @brief Unit Test Registry class definition
+/**
+ * @file UnitTest.hpp
+ * @brief Unit Test Registry class definition
  */
 
 #pragma once
@@ -22,8 +22,8 @@ namespace Tests
 {
 
     /**
-    - @class FUnitTestRegistry
-    - @brief Registry collecting and executing all statically declared tests.
+     * @class FUnitTestRegistry
+     * @brief Registry collecting and executing all statically declared tests.
      */
     class CORE_EXPORT FUnitTestRegistry
     {
@@ -35,11 +35,11 @@ namespace Tests
         /** @brief Register a unit test with the registry. */
         void Register ( FUnitTestMetadata const &Metadata );
 
-        /*
-        - @brief Run the unit tests
-        - @param InSuiteFilter Wildcard or substring filter applied to SuiteName.
-        - @param InKindFilter Optional filter applied to test kind.
-        - @return Test run summary.
+        /**
+         * @brief Run the unit tests
+         * @param InSuiteFilter Wildcard or substring filter applied to SuiteName.
+         * @param InKindFilter Optional filter applied to test kind.
+         * @return Test run summary.
          */
         [[nodiscard]] FUnitTestTestRunSummary Run ( FStringView InSuiteFilter             = {},
                                                     TOptional<EUnitTestKind> InKindFilter = {} ) const;
@@ -60,8 +60,8 @@ namespace Tests
     };
 
     /**
-    - @struct FAutoRegisterUnitTest
-    - @brief Helper registering a test case at dynamic startup.
+     * @struct FAutoRegisterUnitTest
+     * @brief Helper registering a test case at dynamic startup.
      */
     struct FAutoRegisterUnitTest
     {

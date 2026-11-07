@@ -1,6 +1,6 @@
-/*
-- @file BenchmarkState.hpp
-- @brief Benchmark state definition.
+/**
+ * @file BenchmarkState.hpp
+ * @brief Benchmark state definition.
  */
 
 #pragma once
@@ -41,8 +41,8 @@ namespace Benchmarks
         };
 
         /**
-        - @class FIterator
-        - @brief Loop iterator. Stops the timer when the loop ends, breaks, or throws.
+         * @class FIterator
+         * @brief Loop iterator. Stops the timer when the loop ends, breaks, or throws.
          */
         class CORE_EXPORT FIterator final : public FNonCopyable, public FNonMovable
         {

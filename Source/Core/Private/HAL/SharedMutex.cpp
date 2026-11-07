@@ -1,6 +1,6 @@
 /**
-- @file SharedMutex.cpp
-- @brief Implementation of FSharedMutex
+ * @file SharedMutex.cpp
+ * @brief Implementation of FSharedMutex
  */
 
 #include <HAL/SharedMutex.hpp>
@@ -112,10 +112,10 @@ void Lumen::FSharedMutex::WaitForWriterFlag ( UInt32 InExpected ) noexcept
         if ( SpinCount < GMaxSpinCount )
         {
             /**
-            - INFO: Busy-spinning with exponential back-off:
-            - issue a pause hint to reduce pipeline pressure and cache-line bouncing
-            - on x86/ARM.  The spin count is capped to prevent excessive CPU usage
-            - under high contention, at which point we transition to an OS-assisted wait.
+             * INFO: Busy-spinning with exponential back-off:
+             * issue a pause hint to reduce pipeline pressure and cache-line bouncing
+             * on x86/ARM.  The spin count is capped to prevent excessive CPU usage
+             * under high contention, at which point we transition to an OS-assisted wait.
              */
             for ( UInt32 Pause = 0U; Pause < ( 1U << SpinCount ); ++Pause )
             {

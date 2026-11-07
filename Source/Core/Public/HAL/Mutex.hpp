@@ -1,6 +1,6 @@
 /**
-- @file Mutex.hpp
-- @brief Mutex class definition for thread synchronization.
+ * @file Mutex.hpp
+ * @brief Mutex class definition for thread synchronization.
  */
 
 #pragma once
@@ -15,8 +15,8 @@ namespace Lumen
 {
 
 /**
-- @class FMutex
-- @brief A highly optimized lightweight spin-mutex.
+ * @class FMutex
+ * @brief A highly optimized lightweight spin-mutex.
  */
 class CORE_EXPORT FMutex final : public FNonCopyable, public FNonMovable, public Internal::IMutex
 {
@@ -60,8 +60,8 @@ private:
 };
 
 /**
-- @class TUniqueLock
-- @brief A move-only mutex ownership wrapper.
+ * @class TUniqueLock
+ * @brief A move-only mutex ownership wrapper.
  */
 template <typename MutexType> class TUniqueLock final : public FNonCopyable, public Internal::IMutex
 {

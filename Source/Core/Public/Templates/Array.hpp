@@ -1,6 +1,6 @@
 /**
-- @file Array.hpp
-- @brief Declaration of the Array container class.
+ * @file Array.hpp
+ * @brief Declaration of the Array container class.
  */
 
 #pragma once

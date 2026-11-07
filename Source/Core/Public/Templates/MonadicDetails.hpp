@@ -1,6 +1,6 @@
-/*
-- @file MonadicInternals.hpp
-- @brief Monadic details implementation
+/**
+ * @file MonadicInternals.hpp
+ * @brief Monadic details implementation
  */
 
 #pragma once
@@ -19,31 +19,41 @@ namespace Concepts
 {
     template <class MonadicType>
     concept CHasValueMember = requires( const MonadicType &Container )
-    /** */
+    /**
+     *
+     */
     {
         { Container.HasValue() } -> CConvertibleTo<Bool>;
     };
 
     template <class MonadicType>
     concept CBoolTestable = requires( const MonadicType &Container )
-    /** */
+    /**
+     *
+     */
     { static_cast<Bool>( Container ); };
 
     template <class Self>
     concept CHasError = requires( Self &&Container )
-    /** */
+    /**
+     *
+     */
     { std::forward<Self>( Container ).Error(); };
 
     template <class Out, class Source>
     concept CHasFailHook = requires
-    /** */
+    /**
+     *
+     */
     {
         { Out::MonadicFail( std::declval<Source>() ) } -> CSameAs<Out>;
     };
 
     template <class Out, class Func, class Array>
     concept CHasEmplaceHook = requires
-    /** */
+    /**
+     *
+     */
     {
         { Out::MonadicEmplace( std::declval<Func>(), std::declval<Array>() ) } -> CSameAs<Out>;
     };

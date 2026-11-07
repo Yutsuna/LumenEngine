@@ -1,6 +1,6 @@
-/*
-- @file Monadic.hpp
-- @brief Auto Monadic Mixin operations
+/**
+ * @file Monadic.hpp
+ * @brief Auto Monadic Mixin operations
  */
 
 #pragma once
@@ -17,26 +17,26 @@ namespace Lumen
 namespace Concepts
 {
 
-    /*
-    - @concept CMonadic
-    - @brief Test the 3 monadic state
+    /**
+     * @concept CMonadic
+     * @brief Test the 3 monadic state
      */
     template <class Container>
     concept CMonadic = ( CHasValueMember<std::remove_cvref_t<Container>> or CBoolTestable<std::remove_cvref_t<Container>> ) and
                        requires( Container &&InContainer ) { *std::forward<Container>( InContainer ); };
 
-    /*
-    - @concept CTransformable
-    - @brief Test the transformable state (T -> U).
+    /**
+     * @concept CTransformable
+     * @brief Test the transformable state (T -> U).
      */
     template <class Self, class Func>
     concept CTransformable = CMonadic<Self> and std::invocable<Func, MonadicInternal::TValueRef<Self>> and
                              ( not std::is_void_v<MonadicInternal::TTransformResult<Self, Func>> ) and
                              requires { typename MonadicInternal::TTransformOut<Self, Func>; };
 
-    /*
-    - @concept CBindable
-    - @brief Test the bindable state
+    /**
+     * @concept CBindable
+     * @brief Test the bindable state
      */
     template <class Self, class Func>
     concept CBindable = CMonadic<Self> and
@@ -44,9 +44,9 @@ namespace Concepts
                                                               : std::invocable<Func, MonadicInternal::TValueRef<Self>> ) and
                         CMonadic<MonadicInternal::TBindOut<Self, Func>>;
 
-    /*
-    - @concept CRecoverable
-    - @brief Test the recoverable state
+    /**
+     * @concept CRecoverable
+     * @brief Test the recoverable state
      */
     template <class Self, class Func>
     concept CRecoverable = CMonadic<Self> and std::constructible_from<MonadicInternal::TSelfType<Self>, Self> and
@@ -58,8 +58,8 @@ namespace Concepts
 } // namespace Concepts
 
 /**
-- @struct FMonadic
-- @brief Monadic mixin with 0 CRTP
+ * @struct FMonadic
+ * @brief Monadic mixin with 0 CRTP
  */
 struct CORE_EXPORT FMonadic
 {

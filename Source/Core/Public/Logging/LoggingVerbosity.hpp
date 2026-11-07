@@ -1,6 +1,6 @@
 /**
-- @file LoggingVerbosity.hpp
-- @brief Definition of the logging verbosity levels.
+ * @file LoggingVerbosity.hpp
+ * @brief Definition of the logging verbosity levels.
  */
 
 #pragma once

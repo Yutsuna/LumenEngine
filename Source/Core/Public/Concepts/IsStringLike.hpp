@@ -1,6 +1,6 @@
-/*
-- @file IsStringLike.hpp
-- @brief Concept to check if a type is a string-like type.
+/**
+ * @file IsStringLike.hpp
+ * @brief Concept to check if a type is a string-like type.
  */
 
 #pragma once
@@ -15,8 +15,8 @@ namespace Concepts
 {
 
     /**
-    - @concepts CIsStringLike
-    - @brief Concept to check if a type is a string-like type.
+     * @concepts CIsStringLike
+     * @brief Concept to check if a type is a string-like type.
      */
     template <class Type>
     concept CIsStringLike = CConvertibleTo<Type, FString>;

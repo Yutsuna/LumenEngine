@@ -1,6 +1,6 @@
 /**
-- @file Mutex.inl
-- @brief Inline implementation for the FMutex class.
+ * @file Mutex.inl
+ * @brief Inline implementation for the FMutex class.
  */
 
 #pragma once
@@ -23,7 +23,7 @@ template <typename MutexType> TLockGuard<MutexType>::~TLockGuard() noexcept
 }
 
 /**
-- TUniqueLock Implementation
+ * TUniqueLock Implementation
  */
 
 template <typename MutexType> TUniqueLock<MutexType>::TUniqueLock( MutexType &InMutex ) noexcept : Mutex( &InMutex )

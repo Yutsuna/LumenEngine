@@ -1,6 +1,6 @@
-/*
-- @file UnitTestTypes.hpp
-- @brief Defines types and structures used for unit testing.
+/**
+ * @file UnitTestTypes.hpp
+ * @brief Defines types and structures used for unit testing.
  */
 
 #pragma once
@@ -18,8 +18,8 @@ namespace Lumen
 namespace Tests
 {
     /**
-    - @enum EUnitTestKind
-    - @brief Qualifies the operational scope of a test case.
+     * @enum EUnitTestKind
+     * @brief Qualifies the operational scope of a test case.
      */
     enum class CORE_EXPORT EUnitTestKind : UInt8
     {
@@ -28,8 +28,8 @@ namespace Tests
     };
 
     /**
-    - @struct FUnitTestMetadata
-    - @brief Descriptor holding metadata for a unit test.
+     * @struct FUnitTestMetadata
+     * @brief Descriptor holding metadata for a unit test.
      */
     struct CORE_EXPORT FUnitTestMetadata
     {
@@ -41,8 +41,8 @@ namespace Tests
     };
 
     /**
-    - @struct FUnitTestRunSummary
-    - @brief Aggregate result of a test suite execution pass.
+     * @struct FUnitTestRunSummary
+     * @brief Aggregate result of a test suite execution pass.
      */
     struct CORE_EXPORT FUnitTestTestRunSummary
     {

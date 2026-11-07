@@ -1,6 +1,6 @@
-/*
-- @file IFileSystem.hpp
-- @brief Interface declaration for Filesystem.
+/**
+ * @file IFileSystem.hpp
+ * @brief Interface declaration for Filesystem.
  */
 
 #pragma once
@@ -20,8 +20,8 @@ namespace Filesystem
 {
 
     /**
-    - @class IFileSystem
-    - @brief Interface for physical or virtual file system operations.
+     * @class IFileSystem
+     * @brief Interface for physical or virtual file system operations.
      */
     class CORE_EXPORT IFileSystem
     {

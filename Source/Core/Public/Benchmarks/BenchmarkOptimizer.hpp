@@ -1,6 +1,6 @@
-/*
-- @file BenchmarkOptimizer.hpp
-- @brief Optimizer barriers keeping the compiler from deleting the code under measurement.
+/**
+ * @file BenchmarkOptimizer.hpp
+ * @brief Optimizer barriers keeping the compiler from deleting the code under measurement.
  */
 
 #pragma once

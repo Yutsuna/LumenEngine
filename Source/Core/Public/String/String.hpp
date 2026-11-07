@@ -1,6 +1,6 @@
-/*
-- @file String.hpp
-- @brief FString class declaration
+/**
+ * @file String.hpp
+ * @brief FString class declaration
  */
 
 #pragma once

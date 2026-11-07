@@ -1,6 +1,6 @@
-/*
-- @file SharedMutexTests.cpp
-- @brief Functional tests for FSharedMutex, TSharedLock, TSharedUniqueLock.
+/**
+ * @file SharedMutexTests.cpp
+ * @brief Functional tests for FSharedMutex, TSharedLock, TSharedUniqueLock.
  */
 
 #include <Core/CoreDefinitions.hpp>
@@ -17,7 +17,7 @@ namespace Lumen
 {
 
 /**
-- initial state
+ * initial state
  */
 
 LUMEN_TEST( SharedMutex_State, DefaultUnlocked )
@@ -354,7 +354,7 @@ LUMEN_TEST( SharedMutex_Threading, WriterBlocksReader )
 }
 
 /**
-- Multithreading - readers block writer
+ * Multithreading - readers block writer
  */
 
 LUMEN_TEST( SharedMutex_Threading, ReaderBlocksWriter )

@@ -1,6 +1,6 @@
 /**
-- @file PlatformTime.hpp
-- @brief Platform-specific time utilities for high-resolution timing and performance measurement.
+ * @file PlatformTime.hpp
+ * @brief Platform-specific time utilities for high-resolution timing and performance measurement.
  */
 
 #pragma once
@@ -15,8 +15,8 @@ namespace HAL
 {
 
     /**
-    - @struct FPlatformTime
-    - @brief Platform-specific time utilities for high-resolution timing and performance measurement.
+     * @struct FPlatformTime
+     * @brief Platform-specific time utilities for high-resolution timing and performance measurement.
      */
     struct CORE_EXPORT FPlatformTime
     {

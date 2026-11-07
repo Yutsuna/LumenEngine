@@ -1,6 +1,6 @@
-/*
-- @file FileTypes.hpp
-- @brief Contains file-related enumerations and structures.
+/**
+ * @file FileTypes.hpp
+ * @brief Contains file-related enumerations and structures.
  */
 
 #pragma once
@@ -16,8 +16,8 @@ namespace Filesystem
 {
 
     /**
-    - @enum EFileAccess
-    - @brief Specifies the access mode for a file.
+     * @enum EFileAccess
+     * @brief Specifies the access mode for a file.
      */
     enum class EFileAccess : UInt8
     {
@@ -30,8 +30,8 @@ namespace Filesystem
     LUMEN_ENUM_FLAGS( EFileAccess )
 
     /**
-    - @enum EFileMode
-    - @brief Specifies the handling mode for opening or creating a file.
+     * @enum EFileMode
+     * @brief Specifies the handling mode for opening or creating a file.
      */
     enum class EFileMode : UInt8
     {
@@ -42,8 +42,8 @@ namespace Filesystem
     };
 
     /**
-    - @enum ESeekOrigin
-    - @brief Specifies the origin for seeking within a file.
+     * @enum ESeekOrigin
+     * @brief Specifies the origin for seeking within a file.
      */
     enum class ESeekOrigin : UInt8
     {
@@ -53,8 +53,8 @@ namespace Filesystem
     };
 
     /**
-    - @enum EFileError
-    - @brief List of different file errors.
+     * @enum EFileError
+     * @brief List of different file errors.
      */
     enum class EFileError : UInt8
     {
@@ -73,8 +73,8 @@ namespace Filesystem
     };
 
     /**
-    - @struct FFileStat
-    - @brief File stat mapping (size, permissions, timestamps).
+     * @struct FFileStat
+     * @brief File stat mapping (size, permissions, timestamps).
      */
     struct CORE_EXPORT FFileStat
     {

@@ -1,6 +1,6 @@
-/*
-- @file UnitTestAssertionFailure.cpp
-- @brief Unit test assertion failure implementation.
+/**
+ * @file UnitTestAssertionFailure.cpp
+ * @brief Unit test assertion failure implementation.
  */
 
 #include <Tests/UnitTestAssertionFailure.hpp>

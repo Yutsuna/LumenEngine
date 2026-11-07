@@ -1,6 +1,6 @@
-/*
-- @file MutexTests.cpp
-- @brief Functional tests for FMutex, TLockGuard, TUniqueLock.
+/**
+ * @file MutexTests.cpp
+ * @brief Functional tests for FMutex, TLockGuard, TUniqueLock.
  */
 
 #include <HAL/Mutex.hpp>
@@ -17,7 +17,7 @@ namespace Lumen
 {
 
 /**
-- initial state
+ * initial state
  */
 
 LUMEN_TEST( Mutex_State, DefaultUnlocked )
@@ -29,7 +29,7 @@ LUMEN_TEST( Mutex_State, DefaultUnlocked )
 }
 
 /**
-- Lock / Unlock
+ * Lock / Unlock
  */
 
 LUMEN_TEST( Mutex_LockUnlock, BasicRoundTrip )
@@ -71,7 +71,7 @@ LUMEN_TEST( Mutex_LockUnlock, OperatorBoolReflectsState )
 }
 
 /**
-- TryLock
+ * TryLock
  */
 
 LUMEN_TEST( Mutex_TryLock, SucceedsWhenFree )
@@ -106,7 +106,7 @@ LUMEN_TEST( Mutex_TryLock, SucceedsAfterUnlock )
 }
 
 /**
-- FMutex IMutex lowercase compatibility surface
+ * FMutex IMutex lowercase compatibility surface
  */
 
 LUMEN_TEST( Mutex_IMutex, LowercaseLockUnlock )
@@ -132,7 +132,7 @@ LUMEN_TEST( Mutex_IMutex, LowercaseTryLock )
 }
 
 /**
-- TLockGuard RAII
+ * TLockGuard RAII
  */
 
 LUMEN_TEST( LockGuard_RAII, LocksOnConstructionReleasesOnDestruction )
@@ -170,7 +170,7 @@ LUMEN_TEST( LockGuard_RAII, NestedGuardsOnDifferentMutexes )
 }
 
 /**
-- TUniqueLock construction
+ * TUniqueLock construction
  */
 
 LUMEN_TEST( UniqueLock, DefaultConstructionIsEmpty )
@@ -203,7 +203,7 @@ LUMEN_TEST( UniqueLock, DestructorReleases )
 }
 
 /**
-- TUniqueLock manual control
+ * TUniqueLock manual control
  */
 
 LUMEN_TEST( UniqueLock, ManualUnlock )
@@ -241,7 +241,7 @@ LUMEN_TEST( UniqueLock, LockOnNullIsNoOp )
 }
 
 /**
-- TUniqueLock TryLock
+ * TUniqueLock TryLock
  */
 
 LUMEN_TEST( UniqueLock, TryLockWithoutMutexFails )
@@ -277,7 +277,7 @@ LUMEN_TEST( UniqueLock, TryLockFailsWhenAlreadyHeld )
 }
 
 /**
-- TUniqueLock operator Bool
+ * TUniqueLock operator Bool
  */
 
 LUMEN_TEST( UniqueLock, OperatorBool )
@@ -292,7 +292,7 @@ LUMEN_TEST( UniqueLock, OperatorBool )
 }
 
 /**
-- Multithreading
+ * Multithreading
  */
 
 LUMEN_TEST( Mutex_Threading, LockBlocksSecondThread )

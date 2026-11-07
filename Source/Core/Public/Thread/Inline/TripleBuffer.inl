@@ -1,6 +1,6 @@
-/*
-- @file TripleBuffer.inl
-- @brief TripleBuffer implementation.
+/**
+ * @file TripleBuffer.inl
+ * @brief TripleBuffer implementation.
  */
 
 #pragma once
@@ -12,7 +12,7 @@
 #include <Thread/TripleBuffer.hpp>
 
 /**
-- FBufferFlag
+ * FBufferFlag
  */
 
 constexpr Lumen::Thread::Internal::FBufferFlag::Type
@@ -56,7 +56,7 @@ constexpr Lumen::Thread::Internal::FBufferFlag::Type Lumen::Thread::Internal::FB
 }
 
 /**
-- TTripleBuffer
+ * TTripleBuffer
  */
 
 template <typename BufferType>
@@ -73,9 +73,13 @@ Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer()
 template <typename BufferType>
 Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer( const BufferType &InData )
     : OwnedBuffers( Lumen::MakeUnique<BufferType[]>( 3 ) ),
-      /** */
+      /**
+       *
+       */
       Buffers( OwnedBuffers.Get() ),
-      /** */
+      /**
+       *
+       */
       BufferFlags( Internal::FBufferFlag::Type::Initial )
 {
     Buffers[0] = Buffers[1] = Buffers[2] = InData;
@@ -84,7 +88,9 @@ Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer( const BufferType &InDat
 template <typename BufferType>
 Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer( BufferType ( &InBuffers )[3] )
     : Buffers( &InBuffers[0] ),
-      /** */
+      /**
+       *
+       */
       BufferFlags( ( Internal::FBufferFlag::Type::Initial | Internal::FBufferFlag::Type::Dirty ) )
 {
     /** Empty */
@@ -191,8 +197,8 @@ Lumen::Thread::Internal::FBufferFlag::Type
 Lumen::Thread::TTripleBuffer<BufferType>::SwapReadWithTempFlags ( const Internal::FBufferFlag::Type Flags ) const noexcept
 {
     /**
-    - INFO: Reader takes the Temp slot, Temp takes the old Reader slot.
-    - Dirty becomes false because the Reader has just consumed the new data.
+     * INFO: Reader takes the Temp slot, Temp takes the old Reader slot.
+     * Dirty becomes false because the Reader has just consumed the new data.
      */
     return Internal::FBufferFlag::Make( Internal::FBufferFlag::GetTempIndex( Flags ),   ///<< ReaderIdx
                                         Internal::FBufferFlag::GetWriterIndex( Flags ), ///<< WriterIdx
@@ -205,8 +211,8 @@ Lumen::Thread::Internal::FBufferFlag::Type
 Lumen::Thread::TTripleBuffer<BufferType>::SwapWriteWithTempFlags ( const Internal::FBufferFlag::Type Flags ) const noexcept
 {
     /**
-    - INFO: Writer takes the Temp slot, Temp takes the old Writer slot.
-    - Dirty becomes true to signal fresh data to the Reader.
+     * INFO: Writer takes the Temp slot, Temp takes the old Writer slot.
+     * Dirty becomes true to signal fresh data to the Reader.
      */
     return Internal::FBufferFlag::Make( Internal::FBufferFlag::GetReaderIndex( Flags ), ///<< ReaderIdx
                                         Internal::FBufferFlag::GetTempIndex( Flags ),   ///<< WriterIdx
@@ -219,10 +225,10 @@ template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::Pu
     Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
 
     /**
-    - INFO:
-    -  Acquire -> ensure this thread sees the reader's prior accesses when it swapped away from a slot
-    -             needed when the writer later reclaims that slot in the next WriteBuffer call
-    -  Release -> publish that new data is available in the writer slot
+     * INFO:
+     *  Acquire -> ensure this thread sees the reader's prior accesses when it swapped away from a slot
+     *             needed when the writer later reclaims that slot in the next WriteBuffer call
+     *  Release -> publish that new data is available in the writer slot
      */
     while ( not BufferFlags.compare_exchange_weak( CurrentFlags, SwapWriteWithTempFlags( CurrentFlags ),
                                                    std::memory_order_acq_rel, std::memory_order_relaxed ) )

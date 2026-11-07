@@ -1,6 +1,6 @@
-/*
-- @file IFileHandle.hpp
-- @brief Interface for low-level raw byte file handle.
+/**
+ * @file IFileHandle.hpp
+ * @brief Interface for low-level raw byte file handle.
  */
 
 #pragma once
@@ -18,8 +18,8 @@ namespace Filesystem
 {
 
     /**
-    - @class IFileHandle
-    - @brief Low-level stream/handle interface for reading and writing raw bytes.
+     * @class IFileHandle
+     * @brief Low-level stream/handle interface for reading and writing raw bytes.
      */
     class CORE_EXPORT IFileHandle
     {

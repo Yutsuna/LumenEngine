@@ -1,6 +1,6 @@
 /**
-- @file SharedRef.inl
-- @brief Inline implementations for Shared Reference classes.
+ * @file SharedRef.inl
+ * @brief Inline implementations for Shared Reference classes.
  */
 
 #pragma once
@@ -133,7 +133,7 @@ template <typename Type> void TSharedRef<Type>::Release () noexcept
 }
 
 /**
-- SharedRef Builder
+ * SharedRef Builder
  */
 
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)
@@ -144,7 +144,7 @@ TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::
 }
 
 /**
-- StaticCast
+ * StaticCast
  */
 
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)

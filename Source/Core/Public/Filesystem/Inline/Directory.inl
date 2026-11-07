@@ -1,6 +1,6 @@
-/*
-- @file Directory.inl
-- @brief Inline directory traversal implementation.
+/**
+ * @file Directory.inl
+ * @brief Inline directory traversal implementation.
  */
 
 #pragma once

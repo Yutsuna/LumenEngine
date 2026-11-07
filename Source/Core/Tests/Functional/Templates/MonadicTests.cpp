@@ -1,6 +1,6 @@
-/*
-- @file MonadicTests.cpp
-- @brief Functional tests for the FMonadic mixin: Transform, AndThen, OrElse, Inspect, ValueOr.
+/**
+ * @file MonadicTests.cpp
+ * @brief Functional tests for the FMonadic mixin: Transform, AndThen, OrElse, Inspect, ValueOr.
  */
 
 #include <Core/CoreDefinitions.hpp>
@@ -52,11 +52,13 @@ namespace
 
     void NoOpInspect ( Int32 LUMEN_UNUSED NoOp ) noexcept
     {
-        /** */
+        /**
+         *
+         */
     }
 
     /**
-    - @brief Compile-time invariants: result types of the monadic operations.
+     * @brief Compile-time invariants: result types of the monadic operations.
      */
     static_assert( Concepts::CSameAs<decltype( std::declval<TExpected<Int32, EMonadicTestError> &>().Transform( &IntToFString ) ),
                                      TExpected<FString, EMonadicTestError>> );
@@ -68,7 +70,7 @@ namespace
 } // namespace
 
 /**
-- Transform
+ * Transform
  */
 
 LUMEN_TEST( Monadic_Transform, ExpectedValue )
@@ -160,7 +162,7 @@ LUMEN_TEST( Monadic_Transform, RvalueOptional )
 }
 
 /**
-- AndThen
+ * AndThen
  */
 
 LUMEN_TEST( Monadic_AndThen, ExpectedValue )
@@ -255,7 +257,7 @@ LUMEN_TEST( Monadic_AndThen, OptionalInnerEmpty )
 }
 
 /**
-- AndThen on TExpected<void, E>
+ * AndThen on TExpected<void, E>
  */
 
 LUMEN_TEST( Monadic_AndThenVoid, SuccessInvokesFunction )
@@ -287,7 +289,7 @@ LUMEN_TEST( Monadic_AndThenVoid, ChainWithValue )
 }
 
 /**
-- OrElse
+ * OrElse
  */
 
 LUMEN_TEST( Monadic_OrElse, ExpectedValueSkipsFunction )
@@ -365,7 +367,7 @@ LUMEN_TEST( Monadic_OrElse, OptionalEmptyInvokesFunction )
 }
 
 /**
-- Inspect
+ * Inspect
  */
 
 LUMEN_TEST( Monadic_Inspect, ExpectedValueInvokesCallback )
@@ -430,7 +432,7 @@ LUMEN_TEST( Monadic_Inspect, Chained )
 }
 
 /**
-- ValueOr
+ * ValueOr
  */
 
 LUMEN_TEST( Monadic_ValueOr, ExpectedValue )

@@ -1,6 +1,6 @@
 /**
-- @file SharedPtr.hpp
-- @brief Shared Memory Pointer
+ * @file SharedPtr.hpp
+ * @brief Shared Memory Pointer
  */
 
 #pragma once
@@ -16,9 +16,9 @@ template <typename Type> class TSharedPtr;
 namespace SharedPtrInternal
 {
     /**
-    - @struct FReferenceController
-    - @brief Thread-Safe reference controller for shared pointers.
-    - @details Manages the shared reference count and the lifetime of the managed object.
+     * @struct FReferenceController
+     * @brief Thread-Safe reference controller for shared pointers.
+     * @details Manages the shared reference count and the lifetime of the managed object.
      */
     struct FReferenceController
     {
@@ -35,9 +35,9 @@ namespace SharedPtrInternal
     };
 
     /**
-    - @class TIntrusiveReferenceController
-    - @brief Stores the object and the reference count in a single memory block.
-    - @tparam Type The type of the managed object.
+     * @class TIntrusiveReferenceController
+     * @brief Stores the object and the reference count in a single memory block.
+     * @tparam Type The type of the managed object.
      */
     template <typename Type> class TIntrusiveReferenceController final : public FReferenceController
     {
@@ -60,9 +60,9 @@ namespace SharedPtrInternal
     };
 
     /**
-    - @classs TDefaultReferenceController
-    - @brief Controller for objects already allocated on the heap.
-    - @tparam Type The type of the managed object.
+     * @classs TDefaultReferenceController
+     * @brief Controller for objects already allocated on the heap.
+     * @tparam Type The type of the managed object.
      */
     template <typename Type> class TDefaultReferenceController final : public FReferenceController
     {
@@ -83,9 +83,9 @@ namespace SharedPtrInternal
     };
 
     /**
-    - @struct TRawPtrProxy
-    - @brief Internal proxy used to allow implicit conversion from MakeShareable to Ref or Ptr.
-    - @tparam Type The type of the managed object.
+     * @struct TRawPtrProxy
+     * @brief Internal proxy used to allow implicit conversion from MakeShareable to Ref or Ptr.
+     * @tparam Type The type of the managed object.
      */
     template <typename Type> struct TRawPtrProxy
     {
@@ -95,29 +95,29 @@ namespace SharedPtrInternal
         Type *Object;
     };
 
-    /*
-    - @brief Creates a new TIntrusiveReferenceController instance with the given arguments.
-    - @tparam Type The type of the managed object.
-    - @param InArgs Arguments to forward to the constructor of ObjectType.
-    - @return A pointer to the newly created TIntrusiveReferenceController instance.
+    /**
+     * @brief Creates a new TIntrusiveReferenceController instance with the given arguments.
+     * @tparam Type The type of the managed object.
+     * @param InArgs Arguments to forward to the constructor of ObjectType.
+     * @return A pointer to the newly created TIntrusiveReferenceController instance.
      */
     template <typename Type, typename... Arguments>
     SharedPtrInternal::TIntrusiveReferenceController<Type> *NewIntrusiveReferenceController ( Arguments &&...InArgs ) noexcept;
 
-    /*
-    - @brief Creates a new TDefaultReferenceController instance for the given object.
-    - @tparam Type The type of the managed object.
-    - @param InObject Pointer to the managed object.
-    - @return A pointer to othe newly created TDefaultReferenceController.
+    /**
+     * @brief Creates a new TDefaultReferenceController instance for the given object.
+     * @tparam Type The type of the managed object.
+     * @param InObject Pointer to the managed object.
+     * @return A pointer to othe newly created TDefaultReferenceController.
      */
     template <typename Type>
     SharedPtrInternal::TDefaultReferenceController<Type> *NewDefaultReferenceController ( Type *InObject ) noexcept;
 } // namespace SharedPtrInternal
 
 /**
-- @class TSharedRef
-- @brief A non-nullable shared reference smart pointer.
-- @tparam Type The type of the managed object.
+ * @class TSharedRef
+ * @brief A non-nullable shared reference smart pointer.
+ * @tparam Type The type of the managed object.
  */
 template <typename Type> class TSharedRef final
 {
@@ -196,9 +196,9 @@ private:
 };
 
 /**
-- @class TSharedPtr
-- @brief A nullable shared pointer
-- @tparam Type The type of the managed object.
+ * @class TSharedPtr
+ * @brief A nullable shared pointer
+ * @tparam Type The type of the managed object.
  */
 template <typename Type> class TSharedPtr final
 {
@@ -271,26 +271,26 @@ private:
     SharedPtrInternal::FReferenceController *Controller;
 };
 
-/*
-- @brief Creates a TSharedRef from existing object and reference controller.
-- @param InObject Pointer to the managed object.
-- @param InController Pointer to the reference controller managing the object.
-- @return A TSharedRef managing the given object and reference controller.
+/**
+ * @brief Creates a TSharedRef from existing object and reference controller.
+ * @param InObject Pointer to the managed object.
+ * @param InController Pointer to the reference controller managing the object.
+ * @return A TSharedRef managing the given object and reference controller.
  */
 template <typename ObjectType>
 TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController ) noexcept;
 
-/*
-- @brief Creates a new TSharedRef instance with the given arguments.
-- @param InArgs Arguments to forward to the constructor of ObjectType.
-- @return A TSharedRef managing the newly created object.
+/**
+ * @brief Creates a new TSharedRef instance with the given arguments.
+ * @param InArgs Arguments to forward to the constructor of ObjectType.
+ * @return A TSharedRef managing the newly created object.
  */
 template <typename ObjectType, typename... Arguments> TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs ) noexcept;
 
-/*
-- @brief Creates a TRawPtrProxy instance from the given object pointer.
-- @param InObject Pointer to the object to create a proxy for.
-- @return A TRawPtrProxy managing the given object.
+/**
+ * @brief Creates a TRawPtrProxy instance from the given object pointer.
+ * @param InObject Pointer to the object to create a proxy for.
+ * @return A TRawPtrProxy managing the given object.
  */
 template <typename ObjectType> SharedPtrInternal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject ) noexcept;
 } // namespace Lumen

@@ -1,6 +1,6 @@
 /**
-- @file SharedPtr.inl
-- @brief Inline implementations for Shared Pointer classes.
+ * @file SharedPtr.inl
+ * @brief Inline implementations for Shared Pointer classes.
  */
 
 #pragma once
@@ -134,7 +134,7 @@ template <typename Type> void TSharedPtr<Type>::Release () noexcept
 }
 
 /**
-- SharedPtr Builders
+ * SharedPtr Builders
  */
 
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)
@@ -152,7 +152,7 @@ template <typename ObjectType> SharedPtrInternal::TRawPtrProxy<ObjectType> MakeS
 }
 
 /**
-- Static Casts
+ * Static Casts
  */
 
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)

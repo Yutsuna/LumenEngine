@@ -1,6 +1,6 @@
-/*
-- @file BenchmarkReporter.hpp
-- @brief Reporter interface and built-in reporters (console table, JSON file, debug dump).
+/**
+ * @file BenchmarkReporter.hpp
+ * @brief Reporter interface and built-in reporters (console table, JSON file, debug dump).
  */
 
 #pragma once
@@ -18,8 +18,8 @@ namespace Benchmarks
 {
 
     /**
-    - @class IBenchmarkReporter
-    - @brief Receives the events emitted by a benchmark run.
+     * @class IBenchmarkReporter
+     * @brief Receives the events emitted by a benchmark run.
      */
     class CORE_EXPORT IBenchmarkReporter
     {
@@ -33,8 +33,8 @@ namespace Benchmarks
     };
 
     /**
-    - @class FConsoleBenchmarkReporter
-    - @brief Prints an aligned table on stdout, one row per finished benchmark.
+     * @class FConsoleBenchmarkReporter
+     * @brief Prints an aligned table on stdout, one row per finished benchmark.
      */
     class CORE_EXPORT FConsoleBenchmarkReporter final : public IBenchmarkReporter
     {
@@ -50,8 +50,8 @@ namespace Benchmarks
     };
 
     /**
-    - @class FJsonBenchmarkReporter
-    - @brief Writes every result to a JSON file when the run ends.
+     * @class FJsonBenchmarkReporter
+     * @brief Writes every result to a JSON file when the run ends.
      */
     class CORE_EXPORT FJsonBenchmarkReporter final : public IBenchmarkReporter
     {
@@ -71,8 +71,8 @@ namespace Benchmarks
     };
 
     /**
-    - @class FDebugBenchmarkReporter
-    - @brief Dumps every event as JSON via Meta::SerializeToJSON. Debug/CI only.
+     * @class FDebugBenchmarkReporter
+     * @brief Dumps every event as JSON via Meta::SerializeToJSON. Debug/CI only.
      */
     class CORE_EXPORT FDebugBenchmarkReporter final : public IBenchmarkReporter
     {

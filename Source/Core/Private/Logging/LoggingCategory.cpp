@@ -1,6 +1,6 @@
-/*
-- @file LoggingCategory.cpp
-- @brief Implementation of the FLogCategory struct, which represents a logging category.
+/**
+ * @file LoggingCategory.cpp
+ * @brief Implementation of the FLogCategory struct, which represents a logging category.
  */
 
 #include <Logging/LoggingCategory.hpp>

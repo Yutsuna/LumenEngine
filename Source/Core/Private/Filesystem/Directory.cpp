@@ -1,6 +1,6 @@
-/*
-- @file Directory.cpp
-- @brief Monadic FDirectory helper implementations.
+/**
+ * @file Directory.cpp
+ * @brief Monadic FDirectory helper implementations.
  */
 
 #include <Filesystem/Directory.hpp>

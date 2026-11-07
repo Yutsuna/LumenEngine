@@ -1,6 +1,6 @@
-/*
-- @file UniquePtr.hpp
-- @brief Declaration of Unique Smart Pointer class for exclusive memory ownership.
+/**
+ * @file UniquePtr.hpp
+ * @brief Declaration of Unique Smart Pointer class for exclusive memory ownership.
  */
 
 #pragma once
@@ -17,9 +17,9 @@ namespace Lumen
 namespace UniquePtrInternal
 {
     /**
-    - @struct TDefaultDelete
-    - @brief Default deleter functor used by TUniquePtr to destroy the managed object.
-    - @tparam Type The object type
+     * @struct TDefaultDelete
+     * @brief Default deleter functor used by TUniquePtr to destroy the managed object.
+     * @tparam Type The object type
      */
     template <typename Type> struct TDefaultDelete
     {
@@ -52,10 +52,10 @@ namespace UniquePtrInternal
 } // namespace UniquePtrInternal
 
 /**
-- @class TUniquePtr
-- @brief Unique pointer class that owns and manages a dynamically allocated object.
-- @tparam Type The object type
-- @tparam Deleter The functor type used to destroy the managed object.
+ * @class TUniquePtr
+ * @brief Unique pointer class that owns and manages a dynamically allocated object.
+ * @tparam Type The object type
+ * @tparam Deleter The functor type used to destroy the managed object.
  */
 template <typename Type, typename Deleter = UniquePtrInternal::TDefaultDelete<Type>>
 class TUniquePtr final : public FNonCopyable, public FMonadic
@@ -112,15 +112,15 @@ public:
     [[nodiscard]] Bool IsValid () const noexcept;
     explicit operator Bool () const noexcept;
 
-    /*
-    - @brief Release ownership of the managed object and returns the pointer.
-    - @return The raw pointer to the previously managed object.
+    /**
+     * @brief Release ownership of the managed object and returns the pointer.
+     * @return The raw pointer to the previously managed object.
      */
     Type *Release () noexcept;
 
-    /*
-    - @brief Replaces the managed object with a new one, destroying the old one if it exists.
-    - @param InObject The new object to manage.
+    /**
+     * @brief Replaces the managed object with a new one, destroying the old one if it exists.
+     * @param InObject The new object to manage.
      */
     void Reset ( Type *InObject = nullptr ) noexcept;
 
@@ -149,10 +149,10 @@ private:
 };
 
 /**
-- @class TUniquePtr
-- @brief Unique pointer class that owns and manages a dynamically allocated object.
-- @tparam Type The object type
-- @tparam Deleter The functor type used to destroy the managed object.
+ * @class TUniquePtr
+ * @brief Unique pointer class that owns and manages a dynamically allocated object.
+ * @tparam Type The object type
+ * @tparam Deleter The functor type used to destroy the managed object.
  */
 template <typename Type, typename Deleter> class TUniquePtr<Type[], Deleter> final : public FNonCopyable
 {
@@ -205,15 +205,15 @@ public:
     [[nodiscard]] Bool IsValid () const noexcept;
     explicit operator Bool () const noexcept;
 
-    /*
-    - @brief Release ownership of the managed object and returns the pointer.
-    - @return The raw pointer to the previously managed object.
+    /**
+     * @brief Release ownership of the managed object and returns the pointer.
+     * @return The raw pointer to the previously managed object.
      */
     Type *Release () noexcept;
 
-    /*
-    - @brief Replaces the managed object with a new one, destroying the old one if it exists.
-    - @param InObject The new object to manage.
+    /**
+     * @brief Replaces the managed object with a new one, destroying the old one if it exists.
+     * @param InObject The new object to manage.
      */
     void Reset ( Type *InObject = nullptr ) noexcept;
 

@@ -1,6 +1,6 @@
-/*
-- @file PlatformFileSystem.cpp
-- @brief High-performance, cross-platform POSIX and Win32 IFileSystem backend.
+/**
+ * @file PlatformFileSystem.cpp
+ * @brief High-performance, cross-platform POSIX and Win32 IFileSystem backend.
  */
 
 #include <Core/CoreDefinitions.hpp>

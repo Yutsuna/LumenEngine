@@ -1,6 +1,6 @@
-/*
-- @file Signal.cpp
-- @brief Implementation of signal handling functions.
+/**
+ * @file Signal.cpp
+ * @brief Implementation of signal handling functions.
  */
 
 #include <HAL/Signal.hpp>

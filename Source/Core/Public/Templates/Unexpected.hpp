@@ -1,6 +1,6 @@
-/*
-- @file Unexpected.hpp
-- @brief Definition of TUnexpected class
+/**
+ * @file Unexpected.hpp
+ * @brief Definition of TUnexpected class
  */
 
 #pragma once
@@ -13,8 +13,8 @@ namespace Lumen
 {
 
 /**
-- @struct FUnexpect
-- @brief Wrapper to encapsulate explicit error
+ * @struct FUnexpect
+ * @brief Wrapper to encapsulate explicit error
  */
 struct FUnexpect
 {
@@ -24,8 +24,8 @@ struct FUnexpect
 inline constexpr FUnexpect Unexpect{};
 
 /**
-- @class TUnexpected
-- @brief Wrapper to encapsulate explicit error
+ * @class TUnexpected
+ * @brief Wrapper to encapsulate explicit error
  */
 template <class ErrorType> class TUnexpected
 {
