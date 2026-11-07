@@ -16,6 +16,7 @@ namespace Internal
     /**
      * @class FActorRegistry
      * @brief Thread-safe registry for actor lookups.
+     * @note Sends are lock-free; spawn/despawn take a short lock.
      */
     class SCENE_EXPORT FActorRegistry
     {
