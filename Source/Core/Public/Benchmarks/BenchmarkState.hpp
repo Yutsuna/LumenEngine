@@ -21,15 +21,15 @@ namespace Benchmarks
 {
 
     /**
-    - @class FBenchmarkState
-    - @brief Controls the measured loop of a benchmark.
+     * @class FBenchmarkState
+     * @brief Controls the measured loop of a benchmark.
 
-    - @code
-    - for ( auto _ : State )
-    - {
-    -     // measured body
-    - }
-    - @endcode
+     * @code
+     * for ( auto _ : State )
+     * {
+     *     // measured body
+     * }
+     * @endcode
      */
     class CORE_EXPORT FBenchmarkState final : public FNonCopyable, public FNonMovable
     {

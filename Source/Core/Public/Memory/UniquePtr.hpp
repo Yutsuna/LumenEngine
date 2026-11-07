@@ -37,9 +37,9 @@ namespace UniquePtrInternal
 
     /*
 
-    - @struct TDefaultDelete
-    - @brief Default deleter functor used by TUniquePtr to destroy the managed object.
-    - @tparam Type The object type
+     * @struct TDefaultDelete
+     * @brief Default deleter functor used by TUniquePtr to destroy the managed object.
+     * @tparam Type The object type
      */
     template <typename Type> struct TDefaultDelete<Type[]>
     {

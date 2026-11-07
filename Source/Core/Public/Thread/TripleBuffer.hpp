@@ -65,21 +65,21 @@ namespace Thread
     } // namespace Internal
 
     /**
-    - @class TTripleBuffer
-    - @brief Triple-buffered latest-snapshot exchange with serialized writers.
+     * @class TTripleBuffer
+     * @brief Triple-buffered latest-snapshot exchange with serialized writers.
 
-    - Slots:
-    -  - Reader: where ReadBuffer() reads.
-    -  - Writer: where WriteBuffer() writes.
-    -  - Temp:   staging slot swapped atomically between reader and writer.
+     * Slots:
+     *  - Reader: where ReadBuffer() reads.
+     *  - Writer: where WriteBuffer() writes.
+     *  - Temp:   staging slot swapped atomically between reader and writer.
 
-    - Thread safety:
-    -  - Multiple concurrent publishers are serialized via an internal write-side spinlock.
-    -  - Exactly one read-owner thread must drive SwapReadBuffers() for a given instance.
-    -  - Any number of threads may inspect the current reader snapshot through ReadBuffer(),
-    -    but the returned reference is immutable and only stable until the next reader-driven swap.
+     * Thread safety:
+     *  - Multiple concurrent publishers are serialized via an internal write-side spinlock.
+     *  - Exactly one read-owner thread must drive SwapReadBuffers() for a given instance.
+     *  - Any number of threads may inspect the current reader snapshot through ReadBuffer(),
+     *    but the returned reference is immutable and only stable until the next reader-driven swap.
 
-    - @tparam BufferType The type stored in each slot.
+     * @tparam BufferType The type stored in each slot.
      */
     template <typename BufferType> class TTripleBuffer final : public FNonCopyable, public FNonMovable
     {
@@ -96,13 +96,13 @@ namespace Thread
         explicit TTripleBuffer ( const BufferType &InData );
 
         /**
-        - @brief Wraps an existing three-element array (caller owns the memory).
-        - The caller must keep InBuffers alive for the lifetime of this instance.
+         * @brief Wraps an existing three-element array (caller owns the memory).
+         * The caller must keep InBuffers alive for the lifetime of this instance.
 
-        - Index mapping:
-        -  - 0: Temp slot
-        -  - 1: Writer slot
-        -  - 2: Reader slot
+         * Index mapping:
+         *  - 0: Temp slot
+         *  - 1: Writer slot
+         *  - 2: Reader slot
          */
         explicit TTripleBuffer ( BufferType ( &InBuffers )[3] );
 
