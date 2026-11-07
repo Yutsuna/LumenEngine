@@ -7,6 +7,7 @@
 
 #include <String/StringView.hpp>
 #include <Templates/Hash.hpp>
+
 template <class TObjectType> consteval Lumen::UInt64 Lumen::FHash::TypeHash () noexcept
 {
 
