@@ -113,6 +113,11 @@ public:
         return bHasValue;
     }
 
+    [[nodiscard]] constexpr explicit operator Bool () const noexcept
+    {
+        return bHasValue;
+    }
+
     /** @brief Destroy the contained value, making the optional empty. */
     constexpr void Reset () noexcept( std::is_nothrow_destructible_v<ValueType> )
     {
