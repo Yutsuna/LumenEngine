@@ -53,8 +53,9 @@ public:
     /**
      * @brief Enqueues a message. Safe to call from any thread simultaneously.
      * @param InMessage The message to send.
+     * @return True if the message was successfully enqueued, false otherwise.
      */
-    void Push ( const FMessage &InMessage ) noexcept;
+    Bool Push ( const FMessage &InMessage ) noexcept;
 
     /**
      * @brief Attempts to dequeue the front message.

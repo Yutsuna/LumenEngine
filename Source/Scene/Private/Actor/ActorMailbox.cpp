@@ -51,7 +51,7 @@ Lumen::FMailBox::~FMailBox () noexcept
     }
 }
 
-void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
+Lumen::Bool Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
 {
     /**
      * INFO: Try taking an existing node lock-free, allocate only if pool is depleted.
@@ -70,7 +70,7 @@ void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
     if ( NewNode == nullptr )
     {
         LUMEN_LOG_ERROR( LogActor, "FMailBox::Push: failed to allocate node for new message" );
-        return;
+        return false;
     }
 
     NewNode->Next.store( nullptr, std::memory_order_relaxed );
@@ -85,6 +85,7 @@ void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
      * INFO: this store must be release to synchronize with the consumer's acquire on Next
      */
     PrevTail->Next.store( NewNode, std::memory_order_release );
+    return true;
 }
 
 Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
