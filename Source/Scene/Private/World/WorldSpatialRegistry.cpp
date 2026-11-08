@@ -29,6 +29,10 @@ void Lumen::FSpatialRegistry::FDeltaTracker::ClearAll () noexcept
  * FSpatialRegistry
  */
 
+/**
+ * Public
+ */
+
 Lumen::FSpatialRegistry &Lumen::FSpatialRegistry::Get () noexcept
 {
     static FSpatialRegistry Instance;
@@ -51,12 +55,7 @@ void Lumen::FSpatialRegistry::RegisterSpatialEntity ( ActorID InId )
     WorkingData.Transforms.emplace_back( Maths::FMatrix4x4f::Identity() );
     WorkingData.IDToIndex.emplace( InId, NewIndex );
 
-    /** INFO: Resize bitsets and flag structural sync for all 3 buffers */
-    for ( USize Index = 0U; Index < 3U; ++Index )
-    {
-        DeltaTrackers[Index].bMetadataDirty = true;
-        DeltaTrackers[Index].Resize( WorkingData.EntityIDs.size() );
-    }
+    ResizeTrackersAndFlagStructuralChange();
 }
 
 void Lumen::FSpatialRegistry::UnregisterSpatialEntity ( ActorID InId )
@@ -85,11 +84,7 @@ void Lumen::FSpatialRegistry::UnregisterSpatialEntity ( ActorID InId )
     WorkingData.Transforms.pop_back();
     WorkingData.IDToIndex.erase( InId );
 
-    for ( USize Index = 0U; Index < 3U; ++Index )
-    {
-        DeltaTrackers[Index].bMetadataDirty = true;
-        DeltaTrackers[Index].Resize( WorkingData.EntityIDs.size() );
-    }
+    ResizeTrackersAndFlagStructuralChange();
 }
 
 void Lumen::FSpatialRegistry::UpdateTransform ( ActorID InId, const Maths::FMatrix4x4f &InTransform ) noexcept
@@ -105,20 +100,28 @@ void Lumen::FSpatialRegistry::UpdateTransform ( ActorID InId, const Maths::FMatr
     }
 }
 
-void Lumen::FSpatialRegistry::MarkComponentDirty ( USize InIndex, ESpatialComponentType InComponent ) noexcept
-{
-    const USize ComponentIdx = static_cast<USize>( InComponent );
-    for ( USize TrackerIdx = 0U; TrackerIdx < 3U; ++TrackerIdx )
-    {
-        DeltaTrackers[TrackerIdx].ComponentDirtyStates[ComponentIdx].Set( InIndex );
-    }
-}
-
 void Lumen::FSpatialRegistry::Publish () noexcept
 {
     TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
 
-    SnapshotBuffer.WriteBuffer( [this] ( FSpatialRegistryData &OutData )
+    /**
+     * INFO: Drain Pending into every buffer's tracker BEFORE writing to the
+     *       current buffer. We hold the exclusive lock, so no concurrent
+     *       UpdateTransform is active — the drain is race-free even though
+     *       the bitsets are atomic.
+     */
+    for ( USize Comp = 0U; Comp < static_cast<USize>( ESpatialComponentType::Count ); ++Comp )
+    {
+        Pending[Comp].ForEachSetBitAndClear( [this, Comp] ( const USize Index ) noexcept -> void
+        {
+            for ( USize BufferIdx = 0U; BufferIdx < Thread::TripleBufferCount; ++BufferIdx )
+            {
+                DeltaTrackers[BufferIdx].ComponentDirtyStates[Comp].Set( Index );
+            }
+        } );
+    }
+
+    SnapshotBuffer.WriteBuffer( [this] ( FSpatialRegistryData &OutData ) noexcept -> void
     {
         /** INFO: Identify which of the 3 buffers we are currently writing to */
         const USize BufferIdx  = static_cast<USize>( &OutData - SnapshotBuffer.GetBuffers() );
@@ -134,7 +137,7 @@ void Lumen::FSpatialRegistry::Publish () noexcept
 
         /** INFO: Granular Sync: Only copy what changed for THIS buffer instance */
         Tracker.ComponentDirtyStates[static_cast<USize>( ESpatialComponentType::Transform )].ForEachSetBitAndClear(
-            [&] ( USize Index )
+            [&] ( const USize Index )
         {
             OutData.Transforms[Index] = WorkingData.Transforms[Index];
         } );
@@ -149,4 +152,31 @@ void Lumen::FSpatialRegistry::SwapReadBuffers () noexcept
 const Lumen::FSpatialRegistryData &Lumen::FSpatialRegistry::GetReadSnapshot () const noexcept
 {
     return SnapshotBuffer.ReadBuffer();
+}
+
+/**
+ * Private
+ */
+
+void Lumen::FSpatialRegistry::MarkComponentDirty ( const USize InIndex, const ESpatialComponentType InComponent ) noexcept
+{
+    Pending[static_cast<USize>( InComponent )].Set( InIndex );
+}
+
+void Lumen::FSpatialRegistry::ResizeTrackersAndFlagStructuralChange () noexcept
+{
+    const USize EntityCount = WorkingData.EntityIDs.size();
+
+    /** INFO: every buffer needs a full copy on the next Publish */
+    for ( USize BufferIdx = 0U; BufferIdx < 3U; ++BufferIdx )
+    {
+        DeltaTrackers[BufferIdx].bMetadataDirty = true;
+        DeltaTrackers[BufferIdx].Resize( EntityCount );
+    }
+
+    /** INFO: Pending must cover the new entity range for future updates. */
+    for ( USize CompIdx = 0U; CompIdx < Thread::TripleBufferCount; ++CompIdx )
+    {
+        Pending[CompIdx].Resize( EntityCount );
+    }
 }
