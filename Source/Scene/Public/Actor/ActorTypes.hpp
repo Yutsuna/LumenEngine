@@ -108,13 +108,21 @@ public:
 
     FActorRef () noexcept = default;
 
+    /** @brief Constructs an actor reference from an actor ID. */
     explicit FActorRef ( ActorID InId ) noexcept;
 
+    /** @brief Constructs an actor reference from an actor pointer. */
     explicit FActorRef ( AActor *InActor ) noexcept;
+
+    /** @brief Deleted constructor to prevent null references. */
+    explicit FActorRef ( NullPtrType ) = delete;
 
 public:
 
+    /** @brief Returns the actor ID of the referenced actor. */
     [[nodiscard]] ActorID GetId () const noexcept;
+
+    /** @brief Returns whether the referenced actor is valid. */
     [[nodiscard]] Bool IsValid () const noexcept;
 
     /**
