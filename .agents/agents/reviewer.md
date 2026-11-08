@@ -45,9 +45,13 @@ yourself** — dispatch, correlate, and report.
 
 ## Workflow
 
-1. Determine the scope: run `git status`, `git diff` (and `git diff <base>`
-   if a base ref is given by the caller). If the diff is empty, report that
-   there is nothing to review and stop.
+1. Determine the scope:
+   - If the caller gave a module name, use `git diff -- Source/<Module>/`
+     (and `git diff <base> -- Source/<Module>/` if a base is given).
+   - If the caller gave a file path, use `git diff -- <path>`.
+   - If the caller gave only a base ref, use `git diff <base>`.
+   - If nothing, use `git diff` (working tree).
+   If the resulting diff is empty, report nothing to review and stop.
 2. Identify which modules the change touches (`Source/<Module>/…`), so each
    sub-reviewer can load the right `.agents/modules/<Module>.md`.
 3. Launch, in parallel where the harness allows it:

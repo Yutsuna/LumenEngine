@@ -1,8 +1,14 @@
 ---
 description: Run the review pipeline (reviewer + reviewer-safety + reviewer-norme) over the current changes
+argument-hint: "<module> | <file> | (empty for git diff)"
 ---
 
 # review
+
+**Argument resolution (follow strictly in order):**
+1. If the user supplied an argument that matches a module name under `.agents/modules/`, review that module's diff.
+2. Else if the user supplied an argument that is a file path, review that file's diff.
+3. If no argument is supplied, default to `git diff` (working tree or against the harness-provided `<base>`).
 
 Dispatches the review agents defined in `.agents/agents/` (all strictly
 read-only; performance is deliberately out of scope) over the current changes.
@@ -16,12 +22,3 @@ reviewer-safety and reviewer-norme, consolidate their findings into one
 report ordered by severity — each finding with path:line, quoted evidence,
 and the rule (or defect) it violates. End with a verdict:
 approve / needs changes / fails the rules.
-```
-
-Notes:
-
-- The orchestrator deduplicates and orders, but never softens or overrides
-  the sub-reviewers' verdicts; disagreements are shown as such.
-- Subagents must load `.agents/rules/coding-style.md`, `.agents/rules/core-first.md`
-  and the touched `.agents/modules/<Module>.md` before judging.
-- Reviewers never edit code; any fix pass happens afterwards in the main session.
