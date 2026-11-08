@@ -31,9 +31,6 @@ namespace Internal
         /** @brief Nulls the slot and bumps its generation. Serial phase only. */
         static void Unregister ( AActor *InActor ) noexcept;
 
-        /** @brief Lock-free lookup; returns nullptr if the id is stale or unknown. */
-        [[nodiscard]] static AActor *Lookup ( ActorID InId ) noexcept;
-
         /** @brief Lock-free lookup + deliver. */
         static void EnqueueMessage ( ActorID InId, const FMessage &InMessage ) noexcept;
     };
