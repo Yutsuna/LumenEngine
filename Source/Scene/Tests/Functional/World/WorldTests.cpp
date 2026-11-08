@@ -31,23 +31,19 @@ public:
 
     explicit FWorldTestActor ( const ActorID InId ) noexcept : AActor( InId )
     {
-        /**
-         *
-         */
+        /* */
     }
 
     void Receive ( const FMessage &InMessage ) noexcept override
     {
-        if ( InMessage.Type == static_cast<UInt32>( EEngineMessage::Tick ) )
-        {
-            TickDelta = InMessage.GetPayload<FTickPayload>().DeltaTime;
-        }
-        else
-        {
-            ReceivedPayloads.push_back( InMessage.GetPayload<Int32>() );
-        }
-
         ReceivedTypes.push_back( InMessage.Type );
+        ReceivedPayloads.push_back( InMessage.GetPayload<Int32>() );
+    }
+
+    void OnTick ( const Float64 InDeltaTime ) noexcept override
+    {
+        TickDelta = InDeltaTime;
+        ++TickCount;
     }
 
     [[nodiscard]] const TVector<UInt32> &GetReceivedTypes () const noexcept
@@ -65,11 +61,17 @@ public:
         return TickDelta;
     }
 
+    [[nodiscard]] UInt32 GetTickCount () const noexcept
+    {
+        return TickCount;
+    }
+
 private:
 
     TVector<UInt32> ReceivedTypes;
     TVector<Int32> ReceivedPayloads;
     Float64 TickDelta = -1.0;
+    UInt32 TickCount  = 0U;
 };
 
 /** @brief Second actor type used to exercise type diversity inside a world. */
@@ -306,19 +308,13 @@ LUMEN_TEST( FWorld_Tick, DeliversTickPayloadToActors )
 
     World.Tick( 16.0 );
 
-    const TVector<UInt32> &Received = Actor->GetReceivedTypes();
-
-    LUMEN_CHECK_EQ( Received.size(), 1ULL );
-    LUMEN_CHECK_EQ( Received[0], static_cast<UInt32>( EEngineMessage::Tick ) );
     LUMEN_CHECK_EQ( Actor->GetTickDelta(), 16.0 );
+    LUMEN_CHECK_EQ( Actor->GetTickCount(), 1U );
+    LUMEN_CHECK_EQ( Actor->GetReceivedTypes().size(), 0ULL );
 }
 
 LUMEN_TEST( FWorld_Tick, ThrottlesMailboxThroughputPerActor )
 {
-    /**
-     * INFO: Tick caps the processed messages at MaxMessagesPerTick; the
-     *       leftover backlogs drain over the next ticks only.
-     */
     FWorld World;
 
     const TSharedRef<FWorldTestActor> Actor = World.SpawnActor<FWorldTestActor>();
@@ -330,15 +326,16 @@ LUMEN_TEST( FWorld_Tick, ThrottlesMailboxThroughputPerActor )
         Actor->EnqueueMessage( FMessage::Make( 10U, 0ULL ) );
     }
 
+    /** INFO: First Tick is capped at MaxMessagesPerTick — no tick message inflates the count. */
     World.Tick( 0.0 );
-
-    /** INFO: The backlog holds 151 entries (150 + the tick message); the cap must apply. */
     LUMEN_CHECK_EQ( Actor->GetReceivedTypes().size(), static_cast<USize>( FWorld::MaxMessagesPerTick ) );
 
+    /** INFO: Second Tick drains the remaining 50. */
     World.Tick( 0.0 );
+    LUMEN_CHECK_EQ( Actor->GetReceivedTypes().size(), static_cast<USize>( PreloadedCount ) );
 
-    /** INFO: Second pass drains 150 backlog entries plus two tick entries. */
-    LUMEN_CHECK_EQ( Actor->GetReceivedTypes().size(), static_cast<USize>( PreloadedCount ) + 2ULL );
+    /** INFO: OnTick still fires every frame. */
+    LUMEN_CHECK_EQ( Actor->GetTickCount(), 2U );
 }
 
 LUMEN_TEST( FWorld_Tick, ProcessesDiverseActorTypesInOnePass )
@@ -351,17 +348,14 @@ LUMEN_TEST( FWorld_Tick, ProcessesDiverseActorTypesInOnePass )
 
     World.Tick( 1.0 / 120.0 );
 
-    constexpr UInt32 TickType = static_cast<UInt32>( EEngineMessage::Tick );
+    /** INFO: No message was enqueued — Receive stays empty. */
+    LUMEN_CHECK_EQ( First->GetReceivedTypes().size(), 0ULL );
+    LUMEN_CHECK_EQ( Alt->GetReceivedTypes().size(), 0ULL );
+    LUMEN_CHECK_EQ( Third->GetReceivedTypes().size(), 0ULL );
 
-    LUMEN_CHECK_EQ( First->GetReceivedTypes().size(), 1ULL );
-    LUMEN_CHECK_EQ( Alt->GetReceivedTypes().size(), 1ULL );
-    LUMEN_CHECK_EQ( Third->GetReceivedTypes().size(), 1ULL );
-
-    LUMEN_CHECK_EQ( First->GetReceivedTypes()[0], TickType );
-    LUMEN_CHECK_EQ( Alt->GetReceivedTypes()[0], TickType );
-    LUMEN_CHECK_EQ( Third->GetReceivedTypes()[0], TickType );
-
+    /** INFO: OnTick fires on every actor, regardless of type. */
     LUMEN_CHECK_EQ( First->GetTickDelta(), 1.0 / 120.0 );
+    LUMEN_CHECK_EQ( Third->GetTickDelta(), 1.0 / 120.0 );
 }
 
 } // namespace Lumen
