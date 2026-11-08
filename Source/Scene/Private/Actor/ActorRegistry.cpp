@@ -160,7 +160,8 @@ void Lumen::Internal::FActorRegistry::Register ( AActor *InActor ) noexcept
 
     if ( Slot == nullptr ) [[unlikely]]
     {
-        LUMEN_LOG_ERROR( LogActor, "FActorRegistry::Register: ActorID '{}' maps to an unallocated chunk (was AllocateId() called?).", Id );
+        LUMEN_LOG_ERROR( LogActor,
+                         "FActorRegistry::Register: ActorID '{}' maps to an unallocated chunk (was AllocateId() called?).", Id );
         return;
     }
 
@@ -172,7 +173,8 @@ void Lumen::Internal::FActorRegistry::Register ( AActor *InActor ) noexcept
 
     AActor *Expected = nullptr;
 
-    if ( not Slot->Actor.compare_exchange_strong( Expected, InActor, std::memory_order_release, std::memory_order_relaxed ) ) [[unlikely]]
+    if ( not Slot->Actor.compare_exchange_strong( Expected, InActor, std::memory_order_release, std::memory_order_relaxed ) )
+        [[unlikely]]
     {
         LUMEN_LOG_ERROR( LogActor, "FActorRegistry::Register: ActorID '{}' already registered.", Id );
     }

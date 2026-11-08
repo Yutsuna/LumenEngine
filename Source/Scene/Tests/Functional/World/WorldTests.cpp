@@ -185,16 +185,16 @@ LUMEN_TEST( FWorld_SpawnActor, AssignsSequentialIds )
     const ActorID SecondId = Second->GetId();
     const ActorID ThirdId  = Third->GetId();
 
-    LUMEN_CHECK_NOT_EQ( FirstId,  0ULL );
+    LUMEN_CHECK_NOT_EQ( FirstId, 0ULL );
     LUMEN_CHECK_NOT_EQ( SecondId, 0ULL );
-    LUMEN_CHECK_NOT_EQ( ThirdId,  0ULL );
+    LUMEN_CHECK_NOT_EQ( ThirdId, 0ULL );
 
-    LUMEN_CHECK_NOT_EQ( FirstId,  SecondId );
+    LUMEN_CHECK_NOT_EQ( FirstId, SecondId );
     LUMEN_CHECK_NOT_EQ( SecondId, ThirdId );
-    LUMEN_CHECK_NOT_EQ( FirstId,  ThirdId );
+    LUMEN_CHECK_NOT_EQ( FirstId, ThirdId );
 
-    LUMEN_CHECK_NOT_EQ( Lumen::ActorIdSlotIndex( FirstId  ), Lumen::ActorIdSlotIndex( SecondId ) );
-    LUMEN_CHECK_NOT_EQ( Lumen::ActorIdSlotIndex( SecondId ), Lumen::ActorIdSlotIndex( ThirdId  ) );
+    LUMEN_CHECK_NOT_EQ( Lumen::ActorIdSlotIndex( FirstId ), Lumen::ActorIdSlotIndex( SecondId ) );
+    LUMEN_CHECK_NOT_EQ( Lumen::ActorIdSlotIndex( SecondId ), Lumen::ActorIdSlotIndex( ThirdId ) );
 
     LUMEN_CHECK_TRUE( First->GetRef().IsValid() );
 }

@@ -3,9 +3,9 @@
  * @brief Functional tests for FActorRef.
  */
 
-#include <Actor/ActorRegistry.hpp>
 #include <Actor/Actor.hpp>
 #include <Actor/ActorMessage.hpp>
+#include <Actor/ActorRegistry.hpp>
 #include <Actor/ActorTypes.hpp>
 
 #include <Templates/Vector.hpp>
@@ -53,7 +53,7 @@ private:
 
 LUMEN_TEST( FActorRef_Construct, DefaultRefIsInvalid )
 {
-    constexpr ActorID DefaultId = 0ULL;
+    const ActorID DefaultId = 0ULL;
 
     const FActorRef Ref;
 
@@ -63,7 +63,7 @@ LUMEN_TEST( FActorRef_Construct, DefaultRefIsInvalid )
 
 LUMEN_TEST( FActorRef_Construct, FromExplicitIdIsValid )
 {
-    constexpr ActorID ActorId = 3001ULL;
+    const ActorID ActorId = Internal::FActorRegistry::AllocateId();
 
     const FActorRef Ref( ActorId );
 
@@ -81,11 +81,11 @@ LUMEN_TEST( FActorRef_Construct, FromNullActorIsInvalid )
 
 LUMEN_TEST( FActorRef_Construct, FromLiveActorCapturesItsId )
 {
-    FRefProbeActor Actor( 3002ULL );
+    FRefProbeActor Actor( Internal::FActorRegistry::AllocateId() );
 
     const FActorRef Ref( &Actor );
 
-    LUMEN_CHECK_EQ( Ref.GetId(), 3002ULL );
+    LUMEN_CHECK_EQ( Ref.GetId(), Actor.GetId() );
     LUMEN_CHECK_TRUE( Ref.IsValid() );
 }
 
@@ -144,9 +144,9 @@ LUMEN_TEST( FActorRef_Routing, DeadReferenceDropsMessages )
 
 LUMEN_TEST( FActorRef_Routing, UnknownIdIsSilentlyDiscarded )
 {
-    constexpr ActorID UnknownId = 3999ULL;
+    const ActorID UnknownId = 3999ULL;
 
-    FRefProbeActor BystanderActor( 3012ULL );
+    FRefProbeActor BystanderActor( Internal::FActorRegistry::AllocateId() );
     const FActorRef UnknownRef( UnknownId );
 
     UnknownRef.EnqueueMessage( FMessage::Make( 7U, 0ULL ) );
