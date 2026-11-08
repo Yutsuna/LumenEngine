@@ -7,9 +7,9 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from .Configuration import GLOBAL_BASE_SCOPES, GLOBAL_SOURCE_ROOT, GLOBAL_TITLE_RE
-from .Errors import TitleError, ScopeError, IssueNotFound, IssueLookupError
+from .Errors import IssueLookupError, IssueNotFound, ScopeError, TitleError
 
-__all__ = [ "LumenScopes", "GitHubPullRequest", "GitHubIssue" ]
+__all__ = ["GitHubIssue", "GitHubPullRequest", "LumenScopes"]
 
 
 def _starts_with_capital( cstring : str ) -> bool:
@@ -22,7 +22,7 @@ class LumenScopes:
     values: tuple[str, ...]
 
     @classmethod
-    def discover(cls, root: Path = GLOBAL_SOURCE_ROOT ) -> "LumenScopes":
+    def discover(cls, root: Path = GLOBAL_SOURCE_ROOT ) -> LumenScopes:
         directories : list[str] = []
         if root.is_dir():
             directories = [
@@ -50,7 +50,7 @@ class GitHubPullRequest:
     description: str
 
     @classmethod
-    def parse(cls, raw: str, scopes: LumenScopes ) -> "GitHubPullRequest":
+    def parse(cls, raw: str, scopes: LumenScopes ) -> GitHubPullRequest:
         if not raw:
             raise TitleError("The title of the pull request is empty.")
 

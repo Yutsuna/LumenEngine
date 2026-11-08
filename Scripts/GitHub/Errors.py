@@ -1,4 +1,4 @@
-__all__ = ["TitleError", "ScopeError", "IssueNotFound", "IssueLookupError"]
+__all__ = ["IssueLookupError", "IssueNotFound", "ScopeError", "TitleError"]
 
 
 class TitleError(Exception):
