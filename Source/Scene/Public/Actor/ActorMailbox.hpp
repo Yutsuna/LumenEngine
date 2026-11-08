@@ -71,6 +71,18 @@ public:
     void Reserve ( USize InCapacity ) noexcept;
 
     /**
+     * @brief Freezes the tick boundary at the current tail.
+     * @note Consumer-only. Called by FWorld::Tick before the parallel phase.
+     */
+    void BeginTick () noexcept;
+
+    /**
+     * @brief Clears the tick boundary. Pop resumes processing all nodes.
+     * @note Consumer-only. Called by FWorld::Tick after the parallel phase.
+     */
+    void EndTick () noexcept;
+
+    /**
      * @brief Returns true if no messages are pending.
      * @note May transiently return true during a producer gap. Single-consumer only.
      */
@@ -97,6 +109,9 @@ private:
 
     /** @brief Tail: last node inserted. Written by producers via atomic exchange. */
     alignas( 64 ) TAtomic<FNode *> Tail = { nullptr };
+
+    /** @brief Last node enqueued before the parallel phase; nullptr = no fence. */
+    FNode *Boundary = nullptr;
 
 }; // class FMailBox
 

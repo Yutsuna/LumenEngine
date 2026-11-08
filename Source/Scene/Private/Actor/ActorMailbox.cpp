@@ -90,9 +90,15 @@ void Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
 Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
 {
     /**
-     * INFO: Head points to the stub (or a previously consumed node acting as stub).
-     * The real next message lives in Head->Next.
+     * INFO: Tick fence: if the consumer has caught up to the boundary frozen
+     *       at BeginTick, everything still in the queue was enqueued DURING
+     *       the parallel phase and belongs to the next tick.
      */
+    if ( Boundary != nullptr and Head == Boundary )
+    {
+        return {};
+    }
+
     FNode *const NextNode = Head->Next.load( std::memory_order_acquire );
 
     if ( NextNode == nullptr )
@@ -108,10 +114,8 @@ Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
         return {};
     }
 
-    /** INFO: Transfer ownership of the message out of the node into the result. */
     TOptional<FMessage> Result = std::move( NextNode->Message );
 
-    /** INFO: The old Head becomes the new stub; delete it unless it is the original stub. */
     FNode *const OldHead = std::exchange( Head, NextNode );
     RecycleHead( OldHead );
 
@@ -135,6 +139,16 @@ void Lumen::FMailBox::Reserve ( USize InCapacity ) noexcept
             break;
         }
     }
+}
+
+void Lumen::FMailBox::BeginTick () noexcept
+{
+    Boundary = Tail.load( std::memory_order_acquire );
+}
+
+void Lumen::FMailBox::EndTick () noexcept
+{
+    Boundary = nullptr;
 }
 
 Lumen::Bool Lumen::FMailBox::IsEmpty () const noexcept
