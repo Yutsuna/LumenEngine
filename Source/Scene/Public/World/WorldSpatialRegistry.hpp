@@ -86,8 +86,11 @@ private:
 
     FSpatialRegistry () noexcept = default;
 
-    /** Internal helper to mark a component dirty across all TripleBuffer slots */
+    /** @brief Mark a component dirty across all TripleBuffer slots */
     void MarkComponentDirty ( USize InIndex, ESpatialComponentType InComponent ) noexcept;
+
+    /** @brief Resizes the delta trackers and flags structural changes across all TripleBuffer slots */
+    void ResizeTrackersAndFlagStructuralChange () noexcept;
 
 private:
 
@@ -113,6 +116,9 @@ private:
     };
 
     FDeltaTracker DeltaTrackers[3];
+
+    /** @brief One bitset per component. UpdateTransform marks here (1 atomic RMW). */
+    FAtomicBitset Pending[static_cast<USize>( ESpatialComponentType::Count )];
 };
 
 } // namespace Lumen
