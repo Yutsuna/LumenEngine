@@ -25,6 +25,9 @@ namespace Internal
         /** @brief Allocates a fresh ActorID. Safe from any thread. */
         [[nodiscard]] static ActorID AllocateId () noexcept;
 
+        /** @brief Total number of messages dropped because the target actor was dead. */
+        [[nodiscard]] static UInt64 GetDeadLetterCount () noexcept;
+
         /** @brief Registers the actor in its slot. Serial phase only. */
         static void Register ( AActor *InActor ) noexcept;
 

@@ -123,6 +123,7 @@ struct FActorRegistryState
 }
 
 constinit FActorRegistryState GRegistry;
+constinit Lumen::TAtomic<Lumen::UInt64> GDeadLetters{ 0ULL };
 
 constexpr Lumen::UInt64 GenerationMask = 0xFFFFFFFFULL;
 constexpr Lumen::UInt64 ReaderUnit     = 1ULL << 32U;
@@ -145,6 +146,11 @@ Lumen::ActorID Lumen::Internal::FActorRegistry::AllocateId () noexcept
 
     /** INFO: Bumped at release time so the ID carries the generation of the next occupant. */
     return MakeActorId( SlotIndex, GenerationOf( *GRegistry.FindSlot( SlotIndex ), std::memory_order_relaxed ) );
+}
+
+Lumen::UInt64 Lumen::Internal::FActorRegistry::GetDeadLetterCount () noexcept
+{
+    return GDeadLetters.load( std::memory_order_relaxed );
 }
 
 void Lumen::Internal::FActorRegistry::Register ( AActor *InActor ) noexcept
@@ -231,9 +237,12 @@ void Lumen::Internal::FActorRegistry::EnqueueMessage ( ActorID InId, const FMess
     /** INFO: Keep stale senders from pinning a retiring slot. */
     if ( GenerationOf( *Slot, std::memory_order_relaxed ) != Generation ) [[unlikely]]
     {
+        GDeadLetters.fetch_add( 1ULL, std::memory_order_relaxed );
         LUMEN_LOG_WARNING( LogActor, "FActorRegistry::EnqueueMessage: ActorID '{}' generation mismatch.", InId );
         return;
     }
+
+    Bool Delivered = false;
 
     /** INFO: Pin + generation check in one RMW operation. */
     const UInt64 Previous = Slot->State.fetch_add( ReaderUnit, std::memory_order_acquire );
@@ -242,9 +251,15 @@ void Lumen::Internal::FActorRegistry::EnqueueMessage ( ActorID InId, const FMess
         if ( AActor *const Target = Slot->Actor.load( std::memory_order_acquire ) ) [[likely]]
         {
             Target->EnqueueMessage( InMessage );
+            Delivered = true;
         }
     }
 
     /** INFO: Unpin after message dispatch. */
     Slot->State.fetch_sub( ReaderUnit, std::memory_order_release );
+
+    if ( not Delivered ) [[unlikely]]
+    {
+        GDeadLetters.fetch_add( 1ULL, std::memory_order_relaxed );
+    }
 }
