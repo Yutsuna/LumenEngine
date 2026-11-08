@@ -8,5 +8,5 @@ __pycache__/
 ThirdParty/
 result
 compile_commands.json
-.kimi
+.kimi-code
 .opencode
