@@ -166,6 +166,8 @@ namespace Thread
         alignas( 64 ) FMutex WriteMutex;
     };
 
+    static constexpr inline USize TripleBufferCount = 3U;
+
 } // namespace Thread
 
 } // namespace Lumen
