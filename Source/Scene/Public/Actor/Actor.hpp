@@ -37,6 +37,12 @@ public:
     /** @brief Lock-free message enqueueing. */
     void EnqueueMessage ( const FMessage &InMessage ) noexcept;
 
+    /** @brief Freezes the mailbox tick boundary. Called by FWorld::Tick. */
+    void BeginTick () noexcept;
+
+    /** @brief Clears the mailbox tick boundary. Called by FWorld::Tick. */
+    void EndTick () noexcept;
+
     /**
      * @brief Runs a single frame of the actor, processing messages and ticking.
      * @param InDeltaTime The elapsed time since the last frame.

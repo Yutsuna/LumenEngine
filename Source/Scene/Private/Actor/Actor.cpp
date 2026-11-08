@@ -47,6 +47,16 @@ void Lumen::AActor::EnqueueMessage ( const FMessage &InMessage ) noexcept
     Mailbox.Push( InMessage );
 }
 
+void Lumen::AActor::BeginTick () noexcept
+{
+    Mailbox.BeginTick();
+}
+
+void Lumen::AActor::EndTick () noexcept
+{
+    Mailbox.EndTick();
+}
+
 Lumen::ActorID Lumen::AActor::GetId () const noexcept
 {
     return Id;
