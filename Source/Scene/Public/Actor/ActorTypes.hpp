@@ -131,7 +131,7 @@ private:
     ActorID Id = 0ULL;
 };
 
-extern const FLogCategory LogActor;
+extern const SCENE_EXPORT FLogCategory LogActor;
 
 } // namespace Lumen
 
