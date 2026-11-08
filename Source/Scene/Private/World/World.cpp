@@ -8,10 +8,10 @@
 
 #include <Actor/Actor.hpp>
 
-#include <Messages/EngineMessageTypes.hpp>
-
 #include <algorithm>
+#include <cassert>
 #include <execution>
+#include <utility>
 
 namespace
 {
@@ -19,53 +19,149 @@ namespace
 LUMEN_FORCE_INLINE Lumen::Bool SortActiveActors ( const Lumen::TSharedPtr<Lumen::AActor> &A,
                                                   const Lumen::TSharedPtr<Lumen::AActor> &B ) noexcept
 {
-    return A->GetTypeID() < B->GetTypeID();
+    const Lumen::USize Ka = A->GetTypeID();
+    const Lumen::USize Kb = B->GetTypeID();
+
+    return Ka != Kb ? Ka < Kb : A->GetId() < B->GetId();
 }
 
 } // namespace
 
 void Lumen::FWorld::Broadcast ( const FMessage &InMessage )
 {
+    if ( bInParallelPhase )
+    {
+        TFunction<void( FWorld & )> Command = [Msg = InMessage] ( FWorld &World ) -> void
+        {
+            World.Broadcast( Msg );
+        };
+
+        TUniqueLock<FMutex> Lock( DeferredMutex );
+        DeferredCommands.push_back( std::move( Command ) );
+        return;
+    }
+
     for ( const TSharedPtr<AActor> &Actor : ActiveActors )
     {
         Actor->EnqueueMessage( InMessage );
     }
 }
 
-void Lumen::FWorld::Tick ( const Float64 InDeltaTime )
+void Lumen::FWorld::DestroyActor ( ActorID InId )
 {
-    const FTickPayload Payload = FTickPayload{ .DeltaTime = InDeltaTime };
-    const FMessage TickMsg     = FMessage::Make( EEngineMessage::Tick, 0ULL, Payload );
-
-    for ( const TSharedPtr<AActor> &Actor : ActiveActors )
+    if ( bInParallelPhase )
     {
-        Actor->EnqueueMessage( TickMsg );
+        TFunction<void( FWorld & )> Command = [InId] ( FWorld &World ) -> void
+        {
+            World.DestroyActorImpl( InId );
+        };
+
+        TUniqueLock<FMutex> Lock( DeferredMutex );
+        DeferredCommands.push_back( std::move( Command ) );
+        return;
     }
 
-    /**
-     * NOTE: Instruction Cache Optimization
-     * Sort actors by TypeIndex to group similar actor logic together, reducing I-Cache misses
-     * when the parallel loop invokes the virtual Receive function.
-     */
+    DestroyActorImpl( InId );
+}
+
+void Lumen::FWorld::Tick ( const Float64 InDeltaTime )
+{
+    /** NOTE: Apply deferred structural commands serially. */
+    ApplyDeferredCommands();
+
+    /** NOTE: Re-sort only after a structural change. */
     if ( bNeedsSorting ) [[unlikely]]
     {
         std::ranges::sort( ActiveActors, &SortActiveActors );
         bNeedsSorting = false;
     }
 
-    using FActorIterator            = TVector<TSharedPtr<AActor>>::iterator;
-    const FActorIterator ActorBegin = ActiveActors.begin();
-    const FActorIterator ActorEnd   = ActiveActors.end();
-
     /**
-     * NOTE: Core parallel Mailbox evaluation of the Active Actors.
-     * Throttled to 100 messages per tick to prevent "Long Tail" latency from busy actors.
+     * NOTE: Freeze the mailbox tick boundary for every actor.
+     *       Any message enqueued during the parallel phase is deferred to
+     *       the next frame (deterministic per-producer delivery order).
      */
+    for ( const TSharedPtr<AActor> &Actor : ActiveActors )
+    {
+        Actor->BeginTick();
+    }
+
+    /** NOTE: Parallel RunFrame: process mailbox, then OnTick. */
+    bInParallelPhase = true;
+
+    using FActiveActorIterator            = decltype( ActiveActors )::iterator;
+    const FActiveActorIterator ActorBegin = ActiveActors.begin();
+    const FActiveActorIterator ActorEnd   = ActiveActors.end();
+
     std::for_each( std::execution::par, ActorBegin, ActorEnd, [InDeltaTime] ( const TSharedPtr<AActor> &Actor ) noexcept -> void
     {
         Actor->RunFrame( InDeltaTime, MaxMessagesPerTick );
     } );
 
-    /** NOTE: Publish the spatial changes to the lock-free snapshot buffer */
+    bInParallelPhase = false;
+
+    /** NOTE: Clear the fences so external RunFrame calls behave as before. */
+    for ( const TSharedPtr<AActor> &Actor : ActiveActors )
+    {
+        Actor->EndTick();
+    }
+
+    /** NOTE: Publish the spatial snapshot. */
     FSpatialRegistry::Get().Publish();
+}
+
+/**
+ * Private
+ */
+
+void Lumen::FWorld::ApplyDeferredCommands () noexcept
+{
+    /**
+     * NOTE: Swap the queue out first so commands that themselves enqueue
+     *       deferred work (DestroyActor from a deferred Broadcast handler, ...)
+     *       land in a fresh queue and get applied next tick. Prevents
+     *       unbounded recursion inside a single serial phase.
+     */
+    TVector<TFunction<void( FWorld & )>> Batch;
+    {
+        TUniqueLock<FMutex> Lock( DeferredMutex );
+        Batch = std::move( DeferredCommands );
+        DeferredCommands.clear();
+    }
+
+    for ( TFunction<void( FWorld & )> &Command : Batch )
+    {
+        Command( *this );
+    }
+}
+
+void Lumen::FWorld::DestroyActorImpl ( ActorID InId ) noexcept
+{
+    using FActorIterator    = decltype( Actors )::iterator;
+    const FActorIterator It = Actors.find( InId );
+    if ( It == Actors.end() )
+    {
+        return;
+    }
+
+    /**
+     * NOTE: Unregister the spatial entity before the actor leaves the world
+     *       containers, so FSpatialRegistry never observes a stale id on
+     *       the next Publish.
+     */
+    FSpatialRegistry::Get().UnregisterSpatialEntity( InId );
+
+    Actors.erase( It );
+
+    using FActiveActorIterator = decltype( ActiveActors )::iterator;
+    for ( FActiveActorIterator VIt = ActiveActors.begin(); VIt != ActiveActors.end(); ++VIt )
+    {
+        if ( ( *VIt )->GetId() == InId )
+        {
+            ActiveActors.erase( VIt );
+            break;
+        }
+    }
+
+    bNeedsSorting = true;
 }
