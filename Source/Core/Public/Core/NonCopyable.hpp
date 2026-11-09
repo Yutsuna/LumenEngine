@@ -1,5 +1,7 @@
-/// @file NonCopyable.hpp
-/// @brief Declaration of NonCopyable class for preventing copy construction and assignment.
+/**
+ * @file NonCopyable.hpp
+ * @brief Declaration of NonCopyable class for preventing copy construction and assignment.
+ */
 
 #pragma once
 
@@ -8,10 +10,10 @@
 namespace Lumen
 {
 
-///
-/// @class FNonCopyable
-/// @brief Prevents copy construction and assignment.
-///
+/**
+ * @class FNonCopyable
+ * @brief Prevents copy construction and assignment.
+ */
 class CORE_EXPORT FNonCopyable
 {
 public:

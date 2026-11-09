@@ -1,7 +1,7 @@
-///
-/// @file PlatformTime.hpp
-/// @brief Platform-specific time utilities for high-resolution timing and performance measurement.
-///
+/**
+ * @file PlatformTime.hpp
+ * @brief Platform-specific time utilities for high-resolution timing and performance measurement.
+ */
 
 #pragma once
 
@@ -14,19 +14,19 @@ namespace Lumen
 namespace HAL
 {
 
-    ///
-    /// @struct FPlatformTime
-    /// @brief Platform-specific time utilities for high-resolution timing and performance measurement.
-    ///
+    /**
+     * @struct FPlatformTime
+     * @brief Platform-specific time utilities for high-resolution timing and performance measurement.
+     */
     struct CORE_EXPORT FPlatformTime
     {
-        /// @returns The current time in seconds since the application started.
+        /** @returns The current time in seconds since the application started. */
         static Float64 Seconds () noexcept;
 
-        /// @returns The current wall-clock time in nanoseconds since Unix epoch.
+        /** @returns The current wall-clock time in nanoseconds since Unix epoch. */
         static UInt64 NowNanoseconds () noexcept;
 
-        /// @brief Blocks the current thread for the specified number of seconds.
+        /** @brief Blocks the current thread for the specified number of seconds. */
         static void Sleep ( const Float64 Seconds ) noexcept;
 
         static constexpr Float64 DefaultTickRate = 1.0 / 60.0;

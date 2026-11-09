@@ -1,5 +1,7 @@
-/// @file LaunchProcessGuard.cpp
-/// @brief Implementation of Launch Process Guard
+/**
+ * @file LaunchProcessGuard.cpp
+ * @brief Implementation of Launch Process Guard
+ */
 
 #include <Engine/LaunchEngineLoop.hpp>
 #include <Engine/LaunchProcessGuard.hpp>
@@ -13,7 +15,7 @@
 namespace
 {
 
-/// @brief Handles Signals received
+/** @brief Handles Signals received */
 template <typename TMessage> void OnSignal ( const Lumen::ESystemSignal::Type InSignal, const TMessage &InMessage ) noexcept
 {
     if ( Lumen::Launch::FLaunchEngineLoop::RequestExit() )
@@ -24,19 +26,19 @@ template <typename TMessage> void OnSignal ( const Lumen::ESystemSignal::Type In
     }
 }
 
-/// @brief Handles Interrupt Signal
+/** @brief Handles Interrupt Signal */
 void OnInterruptSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
 {
     OnSignal( InSignal, "\rInterrupt signal trapped: exiting gracefully..." LUMEN_NEWLINE );
 }
 
-/// @brief Handles Terminate Signal
+/** @brief Handles Terminate Signal */
 void OnTerminateSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
 {
     OnSignal( InSignal, "\rTerminate signal trapped: exiting gracefully..." LUMEN_NEWLINE );
 }
 
-/// @brief Handles Out Of Memory
+/** @brief Handles Out Of Memory */
 void OnOutOfMemory () noexcept
 {
     Lumen::FLogger::Flush( "Fatal: Out of Memory" LUMEN_NEWLINE );

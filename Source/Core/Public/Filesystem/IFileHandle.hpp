@@ -1,5 +1,7 @@
-/// @file IFileHandle.hpp
-/// @brief Interface for low-level raw byte file handle.
+/**
+ * @file IFileHandle.hpp
+ * @brief Interface for low-level raw byte file handle.
+ */
 
 #pragma once
 
@@ -15,10 +17,10 @@ namespace Lumen
 namespace Filesystem
 {
 
-    ///
-    /// @class IFileHandle
-    /// @brief Low-level stream/handle interface for reading and writing raw bytes.
-    ///
+    /**
+     * @class IFileHandle
+     * @brief Low-level stream/handle interface for reading and writing raw bytes.
+     */
     class CORE_EXPORT IFileHandle
     {
     public:
@@ -27,25 +29,25 @@ namespace Filesystem
 
     public:
 
-        /// @brief Reads bytes into the provided span.
+        /** @brief Reads bytes into the provided span. */
         [[nodiscard]] virtual TExpected<USize, EFileError> Read ( TSpan<Byte> OutBuffer ) noexcept = 0;
 
-        /// @brief Writes bytes from the provided span.
+        /** @brief Writes bytes from the provided span. */
         [[nodiscard]] virtual TExpected<USize, EFileError> Write ( TSpan<const Byte> InBuffer ) noexcept = 0;
 
-        /// @brief Moves the cursor position in the file.
+        /** @brief Moves the cursor position in the file. */
         [[nodiscard]] virtual TExpected<Int64, EFileError> Seek ( Int64 Offset, ESeekOrigin Origin ) noexcept = 0;
 
-        /// @brief Current cursor position.
+        /** @brief Current cursor position. */
         [[nodiscard]] virtual Int64 Tell () const noexcept = 0;
 
-        /// @brief Total file size.
+        /** @brief Total file size. */
         [[nodiscard]] virtual UInt64 Size () const noexcept = 0;
 
-        /// @brief Flushes pending writes to disk.
+        /** @brief Flushes pending writes to disk. */
         virtual TExpected<void, EFileError> Flush () noexcept = 0;
 
-        /// @brief Checks if the cursor is at or past the end of file.
+        /** @brief Checks if the cursor is at or past the end of file. */
         [[nodiscard]] virtual Bool IsEOF () const noexcept
         {
             return Tell() >= static_cast<Int64>( Size() );
@@ -53,13 +55,13 @@ namespace Filesystem
 
     public:
 
-        /// @brief Maps the entire file into memory for zero-copy read access.
+        /** @brief Maps the entire file into memory for zero-copy read access. */
         [[nodiscard]] virtual TSpan<const Byte> Map () noexcept
         {
             return {};
         }
 
-        /// @brief Unmaps a previously mapped file region.
+        /** @brief Unmaps a previously mapped file region. */
         virtual void Unmap () noexcept
         {
         }

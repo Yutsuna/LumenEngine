@@ -1,7 +1,7 @@
-///
-/// @file LaunchWindowModule.hpp
-/// @brief Launch the main window. Requires the Application module.
-///
+/**
+ * @file LaunchWindowModule.hpp
+ * @brief Launch the main window. Requires the Application module.
+ */
 
 #pragma once
 
@@ -17,10 +17,10 @@ class FGenericWindow;
 namespace Launch
 {
 
-    ///
-    /// @class FLaunchWindowModule
-    /// @brief Owns the main OS window. Dies before the Application module.
-    ///
+    /**
+     * @class FLaunchWindowModule
+     * @brief Owns the main OS window. Dies before the Application module.
+     */
     class FLaunchWindowModule final : public IEngineModule
     {
     public:
@@ -37,7 +37,7 @@ namespace Launch
         TSharedPtr<FGenericWindow> Window;
     };
 
-    /// @brief Factory registered in GetEngineModules(). Headless yields a no-op module.
+    /** @brief Factory registered in GetEngineModules(). Headless yields a no-op module. */
     [[nodiscard]] TLaunchResult<TUniquePtr<IEngineModule>> MakeWindowModule ( const FLaunchEngineConfig &InConfig ) noexcept;
 
 } // namespace Launch

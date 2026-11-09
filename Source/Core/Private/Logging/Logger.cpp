@@ -1,7 +1,7 @@
-///
-/// @file Logger.cpp
-/// @brief Implementation of the Logger class.
-///
+/**
+ * @file Logger.cpp
+ * @brief Implementation of the Logger class.
+ */
 
 #include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
@@ -39,10 +39,10 @@ namespace Lumen
 namespace
 {
 
-    ///
-    /// @brief Writes the whole buffer to stdout, bypassing stdio buffering. Never allocates.
-    /// @return false on an unrecoverable I/O error.
-    ///
+    /**
+     * @brief Writes the whole buffer to stdout, bypassing stdio buffering. Never allocates.
+     * @return false on an unrecoverable I/O error.
+     */
     Bool WriteStdout ( const AnsiChar *Data, USize Size ) noexcept
     {
 #if defined( LUMEN_PLATFORM_WINDOWS )
@@ -86,10 +86,10 @@ namespace
 #endif
     }
 
-    ///
-    /// @brief Legacy Windows consoles print ANSI escape sequences as garbage unless virtual terminal
-    ///        processing is enabled. No-op on other platforms and when stdout is redirected.
-    ///
+    /**
+     * @brief Legacy Windows consoles print ANSI escape sequences as garbage unless virtual terminal
+     *        processing is enabled. No-op on other platforms and when stdout is redirected.
+     */
     Bool EnableAnsiEscapeCodes () noexcept
     {
 #if defined( LUMEN_PLATFORM_WINDOWS )
@@ -127,7 +127,10 @@ void FLogger::Initialize () noexcept
         {
             return;
         }
-        WorkerThread = std::jthread( [this] ( std::stop_token Token ) { FlushLogMessages( Token ); } );
+        WorkerThread = std::jthread( [this] ( std::stop_token Token )
+        {
+            FlushLogMessages( Token );
+        } );
         bIsAsync.store( true );
     }
     catch ( std::system_error &SystemError )
@@ -142,10 +145,15 @@ void FLogger::Initialize () noexcept
 
 void FLogger::Flush ( const AnsiChar *const String ) noexcept
 {
-    /// INFO: Flush stdout before writing to it to avoid overwriting earlier log lines.
+    /** INFO: Flush stdout before writing to it to avoid overwriting earlier log lines. */
     std::fflush( stdout );
 
     WriteStdout( String, std::char_traits<AnsiChar>::length( String ) );
+}
+
+void FLogger::Flush ( const FString &String ) noexcept
+{
+    Flush( String.c_str() );
 }
 
 FLogger::~FLogger ()
@@ -155,7 +163,7 @@ FLogger::~FLogger ()
 
 void FLogger::Shutdown () noexcept
 {
-    /// INFO: Serialize concurrent callers to avoid race conditions.
+    /** INFO: Serialize concurrent callers to avoid race conditions. */
     const TLockGuard<FMutex> ShutdownLock( ShutdownMutex );
 
     std::jthread Worker;
@@ -188,7 +196,7 @@ void FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbos
         return;
     }
 
-    const bool bQueued = [&] -> bool
+    const Bool bQueued = [&] -> Bool
     {
         const TLockGuard<FMutex> Lock( QueueMutex );
 
@@ -218,7 +226,10 @@ void FLogger::FlushLogMessages ( std::stop_token &StopToken )
         {
             TUniqueLock<FMutex> Lock( QueueMutex );
 
-            Condition.wait( Lock, StopToken, [this] { return !LogMessageQueue.empty(); } );
+            Condition.wait( Lock, StopToken, [this]
+            {
+                return !LogMessageQueue.empty();
+            } );
 
             if ( LogMessageQueue.empty() )
             {
@@ -244,7 +255,7 @@ void FLogger::CoutMessage ( const FLogMessage &LogMessage ) const noexcept
     static constexpr const AnsiChar *const ResetColor   = "\033[0m";
     static constexpr const AnsiChar *const FormatString = "[{:.4f}] {}: {}{}: {}{}";
 
-    /// @brief Runs once, needed on Windows consoles; trivially true elsewhere.
+    /** @brief Runs once, needed on Windows consoles; trivially true elsewhere. */
     [[maybe_unused]] static const Bool bAnsiEscapeCodesReady = EnableAnsiEscapeCodes();
 
     const AnsiChar *const VerbosityColor  = ELogVerbosity::ToColor( LogMessage.Verbosity );

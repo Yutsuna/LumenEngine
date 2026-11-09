@@ -1,7 +1,7 @@
-///
-///@file SharedPtr.inl
-///@brief Inline implementations for Shared Pointer classes.
-///
+/**
+ * @file SharedPtr.inl
+ * @brief Inline implementations for Shared Pointer classes.
+ */
 
 #pragma once
 
@@ -13,12 +13,12 @@ namespace Lumen
 {
 template <typename Type> TSharedPtr<Type>::TSharedPtr() noexcept : Object( nullptr ), Controller( nullptr )
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type> TSharedPtr<Type>::TSharedPtr( NullPtrType ) noexcept : Object( nullptr ), Controller( nullptr )
 {
-    /// Empty
+    /** Empty */
 }
 
 template <typename Type>
@@ -133,9 +133,9 @@ template <typename Type> void TSharedPtr<Type>::Release () noexcept
     }
 }
 
-///
-/// SharedPtr Builders
-///
+/**
+ * SharedPtr Builders
+ */
 
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename ObjectType, typename... Arguments> TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs ) noexcept
@@ -151,9 +151,9 @@ template <typename ObjectType> SharedPtrInternal::TRawPtrProxy<ObjectType> MakeS
     return SharedPtrInternal::TRawPtrProxy<ObjectType>( InObject );
 }
 
-///
-/// Static Casts
-///
+/**
+ * Static Casts
+ */
 
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename CastToType, typename CastFromType>

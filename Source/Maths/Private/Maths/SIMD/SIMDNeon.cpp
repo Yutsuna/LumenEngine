@@ -1,7 +1,7 @@
-///
-/// @file SIMDNeon.cpp
-/// @brief Implementation of Neon utilities for mathematical operations.
-///
+/**
+ * @file SIMDNeon.cpp
+ * @brief Implementation of Neon utilities for mathematical operations.
+ */
 
 #include <Maths/SIMD/SIMD.hpp>
 
@@ -24,7 +24,7 @@ void Lumen::Maths::SIMD::MatrixMul4x4 ( const Float32 *InLeft, const Float32 *In
     {
         const float32x4_t RCol = vld1q_f32( InRight + ( Idx * 4 ) );
 
-        /// INFO: Compute linear combination using Neon intrinsics
+        /** INFO: Compute linear combination using Neon intrinsics */
         float32x4_t Res = vmulq_n_f32( L0, vgetq_lane_f32( RCol, 0 ) );
         Res             = vmlaq_n_f32( Res, L1, vgetq_lane_f32( RCol, 1 ) );
         Res             = vmlaq_n_f32( Res, L2, vgetq_lane_f32( RCol, 2 ) );

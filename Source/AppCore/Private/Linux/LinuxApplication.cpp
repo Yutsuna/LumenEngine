@@ -1,7 +1,7 @@
-///
-/// @file LinuxApplication.cpp
-/// @brief Implementation of the FLinuxApplication class for Linux-specific application management.
-///
+/**
+ * @file LinuxApplication.cpp
+ * @brief Implementation of the FLinuxApplication class for Linux-specific application management.
+ */
 
 #include <Linux/LinuxApplication.hpp>
 
@@ -50,11 +50,11 @@ Lumen::TSharedPtr<Lumen::FGenericApplication> Lumen::FLinuxApplication::MakeLinu
     if ( not FLinuxBackend::InitializeSDL() )
     {
         LUMEN_LOG_FATAL( LogLinuxApplication, "Failed to initialize SDL library for Linux application: {}", SDL_GetError() );
-        /// INFO: unused as LUMEN LOG FATAL with raise a terminate signal after logging the message
+        /** INFO: unused as LUMEN LOG FATAL with raise a terminate signal after logging the message */
         return nullptr;
     }
 
-    /// Use MakeShared to align the control block and pointer cleanly together
+    /** Use MakeShared to align the control block and pointer cleanly together */
     TSharedPtr<FLinuxApplication> Application = MakeShared<FLinuxApplication>();
     GLinuxApplication                         = Application.Get();
 
@@ -75,7 +75,7 @@ void Lumen::FLinuxApplication::InitializeWindow ( const TSharedRef<FGenericWindo
 
 void Lumen::FLinuxApplication::Shutdown () noexcept
 {
-    /// INFO: Clear all tracked windows and message handlers
+    /** INFO: Clear all tracked windows and message handlers */
     Windows.clear();
     MainWindow.Reset();
     MessageHandler.Reset();

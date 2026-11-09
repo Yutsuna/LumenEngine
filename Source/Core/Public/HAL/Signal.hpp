@@ -1,5 +1,7 @@
-/// @file Signal.hpp
-/// @brief Declaration of the FSignal class for event handling and callback management.
+/**
+ * @file Signal.hpp
+ * @brief Declaration of the FSignal class for event handling and callback management.
+ */
 
 #pragma once
 
@@ -13,10 +15,10 @@
 
 namespace Lumen
 {
-///
-/// @enum ESystemSignal
-/// @brief Enumeration of system signals that can be handled by the engine.
-///
+/**
+ * @enum ESystemSignal
+ * @brief Enumeration of system signals that can be handled by the engine.
+ */
 namespace ESystemSignal
 {
     enum Type : UInt8
@@ -31,53 +33,53 @@ namespace ESystemSignal
     };
 }; // namespace ESystemSignal
 
-///
-/// @typedef FSignalHandlerSignature
-/// @brief Type definition for signal handler functions that can be registered with the FSignal class.
-///
+/**
+ * @typedef FSignalHandlerSignature
+ * @brief Type definition for signal handler functions that can be registered with the FSignal class.
+ */
 using FSignalHandlerSignature = void ( * )( ESystemSignal::Type );
 
-///
-/// @class FSignal
-/// @brief Static manager to trap and dispatch system signals to registered handlers.
-///
+/**
+ * @class FSignal
+ * @brief Static manager to trap and dispatch system signals to registered handlers.
+ */
 class CORE_EXPORT FSignal
 {
 public:
 
-    ///
-    /// @brief Binds a signal handler to a specific system signal.
-    /// @param InSignal The system signal to bind the handler to.
-    /// @param InHandler The function pointer to the signal handler to be called when the signal
-    ///
+    /**
+     * @brief Binds a signal handler to a specific system signal.
+     * @param InSignal The system signal to bind the handler to.
+     * @param InHandler The function pointer to the signal handler to be called when the signal
+     */
     static void Bind ( const ESystemSignal::Type InSignal, const FSignalHandlerSignature InHandler );
 
-    ///
-    /// @brief Raises a system signal, invoking any registered handlers for that signal.
-    /// @param InSignal The system signal to raise.
-    ///
+    /**
+     * @brief Raises a system signal, invoking any registered handlers for that signal.
+     * @param InSignal The system signal to raise.
+     */
     static void Raise ( const ESystemSignal::Type InSignal );
 
-    ///
-    /// @brief Unbinds any signal handler associated with a specific system signal, preventing it from being called when the
-    /// signal is raised.
-    /// @param InSignal The system signal to unbind the handler from.
-    ///
+    /**
+     * @brief Unbinds any signal handler associated with a specific system signal, preventing it from being called when the
+     * signal is raised.
+     * @param InSignal The system signal to unbind the handler from.
+     */
     static void Unbind ( const ESystemSignal::Type InSignal );
 
-    ///
-    /// @brief Restores all registered OS handlers to defaults and releases all listener storage.
-    ///
+    /**
+     * @brief Restores all registered OS handlers to defaults and releases all listener storage.
+     */
     static void Reset ();
 
 private:
 
-    /// @brief Internal handler called by the OS
+    /** @brief Internal handler called by the OS */
     static void HandleOSSignal ( const Int32 InSignal );
 
 private:
 
-    /// @brief Map of registered signal handlers for each system signal
+    /** @brief Map of registered signal handlers for each system signal */
     static TMap<ESystemSignal::Type, TVector<FSignalHandlerSignature>> SignalListeners;
 };
 } // namespace Lumen

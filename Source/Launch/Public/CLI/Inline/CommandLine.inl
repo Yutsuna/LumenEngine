@@ -1,7 +1,7 @@
-///
-/// @file CommandLine.inl
-/// @brief Template definitions of FCommandLine.
-///
+/**
+ * @file CommandLine.inl
+ * @brief Template definitions of FCommandLine.
+ */
 
 #pragma once
 
@@ -18,22 +18,21 @@ namespace Lumen
 template <Launch::Concepts::CCommandLineNumber NumberType>
 Launch::TLaunchResult<NumberType> Launch::FCommandLine::GetNumber ( const FStringView InKey ) const noexcept
 {
-    return GetValue( InKey ).AndThen(
-        [] ( const FStringView InText ) noexcept -> TLaunchResult<NumberType>
+    return GetValue( InKey ).AndThen( [] ( const FStringView InText ) noexcept -> TLaunchResult<NumberType>
+    {
+        NumberType Parsed{};
+        const AnsiChar *const Begin = InText.data();
+        const AnsiChar *const End   = Begin + InText.size();
+
+        const auto [Last, ErrorCode] = std::from_chars( Begin, End, Parsed );
+        if ( ErrorCode != std::errc{} or Last != End ) [[unlikely]]
         {
-            NumberType Parsed{};
-            const AnsiChar *const Begin = InText.data();
-            const AnsiChar *const End   = Begin + InText.size();
+            return LaunchFailure( ELaunchStage::PreInit, ELaunchErrorCode::InvalidArgument,
+                                  "Malformed numeric command-line value" );
+        }
 
-            const auto [Last, ErrorCode] = std::from_chars( Begin, End, Parsed );
-            if ( ErrorCode != std::errc{} or Last != End ) [[unlikely]]
-            {
-                return LaunchFailure( ELaunchStage::PreInit, ELaunchErrorCode::InvalidArgument,
-                                      "Malformed numeric command-line value" );
-            }
-
-            return Parsed;
-        } );
+        return Parsed;
+    } );
 }
 
 template <Launch::Concepts::CCommandLineNumber NumberType>
@@ -48,14 +47,14 @@ Launch::TLaunchResult<NumberType> Launch::FCommandLine::GetNumberOr ( const FStr
 
     return GetNumber<NumberType>( InKey ).OrElse(
         [InFallback] ( const FLaunchError &InError ) noexcept -> TLaunchResult<NumberType>
+    {
+        if ( InError.Code == ELaunchErrorCode::MissingArgument )
         {
-            if ( InError.Code == ELaunchErrorCode::MissingArgument )
-            {
-                return InFallback;
-            }
+            return InFallback;
+        }
 
-            return MakeUnexpected( InError );
-        } );
+        return MakeUnexpected( InError );
+    } );
 }
 
 template <typename TFunction> void Launch::FCommandLine::ForEachOption ( TFunction &&InCallback ) const noexcept

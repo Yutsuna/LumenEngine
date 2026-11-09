@@ -1,7 +1,7 @@
-///
-/// @file Map.hpp
-/// @brief Declaration of the FMap class for key-value pair storage and retrieval.
-///
+/**
+ * @file Map.hpp
+ * @brief Declaration of the FMap class for key-value pair storage and retrieval.
+ */
 
 #pragma once
 

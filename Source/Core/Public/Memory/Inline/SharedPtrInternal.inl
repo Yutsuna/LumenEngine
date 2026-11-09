@@ -1,7 +1,7 @@
-///
-/// @file SharedPtrInternal.inl
-/// @brief Inline implementations for Shared Pointer Internal classes.
-///
+/**
+ * @file SharedPtrInternal.inl
+ * @brief Inline implementations for Shared Pointer Internal classes.
+ */
 
 #pragma once
 
@@ -24,9 +24,9 @@ namespace SharedPtrInternal
         return new SharedPtrInternal::TDefaultReferenceController<ObjectType>( InObject );
     }
 
-    ///
-    /// TIntrusiveReferenceController
-    ///
+    /**
+     * TIntrusiveReferenceController
+     */
 
     template <typename Type>
     template <typename... Arguments>
@@ -50,14 +50,14 @@ namespace SharedPtrInternal
         return reinterpret_cast<Type *>( Storage );
     }
 
-    ///
-    /// TDefaultReferenceController
-    ///
+    /**
+     * TDefaultReferenceController
+     */
 
     template <typename Type>
     TDefaultReferenceController<Type>::TDefaultReferenceController( Type *InObject ) noexcept : Object( InObject )
     {
-        /// Empty
+        /** Empty */
     }
 
     template <typename Type> void TDefaultReferenceController<Type>::DestroyObject () noexcept
@@ -70,12 +70,12 @@ namespace SharedPtrInternal
         delete this;
     }
 
-    ///
-    /// TRawPtrProxy
-    ///
+    /**
+     * TRawPtrProxy
+     */
     template <typename Type> TRawPtrProxy<Type>::TRawPtrProxy( Type *InObject ) noexcept : Object( InObject )
     {
-        /// Empty
+        /** Empty */
     }
 } // namespace SharedPtrInternal
 } // namespace Lumen

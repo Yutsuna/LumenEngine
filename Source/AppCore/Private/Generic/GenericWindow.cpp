@@ -1,41 +1,43 @@
-/// @file GenericWindow.cpp
-/// @brief Implementation of the FGenericWindow class for cross-platform window management.
+/**
+ * @file GenericWindow.cpp
+ * @brief Implementation of the FGenericWindow class for cross-platform window management.
+ */
 
 #include <Generic/GenericWindow.hpp>
 
 void Lumen::FGenericWindow::Clear () noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 void Lumen::FGenericWindow::Destroy () noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 void Lumen::FGenericWindow::Show () noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 void Lumen::FGenericWindow::Minimize () noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 void Lumen::FGenericWindow::Maximize () noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 void Lumen::FGenericWindow::Hide () noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 void Lumen::FGenericWindow::SetWindowMode ( const EWindowMode::Type LUMEN_UNUSED InWindowMode ) noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 Lumen::EWindowMode::Type Lumen::FGenericWindow::GetWindowMode () const noexcept
@@ -60,17 +62,17 @@ Lumen::Bool Lumen::FGenericWindow::IsVisible () const noexcept
 
 void Lumen::FGenericWindow::SetWindowFocus () noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 void Lumen::FGenericWindow::SetOpacity ( const Float32 LUMEN_UNUSED InOpacity ) noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 void Lumen::FGenericWindow::EnableInput ( Bool LUMEN_UNUSED bEnable ) noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 Lumen::Bool Lumen::FGenericWindow::IsPointInWindow ( const Int32 InX, const Int32 InY ) const noexcept
@@ -106,7 +108,7 @@ Lumen::Bool Lumen::FGenericWindow::IsForegroundWindow () const noexcept
 
 void Lumen::FGenericWindow::SetWindowTitle ( const AnsiChar LUMEN_UNUSED *const InText ) noexcept
 {
-    /// NOTE: "To be implemented by children
+    /** NOTE: "To be implemented by children */
 }
 
 Lumen::Int32 Lumen::FGenericWindow::GetWindowWidth () const noexcept

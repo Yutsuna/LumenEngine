@@ -1,0 +1,9 @@
+Diagnostics:
+  Suppress:
+    - "pp_file_not_found"
+
+CompileFlags:
+  Add:
+    - "-std=c++26"
+  Remove:
+    - "-freflection"

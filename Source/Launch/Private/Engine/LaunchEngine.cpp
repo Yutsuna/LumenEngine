@@ -1,5 +1,7 @@
-/// @file LaunchEngine.cpp
-/// @brief Launches the Lumen Engine
+/**
+ * @file LaunchEngine.cpp
+ * @brief Launches the Lumen Engine
+ */
 
 #include <Core/CoreDefinitions.hpp>
 

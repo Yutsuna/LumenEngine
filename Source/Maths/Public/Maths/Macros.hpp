@@ -1,7 +1,7 @@
-///
-/// @file Macros.hpp
-/// @brief Common macros for Lumen MathsCore module
-///
+/**
+ * @file Macros.hpp
+ * @brief Common macros for Lumen MathsCore module
+ */
 
 #pragma once
 

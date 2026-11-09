@@ -1,7 +1,7 @@
-///
-/// @file GenericWindowDescription.hpp
-/// @brief Declaration of the FGenericWindowDescription struct for window configuration.
-///
+/**
+ * @file GenericWindowDescription.hpp
+ * @brief Declaration of the FGenericWindowDescription struct for window configuration.
+ */
 
 #pragma once
 
@@ -17,24 +17,24 @@ namespace Lumen
 namespace EWindowMode
 {
 
-    ///
-    /// @brief Enumeration of possible window modes.
-    ///
+    /**
+     * @brief Enumeration of possible window modes.
+     */
     enum Type : Int32 /// NOLINT(performance-enum-size)
     {
-        /// True fullscreen window mode
+        /** True fullscreen window mode */
         Fullscreen,
-        /// Borderless windowed fullscreen mode
+        /** Borderless windowed fullscreen mode */
         WindowedFullscreen,
-        /// Standard windowed mode
+        /** Standard windowed mode */
         Windowed,
-        /// Number of window modes
+        /** Number of window modes */
         NumWindowModes
     };
 
-    ///
-    /// @brief Convert a window mode enum value to its string representation.
-    ///
+    /**
+     * @brief Convert a window mode enum value to its string representation.
+     */
     static constexpr const AnsiChar *ToString ( const Type InWindowMode )
     {
         switch ( InWindowMode )
@@ -65,22 +65,22 @@ namespace /// NOLINT(cert-dcl59-cpp)
 
 } // namespace
 
-///
-/// @brief Structure describing the properties of a generic window.
-///
+/**
+ * @brief Structure describing the properties of a generic window.
+ */
 struct FGenericWindowDescription
 {
-    /// Title of the window
+    /** Title of the window */
     FString Title = FString{ DefaultWindowTitle };
-    /// Initial position of the window on screen
+    /** Initial position of the window on screen */
     Maths::FVec2i Position = Maths::FVec2i( DefaultWindowPosX, DefaultWindowPosY );
-    /// Initial size of the window
+    /** Initial size of the window */
     Maths::FVec2i Size = Maths::FVec2i( DefaultWindowWidth, DefaultWindowHeight );
-    /// Initial window mode
+    /** Initial window mode */
     EWindowMode::Type WindowMode = EWindowMode::Windowed;
-    /// Is the window resizable by the user
+    /** Is the window resizable by the user */
     Bool bIsResizable = true;
-    /// Is the window initially visible on screen
+    /** Is the window initially visible on screen */
     Bool bIsVisible = true;
 };
 

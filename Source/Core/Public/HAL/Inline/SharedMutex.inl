@@ -1,7 +1,7 @@
-///
-/// @file SharedMutex.inl
-/// @brief Inline template implementations for TSharedLock and TSharedUniqueLock.
-///
+/**
+ * @file SharedMutex.inl
+ * @brief Inline template implementations for TSharedLock and TSharedUniqueLock.
+ */
 
 #pragma once
 
@@ -12,9 +12,9 @@
 namespace Lumen
 {
 
-///
-/// TSharedLock
-///
+/**
+ * TSharedLock
+ */
 
 template <typename MutexType> TSharedLock<MutexType>::TSharedLock( MutexType &InMutex ) noexcept : Mutex( InMutex )
 {
@@ -26,9 +26,9 @@ template <typename MutexType> TSharedLock<MutexType>::~TSharedLock() noexcept
     Mutex.UnlockShared();
 }
 
-///
-/// TSharedUniqueLock
-///
+/**
+ * TSharedUniqueLock
+ */
 
 template <typename MutexType> TSharedUniqueLock<MutexType>::TSharedUniqueLock( MutexType &InMutex ) noexcept : Mutex( &InMutex )
 {
@@ -47,7 +47,9 @@ template <typename MutexType>
 TSharedUniqueLock<MutexType>::TSharedUniqueLock( TSharedUniqueLock &&InOther ) noexcept
     : Mutex( std::exchange<MutexType>( InOther.Mutex, nullptr ) ), bIsLocked( std::exchange<Bool>( InOther.bIsLocked, false ) )
 {
-    ///
+    /**
+     *
+     */
 }
 
 template <typename MutexType>

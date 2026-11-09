@@ -1,16 +1,16 @@
-///
-/// @file SharedMutex.cpp
-/// @brief Implementation of FSharedMutex
-///
+/**
+ * @file SharedMutex.cpp
+ * @brief Implementation of FSharedMutex
+ */
 
-#include "HAL/SharedMutex.hpp"
+#include <HAL/SharedMutex.hpp>
 
-/// @brief Maximum number of busy-spin iterations before falling back to atomic::wait.
+/** @brief Maximum number of busy-spin iterations before falling back to atomic::wait. */
 static constexpr Lumen::UInt32 GMaxSpinCount = 64U;
 
 void Lumen::FSharedMutex::Lock () noexcept
 {
-    /// INFO: Only one thread can win the CAS; every other writer spins via WaitForWriterFlag
+    /** INFO: Only one thread can win the CAS; every other writer spins via WaitForWriterFlag */
     UInt32 Expected = 0U;
     while ( not WriterFlag.compare_exchange_weak( Expected, 1U, std::memory_order::acquire, std::memory_order::relaxed ) )
     {
@@ -18,21 +18,21 @@ void Lumen::FSharedMutex::Lock () noexcept
         WaitForWriterFlag( 0U );
     }
 
-    /// INFO: Waiting for all active readers to finish
+    /** INFO: Waiting for all active readers to finish */
     WaitForReadersTodrain();
 }
 
 Lumen::Bool Lumen::FSharedMutex::TryLock () noexcept
 {
 
-    /// INFO: Succeed only when there is no active writer AND no active readers
+    /** INFO: Succeed only when there is no active writer AND no active readers */
     if ( UInt32 Expected = 0U;
          not WriterFlag.compare_exchange_strong( Expected, 1U, std::memory_order::acquire, std::memory_order::relaxed ) )
     {
         return false;
     }
 
-    /// INFO: Check if there are any active readers
+    /** INFO: Check if there are any active readers */
     if ( ReaderCount.load( std::memory_order::acquire ) != 0U )
     {
         WriterFlag.store( 0U, std::memory_order::release );
@@ -45,7 +45,7 @@ Lumen::Bool Lumen::FSharedMutex::TryLock () noexcept
 
 void Lumen::FSharedMutex::Unlock () noexcept
 {
-    /// INFO: Release the exclusive lock
+    /** INFO: Release the exclusive lock */
     WriterFlag.store( 0U, std::memory_order::release );
     WriterFlag.notify_all();
 }
@@ -58,7 +58,7 @@ void Lumen::FSharedMutex::LockShared () noexcept
 
         ReaderCount.fetch_add( 1U, std::memory_order::acquire );
 
-        if ( WriterFlag.load( std::memory_order::relaxed ) == 0U )
+        if ( WriterFlag.load( std::memory_order::acquire ) == 0U )
         {
             return;
         }
@@ -77,7 +77,7 @@ Lumen::Bool Lumen::FSharedMutex::TryLockShared () noexcept
 
     ReaderCount.fetch_add( 1U, std::memory_order::acquire );
 
-    if ( WriterFlag.load( std::memory_order::relaxed ) != 0U )
+    if ( WriterFlag.load( std::memory_order::acquire ) != 0U )
     {
         ReaderCount.fetch_sub( 1U, std::memory_order::release );
         ReaderCount.notify_all();
@@ -111,12 +111,12 @@ void Lumen::FSharedMutex::WaitForWriterFlag ( UInt32 InExpected ) noexcept
     {
         if ( SpinCount < GMaxSpinCount )
         {
-            ///
-            /// INFO: Busy-spinning with exponential back-off:
-            /// issue a pause hint to reduce pipeline pressure and cache-line bouncing
-            /// on x86/ARM.  The spin count is capped to prevent excessive CPU usage
-            /// under high contention, at which point we transition to an OS-assisted wait.
-            ///
+            /**
+             * INFO: Busy-spinning with exponential back-off:
+             * issue a pause hint to reduce pipeline pressure and cache-line bouncing
+             * on x86/ARM.  The spin count is capped to prevent excessive CPU usage
+             * under high contention, at which point we transition to an OS-assisted wait.
+             */
             for ( UInt32 Pause = 0U; Pause < ( 1U << SpinCount ); ++Pause )
             {
 #if defined( __x86_64__ ) or defined( _M_X64 )

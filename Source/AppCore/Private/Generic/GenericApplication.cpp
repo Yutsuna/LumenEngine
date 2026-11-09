@@ -1,19 +1,19 @@
-///
-/// @file GenericApplication.cpp
-/// @brief Implementation of the FGenericApplication class for cross-platform application management.
-///
+/**
+ * @file GenericApplication.cpp
+ * @brief Implementation of the FGenericApplication class for cross-platform application management.
+ */
 
 #include <Generic/GenericApplication.hpp>
 #include <Generic/GenericApplicationMessageHandler.hpp>
 #include <Generic/GenericWindow.hpp>
 
-///
-/// public
-///
+/**
+ * public
+ */
 
 Lumen::FGenericApplication::FGenericApplication () noexcept : MessageHandler( MakeShared<FGenericApplicationMessageHandler>() )
 {
-    /// Ctor
+    /** Ctor */
 }
 
 void Lumen::FGenericApplication::SetMessageHandler (
@@ -51,10 +51,10 @@ Lumen::TSharedPtr<Lumen::FGenericWindow> Lumen::FGenericApplication::GetMainWind
 
 void Lumen::FGenericApplication::PumpMessages ( const Float64 LUMEN_UNUSED DeltaTime ) noexcept
 {
-    /// Empty
+    /** Empty */
 }
 
 void Lumen::FGenericApplication::Shutdown () noexcept
 {
-    /// Empty
+    /** Empty */
 }

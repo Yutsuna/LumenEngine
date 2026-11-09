@@ -1,5 +1,7 @@
-/// @file Reflection.hpp
-/// @brief C++26 static reflection helpers over aggregates.
+/**
+ * @file Reflection.hpp
+ * @brief C++26 static reflection helpers over aggregates.
+ */
 
 #pragma once
 
@@ -25,17 +27,17 @@ namespace Lumen
 namespace Meta
 {
 
-    namespace Detail
+    namespace Internal
     {
-        /// @brief The one field name reflection skips: source-location plumbing.
+        /** @brief The one field name reflection skips: source-location plumbing. */
         inline constexpr std::string_view HiddenField = "Loc";
-    } // namespace Detail
+    } // namespace Internal
 
-    /// @brief A type is Reflected when field iteration can walk it: an aggregate class.
+    /** @brief A type is Reflected when field iteration can walk it: an aggregate class. */
     template <typename TObject>
     concept CReflected = std::is_class_v<std::remove_cvref_t<TObject>> && std::is_aggregate_v<std::remove_cvref_t<TObject>>;
 
-    /// @brief Invoke Callback( Name, FieldRef ) for each semantic field, in declaration order.
+    /** @brief Invoke Callback( Name, FieldRef ) for each semantic field, in declaration order. */
     template <CReflected TObject, typename TFunc> constexpr void ForEachMember ( TObject &Object, TFunc &&Callback )
     {
 #if LUMEN_HAS_REFLECTION
@@ -45,7 +47,7 @@ namespace Meta
 
         template for ( constexpr auto Member : Members )
         {
-            if constexpr ( std::meta::identifier_of( Member ) != Detail::HiddenField )
+            if constexpr ( std::meta::identifier_of( Member ) != Internal::HiddenField )
             {
                 Callback( std::define_static_string( std::meta::identifier_of( Member ) ), Object.[:Member:] );
             }
@@ -56,7 +58,7 @@ namespace Meta
 #endif
     }
 
-    /// @brief Number of semantic fields ForEachMember will visit.
+    /** @brief Number of semantic fields ForEachMember will visit. */
     template <CReflected TObject> [[nodiscard]] consteval USize MemberCount ()
     {
 #if LUMEN_HAS_REFLECTION
@@ -64,7 +66,7 @@ namespace Meta
         for ( const auto Member :
               std::meta::nonstatic_data_members_of( ^^std::remove_cvref_t<TObject>, std::meta::access_context::unchecked() ) )
         {
-            if ( std::meta::identifier_of( Member ) != Detail::HiddenField )
+            if ( std::meta::identifier_of( Member ) != Internal::HiddenField )
             {
                 ++Count;
             }
@@ -75,7 +77,7 @@ namespace Meta
 #endif
     }
 
-    /// @brief Enumerator name of Value, or "<unknown>" for out-of-range values.
+    /** @brief Enumerator name of Value, or "<unknown>" for out-of-range values. */
     template <typename TEnum>
         requires std::is_enum_v<TEnum>
     [[nodiscard]] constexpr std::string_view EnumName ( TEnum Value )
@@ -95,7 +97,7 @@ namespace Meta
 #endif
     }
 
-    /// @brief Unqualified type name of T ("FLaunchEngineConfig", "FString"), aliases resolved.
+    /** @brief Unqualified type name of T ("FLaunchEngineConfig", "FString"), aliases resolved. */
     template <typename TType> [[nodiscard]] consteval std::string_view TypeName ()
     {
 #if LUMEN_HAS_REFLECTION
@@ -108,24 +110,22 @@ namespace Meta
 #endif
     }
 
-    /// @brief Type name of the active alternative of a variant (monostate → "None").
+    /** @brief Type name of the active alternative of a variant (monostate → "None"). */
     template <typename... Alts> [[nodiscard]] constexpr std::string_view ActiveName ( const std::variant<Alts...> &Node )
     {
 #if LUMEN_HAS_REFLECTION
-        return std::visit(
-            [] ( const auto &Alt ) -> std::string_view
+        return std::visit( [] ( const auto &Alt ) -> std::string_view
+        {
+            using TObject = std::remove_cvref_t<decltype( Alt )>;
+            if constexpr ( Concepts::CSameAs<TObject, std::monostate> )
             {
-                using TObject = std::remove_cvref_t<decltype( Alt )>;
-                if constexpr ( Concepts::CSameAs<TObject, std::monostate> )
-                {
-                    return "None";
-                }
-                else
-                {
-                    return TypeName<TObject>();
-                }
-            },
-            Node );
+                return "None";
+            }
+            else
+            {
+                return TypeName<TObject>();
+            }
+        }, Node );
 #else
         static_cast<void>( Node );
         return "Unknown";

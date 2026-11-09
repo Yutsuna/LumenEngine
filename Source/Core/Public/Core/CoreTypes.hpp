@@ -1,7 +1,7 @@
-///
-/// @file CoreTypes.hpp
-/// @brief Core type definitions for Lumen
-///
+/**
+ * @file CoreTypes.hpp
+ * @brief Core type definitions for Lumen
+ */
 
 #pragma once
 
@@ -33,15 +33,19 @@ using FAtomicFlag                      = std::atomic_flag;
 
 using NullPtrType = decltype( nullptr );
 
-/// @brief Unsigned Integer type used for sizes & indexing
-/// @details calculated using compile intrinsics
+/**
+ * @brief Unsigned Integer type used for sizes & indexing
+ * @details calculated using compile intrinsics
+ */
 using USize = decltype( sizeof( 0 ) );
 
-/// @brief Signed integer type used for pointer arithmetic and offsets
-/// @details Calculated using compiler intrinsics
+/**
+ * @brief Signed integer type used for pointer arithmetic and offsets
+ * @details Calculated using compiler intrinsics
+ */
 using ISize = decltype( static_cast<AnsiChar *>( nullptr ) - static_cast<AnsiChar *>( nullptr ) );
 
-/// @brief Integers guaranteed to be the same size as a pointer
+/** @brief Integers guaranteed to be the same size as a pointer */
 #if defined( __x86_64__ ) || defined( _M_X64 ) || defined( __aarch64__ ) || defined( __LP64__ )
 using UPtr = unsigned long long;
 using IPtr = long long;
@@ -49,5 +53,7 @@ using IPtr = long long;
 using UPtr = unsigned int;
 using IPtr = int;
 #endif
+
+template <typename TObject> inline constexpr Bool AlwaysFalseV = false;
 
 } // namespace Lumen

@@ -1,7 +1,7 @@
-///
-/// @file SIMD.hpp
-/// @brief Declaration of SIMD utilities for mathematical operations.
-///
+/**
+ * @file SIMD.hpp
+ * @brief Declaration of SIMD utilities for mathematical operations.
+ */
 
 #pragma once
 

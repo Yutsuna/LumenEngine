@@ -1,5 +1,7 @@
-/// @file LaunchProcessGuard.hpp
-/// @brief RAII Owner Launch Services
+/**
+ * @file LaunchProcessGuard.hpp
+ * @brief RAII Owner Launch Services
+ */
 
 #pragma once
 
@@ -13,10 +15,10 @@ namespace Lumen
 namespace Launch
 {
 
-    ///
-    /// @class FLaunchProcessGuard
-    /// @brief RAII Owner Launch Services
-    ///
+    /**
+     * @class FLaunchProcessGuard
+     * @brief RAII Owner Launch Services
+     */
     class FLaunchProcessGuard final : public FNonCopyable
     {
 

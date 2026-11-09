@@ -1,7 +1,7 @@
-///
-/// @file LaunchFrameTiming.hpp
-/// @brief Fixed step clock and frame limiter.
-///
+/**
+ * @file LaunchFrameTiming.hpp
+ * @brief Fixed step clock and frame limiter.
+ */
 
 #pragma once
 
@@ -13,9 +13,9 @@ namespace Lumen
 
 namespace Launch
 {
-    ///
-    /// @struct FFrameStep
-    ///
+    /**
+     * @struct FFrameStep
+     */
     struct FFrameStep
     {
         Float64 DeltaSeconds = 0.0;
@@ -25,9 +25,9 @@ namespace Launch
 
     static_assert( std::is_trivially_copyable_v<FFrameStep>, "FFrameStep is returned by value every frame." );
 
-    ///
-    /// @class FFrameClock
-    ///
+    /**
+     * @class FFrameClock
+     */
     class FFrameClock final
     {
     public:
@@ -50,9 +50,9 @@ namespace Launch
         Float64 Accumulator = 0.0;
     };
 
-    ///
-    /// @class FFrameLimiter
-    ///
+    /**
+     * @class FFrameLimiter
+     */
     class FFrameLimiter final
     {
     public:

@@ -1,7 +1,7 @@
-///
-/// @file IMutex.cpp
-/// @brief Implementation for mutex types in Lumen Engine.
-///
+/**
+ * @file IMutex.cpp
+ * @brief Implementation for mutex types in Lumen Engine.
+ */
 
 #include <HAL/Interface/IMutex.hpp>
 

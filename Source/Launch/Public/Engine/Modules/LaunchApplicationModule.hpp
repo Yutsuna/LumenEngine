@@ -1,5 +1,7 @@
-/// @file LaunchApplicationModule.hpp
-/// @brief Launch the application module
+/**
+ * @file LaunchApplicationModule.hpp
+ * @brief Launch the application module
+ */
 
 #pragma once
 
@@ -18,10 +20,10 @@ class FGenericApplication;
 namespace Launch
 {
 
-    ///
-    /// @class FLaunchMessageHandler
-    /// @brief Routes OS-level requests to the engine loop.
-    ///
+    /**
+     * @class FLaunchMessageHandler
+     * @brief Routes OS-level requests to the engine loop.
+     */
     class FLaunchMessageHandler : public FGenericApplicationMessageHandler
     {
     public:
@@ -30,10 +32,10 @@ namespace Launch
         void OnQuit () noexcept override;
     };
 
-    ///
-    /// @class FLaunchApplicationModule
-    /// @brief Launches the application module.
-    ///
+    /**
+     * @class FLaunchApplicationModule
+     * @brief Launches the application module.
+     */
     class FLaunchApplicationModule final : public IEngineModule
     {
     public:
@@ -54,10 +56,10 @@ namespace Launch
         TSharedRef<FLaunchMessageHandler> MessageHandler;
     };
 
-    /// @brief Accessor for modules created after this one.
+    /** @brief Accessor for modules created after this one. */
     [[nodiscard]] TSharedPtr<FGenericApplication> GetApplication () noexcept;
 
-    /// @brief Factory registered in GetEngineModules.
+    /** @brief Factory registered in GetEngineModules. */
     [[nodiscard]] TLaunchResult<TUniquePtr<IEngineModule>> MakeApplicationModule ( const FLaunchEngineConfig &InConfig ) noexcept;
 
 } // namespace Launch

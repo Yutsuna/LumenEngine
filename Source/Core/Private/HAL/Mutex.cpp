@@ -1,7 +1,7 @@
-///
-/// @file Mutex.cpp
-/// @brief Implementation of the FMutex class for thread synchronization in Lumen Engine.
-///
+/**
+ * @file Mutex.cpp
+ * @brief Implementation of the FMutex class for thread synchronization in Lumen Engine.
+ */
 
 #include <HAL/Mutex.hpp>
 

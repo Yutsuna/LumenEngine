@@ -1,5 +1,7 @@
-/// @file LaunchEngineConfigParser.cpp
-/// @brief Parse the Command Line then Validate the configuration.
+/**
+ * @file LaunchEngineConfigParser.cpp
+ * @brief Parse the Command Line then Validate the configuration.
+ */
 
 #include "Launch/LaunchError.hpp"
 #include <Engine/LaunchEngineConfig.hpp>
@@ -25,10 +27,10 @@ namespace
 
     LUMEN_LOG_DEFINE_CATEGORY( LogEngineConfigParser, "EngineConfigParser" );
 
-    /// @brief Prevents `-fixedstep=1e-9` from freezing the engine in the catch-up loop.
+    /** @brief Prevents `-fixedstep=1e-9` from freezing the engine in the catch-up loop. */
     constexpr Float64 MaxFixedStepsPerFrame = 1024.0;
 
-    /// @brief Inline buffer for a lowercased option key.
+    /** @brief Inline buffer for a lowercased option key. */
     struct FOptionKey
     {
         TArray<AnsiChar, 32> Buffer{};
@@ -40,7 +42,7 @@ namespace
         }
     };
 
-    /// @brief "MaxFrameTime" -> "maxframetime", "bHeadless" -> "headless".
+    /** @brief "MaxFrameTime" -> "maxframetime", "bHeadless" -> "headless". */
     [[nodiscard]] FOptionKey ToOptionKey ( const std::string_view InName, const Bool bIsBool ) noexcept
     {
         FOptionKey Key;
@@ -59,16 +61,15 @@ namespace
         return Key;
     }
 
-    /// @brief Meta::ForEachMember, but the callback receives the CLI key instead of the raw member name.
+    /** @brief Meta::ForEachMember, but the callback receives the CLI key instead of the raw member name. */
     template <Meta::CReflected TObject, typename TFunc>
     void ForEachConfigOption ( TObject &InObject, TFunc &&InCallback ) noexcept
     {
-        Meta::ForEachMember( InObject,
-                             [&InCallback] ( const std::string_view InName, auto &InField ) noexcept
-                             {
-                                 using FValue = std::remove_cvref_t<decltype( InField )>;
-                                 InCallback( ToOptionKey( InName, Concepts::CSameAs<FValue, Bool> ), InField );
-                             } );
+        Meta::ForEachMember( InObject, [&InCallback] ( const std::string_view InName, auto &InField ) noexcept
+        {
+            using FValue = std::remove_cvref_t<decltype( InField )>;
+            InCallback( ToOptionKey( InName, Concepts::CSameAs<FValue, Bool> ), InField );
+        } );
     }
 
     [[nodiscard]] Bool IsKnownOption ( const FStringView InName ) noexcept
@@ -81,32 +82,33 @@ namespace
         Bool bKnown = false;
         const Launch::FLaunchEngineConfig Defaults{};
         ForEachConfigOption( Defaults, [&bKnown, InName] ( const FOptionKey &InKey, const auto & ) noexcept
-                             { bKnown = bKnown or EqualsIgnoreCase( InName, InKey.View() ); } );
+        {
+            bKnown = bKnown or EqualsIgnoreCase( InName, InKey.View() );
+        } );
         return bKnown;
     }
 
     [[nodiscard]] Launch::TLaunchResult<void> ValidateOptions ( const Launch::FCommandLine &InCommandLine ) noexcept
     {
         Launch::TLaunchResult<void> Result{};
-        InCommandLine.ForEachOption(
-            [&Result] ( const AnsiChar *const Raw, const FStringView Option ) noexcept
+        InCommandLine.ForEachOption( [&Result] ( const AnsiChar *const Raw, const FStringView Option ) noexcept
+        {
+            if ( not Result )
             {
-                if ( not Result )
-                {
-                    return;
-                }
-                if ( Option.empty() )
-                {
-                    LUMEN_LOG_WARNING( LogEngineConfigParser, "Ignoring positional argument '{}'", Raw );
-                    return;
-                }
-                if ( not IsKnownOption( Option ) )
-                {
-                    LUMEN_LOG_ERROR( LogEngineConfigParser, "Unknown command-line option '{}'", Option );
-                    Result = LaunchFailure( Launch::ELaunchStage::PreInit, Launch::ELaunchErrorCode::InvalidArgument,
-                                            "Unknown command-line option" );
-                }
-            } );
+                return;
+            }
+            if ( Option.empty() )
+            {
+                LUMEN_LOG_WARNING( LogEngineConfigParser, "Ignoring positional argument '{}'", Raw );
+                return;
+            }
+            if ( not IsKnownOption( Option ) )
+            {
+                LUMEN_LOG_ERROR( LogEngineConfigParser, "Unknown command-line option '{}'", Option );
+                Result = LaunchFailure( Launch::ELaunchStage::PreInit, Launch::ELaunchErrorCode::InvalidArgument,
+                                        "Unknown command-line option" );
+            }
+        } );
         return Result;
     }
 
@@ -115,38 +117,39 @@ namespace
         return Launch::LaunchFailure( Launch::ELaunchStage::PreInit, Launch::ELaunchErrorCode::InvalidConfiguration, InMessage );
     }
 
-    /// @brief Bind each member Bool -> -switch, arithmetic -> -key=value.
+    /** @brief Bind each member Bool -> -switch, arithmetic -> -key=value. */
     [[nodiscard]] Launch::TLaunchResult<Launch::FLaunchEngineConfig>
     BindOptions ( const Launch::FCommandLine &InCommandLine, const Launch::FLaunchEngineConfig &InDefaults ) noexcept
     {
         Launch::FLaunchEngineConfig Config = InDefaults;
         Launch::TLaunchResult<void> Result{};
 
-        ForEachConfigOption(
-            Config,
-            [&InCommandLine, &Result] ( const FOptionKey &InKey, auto &InField ) noexcept
+        ForEachConfigOption( Config, [&InCommandLine, &Result] ( const FOptionKey &InKey, auto &InField ) noexcept
+        {
+            if ( not Result )
             {
-                if ( not Result )
+                return; ///<< First error -> stop
+            }
+
+            const Meta::FOverloaded Bind{
+                [&] ( Bool &InSwitch ) noexcept
+            {
+                InSwitch = InSwitch or InCommandLine.HasSwitch( InKey.View() );
+            },
+                [&]<Launch::Concepts::CCommandLineNumber TNumber>( TNumber &InValue ) noexcept
+            {
+                const Launch::TLaunchResult<TNumber> Parsed = InCommandLine.GetNumberOr( InKey.View(), InValue );
+                if ( not Parsed ) [[unlikely]]
                 {
-                    return; ///<< First error -> stop
+                    Result = MakeUnexpected( Parsed.Error() );
+                    return;
                 }
+                InValue = *Parsed;
+            },
+            };
 
-                const Meta::FOverloaded Bind{
-                    [&] ( Bool &InSwitch ) noexcept { InSwitch = InSwitch or InCommandLine.HasSwitch( InKey.View() ); },
-                    [&]<Launch::Concepts::CCommandLineNumber TNumber>( TNumber &InValue ) noexcept
-                    {
-                        const Launch::TLaunchResult<TNumber> Parsed = InCommandLine.GetNumberOr( InKey.View(), InValue );
-                        if ( not Parsed ) [[unlikely]]
-                        {
-                            Result = MakeUnexpected( Parsed.Error() );
-                            return;
-                        }
-                        InValue = *Parsed;
-                    },
-                };
-
-                Bind( InField );
-            } );
+            Bind( InField );
+        } );
 
         if ( not Result ) [[unlikely]]
         {
@@ -160,21 +163,19 @@ namespace
         LUMEN_LOG_DISPLAY( LogEngineConfigParser, "Usage: {} [-help]", InCommandLine.GetProgramName() );
 
         const Launch::FLaunchEngineConfig Defaults{};
-        ForEachConfigOption( Defaults,
-                             [] ( const FOptionKey &InKey, const auto &InField ) noexcept
-                             {
-                                 using FValue = std::remove_cvref_t<decltype( InField )>;
+        ForEachConfigOption( Defaults, [] ( const FOptionKey &InKey, const auto &InField ) noexcept
+        {
+            using FValue = std::remove_cvref_t<decltype( InField )>;
 
-                                 if constexpr ( Concepts::CSameAs<FValue, Bool> )
-                                 {
-                                     LUMEN_LOG_DISPLAY( LogEngineConfigParser, "  -{}", InKey.View() );
-                                 }
-                                 else
-                                 {
-                                     LUMEN_LOG_DISPLAY( LogEngineConfigParser, "  -{}=<{}>", InKey.View(),
-                                                        Meta::TypeName<FValue>() );
-                                 }
-                             } );
+            if constexpr ( Concepts::CSameAs<FValue, Bool> )
+            {
+                LUMEN_LOG_DISPLAY( LogEngineConfigParser, "  -{}", InKey.View() );
+            }
+            else
+            {
+                LUMEN_LOG_DISPLAY( LogEngineConfigParser, "  -{}=<{}>", InKey.View(), Meta::TypeName<FValue>() );
+            }
+        } );
     }
 
 } // namespace

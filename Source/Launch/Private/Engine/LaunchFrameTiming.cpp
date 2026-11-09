@@ -1,7 +1,7 @@
-///
-/// @file LaunchFrameTiming.cpp
-/// @brief FFrameClock / FFrameLimiter implementation.
-///
+/**
+ * @file LaunchFrameTiming.cpp
+ * @brief FFrameClock / FFrameLimiter implementation.
+ */
 
 #include <Engine/LaunchFrameTiming.hpp>
 
@@ -16,9 +16,11 @@ namespace Lumen
 namespace
 {
 
-    /// @brief Sleep until the specified deadline.
-    /// @param InDeadline The deadline to sleep until.
-    /// @return The current time in seconds.
+    /**
+     * @brief Sleep until the specified deadline.
+     * @param InDeadline The deadline to sleep until.
+     * @return The current time in seconds.
+     */
     [[nodiscard]] Float64 WaitUntil ( const Float64 InDeadline ) noexcept
     {
         static constexpr Float64 SpinMargin = 0.0015;
@@ -43,7 +45,7 @@ namespace
 Launch::FFrameClock::FFrameClock ( const Float64 InFixedStep, const Float64 InMaxFrameTime ) noexcept
     : FFrameClock( InFixedStep, InMaxFrameTime, HAL::FPlatformTime::Seconds() )
 {
-    /// Empty
+    /** Empty */
 }
 
 Launch::FFrameClock::FFrameClock ( const Float64 InFixedStep,
@@ -51,7 +53,7 @@ Launch::FFrameClock::FFrameClock ( const Float64 InFixedStep,
                                    const Float64 InStartSeconds ) noexcept
     : FixedStep( InFixedStep ), MaxFrameTime( InMaxFrameTime ), StartTime( InStartSeconds ), PreviousTime( InStartSeconds )
 {
-    /// Empty
+    /** Empty */
 }
 
 Launch::FFrameStep Launch::FFrameClock::BeginFrame () noexcept
@@ -84,7 +86,7 @@ Float64 Launch::FFrameClock::ElapsedSeconds () const noexcept
 Launch::FFrameLimiter::FFrameLimiter ( const Float64 InMaxFPS ) noexcept
     : FrameBudget( InMaxFPS > 0.0 ? 1.0 / InMaxFPS : 0.0 ), NextDeadline( HAL::FPlatformTime::Seconds() )
 {
-    /// Empty
+    /** Empty */
 }
 
 void Launch::FFrameLimiter::Wait () noexcept

@@ -1,7 +1,7 @@
-///
-/// @file Vec.hpp
-/// @brief Declaration of the Vec struct for mathematical vector operations.
-///
+/**
+ * @file Vec.hpp
+ * @brief Declaration of the Vec struct for mathematical vector operations.
+ */
 
 #pragma once
 
@@ -18,7 +18,7 @@ namespace Lumen
 namespace Maths
 {
 
-    namespace Private
+    namespace Internal
     {
 
         template <typename Type, USize Dimension> struct TVecData
@@ -110,46 +110,46 @@ namespace Maths
 
 #endif
 
-    } // namespace Private
+    } // namespace Internal
 
     template <typename Type, USize Dimension>
     concept CVecDimension = Dimension > 0 and Dimension <= 4;
 
     template <typename Type, USize Dimension>
         requires CVecDimension<Type, Dimension>
-    struct MATHS_EXPORT TVec final : Private::TVecData<Type, Dimension>
+    struct MATHS_EXPORT TVec final : Internal::TVecData<Type, Dimension>
     {
         constexpr TVec () noexcept = default;
 
-        ///
-        /// @brief Construct a Vec with all components set to the same value
-        /// @param Value The value to set all components to
-        /// @return A vector with all components set to Value
-        ///
+        /**
+         * @brief Construct a Vec with all components set to the same value
+         * @param Value The value to set all components to
+         * @return A vector with all components set to Value
+         */
         constexpr TVec ( const Type &Value ) noexcept;
 
-        ///
-        /// @brief Construct a Vec by copying from another Vec of the same type and dimension
-        /// @param Other The Vec to copy from
-        /// @return A new Vec with the same component values as Other
-        ///
+        /**
+         * @brief Construct a Vec by copying from another Vec of the same type and dimension
+         * @param Other The Vec to copy from
+         * @return A new Vec with the same component values as Other
+         */
         constexpr TVec ( const TVec<Type, Dimension> &Other ) noexcept = default;
 
         constexpr TVec &operator=( const TVec &Other ) noexcept = default;
         constexpr TVec &operator=( TVec &&Other ) noexcept      = default;
 
-        ///
-        /// @brief Construct a Vec by converting from another Vec of a different type but the same dimension
-        /// @param Other The Vec to convert from
-        /// @return A new Vec with component values converted from Other
-        ///
+        /**
+         * @brief Construct a Vec by converting from another Vec of a different type but the same dimension
+         * @param Other The Vec to convert from
+         * @return A new Vec with component values converted from Other
+         */
         template <typename OtherType> constexpr explicit TVec( const TVec<OtherType, Dimension> &Other ) noexcept;
 
         template <typename... Arguments>
             requires( sizeof...( Arguments ) == Dimension and ( std::is_convertible_v<Arguments, Type> and ... ) )
         constexpr TVec( Arguments &&...Args ) noexcept;
 
-        /// Operators
+        /** Operators */
 
         constexpr Bool operator==( const TVec &Other ) const noexcept;
         constexpr Bool operator!=( const TVec &Other ) const noexcept;
@@ -171,7 +171,7 @@ namespace Maths
 
         [[nodiscard]] constexpr TVec operator-() const noexcept;
 
-        /// Methods
+        /** Methods */
 
         [[nodiscard]] constexpr Type Dot ( const TVec &Other ) const noexcept;
         [[nodiscard]] constexpr TVec Cross ( const TVec &Other ) const noexcept
@@ -199,11 +199,11 @@ namespace Maths
     using FVec3u = TVec<UInt32, 3>;
     using FVec4u = TVec<UInt32, 4>;
 
-    ///
-    /// @brief Normalize a plane represented as a vec4 (Normal.xyz, Distance)
-    /// @param InPlane The input plane to normalize
-    /// @return A new plane with the normal vector normalized and distance adjusted accordingly
-    ///
+    /**
+     * @brief Normalize a plane represented as a vec4 (Normal.xyz, Distance)
+     * @param InPlane The input plane to normalize
+     * @return A new plane with the normal vector normalized and distance adjusted accordingly
+     */
     template <typename Type> [[nodiscard]] constexpr TVec<Type, 4> NormalizePlane ( const TVec<Type, 4> &InPlane ) noexcept;
 
 } // namespace Maths

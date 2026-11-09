@@ -1,5 +1,7 @@
-/// @file IFileSystem.hpp
-/// @brief Interface declaration for Filesystem.
+/**
+ * @file IFileSystem.hpp
+ * @brief Interface declaration for Filesystem.
+ */
 
 #pragma once
 
@@ -17,10 +19,10 @@ namespace Lumen
 namespace Filesystem
 {
 
-    ///
-    /// @class IFileSystem
-    /// @brief Interface for physical or virtual file system operations.
-    ///
+    /**
+     * @class IFileSystem
+     * @brief Interface for physical or virtual file system operations.
+     */
     class CORE_EXPORT IFileSystem
     {
     public:
@@ -55,7 +57,7 @@ namespace Filesystem
         [[nodiscard]] virtual TExpected<FFileStat, EFileError> GetStat ( const FPath &InPath ) const noexcept = 0;
     };
 
-    /// @brief Returns the process-wide default platform filesystem instance.
+    /** @brief Returns the process-wide default platform filesystem instance. */
     [[nodiscard]] CORE_EXPORT IFileSystem &GetDefaultFileSystem () noexcept;
 
 } // namespace Filesystem

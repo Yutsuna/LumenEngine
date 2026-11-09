@@ -1,7 +1,7 @@
-///
-/// @file LaunchError.hpp
-/// @brief Error type shared by every stage of the launch pipeline.
-///
+/**
+ * @file LaunchError.hpp
+ * @brief Error type shared by every stage of the launch pipeline.
+ */
 
 #pragma once
 
@@ -15,10 +15,10 @@ namespace Lumen
 {
 namespace Launch
 {
-    ///
-    /// @enum ELaunchStage
-    /// @brief Pipeline stage that produced an error.
-    ///
+    /**
+     * @enum ELaunchStage
+     * @brief Pipeline stage that produced an error.
+     */
     enum class ELaunchStage : UInt8
     {
         PreInit,
@@ -26,10 +26,10 @@ namespace Launch
         Run,
     };
 
-    ///
-    /// @enum ELaunchErrorCode
-    /// @brief Stable error codes. The numeric value doubles as the process exit code.
-    ///
+    /**
+     * @enum ELaunchErrorCode
+     * @brief Stable error codes. The numeric value doubles as the process exit code.
+     */
     enum class ELaunchErrorCode : UInt8
     {
         None = 0,
@@ -41,11 +41,11 @@ namespace Launch
         Unknown,
     };
 
-    ///
-    /// @struct FLaunchError
-    /// @brief Trivially copyable error payload: no heap, no ownership.
-    /// @warning `Message` must point to storage with static duration (string literal).
-    ///
+    /**
+     * @struct FLaunchError
+     * @brief Trivially copyable error payload: no heap, no ownership.
+     * @warning `Message` must point to storage with static duration (string literal).
+     */
     struct FLaunchError
     {
         ELaunchStage Stage;
@@ -60,18 +60,20 @@ namespace Launch
 
     static_assert( std::is_trivially_copyable_v<FLaunchError>, "FLaunchError travels by value through TExpected." );
 
-    /// @brief Result type of every launch stage.
+    /** @brief Result type of every launch stage. */
     template <typename Type> using TLaunchResult = TExpected<Type, FLaunchError>;
 
-    /// @brief Builds the failure side of a TLaunchResult.
+    /** @brief Builds the failure side of a TLaunchResult. */
     [[nodiscard]] constexpr TUnexpected<FLaunchError>
     LaunchFailure ( const ELaunchStage InStage, const ELaunchErrorCode InCode, const FStringView InMessage ) noexcept
     {
         return TUnexpected<FLaunchError>( { .Stage = InStage, .Code = InCode, .Message = InMessage } );
     }
 
-    /// @brief Converts a launch stage to a string.
-    /// @param InStage The launch stage to convert.
+    /**
+     * @brief Converts a launch stage to a string.
+     * @param InStage The launch stage to convert.
+     */
     [[nodiscard]] constexpr const AnsiChar *ToCString ( const ELaunchStage InStage ) noexcept
     {
         switch ( InStage )

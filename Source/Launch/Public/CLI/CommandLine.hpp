@@ -1,7 +1,7 @@
-///
-/// @file CommandLine.hpp
-/// @brief Zero-allocation, non-owning view over `argv`.
-///
+/**
+ * @file CommandLine.hpp
+ * @brief Zero-allocation, non-owning view over `argv`.
+ */
 
 #pragma once
 
@@ -23,17 +23,19 @@ namespace Launch
     namespace Concepts
     {
 
-        /// @concept CCommandLineNumber
-        /// @brief Numeric types FCommandLine can parse.
+        /**
+         * @concept CCommandLineNumber
+         * @brief Numeric types FCommandLine can parse.
+         */
         template <typename Type>
         concept CCommandLineNumber = std::is_arithmetic_v<Type> and not ::Lumen::Concepts::CSameAs<Type, Bool>;
 
     } // namespace Concepts
 
-    ///
-    /// @class FCommandLine
-    /// @brief Parses `-Switch`, `-Key=Value` and `--Key=Value` (keys are ASCII case-insensitive).
-    ///
+    /**
+     * @class FCommandLine
+     * @brief Parses `-Switch`, `-Key=Value` and `--Key=Value` (keys are ASCII case-insensitive).
+     */
     class FCommandLine
     {
     public:
@@ -45,25 +47,27 @@ namespace Launch
 
         [[nodiscard]] FStringView GetProgramName () const noexcept;
 
-        /// @brief True if `-Name` is present (without a value).
+        /** @brief True if `-Name` is present (without a value). */
         [[nodiscard]] Bool HasSwitch ( FStringView InName ) const noexcept;
 
-        /// @brief Raw text of `-Key=Value`, or MissingArgument.
+        /** @brief Raw text of `-Key=Value`, or MissingArgument. */
         [[nodiscard]] TLaunchResult<FStringView> GetValue ( FStringView InKey ) const noexcept;
 
-        /// @brief Numeric value of `-Key=Value`; MissingArgument if absent, InvalidArgument if malformed.
+        /** @brief Numeric value of `-Key=Value`; MissingArgument if absent, InvalidArgument if malformed. */
         template <Concepts::CCommandLineNumber NumberType>
         [[nodiscard]] TLaunchResult<NumberType> GetNumber ( FStringView InKey ) const noexcept;
 
-        /// @brief Like GetNumber, but an absent key yields `InFallback`. A malformed value is still an error.
+        /** @brief Like GetNumber, but an absent key yields `InFallback`. A malformed value is still an error. */
         template <Concepts::CCommandLineNumber NumberType>
         [[nodiscard]] TLaunchResult<NumberType> GetNumberOr ( FStringView InKey, NumberType InFallback ) const noexcept;
 
-        /// @return Raw argv (excluding the program name).
+        /** @return Raw argv (excluding the program name). */
         [[nodiscard]] TSpan<const AnsiChar *const> GetArguments () const noexcept;
 
-        /// @brief Every option's name with dashes and `=value` stripped, in argv order.
-        ///        Non-option arguments (no leading `-`) are reported as empty views.
+        /**
+         * @brief Every option's name with dashes and `=value` stripped, in argv order.
+         *        Non-option arguments (no leading `-`) are reported as empty views.
+         */
         template <typename TFunction> void ForEachOption ( TFunction &&InCallback ) const noexcept;
 
     private:

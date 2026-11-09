@@ -1,5 +1,7 @@
-/// @file File.hpp
-/// @brief Static helper facade for file operations.
+/**
+ * @file File.hpp
+ * @brief Static helper facade for file operations.
+ */
 
 #pragma once
 
@@ -19,10 +21,10 @@ namespace Lumen
 namespace Filesystem
 {
 
-    ///
-    /// @class FFile
-    /// @brief High-level monadic static utility facade for file I/O.
-    ///
+    /**
+     * @class FFile
+     * @brief High-level monadic static utility facade for file I/O.
+     */
     class CORE_EXPORT FFile
     {
     public:

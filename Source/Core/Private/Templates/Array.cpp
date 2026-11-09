@@ -1,4 +1,6 @@
-/// @file Array.cpp
-/// @brief Array include file.
+/**
+ * @file Array.cpp
+ * @brief Array include file.
+ */
 
 #include <Templates/Array.hpp>

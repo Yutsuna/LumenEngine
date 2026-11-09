@@ -8,6 +8,7 @@ subdir('Meson/')
 ModuleNames = [
     'Core',
     'Maths',
+    'Scene',
     'AppCore',
     'Launch',
 ]
@@ -24,3 +25,4 @@ endforeach
 subdir('Meson/Public')
 subdir('Meson/Private')
 subdir('Meson/Tests')
+subdir('Meson/Benchmarks')

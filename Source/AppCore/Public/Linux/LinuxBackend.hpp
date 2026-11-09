@@ -1,5 +1,7 @@
-/// @file LinuxBackend.hpp
-/// @brief Declaration of the FLinuxBackend struct for Linux-specific backend management
+/**
+ * @file LinuxBackend.hpp
+ * @brief Declaration of the FLinuxBackend struct for Linux-specific backend management
+ */
 
 #pragma once
 
@@ -15,13 +17,13 @@ namespace Lumen
 
 struct APPCORE_EXPORT FLinuxBackend
 {
-    /// @return True if SDL library is initialized
+    /** @return True if SDL library is initialized */
     static Bool InitializeSDL () noexcept;
 
-    /// @brief Shutdown SDL library
+    /** @brief Shutdown SDL library */
     static void ShutdownSDL () noexcept;
 
-    /// @brief Pumps the SDL Event Queue, processing all pending events
+    /** @brief Pumps the SDL Event Queue, processing all pending events */
     static void PumpSDLMessagesQueue () noexcept;
 };
 

@@ -1,5 +1,7 @@
-/// @file PlatformFileSystem.cpp
-/// @brief High-performance, cross-platform POSIX and Win32 IFileSystem backend.
+/**
+ * @file PlatformFileSystem.cpp
+ * @brief High-performance, cross-platform POSIX and Win32 IFileSystem backend.
+ */
 
 #include <Core/CoreDefinitions.hpp>
 
@@ -623,19 +625,19 @@ namespace Filesystem
 
             if ( bRecursive )
             {
-                const auto Result = Internal::PlatformEnumerateEntries( InPath, false,
-                                                                        [this] ( const FPath &Entry, const Bool bIsDir ) -> Bool
-                                                                        {
-                                                                            if ( bIsDir )
-                                                                            {
-                                                                                ( void )DeleteDirectory( Entry, true );
-                                                                            }
-                                                                            else
-                                                                            {
-                                                                                ( void )DeleteFile( Entry );
-                                                                            }
-                                                                            return true;
-                                                                        } );
+                const auto Result =
+                    Internal::PlatformEnumerateEntries( InPath, false, [this] ( const FPath &Entry, const Bool bIsDir ) -> Bool
+                {
+                    if ( bIsDir )
+                    {
+                        ( void )DeleteDirectory( Entry, true );
+                    }
+                    else
+                    {
+                        ( void )DeleteFile( Entry );
+                    }
+                    return true;
+                } );
 
                 if ( not Result )
                 {

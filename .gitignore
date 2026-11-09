@@ -3,7 +3,10 @@
 .cache/
 .zed/
 Build/
+Build-Release/
 __pycache__/
 ThirdParty/
 result
 compile_commands.json
+.kimi-code
+.opencode

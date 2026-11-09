@@ -1,6 +1,6 @@
 import os
 
-__all__ = [ "set_output", "set_multiline_output", "write_summary", "annotate_error" ]
+__all__ = ["annotate_error", "set_multiline_output", "set_output", "write_summary"]
 
 def _append( env_var : str, text: str ) -> None:
     path = os.environ.get( env_var )

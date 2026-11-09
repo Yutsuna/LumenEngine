@@ -1,5 +1,7 @@
-/// @file GenericApplication.hpp
-/// @brief Base class for platform-independent application management.
+/**
+ * @file GenericApplication.hpp
+ * @brief Base class for platform-independent application management.
+ */
 
 #pragma once
 
@@ -24,25 +26,25 @@ public:
 
 public:
 
-    /// @brief Sets the message handler for the application.
+    /** @brief Sets the message handler for the application. */
     void SetMessageHandler ( const TSharedRef<FGenericApplicationMessageHandler> &InMessageHandler ) noexcept;
 
-    /// @return The message handler for the application.
+    /** @return The message handler for the application. */
     [[nodiscard]] TSharedPtr<FGenericApplicationMessageHandler> GetMessageHandler () const noexcept;
 
-    /// @brief Initializes a window for the application.
+    /** @brief Initializes a window for the application. */
     virtual void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
                                     const TSharedRef<FGenericWindowDescription> &InDescription,
                                     const TSharedPtr<FGenericWindow> &InParentWindow,
                                     Bool bShowImmediately ) noexcept;
 
-    /// @return The main window for the application.
+    /** @return The main window for the application. */
     [[nodiscard]] virtual TSharedPtr<FGenericWindow> GetMainWindow () const noexcept;
 
-    /// @brief Polls the messages events
+    /** @brief Polls the messages events */
     virtual void PumpMessages ( Float64 DeltaTime ) noexcept;
 
-    /// @brief Shuts down the application.
+    /** @brief Shuts down the application. */
     virtual void Shutdown () noexcept;
 
 public:

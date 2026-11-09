@@ -1,5 +1,7 @@
-/// @file UnitTest.hpp
-/// @brief Unit Test Registry class definition
+/**
+ * @file UnitTest.hpp
+ * @brief Unit Test Registry class definition
+ */
 
 #pragma once
 
@@ -19,30 +21,32 @@ namespace Lumen
 namespace Tests
 {
 
-    ///
-    /// @class FUnitTestRegistry
-    /// @brief Registry collecting and executing all statically declared tests.
-    ///
+    /**
+     * @class FUnitTestRegistry
+     * @brief Registry collecting and executing all statically declared tests.
+     */
     class CORE_EXPORT FUnitTestRegistry
     {
     public:
 
-        /// @brief Get the singleton instance of the unit test registry.
+        /** @brief Get the singleton instance of the unit test registry. */
         [[nodiscard]] static FUnitTestRegistry &GetInstance () noexcept;
 
-        /// @brief Register a unit test with the registry.
+        /** @brief Register a unit test with the registry. */
         void Register ( FUnitTestMetadata const &Metadata );
 
-        /// @brief Run the unit tests
-        /// @param InSuiteFilter Wildcard or substring filter applied to SuiteName.
-        /// @param InKindFilter Optional filter applied to test kind.
-        /// @return Test run summary.
+        /**
+         * @brief Run the unit tests
+         * @param InSuiteFilter Wildcard or substring filter applied to SuiteName.
+         * @param InKindFilter Optional filter applied to test kind.
+         * @return Test run summary.
+         */
         [[nodiscard]] FUnitTestTestRunSummary Run ( FStringView InSuiteFilter             = {},
                                                     TOptional<EUnitTestKind> InKindFilter = {} ) const;
 
     public:
 
-        /// @return The number of registered unit tests.
+        /** @return The number of registered unit tests. */
         [[nodiscard]] USize GetRegisteredCount () const noexcept;
 
     private:
@@ -55,10 +59,10 @@ namespace Tests
         TVector<FUnitTestMetadata> RegisteredTests;
     };
 
-    ///
-    /// @struct FAutoRegisterUnitTest
-    /// @brief Helper registering a test case at dynamic startup.
-    ///
+    /**
+     * @struct FAutoRegisterUnitTest
+     * @brief Helper registering a test case at dynamic startup.
+     */
     struct FAutoRegisterUnitTest
     {
         FAutoRegisterUnitTest ( const FStringView InSuite,

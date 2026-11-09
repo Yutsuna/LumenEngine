@@ -1,4 +1,6 @@
-/// @file Vector.cpp
-/// @brief Vector include file.
+/**
+ * @file Vector.cpp
+ * @brief Vector include file.
+ */
 
 #include <Templates/Vector.hpp>

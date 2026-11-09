@@ -1,7 +1,7 @@
-///
-/// @file PlatformTime.cpp
-/// @brief Platform-specific time utilities for high-resolution timing and performance measurement.
-///
+/**
+ * @file PlatformTime.cpp
+ * @brief Platform-specific time utilities for high-resolution timing and performance measurement.
+ */
 
 #include <HAL/PlatformTime.hpp>
 

@@ -1,14 +1,15 @@
-///
-/// @file LaunchEngineLoop.cpp
-/// @brief Launch::FLaunchEngineLoop implementation.
-///
+/**
+ * @file LaunchEngineLoop.cpp
+ * @brief Launch::FLaunchEngineLoop implementation.
+ */
 
-#include "Engine/LaunchEngineConfig.hpp"
+#include <Engine/LaunchEngineConfig.hpp>
 #include <Engine/LaunchEngineConfigParser.hpp>
 #include <Engine/LaunchEngineLoop.hpp>
 #include <Engine/LaunchFrameTiming.hpp>
 
-#include <Meta/Serialize.hpp>
+#include <Core/CoreDefinitions.hpp>
+#include <Meta/SerializeToJSON.hpp>
 
 #include <Logging/Logger.hpp>
 
@@ -41,23 +42,21 @@ namespace
 
 Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit ( const FCommandLine &InCommandLine ) noexcept
 {
-    /// INFO: Initialize the clock epoch now so that no later measurement pays for its lazy initialization.
+    /** INFO: Initialize the clock epoch now so that no later measurement pays for its lazy initialization. */
     ( void )HAL::FPlatformTime::Seconds();
 
     LUMEN_LOG_VERBOSE( LogEngineLoop, "Starting '{}' ({} arguments)", InCommandLine.GetProgramName(),
                        InCommandLine.GetArguments().size() );
 
     return ParseEngineConfig( InCommandLine )
-        .Transform(
-            [&InCommandLine] ( FLaunchEngineConfig &&InConfig ) noexcept -> FPreInitState
-            {
-                const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move( InConfig ) };
+        .Transform( [&InCommandLine] ( FLaunchEngineConfig &&InConfig ) noexcept -> FPreInitState
+    {
+        const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move( InConfig ) };
 
-                LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}",
-                                   Meta::SerializeToString( InConfig ) );
+        LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}", Meta::SerializeToJSON( InConfig ) );
 
-                return PreInitState;
-            } );
+        return PreInitState;
+    } );
 }
 
 Launch::TLaunchResult<Launch::FInitState> Launch::FLaunchEngineLoop::Init ( FPreInitState &&InPreInitState ) noexcept
@@ -109,7 +108,7 @@ Launch::TLaunchResult<Launch::FRunSummary> Launch::FLaunchEngineLoop::Run ( FIni
     };
 
     LUMEN_LOG_INFO( LogEngineLoop, "Main loop exited." );
-    LUMEN_LOG_DISPLAY( LogEngineLoop, "Run summary:" LUMEN_NEWLINE "{}", Meta::SerializeToString( RunSummary ) );
+    LUMEN_LOG_DISPLAY( LogEngineLoop, "Run summary:" LUMEN_NEWLINE "{}", Meta::SerializeToJSON( RunSummary ) );
     return RunSummary;
 }
 
