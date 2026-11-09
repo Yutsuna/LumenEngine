@@ -72,12 +72,12 @@ struct alignas( 64 ) FMessage
      */
     template <Concepts::CTriviallyCopyablePayload TPayloadType>
         requires( sizeof( TPayloadType ) <= MaxPayloadSize and alignof( TPayloadType ) <= PayloadAlignment )
-    [[nodiscard]] const TPayloadType &GetPayload () const noexcept
+    [[nodiscard]] TPayloadType GetPayload () const noexcept
     {
 #if defined( __cpp_lib_start_lifetime_as ) && __cpp_lib_start_lifetime_as >= 202207L
         return *std::start_lifetime_as<TPayloadType>( PayloadData );
 #else
-        thread_local TPayloadType Storage;
+        TPayloadType Storage;
         std::memcpy( &Storage, PayloadData, sizeof( TPayloadType ) );
         return Storage;
 #endif
