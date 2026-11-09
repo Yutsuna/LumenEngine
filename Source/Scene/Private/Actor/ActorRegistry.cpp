@@ -89,7 +89,16 @@ struct FActorRegistryState
 
         if ( const Lumen::UInt32 Recycled = FreeHead; Recycled != 0U )
         {
-            FreeHead = FindSlot( Recycled )->NextFree;
+            /**
+             * INFO: The cycled index always originates from a live chunk,
+             *       but FindSlot() cannot prove it to the compiler.
+             */
+            FActorSlot *const RecycledSlot = FindSlot( Recycled );
+            if ( RecycledSlot == nullptr ) [[unlikely]]
+            {
+                return 0U;
+            }
+            FreeHead = RecycledSlot->NextFree;
             return Recycled;
         }
 
