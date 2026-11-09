@@ -17,21 +17,20 @@
 namespace
 {
 
-    /** @brief Producers contending on the mailbox in the MPSC macro benchmark. */
-    constexpr Lumen::USize ProducerCount = 6U;
+/** @brief Producers contending on the mailbox in the MPSC macro benchmark. */
+constexpr Lumen::USize ProducerCount = 6U;
 
-    /** @brief Messages enqueued by each producer in the MPSC macro benchmark. */
-    constexpr Lumen::USize MessagesPerProducer = 4096U;
+/** @brief Messages enqueued by each producer in the MPSC macro benchmark. */
+constexpr Lumen::USize MessagesPerProducer = 4096U;
 
-    /** @brief Upper bound of the drain batch range; covers the free-list pre-fill. */
-    constexpr Lumen::USize MaxDrainBatch = 4096U;
+/** @brief Upper bound of the drain batch range; covers the free-list pre-fill. */
+constexpr Lumen::USize MaxDrainBatch = 4096U;
 
-    /** @brief Builds the representative per-frame tick message used by every benchmark here. */
-    [[nodiscard]] Lumen::FMessage MakeTickMessage () noexcept
-    {
-        return Lumen::FMessage::Make( Lumen::EEngineMessage::Tick, Lumen::InvalidActorID,
-                                      Lumen::FTickPayload{ .DeltaTime = 0.016 } );
-    }
+/** @brief Builds the representative per-frame tick message used by every benchmark here. */
+[[nodiscard]] Lumen::FMessage MakeTickMessage () noexcept
+{
+    return Lumen::FMessage::Make( Lumen::EEngineMessage::Tick, Lumen::InvalidActorID, Lumen::FTickPayload{ .DeltaTime = 0.016 } );
+}
 
 } // namespace
 
@@ -122,7 +121,7 @@ LUMEN_MACRO_BENCHMARK( FMailBox, MpscContentionExchange )
 
     for ( auto _ : State )
     {
-        auto ProducerLoop = [ &Mailbox, &Message ] () noexcept -> void
+        auto ProducerLoop = [&Mailbox, &Message] () noexcept -> void
         {
             for ( Lumen::USize MessageIndex = 0U; MessageIndex < MessagesPerProducer; ++MessageIndex )
             {

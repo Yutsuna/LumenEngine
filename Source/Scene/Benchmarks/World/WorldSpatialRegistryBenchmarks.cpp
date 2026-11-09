@@ -17,38 +17,38 @@
 namespace
 {
 
-    /** @brief Background entity population shared by every benchmark here (power of two). */
-    constexpr Lumen::USize EntityCount = 1024U;
+/** @brief Background entity population shared by every benchmark here (power of two). */
+constexpr Lumen::USize EntityCount = 1024U;
 
-    /** @brief Allocates Count unique IDs and registers them as spatial entities. */
-    void RegisterEntities ( Lumen::TVector<Lumen::ActorID> &OutEntityIds, const Lumen::USize Count )
+/** @brief Allocates Count unique IDs and registers them as spatial entities. */
+void RegisterEntities ( Lumen::TVector<Lumen::ActorID> &OutEntityIds, const Lumen::USize Count )
+{
+    OutEntityIds.reserve( Count );
+
+    for ( Lumen::USize EntityIndex = 0U; EntityIndex < Count; ++EntityIndex )
     {
-        OutEntityIds.reserve( Count );
+        const Lumen::ActorID NewEntityId = Lumen::Internal::FActorRegistry::AllocateId();
+        OutEntityIds.push_back( NewEntityId );
 
-        for ( Lumen::USize EntityIndex = 0U; EntityIndex < Count; ++EntityIndex )
-        {
-            const Lumen::ActorID NewEntityId = Lumen::Internal::FActorRegistry::AllocateId();
-            OutEntityIds.push_back( NewEntityId );
-
-            Lumen::FSpatialRegistry::Get().RegisterSpatialEntity( NewEntityId );
-        }
+        Lumen::FSpatialRegistry::Get().RegisterSpatialEntity( NewEntityId );
     }
+}
 
-    /** @brief Unregisters and releases every ID, leaving the singleton clean for the next benchmark. */
-    void ReleaseEntities ( const Lumen::TVector<Lumen::ActorID> &EntityIds )
+/** @brief Unregisters and releases every ID, leaving the singleton clean for the next benchmark. */
+void ReleaseEntities ( const Lumen::TVector<Lumen::ActorID> &EntityIds )
+{
+    for ( const Lumen::ActorID EntityId : EntityIds )
     {
-        for ( const Lumen::ActorID EntityId : EntityIds )
-        {
-            Lumen::FSpatialRegistry::Get().UnregisterSpatialEntity( EntityId );
-            Lumen::Internal::FActorRegistry::ReleaseId( EntityId );
-        }
+        Lumen::FSpatialRegistry::Get().UnregisterSpatialEntity( EntityId );
+        Lumen::Internal::FActorRegistry::ReleaseId( EntityId );
     }
+}
 
-    /** @brief Builds one identity transform per entity (untimed setup helper). */
-    [[nodiscard]] Lumen::TVector<Lumen::Maths::FMatrix4x4f> MakeTransforms ( const Lumen::USize Count )
-    {
-        return Lumen::TVector<Lumen::Maths::FMatrix4x4f>( Count, Lumen::Maths::FMatrix4x4f::Identity() );
-    }
+/** @brief Builds one identity transform per entity (untimed setup helper). */
+[[nodiscard]] Lumen::TVector<Lumen::Maths::FMatrix4x4f> MakeTransforms ( const Lumen::USize Count )
+{
+    return Lumen::TVector<Lumen::Maths::FMatrix4x4f>( Count, Lumen::Maths::FMatrix4x4f::Identity() );
+}
 
 } // namespace
 

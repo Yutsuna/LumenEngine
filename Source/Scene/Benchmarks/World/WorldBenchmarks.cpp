@@ -23,108 +23,108 @@
 namespace
 {
 
-    /** @brief Delta time used for every simulated frame. */
-    constexpr Lumen::Float64 FrameDeltaTime = 0.016;
+/** @brief Delta time used for every simulated frame. */
+constexpr Lumen::Float64 FrameDeltaTime = 0.016;
 
-    /** @brief Actor counts of the scene sizes the tick macro benchmarks cover. */
-    constexpr Lumen::USize SmallSceneActorCount  = 100U;
-    constexpr Lumen::USize MediumSceneActorCount = 1000U;
-    constexpr Lumen::USize LargeSceneActorCount  = 10000U;
+/** @brief Actor counts of the scene sizes the tick macro benchmarks cover. */
+constexpr Lumen::USize SmallSceneActorCount  = 100U;
+constexpr Lumen::USize MediumSceneActorCount = 1000U;
+constexpr Lumen::USize LargeSceneActorCount  = 10000U;
 
-    /** @brief Upper bound of the spawn range benchmark. */
-    constexpr Lumen::USize MaxSpawnActors = 4096U;
+/** @brief Upper bound of the spawn range benchmark. */
+constexpr Lumen::USize MaxSpawnActors = 4096U;
 
-    /**
-     * @class FBenchNullActor
-     * @brief Actor with no behaviour — isolates the pure spawn/teardown path.
-     */
-    class FBenchNullActor final : public Lumen::AActor
+/**
+ * @class FBenchNullActor
+ * @brief Actor with no behaviour — isolates the pure spawn/teardown path.
+ */
+class FBenchNullActor final : public Lumen::AActor
+{
+    LUMEN_ACTOR_BODY ( FBenchNullActor );
+
+public:
+
+    explicit FBenchNullActor ( const Lumen::ActorID InId ) noexcept : Lumen::AActor( InId )
     {
-        LUMEN_ACTOR_BODY ( FBenchNullActor );
-
-    public:
-
-        explicit FBenchNullActor ( const Lumen::ActorID InId ) noexcept : Lumen::AActor( InId )
-        {
-            /**
-             *
-             */
-        }
-
-        void Receive ( const Lumen::FMessage & ) noexcept override
-        {
-            /**
-             *
-             */
-        }
-    };
-
-    /**
-     * @class FBenchSceneActor
-     * @brief Actor moving every frame: Receive counts, OnTick pushes the new
-     *        transform into the spatial registry — the per-entity work of a
-     *        real scene frame, including the world's Publish.
-     */
-    class FBenchSceneActor final : public Lumen::AActor
-    {
-        LUMEN_ACTOR_BODY ( FBenchSceneActor );
-
-    public:
-
-        explicit FBenchSceneActor ( const Lumen::ActorID InId ) noexcept : Lumen::AActor( InId )
-        {
-            Lumen::FSpatialRegistry::Get().RegisterSpatialEntity( InId );
-        }
-
-        ~FBenchSceneActor () noexcept override
-        {
-            /** INFO: Covers both world teardown and DestroyActor (idempotent). */
-            Lumen::FSpatialRegistry::Get().UnregisterSpatialEntity( GetId() );
-        }
-
-        void Receive ( const Lumen::FMessage &InMessage ) noexcept override
-        {
-            ProcessedMessageCount += InMessage.Type;
-        }
-
-        void OnTick ( const Lumen::Float64 InDeltaTime ) noexcept override
-        {
-            const Lumen::Float32 SweepOffset =
-                static_cast<Lumen::Float32>( TickIndex ) * 0.01F + static_cast<Lumen::Float32>( InDeltaTime );
-
-            Transform = Lumen::Maths::FMatrix4x4f::Translate( Lumen::Maths::FVec3f{ SweepOffset, SweepOffset, SweepOffset } ) *
-                        Transform;
-
-            Lumen::FSpatialRegistry::Get().UpdateTransform( GetId(), Transform );
-            ++TickIndex;
-        }
-
-    private:
-
-        Lumen::Maths::FMatrix4x4f Transform = Lumen::Maths::FMatrix4x4f::Identity();
-        Lumen::UInt32 TickIndex             = 0U;
-        Lumen::UInt32 ProcessedMessageCount = 0U;
-    };
-
-    /** @brief Spawns Count null actors into the world (untimed setup helper). */
-    void PopulateWorldWithNullActors ( Lumen::FWorld &World, const Lumen::USize ActorCount )
-    {
-        for ( Lumen::USize ActorIndex = 0U; ActorIndex < ActorCount; ++ActorIndex )
-        {
-            Lumen::TSharedRef<FBenchNullActor> Spawned = World.SpawnActor<FBenchNullActor>();
-            Lumen::Benchmarks::DoNotOptimize( Spawned );
-        }
+        /**
+         *
+         */
     }
 
-    /** @brief Spawns Count scene actors into the world (untimed setup helper). */
-    void PopulateWorldWithSceneActors ( Lumen::FWorld &World, const Lumen::USize ActorCount )
+    void Receive ( const Lumen::FMessage & ) noexcept override
     {
-        for ( Lumen::USize ActorIndex = 0U; ActorIndex < ActorCount; ++ActorIndex )
-        {
-            Lumen::TSharedRef<FBenchSceneActor> Spawned = World.SpawnActor<FBenchSceneActor>();
-            Lumen::Benchmarks::DoNotOptimize( Spawned );
-        }
+        /**
+         *
+         */
     }
+};
+
+/**
+ * @class FBenchSceneActor
+ * @brief Actor moving every frame: Receive counts, OnTick pushes the new
+ *        transform into the spatial registry — the per-entity work of a
+ *        real scene frame, including the world's Publish.
+ */
+class FBenchSceneActor final : public Lumen::AActor
+{
+    LUMEN_ACTOR_BODY ( FBenchSceneActor );
+
+public:
+
+    explicit FBenchSceneActor ( const Lumen::ActorID InId ) noexcept : Lumen::AActor( InId )
+    {
+        Lumen::FSpatialRegistry::Get().RegisterSpatialEntity( InId );
+    }
+
+    ~FBenchSceneActor () noexcept override
+    {
+        /** INFO: Covers both world teardown and DestroyActor (idempotent). */
+        Lumen::FSpatialRegistry::Get().UnregisterSpatialEntity( GetId() );
+    }
+
+    void Receive ( const Lumen::FMessage &InMessage ) noexcept override
+    {
+        ProcessedMessageCount += InMessage.Type;
+    }
+
+    void OnTick ( const Lumen::Float64 InDeltaTime ) noexcept override
+    {
+        const Lumen::Float32 SweepOffset =
+            static_cast<Lumen::Float32>( TickIndex ) * 0.01F + static_cast<Lumen::Float32>( InDeltaTime );
+
+        Transform =
+            Lumen::Maths::FMatrix4x4f::Translate( Lumen::Maths::FVec3f{ SweepOffset, SweepOffset, SweepOffset } ) * Transform;
+
+        Lumen::FSpatialRegistry::Get().UpdateTransform( GetId(), Transform );
+        ++TickIndex;
+    }
+
+private:
+
+    Lumen::Maths::FMatrix4x4f Transform = Lumen::Maths::FMatrix4x4f::Identity();
+    Lumen::UInt32 TickIndex             = 0U;
+    Lumen::UInt32 ProcessedMessageCount = 0U;
+};
+
+/** @brief Spawns Count null actors into the world (untimed setup helper). */
+void PopulateWorldWithNullActors ( Lumen::FWorld &World, const Lumen::USize ActorCount )
+{
+    for ( Lumen::USize ActorIndex = 0U; ActorIndex < ActorCount; ++ActorIndex )
+    {
+        Lumen::TSharedRef<FBenchNullActor> Spawned = World.SpawnActor<FBenchNullActor>();
+        Lumen::Benchmarks::DoNotOptimize( Spawned );
+    }
+}
+
+/** @brief Spawns Count scene actors into the world (untimed setup helper). */
+void PopulateWorldWithSceneActors ( Lumen::FWorld &World, const Lumen::USize ActorCount )
+{
+    for ( Lumen::USize ActorIndex = 0U; ActorIndex < ActorCount; ++ActorIndex )
+    {
+        Lumen::TSharedRef<FBenchSceneActor> Spawned = World.SpawnActor<FBenchSceneActor>();
+        Lumen::Benchmarks::DoNotOptimize( Spawned );
+    }
+}
 
 } // namespace
 

@@ -16,46 +16,46 @@
 namespace
 {
 
-    /** @brief Delta time used for every simulated frame. */
-    constexpr Lumen::Float64 FrameDeltaTime = 0.016;
+/** @brief Delta time used for every simulated frame. */
+constexpr Lumen::Float64 FrameDeltaTime = 0.016;
 
-    /**
-     * @class FBenchActor
-     * @brief Minimal concrete actor: counts processed messages, no extra bookkeeping.
-     */
-    class FBenchActor final : public Lumen::AActor
+/**
+ * @class FBenchActor
+ * @brief Minimal concrete actor: counts processed messages, no extra bookkeeping.
+ */
+class FBenchActor final : public Lumen::AActor
+{
+    LUMEN_ACTOR_BODY ( FBenchActor );
+
+public:
+
+    explicit FBenchActor ( const Lumen::ActorID InId ) noexcept : Lumen::AActor( InId )
     {
-        LUMEN_ACTOR_BODY ( FBenchActor );
+        /**
+         *
+         */
+    }
 
-    public:
+    void Receive ( const Lumen::FMessage &InMessage ) noexcept override
+    {
+        ProcessedMessageCount += InMessage.Type;
+    }
 
-        explicit FBenchActor ( const Lumen::ActorID InId ) noexcept : Lumen::AActor( InId )
-        {
-            /**
-             *
-             */
-        }
+    /** @brief Exposes the protected mailbox reservation for benchmark setup. */
+    void ReserveMailbox ( const Lumen::USize InCapacity ) noexcept
+    {
+        GetMailbox().Reserve( InCapacity );
+    }
 
-        void Receive ( const Lumen::FMessage &InMessage ) noexcept override
-        {
-            ProcessedMessageCount += InMessage.Type;
-        }
+    [[nodiscard]] Lumen::UInt32 GetProcessedMessageCount () const noexcept
+    {
+        return ProcessedMessageCount;
+    }
 
-        /** @brief Exposes the protected mailbox reservation for benchmark setup. */
-        void ReserveMailbox ( const Lumen::USize InCapacity ) noexcept
-        {
-            GetMailbox().Reserve( InCapacity );
-        }
+private:
 
-        [[nodiscard]] Lumen::UInt32 GetProcessedMessageCount () const noexcept
-        {
-            return ProcessedMessageCount;
-        }
-
-    private:
-
-        Lumen::UInt32 ProcessedMessageCount = 0U;
-    };
+    Lumen::UInt32 ProcessedMessageCount = 0U;
+};
 
 } // namespace
 
