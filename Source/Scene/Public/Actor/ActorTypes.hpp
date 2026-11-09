@@ -28,7 +28,7 @@ using ActorID = UInt64;
 /**
  * @brief The invalid actor ID value.
  */
-inline constexpr ActorID InvalidActorID = 0ULL;
+inline constexpr SCENE_EXPORT ActorID InvalidActorID = 0ULL;
 
 /**
  * @brief Computes the slot index from an actor ID.
