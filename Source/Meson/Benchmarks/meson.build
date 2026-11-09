@@ -78,6 +78,7 @@ and not ModuleDependencies.contains('Core')
             BenchmarkTarget,
             workdir : meson.project_source_root(),
             suite : ModuleName,
+            timeout : 0, #<< Benchmarks are long by nature; the 30s default kills whole suites.
         )
     endif
 endforeach
