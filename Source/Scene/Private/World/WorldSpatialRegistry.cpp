@@ -89,7 +89,7 @@ void Lumen::FSpatialRegistry::UnregisterSpatialEntity ( ActorID InId )
 
 void Lumen::FSpatialRegistry::UpdateTransform ( ActorID InId, const Maths::FMatrix4x4f &InTransform ) noexcept
 {
-    TSharedLock<FSharedMutex> Lock( RegistryMutex );
+    TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
     const FSpatialRegistryData::FMapIterator It = WorkingData.IDToIndex.find( InId );
 
     if ( It != WorkingData.IDToIndex.end() )
