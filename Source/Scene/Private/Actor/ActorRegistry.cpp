@@ -250,8 +250,7 @@ void Lumen::Internal::FActorRegistry::EnqueueMessage ( ActorID InId, const FMess
     {
         if ( AActor *const Target = Slot->Actor.load( std::memory_order_acquire ) ) [[likely]]
         {
-            Target->EnqueueMessage( InMessage );
-            Delivered = true;
+            Delivered = Target->EnqueueMessage( InMessage );
         }
     }
 
