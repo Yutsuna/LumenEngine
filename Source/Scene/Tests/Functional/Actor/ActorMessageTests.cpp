@@ -127,13 +127,12 @@ LUMEN_TEST( FMessage_Layout, HeaderAvoidsPaddingHoles )
 
 LUMEN_TEST( FMessage_Layout, PayloadDataStartsAfterHeader )
 {
-    const FMessage Msg                          = FMessage::Make( 1U, 1ULL, FBooleanPayload{ .bFlag = true, .Value = 7 } );
-    const FBooleanPayload *const PayloadPointer = &Msg.GetPayload<FBooleanPayload>();
+    const FMessage Msg            = FMessage::Make( 1U, 1ULL, FBooleanPayload{ .bFlag = true, .Value = 7 } );
+    const FBooleanPayload Payload = Msg.GetPayload<FBooleanPayload>();
 
-    LUMEN_CHECK_TRUE( PayloadPointer != nullptr );
+    LUMEN_CHECK_TRUE( Payload.bFlag == true );
 
-    const UPtr PayloadOffset = reinterpret_cast<UPtr>( PayloadPointer ) - reinterpret_cast<UPtr>( &Msg );
-
+    const UPtr PayloadOffset = reinterpret_cast<UPtr>( &Payload ) - reinterpret_cast<UPtr>( &Msg );
     LUMEN_CHECK_EQ( PayloadOffset, 16ULL );
 }
 

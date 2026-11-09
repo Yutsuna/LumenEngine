@@ -228,6 +228,11 @@ void Lumen::Internal::FActorRegistry::EnqueueMessage ( ActorID InId, const FMess
     FActorSlot *const Slot = GRegistry.FindSlot( ActorIdSlotIndex( InId ) );
     if ( Slot == nullptr ) [[unlikely]]
     {
+        /** INFO: Id 0 is the canonical invalid ID and is documented as not dead-lettered. */
+        if ( InId != InvalidActorID )
+        {
+            GDeadLetters.fetch_add( 1ULL, std::memory_order_relaxed );
+        }
         return;
     }
 
