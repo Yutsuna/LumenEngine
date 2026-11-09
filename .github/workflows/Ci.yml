@@ -35,9 +35,6 @@ jobs:
       - name: Install Nix (Determinate)
         uses: DeterminateSystems/determinate-nix-action@v3
 
-      - name: Magic Nix Cache
-        uses: DeterminateSystems/magic-nix-cache-action@v8
-
       - name: Meson setup
         run: nix develop --command meson setup Build
 
