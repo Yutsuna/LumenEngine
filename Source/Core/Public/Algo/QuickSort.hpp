@@ -5,8 +5,9 @@
 
 #pragma once
 
-#include <Concepts/Sortable.hpp>
 #include <Core/CoreTypes.hpp>
+
+#include <Concepts/Sortable.hpp>
 
 namespace Lumen
 {
@@ -21,42 +22,58 @@ namespace Algo
 
         /** @returns The median of three elements using the given predicate. */
         template <typename TIterator, typename TPredicate>
-        TIterator MedianOfThree ( TIterator InFirst, TIterator InSecond, TIterator InThird, TPredicate &InPredicate ) noexcept;
+        [[nodiscard]] TIterator
+        MedianOfThree ( TIterator InFirst, TIterator InSecond, TIterator InThird, TPredicate &InPredicate ) noexcept;
 
-        /** @brief QuickSort loop leaving chunks of elements to be sorted recursively. */
-        template <typename TIterator, typename TPredicate>
-        void QuickSortLoop ( TIterator InFirst, TIterator InLast, TPredicate &InPredicate ) noexcept;
-
-        /** @brief Moves the median element to the first position in the range. */
+        /**
+         * @brief Swaps a pivot candidate to InFirst.
+         * @pre InLast - InFirst > InsertionSortThreshold.
+         */
         template <typename TIterator, typename TPredicate>
         void MoveMedianToFirst ( TIterator InFirst, TIterator InLast, TPredicate &InPredicate ) noexcept;
 
-        /** @brief Unguarded partition step for QuickSort. */
+        /**
+         * @brief Hoare partition without bound checks, around the pivot stored at InPivot.
+         *
+         * @param InLeft First element to scan (InPivot + 1).
+         * @param InRight One past the last element to scan.
+         * @param InPivot Iterator to the pivot, never moved by the partition.
+         *
+         * @return Cut such as [first, Cut) <= pivot <= [Cut, last), with first < Cut < last.
+         * @pre The pivot was prepared by MoveMedianToFirst (sentinels exist on both sides).
+         */
         template <typename TIterator, typename TPredicate>
         [[nodiscard]] TIterator
         UnguardedPartition ( TIterator InLeft, TIterator InRight, TIterator InPivot, TPredicate &InPredicate ) noexcept;
 
-        /** @brief Performs linear insertion sort on the range. */
+        /**
+         * @brief Quicksort loop leaving chunks of at most InsertionSortThreshold elements unsorted.
+         */
         template <typename TIterator, typename TPredicate>
-        void UnguardedLinearInsert ( TIterator InLast, TPredicate &InPredicate ) noexcept;
+        void QuickSortLoop ( TIterator InFirst, TIterator InLast, TPredicate &InPredicate ) noexcept;
 
     } // namespace Internal
 
     /**
-     * @brief Sorts the range in ascending order <
-     * @note Prefer IntroSort unless the input is trusted. Worst case is O(n²).
+     * @brief Sorts the range in ascending order (`operator<`) with quicksort.
+     *
+     * @param InRange The range to sort.
+     * @note Not stable. Prefer IntroSort unless the input is trusted: worst case is O(n^2).
      */
     template <typename TRangeType>
         requires Concepts::CSortableRange<TRangeType, std::less<>>
     void QuickSort ( TRangeType &&InRange ) noexcept;
 
     /**
-     * @brief Sorts the range in ascending order using the QuickSort algorithm.
-     * @note Prefer IntroSort unless the input is trusted. Worst case is O(n²).
+     * @brief Sorts the range with quicksort and the given predicate.
+     *
+     * @param InRange The range to sort.
+     * @param InPredicate Strict weak ordering returning true when the first argument goes before the second.
+     * @note Not stable. Prefer IntroSort unless the input is trusted: worst case is O(n^2).
      */
     template <typename TRangeType, typename TPredicate>
         requires Concepts::CSortableRange<TRangeType, TPredicate>
-    void QuickSort ( TRangeType &&InRange ) noexcept;
+    void QuickSort ( TRangeType &&InRange, TPredicate InPredicate ) noexcept;
 
 } // namespace Algo
 

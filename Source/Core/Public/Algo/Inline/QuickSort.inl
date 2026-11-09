@@ -8,8 +8,7 @@
 #include <Algo/InsertionSort.hpp>
 #include <Algo/QuickSort.hpp>
 
-#include <algorithm>
-#include <iterator>
+#include <Concepts/TriviallyCopyable.hpp>
 
 /**
  * Public
@@ -51,6 +50,18 @@ void Lumen::Algo::Internal::QuickSortLoop ( TIterator InFirst, TIterator InLast,
     while ( InLast - InFirst > Threshold )
     {
         MoveMedianToFirst( InFirst, InLast, InPredicate );
+        const TIterator Cut = UnguardedPartition( InFirst + 1, InLast, InFirst, InPredicate );
+
+        if ( Cut - InFirst < InLast - Cut )
+        {
+            QuickSortLoop( InFirst, Cut, InPredicate );
+            InFirst = Cut;
+        }
+        else
+        {
+            QuickSortLoop( Cut, InLast, InPredicate );
+            InLast = Cut;
+        }
     }
 }
 
@@ -67,7 +78,7 @@ void Lumen::Algo::Internal::MoveMedianToFirst ( TIterator InFirst, TIterator InL
 
     if ( Count > static_cast<FDifference>( NintherThreshold ) )
     {
-        /** INFO: Tukey's ninther median of three medians */
+        /** INFO: Tukey's ninther, median of three medians. */
         const FDifference Step = Count / 8;
         Pivot                  = MedianOfThree( MedianOfThree( Low, Low + Step, Low + ( Step * 2 ), InPredicate ),
                                                 MedianOfThree( Mid - Step, Mid, Mid + Step, InPredicate ),
@@ -112,15 +123,14 @@ TIterator Lumen::Algo::Internal::UnguardedPartition ( TIterator InLeft,
     using FValue = std::iter_value_t<TIterator>;
 
     /**
-     * INFO: Heavy types are read by ref: the pivot slot is never swapped
-     *       so the ref stays valid.
+     * INFO: Heavy types are read by reference:
+     *       the pivot slot is never swapped, so the reference stays valid.
      */
     constexpr Bool bCopyPivot = Concepts::CTriviallyCopyable<FValue> and ( sizeof( FValue ) <= ( 2U * sizeof( void * ) ) );
     std::conditional_t<bCopyPivot, const FValue, const FValue &> PivotValue = *InPivot;
 
     for ( ;; )
     {
-
         while ( InPredicate( *InLeft, PivotValue ) )
         {
             ++InLeft;
