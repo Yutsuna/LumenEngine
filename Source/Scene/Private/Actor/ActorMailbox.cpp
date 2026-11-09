@@ -54,24 +54,26 @@ Lumen::FMailBox::~FMailBox () noexcept
 Lumen::Bool Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
 {
     /**
-     * INFO: Try taking an existing node lock-free, allocate only if pool is depleted.
-     * OrElse performs the allocation as a monadic recovery when Pop() is empty.
+     * INFO: Try taking an existing node lock-free; recover with an allocation
+     *       only when the free-list pool is depleted. The result stays inside
+     *       TOptional end-to-end — no null-pointer sentinel is materialized.
      */
-    FNode *const NewNode = FreeNodes.Pop()
-                               .OrElse( [] () noexcept -> TOptional<FNode *>
+    const TOptional<FNode *> Node = FreeNodes.Pop().OrElse( [] () noexcept -> TOptional<FNode *>
     {
         if ( FNode *const Allocated = new ( std::nothrow ) FNode() )
         {
             return TOptional<FNode *>( Allocated );
         }
         return TOptional<FNode *>{};
-    } ).ValueOr( nullptr );
+    } );
 
-    if ( NewNode == nullptr )
+    if ( not Node.HasValue() ) [[unlikely]]
     {
         LUMEN_LOG_ERROR( LogActor, "FMailBox::Push: failed to allocate node for new message" );
         return false;
     }
+
+    FNode *const NewNode = *Node;
 
     NewNode->Next.store( nullptr, std::memory_order_relaxed );
     NewNode->Message.Emplace( InMessage );

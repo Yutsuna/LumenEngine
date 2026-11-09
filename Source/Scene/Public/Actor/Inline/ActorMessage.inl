@@ -15,8 +15,8 @@
  */
 
 template <Lumen::Concepts::CTriviallyCopyablePayload TPayloadType>
-    requires( sizeof( TPayloadType ) <= Lumen::FMessage::MaxPayloadSize and
-              alignof( TPayloadType ) <= Lumen::FMessage::PayloadAlignment )
+    requires( sizeof( TPayloadType ) <= Lumen::FMessageMaxPayloadSize and
+              alignof( TPayloadType ) <= Lumen::FMessagePayloadAlignment )
 Lumen::FMessage Lumen::FMessage::Make ( const UInt32 InType, const ActorID InSender, const TPayloadType &InPayload ) noexcept
 {
     FMessage Msg;
@@ -27,17 +27,9 @@ Lumen::FMessage Lumen::FMessage::Make ( const UInt32 InType, const ActorID InSen
     return Msg;
 }
 
-Lumen::FMessage Lumen::FMessage::Make ( const UInt32 InType, const ActorID InSender ) noexcept
-{
-    FMessage Msg;
-    Msg.Type   = InType;
-    Msg.Sender = InSender;
-    return Msg;
-}
-
 template <Lumen::Concepts::CTriviallyCopyablePayload TPayloadType>
-    requires( sizeof( TPayloadType ) <= Lumen::FMessage::MaxPayloadSize and
-              alignof( TPayloadType ) <= Lumen::FMessage::PayloadAlignment )
+    requires( sizeof( TPayloadType ) <= Lumen::FMessageMaxPayloadSize and
+              alignof( TPayloadType ) <= Lumen::FMessagePayloadAlignment )
 [[nodiscard]] TPayloadType Lumen::FMessage::GetPayload () const noexcept
 {
 #if defined( __cpp_lib_start_lifetime_as ) && __cpp_lib_start_lifetime_as >= 202207L

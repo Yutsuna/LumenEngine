@@ -12,6 +12,12 @@
 namespace Lumen
 {
 
+/** INFO: Payload limits live at namespace scope so the requires-clauses below can also reference them from the out-of-line
+ * definitions in Inline/ActorMessage.inl (GCC cannot match a requires-clause that references class-scope constants across an
+ * out-of-line definition). */
+inline constexpr SCENE_EXPORT USize FMessageMaxPayloadSize   = 112;
+inline constexpr SCENE_EXPORT USize FMessagePayloadAlignment = 16;
+
 /**
  * @struct FMessage
  * @brief Represents a message sent between actors in the Lumen Engine.
@@ -19,8 +25,8 @@ namespace Lumen
  */
 struct alignas( 64 ) SCENE_EXPORT FMessage
 {
-    static constexpr USize MaxPayloadSize   = 112;
-    static constexpr USize PayloadAlignment = 16;
+    static constexpr USize MaxPayloadSize   = FMessageMaxPayloadSize;
+    static constexpr USize PayloadAlignment = FMessagePayloadAlignment;
 
     ActorID Sender     = 0ULL;
     UInt32 Type        = 0U;
@@ -38,7 +44,8 @@ struct alignas( 64 ) SCENE_EXPORT FMessage
      * @return A message with the given type, sender, and payload.
      */
     template <Concepts::CTriviallyCopyablePayload TPayloadType>
-        requires( sizeof( TPayloadType ) <= MaxPayloadSize and alignof( TPayloadType ) <= PayloadAlignment )
+        requires( sizeof( TPayloadType ) <= Lumen::FMessageMaxPayloadSize and
+                  alignof( TPayloadType ) <= Lumen::FMessagePayloadAlignment )
     [[nodiscard]] static FMessage Make ( UInt32 InType, ActorID InSender, const TPayloadType &InPayload ) noexcept;
 
     /**
@@ -54,7 +61,8 @@ struct alignas( 64 ) SCENE_EXPORT FMessage
      * @return The payload of the message.
      */
     template <Concepts::CTriviallyCopyablePayload TPayloadType>
-        requires( sizeof( TPayloadType ) <= MaxPayloadSize and alignof( TPayloadType ) <= PayloadAlignment )
+        requires( sizeof( TPayloadType ) <= Lumen::FMessageMaxPayloadSize and
+                  alignof( TPayloadType ) <= Lumen::FMessagePayloadAlignment )
     [[nodiscard]] TPayloadType GetPayload () const noexcept;
 };
 
@@ -64,4 +72,4 @@ static_assert( offsetof( FMessage, PayloadData ) == 16, "PayloadData should be a
 
 } // namespace Lumen
 
-/// #include "Inline/ActorMessage.inl"
+#include "Inline/ActorMessage.inl"
