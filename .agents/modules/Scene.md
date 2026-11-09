@@ -18,6 +18,15 @@
 Tests in `Source/Scene/Tests/{Functional,Integration}/Actor|World|Messages`
 (`ActorMailboxFenceTest.cpp`, dead-letter registry tests, world phase tests...).
 
+Benchmarks in `Source/Scene/Benchmarks/` (`SceneBenchmarks` binary, suites
+`FMailBox`, `AActor`, `FActorRegistry`, `FWorld`, `FSpatialRegistry`):
+`Actor/ActorMailboxBenchmarks.cpp` (push/pop, batch drain, MPSC contention),
+`Actor/ActorBenchmarks.cpp` (RunFrame, ID alloc), `World/WorldBenchmarks.cpp`
+(spawn scaling, full-frame ticks at 100/1k/10k actors), and
+`World/WorldSpatialRegistryBenchmarks.cpp` (transform updates, idle/all-dirty
+publish, structural churn). Release build only — see
+`skills/write-benchmarks.md`.
+
 ## Notes for agents
 
 - Actor communication only via mailbox `Push` of `FMessage`s; no shared
