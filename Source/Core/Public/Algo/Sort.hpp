@@ -1,6 +1,6 @@
 /**
  * @file Sort.hpp
- * @brief Sorting algorithms.
+ * @brief Default sorting entry points.
  */
 
 #pragma once
@@ -9,7 +9,7 @@
 
 #include <Concepts/Sortable.hpp>
 
-#include <utility>
+#include <Algo/IntroSort.hpp>
 
 namespace Lumen
 {
@@ -18,28 +18,21 @@ namespace Algo
 {
 
     /**
-     * @brief Sorts the given range in ascending order <.
+     * @brief Sorts the range in ascending order (`operator<`) using introsort.
      *
-     * @tparam TRangeType The type of the range to sort.
-     * @tparam TPredicate The type of the predicate to use.
      * @param InRange The range to sort.
-     * @param InPredicate The predicate to use.
-     *
-     * @note O(n log n) worst case
+     * @note Not stable. O(n log n) worst case, in place, no allocation.
      */
     template <typename TRangeType>
         requires Concepts::CSortableRange<TRangeType, std::less<>>
     LUMEN_FORCE_INLINE void Sort ( TRangeType &&InRange ) noexcept;
 
     /**
-     * @brief Sorts the given range using introsort with the given predicate.
+     * @brief Sorts the range using introsort and the given predicate.
      *
-     * @tparam TRangeType The type of the range to sort.
-     * @tparam TPredicate The type of the predicate to use.
-     * @param Range The range to sort.
-     * @param Predicate The predicate to use.
-     *
-     * @note O(n log n) worst case
+     * @param InRange The range to sort.
+     * @param InPredicate The predicate to use for comparison.
+     * @note Not stable. O(n log n) worst case, in place, no allocation.
      */
     template <typename TRangeType, typename TPredicate>
         requires Concepts::CSortableRange<TRangeType, TPredicate>

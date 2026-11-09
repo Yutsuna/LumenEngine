@@ -57,6 +57,7 @@ void Lumen::Algo::Internal::IntroSortLoop ( TIterator InFirst,
     {
         if ( InDepthLimit == 0 ) [[unlikely]]
         {
+            /** INFO: The range is fully sorted afterwards, the final insertion pass is a no-op on it. */
             HeapSort( InFirst, InLast, InPredicate );
             return;
         }
