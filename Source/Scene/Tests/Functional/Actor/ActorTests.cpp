@@ -160,6 +160,24 @@ LUMEN_TEST( AActor_TypeID, NegativeRegistryContract )
 }
 
 /**
+ * RunFrame
+ */
+
+LUMEN_TEST( AActor_RunFrame, DeliversAndTicksWithoutExceptionBoundary )
+{
+    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+
+    for ( UInt32 Index = 0U; Index < 8U; ++Index )
+    {
+        Actor.EnqueueMessage( FMessage::Make( Index, 0ULL ) );
+    }
+
+    Actor.RunFrame( 0.0, 0U );
+
+    LUMEN_CHECK_EQ( Actor.GetReceivedMessages().size(), 8ULL );
+}
+
+/**
  * Mailbox processing
  */
 
