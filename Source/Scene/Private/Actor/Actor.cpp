@@ -8,7 +8,6 @@
 #include <Actor/ActorTypes.hpp>
 
 #include <Core/CoreDefinitions.hpp>
-#include <Logging/Logger.hpp>
 
 Lumen::AActor::AActor ( ActorID InId ) noexcept : Id( InId )
 {
