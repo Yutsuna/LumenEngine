@@ -27,19 +27,8 @@ void Lumen::AActor::OnTick ( const Float64 LUMEN_UNUSED InDeltaTime ) noexcept
 
 void Lumen::AActor::RunFrame ( const Float64 InDeltaTime, const UInt32 InMaxMessages ) noexcept
 {
-    try
-    {
-        ProcessMailbox( InMaxMessages );
-        OnTick( InDeltaTime );
-    }
-    catch ( const std::exception &Exception )
-    {
-        LUMEN_LOG_ERROR( LogActor, "Actor {} threw: {}", Id, Exception.what() );
-    }
-    catch ( ... )
-    {
-        LUMEN_LOG_ERROR( LogActor, "Actor {} threw: unknown exception", Id );
-    }
+    ProcessMailbox( InMaxMessages );
+    OnTick( InDeltaTime );
 }
 
 Lumen::Bool Lumen::AActor::EnqueueMessage ( const FMessage &InMessage ) noexcept
