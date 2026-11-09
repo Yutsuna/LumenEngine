@@ -9,9 +9,6 @@
 
 #include <Actor/ActorTypes.hpp>
 
-#include <cstring>
-#include <memory>
-
 namespace Lumen
 {
 
@@ -42,15 +39,7 @@ struct alignas( 64 ) FMessage
      */
     template <Concepts::CTriviallyCopyablePayload TPayloadType>
         requires( sizeof( TPayloadType ) <= MaxPayloadSize and alignof( TPayloadType ) <= PayloadAlignment )
-    [[nodiscard]] static FMessage Make ( UInt32 InType, ActorID InSender, const TPayloadType &InPayload ) noexcept
-    {
-        FMessage Msg;
-        Msg.Type        = InType;
-        Msg.Sender      = InSender;
-        Msg.PayloadSize = static_cast<UInt16>( sizeof( TPayloadType ) );
-        std::memcpy( Msg.PayloadData, &InPayload, sizeof( TPayloadType ) );
-        return Msg;
-    }
+    [[nodiscard]] static FMessage Make ( UInt32 InType, ActorID InSender, const TPayloadType &InPayload ) noexcept;
 
     /**
      * @brief Creates a message with the given type and sender.
@@ -58,13 +47,7 @@ struct alignas( 64 ) FMessage
      * @param InSender The sender of the message.
      * @return A message with the given type and sender.
      */
-    [[nodiscard]] static FMessage Make ( UInt32 InType, ActorID InSender ) noexcept
-    {
-        FMessage Msg;
-        Msg.Type   = InType;
-        Msg.Sender = InSender;
-        return Msg;
-    }
+    [[nodiscard]] static FMessage Make ( UInt32 InType, ActorID InSender ) noexcept;
 
     /**
      * @brief Gets the payload of the message.
@@ -72,16 +55,7 @@ struct alignas( 64 ) FMessage
      */
     template <Concepts::CTriviallyCopyablePayload TPayloadType>
         requires( sizeof( TPayloadType ) <= MaxPayloadSize and alignof( TPayloadType ) <= PayloadAlignment )
-    [[nodiscard]] TPayloadType GetPayload () const noexcept
-    {
-#if defined( __cpp_lib_start_lifetime_as ) && __cpp_lib_start_lifetime_as >= 202207L
-        return *std::start_lifetime_as<TPayloadType>( PayloadData );
-#else
-        TPayloadType Storage;
-        std::memcpy( &Storage, PayloadData, sizeof( TPayloadType ) );
-        return Storage;
-#endif
-    }
+    [[nodiscard]] TPayloadType GetPayload () const noexcept;
 };
 
 static_assert( sizeof( FMessage ) == 128, "FMessage should be exactly 128 bytes." );
