@@ -20,13 +20,13 @@
 namespace
 {
 
-LUMEN_FORCE_INLINE Lumen::Bool SortActiveActors ( const Lumen::TSharedPtr<Lumen::AActor> &A,
-                                                  const Lumen::TSharedPtr<Lumen::AActor> &B ) noexcept
+LUMEN_FORCE_INLINE Lumen::Bool SortActiveActors ( const Lumen::TSharedPtr<Lumen::AActor> &InActorA,
+                                                  const Lumen::TSharedPtr<Lumen::AActor> &InActorB ) noexcept
 {
-    const Lumen::USize Ka = A->GetTypeID();
-    const Lumen::USize Kb = B->GetTypeID();
+    const Lumen::USize ActorIDA = InActorA->GetTypeID();
+    const Lumen::USize ActorIDB = InActorB->GetTypeID();
 
-    return Ka != Kb ? Ka < Kb : A->GetId() < B->GetId();
+    return ActorIDA != ActorIDB ? ActorIDA < ActorIDB : InActorA->GetId() < InActorB->GetId();
 }
 
 } // namespace
