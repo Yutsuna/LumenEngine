@@ -441,4 +441,78 @@ LUMEN_TEST( FSpatialRegistry_Threading, UpdatesAndPublishesConcurrently )
     Session.Cleanup();
 }
 
+LUMEN_TEST( FSpatialRegistry_UpdateTransform, ConcurrentSameEntityWritesSerialize )
+{
+    FRegistrySession Session;
+    Session.Cleanup();
+
+    constexpr ActorID EntityId = 7020ULL;
+    Session.TrackRegister( EntityId );
+    Session.Registry.Publish();
+    Session.Registry.SwapReadBuffers();
+
+    constexpr UInt32 ThreadCount     = 4U;
+    constexpr UInt32 WritesPerThread = 500U;
+
+    const Maths::FMatrix4x4f ThreadTransforms[ThreadCount] = {
+        MakeTranslation( 1.0F, 0.0F, 0.0F ),
+        MakeTranslation( 0.0F, 2.0F, 0.0F ),
+        MakeTranslation( 0.0F, 0.0F, 3.0F ),
+        MakeTranslation( 4.0F, 4.0F, 4.0F ),
+    };
+
+    std::thread Writers[ThreadCount];
+
+    for ( UInt32 Index = 0U; Index < ThreadCount; ++Index )
+    {
+        Writers[Index] = std::thread( [Index, EntityId, &ThreadTransforms] ()
+        {
+            for ( UInt32 Step = 0U; Step < WritesPerThread; ++Step )
+            {
+                FSpatialRegistry::Get().UpdateTransform( EntityId, ThreadTransforms[Index] );
+            }
+        } );
+    }
+
+    std::thread Publisher( [] ()
+    {
+        for ( UInt32 Cycle = 0U; Cycle < 250U; ++Cycle )
+        {
+            FSpatialRegistry::Get().Publish();
+            FSpatialRegistry::Get().SwapReadBuffers();
+        }
+    } );
+
+    for ( std::thread &Writer : Writers )
+    {
+        Writer.join();
+    }
+
+    Publisher.join();
+
+    Session.Registry.Publish();
+    Session.Registry.SwapReadBuffers();
+
+    const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
+
+    LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 1ULL );
+    LUMEN_CHECK_EQ( Snapshot.EntityIDs[0], EntityId );
+
+    /** INFO: After serialization the observed matrix must be one of the writes verbatim
+     *        — never a torn / mixed matrix produced by two interleaved writers. */
+    Bool bMatched = false;
+    for ( UInt32 Index = 0U; Index < ThreadCount; ++Index )
+    {
+        if ( Snapshot.Transforms[0] == ThreadTransforms[Index] )
+        {
+            bMatched = true;
+            break;
+        }
+    }
+
+    LUMEN_CHECK_TRUE( bMatched );
+
+    Session.Cleanup();
+}
+
 } // namespace Lumen
