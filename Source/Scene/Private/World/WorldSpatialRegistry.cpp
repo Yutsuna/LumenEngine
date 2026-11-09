@@ -137,7 +137,7 @@ void Lumen::FSpatialRegistry::Publish () noexcept
 
         /** INFO: Granular Sync: Only copy what changed for THIS buffer instance */
         Tracker.ComponentDirtyStates[static_cast<USize>( ESpatialComponentType::Transform )].ForEachSetBitAndClear(
-            [&] ( const USize Index )
+            [&] ( const USize Index ) noexcept -> void
         {
             OutData.Transforms[Index] = WorkingData.Transforms[Index];
         } );
