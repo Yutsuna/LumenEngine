@@ -1,6 +1,6 @@
 /**
- * @file Quicksort.hpp
- * @brief Quicksort algorithm declaration.
+ * @file QuickSort.hpp
+ * @brief QuickSort algorithm declaration.
  */
 
 #pragma once
@@ -23,7 +23,7 @@ namespace Algo
         template <typename TIterator, typename TPredicate>
         TIterator MedianOfThree ( TIterator InFirst, TIterator InSecond, TIterator InThird, TPredicate &InPredicate ) noexcept;
 
-        /** @brief Quicksort loop leaving chunks of elements to be sorted recursively. */
+        /** @brief QuickSort loop leaving chunks of elements to be sorted recursively. */
         template <typename TIterator, typename TPredicate>
         void QuickSortLoop ( TIterator InFirst, TIterator InLast, TPredicate &InPredicate ) noexcept;
 
@@ -31,7 +31,7 @@ namespace Algo
         template <typename TIterator, typename TPredicate>
         void MoveMedianToFirst ( TIterator InFirst, TIterator InLast, TPredicate &InPredicate ) noexcept;
 
-        /** @brief Unguarded partition step for quicksort. */
+        /** @brief Unguarded partition step for QuickSort. */
         template <typename TIterator, typename TPredicate>
         [[nodiscard]] TIterator
         UnguardedPartition ( TIterator InLeft, TIterator InRight, TIterator InPivot, TPredicate &InPredicate ) noexcept;
@@ -51,7 +51,7 @@ namespace Algo
     void QuickSort ( TRangeType &&InRange ) noexcept;
 
     /**
-     * @brief Sorts the range in ascending order using the quicksort algorithm.
+     * @brief Sorts the range in ascending order using the QuickSort algorithm.
      * @note Prefer IntroSort unless the input is trusted. Worst case is O(n²).
      */
     template <typename TRangeType, typename TPredicate>

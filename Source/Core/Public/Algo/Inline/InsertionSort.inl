@@ -8,7 +8,10 @@
 #include <Algo/InsertionSort.hpp>
 
 #include <algorithm>
+#include <functional>
 #include <iterator>
+#include <ranges>
+#include <utility>
 
 /**
  * Public
@@ -18,6 +21,7 @@ template <typename TIterator, typename TPredicate>
 void Lumen::Algo::InsertionSort ( TIterator InFirst, TIterator InLast, TPredicate &InPredicate ) noexcept
 {
     using FValue = std::iter_value_t<TIterator>;
+
     if ( InFirst == InLast )
     {
         return;
@@ -34,9 +38,24 @@ void Lumen::Algo::InsertionSort ( TIterator InFirst, TIterator InLast, TPredicat
         }
         else
         {
+            /** INFO: *InFirst is not greater than *Current, it acts as the sentinel. */
             Internal::UnguardedLinearInsert( Current, InPredicate );
         }
     }
+}
+
+template <typename TRangeType>
+    requires Lumen::Concepts::CSortableRange<TRangeType, std::less<>>
+void Lumen::Algo::InsertionSort ( TRangeType &&InRange ) noexcept
+{
+    InsertionSort( std::forward<TRangeType>( InRange ), std::less<>{} );
+}
+
+template <typename TRangeType, typename TPredicate>
+    requires Lumen::Concepts::CSortableRange<TRangeType, TPredicate>
+void Lumen::Algo::InsertionSort ( TRangeType &&InRange, TPredicate InPredicate ) noexcept
+{
+    InsertionSort( std::ranges::begin( InRange ), std::ranges::end( InRange ), InPredicate );
 }
 
 /**
