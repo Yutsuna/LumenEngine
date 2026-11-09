@@ -36,6 +36,9 @@ namespace Internal
 
         /** @brief Lock-free lookup + deliver. */
         static void EnqueueMessage ( ActorID InId, const FMessage &InMessage ) noexcept;
+
+        /** @brief Retires an ID that was never bound to an actor (deferred spawn cancelled). */
+        static void ReleaseId ( ActorID InId ) noexcept;
     };
 
 } // namespace Internal

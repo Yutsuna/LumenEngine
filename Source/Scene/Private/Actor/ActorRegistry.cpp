@@ -226,8 +226,7 @@ void Lumen::Internal::FActorRegistry::Unregister ( AActor *InActor ) noexcept
 void Lumen::Internal::FActorRegistry::EnqueueMessage ( ActorID InId, const FMessage &InMessage ) noexcept
 {
     FActorSlot *const Slot = GRegistry.FindSlot( ActorIdSlotIndex( InId ) );
-
-    if ( Slot == nullptr )
+    if ( Slot == nullptr ) [[unlikely]]
     {
         return;
     }
@@ -261,4 +260,37 @@ void Lumen::Internal::FActorRegistry::EnqueueMessage ( ActorID InId, const FMess
     {
         GDeadLetters.fetch_add( 1ULL, std::memory_order_relaxed );
     }
+}
+
+void Lumen::Internal::FActorRegistry::ReleaseId ( ActorID InId ) noexcept
+{
+    if ( InId == InvalidActorID ) [[unlikely]]
+    {
+        return;
+    }
+
+    FActorSlot *const Slot = GRegistry.FindSlot( ActorIdSlotIndex( InId ) );
+    if ( Slot == nullptr ) [[unlikely]]
+    {
+        return;
+    }
+
+    UInt64 OldState = Slot->State.load( std::memory_order_relaxed );
+    UInt64 NewState = 0ULL;
+
+    do
+    {
+        NewState = ( OldState & ~GenerationMask ) | ( ( OldState + 1ULL ) & GenerationMask );
+    } while ( not Slot->State.compare_exchange_weak( OldState, NewState, std::memory_order_acq_rel, std::memory_order_relaxed ) );
+
+    while ( ( Slot->State.load( std::memory_order_acquire ) >> 32U ) != 0ULL )
+    {
+        HAL::CpuRelax();
+    }
+
+    Slot->Actor.store( nullptr, std::memory_order_release );
+
+    HAL::FSpinGuard Guard( GRegistry.Lock );
+    Slot->NextFree     = GRegistry.FreeHead;
+    GRegistry.FreeHead = ActorIdSlotIndex( InId );
 }
