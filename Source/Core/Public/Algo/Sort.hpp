@@ -9,8 +9,6 @@
 
 #include <Concepts/Sortable.hpp>
 
-#include <Algo/IntroSort.hpp>
-
 namespace Lumen
 {
 
