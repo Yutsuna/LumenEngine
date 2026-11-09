@@ -52,14 +52,15 @@ template <typename ActorType, typename... Args> Lumen::FActorRef Lumen::FWorld::
         Internal::TerminateOnRegistryExhaustion();
     }
 
-    TFunction<void( FWorld & )> Command = [NewId, ... Captured = std::forward<Args>( InArgs )] ( FWorld &World ) mutable -> void
+    FDeferredCommand Command = { .OwnedId = NewId,
+                                 .Execute = [NewId, ... Captured = std::forward<Args>( InArgs )] ( FWorld &World ) mutable -> void
     {
         TSharedRef<ActorType> NewActor = MakeShared<ActorType>( NewId, std::move( Captured )... );
         TSharedPtr<AActor> StoredActor = NewActor;
         World.Actors[NewId]            = StoredActor;
         World.ActiveActors.push_back( StoredActor );
         World.bNeedsSorting = true;
-    };
+    } };
 
     {
         TUniqueLock<FMutex> Lock( DeferredMutex );

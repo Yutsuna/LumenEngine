@@ -31,8 +31,8 @@ class SCENE_EXPORT FWorld : public FNonCopyable
 {
 public:
 
-    FWorld () noexcept          = default;
-    virtual ~FWorld () noexcept = default;
+    FWorld () noexcept = default;
+    virtual ~FWorld () noexcept;
 
 public:
 
@@ -75,11 +75,23 @@ private:
 
 private:
 
+    /**
+     * @struct FDeferredCommand
+     * @brief Represents a command to be executed during the deferred phase.
+     */
+    struct FDeferredCommand
+    {
+        /** Non-zero when this command owns an actor slot that must be released if never executed. */
+        ActorID OwnedId = 0ULL;
+        /** The function to execute when this command is processed. */
+        TFunction<void( FWorld & )> Execute;
+    };
+
     TMap<ActorID, TSharedPtr<AActor>> Actors;
     TVector<TSharedPtr<AActor>> ActiveActors;
 
     mutable FMutex DeferredMutex;
-    TVector<TFunction<void( FWorld & )>> DeferredCommands;
+    TVector<FDeferredCommand> DeferredCommands;
 
     Bool bNeedsSorting    = false;
     Bool bInParallelPhase = false;
