@@ -13,6 +13,10 @@
 #include <execution>
 #include <utility>
 
+/**
+ * Private
+ */
+
 namespace
 {
 
@@ -27,14 +31,32 @@ LUMEN_FORCE_INLINE Lumen::Bool SortActiveActors ( const Lumen::TSharedPtr<Lumen:
 
 } // namespace
 
+/**
+ * Public
+ */
+
+Lumen::FWorld::~FWorld () noexcept
+{
+    TUniqueLock<FMutex> Lock( DeferredMutex );
+
+    for ( const FDeferredCommand &Command : DeferredCommands )
+    {
+        if ( Command.OwnedId != InvalidActorID )
+        {
+            Internal::FActorRegistry::ReleaseId( Command.OwnedId );
+        }
+    }
+}
+
 void Lumen::FWorld::Broadcast ( const FMessage &InMessage )
 {
     if ( bInParallelPhase )
     {
-        TFunction<void( FWorld & )> Command = [Msg = InMessage] ( FWorld &World ) -> void
+        FDeferredCommand Command = { .OwnedId = 0UL,
+                                     .Execute = [Msg = InMessage] ( FWorld &World ) -> void
         {
             World.Broadcast( Msg );
-        };
+        } };
 
         TUniqueLock<FMutex> Lock( DeferredMutex );
         DeferredCommands.push_back( std::move( Command ) );
@@ -51,10 +73,11 @@ void Lumen::FWorld::DestroyActor ( ActorID InId )
 {
     if ( bInParallelPhase )
     {
-        TFunction<void( FWorld & )> Command = [InId] ( FWorld &World ) -> void
+        FDeferredCommand Command = { .OwnedId = InId,
+                                     .Execute = [InId] ( FWorld &World ) -> void
         {
             World.DestroyActorImpl( InId );
-        };
+        } };
 
         TUniqueLock<FMutex> Lock( DeferredMutex );
         DeferredCommands.push_back( std::move( Command ) );
@@ -122,16 +145,16 @@ void Lumen::FWorld::ApplyDeferredCommands () noexcept
      *       land in a fresh queue and get applied next tick. Prevents
      *       unbounded recursion inside a single serial phase.
      */
-    TVector<TFunction<void( FWorld & )>> Batch;
+    decltype( DeferredCommands ) Batch;
     {
         TUniqueLock<FMutex> Lock( DeferredMutex );
         Batch = std::move( DeferredCommands );
         DeferredCommands.clear();
     }
 
-    for ( TFunction<void( FWorld & )> &Command : Batch )
+    for ( FDeferredCommand &Command : Batch )
     {
-        Command( *this );
+        Command.Execute( *this );
     }
 }
 
