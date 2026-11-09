@@ -34,8 +34,11 @@ public:
     /** @brief Called every tick with the elapsed time since the last tick. */
     virtual void OnTick ( Float64 InDeltaTime ) noexcept;
 
-    /** @brief Lock-free message enqueueing. */
-    void EnqueueMessage ( const FMessage &InMessage ) noexcept;
+    /**
+     * @brief Lock-free message enqueueing.
+     * @return True if the message was successfully enqueued, false otherwise.
+     */
+    Bool EnqueueMessage ( const FMessage &InMessage ) noexcept;
 
     /** @brief Freezes the mailbox tick boundary. Called by FWorld::Tick. */
     void BeginTick () noexcept;

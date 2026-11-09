@@ -42,9 +42,9 @@ void Lumen::AActor::RunFrame ( const Float64 InDeltaTime, const UInt32 InMaxMess
     }
 }
 
-void Lumen::AActor::EnqueueMessage ( const FMessage &InMessage ) noexcept
+Lumen::Bool Lumen::AActor::EnqueueMessage ( const FMessage &InMessage ) noexcept
 {
-    Mailbox.Push( InMessage );
+    return Mailbox.Push( InMessage );
 }
 
 void Lumen::AActor::BeginTick () noexcept
