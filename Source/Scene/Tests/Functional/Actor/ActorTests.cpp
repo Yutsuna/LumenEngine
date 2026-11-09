@@ -383,4 +383,26 @@ LUMEN_TEST( AActor_Threading, MultipleProducersEnqueueToSingleActor )
     LUMEN_CHECK_EQ( Actor.GetReceivedMessages().size(), TargetTotal );
 }
 
+/**
+ * Enqueueing
+ */
+
+LUMEN_TEST( AActor_EnqueueMessage, ReturnsTrueOnSuccess )
+{
+    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+
+    LUMEN_CHECK_TRUE( Actor.EnqueueMessage( FMessage::Make( 1U, 0ULL ) ) );
+    LUMEN_CHECK_TRUE( Actor.EnqueueMessage( FMessage::Make( 2U, 0ULL ) ) );
+}
+
+LUMEN_TEST( AActor_EnqueueMessage, ReturnsTrueAcrossManyPushes )
+{
+    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+
+    for ( UInt32 Index = 0U; Index < 256U; ++Index )
+    {
+        LUMEN_CHECK_TRUE( Actor.EnqueueMessage( FMessage::Make( Index, 0ULL ) ) );
+    }
+}
+
 } // namespace Lumen
