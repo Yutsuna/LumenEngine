@@ -31,6 +31,24 @@ namespace
     };
 } // namespace
 
+LUMEN_TEST( FActorRegistry_DeadLetter, UnresolvedNonInvalidIdIsCounted )
+{
+    const UInt64 StartCount = Internal::FActorRegistry::GetDeadLetterCount();
+
+    /**
+     * INFO: Slot 0x0200'0000 >> 10 = 32'768, which exceeds MaxChunks (16'384).
+     *       FindSlot() therefore returns nullptr for this id — the "unresolved"
+     *       path. Id 0 is exempt, but this id is not.
+     */
+    constexpr ActorID UnresolvedId = 0x0000'0000'0200'0000ULL;
+    static_assert( UnresolvedId != InvalidActorID );
+
+    const FActorRef Ref( UnresolvedId );
+    Ref.EnqueueMessage( FMessage::Make( 1U, 0ULL ) );
+
+    LUMEN_CHECK_EQ( Internal::FActorRegistry::GetDeadLetterCount() - StartCount, 1ULL );
+}
+
 LUMEN_TEST( FActorRegistry_DeadLetter, SendToDeadActorIncrementsCounter )
 {
     const UInt64 StartCount = Internal::FActorRegistry::GetDeadLetterCount();

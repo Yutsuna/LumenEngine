@@ -127,7 +127,7 @@ LUMEN_TEST( FMessage_Layout, HeaderAvoidsPaddingHoles )
 
 LUMEN_TEST( FMessage_Layout, PayloadDataStartsAfterHeader )
 {
-    const FMessage Msg = FMessage::Make( 1U, 1ULL, FBooleanPayload{ .bFlag = true, .Value = 7 } );
+    const FMessage Msg       = FMessage::Make( 1U, 1ULL, FBooleanPayload{ .bFlag = true, .Value = 7 } );
     const UPtr PayloadOffset = reinterpret_cast<UPtr>( Msg.PayloadData ) - reinterpret_cast<UPtr>( &Msg );
     LUMEN_CHECK_EQ( PayloadOffset, 16ULL );
 
@@ -311,6 +311,30 @@ LUMEN_TEST( FMessage_Make, PayloadKeepsStricterAlignmentUsable )
     const FAligned16Payload &Payload = Msg.GetPayload<FAligned16Payload>();
 
     LUMEN_CHECK_EQ( Payload.Value, 0xDEADBEEFULL );
+}
+
+LUMEN_TEST( FMessage_Payload, GetPayloadReturnsIndependentCopies )
+{
+    /**
+     * INFO: The former thread_local fallback aliased every same-type GetPayload
+     *       call on a thread to one object. Two calls must now yield values with
+     *       independent storage.
+     */
+    const FMessage Msg = FMessage::Make( 1U, 0ULL, FBooleanPayload{ .bFlag = true, .Value = 5 } );
+
+    FBooleanPayload First  = Msg.GetPayload<FBooleanPayload>();
+    FBooleanPayload Second = Msg.GetPayload<FBooleanPayload>();
+
+    LUMEN_CHECK_EQ( First.Value, 5 );
+    LUMEN_CHECK_EQ( Second.Value, 5 );
+
+    First.Value = 999;
+
+    LUMEN_CHECK_EQ( Second.Value, 5 );
+    LUMEN_CHECK_EQ( Msg.GetPayload<FBooleanPayload>().Value, 5 );
+
+    /** INFO: The returned object is a copy, not an alias into PayloadData. */
+    LUMEN_CHECK_FALSE( reinterpret_cast<const void *>( &Second ) == reinterpret_cast<const void *>( Msg.PayloadData ) );
 }
 
 /**

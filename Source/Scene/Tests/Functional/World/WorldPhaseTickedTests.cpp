@@ -142,4 +142,52 @@ LUMEN_TEST( FWorld_PhasedTick, DestroyFromReceiveIsDeferred )
     LUMEN_CHECK_EQ( Victim->GetProbeCount(), 0U );
 }
 
+/**
+ * Destroy
+ */
+
+LUMEN_TEST( FWorld_DeferredSpawn, DestroyedWorldReleasesUnappliedIds )
+{
+    ActorID DeferredId = InvalidActorID;
+
+    {
+        FWorld World;
+        const FActorRef Ref = World.SpawnActorDeferred<FSpawnerActor>( &World );
+        DeferredId          = Ref.GetId();
+        LUMEN_CHECK_NOT_EQ( DeferredId, InvalidActorID );
+        /** INFO: No Tick — the command stays in DeferredCommands. */
+    }
+
+    /** INFO: ~FWorld runs before the free-list state is observed. Before the
+     *        fix the slot stayed owned by a never-constructed actor, leaking
+     *        one registry slot per abandoned deferred spawn. */
+    Bool bFound = false;
+    TVector<ActorID> Allocated;
+
+    for ( UInt32 Probe = 0U; Probe < 256U and not bFound; ++Probe )
+    {
+        const ActorID Probed = Internal::FActorRegistry::AllocateId();
+        LUMEN_CHECK_NOT_EQ( Probed, InvalidActorID );
+
+        if ( ActorIdSlotIndex( Probed ) == ActorIdSlotIndex( DeferredId ) )
+        {
+            /** INFO: Generation was bumped on release — a fresh occupant. */
+            LUMEN_CHECK_NOT_EQ( Probed, DeferredId );
+            bFound = true;
+        }
+        else
+        {
+            Allocated.push_back( Probed );
+        }
+    }
+
+    LUMEN_CHECK_TRUE( bFound );
+
+    /** INFO: Don't leak probe allocations into following suites. */
+    for ( const ActorID Probed : Allocated )
+    {
+        Internal::FActorRegistry::ReleaseId( Probed );
+    }
+}
+
 } // namespace Lumen
