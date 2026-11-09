@@ -86,15 +86,6 @@ namespace Internal
 
 } // namespace Internal
 
-#define LUMEN_ACTOR_BODY( ActorClassName )                                                                                       \
-                                                                                                                                 \
-public:                                                                                                                          \
-                                                                                                                                 \
-    [[nodiscard]] inline ::Lumen::USize GetTypeID() const noexcept override                                                      \
-    {                                                                                                                            \
-        return ::Lumen::Internal::TActorTypeRegistry<ActorClassName>::ID;                                                        \
-    }
-
 /**
  * @class FActorRef
  * @brief Lightweight handle to an actor.
