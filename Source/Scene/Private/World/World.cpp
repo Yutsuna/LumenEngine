@@ -133,6 +133,11 @@ void Lumen::FWorld::Tick ( const Float64 InDeltaTime )
     FSpatialRegistry::Get().Publish();
 }
 
+Lumen::Bool Lumen::FWorld::IsInParallelPhase () const noexcept
+{
+    return bInParallelPhase;
+}
+
 /**
  * Private
  */

@@ -58,10 +58,7 @@ public:
     void Tick ( Float64 InDeltaTime );
 
     /** @returns True while the parallel phase is active. */
-    [[nodiscard]] Bool IsInParallelPhase () const noexcept
-    {
-        return bInParallelPhase;
-    }
+    [[nodiscard]] Bool IsInParallelPhase () const noexcept;
 
 public:
 
