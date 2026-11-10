@@ -10,6 +10,7 @@
 
 namespace
 {
+
 Lumen::Filesystem::FPath GetTestPath ( const char *InName )
 {
     return Lumen::Filesystem::FPath( "LumenFilesystemTests" ) / Lumen::FStringView( InName );
@@ -21,7 +22,7 @@ struct FScopedTestDir
 
     explicit FScopedTestDir ( const char *InName, bool bCreate = true ) : Path( GetTestPath( InName ) )
     {
-        Lumen::Filesystem::FDirectory::Delete( Path, true ); // ignore result
+        Lumen::Filesystem::FDirectory::Delete( Path, true );
         if ( bCreate )
         {
             Lumen::Filesystem::FDirectory::CreateDirectories( Path );
@@ -33,11 +34,10 @@ struct FScopedTestDir
         Lumen::Filesystem::FDirectory::Delete( Path, true );
     }
 };
+
 } // namespace
 
-// ---------------------------------------------------------------------------
-// FDirectory::Exists
-// ---------------------------------------------------------------------------
+/** FDirectory::Exists */
 
 LUMEN_TEST( FDirectory_Exists, ReturnsFalseForMissingPath )
 {
@@ -52,9 +52,7 @@ LUMEN_TEST( FDirectory_Exists, ReturnsTrueForExistingPath )
     LUMEN_CHECK_TRUE( Lumen::Filesystem::FDirectory::Exists( Guard.Path ) );
 }
 
-// ---------------------------------------------------------------------------
-// FDirectory::Create
-// ---------------------------------------------------------------------------
+/** FDirectory::Create */
 
 LUMEN_TEST( FDirectory_Create, CreatesNewDirectory )
 {
@@ -71,9 +69,7 @@ LUMEN_TEST( FDirectory_Create, FailsWhenDirectoryAlreadyExists )
     LUMEN_CHECK_HAS_ERROR( Result );
 }
 
-// ---------------------------------------------------------------------------
-// FDirectory::CreateDirectories
-// ---------------------------------------------------------------------------
+/** FDirectory::CreateDirectories */
 
 LUMEN_TEST( FDirectory_CreateDirectories, CreatesNestedDirectories )
 {
@@ -91,9 +87,7 @@ LUMEN_TEST( FDirectory_CreateDirectories, SucceedsWhenDirectoryAlreadyExists )
     LUMEN_CHECK_HAS_VALUE( Result );
 }
 
-// ---------------------------------------------------------------------------
-// FDirectory::Delete
-// ---------------------------------------------------------------------------
+/** FDirectory::Delete */
 
 LUMEN_TEST( FDirectory_Delete, DeletesEmptyDirectory )
 {
@@ -131,9 +125,7 @@ LUMEN_TEST( FDirectory_Delete, DeletesNonEmptyDirectoryWithRecursive )
     LUMEN_CHECK_FALSE( Lumen::Filesystem::FDirectory::Exists( Guard.Path ) );
 }
 
-// ---------------------------------------------------------------------------
-// FDirectory::ForEachEntry
-// ---------------------------------------------------------------------------
+/** FDirectory::ForEachEntry */
 
 LUMEN_TEST( FDirectory_ForEachEntry, IteratesImmediateEntriesNonRecursive )
 {
@@ -223,7 +215,7 @@ LUMEN_TEST( FDirectory_ForEachEntry, StopsEarlyWhenCallbackReturnsFalse )
         Guard.Path, false, [&] ( const Lumen::Filesystem::FPath &, Lumen::Bool ) -> Lumen::Bool
     {
         ++CallCount;
-        return false; // stop after first
+        return false;
     } );
 
     LUMEN_CHECK_HAS_VALUE( Result );

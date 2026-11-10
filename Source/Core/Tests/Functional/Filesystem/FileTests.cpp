@@ -69,7 +69,7 @@ LUMEN_TEST( FFile_WriteAllText, WritesNewFile )
 
     const auto ReadResult = Lumen::Filesystem::FFile::ReadAllText( FilePath );
     LUMEN_CHECK_HAS_VALUE( ReadResult );
-    LUMEN_CHECK_EQ( ReadResult.GetValue(), Lumen::FString( "Hello, World!" ) );
+    LUMEN_CHECK_EQ( *ReadResult, Lumen::FString( "Hello, World!" ) );
 }
 
 LUMEN_TEST( FFile_WriteAllText, OverwritesExistingFile )
@@ -81,7 +81,7 @@ LUMEN_TEST( FFile_WriteAllText, OverwritesExistingFile )
     LUMEN_CHECK_HAS_VALUE( Result );
     const auto ReadResult = Lumen::Filesystem::FFile::ReadAllText( FilePath );
     LUMEN_CHECK_HAS_VALUE( ReadResult );
-    LUMEN_CHECK_EQ( ReadResult.GetValue(), Lumen::FString( "new" ) );
+    LUMEN_CHECK_EQ( *ReadResult, Lumen::FString( "new" ) );
 }
 
 LUMEN_TEST( FFile_WriteAllText, FailsWhenParentDirectoryMissing )
@@ -100,7 +100,7 @@ LUMEN_TEST( FFile_WriteAllText, WritesEmptyFile )
     LUMEN_CHECK_HAS_VALUE( Result );
     const auto SizeResult = Lumen::Filesystem::FFile::GetSize( FilePath );
     LUMEN_CHECK_HAS_VALUE( SizeResult );
-    LUMEN_CHECK_EQ( SizeResult.GetValue(), 0ULL );
+    LUMEN_CHECK_EQ( *SizeResult, 0ULL );
 }
 
 LUMEN_TEST( FFile_ReadAllText, ReadsExistingFile )
@@ -110,7 +110,7 @@ LUMEN_TEST( FFile_ReadAllText, ReadsExistingFile )
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "readme" );
     const auto Result = Lumen::Filesystem::FFile::ReadAllText( FilePath );
     LUMEN_CHECK_HAS_VALUE( Result );
-    LUMEN_CHECK_EQ( Result.GetValue(), Lumen::FString( "readme" ) );
+    LUMEN_CHECK_EQ( *Result, Lumen::FString( "readme" ) );
 }
 
 LUMEN_TEST( FFile_ReadAllText, FailsForMissingFile )
@@ -128,7 +128,7 @@ LUMEN_TEST( FFile_ReadAllText, ReturnsEmptyForEmptyFile )
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "" );
     const auto Result = Lumen::Filesystem::FFile::ReadAllText( FilePath );
     LUMEN_CHECK_HAS_VALUE( Result );
-    LUMEN_CHECK_TRUE( Result.GetValue().empty() );
+    LUMEN_CHECK_TRUE( Result->empty() );
 }
 
 /**
@@ -147,8 +147,8 @@ LUMEN_TEST( FFile_WriteAllBytes, WritesBytes )
 
     const auto ReadResult = Lumen::Filesystem::FFile::ReadAllBytes( FilePath );
     LUMEN_CHECK_HAS_VALUE( ReadResult );
-    const auto &Bytes = ReadResult.GetValue();
-    LUMEN_CHECK_EQ( Bytes.Size(), 4U );
+    const auto &Bytes = *ReadResult;
+    LUMEN_CHECK_EQ( Bytes.size(), 4U );
     LUMEN_CHECK_EQ( static_cast<Lumen::UInt32>( Bytes[0] ), 0x01U );
     LUMEN_CHECK_EQ( static_cast<Lumen::UInt32>( Bytes[1] ), 0x02U );
     LUMEN_CHECK_EQ( static_cast<Lumen::UInt32>( Bytes[2] ), 0x03U );
@@ -158,13 +158,13 @@ LUMEN_TEST( FFile_WriteAllBytes, WritesBytes )
 LUMEN_TEST( FFile_WriteAllBytes, WritesEmptyBytes )
 {
     FScopedTestDir Guard( "FFile_WriteAllBytes_Empty", true );
-    const auto FilePath = Guard.Path / "empty.bin";
-    const Lumen::TSpan<const Lumen::Byte> EmptySpan( nullptr, 0 );
-    const auto Result = Lumen::Filesystem::FFile::WriteAllBytes( FilePath, EmptySpan );
+    const auto FilePath                             = Guard.Path / "empty.bin";
+    const Lumen::TSpan<const Lumen::Byte> EmptySpan = {};
+    const auto Result                               = Lumen::Filesystem::FFile::WriteAllBytes( FilePath, EmptySpan );
     LUMEN_CHECK_HAS_VALUE( Result );
     const auto SizeResult = Lumen::Filesystem::FFile::GetSize( FilePath );
     LUMEN_CHECK_HAS_VALUE( SizeResult );
-    LUMEN_CHECK_EQ( SizeResult.GetValue(), 0ULL );
+    LUMEN_CHECK_EQ( *SizeResult, 0ULL );
 }
 
 LUMEN_TEST( FFile_ReadAllBytes, ReadsBytes )
@@ -177,8 +177,8 @@ LUMEN_TEST( FFile_ReadAllBytes, ReadsBytes )
 
     const auto Result = Lumen::Filesystem::FFile::ReadAllBytes( FilePath );
     LUMEN_CHECK_HAS_VALUE( Result );
-    const auto &Bytes = Result.GetValue();
-    LUMEN_CHECK_EQ( Bytes.Size(), 3U );
+    const auto &Bytes = *Result;
+    LUMEN_CHECK_EQ( Bytes.size(), 3U );
     LUMEN_CHECK_EQ( static_cast<Lumen::UInt32>( Bytes[0] ), 0xAAU );
     LUMEN_CHECK_EQ( static_cast<Lumen::UInt32>( Bytes[1] ), 0xBBU );
     LUMEN_CHECK_EQ( static_cast<Lumen::UInt32>( Bytes[2] ), 0xCCU );
@@ -199,7 +199,7 @@ LUMEN_TEST( FFile_ReadAllBytes, ReturnsEmptyForEmptyFile )
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "" );
     const auto Result = Lumen::Filesystem::FFile::ReadAllBytes( FilePath );
     LUMEN_CHECK_HAS_VALUE( Result );
-    LUMEN_CHECK_EQ( Result.GetValue().Size(), 0U );
+    LUMEN_CHECK_EQ( Result->size(), 0U );
 }
 
 /**
@@ -239,7 +239,7 @@ LUMEN_TEST( FFile_Copy, CopiesFile )
     LUMEN_CHECK_TRUE( Lumen::Filesystem::FFile::Exists( Dest ) );
     const auto ReadResult = Lumen::Filesystem::FFile::ReadAllText( Dest );
     LUMEN_CHECK_HAS_VALUE( ReadResult );
-    LUMEN_CHECK_EQ( ReadResult.GetValue(), Lumen::FString( "copy me" ) );
+    LUMEN_CHECK_EQ( *ReadResult, Lumen::FString( "copy me" ) );
 }
 
 LUMEN_TEST( FFile_Copy, FailsWhenDestinationExistsAndNoOverwrite )
@@ -264,7 +264,7 @@ LUMEN_TEST( FFile_Copy, OverwritesWhenDestinationExistsAndOverwriteTrue )
     LUMEN_CHECK_HAS_VALUE( Result );
     const auto ReadResult = Lumen::Filesystem::FFile::ReadAllText( Dest );
     LUMEN_CHECK_HAS_VALUE( ReadResult );
-    LUMEN_CHECK_EQ( ReadResult.GetValue(), Lumen::FString( "new content" ) );
+    LUMEN_CHECK_EQ( *ReadResult, Lumen::FString( "new content" ) );
 }
 
 LUMEN_TEST( FFile_Copy, FailsWhenSourceMissing )
@@ -292,7 +292,7 @@ LUMEN_TEST( FFile_Move, MovesFile )
     LUMEN_CHECK_TRUE( Lumen::Filesystem::FFile::Exists( Dest ) );
     const auto ReadResult = Lumen::Filesystem::FFile::ReadAllText( Dest );
     LUMEN_CHECK_HAS_VALUE( ReadResult );
-    LUMEN_CHECK_EQ( ReadResult.GetValue(), Lumen::FString( "move me" ) );
+    LUMEN_CHECK_EQ( *ReadResult, Lumen::FString( "move me" ) );
 }
 
 LUMEN_TEST( FFile_Move, FailsWhenDestinationExistsAndNoOverwrite )
@@ -320,7 +320,7 @@ LUMEN_TEST( FFile_Move, OverwritesWhenDestinationExistsAndOverwriteTrue )
     LUMEN_CHECK_FALSE( Lumen::Filesystem::FFile::Exists( Source ) );
     const auto ReadResult = Lumen::Filesystem::FFile::ReadAllText( Dest );
     LUMEN_CHECK_HAS_VALUE( ReadResult );
-    LUMEN_CHECK_EQ( ReadResult.GetValue(), Lumen::FString( "new content" ) );
+    LUMEN_CHECK_EQ( *ReadResult, Lumen::FString( "new content" ) );
 }
 
 LUMEN_TEST( FFile_Move, FailsWhenSourceMissing )
@@ -343,7 +343,7 @@ LUMEN_TEST( FFile_GetSize, ReturnsCorrectSize )
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "12345" );
     const auto Result = Lumen::Filesystem::FFile::GetSize( FilePath );
     LUMEN_CHECK_HAS_VALUE( Result );
-    LUMEN_CHECK_EQ( Result.GetValue(), 5ULL );
+    LUMEN_CHECK_EQ( *Result, 5ULL );
 }
 
 LUMEN_TEST( FFile_GetSize, FailsForMissingFile )
