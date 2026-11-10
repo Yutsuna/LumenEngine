@@ -73,7 +73,7 @@ constexpr Lumen::Bool Lumen::Algo::ForEachUntil ( TObject &&Object, TPredicate &
 
     for ( auto &&Item : Object )
     {
-        if ( Invoke( Pred, Item ) && Invoke( Callable, Item ) )
+        if ( Invoke( Pred, Item ) and Invoke( Callable, Item ) )
         {
             return true;
         }
