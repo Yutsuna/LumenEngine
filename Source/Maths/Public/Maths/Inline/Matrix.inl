@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Maths/Macros.hpp>
 #include <Maths/Matrix.hpp>
 #include <Maths/SIMD/SIMD.hpp>
 
@@ -116,7 +117,7 @@ namespace Maths
     template <typename Type, USize Rows, USize Columns>
         requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Translate ( const TVec<Type, 3> &InTranslation ) noexcept
-        requires Concepts::CSquareMatrix<4, 4>
+        requires( Rows == 4 and Columns == 4 )
     {
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
@@ -130,7 +131,7 @@ namespace Maths
     template <typename Type, USize Rows, USize Columns>
         requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::Scale ( const TVec<Type, 3> &InScale ) noexcept
-        requires Concepts::CSquareMatrix<4, 4>
+        requires( Rows == 4 and Columns == 4 )
     {
         TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
 
@@ -145,7 +146,7 @@ namespace Maths
     template <typename Type, USize Rows, USize Columns>
         requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::RotateX ( Type InAngleRadians ) noexcept
-        requires Concepts::CSquareMatrix<4, 4>
+        requires( Rows == 4 and Columns == 4 )
     {
         const Type CosAngle = std::cos( InAngleRadians );
         const Type SinAngle = std::sin( InAngleRadians );
@@ -163,7 +164,7 @@ namespace Maths
     template <typename Type, USize Rows, USize Columns>
         requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::RotateY ( Type InAngleRadians ) noexcept
-        requires Concepts::CSquareMatrix<4, 4>
+        requires( Rows == 4 and Columns == 4 )
     {
         const Type CosAngle = std::cos( InAngleRadians );
         const Type SinAngle = std::sin( InAngleRadians );
@@ -171,8 +172,8 @@ namespace Maths
         TMatrix<Type, 4, 4> Result = TMatrix<Type, 4, 4>::Identity();
 
         Result[0].Data[0] = CosAngle;
-        Result[0].Data[2] = -SinAngle;
-        Result[2].Data[0] = SinAngle;
+        Result[0].Data[2] = SinAngle;
+        Result[2].Data[0] = -SinAngle;
         Result[2].Data[2] = CosAngle;
 
         return Result;
@@ -181,7 +182,7 @@ namespace Maths
     template <typename Type, USize Rows, USize Columns>
         requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::RotateZ ( Type InAngleRadians ) noexcept
-        requires Concepts::CSquareMatrix<4, 4>
+        requires( Rows == 4 and Columns == 4 )
     {
         const Type CosAngle = std::cos( InAngleRadians );
         const Type SinAngle = std::sin( InAngleRadians );
@@ -202,7 +203,7 @@ namespace Maths
                                                                               Type InAspectRatio,
                                                                               Type InNearPlane,
                                                                               Type InFarPlane ) noexcept
-        requires Concepts::CSquareMatrix<4, 4>
+        requires( Rows == 4 and Columns == 4 )
     {
         const Type TanHalfFov = std::tan( InFieldOfViewRadians / static_cast<Type>( 2 ) );
 
@@ -221,7 +222,7 @@ namespace Maths
         requires Concepts::CMatrixDimension<Rows, Columns>
     constexpr TMatrix<Type, 4, 4>
     TMatrix<Type, Rows, Columns>::Orthographic ( Type InWidth, Type InHeight, Type InNearPlane, Type InFarPlane ) noexcept
-        requires Concepts::CSquareMatrix<4, 4>
+        requires( Rows == 4 and Columns == 4 )
     {
         TMatrix<Type, 4, 4> Result( static_cast<Type>( 0 ) );
 
@@ -240,7 +241,7 @@ namespace Maths
     constexpr TMatrix<Type, 4, 4> TMatrix<Type, Rows, Columns>::LookAt ( const TVec<Type, 3> &InEye,
                                                                          const TVec<Type, 3> &InTarget,
                                                                          const TVec<Type, 3> &InUp ) noexcept
-        requires Concepts::CSquareMatrix<4, 4>
+        requires( Rows == 4 and Columns == 4 )
     {
         const TVec<Type, 3> F = ( InTarget - InEye ).Normalize();
         const TVec<Type, 3> R = InUp.Cross( F ).Normalize();
@@ -273,12 +274,10 @@ namespace Maths
     {
         TMatrix<Type, Rows, Columns> Result;
 
-        if constexpr ( Concepts::CFloatingPoint<Type> and Concepts::CSquareMatrix<4, 4> )
+        if constexpr ( ::Lumen::Concepts::CSameAs<Type, Float32> and Rows == 4 and Inner == 4 and Columns == 4 )
         {
             SIMD::MatrixMul4x4( reinterpret_cast<const Float32 *>( &Left ), reinterpret_cast<const Float32 *>( &Right ),
                                 reinterpret_cast<Float32 *>( &Result ) );
-
-            return Result;
         }
         else
         {
@@ -295,8 +294,8 @@ namespace Maths
                     Result[ColIndex].Data[RowIndex] = Sum;
                 }
             }
-            return Result;
         }
+
         return Result;
     }
 
@@ -326,14 +325,11 @@ namespace Maths
     {
         TMatrix<Type, Rows, Columns> Result;
 
-        if constexpr ( Concepts::CFloatingPoint<Type> and Concepts::CSquareMatrix<4, 4> )
+        if constexpr ( ::Lumen::Concepts::CSameAs<Type, Float32> and Rows == 4 and Columns == 4 )
         {
             SIMD::MatrixScalarMul4x4( reinterpret_cast<const Float32 *>( &Left ), static_cast<Float32>( Scalar ),
                                       reinterpret_cast<Float32 *>( &Result ) );
-
-            return Result;
         }
-
         else
         {
             for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
@@ -344,7 +340,73 @@ namespace Maths
                 }
             }
         }
+
         return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator+( const TMatrix<Type, Rows, Columns> &Left,
+                                                      const TMatrix<Type, Rows, Columns> &Right ) noexcept
+    {
+        TMatrix<Type, Rows, Columns> Result;
+
+        for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
+        {
+            for ( USize RowIndex = 0; RowIndex < Rows; ++RowIndex )
+            {
+                Result[ColIndex].Data[RowIndex] = Left[ColIndex].Data[RowIndex] + Right[ColIndex].Data[RowIndex];
+            }
+        }
+
+        return Result;
+    }
+
+    template <typename Type, USize Rows, USize Columns>
+    constexpr TMatrix<Type, Rows, Columns> operator+( const TMatrix<Type, Rows, Columns> &Left, const Type Scalar ) noexcept
+    {
+        TMatrix<Type, Rows, Columns> Result;
+
+        for ( USize ColIndex = 0; ColIndex < Columns; ++ColIndex )
+        {
+            for ( USize RowIndex = 0; RowIndex < Rows; ++RowIndex )
+            {
+                Result[ColIndex].Data[RowIndex] = Left[ColIndex].Data[RowIndex] + Scalar;
+            }
+        }
+
+        return Result;
+    }
+
+    /**
+     * Helper
+     */
+
+    template <typename Type, USize TRow, USize TColumn>
+    Bool
+    IsEqual ( const TMatrix<Type, TRow, TColumn> &MatA, const TMatrix<Type, TRow, TColumn> &MatB, const Type InEpsilon ) noexcept
+    {
+        for ( USize Col = 0; Col < TColumn; ++Col )
+        {
+            for ( USize Row = 0; Row < TRow; ++Row )
+            {
+                if constexpr ( Concepts::CFloatingPoint<Type> )
+                {
+                    if ( not IsEqual( MatA[Col].Data[Row], MatB[Col].Data[Row], InEpsilon ) )
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    if ( MatA[Col].Data[Row] != MatB[Col].Data[Row] )
+                    {
+                        return false;
+                    }
+                }
+            }
+        }
+
+        return true;
     }
 
 } // namespace Maths
