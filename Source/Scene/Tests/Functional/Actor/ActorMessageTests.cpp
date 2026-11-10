@@ -368,7 +368,7 @@ LUMEN_TEST( FMessage_Make, EngineTransformPayloadRoundTripsExactly )
 {
     constexpr UInt32 TransformUpdateType = static_cast<UInt32>( EEngineMessage::TransformUpdate );
 
-    const Maths::FMatrix4x4f SourceTransform = Maths::FMatrix4x4f::Translate( Maths::FVec3f{ 1.0F, 2.0F, 3.0F } );
+    const Maths::FMat4x4f SourceTransform = Maths::FMat4x4f::Translate( Maths::FVec3f{ 1.0F, 2.0F, 3.0F } );
     const FTransformPayload SourcePayload{ .NewTransform = SourceTransform };
 
     const FMessage TransformMessage  = FMessage::Make( TransformUpdateType, 55ULL, SourcePayload );

@@ -55,9 +55,9 @@ namespace
         }
     };
 
-    [[nodiscard]] Maths::FMatrix4x4f MakeTranslation ( const Float32 InX, const Float32 InY, const Float32 InZ ) noexcept
+    [[nodiscard]] Maths::FMat4x4f MakeTranslation ( const Float32 InX, const Float32 InY, const Float32 InZ ) noexcept
     {
-        return Maths::FMatrix4x4f::Translate( Maths::FVec3f{ InX, InY, InZ } );
+        return Maths::FMat4x4f::Translate( Maths::FVec3f{ InX, InY, InZ } );
     }
 
 } // namespace
@@ -98,7 +98,7 @@ LUMEN_TEST( FSpatialRegistry_Register, PublishesEntityWithInitialTransform )
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 1ULL );
     LUMEN_CHECK_EQ( Snapshot.EntityIDs[0], EntityId );
-    LUMEN_CHECK_TRUE( Snapshot.Transforms[0] == Maths::FMatrix4x4f::Identity() );
+    LUMEN_CHECK_TRUE( Snapshot.Transforms[0] == Maths::FMat4x4f::Identity() );
 
     Session.Cleanup();
 }
@@ -166,7 +166,7 @@ LUMEN_TEST( FSpatialRegistry_UpdateTransform, RoundTripsPublishedValue )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const Maths::FMatrix4x4f TargetTransform = MakeTranslation( 1.0F, 2.0F, 3.0F );
+    const Maths::FMat4x4f TargetTransform = MakeTranslation( 1.0F, 2.0F, 3.0F );
 
     Session.Registry.UpdateTransform( EntityId, TargetTransform );
     Session.Registry.Publish();
@@ -199,7 +199,7 @@ LUMEN_TEST( FSpatialRegistry_UpdateTransform, UnknownEntityIsHarmless )
     const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 1ULL );
-    LUMEN_CHECK_TRUE( Snapshot.Transforms[0] == Maths::FMatrix4x4f::Identity() );
+    LUMEN_CHECK_TRUE( Snapshot.Transforms[0] == Maths::FMat4x4f::Identity() );
 
     Session.Cleanup();
 }
@@ -225,8 +225,8 @@ LUMEN_TEST( FSpatialRegistry_Unregister, ShiftsTailIntoVacantIndex )
     Session.TrackRegister( MidId );
     Session.TrackRegister( TailId );
 
-    const Maths::FMatrix4x4f MidTransform  = MakeTranslation( 1.0F, 0.0F, 0.0F );
-    const Maths::FMatrix4x4f TailTransform = MakeTranslation( 0.0F, 2.0F, 0.0F );
+    const Maths::FMat4x4f MidTransform  = MakeTranslation( 1.0F, 0.0F, 0.0F );
+    const Maths::FMat4x4f TailTransform = MakeTranslation( 0.0F, 2.0F, 0.0F );
 
     Session.Registry.UpdateTransform( MidId, MidTransform );
     Session.Registry.UpdateTransform( TailId, TailTransform );
@@ -303,13 +303,13 @@ LUMEN_TEST( FSpatialRegistry_Snapshot, PublishWithoutSwapKeepsOldSnapshot )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const Maths::FMatrix4x4f TargetTransform = MakeTranslation( 4.0F, 5.0F, 6.0F );
+    const Maths::FMat4x4f TargetTransform = MakeTranslation( 4.0F, 5.0F, 6.0F );
 
     Session.Registry.UpdateTransform( EntityId, TargetTransform );
     Session.Registry.Publish();
 
     /** INFO: No reader swap happened, so the old identity must still be visible. */
-    LUMEN_CHECK_TRUE( Session.Registry.GetReadSnapshot().Transforms[0] == Maths::FMatrix4x4f::Identity() );
+    LUMEN_CHECK_TRUE( Session.Registry.GetReadSnapshot().Transforms[0] == Maths::FMat4x4f::Identity() );
 
     Session.Registry.SwapReadBuffers();
 
@@ -418,7 +418,7 @@ LUMEN_TEST( FSpatialRegistry_Threading, UpdatesAndPublishesConcurrently )
 
     LUMEN_CHECK_EQ( ObservedSum, ExpectedSum );
 
-    const Maths::FMatrix4x4f ExpectedTransform = MakeTranslation( FinalOffset, FinalOffset, FinalOffset );
+    const Maths::FMat4x4f ExpectedTransform = MakeTranslation( FinalOffset, FinalOffset, FinalOffset );
 
     for ( ActorID EntityId : EntityIds )
     {
@@ -454,7 +454,7 @@ LUMEN_TEST( FSpatialRegistry_UpdateTransform, ConcurrentSameEntityWritesSerializ
     constexpr UInt32 ThreadCount     = 4U;
     constexpr UInt32 WritesPerThread = 500U;
 
-    const Maths::FMatrix4x4f ThreadTransforms[ThreadCount] = {
+    const Maths::FMat4x4f ThreadTransforms[ThreadCount] = {
         MakeTranslation( 1.0F, 0.0F, 0.0F ),
         MakeTranslation( 0.0F, 2.0F, 0.0F ),
         MakeTranslation( 0.0F, 0.0F, 3.0F ),
