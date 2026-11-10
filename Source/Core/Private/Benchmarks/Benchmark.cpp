@@ -7,9 +7,9 @@
 
 #include <Benchmarks/BenchmarkReporter.hpp>
 
+#include <Algo/Sort.hpp>
 #include <HAL/PlatformTime.hpp>
 
-#include <algorithm>
 #include <cmath>
 #include <exception>
 #include <format>
@@ -213,7 +213,7 @@ namespace Benchmarks
             return Stats;
         }
 
-        std::ranges::sort( Samples );
+        Algo::Sort( Samples );
 
         const USize Count = Samples.size();
         Stats.Min         = Samples.front();
@@ -296,24 +296,24 @@ namespace Benchmarks
         }
 
         // Static initialization order across translation units is unspecified: sort for a deterministic report.
-        std::ranges::stable_sort( SelectedBenchmarks, [] ( const FBenchmarkMetadata *A, const FBenchmarkMetadata *B )
+        Lumen::Algo::StableSort( SelectedBenchmarks, [] ( const FBenchmarkMetadata *MetaA, const FBenchmarkMetadata *MetaB )
         {
-            if ( A->SuiteName != B->SuiteName )
+            if ( MetaA->SuiteName != MetaB->SuiteName )
             {
-                return A->SuiteName < B->SuiteName;
+                return MetaA->SuiteName < MetaB->SuiteName;
             }
-            if ( A->BenchmarkName != B->BenchmarkName )
+            if ( MetaA->BenchmarkName != MetaB->BenchmarkName )
             {
-                return A->BenchmarkName < B->BenchmarkName;
+                return MetaA->BenchmarkName < MetaB->BenchmarkName;
             }
 
-            const FStringView FileA = A->DeclaredLocation.file_name();
-            const FStringView FileB = B->DeclaredLocation.file_name();
+            const FStringView FileA = MetaA->DeclaredLocation.file_name();
+            const FStringView FileB = MetaB->DeclaredLocation.file_name();
             if ( FileA != FileB )
             {
                 return FileA < FileB;
             }
-            return A->DeclaredLocation.line() < B->DeclaredLocation.line();
+            return MetaA->DeclaredLocation.line() < MetaB->DeclaredLocation.line();
         } );
 
         TVector<FPlannedRun> Plan;

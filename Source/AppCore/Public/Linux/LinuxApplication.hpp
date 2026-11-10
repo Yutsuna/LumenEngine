@@ -14,6 +14,7 @@
     #include <Generic/GenericApplication.hpp>
     #include <Linux/LinuxBackend.hpp>
 
+    #include <Templates/Optional.hpp>
     #include <Templates/Vector.hpp>
 
     #include <SDL3/SDL_events.h>
@@ -57,7 +58,7 @@ public:
 private:
 
     /** @brief helper function to find a window by its SDL Window ID */
-    [[nodiscard]] TSharedPtr<FLinuxWindow> FindWindowByID ( SDL_WindowID InWindowID ) const noexcept;
+    [[nodiscard]] TOptional<TSharedPtr<FLinuxWindow>> FindWindowByID ( SDL_WindowID InWindowID ) const noexcept;
 
 private:
 

@@ -22,6 +22,7 @@
 | `Templates/Function.hpp` | `TFunction`/`TFunc` type-erased callable | callbacks, delegates |
 | `Templates/Hash.hpp` | `FHash` | hashing for containers/ids |
 | `Templates/AtomicBitset.hpp` | atomic bitset | concurrent flag sets |
+| `Algo/Sort.hpp` (+ `IntroSort.hpp`, `QuickSort.hpp`, `HeapSort.hpp`, `InsertionSort.hpp`) | `Algo::Sort`, `Algo::IntroSort` (ranges); `Algo::QuickSort`, `Algo::HeapSort`, `Algo::InsertionSort` (iterator pairs) | sorting without `std::sort`; prefer `Sort`/`IntroSort` (O(n log n) worst case), untrusted input only via introsort |
 | `String/String.hpp`, `StringView.hpp`, `StringUtils.hpp` | `FString`, `FStringView` | all text handling |
 | `Memory/UniquePtr.hpp`, `SharedPtr.hpp`, `Span.hpp` | ownership smart pointers, `TSpan` | memory ownership (no raw `new`) |
 | `Thread/SPMCQueue.hpp` | wait-free MPSC queue | actor mailboxes, message passing |

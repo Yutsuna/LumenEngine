@@ -98,6 +98,34 @@ public:
         }
     }
 
+    /** @brief Converting copy constructor (implicit if ValueType is implicitly constructible from Other) */
+    template <class Other>
+        requires( not std::same_as<Other, ValueType> ) && std::constructible_from<ValueType, const Other &>
+    constexpr explicit( not std::convertible_to<const Other &, ValueType> )
+        TOptional( const TOptional<Other> &InOptional ) noexcept( std::is_nothrow_constructible_v<ValueType, const Other &> )
+        : Dummy( 0 )
+    {
+        if ( InOptional.HasValue() )
+        {
+            std::construct_at( std::addressof( Value ), *InOptional );
+            bHasValue = true;
+        }
+    }
+
+    /** @brief Converting move constructor (implicit if ValueType is implicitly constructible from Other) */
+    template <class Other>
+        requires( not std::same_as<Other, ValueType> ) && std::constructible_from<ValueType, Other &&>
+    constexpr explicit( not std::convertible_to<Other &&, ValueType> )
+        TOptional( TOptional<Other> &&InOptional ) noexcept( std::is_nothrow_constructible_v<ValueType, Other &&> )
+        : Dummy( 0 )
+    {
+        if ( InOptional.HasValue() )
+        {
+            std::construct_at( std::addressof( Value ), *std::move( InOptional ) );
+            bHasValue = true;
+        }
+    }
+
     /** @brief Assignment operator deleted */
     TOptional &operator=( const TOptional & ) = delete;
 

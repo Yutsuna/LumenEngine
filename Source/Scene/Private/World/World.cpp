@@ -6,12 +6,11 @@
 #include <World/World.hpp>
 #include <World/WorldSpatialRegistry.hpp>
 
+#include <Algo/Sort.hpp>
+
 #include <Actor/Actor.hpp>
 
-#include <algorithm>
-#include <cassert>
 #include <execution>
-#include <utility>
 
 /**
  * Private
@@ -95,7 +94,7 @@ void Lumen::FWorld::Tick ( const Float64 InDeltaTime )
     /** NOTE: Re-sort only after a structural change. */
     if ( bNeedsSorting ) [[unlikely]]
     {
-        std::ranges::sort( ActiveActors, &SortActiveActors );
+        Lumen::Algo::Sort( ActiveActors, &SortActiveActors );
         bNeedsSorting = false;
     }
 
