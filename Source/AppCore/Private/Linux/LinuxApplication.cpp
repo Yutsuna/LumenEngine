@@ -3,6 +3,7 @@
  * @brief Implementation of the FLinuxApplication class for Linux-specific application management.
  */
 
+#include "Templates/Optional.hpp"
 #include <Linux/LinuxApplication.hpp>
 
 #if defined( LUMEN_PLATFORM_LINUX )
@@ -17,6 +18,8 @@
 
     #include <Logging/Logger.hpp>
     #include <Logging/LoggingCategory.hpp>
+
+    #include <Algo/Find.hpp>
 
     #include <SDL3/SDL.h>
     #include <SDL3/SDL_events.h>
@@ -140,20 +143,23 @@ namespace
 
 void Lumen::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent ) noexcept
 {
-    TSharedPtr<FLinuxWindow> CurrentWindow = FindWindowByID( InEvent.window.windowID );
+    /** INFO: Quit is application-wide, it carries no window ID. */
+    if ( InEvent.type == SDL_EVENT_QUIT )
+    {
+        SendQuitEvent( MessageHandler );
+        return;
+    }
 
-    if ( not CurrentWindow.IsValid() )
+    /** INFO: Every other event handled here is tied to a window we own, ignore the rest. */
+    const TOptional<TSharedPtr<FLinuxWindow>> CurrentWindow = FindWindowByID( InEvent.window.windowID );
+
+    if ( not CurrentWindow.HasValue() )
     {
         return;
     }
 
     switch ( InEvent.type )
     {
-    case SDL_EVENT_QUIT:
-    {
-        SendQuitEvent( MessageHandler );
-        break;
-    }
     case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
     {
         SendWindowCloseRequestedEvent( MessageHandler );
@@ -189,16 +195,13 @@ void Lumen::FLinuxApplication::PumpMessages ( const Float64 LUMEN_UNUSED DeltaTi
     FLinuxBackend::PumpSDLMessagesQueue();
 }
 
-Lumen::TSharedPtr<Lumen::FLinuxWindow> Lumen::FLinuxApplication::FindWindowByID ( const SDL_WindowID InWindowID ) const noexcept
+Lumen::TOptional<Lumen::TSharedPtr<Lumen::FLinuxWindow>>
+Lumen::FLinuxApplication::FindWindowByID ( const SDL_WindowID InWindowID ) const noexcept
 {
-    for ( const TSharedRef<FLinuxWindow> &Window : Windows )
+    return Algo::FindIfOrNone( Windows, [&] ( const TSharedRef<FLinuxWindow> &Window ) noexcept -> Bool
     {
-        if ( Window->GetOSWindowID() == InWindowID )
-        {
-            return Window;
-        }
-    }
-    return nullptr;
+        return Window->GetOSWindowID() == InWindowID;
+    } );
 }
 
 #endif
