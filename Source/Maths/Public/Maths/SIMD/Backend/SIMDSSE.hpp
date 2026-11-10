@@ -61,7 +61,7 @@ namespace Maths
          * @param Scalar The scalar value to multiply by.
          * @param OutResult A pointer to the output 4x4 matrix (16 Float32 values, 16-byte aligned).
          */
-        void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept;
+        MATHS_EXPORT void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept;
 
     } // namespace SIMD
 
