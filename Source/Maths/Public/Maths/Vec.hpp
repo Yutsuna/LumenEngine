@@ -8,9 +8,9 @@
 #include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 
-#include <MathsExport.hpp>
+#include <Concepts/ConvertibleTo.hpp>
 
-#include <type_traits>
+#include <MathsExport.hpp>
 
 namespace Lumen
 {
@@ -23,7 +23,18 @@ namespace Maths
 
         template <typename Type, USize Dimension> struct TVecData
         {
-            Type Data[Dimension] = {};
+            Type Data[Dimension];
+
+            constexpr TVecData () noexcept : Data{}
+            {
+                /* */
+            }
+
+            template <typename... TArgs>
+            constexpr explicit TVecData( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
+            {
+                /* */
+            }
         };
 
 #ifdef LUMEN_COMPILER_CLANG
@@ -58,8 +69,19 @@ namespace Maths
                 {
                     Type Width, Height;
                 };
-                Type Data[2] = {};
+                Type Data[2];
             };
+
+            constexpr TVecData () noexcept : Data{}
+            {
+                /* */
+            }
+
+            template <typename... TArgs>
+            constexpr explicit TVecData( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
+            {
+                /* */
+            }
         };
 
         template <typename Type> struct TVecData<Type, 3>
@@ -78,8 +100,19 @@ namespace Maths
                 {
                     Type S, T, P;
                 };
-                Type Data[3] = {};
+                Type Data[3];
             };
+
+            constexpr TVecData () noexcept : Data{}
+            {
+                /* */
+            }
+
+            template <typename... TArgs>
+            constexpr explicit TVecData( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
+            {
+                /* */
+            }
         };
 
         template <typename Type> struct TVecData<Type, 4>
@@ -98,8 +131,19 @@ namespace Maths
                 {
                     Type S, T, P, Q;
                 };
-                Type Data[4] = {};
+                Type Data[4];
             };
+
+            constexpr TVecData () noexcept : Data{}
+            {
+                /* */
+            }
+
+            template <typename... TArgs>
+            constexpr explicit TVecData( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
+            {
+                /* */
+            }
         };
 
 #ifdef __clang__
@@ -119,7 +163,7 @@ namespace Maths
         requires CVecDimension<Type, Dimension>
     struct MATHS_EXPORT TVec final : Internal::TVecData<Type, Dimension>
     {
-        constexpr TVec () noexcept = default;
+        constexpr TVec () noexcept;
 
         /**
          * @brief Construct a Vec with all components set to the same value
@@ -145,9 +189,9 @@ namespace Maths
          */
         template <typename OtherType> constexpr explicit TVec( const TVec<OtherType, Dimension> &Other ) noexcept;
 
-        template <typename... Arguments>
-            requires( sizeof...( Arguments ) == Dimension and ( std::is_convertible_v<Arguments, Type> and ... ) )
-        constexpr TVec( Arguments &&...Args ) noexcept;
+        template <typename... TArgs>
+            requires( sizeof...( TArgs ) == Dimension and ( Lumen::Concepts::CConvertibleTo<TArgs, Type> and ... ) )
+        constexpr TVec( TArgs &&...Args ) noexcept;
 
         /** Operators */
 

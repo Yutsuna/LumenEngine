@@ -11,6 +11,14 @@ namespace Lumen
 namespace Maths
 {
 
+    template <typename Type, USize Dimension>
+        requires CVecDimension<Type, Dimension>
+
+    constexpr TVec<Type, Dimension>::TVec() noexcept : Internal::TVecData<Type, Dimension>{}
+    {
+        /* */
+    }
+
     /**
      * @brief Construct a Vec by converting from another Vec of a different type but the same dimension
 
@@ -57,11 +65,11 @@ namespace Maths
     template <typename Type, USize Dimension>
         requires CVecDimension<Type, Dimension>
 
-    template <typename... Arguments>
-        requires( sizeof...( Arguments ) == Dimension and ( std::is_convertible_v<Arguments, Type> && ... ) )
+    template <typename... TArgs>
+        requires( sizeof...( TArgs ) == Dimension and ( Lumen::Concepts::CConvertibleTo<TArgs, Type> && ... ) )
 
-    constexpr TVec<Type, Dimension>::TVec( Arguments &&...Args ) noexcept
-        : Internal::TVecData<Type, Dimension>{ { static_cast<Type>( Args )... } }
+    constexpr TVec<Type, Dimension>::TVec( TArgs &&...Args ) noexcept
+        : Internal::TVecData<Type, Dimension>{ static_cast<Type>( Args )... }
     {
         /** Empty */
     }
@@ -178,12 +186,26 @@ namespace Maths
     constexpr TVec<Type, Dimension> TVec<Type, Dimension>::operator/( Type Scalar ) const noexcept
     {
         [[assume( Scalar != static_cast<Type>( 0 ) )]];
+
         TVec Result;
-        const Type InvScalar = static_cast<Type>( 1 ) / Scalar;
-        for ( USize Index = 0; Index < Dimension; ++Index )
+
+        if constexpr ( std::is_integral_v<Type> )
         {
-            Result.Data[Index] = this->Data[Index] * InvScalar;
+            for ( USize Index = 0; Index < Dimension; ++Index )
+            {
+                Result.Data[Index] = this->Data[Index] / Scalar;
+            }
         }
+        else
+        {
+            const Type InvScalar = static_cast<Type>( 1 ) / Scalar;
+
+            for ( USize Index = 0; Index < Dimension; ++Index )
+            {
+                Result.Data[Index] = this->Data[Index] * InvScalar;
+            }
+        }
+
         return Result;
     }
 
@@ -260,8 +282,9 @@ namespace Maths
     constexpr TVec<Type, Dimension> TVec<Type, Dimension>::Cross ( const TVec &Other ) const noexcept
         requires( Dimension == 3 )
     {
-        return TVec( ( this->Y * Other.Z ) - ( this->Z * Other.Y ), ( this->Z * Other.X ) - ( this->X * Other.Z ),
-                     ( this->X * Other.Y ) - ( this->Y * Other.X ) );
+        return TVec( ( this->Data[1] * Other.Data[2] ) - ( this->Data[2] * Other.Data[1] ),
+                     ( this->Data[2] * Other.Data[0] ) - ( this->Data[0] * Other.Data[2] ),
+                     ( this->Data[0] * Other.Data[1] ) - ( this->Data[1] * Other.Data[0] ) );
     }
 
     template <typename Type, USize Dimension>
@@ -275,7 +298,7 @@ namespace Maths
         requires CVecDimension<Type, Dimension>
     constexpr Type TVec<Type, Dimension>::Length () const noexcept
     {
-        return std::sqrt( this->LengthSquared() );
+        return static_cast<Type>( std::sqrt( static_cast<Float64>( this->LengthSquared() ) ) );
     }
 
     template <typename Type, USize Dimension>
@@ -290,11 +313,12 @@ namespace Maths
         return *this;
     }
 
-    template <typename Type> constexpr Lumen::Maths::TVec<Type, 4> NormalizePlane ( const TVec<Type, 4> &InPlane ) noexcept
+    template <typename Type> constexpr TVec<Type, 4> NormalizePlane ( const TVec<Type, 4> &InPlane ) noexcept
     {
-        const Type MagSq = ( InPlane.X * InPlane.X ) + ( InPlane.Y * InPlane.Y ) + ( InPlane.Z * InPlane.Z );
+        const Type MagSq =
+            ( InPlane.Data[0] * InPlane.Data[0] ) + ( InPlane.Data[1] * InPlane.Data[1] ) + ( InPlane.Data[2] * InPlane.Data[2] );
 
-        if ( MagSq > Lumen::Maths::Epsilon<Type> * Lumen::Maths::Epsilon<Type> )
+        if ( MagSq > Epsilon<Type> * Epsilon<Type> )
         {
             const Type InvMag = Type{ 1 } / std::sqrt( MagSq );
             return InPlane * InvMag;
