@@ -8,6 +8,8 @@
 #include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 
+#include <Algo/RangeTraits.hpp>
+
 #include <Concepts/ConvertibleTo.hpp>
 #include <Templates/Invoke.hpp>
 
@@ -22,11 +24,11 @@ namespace Algo
      *
      * @param Object The range to iterate over.
      * @param Predicate The predicate to satisfy.
-     * @param Func The function to apply to each element.
+     * @param Func The function to apply to each element that satisfies Predicate.
      */
     template <typename TObject, typename TPredicate, typename TFunc>
-        requires( Concepts::CConvertibleTo<TInvokeResultT<TFunc, TObject &>, Bool> )
-    LUMEN_FORCE_INLINE void ForEach ( TObject &&Object, TPredicate &&Predicate, TFunc &&Func );
+        requires( Concepts::CConvertibleTo<TInvokeResultT<TPredicate, Internal::TRangeReferenceT<TObject>>, Bool> )
+    LUMEN_FORCE_INLINE constexpr void ForEach ( TObject &&Object, TPredicate &&Predicate, TFunc &&Func );
 
     /**
      * @brief Applies a function to each element in a range.
@@ -34,30 +36,32 @@ namespace Algo
      * @param Object The range to iterate over.
      * @param Func The function to apply to each element.
      */
-    template <typename TObject, typename TFunc> LUMEN_FORCE_INLINE void ForEach ( TObject &&Object, TFunc &&Func );
+    template <typename TObject, typename TFunc> LUMEN_FORCE_INLINE constexpr void ForEach ( TObject &&Object, TFunc &&Func );
 
     /**
-     * @brief Applies a function to each element until the function returns true.
+     * @brief Iterates until Func returns true and returns the matching element.
      *
      * @param Object The range to iterate over.
-     * @param Func The function to apply to each element.
-     * @return True if the loop was stopped early, false if the range was exhausted.
+     * @param Func The predicate selecting the element to stop on.
+     * @return Pointer to the first element for which Func returned true,
+     *         or nullptr if the range was exhausted.
      */
     template <typename TObject, typename TFunc>
-        requires( Concepts::CConvertibleTo<TInvokeResultT<TFunc, TObject &>, Bool> )
-    [[nodiscard]] LUMEN_FORCE_INLINE Bool ForEachUntil ( TObject &&Object, TFunc &&Func );
+        requires( Concepts::CConvertibleTo<TInvokeResultT<TFunc, Internal::TRangeReferenceT<TObject>>, Bool> )
+    LUMEN_FORCE_INLINE constexpr Internal::TRangeElementPtr<TObject> ForEachUntil ( TObject &&Object, TFunc &&Func );
 
     /**
-     * @brief Applies a function to each element satisfying a predicate until the function returns true.
+     * @brief Applies Func to each element satisfying Predicate, stopping early.
      *
      * @param Object The range to iterate over.
      * @param Predicate The predicate to apply to each element.
-     * @param Func The function to apply to each element.
+     * @param Func The function to apply to each element satisfying Predicate.
      * @return True if the loop was stopped early, false if the range was exhausted.
      */
     template <typename TObject, typename TPredicate, typename TFunc>
-        requires( Concepts::CConvertibleTo<TInvokeResultT<TFunc, TObject &>, Bool> )
-    [[nodiscard]] LUMEN_FORCE_INLINE Bool ForEachUntil ( TObject &&Object, TPredicate &&Predicate, TFunc &&Func );
+        requires( Concepts::CConvertibleTo<TInvokeResultT<TPredicate, Internal::TRangeReferenceT<TObject>>, Bool> &&
+                  Concepts::CConvertibleTo<TInvokeResultT<TFunc, Internal::TRangeReferenceT<TObject>>, Bool> )
+    LUMEN_FORCE_INLINE constexpr Bool ForEachUntil ( TObject &&Object, TPredicate &&Predicate, TFunc &&Func );
 
 } // namespace Algo
 

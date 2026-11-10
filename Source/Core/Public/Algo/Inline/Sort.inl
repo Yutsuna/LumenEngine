@@ -5,9 +5,9 @@
 
 #pragma once
 
-#include <Algo/Sort.hpp>
 #include <Algo/IntroSort.hpp>
 #include <Algo/MergeSort.hpp>
+#include <Algo/Sort.hpp>
 
 #include <functional>
 #include <utility>

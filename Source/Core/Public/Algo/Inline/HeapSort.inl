@@ -7,10 +7,7 @@
 
 #include <Algo/HeapSort.hpp>
 
-#include <functional>
-#include <iterator>
-#include <ranges>
-#include <utility>
+#include <Templates/Invoke.hpp>
 
 /**
  * Public
@@ -85,7 +82,7 @@ void Lumen::Algo::Internal::SiftDown ( TIterator InFirst,
     while ( Child < ( InCount - 1 ) / 2 )
     {
         Child = 2 * ( Child + 1 );
-        if ( InPredicate( *( InFirst + Child ), *( InFirst + ( Child - 1 ) ) ) )
+        if ( Invoke( InPredicate, *( InFirst + Child ), *( InFirst + ( Child - 1 ) ) ) )
         {
             --Child;
         }
@@ -104,7 +101,7 @@ void Lumen::Algo::Internal::SiftDown ( TIterator InFirst,
 
     /** INFO: Sift InValue back up to its place. */
     FDifference Parent = ( InHole - 1 ) / 2;
-    while ( InHole > Top and InPredicate( *( InFirst + Parent ), InValue ) )
+    while ( InHole > Top and Invoke( InPredicate, *( InFirst + Parent ), InValue ) )
     {
         *( InFirst + InHole ) = std::move( *( InFirst + Parent ) );
         InHole                = Parent;

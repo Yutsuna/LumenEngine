@@ -6,12 +6,7 @@
 #pragma once
 
 #include <Algo/InsertionSort.hpp>
-
-#include <algorithm>
-#include <functional>
-#include <iterator>
-#include <ranges>
-#include <utility>
+#include <Templates/Invoke.hpp>
 
 /**
  * Public
@@ -70,7 +65,7 @@ void Lumen::Algo::Internal::UnguardedLinearInsert ( TIterator InLast, TPredicate
     FValue Value       = std::move( *InLast );
     TIterator Previous = InLast - 1;
 
-    while ( InPredicate( Value, *Previous ) )
+    while ( Invoke( InPredicate, Value, *Previous ) )
     {
         *InLast = std::move( *Previous );
         InLast  = Previous;

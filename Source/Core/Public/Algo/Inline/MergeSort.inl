@@ -8,6 +8,7 @@
 #include <Algo/InsertionSort.hpp>
 #include <Algo/MergeSort.hpp>
 
+#include <Templates/Invoke.hpp>
 #include <Templates/Vector.hpp>
 
 /**
@@ -53,9 +54,9 @@ void Lumen::Algo::MergeSort ( TRangeType &&InRange, TPredicate InPredicate ) noe
 
 template <typename TIterator, typename TPredicate>
 void Lumen::Algo::Internal::MergeSortRecurse ( TIterator InFirst,
-                                                TIterator InLast,
-                                                std::iter_value_t<TIterator> *InBuffer,
-                                                TPredicate &InPredicate ) noexcept
+                                               TIterator InLast,
+                                               std::iter_value_t<TIterator> *InBuffer,
+                                               TPredicate &InPredicate ) noexcept
 {
     using FDifference               = std::iter_difference_t<TIterator>;
     constexpr FDifference Threshold = static_cast<FDifference>( InsertionSortThreshold );
@@ -73,7 +74,7 @@ void Lumen::Algo::Internal::MergeSortRecurse ( TIterator InFirst,
     MergeSortRecurse( Middle, InLast, InBuffer, InPredicate );
 
     /** INFO: Skip the merge when the two halves are already in order. */
-    if ( not InPredicate( *Middle, *( Middle - 1 ) ) )
+    if ( not Invoke( InPredicate, *Middle, *( Middle - 1 ) ) )
     {
         return;
     }
@@ -97,7 +98,7 @@ void Lumen::Algo::Internal::MergeRuns ( TIterator InFirst,
     /** INFO: Stable merge: on equal keys, the left run wins. */
     while ( Left != InMiddle and Right != InLast )
     {
-        if ( InPredicate( *Right, *Left ) )
+        if ( Invoke( InPredicate, *Right, *Left ) )
         {
             *Out = std::move( *Right );
             ++Right;
