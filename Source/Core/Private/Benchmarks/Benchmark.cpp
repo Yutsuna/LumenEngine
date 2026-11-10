@@ -7,8 +7,8 @@
 
 #include <Benchmarks/BenchmarkReporter.hpp>
 
-#include <HAL/PlatformTime.hpp>
 #include <Algo/Sort.hpp>
+#include <HAL/PlatformTime.hpp>
 
 #include <cmath>
 #include <exception>
@@ -213,7 +213,7 @@ namespace Benchmarks
             return Stats;
         }
 
-        Algo::Sort(Samples);
+        Algo::Sort( Samples );
 
         const USize Count = Samples.size();
         Stats.Min         = Samples.front();

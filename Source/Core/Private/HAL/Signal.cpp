@@ -3,6 +3,7 @@
  * @brief Implementation of signal handling functions.
  */
 
+#include <Algo/ForEach.hpp>
 #include <HAL/Signal.hpp>
 
 Lumen::TMap<Lumen::ESystemSignal::Type, Lumen::TVector<Lumen::FSignalHandlerSignature>> Lumen::FSignal::SignalListeners;
@@ -54,9 +55,9 @@ void Lumen::FSignal::HandleOSSignal ( const Int32 InSignal )
     if ( const ESystemSignal::Type SignalType = static_cast<ESystemSignal::Type>( InSignal );
          SignalListeners.contains( SignalType ) )
     {
-        for ( const FSignalHandlerSignature &Handler : SignalListeners[SignalType] )
+        Algo::ForEach( SignalListeners[SignalType], [&] ( const FSignalHandlerSignature &Handler ) -> void
         {
             Handler( SignalType );
-        }
+        } );
     }
 }
