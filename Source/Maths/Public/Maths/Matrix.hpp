@@ -73,31 +73,31 @@ namespace Maths
             requires Concepts::CSquareMatrix<Rows, Columns>;
 
         [[nodiscard]] static constexpr TMatrix<Type, 4, 4> Translate ( const TVec<Type, 3> &InTranslation ) noexcept
-            requires Concepts::CSquareMatrix<4, 4>;
+            requires( Rows == 4 and Columns == 4 );
 
         [[nodiscard]] static constexpr TMatrix<Type, 4, 4> Scale ( const TVec<Type, 3> &InScale ) noexcept
-            requires Concepts::CSquareMatrix<4, 4>;
+            requires( Rows == 4 and Columns == 4 );
 
         [[nodiscard]] static constexpr TMatrix<Type, 4, 4> RotateX ( Type InAngleRadians ) noexcept
-            requires Concepts::CSquareMatrix<4, 4>;
+            requires( Rows == 4 and Columns == 4 );
 
         [[nodiscard]] static constexpr TMatrix<Type, 4, 4> RotateY ( Type InAngleRadians ) noexcept
-            requires Concepts::CSquareMatrix<4, 4>;
+            requires( Rows == 4 and Columns == 4 );
 
         [[nodiscard]] static constexpr TMatrix<Type, 4, 4> RotateZ ( Type InAngleRadians ) noexcept
-            requires Concepts::CSquareMatrix<4, 4>;
+            requires( Rows == 4 and Columns == 4 );
 
         [[nodiscard]] static constexpr TMatrix<Type, 4, 4>
         Perspective ( Type InFieldOfViewRadians, Type InAspectRatio, Type InNearPlane, Type InFarPlane ) noexcept
-            requires Concepts::CSquareMatrix<4, 4>;
+            requires( Rows == 4 and Columns == 4 );
 
         [[nodiscard]] static constexpr TMatrix<Type, 4, 4>
         Orthographic ( Type InWidth, Type InHeight, Type InNearPlane, Type InFarPlane ) noexcept
-            requires Concepts::CSquareMatrix<4, 4>;
+            requires( Rows == 4 and Columns == 4 );
 
         [[nodiscard]] static constexpr TMatrix<Type, 4, 4>
         LookAt ( const TVec<Type, 3> &InEye, const TVec<Type, 3> &InTarget, const TVec<Type, 3> &InUp ) noexcept
-            requires Concepts::CSquareMatrix<4, 4>;
+            requires( Rows == 4 and Columns == 4 );
     };
 
     /**
@@ -124,17 +124,45 @@ namespace Maths
     [[nodiscard]] constexpr TMatrix<Type, Rows, Columns> operator*( const TMatrix<Type, Rows, Columns> &Left,
                                                                     const Type Scalar ) noexcept;
 
+    template <typename Type, USize Rows, USize Columns>
+    [[nodiscard]] constexpr TMatrix<Type, Rows, Columns> operator+( const TMatrix<Type, Rows, Columns> &Left,
+                                                                    const TMatrix<Type, Rows, Columns> &Right ) noexcept;
+
+    template <typename Type, USize Rows, USize Columns>
+    [[nodiscard]] constexpr TMatrix<Type, Rows, Columns> operator+( const TMatrix<Type, Rows, Columns> &Left,
+                                                                    const Type Scalar ) noexcept;
+
     /**
      * Aliases
      */
 
-    using FMatrix2x2f = TMatrix<Float32, 2, 2>;
-    using FMatrix3x3f = TMatrix<Float32, 3, 3>;
-    using FMatrix4x4f = TMatrix<Float32, 4, 4>;
+    using FMat2x2d = Maths::TMatrix<Float64, 2, 2>;
+    using FMat2x3d = Maths::TMatrix<Float64, 2, 3>;
+    using FMat3x2d = Maths::TMatrix<Float64, 3, 2>;
+    using FMat3x3d = Maths::TMatrix<Float64, 3, 3>;
+    using FMat3x4d = Maths::TMatrix<Float64, 3, 4>;
+    using FMat4x4d = Maths::TMatrix<Float64, 4, 4>;
 
-    using FMatrix2x2d = TMatrix<Float64, 2, 2>;
-    using FMatrix3x3d = TMatrix<Float64, 3, 3>;
-    using FMatrix4x4d = TMatrix<Float64, 4, 4>;
+    using FMat2x2f = Maths::TMatrix<Float32, 2, 2>;
+    using FMat2x3f = Maths::TMatrix<Float32, 2, 3>;
+    using FMat3x2f = Maths::TMatrix<Float32, 3, 2>;
+    using FMat3x3f = Maths::TMatrix<Float32, 3, 3>;
+    using FMat3x4f = Maths::TMatrix<Float32, 3, 4>;
+    using FMat4x4f = Maths::TMatrix<Float32, 4, 4>;
+
+    using FMat2x2i = Maths::TMatrix<Int32, 2, 2>;
+    using FMat2x3i = Maths::TMatrix<Int32, 2, 3>;
+    using FMat3x2i = Maths::TMatrix<Int32, 3, 2>;
+    using FMat3x3i = Maths::TMatrix<Int32, 3, 3>;
+    using FMat3x4i = Maths::TMatrix<Int32, 3, 4>;
+    using FMat4x4i = Maths::TMatrix<Int32, 4, 4>;
+
+    using FMat2x2u = Maths::TMatrix<UInt32, 2, 2>;
+    using FMat2x3u = Maths::TMatrix<UInt32, 2, 3>;
+    using FMat3x2u = Maths::TMatrix<UInt32, 3, 2>;
+    using FMat3x3u = Maths::TMatrix<UInt32, 3, 3>;
+    using FMat3x4u = Maths::TMatrix<UInt32, 3, 4>;
+    using FMat4x4u = Maths::TMatrix<UInt32, 4, 4>;
 
     /**
      * @brief Transform an axis-aligned bounding box by a matrix using Arvo's method.
@@ -146,9 +174,14 @@ namespace Maths
      */
     MATHS_EXPORT void TransformAABB ( const FVec3f &LocalMin,
                                       const FVec3f &LocalMax,
-                                      const FMatrix4x4f &Transform,
+                                      const FMat4x4f &Transform,
                                       FVec3f &OutWorldMin,
                                       FVec3f &OutWorldMax ) noexcept;
+
+    template <typename Type, USize TRow, USize TColumn>
+    [[nodiscard]] Bool IsEqual ( const TMatrix<Type, TRow, TColumn> &MatA,
+                                 const TMatrix<Type, TRow, TColumn> &MatB,
+                                 Type InEpsilon = Epsilon<Type> ) noexcept;
 
 } // namespace Maths
 

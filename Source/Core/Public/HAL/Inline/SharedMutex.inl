@@ -45,7 +45,8 @@ template <typename MutexType> TSharedUniqueLock<MutexType>::~TSharedUniqueLock()
 
 template <typename MutexType>
 TSharedUniqueLock<MutexType>::TSharedUniqueLock( TSharedUniqueLock &&InOther ) noexcept
-    : Mutex( std::exchange<MutexType>( InOther.Mutex, nullptr ) ), bIsLocked( std::exchange<Bool>( InOther.bIsLocked, false ) )
+    : Mutex( std::exchange( InOther.Mutex, static_cast<MutexType *>( nullptr ) ) ),
+      bIsLocked( std::exchange<Bool>( InOther.bIsLocked, false ) )
 {
     /**
      *
@@ -62,7 +63,7 @@ TSharedUniqueLock<MutexType> &TSharedUniqueLock<MutexType>::operator=( TSharedUn
             Unlock();
         }
 
-        Mutex             = std::exchange<MutexType>( InOther.Mutex, nullptr );
+        Mutex             = std::exchange( InOther.Mutex, static_cast<MutexType *>( nullptr ) );
         bIsLocked         = std::exchange<Bool>( InOther.bIsLocked, false );
         InOther.Mutex     = nullptr;
         InOther.bIsLocked = false;
@@ -103,7 +104,7 @@ template <typename MutexType> Bool TSharedUniqueLock<MutexType>::TryLock () noex
 template <typename MutexType> MutexType *TSharedUniqueLock<MutexType>::Release () noexcept
 {
     bIsLocked = false;
-    return std::exchange<MutexType>( Mutex, nullptr );
+    return std::exchange( Mutex, static_cast<MutexType *>( nullptr ) );
 }
 
 template <typename MutexType> Bool TSharedUniqueLock<MutexType>::IsLocked () const noexcept

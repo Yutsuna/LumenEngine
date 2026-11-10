@@ -73,14 +73,24 @@ public:
         noexcept( *std::declval<Self>() ) and
         noexcept( MonadicInternal::MakeValue<MonadicInternal::TTransformOut<Self, Func>>( std::declval<Func>(),
                                                                                           *std::declval<Self>() ) ) and
-        noexcept( MonadicInternal::MakeFailure<MonadicInternal::TTransformOut<Self, Func>>( std::declval<Self>() ) ) )
+        noexcept( MonadicInternal::MakeFailure<MonadicInternal::TTransformOut<Self, Func>>( std::declval<Self>() ) ) and
+        ( std::is_lvalue_reference_v<Self> or std::is_nothrow_move_constructible_v<MonadicInternal::TSelfType<Self>> ) )
         -> MonadicInternal::TTransformOut<Self, Func>
     {
         using Out = MonadicInternal::TTransformOut<Self, Func>;
 
         if ( MonadicInternal::Has( InSelf ) ) [[likely]]
         {
-            return MonadicInternal::MakeValue<Out>( std::forward<Func>( InFunc ), *std::forward<Self>( InSelf ) );
+            if constexpr ( std::is_lvalue_reference_v<Self> )
+            {
+                return MonadicInternal::MakeValue<Out>( std::forward<Func>( InFunc ), *InSelf );
+            }
+            else
+            {
+                Out Result = MonadicInternal::MakeValue<Out>( std::forward<Func>( InFunc ), *InSelf );
+                [[maybe_unused]] MonadicInternal::TSelfType<Self> Consumed = std::forward<Self>( InSelf );
+                return Result;
+            }
         }
         return MonadicInternal::MakeFailure<Out>( std::forward<Self>( InSelf ) );
     }

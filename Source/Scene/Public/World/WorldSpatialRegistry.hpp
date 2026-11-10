@@ -41,7 +41,7 @@ enum class ESpatialComponentType : UInt8
 struct SCENE_EXPORT FSpatialRegistryData
 {
     TVector<ActorID> EntityIDs;
-    TVector<Maths::FMatrix4x4f> Transforms;
+    TVector<Maths::FMat4x4f> Transforms;
     TMap<ActorID, USize> IDToIndex;
 
     using FMapIterator = TMap<ActorID, USize>::const_iterator;
@@ -71,7 +71,7 @@ public:
      * @param InId The ID of the entity to update.
      * @param InTransform The new transform.
      */
-    void UpdateTransform ( ActorID InId, const Maths::FMatrix4x4f &InTransform ) noexcept;
+    void UpdateTransform ( ActorID InId, const Maths::FMat4x4f &InTransform ) noexcept;
 
     /** @brief Publishes the current state of the registry. */
     void Publish () noexcept;

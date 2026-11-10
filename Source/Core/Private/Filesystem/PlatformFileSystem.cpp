@@ -5,6 +5,7 @@
 
 #include <Core/CoreDefinitions.hpp>
 
+#include <Filesystem/Directory.hpp>
 #include <Filesystem/FileTypes.hpp>
 #include <Filesystem/IFileHandle.hpp>
 #include <Filesystem/IFileSystem.hpp>
@@ -45,13 +46,6 @@ namespace Lumen
 
 namespace Filesystem
 {
-
-    namespace Internal
-    {
-        TExpected<void, EFileError> PlatformEnumerateEntries ( const FPath &InPath,
-                                                               Bool bRecursive,
-                                                               const std::function<Bool( const FPath &, Bool )> &InCallback );
-    }
 
     namespace
     {
@@ -664,14 +658,10 @@ namespace Filesystem
 #if defined( LUMEN_PLATFORM_WINDOWS )
             if ( not ::CreateDirectoryW( Utf8ToWide( InPath.ToString() ).c_str(), nullptr ) )
             {
-                const DWORD Err = ::GetLastError();
-                if ( Err != ERROR_ALREADY_EXISTS )
-                {
-                    return MakeUnexpected( MapPlatformError( Err ) );
-                }
+                return MakeUnexpected( MapPlatformError( ::GetLastError() ) );
             }
 #else
-            if ( ::mkdir( InPath.ToCString(), 0755 ) != 0 and errno != EEXIST )
+            if ( ::mkdir( InPath.ToCString(), 0755 ) != 0 )
             {
                 return MakeUnexpected( MapPlatformError( errno ) );
             }
@@ -679,7 +669,7 @@ namespace Filesystem
             return {};
         }
 
-        TExpected<void, EFileError> CreateDirectories ( const FPath &InPath ) noexcept override
+        TExpected<void, EFileError> CreateDirectories ( const FPath &InPath ) noexcept override // NOLINT(misc-no-recursion)
         {
             if ( DirectoryExists( InPath ) )
             {
@@ -689,14 +679,19 @@ namespace Filesystem
             const FPath Parent = InPath.GetParent();
             if ( not Parent.IsEmpty() and not DirectoryExists( Parent ) )
             {
-                const auto Res = CreateDirectories( Parent );
+                const TExpected<void, EFileError> Res = CreateDirectories( Parent );
                 if ( not Res )
                 {
                     return Res;
                 }
             }
 
-            return CreateDirectory( InPath );
+            TExpected<void, EFileError> Res = CreateDirectory( InPath );
+            if ( not Res and Res.Error() == EFileError::AlreadyExists )
+            {
+                return {};
+            }
+            return Res;
         }
 
         TExpected<void, EFileError>
@@ -845,9 +840,8 @@ namespace Filesystem
 
     namespace Internal
     {
-        TExpected<void, EFileError> PlatformEnumerateEntries ( const FPath &InPath,
-                                                               const Bool bRecursive,
-                                                               const std::function<Bool( const FPath &, Bool )> &InCallback )
+        CORE_EXPORT TExpected<void, EFileError> PlatformEnumerateEntries (
+            const FPath &InPath, const Bool bRecursive, const std::function<Bool( const FPath &, Bool )> &InCallback )
         {
 #if defined( LUMEN_PLATFORM_WINDOWS )
             FPath SearchPattern = InPath / "*";

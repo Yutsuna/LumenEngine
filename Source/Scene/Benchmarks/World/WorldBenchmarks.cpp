@@ -93,7 +93,7 @@ public:
             static_cast<Lumen::Float32>( TickIndex ) * 0.01F + static_cast<Lumen::Float32>( InDeltaTime );
 
         Transform =
-            Lumen::Maths::FMatrix4x4f::Translate( Lumen::Maths::FVec3f{ SweepOffset, SweepOffset, SweepOffset } ) * Transform;
+            Lumen::Maths::FMat4x4f::Translate( Lumen::Maths::FVec3f{ SweepOffset, SweepOffset, SweepOffset } ) * Transform;
 
         Lumen::FSpatialRegistry::Get().UpdateTransform( GetId(), Transform );
         ++TickIndex;
@@ -101,7 +101,7 @@ public:
 
 private:
 
-    Lumen::Maths::FMatrix4x4f Transform = Lumen::Maths::FMatrix4x4f::Identity();
+    Lumen::Maths::FMat4x4f Transform    = Lumen::Maths::FMat4x4f::Identity();
     Lumen::UInt32 TickIndex             = 0U;
     Lumen::UInt32 ProcessedMessageCount = 0U;
 };

@@ -45,9 +45,9 @@ void ReleaseEntities ( const Lumen::TVector<Lumen::ActorID> &EntityIds )
 }
 
 /** @brief Builds one identity transform per entity (untimed setup helper). */
-[[nodiscard]] Lumen::TVector<Lumen::Maths::FMatrix4x4f> MakeTransforms ( const Lumen::USize Count )
+[[nodiscard]] Lumen::TVector<Lumen::Maths::FMat4x4f> MakeTransforms ( const Lumen::USize Count )
 {
-    return Lumen::TVector<Lumen::Maths::FMatrix4x4f>( Count, Lumen::Maths::FMatrix4x4f::Identity() );
+    return Lumen::TVector<Lumen::Maths::FMat4x4f>( Count, Lumen::Maths::FMat4x4f::Identity() );
 }
 
 } // namespace
@@ -66,9 +66,9 @@ LUMEN_BENCHMARK( FSpatialRegistry, UpdateTransforms )
     Lumen::TVector<Lumen::ActorID> EntityIds;
     RegisterEntities( EntityIds, EntityCount );
 
-    const Lumen::TVector<Lumen::Maths::FMatrix4x4f> Transforms = MakeTransforms( EntityCount );
-    const Lumen::USize EntityIndexMask                         = EntityCount - 1U;
-    Lumen::USize Cursor                                        = 0U;
+    const Lumen::TVector<Lumen::Maths::FMat4x4f> Transforms = MakeTransforms( EntityCount );
+    const Lumen::USize EntityIndexMask                      = EntityCount - 1U;
+    Lumen::USize Cursor                                     = 0U;
 
     for ( auto _ : State )
     {
@@ -111,7 +111,7 @@ LUMEN_BENCHMARK( FSpatialRegistry, PublishAllDirty )
     Lumen::TVector<Lumen::ActorID> EntityIds;
     RegisterEntities( EntityIds, EntityCount );
 
-    const Lumen::TVector<Lumen::Maths::FMatrix4x4f> Transforms = MakeTransforms( EntityCount );
+    const Lumen::TVector<Lumen::Maths::FMat4x4f> Transforms = MakeTransforms( EntityCount );
     State.SetItemsPerIteration( EntityCount );
 
     for ( auto _ : State )

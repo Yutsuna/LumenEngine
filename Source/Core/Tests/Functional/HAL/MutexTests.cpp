@@ -10,11 +10,36 @@
 
 #include <atomic>
 #include <thread>
+#include <type_traits>
+#include <utility>
 
 using namespace std::chrono_literals;
 
 namespace Lumen
 {
+
+/**
+ * API contracts (compile-time)
+ */
+
+static_assert( not std::is_copy_constructible_v<FMutex> and not std::is_copy_assignable_v<FMutex>,
+               "FMutex must not be copyable" );
+static_assert( not std::is_move_constructible_v<FMutex> and not std::is_move_assignable_v<FMutex>, "FMutex must not be movable" );
+static_assert( std::is_nothrow_default_constructible_v<FMutex>, "FMutex must be noexcept default constructible" );
+static_assert( noexcept( std::declval<FMutex &>().Lock() ), "FMutex::Lock must be noexcept" );
+static_assert( noexcept( std::declval<FMutex &>().Unlock() ), "FMutex::Unlock must be noexcept" );
+static_assert( noexcept( std::declval<FMutex &>().TryLock() ), "FMutex::TryLock must be noexcept" );
+static_assert( noexcept( std::declval<FMutex &>().IsLocked() ), "FMutex::IsLocked must be noexcept" );
+
+static_assert( not std::is_copy_constructible_v<TLockGuard<FMutex>> and not std::is_copy_assignable_v<TLockGuard<FMutex>>,
+               "TLockGuard must not be copyable" );
+static_assert( not std::is_move_constructible_v<TLockGuard<FMutex>> and not std::is_move_assignable_v<TLockGuard<FMutex>>,
+               "TLockGuard must not be movable" );
+
+static_assert( not std::is_copy_constructible_v<TUniqueLock<FMutex>> and not std::is_copy_assignable_v<TUniqueLock<FMutex>>,
+               "TUniqueLock must not be copyable" );
+static_assert( std::is_move_constructible_v<TUniqueLock<FMutex>> and std::is_move_assignable_v<TUniqueLock<FMutex>>,
+               "TUniqueLock must be movable" );
 
 /**
  * initial state
@@ -347,6 +372,178 @@ LUMEN_TEST( Mutex_Threading, CounterMutationUnderLock )
     T2.join();
 
     LUMEN_CHECK_EQ( SharedCounter, 2000 );
+}
+
+/**
+ * TUniqueLock move semantics
+ */
+
+LUMEN_TEST( UniqueLock, MoveConstructorTransfersOwnership )
+{
+    FMutex Mutex;
+
+    TUniqueLock<FMutex> Original( Mutex );
+    TUniqueLock<FMutex> Moved( std::move( Original ) );
+
+    LUMEN_CHECK_TRUE( Moved.IsLocked() );
+    LUMEN_CHECK_TRUE( Mutex.IsLocked() );
+    LUMEN_CHECK_TRUE( static_cast<Bool>( Moved ) );
+
+    LUMEN_CHECK_FALSE( Original.IsLocked() );
+    LUMEN_CHECK_TRUE( Original.Release() == nullptr );
+    LUMEN_CHECK_FALSE( static_cast<Bool>( Original ) );
+}
+
+LUMEN_TEST( UniqueLock, MoveAssignmentReleasesHeldMutex )
+{
+    FMutex MutexA;
+    FMutex MutexB;
+
+    TUniqueLock<FMutex> Target( MutexA );
+    TUniqueLock<FMutex> Source( MutexB );
+
+    Target = std::move( Source );
+
+    LUMEN_CHECK_FALSE( MutexA.IsLocked() );
+    LUMEN_CHECK_TRUE( MutexB.IsLocked() );
+
+    LUMEN_CHECK_TRUE( Target.IsLocked() );
+    LUMEN_CHECK_TRUE( static_cast<Bool>( Target ) );
+
+    LUMEN_CHECK_FALSE( Source.IsLocked() );
+    LUMEN_CHECK_FALSE( static_cast<Bool>( Source ) );
+}
+
+LUMEN_TEST( UniqueLock, MoveAssignmentFromEmptyReleasesOwnership )
+{
+    FMutex Mutex;
+
+    TUniqueLock<FMutex> Target( Mutex );
+    TUniqueLock<FMutex> EmptySource;
+
+    Target = std::move( EmptySource );
+
+    LUMEN_CHECK_FALSE( Target.IsLocked() );
+    LUMEN_CHECK_FALSE( static_cast<Bool>( Target ) );
+    LUMEN_CHECK_FALSE( Mutex.IsLocked() );
+
+    LUMEN_CHECK_FALSE( EmptySource.IsLocked() );
+}
+
+LUMEN_TEST( UniqueLock, SelfMoveIsNoOp )
+{
+    FMutex Mutex;
+
+    TUniqueLock<FMutex> Lock( Mutex );
+    TUniqueLock<FMutex> &SelfAlias = Lock;
+
+    Lock = std::move( SelfAlias );
+
+    LUMEN_CHECK_TRUE( Lock.IsLocked() );
+    LUMEN_CHECK_TRUE( Mutex.IsLocked() );
+}
+
+/**
+ * TUniqueLock Release
+ */
+
+LUMEN_TEST( UniqueLock, ReleaseReturnsManagedMutex )
+{
+    FMutex Mutex;
+
+    TUniqueLock<FMutex> Lock( Mutex );
+
+    FMutex *Released = Lock.Release();
+
+    LUMEN_CHECK_TRUE( Released == &Mutex );
+
+    /** INFO: Release hands the lock over without unlocking it */
+    LUMEN_CHECK_TRUE( Mutex.IsLocked() );
+
+    Lock.Unlock();
+    LUMEN_CHECK_FALSE( Lock.IsLocked() );
+
+    Mutex.Unlock();
+    LUMEN_CHECK_FALSE( Mutex.IsLocked() );
+}
+
+LUMEN_TEST( UniqueLock, DestructorAfterReleaseDoesNotTouchMutex )
+{
+    FMutex Mutex;
+
+    {
+        TUniqueLock<FMutex> Lock( Mutex );
+        LUMEN_CHECK_TRUE( Lock.Release() != nullptr );
+        LUMEN_CHECK_FALSE( Lock.IsLocked() );
+    }
+
+    /** INFO: Ownership was detached, so the mutex must stay locked */
+    LUMEN_CHECK_TRUE( Mutex.IsLocked() );
+
+    Mutex.Unlock();
+    LUMEN_CHECK_FALSE( Mutex.IsLocked() );
+}
+
+LUMEN_TEST( UniqueLock, ReleaseWithoutMutexReturnsNull )
+{
+    TUniqueLock<FMutex> Lock;
+
+    LUMEN_CHECK_TRUE( Lock.Release() == nullptr );
+    LUMEN_CHECK_FALSE( Lock.IsLocked() );
+}
+
+/**
+ * FMutex access through the IMutex base
+ */
+
+LUMEN_TEST( Mutex_IMutex, AccessThroughBaseInterface )
+{
+    FMutex Mutex;
+    Internal::IMutex &Interface = Mutex;
+
+    LUMEN_CHECK_FALSE( Interface.IsLocked() );
+
+    Interface.Lock();
+    LUMEN_CHECK_TRUE( Interface.IsLocked() );
+    LUMEN_CHECK_FALSE( Interface.try_lock() );
+
+    Interface.Unlock();
+    LUMEN_CHECK_FALSE( Interface.IsLocked() );
+
+    LUMEN_CHECK_TRUE( Interface.try_lock() );
+    LUMEN_CHECK_TRUE( Interface.IsLocked() );
+
+    Interface.Unlock();
+    LUMEN_CHECK_FALSE( Interface.IsLocked() );
+}
+
+/**
+ * Multithreading - TUniqueLock across threads
+ */
+
+LUMEN_TEST( UniqueLock_Threading, CounterMutationUnderLock )
+{
+    FMutex Mutex;
+    Int32 SharedCounter = 0;
+
+    auto Increment = [&] ()
+    {
+        for ( Int32 Index = 0; Index < 1000; ++Index )
+        {
+            TUniqueLock<FMutex> Owner( Mutex );
+            ++SharedCounter;
+        }
+    };
+
+    std::thread First( Increment );
+    std::thread Second( Increment );
+    std::thread Third( Increment );
+
+    First.join();
+    Second.join();
+    Third.join();
+
+    LUMEN_CHECK_EQ( SharedCounter, 3000 );
 }
 
 } // namespace Lumen

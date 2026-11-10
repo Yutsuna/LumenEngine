@@ -56,7 +56,7 @@ namespace EEngineMessage
 /** @brief Payload for EEngineMessage::TransformUpdate */
 struct FTransformPayload final
 {
-    Maths::FMatrix4x4f NewTransform = Maths::FMatrix4x4f::Identity();
+    Maths::FMat4x4f NewTransform = Maths::FMat4x4f::Identity();
 };
 
 /** @brief Payload for EEngineMessage::Tick */

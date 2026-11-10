@@ -31,5 +31,6 @@
     nixd
     vulkan-tools
     vulkan-validation-layers
+    muon
   ];
 }

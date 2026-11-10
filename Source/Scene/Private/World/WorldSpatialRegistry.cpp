@@ -52,7 +52,7 @@ void Lumen::FSpatialRegistry::RegisterSpatialEntity ( ActorID InId )
     const USize NewIndex = WorkingData.EntityIDs.size();
 
     WorkingData.EntityIDs.emplace_back( InId );
-    WorkingData.Transforms.emplace_back( Maths::FMatrix4x4f::Identity() );
+    WorkingData.Transforms.emplace_back( Maths::FMat4x4f::Identity() );
     WorkingData.IDToIndex.emplace( InId, NewIndex );
 
     ResizeTrackersAndFlagStructuralChange();
@@ -87,7 +87,7 @@ void Lumen::FSpatialRegistry::UnregisterSpatialEntity ( ActorID InId )
     ResizeTrackersAndFlagStructuralChange();
 }
 
-void Lumen::FSpatialRegistry::UpdateTransform ( ActorID InId, const Maths::FMatrix4x4f &InTransform ) noexcept
+void Lumen::FSpatialRegistry::UpdateTransform ( ActorID InId, const Maths::FMat4x4f &InTransform ) noexcept
 {
     TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
     const FSpatialRegistryData::FMapIterator It = WorkingData.IDToIndex.find( InId );

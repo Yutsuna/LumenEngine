@@ -55,7 +55,7 @@ namespace Maths
         /**
          * @brief Multiplies a 4x4 column-major matrix by a scalar.
          */
-        void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept;
+        MATHS_EXPORT void MatrixScalarMul4x4 ( const Float32 *InMatrix, const Float32 Scalar, Float32 *OutResult ) noexcept;
 
     } // namespace SIMD
 
