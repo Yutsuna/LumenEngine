@@ -74,8 +74,7 @@ public:
         noexcept( MonadicInternal::MakeValue<MonadicInternal::TTransformOut<Self, Func>>( std::declval<Func>(),
                                                                                           *std::declval<Self>() ) ) and
         noexcept( MonadicInternal::MakeFailure<MonadicInternal::TTransformOut<Self, Func>>( std::declval<Self>() ) ) and
-        ( std::is_lvalue_reference_v<Self> or
-          std::is_nothrow_move_constructible_v<MonadicInternal::TSelfType<Self>> ) )
+        ( std::is_lvalue_reference_v<Self> or std::is_nothrow_move_constructible_v<MonadicInternal::TSelfType<Self>> ) )
         -> MonadicInternal::TTransformOut<Self, Func>
     {
         using Out = MonadicInternal::TTransformOut<Self, Func>;
