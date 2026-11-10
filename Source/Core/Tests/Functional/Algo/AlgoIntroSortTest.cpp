@@ -68,8 +68,8 @@ LUMEN_TEST( Algo_IntroSort, LargeRecordsByKey )
 
 LUMEN_TEST( Algo_IntroSort, LargeInputs )
 {
-    for ( const Helpers::ESortShape Shape : { Helpers::ESortShape::Random, Helpers::ESortShape::OrganPipe,
-                                              Helpers::ESortShape::SawTooth } )
+    for ( const Helpers::ESortShape Shape :
+          { Helpers::ESortShape::Random, Helpers::ESortShape::OrganPipe, Helpers::ESortShape::SawTooth } )
     {
         Helpers::CheckSorterOnShape( [] ( TVector<Int32> &Values )
         {

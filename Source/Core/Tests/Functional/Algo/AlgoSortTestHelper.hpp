@@ -59,8 +59,8 @@ namespace Tests
                                                             ESortShape::SawTooth } };
 
         /** @brief Sizes around the insertion threshold (16), the ninther threshold (128) and larger. */
-        inline constexpr TArray<USize, 19> SortTestSizes{ { 0, 1, 2, 3, 15, 16, 17, 18, 31, 32, 33, 127, 128, 129, 130, 255, 1000,
-                                                            4096, 10007 } };
+        inline constexpr TArray<USize, 19> SortTestSizes{
+            { 0, 1, 2, 3, 15, 16, 17, 18, 31, 32, 33, 127, 128, 129, 130, 255, 1000, 4096, 10007 } };
 
         using FIntSorter    = TFunction<void( TVector<Int32> & )>;
         using FStringSorter = TFunction<void( TVector<FString> & )>;

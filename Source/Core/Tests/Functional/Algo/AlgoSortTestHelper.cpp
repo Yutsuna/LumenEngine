@@ -109,8 +109,8 @@ void Lumen::Tests::SortHelpers::CheckSorterOnShape ( const FIntSorter &InSorter,
 
     InSorter( Values );
 
-    LUMEN_CHECK_MSG( Values == Expected, std::format( "Count={} Shape={} Descending={}", InCount, std::to_underlying( InShape ),
-                                                      bDescending ) );
+    LUMEN_CHECK_MSG( Values == Expected,
+                     std::format( "Count={} Shape={} Descending={}", InCount, std::to_underlying( InShape ), bDescending ) );
 }
 
 void Lumen::Tests::SortHelpers::CheckSorterOnAllShapes ( const FIntSorter &InSorter,
