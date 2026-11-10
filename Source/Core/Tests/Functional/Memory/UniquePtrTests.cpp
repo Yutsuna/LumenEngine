@@ -824,9 +824,9 @@ LUMEN_TEST( UniquePtr_Array_Ownership, ResetReplacesTheArray )
         Array[ElementIndex].Bind( State );
     }
 
-    Array.Reset( new FArrayElement[ 2 ] );
-    Array[ 0 ].Bind( State );
-    Array[ 1 ].Bind( State );
+    Array.Reset( new FArrayElement[2] );
+    Array[0].Bind( State );
+    Array[1].Bind( State );
 
     LUMEN_CHECK_EQ( State.Destroyed, 2 );
     LUMEN_CHECK_EQ( State.Alive, 2 );
