@@ -16,24 +16,16 @@ namespace Lumen
 namespace Internal
 {
 
+    /**
+     * INFO: Declared before Invoke because the pointer-to-member Invoke overload
+     *       uses it in its trailing return type.
+     */
     template <typename TObjectType, typename TTargetType>
     constexpr auto MaybeDereference ( TTargetType &&Target, const volatile TObjectType *TargetPtr )
         -> decltype( static_cast<TTargetType &&>( Target ) );
 
     template <typename TObjectType, typename TTargetType>
     constexpr auto MaybeDereference ( TTargetType &&Target, ... ) -> decltype( *static_cast<TTargetType &&>( Target ) );
-
-    template <typename, typename TFunc, typename... TArgs> struct TInvokeResultImpl
-    {
-    };
-
-    template <typename TFunc, typename... TArgs>
-    struct TInvokeResultImpl<decltype( static_cast<void>( Invoke( std::declval<TFunc>(), std::declval<TArgs>()... ) ) ),
-                             TFunc,
-                             TArgs...>
-    {
-        using Type = decltype( Invoke( std::declval<TFunc>(), std::declval<TArgs>()... ) );
-    };
 
 } // namespace Internal
 
@@ -52,6 +44,23 @@ LUMEN_FORCE_INLINE constexpr auto Invoke ( TReturnType TObjectType::*InMember, T
     -> decltype( Internal::MaybeDereference( static_cast<TTargetType &&>( InObject ),
                                              std::declval<std::remove_reference_t<TTargetType> *>() ).*
                  InMember );
+
+namespace Internal
+{
+
+    template <typename, typename TFunc, typename... TArgs> struct TInvokeResultImpl
+    {
+    };
+
+    template <typename TFunc, typename... TArgs>
+    struct TInvokeResultImpl<decltype( static_cast<void>( Invoke( std::declval<TFunc>(), std::declval<TArgs>()... ) ) ),
+                             TFunc,
+                             TArgs...>
+    {
+        using Type = decltype( Invoke( std::declval<TFunc>(), std::declval<TArgs>()... ) );
+    };
+
+} // namespace Internal
 
 /**
  * @trait TInvokeResult
