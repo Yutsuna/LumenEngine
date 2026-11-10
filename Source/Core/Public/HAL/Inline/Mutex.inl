@@ -41,7 +41,8 @@ template <typename MutexType> TUniqueLock<MutexType>::~TUniqueLock() noexcept
 
 template <typename MutexType>
 TUniqueLock<MutexType>::TUniqueLock( TUniqueLock &&InOther ) noexcept
-    : Mutex( std::exchange<MutexType>( InOther.Mutex, nullptr ) ), bIsLocked( std::exchange<Bool>( InOther.bIsLocked, false ) )
+    : Mutex( std::exchange( InOther.Mutex, static_cast<MutexType *>( nullptr ) ) ),
+      bIsLocked( std::exchange<Bool>( InOther.bIsLocked, false ) )
 {
     /** Empty */
 }
@@ -55,7 +56,7 @@ template <typename MutexType> TUniqueLock<MutexType> &TUniqueLock<MutexType>::op
             Unlock();
         }
 
-        Mutex     = std::exchange<MutexType>( InOther.Mutex, nullptr );
+        Mutex     = std::exchange( InOther.Mutex, static_cast<MutexType *>( nullptr ) );
         bIsLocked = std::exchange<Bool>( InOther.bIsLocked, false );
     }
 
@@ -94,7 +95,7 @@ template <typename MutexType> Bool TUniqueLock<MutexType>::TryLock () noexcept
 template <typename MutexType> MutexType *TUniqueLock<MutexType>::Release () noexcept
 {
     bIsLocked = false;
-    return std::exchange<MutexType>( Mutex, nullptr );
+    return std::exchange( Mutex, static_cast<MutexType *>( nullptr ) );
 }
 
 template <typename MutexType> Bool TUniqueLock<MutexType>::IsLocked () const noexcept
