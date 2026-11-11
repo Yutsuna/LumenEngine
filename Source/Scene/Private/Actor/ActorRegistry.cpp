@@ -62,6 +62,31 @@ struct FActorRegistryState
     Lumen::TAtomic<FActorChunk *> Chunks[FActorChunk::MaxChunks] = {};
 
     /**
+     * @brief Releases every lazily allocated chunk at process exit.
+     * @note  INFO: The state owns its chunks, so teardown belongs to the state
+     *        itself: no entry-point (tests, benchmarks, runtime) has to know
+     *        about the allocation. Must not log — the Logger may be gone by
+     *        then. After this runs the registry fails soft: FindSlot() yields
+     *        nullptr, so stray Unregister/EnqueueMessage calls are harmless.
+     */
+    ~FActorRegistryState () noexcept
+    {
+        for ( Lumen::UInt32 ChunkIndex = 0U; ChunkIndex < FActorChunk::MaxChunks; ++ChunkIndex )
+        {
+            ReleaseChunk( ChunkIndex );
+        }
+    }
+
+    void ReleaseChunk( const Lumen::UInt32 ChunkIndex ) noexcept
+    {
+        if ( FActorChunk *const Chunk = Chunks[ ChunkIndex ].load( std::memory_order_acquire ) ) [[likely]]
+        {
+            delete Chunk;
+            Chunks[ChunkIndex].store( nullptr, std::memory_order_relaxed );
+        }
+    }
+
+    /**
      * @brief Finds a slot in the registry by slot index.
      * @param InSlotIndex The slot index to find.
      * @return A pointer to the slot, or nullptr if the slot is not found.
@@ -75,7 +100,7 @@ struct FActorRegistryState
             return nullptr;
         }
 
-        FActorChunk *const Chunk = this->Chunks[ChunkIndex].load( std::memory_order_acquire );
+        FActorChunk *const Chunk = Chunks[ChunkIndex].load( std::memory_order_acquire );
         return Chunk != nullptr ? &Chunk->Slots[InSlotIndex & FActorChunk::ChunkMask] : nullptr;
     }
 
