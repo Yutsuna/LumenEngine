@@ -28,6 +28,17 @@ namespace Tests
     };
 
     /**
+     * @enum EUnitTestOutputMode
+     * @brief Controls the verbosity of unit test reporting.
+     */
+    enum class EUnitTestOutputMode : UInt8
+    {
+        Compact,
+        FailuresOnly,
+        Detailed
+    };
+
+    /**
      * @struct FUnitTestMetadata
      * @brief Descriptor holding metadata for a unit test.
      */
