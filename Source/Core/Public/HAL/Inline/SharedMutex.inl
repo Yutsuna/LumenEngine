@@ -65,8 +65,6 @@ TSharedUniqueLock<MutexType> &TSharedUniqueLock<MutexType>::operator=( TSharedUn
 
         Mutex             = std::exchange( InOther.Mutex, static_cast<MutexType *>( nullptr ) );
         bIsLocked         = std::exchange<Bool>( InOther.bIsLocked, false );
-        InOther.Mutex     = nullptr;
-        InOther.bIsLocked = false;
     }
 
     return *this;
