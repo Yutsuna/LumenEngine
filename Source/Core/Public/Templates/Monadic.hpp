@@ -83,11 +83,11 @@ public:
         {
             if constexpr ( std::is_lvalue_reference_v<Self> )
             {
-                return MonadicInternal::MakeValue<Out>( std::forward<Func>( InFunc ), *InSelf );
+                return MonadicInternal::MakeValue<Out>( std::forward<Func>( InFunc ), *std::forward<Self>( InSelf ) );
             }
             else
             {
-                Out Result = MonadicInternal::MakeValue<Out>( std::forward<Func>( InFunc ), *InSelf );
+                Out Result = MonadicInternal::MakeValue<Out>( std::forward<Func>( InFunc ), *std::forward<Self>( InSelf ) );
                 [[maybe_unused]] MonadicInternal::TSelfType<Self> Consumed = std::forward<Self>( InSelf );
                 return Result;
             }
@@ -155,7 +155,7 @@ public:
     {
         if ( MonadicInternal::Has( InSelf ) ) [[likely]]
         {
-            std::invoke( std::forward<Func>( InFunc ), static_cast<MonadicInternal::TConstElementRef<Self>>( *InSelf ) );
+            std::invoke( std::forward<Func>( InFunc ), static_cast<MonadicInternal::TConstElementRef<Self>>( *std::forward<Self>( InSelf ) ) );
         }
         return std::forward<Self>( InSelf );
     }
