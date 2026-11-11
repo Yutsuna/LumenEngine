@@ -155,7 +155,8 @@ public:
     {
         if ( MonadicInternal::Has( InSelf ) ) [[likely]]
         {
-            std::invoke( std::forward<Func>( InFunc ), static_cast<MonadicInternal::TConstElementRef<Self>>( *std::forward<Self>( InSelf ) ) );
+            std::invoke( std::forward<Func>( InFunc ),
+                         static_cast<MonadicInternal::TConstElementRef<Self>>( *std::forward<Self>( InSelf ) ) );
         }
         return std::forward<Self>( InSelf );
     }
