@@ -77,9 +77,9 @@ struct FActorRegistryState
         }
     }
 
-    void ReleaseChunk( const Lumen::UInt32 ChunkIndex ) noexcept
+    void ReleaseChunk ( const Lumen::UInt32 ChunkIndex ) noexcept
     {
-        if ( FActorChunk *const Chunk = Chunks[ ChunkIndex ].load( std::memory_order_acquire ) ) [[likely]]
+        if ( FActorChunk *const Chunk = Chunks[ChunkIndex].load( std::memory_order_acquire ) ) [[likely]]
         {
             delete Chunk;
             Chunks[ChunkIndex].store( nullptr, std::memory_order_relaxed );
