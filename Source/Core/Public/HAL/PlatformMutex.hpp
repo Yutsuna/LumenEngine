@@ -11,10 +11,20 @@
     #include <HAL/Windows/WindowsSharedMutex.hpp>
     #include <HAL/Windows/WindowsSpinLockMutex.hpp>
 
-    using FPlatformMutex = FWindowsMutex;
+namespace Lumen
+{
+
+namespace HAL
+{
+
+    using FPlatformMutex          = FWindowsMutex;
     using FPlatformRecursiveMutex = FWindowsRecursiveMutex;
-    using FPlatformSharedMutex = FWindowsSharedMutex;
-    using FPlatformSpinLockMutex = FWindowsSpinLockMutex;
+    using FPlatformSharedMutex    = FWindowsSharedMutex;
+    using FPlatformSpinLockMutex  = FWindowsSpinLockMutex;
+
+} // namespace HAL
+
+} // namespace Lumen
 
 #elif defined( LUMEN_PLATFORM_UNIX )
     #include <HAL/Unix/UnixMutex.hpp>
@@ -22,10 +32,20 @@
     #include <HAL/Unix/UnixSharedMutex.hpp>
     #include <HAL/Unix/UnixSpinLockMutex.hpp>
 
-    using FPlatformMutex = FUnixMutex;
+namespace Lumen
+{
+
+namespace HAL
+{
+
+    using FPlatformMutex          = FUnixMutex;
     using FPlatformRecursiveMutex = FUnixRecursiveMutex;
-    using FPlatformSharedMutex = FUnixSharedMutex;
-    using FPlatformSpinLockMutex = FUnixSpinLockMutex;
+    using FPlatformSharedMutex    = FUnixSharedMutex;
+    using FPlatformSpinLockMutex  = FUnixSpinLockMutex;
+
+} // namespace HAL
+
+} // namespace Lumen
 
 #else
     #error "PlatformMutex.hpp is unable to determine the platform."
