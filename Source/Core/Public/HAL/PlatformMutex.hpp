@@ -30,7 +30,7 @@ namespace HAL
 
 #elif defined( LUMEN_PLATFORM_UNIX )
     #include <HAL/Unix/UnixMutex.hpp>
-    #include <HAL/Unix/UnixRecursiveMutex.hpp>
+    #include <HAL/Unix/UnixRecursiveSharedMutex.hpp>
     #include <HAL/Unix/UnixSharedMutex.hpp>
     #include <HAL/Unix/UnixSpinLockMutex.hpp>
 
