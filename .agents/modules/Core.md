@@ -9,13 +9,13 @@
 
 ## Public headers map (use these before writing anything new)
 
-Some `Templates/` headers are currently thin aliases over `std` (`TVector`,
-`TArray`, `TMap`, `TPair`, `TQueue`, `TVariant`, `TFunction`, `TSpan`) or over
-`std::atomic` (`TAtomic`, `FAtomicFlag`). Always use the Lumen name anyway:
-aliases may be replaced by real implementations later, and the name keeps call
-sites consistent. Hand-written replacements exist for optional/expected,
-threads, stop tokens, condition variables, atomics bitset, locks, the HAL and
-the algorithms.
+Some headers are currently thin aliases over `std` (`TVector`, `TArray`,
+`TMap`, `TPair`, `TQueue`, `TVariant`, `TFunction`) or over `std::atomic`
+(`TAtomic`, `FAtomicFlag`); `TSpan` is also an alias. Always use the Lumen
+name anyway: aliases may be replaced by real implementations later, and the
+name keeps call sites consistent. Hand-written replacements exist for
+optional/expected, threads, stop tokens, condition variables, atomic bitsets,
+locks, the HAL and the algorithms.
 
 ### Containers, strings, ownership
 
@@ -38,7 +38,7 @@ the algorithms.
 
 | Area / header | Provides | Use when |
 | --- | --- | --- |
-| `Algo/Sort.hpp` (+ `IntroSort.hpp`, `StableSort` via `MergeSort.hpp`, `QuickSort.hpp`, `HeapSort.hpp`, `InsertionSort.hpp`) | `Algo::Sort`, `Algo::StableSort`, `Algo::IntroSort`, `Algo::QuickSort`, `Algo::HeapSort`, `Algo::InsertionSort` | sorting without `std::sort`; prefer `Sort` (introsort, in-place, O(n log n) worst case), `StableSort` only when stability is required |
+| `Algo/Sort.hpp` (+ `IntroSort.hpp`, `MergeSort.hpp`, `QuickSort.hpp`, `HeapSort.hpp`, `InsertionSort.hpp`) | `Algo::Sort`, `Algo::StableSort` (declared in `Sort.hpp`, merge-sort implementation in `MergeSort.hpp`), `Algo::IntroSort`, `Algo::QuickSort`, `Algo::HeapSort`, `Algo::InsertionSort` | sorting without `std::sort`; prefer `Sort` (introsort, in-place, O(n log n) worst case), `StableSort` only when stability is required |
 | `Algo/Find.hpp` | `Algo::Find`, `FindIf`, `FindIfNot`, `FindIfEqual` (+ `…OrNone` returning `TOptional`) | searching ranges without `std::find` |
 | `Algo/ForEach.hpp` | `Algo::ForEach`, predicate-filtered `ForEach` | iterating ranges |
 | `Templates/Hash.hpp` | `FHash::TypeHash<T>()` | compile-time stable type hashing |

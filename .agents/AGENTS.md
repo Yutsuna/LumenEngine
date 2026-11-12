@@ -27,8 +27,8 @@ treat it as mandatory. Do not preload everything.
 | --- | --- | --- |
 | `Core` | built (shared library) | `modules/Core.md` |
 | `Maths` | built (shared library) | `modules/Maths.md` |
-| `Scene` | built (shared library) | `modules/Scene.md` |
 | `RHI` | configured but empty stubs (listed in `ModuleNames`, every source/header is a 0-byte placeholder) | `modules/RHI.md` |
+| `Scene` | built (shared library) | `modules/Scene.md` |
 | `AppCore` | built (shared library) | `modules/AppCore.md` |
 | `Launch` | built (executable entry point) | `modules/Launch.md` |
 | `Renderer`, `RHIOpenGL`, `RHIVulkan` | **not built yet** (empty stubs, absent from `ModuleNames`) | `modules/Renderer.md`, `modules/RHIOpenGL.md`, `modules/RHIVulkan.md` |

@@ -39,7 +39,7 @@ publish, structural churn). Release build only — see
 - Message delivery failures are **dead-lettered** by the registry, not
   dropped silently; keep that contract when touching `ActorRegistry`.
 - Spatial sorting/dirty tracking is deferred until publish — don't eagerly
-  re-sort inside mutation paths (recent commit "Defer spatial dirty tracking
-  until publish").
+  re-sort inside mutation paths (the deferred-publish design lives in
+  `FSpatialRegistry`).
 - Do not export private/internal tags; only Public/ symbols carry
   `SCENE_EXPORT`.
