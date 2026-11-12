@@ -8,7 +8,7 @@
 #include <Core/CoreDefinitions.hpp>
 
 #if not defined( LUMEN_PLATFROM_WINDOWS )
-    #error "WindowsMutex.hpp is only available on Unix platforms."
+    #error "WindowsMutex.hpp is only available on Windows platforms."
 #else
 
     #include <Core/CoreTypes.hpp>

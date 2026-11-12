@@ -9,9 +9,9 @@
 
 #include <HAL/PlatformMutex.hpp>
 
+#include <Templates/ConditionVariable.hpp>
 #include <Templates/Queue.hpp>
 
-#include <condition_variable>
 #include <thread>
 
 namespace Lumen
@@ -73,10 +73,10 @@ private:
 
 private:
 
-    HAL::FPlatformMutex QueueMutex;    ///< Guards LogMessageQueue, WorkerThread and the writes to bIsAsync.
-    HAL::FPlatformMutex ShutdownMutex; ///< Serializes concurrent Shutdown() calls.
-    std::condition_variable_any Condition;
-    TQueue<FLogMessage> LogMessageQueue;
+    HAL::FPlatformMutex QueueMutex;      ///< Guards LogMessageQueue, WorkerThread and the writes to bIsAsync.
+    HAL::FPlatformMutex ShutdownMutex;   ///< Serializes concurrent Shutdown() calls.
+    FConditionVariable Condition;        ///< Manages synchronization for log message processing.
+    TQueue<FLogMessage> LogMessageQueue; ///< Holds log messages waiting to be processed.
 
     std::jthread WorkerThread; ///< Only access under QueueMutex.
     TAtomic<Bool> bIsAsync{ false };

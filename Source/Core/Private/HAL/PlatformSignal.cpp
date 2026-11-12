@@ -103,8 +103,8 @@ void Lumen::HAL::FPlatformSignal::Bind ( const ESystemSignal::Type InSignal, con
 {
     const Int32 OSCode = InSignal;
 
-    TLockGuard<HAL::FPlatformRecursiveSharedMutex> Guard(ListenersMutex);
-    FSignalHandlerVector &Listeners                      = SignalListeners[InSignal];
+    TLockGuard<HAL::FPlatformRecursiveSharedMutex> Guard( ListenersMutex );
+    FSignalHandlerVector &Listeners = SignalListeners[InSignal];
 
     if ( Listeners.empty() )
     {

@@ -25,6 +25,7 @@
 #include <HAL/PlatformSignal.hpp>
 #include <HAL/PlatformTime.hpp>
 
+#include <print>
 #include <thread>
 
 namespace Lumen
@@ -203,7 +204,7 @@ void FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbos
 
     if ( bQueued )
     {
-        Condition.notify_one();
+        Condition.NotifyOne();
         return;
     }
 
@@ -219,7 +220,7 @@ void FLogger::FlushLogMessages ( std::stop_token &StopToken )
         {
             HAL::TUniqueLock<HAL::FPlatformMutex> Lock( QueueMutex );
 
-            Condition.wait( Lock, StopToken, [this]
+            Condition.Wait( Lock, StopToken, [this]
             {
                 return not LogMessageQueue.empty();
             } );
