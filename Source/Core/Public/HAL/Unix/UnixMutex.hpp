@@ -37,10 +37,10 @@ namespace HAL
 
     public:
 
-        void Lock () noexcept;
-        void Unlock () noexcept;
+        LUMEN_FORCE_INLINE void Lock () noexcept;
+        LUMEN_FORCE_INLINE void Unlock () noexcept;
 
-        [[nodiscard]] Bool TryLock () noexcept;
+        [[nodiscard]] LUMEN_FORCE_INLINE Bool TryLock () noexcept;
 
     private:
 
