@@ -3,6 +3,8 @@
  * @brief Platform mutex
  */
 
+#pragma once
+
 #include <Core/CoreDefinitions.hpp>
 
 #if defined( LUMEN_PLATFORM_WINDOWS )
