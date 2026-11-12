@@ -71,14 +71,14 @@ template <class TMutexType> Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock::~T
 }
 
 template <class TMutexType>
-Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TUniqueLock &&InOther ) noexcept
+Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TUniqueLock<TMutexType> &&InOther ) noexcept
     : Mutex( std::exchange( InOther.Mutex, nullptr ) ), bIsLocked( std::exchange( InOther.bIsLocked, false ) )
 {
     /** Empty */
 }
 
 template <class TMutexType>
-Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock &Lumen::HAL::TUniqueLock<TMutexType>::operator=( TUniqueLock &&InOther ) noexcept
+Lumen::HAL::TUniqueLock<TMutexType> &Lumen::HAL::TUniqueLock<TMutexType>::operator=( TUniqueLock<TMutexType> &&InOther ) noexcept
 {
     if ( this != &InOther )
     {

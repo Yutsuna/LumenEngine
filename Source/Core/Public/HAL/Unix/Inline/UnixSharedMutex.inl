@@ -55,10 +55,10 @@ void Lumen::HAL::FUnixSharedMutex::UnlockShared () noexcept
 
 Lumen::Bool Lumen::HAL::FUnixSharedMutex::TryLock () noexcept
 {
-    return pthread_rwlock_trylock( &RwLock ) == 0;
+    return pthread_rwlock_trywrlock( &RwLock ) == 0;
 }
 
 Lumen::Bool Lumen::HAL::FUnixSharedMutex::TryLockShared () noexcept
 {
-    return pthread_rwlock_trylock( &RwLock ) == 0;
+    return pthread_rwlock_tryrdlock( &RwLock ) == 0;
 }

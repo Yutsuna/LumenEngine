@@ -108,7 +108,7 @@ namespace HAL
 
         /** @brief Protects SignalListeners. Never taken from the OS signal handler (it could interrupt the holder and
          * self-deadlock). */
-        static FPlatformRecursiveMutex ListenersMutex;
+        static FPlatformRecursiveSharedMutex ListenersMutex;
 
         /** @brief Bit N is set when signal N was received and not dispatched yet. */
         static TAtomic<UInt64> PendingSignals;
