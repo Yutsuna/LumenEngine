@@ -3,6 +3,8 @@
  * @brief Inline implementation of Unix Mutex
  */
 
+#pragma once
+
 #include <HAL/Unix/UnixMutex.hpp>
 
 /**

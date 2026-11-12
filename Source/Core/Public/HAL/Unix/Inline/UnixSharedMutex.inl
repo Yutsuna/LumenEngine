@@ -7,7 +7,6 @@
 
 #include <HAL/Unix/UnixSharedMutex.inl>
 
-#include <exception>
 #include <pthread.h>
 
 /**
@@ -18,8 +17,7 @@ Lumen::HAL::FUnixSharedMutex::~FUnixSharedMutex () noexcept
 {
     if ( pthread_rwlock_destroy( &RwLock ) == 0 )
     {
-        /** TODO: look if it is pertinent to use LOGGER FATAL */
-        std::terminate();
+        return;
     }
 }
 
@@ -27,8 +25,7 @@ void Lumen::HAL::FUnixSharedMutex::Lock () noexcept
 {
     if ( pthread_rwlock_wrlock( &RwLock ) != 0 )
     {
-        /** TODO: look if it is pertinent to use LOGGER FATAL */
-        std::terminate();
+        return;
     }
 }
 
@@ -36,8 +33,7 @@ void Lumen::HAL::FUnixSharedMutex::Unlock () noexcept
 {
     if ( pthread_rwlock_unlock( &RwLock ) != 0 )
     {
-        /** TODO: look if it is pertinent to use LOGGER FATAL */
-        std::terminate();
+        return;
     }
 }
 
@@ -45,8 +41,7 @@ void Lumen::HAL::FUnixSharedMutex::LockShared () noexcept
 {
     if ( pthread_rwlock_rdlock( &RwLock ) != 0 )
     {
-        /** TODO: look if it is pertinent to use LOGGER FATAL */
-        std::terminate();
+        return;
     }
 }
 
@@ -54,8 +49,7 @@ void Lumen::HAL::FUnixSharedMutex::UnlockShared () noexcept
 {
     if ( pthread_rwlock_unlock( &RwLock ) != 0 )
     {
-        /** TODO: look if it is pertinent to use LOGGER FATAL */
-        std::terminate();
+        return;
     }
 }
 
