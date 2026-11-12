@@ -19,10 +19,10 @@ namespace Lumen
 namespace HAL
 {
 
-    using FPlatformMutex          = FWindowsMutex;
-    using FPlatformRecursiveMutex = FWindowsRecursiveMutex;
-    using FPlatformSharedMutex    = FWindowsSharedMutex;
-    using FPlatformSpinLockMutex  = FWindowsSpinLockMutex;
+    using FPlatformMutex                = FWindowsMutex;
+    using FPlatformRecursiveSharedMutex = FWindowsRecursiveSharedMutex;
+    using FPlatformSharedMutex          = FWindowsSharedMutex;
+    using FPlatformSpinLockMutex        = FWindowsSpinLockMutex;
 
 } // namespace HAL
 
@@ -40,10 +40,10 @@ namespace Lumen
 namespace HAL
 {
 
-    using FPlatformMutex          = FUnixMutex;
-    using FPlatformRecursiveMutex = FUnixRecursiveMutex;
-    using FPlatformSharedMutex    = FUnixSharedMutex;
-    using FPlatformSpinLockMutex  = FUnixSpinLockMutex;
+    using FPlatformMutex                = FUnixMutex;
+    using FPlatformRecursiveSharedMutex = FUnixRecursiveSharedMutex;
+    using FPlatformSharedMutex          = FUnixSharedMutex;
+    using FPlatformSpinLockMutex        = FUnixSpinLockMutex;
 
 } // namespace HAL
 

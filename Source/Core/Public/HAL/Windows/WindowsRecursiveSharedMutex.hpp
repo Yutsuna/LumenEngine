@@ -1,5 +1,5 @@
 /**
- * @file WindowsRecursiveMutex.hpp
+ * @file WindowsRecursiveSharedMutex.hpp
  * @brief Recursive mutex backed by a Win32 CRITICAL_SECTION.
  */
 
@@ -30,15 +30,15 @@ namespace HAL
 {
 
     /**
-     * @class FWindowsRecursiveMutex
+     * @class FWindowsRecursiveSharedMutex
      * @brief Recursive mutex with a spin count.
      */
-    class CORE_EXPORT FWindowsRecursiveMutex final : public FNonCopyable, public FNonMovable
+    class CORE_EXPORT FWindowsRecursiveSharedMutex final : public FNonCopyable, public FNonMovable
     {
     public:
 
-        LUMEN_FORCE_INLINE FWindowsRecursiveMutex () noexcept;
-        LUMEN_FORCE_INLINE ~FWindowsRecursiveMutex() noexcept;
+        LUMEN_FORCE_INLINE FWindowsRecursiveSharedMutex () noexcept;
+        LUMEN_FORCE_INLINE ~FWindowsRecursiveSharedMutex() noexcept;
 
     public:
 
@@ -58,6 +58,6 @@ namespace HAL
 
 } // namespace Lumen
 
-    #include "Inline/WindowsRecursiveMutex.inl"
+    #include "Inline/WindowsRecursiveSharedMutex.inl"
 
 #endif

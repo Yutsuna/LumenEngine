@@ -1,5 +1,5 @@
 /**
- * @file UnixRecursiveMutex.hpp
+ * @file UnixRecursiveSharedMutex.hpp
  * @brief Unix platforms recursive mutex definitions
  */
 
@@ -8,7 +8,7 @@
 #include <Core/CoreDefinitions.hpp>
 
 #if not defined( LUMEN_PLATFORM_UNIX )
-    #error "UnixRecursiveMutex.hpp is only available on Unix platforms."
+    #error "UnixRecursiveSharedMutex.hpp is only available on Unix platforms."
 #else
 
     #include <Core/CoreTypes.hpp>
@@ -63,6 +63,6 @@ namespace HAL
 
 } // namespace Lumen
 
-    #include "Inline/UnixRecursiveMutex.inl"
+    #include "Inline/UnixRecursiveSharedMutex.inl"
 
 #endif

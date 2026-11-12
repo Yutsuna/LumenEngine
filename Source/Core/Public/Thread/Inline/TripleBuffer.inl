@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <Thread/TripleBuffer.hpp>
 #include <HAL/LockGuard.hpp>
+#include <Thread/TripleBuffer.hpp>
 
 /**
  * FBufferFlag

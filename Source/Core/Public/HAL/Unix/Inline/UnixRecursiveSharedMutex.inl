@@ -1,12 +1,12 @@
 /**
- * @file UnixRecursiveMutex.inl
+ * @file UnixRecursiveSharedMutex.inl
  * @brief Inline implementation of FUnixRecursiveSharedMutex.
  */
 
 #pragma once
 
 #include <HAL/PlatformAtomic.hpp>
-#include <HAL/Unix/UnixRecursiveMutex.hpp>
+#include <HAL/Unix/UnixRecursiveSharedMutex.hpp>
 
 #include <pthread.h>
 
