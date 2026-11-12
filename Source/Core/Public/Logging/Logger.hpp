@@ -63,7 +63,7 @@ public:
 private:
 
     void EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message );
-    void FlushLogMessages ( std::stop_token &StopToken );
+    void FlushLogMessages ( const FStopToken &InStopToken );
     void CoutMessage ( const FLogMessage &LogMessage ) const noexcept;
 
 private:
