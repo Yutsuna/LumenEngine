@@ -245,7 +245,7 @@ LUMEN_TEST( SpinLock_Threading, LockBlocksSecondThread )
 
     Lock.Lock();
 
-    std::thread Other( [&] ()
+    FThread Other( [&] ()
     {
         SecondStarted.store( true, std::memory_order_release );
         Lock.Lock();
@@ -275,7 +275,7 @@ LUMEN_TEST( SpinLock_Threading, TryLockFailsFromOtherThreadWhileLocked )
 
     Lock.Lock();
 
-    std::thread Other( [&] ()
+    FThread Other( [&] ()
     {
         OtherObserved.store( Lock.TryLock(), std::memory_order_release );
         Lock.Unlock();
@@ -301,9 +301,9 @@ LUMEN_TEST( SpinLock_Threading, CounterMutationUnderLock )
         }
     };
 
-    std::thread First( Increment );
-    std::thread Second( Increment );
-    std::thread Third( Increment );
+    FThread First( Increment );
+    FThread Second( Increment );
+    FThread Third( Increment );
 
     First.join();
     Second.join();

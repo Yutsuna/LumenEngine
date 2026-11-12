@@ -147,7 +147,7 @@ namespace MonadicInternal
         }
         else
         {
-            return Out( std::invoke( std::forward<Func>( InFunc ), std::forward<Array>( Arg ) ) );
+            return Out( Invoke( std::forward<Func>( InFunc ), std::forward<Array>( Arg ) ) );
         }
     }
 
@@ -179,14 +179,14 @@ namespace MonadicInternal
     constexpr decltype( auto ) InvokeRecover ( Self &&Container, Func &&InFunc ) noexcept(
         std::is_nothrow_invocable_v<Func, decltype( std::forward<Self>( Container ).Error() )> )
     {
-        return std::invoke( std::forward<Func>( InFunc ), std::forward<Self>( Container ).Error() );
+        return Invoke( std::forward<Func>( InFunc ), std::forward<Self>( Container ).Error() );
     }
 
     template <class Self, class Func>
         requires( not Concepts::CHasError<Self> )
     constexpr decltype( auto ) InvokeRecover ( Self &&, Func &&InFunc ) noexcept( std::is_nothrow_invocable_v<Func> )
     {
-        return std::invoke( std::forward<Func>( InFunc ) );
+        return Invoke( std::forward<Func>( InFunc ) );
     }
 
 } // namespace MonadicInternal

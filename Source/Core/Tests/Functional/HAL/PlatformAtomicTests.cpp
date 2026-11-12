@@ -58,7 +58,7 @@ LUMEN_TEST( CpuRelax_MemoryOrdering, SpinWaitObservesOtherThreadStore )
      */
     TAtomic<Int32> State{ 0 };
 
-    std::thread Producer( [&] ()
+    FThread Producer( [&] ()
     {
         HAL::CpuRelax();
         State.store( 7, std::memory_order_release );
@@ -82,7 +82,7 @@ LUMEN_TEST( CpuRelax_MemoryOrdering, RelaxedTTASSpinLoopTerminates )
      */
     TAtomic<Bool> Done{ false };
 
-    std::thread Finisher( [&] ()
+    FThread Finisher( [&] ()
     {
         std::this_thread::sleep_for( 10ms );
         Done.store( true, std::memory_order_release );

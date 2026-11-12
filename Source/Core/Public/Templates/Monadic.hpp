@@ -30,7 +30,7 @@ namespace Concepts
      * @brief Test the transformable state (T -> U).
      */
     template <class Self, class Func>
-    concept CTransformable = CMonadic<Self> and std::invocable<Func, MonadicInternal::TValueRef<Self>> and
+    concept CTransformable = CMonadic<Self> and TIsInvocable<Func, MonadicInternal::TValueRef<Self>> and
                              ( not std::is_void_v<MonadicInternal::TTransformResult<Self, Func>> ) and
                              requires { typename MonadicInternal::TTransformOut<Self, Func>; };
 
@@ -39,10 +39,10 @@ namespace Concepts
      * @brief Test the bindable state
      */
     template <class Self, class Func>
-    concept CBindable = CMonadic<Self> and
-                        ( MonadicInternal::CIsVoidValue<Self> ? std::invocable<Func>
-                                                              : std::invocable<Func, MonadicInternal::TValueRef<Self>> ) and
-                        CMonadic<MonadicInternal::TBindOut<Self, Func>>;
+    concept CBindable =
+        CMonadic<Self> and
+        ( MonadicInternal::CIsVoidValue<Self> ? TIsInvocable<Func> : TIsInvocable<Func, MonadicInternal::TValueRef<Self>> ) and
+        CMonadic<MonadicInternal::TBindOut<Self, Func>>;
 
     /**
      * @concept CRecoverable
@@ -114,11 +114,11 @@ public:
         {
             if constexpr ( MonadicInternal::CIsVoidValue<Self> )
             {
-                return std::invoke( std::forward<Func>( InFunc ) );
+                return Invoke( std::forward<Func>( InFunc ) );
             }
             else
             {
-                return std::invoke( std::forward<Func>( InFunc ), *std::forward<Self>( InSelf ) );
+                return Invoke( std::forward<Func>( InFunc ), *std::forward<Self>( InSelf ) );
             }
         }
         return MonadicInternal::MakeFailure<Out>( std::forward<Self>( InSelf ) );
@@ -146,7 +146,7 @@ public:
 
     /** @brief Inspect the container, calling the given function if the container is not empty. */
     template <class Self, class Func>
-        requires Concepts::CMonadic<Self> && std::invocable<Func, MonadicInternal::TConstElementRef<Self>>
+        requires Concepts::CMonadic<Self> and TIsInvocable<Func, MonadicInternal::TConstElementRef<Self>>
     constexpr auto Inspect ( this Self &&InSelf, Func &&InFunc ) noexcept(
         noexcept( MonadicInternal::Has( std::declval<const MonadicInternal::TSelfType<Self> &>() ) ) and
         std::is_nothrow_invocable_v<Func, MonadicInternal::TConstElementRef<Self>> and
@@ -155,8 +155,8 @@ public:
     {
         if ( MonadicInternal::Has( InSelf ) ) [[likely]]
         {
-            std::invoke( std::forward<Func>( InFunc ),
-                         static_cast<MonadicInternal::TConstElementRef<Self>>( *std::forward<Self>( InSelf ) ) );
+            Invoke( std::forward<Func>( InFunc ),
+                    static_cast<MonadicInternal::TConstElementRef<Self>>( *std::forward<Self>( InSelf ) ) );
         }
         return std::forward<Self>( InSelf );
     }

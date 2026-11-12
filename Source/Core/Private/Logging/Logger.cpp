@@ -3,6 +3,8 @@
  * @brief Implementation of the Logger class.
  */
 
+#include "Templates/StopToken.hpp"
+#include "Thread/Thread.hpp"
 #if defined( LUMEN_PLATFORM_WINDOWS )
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
@@ -118,11 +120,11 @@ void FLogger::Initialize () noexcept
     {
         const HAL::TLockGuard<HAL::FPlatformMutex> Lock( QueueMutex );
 
-        if ( WorkerThread.joinable() )
+        if ( WorkerThread.IsJoinable() )
         {
             return;
         }
-        WorkerThread = std::jthread( [this] ( std::stop_token Token )
+        WorkerThread = FThread( [this] ( FStopToken Token )
         {
             FlushLogMessages( Token );
         } );
@@ -161,7 +163,7 @@ void FLogger::Shutdown () noexcept
     /** INFO: Serialize concurrent callers to avoid race conditions. */
     const HAL::TLockGuard<HAL::FPlatformMutex> ShutdownLock( ShutdownMutex );
 
-    std::jthread Worker;
+    FThread Worker;
 
     {
         const HAL::TLockGuard<HAL::FPlatformMutex> Lock( QueueMutex );

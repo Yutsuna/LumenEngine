@@ -67,7 +67,7 @@ public:
     constexpr TOptional( FEmplaceTag,
                          Function &&Func,
                          Arguments &&Args ) noexcept( std::is_nothrow_invocable_v<Function, Arguments> )
-        : Value( std::invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ), bHasValue( true )
+        : Value( Invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ), bHasValue( true )
     {
         /** Empty */
     }

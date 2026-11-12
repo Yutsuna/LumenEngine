@@ -9,10 +9,10 @@
 
 #include <HAL/PlatformMutex.hpp>
 
+#include <Thread/Thread.hpp>
+
 #include <Templates/ConditionVariable.hpp>
 #include <Templates/Queue.hpp>
-
-#include <thread>
 
 namespace Lumen
 {
@@ -77,8 +77,8 @@ private:
     HAL::FPlatformMutex ShutdownMutex;   ///< Serializes concurrent Shutdown() calls.
     FConditionVariable Condition;        ///< Manages synchronization for log message processing.
     TQueue<FLogMessage> LogMessageQueue; ///< Holds log messages waiting to be processed.
+    FThread WorkerThread;                ///< Only access under QueueMutex.
 
-    std::jthread WorkerThread; ///< Only access under QueueMutex.
     TAtomic<Bool> bIsAsync{ false };
 };
 

@@ -46,7 +46,7 @@ public:
      * The clearing is done per-block (64 bits) atomically using exchange(0).
      */
     template <typename Callable>
-        requires std::is_invocable_v<Callable, USize>
+        requires Concepts::CIsInvocable<Callable, USize>
     void ForEachSetBitAndClear ( Callable &&InFunc ) noexcept;
 
     /** @brief Clears all bits in the bitset. */

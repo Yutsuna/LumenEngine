@@ -342,7 +342,7 @@ LUMEN_TEST( SharedMutex_Threading, WriterBlocksReader )
     TAtomic<Bool> ReaderAcquired{ false };
     TAtomic<Bool> WriterRelease{ false };
 
-    std::thread Writer( [&] ()
+    FThread Writer( [&] ()
     {
         Mutex.Lock();
         WriterReady.store( true, std::memory_order_release );
@@ -358,7 +358,7 @@ LUMEN_TEST( SharedMutex_Threading, WriterBlocksReader )
         std::this_thread::sleep_for( 1ms );
     }
 
-    std::thread Reader( [&] ()
+    FThread Reader( [&] ()
     {
         ReaderStarted.store( true, std::memory_order_release );
         Mutex.LockShared();
@@ -394,7 +394,7 @@ LUMEN_TEST( SharedMutex_Threading, ReaderBlocksWriter )
     TAtomic<Bool> WriterAcquired{ false };
     TAtomic<Bool> ReaderRelease{ false };
 
-    std::thread Reader( [&] ()
+    FThread Reader( [&] ()
     {
         Mutex.LockShared();
         ReaderReady.store( true, std::memory_order_release );
@@ -410,7 +410,7 @@ LUMEN_TEST( SharedMutex_Threading, ReaderBlocksWriter )
         std::this_thread::sleep_for( 1ms );
     }
 
-    std::thread Writer( [&] ()
+    FThread Writer( [&] ()
     {
         WriterStarted.store( true, std::memory_order_release );
         Mutex.Lock();
@@ -552,11 +552,11 @@ LUMEN_TEST( SharedMutex_Threading, MultipleReadersShareSimultaneously )
     FSharedMutex Mutex;
     TAtomic<Bool> ReleaseReaders{ false };
 
-    std::array<std::thread, 4> Readers;
+    std::array<FThread, 4> Readers;
 
-    for ( std::thread &Reader : Readers )
+    for ( FThread &Reader : Readers )
     {
-        Reader = std::thread( [&] ()
+        Reader = FThread( [&] ()
         {
             Mutex.LockShared();
 
@@ -581,7 +581,7 @@ LUMEN_TEST( SharedMutex_Threading, MultipleReadersShareSimultaneously )
 
     ReleaseReaders.store( true, std::memory_order_release );
 
-    for ( std::thread &Reader : Readers )
+    for ( FThread &Reader : Readers )
     {
         Reader.join();
     }
@@ -602,7 +602,7 @@ LUMEN_TEST( SharedMutex_Threading, PendingWriterBlocksNewSharedLock )
 
     Mutex.LockShared();
 
-    std::thread Writer( [&] ()
+    FThread Writer( [&] ()
     {
         /** INFO: Lock() sets WriterFlag immediately, then waits for readers to drain */
         Mutex.Lock();
@@ -624,7 +624,7 @@ LUMEN_TEST( SharedMutex_Threading, PendingWriterBlocksNewSharedLock )
     }
     LUMEN_CHECK_TRUE( Mutex.IsWriteLocked() );
 
-    std::thread Reader( [&] ()
+    FThread Reader( [&] ()
     {
         Mutex.LockShared();
         ReaderAcquired.store( true, std::memory_order_release );
@@ -695,10 +695,10 @@ LUMEN_TEST( SharedMutex_Threading, MixedReadersWritersKeepSharedDataConsistent )
         }
     };
 
-    std::thread WriterOne( WriterWork );
-    std::thread WriterTwo( WriterWork );
-    std::thread ReaderOne( ReaderWork );
-    std::thread ReaderTwo( ReaderWork );
+    FThread WriterOne( WriterWork );
+    FThread WriterTwo( WriterWork );
+    FThread ReaderOne( ReaderWork );
+    FThread ReaderTwo( ReaderWork );
 
     WriterOne.join();
     WriterTwo.join();

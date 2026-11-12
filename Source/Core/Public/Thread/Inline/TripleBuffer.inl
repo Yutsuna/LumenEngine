@@ -164,7 +164,7 @@ void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( BufferType &&InData
 
 template <typename BufferType>
 template <typename Callable>
-    requires std::is_invocable_v<Callable, BufferType &>
+    requires Concepts::CIsInvocable<Callable, BufferType &>
 void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( Callable &&InEditor )
 {
     HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };

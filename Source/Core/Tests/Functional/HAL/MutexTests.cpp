@@ -328,7 +328,7 @@ LUMEN_TEST( Mutex_Threading, LockBlocksSecondThread )
 
     Mutex.Lock();
 
-    std::thread Other( [&] ()
+    FThread Other( [&] ()
     {
         SecondStarted.store( true, std::memory_order_release );
         Mutex.Lock();
@@ -365,8 +365,8 @@ LUMEN_TEST( Mutex_Threading, CounterMutationUnderLock )
         }
     };
 
-    std::thread T1( Increment );
-    std::thread T2( Increment );
+    FThread T1( Increment );
+    FThread T2( Increment );
 
     T1.join();
     T2.join();
@@ -535,9 +535,9 @@ LUMEN_TEST( UniqueLock_Threading, CounterMutationUnderLock )
         }
     };
 
-    std::thread First( Increment );
-    std::thread Second( Increment );
-    std::thread Third( Increment );
+    FThread First( Increment );
+    FThread Second( Increment );
+    FThread Third( Increment );
 
     First.join();
     Second.join();

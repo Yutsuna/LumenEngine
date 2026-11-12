@@ -442,12 +442,12 @@ LUMEN_TEST( TTripleBuffer_Threading, SerializedWritersPublishStrictlyAscendingVa
         }
     };
 
-    std::thread RecorderThread( Recorder );
+    FThread RecorderThread( Recorder );
 
-    std::array<std::thread, WriterCount> WriterThreads = { std::thread( Writer ), std::thread( Writer ), std::thread( Writer ),
-                                                           std::thread( Writer ) };
+    std::array<FThread, WriterCount> WriterThreads = { FThread( Writer ), FThread( Writer ), FThread( Writer ),
+                                                           FThread( Writer ) };
 
-    for ( std::thread &WriterThread : WriterThreads )
+    for ( FThread &WriterThread : WriterThreads )
     {
         WriterThread.join();
     }
@@ -516,8 +516,8 @@ LUMEN_TEST( TTripleBuffer_Threading, SingleWriterReaderSeesOnlyNewerMonotonicVal
         }
     };
 
-    std::thread RecorderThread( Recorder );
-    std::thread WriterThread( Writer );
+    FThread RecorderThread( Recorder );
+    FThread WriterThread( Writer );
 
     WriterThread.join();
 
@@ -595,19 +595,19 @@ LUMEN_TEST( TTripleBuffer_Threading, ConcurrentWritersStayWithinPublishedRange )
         MaxSamples[ReaderIndex] = MaximumSampled;
     };
 
-    std::array<std::thread, WriterCount> WriterThreads = { std::thread( Writer ), std::thread( Writer ), std::thread( Writer ),
-                                                           std::thread( Writer ) };
+    std::array<FThread, WriterCount> WriterThreads = { FThread( Writer ), FThread( Writer ), FThread( Writer ),
+                                                           FThread( Writer ) };
 
-    std::array<std::thread, ReaderCount> ReaderThreads = { std::thread( Reader, 0U ), std::thread( Reader, 1U ) };
+    std::array<FThread, ReaderCount> ReaderThreads = { FThread( Reader, 0U ), FThread( Reader, 1U ) };
 
-    for ( std::thread &WriterThread : WriterThreads )
+    for ( FThread &WriterThread : WriterThreads )
     {
         WriterThread.join();
     }
 
     bAllWritesDone.store( true, std::memory_order_release );
 
-    for ( std::thread &ReaderThread : ReaderThreads )
+    for ( FThread &ReaderThread : ReaderThreads )
     {
         ReaderThread.join();
     }

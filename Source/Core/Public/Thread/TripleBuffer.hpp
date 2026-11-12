@@ -136,7 +136,7 @@ namespace Thread
          * @param InEditor A callable taking a reference to the mutable BufferType.
          */
         template <typename Callable>
-            requires std::is_invocable_v<Callable, BufferType &>
+            requires Concepts::CIsInvocable<Callable, BufferType &>
         void WriteBuffer ( Callable &&InEditor );
 
         /**

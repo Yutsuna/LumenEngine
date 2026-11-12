@@ -375,13 +375,13 @@ LUMEN_TEST( SPMCQueue_Threading, MultiConsumersDeliverExactlyOnce )
         }
     };
 
-    std::thread ProducerThread( Producer );
-    std::array<std::thread, ConsumerCount> ConsumerThreads = { std::thread( Consumer, 0U ), std::thread( Consumer, 1U ),
-                                                               std::thread( Consumer, 2U ), std::thread( Consumer, 3U ) };
+    FThread ProducerThread( Producer );
+    std::array<FThread, ConsumerCount> ConsumerThreads = { FThread( Consumer, 0U ), FThread( Consumer, 1U ),
+                                                               FThread( Consumer, 2U ), FThread( Consumer, 3U ) };
 
     ProducerThread.join();
 
-    for ( std::thread &ConsumerThread : ConsumerThreads )
+    for ( FThread &ConsumerThread : ConsumerThreads )
     {
         ConsumerThread.join();
     }
@@ -428,7 +428,7 @@ LUMEN_TEST( SPMCQueue_Threading, SingleConsumerPreservesFifoUnderLoad )
         bAllPushed.store( true, std::memory_order_release );
     };
 
-    std::thread ProducerThread( Producer );
+    FThread ProducerThread( Producer );
 
     for ( ;; )
     {
@@ -500,8 +500,8 @@ LUMEN_TEST( SPMCQueue_Threading, ProducerAndConsumerCoexistWithoutDeadlock )
         }
     };
 
-    std::thread ProducerThread( Producer );
-    std::thread ConsumerThread( Consumer );
+    FThread ProducerThread( Producer );
+    FThread ConsumerThread( Consumer );
 
     ProducerThread.join();
     ConsumerThread.join();

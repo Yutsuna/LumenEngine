@@ -50,6 +50,7 @@ namespace Internal
 
     template <typename, typename TFunc, typename... TArgs> struct TInvokeResultImpl
     {
+        /* */
     };
 
     template <typename TFunc, typename... TArgs>
@@ -60,6 +61,16 @@ namespace Internal
         using Type = decltype( Invoke( std::declval<TFunc>(), std::declval<TArgs>()... ) );
     };
 
+    template <typename, typename TFunc, typename... TArgs> struct TIsInvocableImpl
+    {
+        static constexpr Bool Value = false;
+    };
+
+    template <typename TFunc, typename... TArgs> struct TIsInvocableImpl<TVoidT<TInvokeResultT<TFunc, TArgs...>>, TFunc, TArgs...>
+    {
+        static constexpr Bool Value = true;
+    };
+
 } // namespace Internal
 
 /**
@@ -68,6 +79,7 @@ namespace Internal
  */
 template <typename TFunc, typename... TArgs> struct TInvokeResult : Internal::TInvokeResultImpl<void, TFunc, TArgs...>
 {
+    /* */
 };
 
 /**
@@ -75,6 +87,20 @@ template <typename TFunc, typename... TArgs> struct TInvokeResult : Internal::TI
  * @brief Alias for TInvokeResult::Type
  */
 template <typename TFunc, typename... TArgs> using TInvokeResultT = typename TInvokeResult<TFunc, TArgs...>::Type;
+
+/**
+ * @trait TIsInvocable
+ * @brief Whether Invoke(Func, Args...) is well-formed.
+ */
+template <typename TFunc, typename... TArgs> struct TIsInvocable : Internal::TIsInvocableImpl<void, TFunc, TArgs...>
+{
+};
+
+/**
+ * @trait TIsInvocableV
+ * @brief Alias variable for TIsInvocable<...>::Value
+ */
+template <typename TFunc, typename... TArgs> inline constexpr bool TIsInvocableV = TIsInvocable<TFunc, TArgs...>::Value;
 
 } // namespace Lumen
 

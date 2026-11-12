@@ -135,7 +135,7 @@ public:
     static TUniquePtr MonadicEmplace ( Function &&Func,
                                        Arguments &&Args ) noexcept( std::is_nothrow_invocable_v<Function, Arguments> )
     {
-        return TUniquePtr( new Type( std::invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ) );
+        return TUniquePtr( new Type( Invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ) );
     }
 
 private:

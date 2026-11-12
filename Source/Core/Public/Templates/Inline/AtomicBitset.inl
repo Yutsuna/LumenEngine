@@ -64,7 +64,7 @@ inline Lumen::Bool Lumen::FAtomicBitset::Test ( USize InIndex ) const noexcept
 }
 
 template <typename Callable>
-    requires std::is_invocable_v<Callable, Lumen::USize>
+    requires Concepts::CIsInvocable<Callable, Lumen::USize>
 inline void Lumen::FAtomicBitset::ForEachSetBitAndClear ( Callable &&InFunc ) noexcept
 {
     for ( USize BlockIdx = 0U; BlockIdx < NumBlocks; ++BlockIdx )
