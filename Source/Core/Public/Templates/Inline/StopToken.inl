@@ -11,10 +11,16 @@
 #include <new>
 #include <utility>
 
+/**
+ * Private
+ */
+
 namespace Lumen
 {
+
 namespace Internal
 {
+
     template <typename TCallback> class TCallbackNode final : public FCallbackNode
     {
     public:
@@ -35,10 +41,16 @@ namespace Internal
 
         [[no_unique_address]] TCallback Callback;
     };
+
+
 } // namespace Internal
 
+/**
+ * Public
+ */
+
 template <typename TCallback>
-    requires Concepts::CIsInvocable<std::decay_t<TCallback> &>
+    requires CIsInvocable<std::decay_t<TCallback> &>
 Lumen::FStopCallback::FStopCallback( const FStopToken &InStopToken, TCallback &&InCallback ) noexcept
 {
     if ( InStopToken.State != nullptr )
@@ -47,4 +59,5 @@ Lumen::FStopCallback::FStopCallback( const FStopToken &InStopToken, TCallback &&
         Register( InStopToken );
     }
 }
+
 } // namespace Lumen

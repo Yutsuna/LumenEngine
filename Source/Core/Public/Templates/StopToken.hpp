@@ -11,11 +11,9 @@
 #include <Core/NonCopyable.hpp>
 #include <Core/NonMovable.hpp>
 
+#include <HAL/PlatformThread.hpp>
 #include <Templates/Invoke.hpp>
-#include <Thread/Thread.hpp>
 
-#include <atomic>
-#include <thread>
 #include <type_traits>
 
 namespace Lumen
@@ -56,7 +54,7 @@ namespace Internal
         TAtomic<ECallbackStatus> Status = { ECallbackStatus::Finished };
         FCallbackNode *Previous         = nullptr;
         FCallbackNode *Next             = nullptr;
-        FThread::FId ExecutingThread;
+        HAL::FPlatformThread::FId ExecutingThread;
     };
 
 } // namespace Internal
@@ -72,12 +70,16 @@ public:
     /** @brief Creates a token with no associated stop state. */
     FStopToken () noexcept = default;
 
+public:
+
     FStopToken ( const FStopToken &InOther ) noexcept;
     FStopToken ( FStopToken &&InOther ) noexcept;
     ~FStopToken () noexcept;
 
     FStopToken &operator=( const FStopToken &InOther ) noexcept;
     FStopToken &operator=( FStopToken &&InOther ) noexcept;
+
+public:
 
     /** @return True when this token can observe a stop request. */
     [[nodiscard]] Bool StopPossible () const noexcept;
@@ -114,12 +116,17 @@ public:
 
     /** @brief Creates a source without stop state. */
     FStopSource ( NullPtrType ) noexcept;
+
+public:
+
     FStopSource ( const FStopSource &InOther ) noexcept;
     FStopSource ( FStopSource &&InOther ) noexcept;
     ~FStopSource () noexcept;
 
     FStopSource &operator=( const FStopSource &InOther ) noexcept;
     FStopSource &operator=( FStopSource &&InOther ) noexcept;
+
+public:
 
     /** @return A token observing this source. */
     [[nodiscard]] FStopToken GetToken () const noexcept;
@@ -157,16 +164,22 @@ public:
      * @brief Registers a callback, or invokes it immediately if stop was already requested.
      * @details The callback is destroyed with this handle. Destroying the handle during concurrent execution waits for
      *          completion unless it is destroyed by the executing callback itself.
+     *
+     * @param InStopToken The stop token to register with.
+     * @param InCallback The callback to invoke.
      */
     template <typename TCallback>
-        requires Concepts::CIsInvocable<std::decay_t<TCallback> &>
+        requires CIsInvocable<std::decay_t<TCallback> &>
     explicit FStopCallback( const FStopToken &InStopToken, TCallback &&InCallback ) noexcept;
 
     ~FStopCallback () noexcept;
 
 private:
 
+    /** @brief Registers the callback with the stop token. */
     void Register ( const FStopToken &InStopToken ) noexcept;
+
+    /** @brief Resets the callback, removing it from the stop token. */
     void Reset () noexcept;
 
 private:

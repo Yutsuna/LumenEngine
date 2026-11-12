@@ -10,6 +10,14 @@
 #include <new>
 #include <utility>
 
+/**
+ * Private
+ */
+
+/**
+ * @class FStopState
+ * @brief Represents the state of a stop token.
+ */
 class Lumen::Internal::FStopState final
 {
 public:
@@ -89,7 +97,7 @@ public:
             }
             else if ( Observed == ECallbackStatus::Executing )
             {
-                if ( InCallback.ExecutingThread == std::this_thread::get_id() )
+                if ( InCallback.ExecutingThread == HAL::FPlatformThread::GetCurrentId() )
                 {
                     break;
                 }
@@ -131,7 +139,7 @@ private:
     static void ExecuteCallback ( FCallbackNode &InCallback ) noexcept
     {
         ECallbackStatus Expected   = ECallbackStatus::Pending;
-        InCallback.ExecutingThread = std::this_thread::get_id();
+        InCallback.ExecutingThread = HAL::FPlatformThread::GetCurrentId();
         if ( not InCallback.Status.compare_exchange_strong( Expected, ECallbackStatus::Executing, std::memory_order::acq_rel,
                                                             std::memory_order::acquire ) )
         {
