@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <Templates/Invoke.hpp>
+
 namespace Lumen
 {
 
