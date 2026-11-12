@@ -3,23 +3,6 @@
  * @brief Implementation of the Logger class.
  */
 
-#include <Core/CoreDefinitions.hpp>
-#include <Core/CoreTypes.hpp>
-
-#include <Logging/Logger.hpp>
-
-#include <HAL/PlatformTime.hpp>
-#include <HAL/Signal.hpp>
-
-#include <cerrno>
-#include <cstdio>
-#include <exception>
-#include <print>
-#include <string>
-#include <system_error>
-#include <thread>
-#include <utility>
-
 #if defined( LUMEN_PLATFORM_WINDOWS )
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
@@ -32,6 +15,17 @@
 #elif defined( LUMEN_PLATFORM_UNIX ) || defined( LUMEN_PLATFORM_MACOS )
     #include <unistd.h>
 #endif
+
+#include <Core/CoreDefinitions.hpp>
+#include <Core/CoreTypes.hpp>
+
+#include <Logging/Logger.hpp>
+
+#include <HAL/LockGuard.hpp>
+#include <HAL/PlatformSignal.hpp>
+#include <HAL/PlatformTime.hpp>
+
+#include <thread>
 
 namespace Lumen
 {
@@ -121,7 +115,7 @@ void FLogger::Initialize () noexcept
 {
     try
     {
-        const TLockGuard<FMutex> Lock( QueueMutex );
+        const HAL::TLockGuard<HAL::FPlatformMutex> Lock( QueueMutex );
 
         if ( WorkerThread.joinable() )
         {
@@ -164,12 +158,12 @@ FLogger::~FLogger ()
 void FLogger::Shutdown () noexcept
 {
     /** INFO: Serialize concurrent callers to avoid race conditions. */
-    const TLockGuard<FMutex> ShutdownLock( ShutdownMutex );
+    const HAL::TLockGuard<HAL::FPlatformMutex> ShutdownLock( ShutdownMutex );
 
     std::jthread Worker;
 
     {
-        const TLockGuard<FMutex> Lock( QueueMutex );
+        const HAL::TLockGuard<HAL::FPlatformMutex> Lock( QueueMutex );
 
         bIsAsync.store( false );
         Worker = std::move( WorkerThread );
@@ -198,14 +192,13 @@ void FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbos
 
     const Bool bQueued = [&] -> Bool
     {
-        const TLockGuard<FMutex> Lock( QueueMutex );
-
-        if ( not bIsAsync.load() )
+        const HAL::TLockGuard<HAL::FPlatformMutex> Lock( QueueMutex );
+        const Bool bAsync = bIsAsync.load();
+        if ( bAsync ) [[likely]]
         {
-            return false;
+            LogMessageQueue.push( std::move( LogMessage ) );
         }
-        LogMessageQueue.push( std::move( LogMessage ) );
-        return true;
+        return bAsync;
     }();
 
     if ( bQueued )
@@ -224,11 +217,11 @@ void FLogger::FlushLogMessages ( std::stop_token &StopToken )
     for ( ;; )
     {
         {
-            TUniqueLock<FMutex> Lock( QueueMutex );
+            HAL::TUniqueLock<HAL::FPlatformMutex> Lock( QueueMutex );
 
             Condition.wait( Lock, StopToken, [this]
             {
-                return !LogMessageQueue.empty();
+                return not LogMessageQueue.empty();
             } );
 
             if ( LogMessageQueue.empty() )
@@ -275,7 +268,7 @@ void FLogger::CoutMessage ( const FLogMessage &LogMessage ) const noexcept
     if ( LogMessage.Verbosity == ELogVerbosity::Fatal )
     {
         std::fflush( stdout );
-        FSignal::Raise( ESystemSignal::Terminate );
+        HAL::FPlatformSignal::Raise( HAL::ESystemSignal::Terminate );
     }
 }
 

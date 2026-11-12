@@ -92,7 +92,7 @@ void RestoreDefaultOSHandler ( const Lumen::Int32 InOSCode ) noexcept
  */
 
 Lumen::HAL::FPlatformSignal::FSignalHandlerMap Lumen::HAL::FPlatformSignal::SignalListeners;
-Lumen::HAL::FPlatformRecursiveMutex Lumen::HAL::FPlatformSignal::ListenersMutex;
+Lumen::HAL::FPlatformRecursiveSharedMutex Lumen::HAL::FPlatformSignal::ListenersMutex;
 Lumen::TAtomic<Lumen::UInt64> Lumen::HAL::FPlatformSignal::PendingSignals{ 0U };
 
 /**
@@ -103,8 +103,8 @@ void Lumen::HAL::FPlatformSignal::Bind ( const ESystemSignal::Type InSignal, con
 {
     const Int32 OSCode = InSignal;
 
-    TLockGuard<HAL::FPlatformRecursiveMutex> Guard = { ListenersMutex };
-    FSignalHandlerVector &Listeners                = SignalListeners[InSignal];
+    TLockGuard<HAL::FPlatformRecursiveSharedMutex> Guard(ListenersMutex);
+    FSignalHandlerVector &Listeners                      = SignalListeners[InSignal];
 
     if ( Listeners.empty() )
     {
@@ -146,7 +146,7 @@ void Lumen::HAL::FPlatformSignal::Unbind ( const ESystemSignal::Type InSignal )
 {
     const Int32 OSCode = InSignal;
 
-    TLockGuard<HAL::FPlatformRecursiveMutex> Guard( ListenersMutex );
+    TLockGuard<HAL::FPlatformRecursiveSharedMutex> Guard( ListenersMutex );
 
     if ( SignalListeners.contains( InSignal ) )
     {
@@ -158,9 +158,9 @@ void Lumen::HAL::FPlatformSignal::Unbind ( const ESystemSignal::Type InSignal )
 
 void Lumen::HAL::FPlatformSignal::Reset ()
 {
-    TLockGuard<HAL::FPlatformRecursiveMutex> Guard( ListenersMutex );
+    TLockGuard<HAL::FPlatformRecursiveSharedMutex> Guard( ListenersMutex );
 
-    Algo::ForEach( SignalHandlers, [] ( const TPair<Int32, FSignalHandlerVector> &InEntry )
+    Algo::ForEach( SignalListeners, [] ( const FSignalHandlerMap::value_type &InEntry )
     {
         RestoreDefaultOSHandler( static_cast<Int32>( InEntry.first ) );
     } );
@@ -193,11 +193,10 @@ void Lumen::HAL::FPlatformSignal::HandleOSSignal ( const Int32 InSignal )
 Lumen::HAL::FPlatformSignal::FSignalHandlerVector
 Lumen::HAL::FPlatformSignal::SnapshotHandlers ( const ESystemSignal::Type InSignal )
 {
-    TLockGuard<FPlatformRecursiveMutex> Guard( ListenersMutex );
-    FSignalHandlerSignature Handlers;
-    using FIterator = typename FSignalHandlerVector::const_iterator;
+    TLockGuard<FPlatformRecursiveSharedMutex> Guard( ListenersMutex );
+    FSignalHandlerVector Handlers;
 
-    if ( const FIterator It = SignalListeners.find( InSignal ); It != SignalListeners.end() )
+    if ( const auto It = SignalListeners.find( InSignal ); It != SignalListeners.end() )
     {
         Handlers = It->second;
     }
