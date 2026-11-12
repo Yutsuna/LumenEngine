@@ -5,17 +5,26 @@
 
 #pragma once
 
-#include <Concepts/SameAs.hpp>
-#include <Core/NonCopyable.hpp>
 #include <CoreExport.hpp>
-#include <HAL/PlatformThread.hpp>
+
+#include <Core/NonCopyable.hpp>
+
+#include <Concepts/IsInvocable.hpp>
+#include <Concepts/SameAs.hpp>
+
 #include <Templates/StopToken.hpp>
 
-#include <type_traits>
+#include <HAL/PlatformThread.hpp>
 
 namespace Lumen
 {
 
+/**
+ * @class FThread
+ * @brief Move-only thread with cooperative cancellation and automatic joining.
+ * @tparam TFunction The callable type to invoke on the thread.
+ * @tparam TArgs The types of the arguments to pass to the callable.
+ */
 class CORE_EXPORT FThread final : public FNonCopyable
 {
 public:

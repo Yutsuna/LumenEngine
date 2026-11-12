@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Concepts/IsInvocable.hpp"
 #include <Core/CoreTypes.hpp>
 #include <Core/EnumFlags.hpp>
 #include <Core/NonCopyable.hpp>

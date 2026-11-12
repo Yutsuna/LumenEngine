@@ -10,14 +10,19 @@
 #include <Memory/UniquePtr.hpp>
 #include <Templates/Invoke.hpp>
 
-#include <new>
 #include <tuple>
 #include <utility>
 
 namespace Lumen
 {
+
 namespace Internal
 {
+
+    /**
+     * @class TThreadData
+     * @brief Holds the data for a thread, including the callable and arguments.
+     */
     template <typename TFunction, typename... TArgs> class TThreadData final
     {
     public:
@@ -27,6 +32,7 @@ namespace Internal
             : StopToken( std::move( InStopToken ) ), Function( std::forward<TForwardedFunction>( InFunction ) ),
               Arguments( std::forward<TForwardedArgs>( InArgs )... )
         {
+            /* */
         }
 
 #if defined( LUMEN_PLATFORM_WINDOWS )
@@ -70,23 +76,25 @@ namespace Internal
         TFunction Function;
         std::tuple<TArgs...> Arguments;
     };
+
 } // namespace Internal
 
 template <typename TFunction, typename... TArgs>
-    requires( not Concepts::CSameAs<std::remove_cvref_t<TFunction>, FThread> ) &&
-            ( Concepts::CIsInvocable<std::decay_t<TFunction>, FStopToken, std::decay_t<TArgs>...> ||
+    requires( not Concepts::CSameAs<std::remove_cvref_t<TFunction>, FThread> ) and
+            ( Concepts::CIsInvocable<std::decay_t<TFunction>, FStopToken, std::decay_t<TArgs>...> or
               Concepts::CIsInvocable<std::decay_t<TFunction>, std::decay_t<TArgs>...> )
-Lumen::FThread::FThread( TFunction &&InFunction, TArgs &&...InArgs ) noexcept
+FThread::FThread( TFunction &&InFunction, TArgs &&...InArgs ) noexcept
 {
     StopSource     = FStopSource();
     using DataType = Internal::TThreadData<std::decay_t<TFunction>, std::decay_t<TArgs>...>;
     TUniquePtr<DataType> Data( new ( std::nothrow ) DataType( StopSource.GetToken(), std::forward<TFunction>( InFunction ),
                                                               std::forward<TArgs>( InArgs )... ) );
-    if ( not Data.IsValid() || not Thread.Start( &DataType::Entry, Data.Get() ) )
+    if ( not Data.IsValid() or not Thread.Start( &DataType::Entry, Data.Get() ) )
     {
         StopSource = FStopSource( nullptr );
         return;
     }
     static_cast<void>( Data.Release() );
 }
+
 } // namespace Lumen
