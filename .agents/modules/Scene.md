@@ -8,7 +8,8 @@
 ## Public surface (`Source/Scene/Public/`)
 
 - `Actor/` — `AActor` (pure actor base, actor-model), `FMailBox` (wait-free
-  MPSC mailbox built on `Core/Thread/SPMCQueue.hpp`, uses `FMessage`),
+  intrusive MPSC mailbox using `FMessage`; its node free-list uses
+  `Core/Thread/SPMCQueue.hpp`, a lock-free bounded SPMC queue),
   `FActorMessage`, `FActorRegistry`.
 - `World/` — `FWorld` (world/phases, `bInParallelPhase` parallel phasing,
   spatial dirty tracking), `FWorldSpatialRegistry`.

@@ -44,7 +44,9 @@ the modules touched.
    `namespace Lumen { }` in `.hpp` but never opened in `.cpp`/`.inl`.
 2. `.agents/rules/core-first.md` + `.agents/modules/Core.md` — flag any
    re-implementation of what Core already provides (`std::vector` instead of
-   `TVector`, `std::mutex` instead of `FMutex`, hand-rolled strings, …).
+   `TVector`, `std::thread`/`std::jthread` instead of `FThread`, `std::mutex`
+   instead of `HAL::FPlatformMutex`, hand-rolled strings, …). Using `std` when
+   Core has no equivalent yet is allowed.
 3. Module exports & boundaries — flag Public symbols missing `<MODULE>_EXPORT`
    and `#include <SceneExport.hpp>`-style generated-export includes, and
    internals that should not be exported (see `.agents/AGENTS.md` module
@@ -63,7 +65,9 @@ the modules touched.
 - Namespace violations: `namespace Lumen { }` opened in a `.cpp`/`.inl`.
 - Comment violations: missing doxygen blocks on new public API, wrong tag
   style, plain `//` where `/** */` + tag is expected.
-- Core-first violations: third-party/std utils duplicating Core inventory.
+- Core-first violations: third-party/std utils duplicating Core inventory
+  (threads, stop tokens, condition variables, mutexes/locks, containers,
+  algorithms — see `rules/core-first.md § std → Core map`).
 - **Monoexcept / paradigm violations**: `try`/`throw`/`catch` in engine
   code (allowed only inside the test framework's assert macros);
   `std::optional`/`std::expected` instead of `TOptional`/`TExpected`;
