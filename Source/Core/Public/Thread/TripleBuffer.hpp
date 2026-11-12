@@ -10,7 +10,7 @@
 #include <Core/NonCopyable.hpp>
 #include <Core/NonMovable.hpp>
 
-#include <HAL/Mutex.hpp>
+#include <HAL/PlatformMutex.hpp>
 
 #include <Memory/UniquePtr.hpp>
 
@@ -163,7 +163,7 @@ namespace Thread
         TUniquePtr<BufferType[]> OwnedBuffers;
         BufferType *Buffers = nullptr;
         TAtomic<Internal::FBufferFlag::Type> BufferFlags;
-        alignas( 64 ) FMutex WriteMutex;
+        alignas( 64 ) HAL::FPlatformMutex WriteMutex;
     };
 
     static constexpr inline USize TripleBufferCount = 3U;
