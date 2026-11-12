@@ -44,8 +44,6 @@ namespace HAL
         FAtomicFlag Flag{};
     };
 
-    using FPlatformSpinLockMutex = FUnixSpinLockMutex;
-
 } // namespace HAL
 
 } // namespace Lumen

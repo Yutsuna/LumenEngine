@@ -59,8 +59,6 @@ namespace HAL
         pthread_mutex_t Mutex;
     };
 
-    using FPlatformRecursiveMutex = FUnixRecursiveSharedMutex;
-
 } // namespace HAL
 
 } // namespace Lumen

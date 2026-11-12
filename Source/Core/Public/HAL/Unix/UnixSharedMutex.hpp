@@ -48,8 +48,6 @@ namespace HAL
     #endif
     };
 
-    using FPlatformSharedMutex = FUnixSharedMutex;
-
 } // namespace HAL
 
 } // namespace Lumen

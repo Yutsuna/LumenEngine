@@ -56,8 +56,6 @@ namespace HAL
         SRWLOCK Mutex = SRWLOCK_INIT;
     };
 
-    using FPlatformSharedMutex = FWindowsSharedMutex;
-
 } // namespace HAL
 
 } // namespace Lumen

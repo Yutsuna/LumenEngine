@@ -54,8 +54,6 @@ namespace HAL
         CRITICAL_SECTION Mutex;
     };
 
-    using FPlatformRecursiveMutex = FWindowsRecursiveMutex;
-
 } // namespace HAL
 
 } // namespace Lumen

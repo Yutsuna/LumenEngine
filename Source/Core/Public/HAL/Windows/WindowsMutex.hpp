@@ -51,8 +51,6 @@ namespace HAL
         SRWLOCK RWLock = SRWLOCK_INIT;
     };
 
-    using FPlatformMutex = FWindowsMutex;
-
 } // namespace HAL
 
 } // namespace Lumen

@@ -47,8 +47,6 @@ namespace HAL
         pthread_mutex_t Mutex = PTHREAD_MUTEX_INITIALIZER;
     };
 
-    using FPlatformMutex = FUnixMutex;
-
 } // namespace HAL
 
 } // namespace Lumen

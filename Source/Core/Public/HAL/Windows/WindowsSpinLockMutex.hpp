@@ -61,8 +61,6 @@ namespace HAL
         std::atomic_flag Flag{};
     };
 
-    using FPlatformSpinLockMutex = FWindowsSpinLockMutex;
-
 } // namespace HAL
 
 } // namespace Lumen
