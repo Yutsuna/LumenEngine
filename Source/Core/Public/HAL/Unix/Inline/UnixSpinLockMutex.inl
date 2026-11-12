@@ -1,12 +1,13 @@
 /**
- * @file UnixSpinLock.inl
+ * @file UnixSpinLockMutex.inl
  * @brief Inline implementation of the Unix spin lock mutex.
  */
 
 #pragma once
 
 #include <HAL/PlatformAtomic.hpp>
-#include <HAL/Unix/UnixSpinLock.hpp>
+
+#include <HAL/Unix/UnixSpinLockMutex.hpp>
 
 #include <sched.h>
 
@@ -16,13 +17,16 @@
 
 void Lumen::HAL::FUnixSpinLockMutex::Lock () noexcept
 {
-    while ( Flag.test_and_set( std::memory_oder::acquire ) )
+    UInt32 SpinCount = 0;
+
+    /** INFO: On test_and_set failure, spin on a relaxed load until the flag looks free */
+    while ( Flag.test_and_set( std::memory_order::acquire ) )
     {
         while ( Flag.test( std::memory_order::relaxed ) )
         {
-            if ( SpinLock < GMaxRelaxSpins )
+            if ( SpinCount < GMaxRelaxSpins )
             {
-                Lumen::HAL::CpuRelax();
+                CpuRelax();
                 ++SpinCount;
             }
             else

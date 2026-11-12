@@ -48,6 +48,6 @@ namespace HAL
 
 } // namespace Lumen
 
-    #include "Inline/UnixSpinLock.inl"
+    #include "Inline/UnixSpinLockMutex.inl"
 
 #endif
