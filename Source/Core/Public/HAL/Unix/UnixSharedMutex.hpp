@@ -54,6 +54,6 @@ namespace HAL
 
 } // namespace Lumen
 
-    #include "Unix/UnixSharedMutex.inl"
+    #include "Inline/UnixSharedMutex.inl"
 
 #endif
