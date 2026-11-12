@@ -7,7 +7,8 @@
 
 #include <Logging/LoggingCategory.hpp>
 
-#include <HAL/Mutex.hpp>
+#include <HAL/PlatformMutex.hpp>
+
 #include <Templates/Queue.hpp>
 
 #include <condition_variable>
@@ -72,8 +73,8 @@ private:
 
 private:
 
-    FMutex QueueMutex;    ///< Guards LogMessageQueue, WorkerThread and the writes to bIsAsync.
-    FMutex ShutdownMutex; ///< Serializes concurrent Shutdown() calls.
+    HAL::FPlatformMutex QueueMutex;    ///< Guards LogMessageQueue, WorkerThread and the writes to bIsAsync.
+    HAL::FPlatformMutex ShutdownMutex; ///< Serializes concurrent Shutdown() calls.
     std::condition_variable_any Condition;
     TQueue<FLogMessage> LogMessageQueue;
 
