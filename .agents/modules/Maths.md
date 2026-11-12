@@ -1,6 +1,6 @@
 # Module: Maths
 
-- **Type:** Shared library (`Source/Maths/meson.build`), depends on nothing.
+- **Type:** Shared library (`Source/Maths/meson.build`), depends on `Core`.
 - **Status:** built; Scene depends on it.
 - **Doc:** this file lives in `.agents/modules/`; header code and docs stay
   English, standard applies (`rules/coding-style.md`), Core-first applies
@@ -9,7 +9,7 @@
 ## Public surface (`Source/Maths/Public/Maths/`)
 
 - `Vec.hpp`, `Matrix.hpp`, `Vertex.hpp` — vector/matrix/vertex math types.
-- `SIMD/SIMD.hpp`, `SIMDTypes.hpp`, `SIMD/Backend/` — SIMD abstraction and
+- `SIMD/SIMD.hpp`, `SIMD/SIMDTypes.hpp`, `SIMD/Backend/` — SIMD abstraction and
   per-backend implementations (keep hot paths branch-free and allocation-free).
 - `Macros.hpp` — math helper macros.
 - `Inline/` — inline/template implementations (`*.inl`, per

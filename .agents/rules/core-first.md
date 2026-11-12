@@ -57,7 +57,7 @@ rule — use the Lumen name.
 | Recursive mutex | `std::recursive_mutex` | `HAL::FPlatformRecursiveSharedMutex` |
 | Spin lock | — (hand-rolled) | `HAL::FPlatformSpinLockMutex` |
 | Condition variable | `std::condition_variable` | `FConditionVariable` (`Templates/ConditionVariable.hpp`) |
-| RAII lock | `std::lock_guard` / `std::unique_lock` / `std::shared_lock` | `HAL::TLockGuard` / `TUniqueLock` / `TSharedLock` |
+| RAII lock | `std::lock_guard` / `std::unique_lock` / `std::shared_lock` | `HAL::TLockGuard` / `HAL::TUniqueLock` / `HAL::TSharedLock` |
 | Atomic | `std::atomic<T>` / `std::atomic_flag` | `TAtomic<T>` / `FAtomicFlag` (`Core/CoreTypes.hpp`) |
 | Atomic bitset | `std::bitset` + manual locks | `FAtomicBitset` (`Templates/AtomicBitset.hpp`) |
 | Invoke | `std::invoke` | `Invoke` (`Templates/Invoke.hpp`) |
@@ -108,6 +108,6 @@ see `rules/testing.md`).
 - Public APIs accept/return Lumen types (`Int32`, `USize`, `FStringView`,
   `TVector<T>`), not raw `int`/`size_t`/C++ std types.
 - No per-message/object hidden allocation in actor/concurrency code — Core
-  provides wait-free queues and triple buffers for that (see `modules/Core.md`).
+  provides lock-free queues and triple buffers for that (see `modules/Core.md`).
 - Do not copy-paste a utility into your module "temporarily"; make it either
   a Core addition (with tests) or a properly-namespaced private helper.
