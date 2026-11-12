@@ -3,6 +3,8 @@
  * @brief Platform atomic operations
  */
 
+#pragma once
+
 #include <Core/CoreDefinitions.hpp>
 #include <CoreExport.hpp>
 
