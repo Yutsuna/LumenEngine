@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <HAL/Unix/UnixSharedMutex.inl>
+#include <HAL/Unix/UnixSharedMutex.hpp>
 
 #include <pthread.h>
 
