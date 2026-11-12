@@ -43,7 +43,8 @@ namespace Concepts
     template <class Self, class Func>
     concept CBindable =
         CMonadic<Self> and
-        ( MonadicInternal::CIsVoidValue<Self> ? Concepts::CIsInvocable<Func> : Concepts::CIsInvocable<Func, MonadicInternal::TValueRef<Self>> ) and
+        ( MonadicInternal::CIsVoidValue<Self> ? Concepts::CIsInvocable<Func>
+                                              : Concepts::CIsInvocable<Func, MonadicInternal::TValueRef<Self>> ) and
         CMonadic<MonadicInternal::TBindOut<Self, Func>>;
 
     /**
