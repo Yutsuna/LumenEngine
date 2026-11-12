@@ -33,7 +33,7 @@ namespace HAL
     public:
 
         FUnixMutex () noexcept = default;
-        ~FUnixMutex () noexcept;
+        LUMEN_FORCE_INLINE ~FUnixMutex () noexcept;
 
     public:
 
