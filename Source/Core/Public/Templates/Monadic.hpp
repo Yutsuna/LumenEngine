@@ -6,6 +6,8 @@
 #pragma once
 
 #include <CoreExport.hpp>
+
+#include <Concepts/IsInvocable.hpp>
 #include <Templates/MonadicDetails.hpp>
 
 #include <concepts>
@@ -30,7 +32,7 @@ namespace Concepts
      * @brief Test the transformable state (T -> U).
      */
     template <class Self, class Func>
-    concept CTransformable = CMonadic<Self> and TIsInvocable<Func, MonadicInternal::TValueRef<Self>> and
+    concept CTransformable = CMonadic<Self> and Concepts::CIsInvocable<Func, MonadicInternal::TValueRef<Self>> and
                              ( not std::is_void_v<MonadicInternal::TTransformResult<Self, Func>> ) and
                              requires { typename MonadicInternal::TTransformOut<Self, Func>; };
 
@@ -41,7 +43,7 @@ namespace Concepts
     template <class Self, class Func>
     concept CBindable =
         CMonadic<Self> and
-        ( MonadicInternal::CIsVoidValue<Self> ? TIsInvocable<Func> : TIsInvocable<Func, MonadicInternal::TValueRef<Self>> ) and
+        ( MonadicInternal::CIsVoidValue<Self> ? Concepts::CIsInvocable<Func> : Concepts::CIsInvocable<Func, MonadicInternal::TValueRef<Self>> ) and
         CMonadic<MonadicInternal::TBindOut<Self, Func>>;
 
     /**
@@ -146,7 +148,7 @@ public:
 
     /** @brief Inspect the container, calling the given function if the container is not empty. */
     template <class Self, class Func>
-        requires Concepts::CMonadic<Self> and TIsInvocable<Func, MonadicInternal::TConstElementRef<Self>>
+        requires Concepts::CMonadic<Self> and Concepts::CIsInvocable<Func, MonadicInternal::TConstElementRef<Self>>
     constexpr auto Inspect ( this Self &&InSelf, Func &&InFunc ) noexcept(
         noexcept( MonadicInternal::Has( std::declval<const MonadicInternal::TSelfType<Self> &>() ) ) and
         std::is_nothrow_invocable_v<Func, MonadicInternal::TConstElementRef<Self>> and

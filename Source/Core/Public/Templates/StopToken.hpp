@@ -12,6 +12,7 @@
 #include <Core/NonMovable.hpp>
 
 #include <Templates/Invoke.hpp>
+#include <Thread/Thread.hpp>
 
 #include <atomic>
 #include <thread>
@@ -51,11 +52,11 @@ namespace Internal
         void AddReference () noexcept;
         void ReleaseReference () noexcept;
 
-        TAtomic<UInt32> ReferenceCount{ 1U };
-        TAtomic<ECallbackStatus> Status{ ECallbackStatus::Finished };
-        FCallbackNode *Previous = nullptr;
-        FCallbackNode *Next     = nullptr;
-        FThread::id ExecutingThread{};
+        TAtomic<UInt32> ReferenceCount  = { 1U };
+        TAtomic<ECallbackStatus> Status = { ECallbackStatus::Finished };
+        FCallbackNode *Previous         = nullptr;
+        FCallbackNode *Next             = nullptr;
+        FThread::FId ExecutingThread;
     };
 
 } // namespace Internal

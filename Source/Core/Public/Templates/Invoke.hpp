@@ -6,6 +6,7 @@
 #pragma once
 
 #include <Core/CoreDefinitions.hpp>
+#include <Core/CoreTypes.hpp>
 
 #include <type_traits>
 #include <utility>
@@ -61,16 +62,6 @@ namespace Internal
         using Type = decltype( Invoke( std::declval<TFunc>(), std::declval<TArgs>()... ) );
     };
 
-    template <typename, typename TFunc, typename... TArgs> struct TIsInvocableImpl
-    {
-        static constexpr Bool Value = false;
-    };
-
-    template <typename TFunc, typename... TArgs> struct TIsInvocableImpl<TVoidT<TInvokeResultT<TFunc, TArgs...>>, TFunc, TArgs...>
-    {
-        static constexpr Bool Value = true;
-    };
-
 } // namespace Internal
 
 /**
@@ -88,12 +79,28 @@ template <typename TFunc, typename... TArgs> struct TInvokeResult : Internal::TI
  */
 template <typename TFunc, typename... TArgs> using TInvokeResultT = typename TInvokeResult<TFunc, TArgs...>::Type;
 
+namespace Internal
+{
+
+    template <typename, typename TFunc, typename... TArgs> struct TIsInvocableImpl
+    {
+        static constexpr Bool Value = false;
+    };
+
+    template <typename TFunc, typename... TArgs> struct TIsInvocableImpl<TVoidT<TInvokeResultT<TFunc, TArgs...>>, TFunc, TArgs...>
+    {
+        static constexpr Bool Value = true;
+    };
+
+} // namespace Internal
+
 /**
  * @trait TIsInvocable
  * @brief Whether Invoke(Func, Args...) is well-formed.
  */
 template <typename TFunc, typename... TArgs> struct TIsInvocable : Internal::TIsInvocableImpl<void, TFunc, TArgs...>
 {
+    /* */
 };
 
 /**
@@ -101,6 +108,13 @@ template <typename TFunc, typename... TArgs> struct TIsInvocable : Internal::TIs
  * @brief Alias variable for TIsInvocable<...>::Value
  */
 template <typename TFunc, typename... TArgs> inline constexpr bool TIsInvocableV = TIsInvocable<TFunc, TArgs...>::Value;
+
+/**
+ * @concept CIsInvocable
+ * @brief Whether Invoke(Func, Args...) is well-formed.
+ */
+template <typename TFunc, typename... TArgs>
+concept CIsInvocable = TIsInvocableV<TFunc, TArgs...>;
 
 } // namespace Lumen
 
