@@ -445,7 +445,7 @@ LUMEN_TEST( TTripleBuffer_Threading, SerializedWritersPublishStrictlyAscendingVa
     FThread RecorderThread( Recorder );
 
     std::array<FThread, WriterCount> WriterThreads = { FThread( Writer ), FThread( Writer ), FThread( Writer ),
-                                                           FThread( Writer ) };
+                                                       FThread( Writer ) };
 
     for ( FThread &WriterThread : WriterThreads )
     {
@@ -596,7 +596,7 @@ LUMEN_TEST( TTripleBuffer_Threading, ConcurrentWritersStayWithinPublishedRange )
     };
 
     std::array<FThread, WriterCount> WriterThreads = { FThread( Writer ), FThread( Writer ), FThread( Writer ),
-                                                           FThread( Writer ) };
+                                                       FThread( Writer ) };
 
     std::array<FThread, ReaderCount> ReaderThreads = { FThread( Reader, 0U ), FThread( Reader, 1U ) };
 

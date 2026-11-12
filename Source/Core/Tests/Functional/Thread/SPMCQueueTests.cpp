@@ -377,7 +377,7 @@ LUMEN_TEST( SPMCQueue_Threading, MultiConsumersDeliverExactlyOnce )
 
     FThread ProducerThread( Producer );
     std::array<FThread, ConsumerCount> ConsumerThreads = { FThread( Consumer, 0U ), FThread( Consumer, 1U ),
-                                                               FThread( Consumer, 2U ), FThread( Consumer, 3U ) };
+                                                           FThread( Consumer, 2U ), FThread( Consumer, 3U ) };
 
     ProducerThread.join();
 
