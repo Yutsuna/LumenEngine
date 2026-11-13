@@ -27,8 +27,9 @@ void Lumen::HAL::FUnixTime::Sleep ( const Float64 Duration ) noexcept
 
     const Float64 Clamped = Duration < MaxSleepSeconds ? Duration : MaxSleepSeconds;
     const time_t Whole    = static_cast<time_t>( Clamped );
+    const Float64 FloatNanonSec = static_cast<Float64>( NanosecondsPerSecond );
+    Int64 Nanoseconds = static_cast<Int64>( ( Clamped - static_cast<Float64>( Whole ) ) * FloatNanonSec );
 
-    Int64 Nanoseconds = static_cast<Int64>( ( Clamped - static_cast<Float64>( Whole ) ) * SecondsPerNanosecond );
     if ( Nanoseconds > MaxNanoseconds )
     {
         Nanoseconds = MaxNanoseconds;
