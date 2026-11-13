@@ -8,7 +8,7 @@
 
 #include <Core/CoreDefinitions.hpp>
 
-#include <HAL/Signal.hpp>
+#include <HAL/PlatformSignal.hpp>
 
 #include <Logging/Logger.hpp>
 
@@ -16,24 +16,24 @@ namespace
 {
 
 /** @brief Handles Signals received */
-template <typename TMessage> void OnSignal ( const Lumen::ESystemSignal::Type InSignal, const TMessage &InMessage ) noexcept
+template <typename TMessage> void OnSignal ( const Lumen::HAL::ESystemSignal::Type InSignal, const TMessage &InMessage ) noexcept
 {
     if ( Lumen::Launch::FLaunchEngineLoop::RequestExit() )
     {
         Lumen::FLogger::Flush( InMessage );
-        Lumen::FSignal::Unbind( InSignal );
-        Lumen::FSignal::Raise( InSignal );
+        Lumen::HAL::FPlatformSignal::Unbind( InSignal );
+        Lumen::HAL::FPlatformSignal::Raise( InSignal );
     }
 }
 
 /** @brief Handles Interrupt Signal */
-void OnInterruptSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
+void OnInterruptSignal ( const Lumen::HAL::ESystemSignal::Type InSignal ) noexcept
 {
     OnSignal( InSignal, "\rInterrupt signal trapped: exiting gracefully..." LUMEN_NEWLINE );
 }
 
 /** @brief Handles Terminate Signal */
-void OnTerminateSignal ( const Lumen::ESystemSignal::Type InSignal ) noexcept
+void OnTerminateSignal ( const Lumen::HAL::ESystemSignal::Type InSignal ) noexcept
 {
     OnSignal( InSignal, "\rTerminate signal trapped: exiting gracefully..." LUMEN_NEWLINE );
 }
@@ -49,8 +49,8 @@ void OnOutOfMemory () noexcept
 
 Lumen::Launch::FLaunchProcessGuard::FLaunchProcessGuard () noexcept : PreviousNewHandler( std::set_new_handler( &OnOutOfMemory ) )
 {
-    FSignal::Bind( ESystemSignal::Interrupt, &OnInterruptSignal );
-    FSignal::Bind( ESystemSignal::Terminate, &OnTerminateSignal );
+    HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, &OnInterruptSignal );
+    HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Terminate, &OnTerminateSignal );
 
     FLogger::GetInstance().Initialize();
 }
@@ -59,8 +59,8 @@ Lumen::Launch::FLaunchProcessGuard::~FLaunchProcessGuard () noexcept
 {
     FLogger::GetInstance().Shutdown();
 
-    FSignal::Unbind( ESystemSignal::Terminate );
-    FSignal::Unbind( ESystemSignal::Interrupt );
+    HAL::FPlatformSignal::Unbind( HAL::ESystemSignal::Terminate );
+    HAL::FPlatformSignal::Unbind( HAL::ESystemSignal::Interrupt );
 
     std::set_new_handler( PreviousNewHandler );
 }
