@@ -117,11 +117,14 @@ template <class TMutexType> TMutexType *Lumen::HAL::TUniqueLock<TMutexType>::Rel
 
 template <class TMutexType> Lumen::Bool Lumen::HAL::TUniqueLock<TMutexType>::TryLock () noexcept
 {
-    /** INFO: If already owned, keep the state: a failing TryLock() on the mutex would clear bIsLocked and leak the lock */
-    if ( Mutex and not bIsLocked )
+    /** INFO: If already owned, do not touch the mutex or the state: a failing TryLock() on the mutex would clear bIsLocked and
+     * leak the lock */
+    if ( not( Mutex and not bIsLocked ) )
     {
-        bIsLocked = Mutex->TryLock();
+        return false;
     }
+
+    bIsLocked = Mutex->TryLock();
 
     return bIsLocked;
 }

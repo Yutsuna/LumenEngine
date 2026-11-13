@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <CoreExport.hpp>
 #include <Core/CoreTypes.hpp>
+#include <CoreExport.hpp>
 
 namespace Lumen
 {
