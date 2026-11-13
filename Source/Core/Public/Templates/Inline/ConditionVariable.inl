@@ -14,7 +14,7 @@
  * Notify
  */
 
-inline void Lumen::FConditionVariable::NotifyOne () noexcept
+LUMEN_FORCE_INLINE void Lumen::FConditionVariable::NotifyOne () noexcept
 {
     /**
      * INFO: Relaxed is enough: the caller's mutex orders the state change, and the futex word only
@@ -24,7 +24,7 @@ inline void Lumen::FConditionVariable::NotifyOne () noexcept
     HAL::FPlatformFutex::WakeOne( Sequence );
 }
 
-inline void Lumen::FConditionVariable::NotifyAll () noexcept
+LUMEN_FORCE_INLINE void Lumen::FConditionVariable::NotifyAll () noexcept
 {
     Sequence.fetch_add( 1U, std::memory_order::relaxed );
     HAL::FPlatformFutex::WakeAll( Sequence );
@@ -85,7 +85,9 @@ Lumen::Bool Lumen::FConditionVariable::WaitFor ( TLockType &InLock, Float64 InTi
 template <Lumen::Concepts::CIsLockable TLockType>
 Lumen::Bool Lumen::FConditionVariable::WaitUntil ( TLockType &InLock, Float64 InDeadlineSeconds ) noexcept
 {
-    return WaitFor( InLock, InDeadlineSeconds - HAL::FPlatformTime::Seconds() );
+    /** INFO: Clamp expired deadlines to zero so the futex layer never receives a negative timeout. */
+    const Float64 Remaining = InDeadlineSeconds - HAL::FPlatformTime::Seconds();
+    return WaitFor( InLock, Remaining > 0.0 ? Remaining : 0.0 );
 }
 
 template <Lumen::Concepts::CIsLockable TLockType, class TPredicate>

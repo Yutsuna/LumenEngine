@@ -29,7 +29,8 @@ namespace Internal
         explicit TCallbackNode( TForwardedCallback &&InCallback ) noexcept
             : Callback( std::forward<TForwardedCallback>( InCallback ) )
         {
-            /* */
+            static_assert( std::is_nothrow_constructible_v<TCallback, TForwardedCallback>,
+                           "FStopCallback is noexcept: the callback must be nothrow-constructible." );
         }
 
         void Execute () noexcept override
@@ -41,7 +42,6 @@ namespace Internal
 
         [[no_unique_address]] TCallback Callback;
     };
-
 
 } // namespace Internal
 

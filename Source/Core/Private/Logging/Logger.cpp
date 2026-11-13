@@ -3,6 +3,10 @@
  * @brief Implementation of the Logger class.
  */
 
+#include <Core/CoreDefinitions.hpp>
+
+extern "C"
+{
 #if defined( LUMEN_PLATFORM_WINDOWS )
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
@@ -15,8 +19,8 @@
 #elif defined( LUMEN_PLATFORM_UNIX ) || defined( LUMEN_PLATFORM_MACOS )
     #include <unistd.h>
 #endif
+}
 
-#include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 
 #include <Logging/Logger.hpp>

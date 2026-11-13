@@ -16,7 +16,7 @@
 
 /**
  * @class FStopState
- * @brief Represents the state of a stop token.
+ * @brief Shared stop state: a stop flag plus an intrusive list of callback nodes.
  */
 class Lumen::Internal::FStopState final
 {
@@ -51,16 +51,29 @@ public:
             Mutex.Unlock();
             return;
         }
+
+        /**
+         * INFO: Stop was already requested: run the callback inline, but through the same status
+         *       machinery as the deferred path. This publishes ExecutingThread and lets a concurrent
+         *       handle destruction wait for completion instead of freeing the node mid-execution.
+         *       The extra reference plays the role of the list reference for this execution.
+         */
+        InCallback.AddReference();
+        InCallback.Status.store( ECallbackStatus::Pending, std::memory_order::release );
         Mutex.Unlock();
 
-        InCallback.Execute();
+        /** INFO: The callback may destroy the last token/source handle, so keep the state alive. */
+        AddReference();
+        ExecuteCallback( InCallback );
+        InCallback.ReleaseReference();
+        ReleaseReference();
     }
 
     void UnregisterCallback ( FCallbackNode &InCallback ) noexcept
     {
-        Bool bReleaseListReference = false;
         Mutex.Lock();
-        if ( InCallback.Status.load( std::memory_order::acquire ) == ECallbackStatus::Registered )
+        ECallbackStatus Observed = InCallback.Status.load( std::memory_order::acquire );
+        if ( Observed == ECallbackStatus::Registered )
         {
             if ( InCallback.Previous != nullptr )
             {
@@ -75,35 +88,40 @@ public:
                 InCallback.Next->Previous = InCallback.Previous;
             }
             InCallback.Status.store( ECallbackStatus::Finished, std::memory_order::release );
-            bReleaseListReference = true;
+            Mutex.Unlock();
+
+            /**
+             * INFO: Unlinked before any stop request could detach the node: no executor can ever
+             *       touch it again, so there is nothing to wait for.
+             */
+            InCallback.ReleaseReference();
+            return;
         }
         Mutex.Unlock();
 
-        if ( bReleaseListReference )
+        if ( Observed == ECallbackStatus::Pending )
         {
-            InCallback.ReleaseReference();
+            /**
+             * INFO: Detached by RequestStop but not executing yet: try to cancel it. On success the
+             *       executor's CAS fails and the executor releases the list reference itself.
+             *       On failure Observed is updated to the executor's state (Executing or Finished).
+             */
+            if ( InCallback.Status.compare_exchange_strong( Observed, ECallbackStatus::Finished, std::memory_order::acq_rel,
+                                                            std::memory_order::acquire ) )
+            {
+                return;
+            }
         }
 
-        ECallbackStatus Observed = InCallback.Status.load( std::memory_order::acquire );
-        while ( Observed != ECallbackStatus::Finished )
+        while ( Observed == ECallbackStatus::Executing )
         {
-            if ( Observed == ECallbackStatus::Pending )
+            /** INFO: Self-destruction from inside the running callback must not wait on itself. */
+            if ( InCallback.ExecutingThread == HAL::FPlatformThread::GetCurrentId() )
             {
-                if ( InCallback.Status.compare_exchange_weak( Observed, ECallbackStatus::Finished, std::memory_order::acq_rel,
-                                                              std::memory_order::acquire ) )
-                {
-                    break;
-                }
+                return;
             }
-            else if ( Observed == ECallbackStatus::Executing )
-            {
-                if ( InCallback.ExecutingThread == HAL::FPlatformThread::GetCurrentId() )
-                {
-                    break;
-                }
-                InCallback.Status.wait( Observed, std::memory_order::acquire );
-                Observed = InCallback.Status.load( std::memory_order::acquire );
-            }
+            InCallback.Status.wait( Observed, std::memory_order::acquire );
+            Observed = InCallback.Status.load( std::memory_order::acquire );
         }
     }
 
@@ -113,6 +131,12 @@ public:
         {
             return false;
         }
+
+        /**
+         * INFO: Callbacks may destroy the last source/token handle, including the very source this
+         *       method was called on. Hold a local reference so the state outlives the walk.
+         */
+        AddReference();
 
         Mutex.Lock();
         FCallbackNode *Callback = Callbacks;
@@ -131,6 +155,8 @@ public:
             Callback->ReleaseReference();
             Callback = Next;
         }
+
+        ReleaseReference();
         return true;
     }
 
@@ -138,11 +164,18 @@ private:
 
     static void ExecuteCallback ( FCallbackNode &InCallback ) noexcept
     {
-        ECallbackStatus Expected   = ECallbackStatus::Pending;
+        /**
+         * INFO: ExecutingThread is written before the CAS so the release side of the CAS publishes
+         *       it: a waiter that acquire-loads Executing is guaranteed to see the thread id.
+         *       There is exactly one executor per node, so a failed CAS cannot race with a reader.
+         */
         InCallback.ExecutingThread = HAL::FPlatformThread::GetCurrentId();
+
+        ECallbackStatus Expected = ECallbackStatus::Pending;
         if ( not InCallback.Status.compare_exchange_strong( Expected, ECallbackStatus::Executing, std::memory_order::acq_rel,
                                                             std::memory_order::acquire ) )
         {
+            /** INFO: UnregisterCallback cancelled the node first; it must not execute. */
             return;
         }
 
@@ -188,6 +221,7 @@ Lumen::FStopToken::FStopToken ( const FStopToken &InOther ) noexcept : State( In
 
 Lumen::FStopToken::FStopToken ( FStopToken &&InOther ) noexcept : State( std::exchange( InOther.State, nullptr ) )
 {
+    /* */
 }
 
 Lumen::FStopToken::~FStopToken () noexcept
@@ -235,7 +269,7 @@ Lumen::Bool Lumen::FStopToken::StopPossible () const noexcept
 
 Lumen::Bool Lumen::FStopToken::StopRequested () const noexcept
 {
-    return State != nullptr && State->bStopRequested.load( std::memory_order::acquire );
+    return State != nullptr and State->bStopRequested.load( std::memory_order::acquire );
 }
 
 void Lumen::FStopToken::Swap ( FStopToken &InOther ) noexcept
@@ -321,7 +355,7 @@ Lumen::FStopToken Lumen::FStopSource::GetToken () const noexcept
 
 Lumen::Bool Lumen::FStopSource::RequestStop () noexcept
 {
-    return State != nullptr && State->RequestStop();
+    return State != nullptr and State->RequestStop();
 }
 
 Lumen::Bool Lumen::FStopSource::StopPossible () const noexcept
@@ -331,7 +365,7 @@ Lumen::Bool Lumen::FStopSource::StopPossible () const noexcept
 
 Lumen::Bool Lumen::FStopSource::StopRequested () const noexcept
 {
-    return State != nullptr && State->bStopRequested.load( std::memory_order::acquire );
+    return State != nullptr and State->bStopRequested.load( std::memory_order::acquire );
 }
 
 void Lumen::FStopSource::Swap ( FStopSource &InOther ) noexcept
@@ -363,6 +397,7 @@ void Lumen::FStopCallback::Reset () noexcept
 {
     Internal::FCallbackNode *CallbackToRemove = std::exchange( Callback, nullptr );
     Internal::FStopState *CallbackState       = std::exchange( State, nullptr );
+
     if ( CallbackState != nullptr )
     {
         CallbackState->UnregisterCallback( *CallbackToRemove );

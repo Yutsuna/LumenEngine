@@ -3,12 +3,13 @@
  * @brief Functional tests for FStopSource, FStopToken, and FStopCallback.
  */
 
+#include "Thread/Thread.hpp"
 #include <Memory/UniquePtr.hpp>
 #include <Templates/StopToken.hpp>
 #include <Tests/UnitTest.hpp>
 
 #include <atomic>
-#include <thread>
+
 #include <type_traits>
 #include <utility>
 
@@ -50,18 +51,21 @@ LUMEN_TEST( StopToken_State, SourceAndTokenShareRequest )
 LUMEN_TEST( StopToken_Ownership, CopiesAndMovesRetainSharedState )
 {
     FStopSource Source;
-    const FStopSource CopiedSource = Source;
-    const FStopToken Token         = Source.GetToken();
-    const FStopToken CopiedToken   = Token;
-    FStopSource MovedSource        = std::move( Source );
+    const FStopSource CopiedSource   = Source;
+    const FStopToken Token           = Source.GetToken();
+    const FStopToken CopiedToken     = Token;
+    const FStopToken &CopiedRefToken = CopiedToken;
+    FStopSource MovedSource          = std::move( Source );
 
     LUMEN_CHECK_TRUE( CopiedSource == MovedSource );
     LUMEN_CHECK_TRUE( CopiedToken == Token );
+    LUMEN_CHECK_TRUE( CopiedRefToken == Token );
     LUMEN_CHECK_FALSE( Source.StopPossible() );
 
     LUMEN_CHECK_TRUE( MovedSource.RequestStop() );
     LUMEN_CHECK_TRUE( CopiedSource.StopRequested() );
     LUMEN_CHECK_TRUE( CopiedToken.StopRequested() );
+    LUMEN_CHECK_TRUE( CopiedRefToken.StopRequested() );
 }
 
 LUMEN_TEST( StopToken_Callback, RunsOnlyOnce )
@@ -150,20 +154,20 @@ LUMEN_TEST( StopToken_Concurrency, ConcurrentRegistrationDoesNotLoseCallbacks )
 
             while ( InvocationCount.load( std::memory_order::acquire ) != TotalCallbacks )
             {
-                std::this_thread::yield();
+                FThread::Yield();
             }
         } );
     }
 
     while ( RegistrationCount.load( std::memory_order::acquire ) != TotalCallbacks )
     {
-        std::this_thread::yield();
+        FThread::Yield();
     }
     LUMEN_CHECK_TRUE( Source.RequestStop() );
 
     for ( FThread &Worker : Workers )
     {
-        Worker.join();
+        Worker.Join();
     }
     LUMEN_CHECK_EQ( InvocationCount.load(), TotalCallbacks );
 }

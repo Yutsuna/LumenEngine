@@ -4,15 +4,15 @@
  */
 
 #include <Tests/UnitTest.hpp>
-#include <Thread/SPMCQueue.hpp>
 
 #include <Core/CoreTypes.hpp>
 
-#include <algorithm>
-#include <array>
-#include <atomic>
-#include <thread>
-#include <vector>
+#include <Algo/Sort.hpp>
+
+#include <Thread/SPMCQueue.hpp>
+#include <Thread/Thread.hpp>
+
+#include <Templates/Array.hpp>
 
 namespace Lumen
 {
@@ -47,6 +47,7 @@ namespace
 
         explicit FCountedPayload ( const Int32 InValue ) noexcept : Value( InValue )
         {
+            /* */
         }
 
         FCountedPayload ( const FCountedPayload &InOther ) noexcept : Value( InOther.Value )
@@ -311,7 +312,7 @@ LUMEN_TEST( SPMCQueue_Flow, RefillAfterFullDrain )
     {
         for ( Int32 Index = 0; Index < 4; ++Index )
         {
-            LUMEN_CHECK_TRUE( Queue.Push( Cycle * 4 + Index ) );
+            LUMEN_CHECK_TRUE( Queue.Push( ( Cycle * 4 ) + Index ) );
         }
 
         LUMEN_CHECK_FALSE( Queue.Push( -1 ) );
@@ -321,7 +322,7 @@ LUMEN_TEST( SPMCQueue_Flow, RefillAfterFullDrain )
             const TOptional<Int32> Item = Queue.Pop();
 
             LUMEN_CHECK_HAS_VALUE( Item );
-            LUMEN_CHECK_EQ( *Item, Cycle * 4 + Index );
+            LUMEN_CHECK_EQ( *Item, ( Cycle * 4 ) + Index );
         }
 
         LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );
@@ -338,8 +339,8 @@ LUMEN_TEST( SPMCQueue_Threading, MultiConsumersDeliverExactlyOnce )
     constexpr Int32 ConsumerCount = 4;
 
     Thread::TSPMCQueue<Int32> Queue( 128 );
-    std::array<std::vector<Int32>, ConsumerCount> ConsumedItems;
-    std::atomic<Bool> bAllPushed{ false };
+    TArray<TVector<Int32>, ConsumerCount> ConsumedItems;
+    TAtomic<Bool> bAllPushed{ false };
 
     auto Producer = [&] ()
     {
@@ -347,7 +348,7 @@ LUMEN_TEST( SPMCQueue_Threading, MultiConsumersDeliverExactlyOnce )
         {
             while ( not Queue.Push( Value ) )
             {
-                std::this_thread::yield();
+                FThread::Yield();
             }
         }
 
@@ -356,7 +357,7 @@ LUMEN_TEST( SPMCQueue_Threading, MultiConsumersDeliverExactlyOnce )
 
     auto Consumer = [&] ( const UInt32 ConsumerIndex )
     {
-        std::vector<Int32> &Received = ConsumedItems[ConsumerIndex];
+        TVector<Int32> &Received = ConsumedItems[ConsumerIndex];
 
         for ( ;; )
         {
@@ -371,31 +372,31 @@ LUMEN_TEST( SPMCQueue_Threading, MultiConsumersDeliverExactlyOnce )
                 break;
             }
 
-            std::this_thread::yield();
+            FThread::Yield();
         }
     };
 
     FThread ProducerThread( Producer );
-    std::array<FThread, ConsumerCount> ConsumerThreads = { FThread( Consumer, 0U ), FThread( Consumer, 1U ),
-                                                           FThread( Consumer, 2U ), FThread( Consumer, 3U ) };
+    TArray<FThread, ConsumerCount> ConsumerThreads = { FThread( Consumer, 0U ), FThread( Consumer, 1U ), FThread( Consumer, 2U ),
+                                                       FThread( Consumer, 3U ) };
 
-    ProducerThread.join();
+    ProducerThread.Join();
 
     for ( FThread &ConsumerThread : ConsumerThreads )
     {
-        ConsumerThread.join();
+        ConsumerThread.Join();
     }
 
-    std::vector<Int32> MergedItems;
+    TVector<Int32> MergedItems;
 
-    for ( const std::vector<Int32> &Received : ConsumedItems )
+    for ( const TVector<Int32> &Received : ConsumedItems )
     {
         MergedItems.insert( MergedItems.end(), Received.begin(), Received.end() );
     }
 
     LUMEN_CHECK_EQ( static_cast<Int32>( MergedItems.size() ), ItemCount );
 
-    std::sort( MergedItems.begin(), MergedItems.end() );
+    Lumen::Algo::Sort( MergedItems );
 
     for ( Int32 Index = 0; Index < ItemCount; ++Index )
     {
@@ -412,8 +413,8 @@ LUMEN_TEST( SPMCQueue_Threading, SingleConsumerPreservesFifoUnderLoad )
     constexpr Int32 ItemCount = 1000;
 
     Thread::TSPMCQueue<UInt64> Queue( 64 );
-    std::vector<UInt64> ReceivedItems;
-    std::atomic<Bool> bAllPushed{ false };
+    TVector<UInt64> ReceivedItems;
+    TAtomic<Bool> bAllPushed{ false };
 
     auto Producer = [&] ()
     {
@@ -421,7 +422,7 @@ LUMEN_TEST( SPMCQueue_Threading, SingleConsumerPreservesFifoUnderLoad )
         {
             while ( not Queue.Push( Value ) )
             {
-                std::this_thread::yield();
+                FThread::Yield();
             }
         }
 
@@ -443,10 +444,10 @@ LUMEN_TEST( SPMCQueue_Threading, SingleConsumerPreservesFifoUnderLoad )
             break;
         }
 
-        std::this_thread::yield();
+        FThread::Yield();
     }
 
-    ProducerThread.join();
+    ProducerThread.Join();
 
     LUMEN_CHECK_EQ( static_cast<Int32>( ReceivedItems.size() ), ItemCount );
 
@@ -465,8 +466,8 @@ LUMEN_TEST( SPMCQueue_Threading, ProducerAndConsumerCoexistWithoutDeadlock )
     constexpr Int32 ItemCount = 500;
 
     Thread::TSPMCQueue<Int32> Queue( 2 );
-    std::atomic<Int32> PoppedCount{ 0 };
-    std::atomic<Bool> bAllPushed{ false };
+    TAtomic<Int32> PoppedCount{ 0 };
+    TAtomic<Bool> bAllPushed{ false };
 
     auto Producer = [&] ()
     {
@@ -474,7 +475,7 @@ LUMEN_TEST( SPMCQueue_Threading, ProducerAndConsumerCoexistWithoutDeadlock )
         {
             while ( not Queue.Push( Value ) )
             {
-                std::this_thread::yield();
+                FThread::Yield();
             }
         }
 
@@ -496,15 +497,15 @@ LUMEN_TEST( SPMCQueue_Threading, ProducerAndConsumerCoexistWithoutDeadlock )
                 break;
             }
 
-            std::this_thread::yield();
+            FThread::Yield();
         }
     };
 
     FThread ProducerThread( Producer );
     FThread ConsumerThread( Consumer );
 
-    ProducerThread.join();
-    ConsumerThread.join();
+    ProducerThread.Join();
+    ConsumerThread.Join();
 
     LUMEN_CHECK_EQ( PoppedCount.load( std::memory_order_relaxed ), ItemCount );
     LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );

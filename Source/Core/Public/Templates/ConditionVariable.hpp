@@ -17,6 +17,14 @@
 namespace Lumen
 {
 
+/**
+ * @class FConditionVariable
+ * @brief Futex-based condition variable.
+ * @details The predicate must be modified under the same lock that is passed to Wait (or with
+ *          equivalent synchronization), and NotifyOne/NotifyAll must be called after the state
+ *          change. The sequence counter is sampled while the lock is held, which rules out lost
+ *          wake-ups under that protocol.
+ */
 class CORE_EXPORT FConditionVariable final : public FNonCopyable, public FNonMovable
 {
 public:

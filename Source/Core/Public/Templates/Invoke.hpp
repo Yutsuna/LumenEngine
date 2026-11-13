@@ -1,6 +1,6 @@
 /**
  * @file Invoke.hpp
- * @brief Invokes a function on an object.
+ * @brief Invokes a callable, a pointer-to-member-data or a pointer-to-member-function.
  */
 
 #pragma once
@@ -8,43 +8,19 @@
 #include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 
+#include <functional>
 #include <type_traits>
 #include <utility>
 
 namespace Lumen
 {
 
-namespace Internal
-{
-
-    /**
-     * INFO: Declared before Invoke because the pointer-to-member Invoke overload
-     *       uses it in its trailing return type.
-     */
-    template <typename TObjectType, typename TTargetType>
-    constexpr auto MaybeDereference ( TTargetType &&Target, const volatile TObjectType *TargetPtr )
-        -> decltype( static_cast<TTargetType &&>( Target ) );
-
-    template <typename TObjectType, typename TTargetType>
-    constexpr auto MaybeDereference ( TTargetType &&Target, ... ) -> decltype( *static_cast<TTargetType &&>( Target ) );
-
-} // namespace Internal
-
 /**
- * @brief Invokes a function with the given arguments and returns the result.
+ * @brief Invokes a callable with the given arguments and returns the result.
  */
 template <typename TFunc, typename... TArgs>
 LUMEN_FORCE_INLINE constexpr auto Invoke ( TFunc &&InFunc, TArgs &&...InArgs )
-    -> decltype( static_cast<TFunc &&>( InFunc )( static_cast<TArgs &&>( InArgs )... ) );
-
-/**
- * @brief Invokes a pointer-to-member-data on an object (dereferencing the object if needed).
- */
-template <typename TReturnType, typename TObjectType, typename TTargetType>
-LUMEN_FORCE_INLINE constexpr auto Invoke ( TReturnType TObjectType::*InMember, TTargetType &&InObject )
-    -> decltype( Internal::MaybeDereference( static_cast<TTargetType &&>( InObject ),
-                                             std::declval<std::remove_reference_t<TTargetType> *>() ).*
-                 InMember );
+    -> decltype( std::invoke( std::forward<TFunc>( InFunc ), std::forward<TArgs>( InArgs )... ) );
 
 namespace Internal
 {

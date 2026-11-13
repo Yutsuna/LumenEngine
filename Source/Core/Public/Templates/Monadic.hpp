@@ -166,7 +166,7 @@ public:
 
 public:
 
-    /** @brief ValueOr.  Pas disponible pour void (pas de valeur) — SFINAE silencieuse. */
+    /** @brief ValueOr. Not available for void value types (no value) - silently SFINAE'd out. */
     template <class Self, class U>
         requires Concepts::CMonadic<Self> and std::convertible_to<U, std::remove_cvref_t<MonadicInternal::TValueRef<Self>>> and
                  std::convertible_to<MonadicInternal::TValueRef<Self>, std::remove_cvref_t<MonadicInternal::TValueRef<Self>>>

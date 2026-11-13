@@ -7,6 +7,7 @@
 
 #include <CoreExport.hpp>
 
+#include <Concepts/IsInvocable.hpp>
 #include <Core/CoreTypes.hpp>
 #include <Memory/UniquePtr.hpp>
 
@@ -17,6 +18,11 @@ namespace Lumen
  * @class FAtomicBitset
  * @brief A bitset that allows atomic set and clear operations.
  * Useful for dirty tracking in multi-threaded environments.
+ *
+ * @details Memory ordering: Set() is a release operation and ForEachSetBitAndClear() is an
+ * acquire operation, so data written before Set() is visible to the thread that consumes the
+ * bit. Resize() is a structural change and must be externally synchronized against all access.
+ * Indices passed to Set/Clear/Test must be smaller than GetNumBits().
  */
 class CORE_EXPORT FAtomicBitset final
 {
@@ -27,7 +33,7 @@ public:
 
 public:
 
-    /** @brief Resizes the bitset. Structural change; clears all bits. */
+    /** @brief Resizes the bitset. Structural change; clears all bits. Not thread-safe. */
     void Resize ( USize InNumBits );
 
     /** @brief Sets the bit at the specified index atomically. Thread-safe. */
@@ -51,6 +57,12 @@ public:
 
     /** @brief Clears all bits in the bitset. */
     void ClearAll () noexcept;
+
+    /** @return The number of bits the bitset was sized for. */
+    [[nodiscard]] USize GetNumBits () const noexcept
+    {
+        return NumBits;
+    }
 
 private:
 

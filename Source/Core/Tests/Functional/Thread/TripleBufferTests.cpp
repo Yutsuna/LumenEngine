@@ -3,16 +3,13 @@
  * @brief Functional tests for Lumen::Thread::TTripleBuffer.
  */
 
+#include "Templates/Array.hpp"
+#include "Thread/Thread.hpp"
 #include <Tests/UnitTest.hpp>
 #include <Thread/TripleBuffer.hpp>
 
 #include <Core/CoreTypes.hpp>
-
 #include <algorithm>
-#include <array>
-#include <atomic>
-#include <thread>
-#include <vector>
 
 namespace Lumen
 {
@@ -51,6 +48,7 @@ namespace
 
         explicit FCountedPayload ( const Int32 InValue ) noexcept : Value( InValue )
         {
+            /* */
         }
 
         FCountedPayload ( const FCountedPayload &InOther ) noexcept : Value( InOther.Value )
@@ -82,7 +80,7 @@ namespace
 
     /** @brief Drains every pending publication on @p InBuffer and records the reader values into @p OutValues. */
     template <typename BufferType>
-    void DrainBuffer ( Thread::TTripleBuffer<BufferType> &InBuffer, std::vector<BufferType> &OutValues )
+    void DrainBuffer ( Thread::TTripleBuffer<BufferType> &InBuffer, TVector<BufferType> &OutValues )
     {
         while ( InBuffer.IsDirty() )
         {
@@ -407,8 +405,8 @@ LUMEN_TEST( TTripleBuffer_Threading, SerializedWritersPublishStrictlyAscendingVa
     Thread::TTripleBuffer<Int32> Buffer( 0 );
 
     Int32 SerializedCounter = 0;
-    std::vector<Int32> RecordedValues;
-    std::atomic<Bool> bAllWritesDone{ false };
+    TVector<Int32> RecordedValues;
+    TAtomic<Bool> bAllWritesDone{ false };
 
     auto Writer = [&] ()
     {
@@ -438,22 +436,21 @@ LUMEN_TEST( TTripleBuffer_Threading, SerializedWritersPublishStrictlyAscendingVa
                 break;
             }
 
-            std::this_thread::yield();
+            FThread::Yield();
         }
     };
 
     FThread RecorderThread( Recorder );
 
-    std::array<FThread, WriterCount> WriterThreads = { FThread( Writer ), FThread( Writer ), FThread( Writer ),
-                                                       FThread( Writer ) };
+    TArray<FThread, WriterCount> WriterThreads = { FThread( Writer ), FThread( Writer ), FThread( Writer ), FThread( Writer ) };
 
     for ( FThread &WriterThread : WriterThreads )
     {
-        WriterThread.join();
+        WriterThread.Join();
     }
 
     bAllWritesDone.store( true, std::memory_order_release );
-    RecorderThread.join();
+    RecorderThread.Join();
 
     /** INFO: the counter increments happen under the write mutex, values 1..TotalWrites */
     LUMEN_CHECK_EQ( SerializedCounter, TotalWrites );
@@ -484,8 +481,8 @@ LUMEN_TEST( TTripleBuffer_Threading, SingleWriterReaderSeesOnlyNewerMonotonicVal
 
     Thread::TTripleBuffer<Int32> Buffer( 0 );
 
-    std::vector<Int32> RecordedValues;
-    std::atomic<Bool> bAllWritesDone{ false };
+    TVector<Int32> RecordedValues;
+    TAtomic<Bool> bAllWritesDone{ false };
 
     auto Writer = [&] ()
     {
@@ -512,17 +509,17 @@ LUMEN_TEST( TTripleBuffer_Threading, SingleWriterReaderSeesOnlyNewerMonotonicVal
                 break;
             }
 
-            std::this_thread::yield();
+            FThread::Yield();
         }
     };
 
     FThread RecorderThread( Recorder );
     FThread WriterThread( Writer );
 
-    WriterThread.join();
+    WriterThread.Join();
 
     bAllWritesDone.store( true, std::memory_order_release );
-    RecorderThread.join();
+    RecorderThread.Join();
 
     DrainBuffer( Buffer, RecordedValues );
 
@@ -553,11 +550,11 @@ LUMEN_TEST( TTripleBuffer_Threading, ConcurrentWritersStayWithinPublishedRange )
 
     Thread::TTripleBuffer<Int32> Buffer( 0 );
 
-    std::atomic<Int32> PublishedCounter{ 0 };
-    std::atomic<Bool> bAllWritesDone{ false };
+    TAtomic<Int32> PublishedCounter{ 0 };
+    TAtomic<Bool> bAllWritesDone{ false };
 
-    std::array<Int32, ReaderCount> MaxSamples     = {};
-    std::array<Int32, ReaderCount> ObservedCounts = {};
+    TArray<Int32, ReaderCount> MaxSamples     = {};
+    TArray<Int32, ReaderCount> ObservedCounts = {};
 
     auto Writer = [&] ()
     {
@@ -577,10 +574,7 @@ LUMEN_TEST( TTripleBuffer_Threading, ConcurrentWritersStayWithinPublishedRange )
         {
             const Int32 Sampled = Buffer.ReadBuffer();
 
-            if ( Sampled > MaximumSampled )
-            {
-                MaximumSampled = Sampled;
-            }
+            MaximumSampled = std::max( Sampled, MaximumSampled );
 
             ++ObservedCounts[ReaderIndex];
 
@@ -589,27 +583,26 @@ LUMEN_TEST( TTripleBuffer_Threading, ConcurrentWritersStayWithinPublishedRange )
                 break;
             }
 
-            std::this_thread::yield();
+            FThread::Yield();
         }
 
         MaxSamples[ReaderIndex] = MaximumSampled;
     };
 
-    std::array<FThread, WriterCount> WriterThreads = { FThread( Writer ), FThread( Writer ), FThread( Writer ),
-                                                       FThread( Writer ) };
+    TArray<FThread, WriterCount> WriterThreads = { FThread( Writer ), FThread( Writer ), FThread( Writer ), FThread( Writer ) };
 
-    std::array<FThread, ReaderCount> ReaderThreads = { FThread( Reader, 0U ), FThread( Reader, 1U ) };
+    TArray<FThread, ReaderCount> ReaderThreads = { FThread( Reader, 0U ), FThread( Reader, 1U ) };
 
     for ( FThread &WriterThread : WriterThreads )
     {
-        WriterThread.join();
+        WriterThread.Join();
     }
 
     bAllWritesDone.store( true, std::memory_order_release );
 
     for ( FThread &ReaderThread : ReaderThreads )
     {
-        ReaderThread.join();
+        ReaderThread.Join();
     }
 
     LUMEN_CHECK_EQ( PublishedCounter.load( std::memory_order_relaxed ), TotalWrites );
@@ -622,7 +615,7 @@ LUMEN_TEST( TTripleBuffer_Threading, ConcurrentWritersStayWithinPublishedRange )
     }
 
     /** INFO: after a full drain the reader slot holds the last published value */
-    std::vector<Int32> DrainValues;
+    TVector<Int32> DrainValues;
     DrainBuffer<Int32>( Buffer, DrainValues );
 
     LUMEN_CHECK_EQ( Buffer.ReadBuffer(), TotalWrites );

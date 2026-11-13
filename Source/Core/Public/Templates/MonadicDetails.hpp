@@ -1,5 +1,5 @@
 /**
- * @file MonadicInternals.hpp
+ * @file MonadicDetails.hpp
  * @brief Monadic details implementation
  */
 
@@ -9,6 +9,7 @@
 
 #include <Concepts/ConvertibleTo.hpp>
 #include <Concepts/SameAs.hpp>
+#include <Templates/Invoke.hpp>
 
 #include <functional>
 
@@ -151,8 +152,12 @@ namespace MonadicInternal
         }
     }
 
-    /** @brief Transform a value into another value. */
-    template <class Self, class Func> using TTransformResult = std::remove_cv_t<std::invoke_result_t<Func, TValueRef<Self>>>;
+    /**
+     * @brief Transform a value into another value.
+     * @details References are decayed: a callable returning U& yields TContainer<U>, never a
+     *          container of references (which would be ill-formed and could dangle).
+     */
+    template <class Self, class Func> using TTransformResult = std::remove_cvref_t<std::invoke_result_t<Func, TValueRef<Self>>>;
     template <class Self, class Func> using TTransformOut    = TSelfType<Self>::template Rebind<TTransformResult<Self, Func>>;
 
     /** @brief AndThen : Bind a value into another value if it is valid. */

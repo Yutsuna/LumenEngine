@@ -26,7 +26,13 @@ namespace Internal
 
     /**
      * @enum ECallbackStatus
-     * @brief Status of a callback node.
+     * @brief Lifecycle of a callback node.
+     *
+     * Transitions:
+     *  - Registered -> Pending -> Executing -> Finished : stop requested while registered.
+     *  - Registered -> Finished                         : unregistered before any stop request.
+     *  - Pending    -> Finished                         : unregistered after detach, before execution.
+     *  - Finished                                       : initial and terminal state.
      */
     enum class ECallbackStatus : UInt8
     {
@@ -38,23 +44,32 @@ namespace Internal
 
     /**
      * @struct FCallbackNode
-     * @brief Base class for callback nodes.
+     * @brief Type-erased base class for callback nodes.
+     * @details Reference-counted with two kinds of owners: the FStopCallback handle owns one
+     *          reference, and the stop state owns one while the node is linked or executing.
+     *          The executor releases its reference only after the callback has fully returned,
+     *          which is what makes destroying a handle from inside its own callback safe.
      */
     struct CORE_EXPORT FCallbackNode
     {
         FCallbackNode () noexcept;
         virtual ~FCallbackNode () noexcept;
 
+        /** @brief Invokes the stored callback. Must not throw. */
         virtual void Execute () noexcept = 0;
 
         void AddReference () noexcept;
         void ReleaseReference () noexcept;
 
+    private:
+
+        friend class FStopState;
+
         TAtomic<UInt32> ReferenceCount  = { 1U };
         TAtomic<ECallbackStatus> Status = { ECallbackStatus::Finished };
         FCallbackNode *Previous         = nullptr;
         FCallbackNode *Next             = nullptr;
-        HAL::FPlatformThread::FId ExecutingThread;
+        HAL::FPlatformThread::FId ExecutingThread{};
     };
 
 } // namespace Internal
@@ -62,6 +77,7 @@ namespace Internal
 /**
  * @class FStopToken
  * @brief Represents a token that can be used to observe a stop request.
+ * @details Copyable, movable, cheap to poll: StopRequested() is a lock-free atomic read.
  */
 class CORE_EXPORT FStopToken final
 {
@@ -133,6 +149,9 @@ public:
 
     /**
      * @brief Requests cancellation and invokes registered callbacks exactly once.
+     * @details Callbacks run synchronously on the calling thread, in reverse registration order,
+     *          with the internal mutex released. A callback may register or unregister callbacks,
+     *          and may destroy token/source handles (including the source being stopped).
      * @return True only for the call that changes the state to stopped.
      */
     [[nodiscard]] Bool RequestStop () noexcept;
@@ -155,6 +174,10 @@ private:
 /**
  * @class FStopCallback
  * @brief Represents a callback that is invoked when a stop request is made.
+ * @details The callback is invoked at most once: either by RequestStop(), or inline at
+ *          construction time if stop was already requested. The callback must not throw and
+ *          must be nothrow-constructible. It may destroy its own handle; in that case the node
+ *          is kept alive until execution has fully returned.
  */
 class CORE_EXPORT FStopCallback final : public FNonCopyable, public FNonMovable
 {
@@ -162,8 +185,8 @@ public:
 
     /**
      * @brief Registers a callback, or invokes it immediately if stop was already requested.
-     * @details The callback is destroyed with this handle. Destroying the handle during concurrent execution waits for
-     *          completion unless it is destroyed by the executing callback itself.
+     * @details The callback is destroyed with this handle. Destroying the handle during concurrent
+     *          execution waits for completion unless it is destroyed by the executing callback itself.
      *
      * @param InStopToken The stop token to register with.
      * @param InCallback The callback to invoke.
