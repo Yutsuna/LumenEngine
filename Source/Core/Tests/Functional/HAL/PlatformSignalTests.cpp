@@ -46,9 +46,9 @@ namespace
         ~FSignalTestCleanup () noexcept
         {
             HAL::FPlatformSignal::Reset();
-            GHandlerACount  = 0;
-            GHandlerBCount  = 0;
-            GLastSignal     = HAL::ESystemSignal::None;
+            GHandlerACount   = 0;
+            GHandlerBCount   = 0;
+            GLastSignal      = HAL::ESystemSignal::None;
             GHandlerThreadId = std::thread::id();
         }
     };

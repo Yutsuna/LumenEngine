@@ -38,16 +38,15 @@ namespace
 
     struct FWaitForResult
     {
-        TAtomic<UInt32> Returned{ 0 };  /** 1 = the waiting thread has returned */
-        TAtomic<UInt32> Woke{ 2 };      /** 0 = timeout, 1 = woken, 2 = not set */
+        TAtomic<UInt32> Returned{ 0 }; /** 1 = the waiting thread has returned */
+        TAtomic<UInt32> Woke{ 2 };     /** 0 = timeout, 1 = woken, 2 = not set */
     };
 
     /**
      * @brief Polls until Predicate returns true, or TimeoutSeconds elapses.
      * @returns The last evaluated predicate value.
      */
-    template <typename PredicateType>
-    bool WaitUntil ( PredicateType Predicate, const Float64 TimeoutSeconds = 1.0 )
+    template <typename PredicateType> bool WaitUntil ( PredicateType Predicate, const Float64 TimeoutSeconds = 1.0 )
     {
         const Float64 Deadline = FPlatformTime::Seconds() + TimeoutSeconds;
         while ( FPlatformTime::Seconds() < Deadline )
@@ -82,7 +81,8 @@ LUMEN_TEST( FPlatformFutex_Wait, BlocksUntilWokenByWakeAll )
 {
     auto *State = new FWaitState();
 
-    std::thread Waiter( [State]() {
+    std::thread Waiter( [State] ()
+    {
         FPlatformFutex::Wait( State->Word, 0 );
         ++State->WokenCount;
     } );
@@ -95,7 +95,8 @@ LUMEN_TEST( FPlatformFutex_Wait, BlocksUntilWokenByWakeAll )
     State->Word = 1;
     FPlatformFutex::WakeAll( State->Word );
 
-    const bool bWoken = WaitUntil( [State]() {
+    const bool bWoken = WaitUntil( [State] ()
+    {
         return static_cast<UInt32>( State->WokenCount ) >= 1U;
     } );
     LUMEN_CHECK_TRUE( bWoken );
@@ -111,7 +112,8 @@ LUMEN_TEST( FPlatformFutex_WaitFor, ReturnsTrueWhenWoken )
     auto *State  = new FWaitState();
     auto *Result = new FWaitForResult();
 
-    std::thread Waiter( [State, Result]() {
+    std::thread Waiter( [State, Result] ()
+    {
         Result->Woke     = FPlatformFutex::WaitFor( State->Word, 0, 5.0 ) ? 1U : 0U;
         Result->Returned = 1;
     } );
@@ -123,8 +125,9 @@ LUMEN_TEST( FPlatformFutex_WaitFor, ReturnsTrueWhenWoken )
     State->Word = 1;
     FPlatformFutex::WakeAll( State->Word );
 
-    const Float64 Start = FPlatformTime::Seconds();
-    const bool bReturned = WaitUntil( [Result]() {
+    const Float64 Start   = FPlatformTime::Seconds();
+    const bool bReturned  = WaitUntil( [Result] ()
+    {
         return static_cast<UInt32>( Result->Returned ) == 1U;
     } );
     const Float64 Elapsed = FPlatformTime::Seconds() - Start;
@@ -140,13 +143,15 @@ LUMEN_TEST( FPlatformFutex_WaitFor, ReturnsFalseOnTimeout )
     auto *Result = new FWaitForResult();
 
     const Float64 Start = FPlatformTime::Seconds();
-    std::thread Waiter( [State, Result]() {
+    std::thread Waiter( [State, Result] ()
+    {
         Result->Woke     = FPlatformFutex::WaitFor( State->Word, 0, 0.2 ) ? 1U : 0U;
         Result->Returned = 1;
     } );
     Waiter.detach();
 
-    LUMEN_CHECK_TRUE( WaitUntil( [Result]() {
+    LUMEN_CHECK_TRUE( WaitUntil( [Result] ()
+    {
         return static_cast<UInt32>( Result->Returned ) == 1U;
     } ) );
     const Float64 Elapsed = FPlatformTime::Seconds() - Start;
@@ -161,8 +166,8 @@ LUMEN_TEST( FPlatformFutex_WaitFor, ReturnsTrueImmediatelyWhenValueDiffers )
     FWaitState State;
     State.Word = 42;
 
-    const Float64 Start = FPlatformTime::Seconds();
-    const Bool bWoken   = FPlatformFutex::WaitFor( State.Word, 0, 1.0 );
+    const Float64 Start   = FPlatformTime::Seconds();
+    const Bool bWoken     = FPlatformFutex::WaitFor( State.Word, 0, 1.0 );
     const Float64 Elapsed = FPlatformTime::Seconds() - Start;
 
     LUMEN_CHECK_TRUE( bWoken );
@@ -173,11 +178,11 @@ LUMEN_TEST( FPlatformFutex_WaitFor, NegativeTimeoutDoesNotHang )
 {
     FWaitState State; /** Word = 0, matches expected */
 
-    const Float64 Start = FPlatformTime::Seconds();
-    const Bool bWoken   = FPlatformFutex::WaitFor( State.Word, 0, -1.0 );
+    const Float64 Start   = FPlatformTime::Seconds();
+    const Bool bWoken     = FPlatformFutex::WaitFor( State.Word, 0, -1.0 );
     const Float64 Elapsed = FPlatformTime::Seconds() - Start;
 
-    LUMEN_CHECK_FALSE( bWoken );      /** no waker → timeout */
+    LUMEN_CHECK_FALSE( bWoken ); /** no waker → timeout */
     LUMEN_CHECK_TRUE( Elapsed < 0.1 );
 }
 
@@ -185,8 +190,8 @@ LUMEN_TEST( FPlatformFutex_WaitFor, ZeroTimeoutDoesNotHang )
 {
     FWaitState State;
 
-    const Float64 Start = FPlatformTime::Seconds();
-    const Bool bWoken   = FPlatformFutex::WaitFor( State.Word, 0, 0.0 );
+    const Float64 Start   = FPlatformTime::Seconds();
+    const Bool bWoken     = FPlatformFutex::WaitFor( State.Word, 0, 0.0 );
     const Float64 Elapsed = FPlatformTime::Seconds() - Start;
 
     LUMEN_CHECK_FALSE( bWoken );
@@ -201,7 +206,8 @@ LUMEN_TEST( FPlatformFutex_WakeOne, WakesExactlyOneWaiter )
 {
     auto *State = new FWaitState();
 
-    auto WaiterBody = [State]() {
+    auto WaiterBody = [State] ()
+    {
         FPlatformFutex::Wait( State->Word, 0 );
         ++State->WokenCount;
     };
@@ -217,7 +223,8 @@ LUMEN_TEST( FPlatformFutex_WakeOne, WakesExactlyOneWaiter )
     State->Word = 1;
     FPlatformFutex::WakeOne( State->Word );
 
-    LUMEN_CHECK_TRUE( WaitUntil( [State]() {
+    LUMEN_CHECK_TRUE( WaitUntil( [State] ()
+    {
         return static_cast<UInt32>( State->WokenCount ) >= 1U;
     } ) );
 
@@ -227,7 +234,8 @@ LUMEN_TEST( FPlatformFutex_WakeOne, WakesExactlyOneWaiter )
 
     /** Clean up the still-blocked waiter so the process is not polluted. */
     FPlatformFutex::WakeAll( State->Word );
-    LUMEN_CHECK_TRUE( WaitUntil( [State]() {
+    LUMEN_CHECK_TRUE( WaitUntil( [State] ()
+    {
         return static_cast<UInt32>( State->WokenCount ) >= 2U;
     } ) );
     LUMEN_CHECK_EQ( static_cast<UInt32>( State->WokenCount ), 2U );
@@ -236,11 +244,12 @@ LUMEN_TEST( FPlatformFutex_WakeOne, WakesExactlyOneWaiter )
 LUMEN_TEST( FPlatformFutex_WakeAll, WakesAllWaiters )
 {
     constexpr UInt32 WaiterCount = 4U;
-    auto *State = new FWaitState();
+    auto *State                  = new FWaitState();
 
     for ( UInt32 Index = 0U; Index < WaiterCount; ++Index )
     {
-        std::thread Waiter( [State]() {
+        std::thread Waiter( [State] ()
+        {
             FPlatformFutex::Wait( State->Word, 0 );
             ++State->WokenCount;
         } );
@@ -253,7 +262,8 @@ LUMEN_TEST( FPlatformFutex_WakeAll, WakesAllWaiters )
     State->Word = 1;
     FPlatformFutex::WakeAll( State->Word );
 
-    const bool bAllWoken = WaitUntil( [State]() {
+    const bool bAllWoken = WaitUntil( [State] ()
+    {
         return static_cast<UInt32>( State->WokenCount ) >= WaiterCount;
     } );
     LUMEN_CHECK_TRUE( bAllWoken );
