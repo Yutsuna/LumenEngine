@@ -176,6 +176,11 @@ public:
         return ( std::forward<decltype( Self )>( Self ).Value );
     }
 
+    constexpr decltype( auto ) operator->( this auto &&Self ) noexcept
+    {
+        return std::addressof( std::forward<decltype( Self )>( Self ).Value );
+    }
+
     /** @brief Monadic Hook */
     template <class Function, class Arguments>
     constexpr static TOptional MonadicEmplace ( Function &&Func,
