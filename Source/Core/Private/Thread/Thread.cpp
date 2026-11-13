@@ -33,11 +33,21 @@ Lumen::FThread &Lumen::FThread::operator=( FThread &&InOther ) noexcept
 void Lumen::FThread::Join () noexcept
 {
     Thread.Join();
+
+    if ( not Thread.IsJoinable() )
+    {
+        StopSource = FStopSource( nullptr );
+    }
 }
 
 void Lumen::FThread::Detach () noexcept
 {
     Thread.Detach();
+
+    if ( not Thread.IsJoinable() )
+    {
+        StopSource = FStopSource( nullptr );
+    }
 }
 
 void Lumen::FThread::Swap ( FThread &InOther ) noexcept
