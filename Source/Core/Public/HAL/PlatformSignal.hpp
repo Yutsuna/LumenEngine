@@ -84,6 +84,9 @@ namespace HAL
 
         /**
          * @brief Unbinds any signal handler associated with a specific system signal.
+         * @details The async-signal-safe OS handler remains installed so that a later
+         *          Raise() on this slot is a safe no-op instead of falling back to the
+         *          process-killing OS default. Only Reset() restores OS defaults.
          * @param InSignal The system signal to unbind the handler from.
          */
         static void Unbind ( ESystemSignal::Type InSignal );
