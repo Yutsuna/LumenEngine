@@ -175,10 +175,11 @@ Lumen::TOptional<Lumen::FIndiceAllocatorRange> Lumen::FIndiceAllocator::TryGetAl
      * INFO: Determine the first and last allocated indices using the
      *       leading and trailing free ranges.
      */
-    const UInt32 LowerBound = ( !Ranges.empty() and Ranges.front().First == 0U ) ? Ranges.front().Last + 1U : 0U;
+    const Bool bHasLeadingFreeRange = not Ranges.empty() and Ranges.front().First == 0U;
+    const UInt32 LowerBound         = bHasLeadingFreeRange ? Ranges.front().Last + 1U : 0U;
 
-    const UInt32 UpperBound =
-        ( !Ranges.empty() and Ranges.back().Last == Capacity - 1U ) ? Ranges.back().First - 1U : Capacity - 1U;
+    const Bool bHasTrailingFreeRange = not Ranges.empty() and Ranges.back().Last == Capacity - 1U;
+    const UInt32 UpperBound          = bHasTrailingFreeRange ? Ranges.back().First - 1U : Capacity - 1U;
 
     if ( LowerBound > UpperBound )
     {
@@ -343,7 +344,7 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceHeapAllocator::Allocate
         }
     }
 
-    if ( !Found )
+    if ( not Found )
     {
         return {};
     }
