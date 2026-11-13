@@ -10,34 +10,12 @@
 #include <bit>
 #include <cassert>
 
-inline Lumen::FAtomicBitset::FAtomicBitset ( USize InNumBits )
+Lumen::FAtomicBitset::FAtomicBitset ( USize InNumBits )
 {
     Resize( InNumBits );
 }
 
-inline void Lumen::FAtomicBitset::Resize ( USize InNumBits )
-{
-    const USize NewNumBlocks = ( InNumBits + ( BitsPerBlock - 1U ) ) / BitsPerBlock;
-
-    if ( NewNumBlocks != NumBlocks )
-    {
-        Blocks    = MakeUnique<TAtomic<UInt64>[]>( NewNumBlocks );
-        NumBlocks = NewNumBlocks;
-
-        for ( USize Index = 0U; Index < NumBlocks; ++Index )
-        {
-            Blocks[Index].store( 0ULL, std::memory_order_relaxed );
-        }
-    }
-    else
-    {
-        ClearAll();
-    }
-
-    NumBits = InNumBits;
-}
-
-inline void Lumen::FAtomicBitset::Set ( USize InIndex ) noexcept
+void Lumen::FAtomicBitset::Set ( USize InIndex ) noexcept
 {
     assert( InIndex < NumBits );
 
@@ -50,7 +28,7 @@ inline void Lumen::FAtomicBitset::Set ( USize InIndex ) noexcept
     Blocks[BlockIndex].fetch_or( Mask, std::memory_order_release );
 }
 
-inline void Lumen::FAtomicBitset::Clear ( USize InIndex ) noexcept
+void Lumen::FAtomicBitset::Clear ( USize InIndex ) noexcept
 {
     assert( InIndex < NumBits );
 
@@ -61,7 +39,7 @@ inline void Lumen::FAtomicBitset::Clear ( USize InIndex ) noexcept
     Blocks[BlockIndex].fetch_and( ~Mask, std::memory_order_relaxed );
 }
 
-inline Lumen::Bool Lumen::FAtomicBitset::Test ( USize InIndex ) const noexcept
+Lumen::Bool Lumen::FAtomicBitset::Test ( USize InIndex ) const noexcept
 {
     assert( InIndex < NumBits );
 
@@ -74,7 +52,7 @@ inline Lumen::Bool Lumen::FAtomicBitset::Test ( USize InIndex ) const noexcept
 
 template <typename Callable>
     requires Lumen::Concepts::CIsInvocable<Callable, Lumen::USize>
-inline void Lumen::FAtomicBitset::ForEachSetBitAndClear ( Callable &&InFunc ) noexcept
+void Lumen::FAtomicBitset::ForEachSetBitAndClear ( Callable &&InFunc ) noexcept
 {
     for ( USize BlockIdx = 0U; BlockIdx < NumBlocks; ++BlockIdx )
     {
@@ -92,10 +70,15 @@ inline void Lumen::FAtomicBitset::ForEachSetBitAndClear ( Callable &&InFunc ) no
     }
 }
 
-inline void Lumen::FAtomicBitset::ClearAll () noexcept
+void Lumen::FAtomicBitset::ClearAll () noexcept
 {
     for ( USize Index = 0U; Index < NumBlocks; ++Index )
     {
         Blocks[Index].store( 0ULL, std::memory_order_relaxed );
     }
+}
+
+LUMEN_FORCE_INLINE Lumen::USize Lumen::FAtomicBitset::GetNumBits () const noexcept
+{
+    return NumBits;
 }

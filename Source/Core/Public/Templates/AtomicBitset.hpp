@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Core/CoreDefinitions.hpp"
 #include <CoreExport.hpp>
 
 #include <Concepts/IsInvocable.hpp>
@@ -29,7 +30,7 @@ class CORE_EXPORT FAtomicBitset final
 public:
 
     FAtomicBitset () noexcept = default;
-    explicit FAtomicBitset ( USize InNumBits );
+    LUMEN_FORCE_INLINE explicit FAtomicBitset( USize InNumBits );
 
 public:
 
@@ -37,13 +38,13 @@ public:
     void Resize ( USize InNumBits );
 
     /** @brief Sets the bit at the specified index atomically. Thread-safe. */
-    void Set ( USize InIndex ) noexcept;
+    LUMEN_FORCE_INLINE void Set ( USize InIndex ) noexcept;
 
     /** @brief Clears the bit at the specified index atomically. Thread-safe. */
-    void Clear ( USize InIndex ) noexcept;
+    LUMEN_FORCE_INLINE void Clear ( USize InIndex ) noexcept;
 
     /** @brief Tests if the bit at the specified index is set. Thread-safe. */
-    [[nodiscard]] Bool Test ( USize InIndex ) const noexcept;
+    [[nodiscard]] LUMEN_FORCE_INLINE Bool Test ( USize InIndex ) const noexcept;
 
 public:
 
@@ -56,13 +57,10 @@ public:
     void ForEachSetBitAndClear ( Callable &&InFunc ) noexcept;
 
     /** @brief Clears all bits in the bitset. */
-    void ClearAll () noexcept;
+    LUMEN_FORCE_INLINE void ClearAll () noexcept;
 
     /** @return The number of bits the bitset was sized for. */
-    [[nodiscard]] USize GetNumBits () const noexcept
-    {
-        return NumBits;
-    }
+    [[nodiscard]] LUMEN_FORCE_INLINE USize GetNumBits () const noexcept;
 
 private:
 
