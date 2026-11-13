@@ -150,7 +150,13 @@ void Lumen::HAL::FPlatformSignal::Unbind ( const ESystemSignal::Type InSignal )
 
     if ( SignalListeners.contains( InSignal ) )
     {
-        RestoreDefaultOSHandler( OSCode );
+        /**
+         *  INFO: The async-signal-safe OS handler stays installed here on purpose:
+         *        a later Raise() on this slot must be a safe no-op (pending bit set,
+         *        then consumed by Dispatch() with no listeners), never a fallback to
+         *        the process-killing default disposition. Reset() is what re-arms
+         *        the OS defaults.
+         */
         SignalListeners.erase( InSignal );
         PendingSignals.fetch_and( ~SignalBit( OSCode ), std::memory_order::acq_rel );
     }
