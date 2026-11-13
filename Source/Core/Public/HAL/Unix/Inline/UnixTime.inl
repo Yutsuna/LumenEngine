@@ -29,13 +29,13 @@ Lumen::UInt64 Lumen::HAL::FUnixTime::Ticks () noexcept
 
 constexpr Lumen::Float64 Lumen::HAL::FUnixTime::TicksToSeconds ( const UInt64 DeltaTicks ) noexcept
 {
-    return static_cast<Float64>( DeltaTicks ) / SecondsPerNanosecond;
+    return static_cast<Float64>( DeltaTicks ) * SecondsPerNanosecond;
 }
 
 Lumen::UInt64 Lumen::HAL::FUnixTime::NowNanoseconds () noexcept
 {
     timespec Time{};
 
-    ::clock_gettime( CLOCK_MONOTONIC, &Time );
+    ::clock_gettime( CLOCK_REALTIME, &Time );
     return ( static_cast<UInt64>( Time.tv_sec ) * NanosecondsPerSecond ) + static_cast<UInt64>( Time.tv_nsec );
 }
