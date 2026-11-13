@@ -10,9 +10,10 @@
  *          - WakeOne wakes exactly one waiter, WakeAll wakes all of them.
  *          - Waking with no waiters is a safe no-op.
  *
- * @note Waiter threads are detached and their shared state is heap-allocated, so
- *       a broken implementation that fails to wake cannot hang the whole test
- *       binary (the test itself times out, the leaked state is harmless).
+ * @note Waiter threads are detached so a broken implementation that fails to wake
+ *       cannot hang the whole test binary (the test itself times out). Their
+ *       heap-allocated shared state is freed at the end of each passing test; if a
+ *       check throws first, it leaks harmlessly by design.
  */
 
 #include <Tests/UnitTest.hpp>
@@ -101,6 +102,8 @@ LUMEN_TEST( FPlatformFutex_Wait, BlocksUntilWokenByWakeAll )
     } );
     LUMEN_CHECK_TRUE( bWoken );
     LUMEN_CHECK_EQ( static_cast<UInt32>( State->WokenCount ), 1U );
+
+    delete State;
 }
 
 /**
@@ -135,6 +138,9 @@ LUMEN_TEST( FPlatformFutex_WaitFor, ReturnsTrueWhenWoken )
     LUMEN_CHECK_TRUE( bReturned );
     LUMEN_CHECK_EQ( static_cast<UInt32>( Result->Woke ), 1U );
     LUMEN_CHECK_TRUE( Elapsed < 0.5 ); /** definitely not the 5 s timeout */
+
+    delete State;
+    delete Result;
 }
 
 LUMEN_TEST( FPlatformFutex_WaitFor, ReturnsFalseOnTimeout )
@@ -159,6 +165,9 @@ LUMEN_TEST( FPlatformFutex_WaitFor, ReturnsFalseOnTimeout )
     LUMEN_CHECK_EQ( static_cast<UInt32>( Result->Woke ), 0U );
     LUMEN_CHECK_TRUE( Elapsed >= 0.15 ); /** didn't return too early */
     LUMEN_CHECK_TRUE( Elapsed < 1.0 );   /** didn't hang */
+
+    delete State;
+    delete Result;
 }
 
 LUMEN_TEST( FPlatformFutex_WaitFor, ReturnsTrueImmediatelyWhenValueDiffers )
@@ -239,6 +248,8 @@ LUMEN_TEST( FPlatformFutex_WakeOne, WakesExactlyOneWaiter )
         return static_cast<UInt32>( State->WokenCount ) >= 2U;
     } ) );
     LUMEN_CHECK_EQ( static_cast<UInt32>( State->WokenCount ), 2U );
+
+    delete State;
 }
 
 LUMEN_TEST( FPlatformFutex_WakeAll, WakesAllWaiters )
@@ -268,6 +279,8 @@ LUMEN_TEST( FPlatformFutex_WakeAll, WakesAllWaiters )
     } );
     LUMEN_CHECK_TRUE( bAllWoken );
     LUMEN_CHECK_EQ( static_cast<UInt32>( State->WokenCount ), WaiterCount );
+
+    delete State;
 }
 
 LUMEN_TEST( FPlatformFutex_WakeOne, NoWaitersIsSafe )
