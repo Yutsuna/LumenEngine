@@ -8,8 +8,6 @@
 #include <Templates/StopToken.hpp>
 #include <Tests/UnitTest.hpp>
 
-#include <atomic>
-
 #include <type_traits>
 #include <utility>
 

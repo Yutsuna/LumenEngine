@@ -17,8 +17,6 @@
 
     #include <HAL/PlatformAtomic.hpp>
 
-    #include <atomic>
-
 extern "C"
 {
     #ifndef WIN32_LEAN_AND_MEAN

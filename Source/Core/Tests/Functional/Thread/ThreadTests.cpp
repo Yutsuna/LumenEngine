@@ -7,7 +7,6 @@
 #include <Tests/UnitTest.hpp>
 #include <Thread/Thread.hpp>
 
-#include <atomic>
 #include <type_traits>
 #include <utility>
 
