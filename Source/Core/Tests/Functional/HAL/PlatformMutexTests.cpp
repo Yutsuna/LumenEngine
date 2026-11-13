@@ -244,7 +244,7 @@ LUMEN_TEST( PlatformMutex_UniqueLock, TryLockFailsWhenAlreadyHeld )
     HAL::FPlatformMutex Mutex;
     HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex );
     LUMEN_CHECK_FALSE( Lock.TryLock() );
-    LUMEN_CHECK_FALSE( Lock.IsLocked() );
+    LUMEN_CHECK_TRUE( Lock.IsLocked() );
     Lock.Unlock();
 }
 
