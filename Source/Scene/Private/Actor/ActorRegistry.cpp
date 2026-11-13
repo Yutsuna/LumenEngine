@@ -10,8 +10,9 @@
 #include <Templates/Map.hpp>
 #include <Templates/Pair.hpp>
 
+#include <HAL/LockGuard.hpp>
 #include <HAL/PlatformAtomic.hpp>
-#include <HAL/SpinLock.hpp>
+#include <HAL/PlatformMutex.hpp>
 
 #include <Logging/Logger.hpp>
 
@@ -56,7 +57,7 @@ struct FActorChunk
  */
 struct FActorRegistryState
 {
-    Lumen::HAL::FSpinLock Lock;
+    Lumen::HAL::FPlatformSpinLockMutex Lock;
     Lumen::UInt32 NextSlot                                       = 1U; /** slot 0  is InvalidActorID */
     Lumen::UInt32 FreeHead                                       = 0U; /** 0 = empty */
     Lumen::TAtomic<FActorChunk *> Chunks[FActorChunk::MaxChunks] = {};
@@ -110,7 +111,7 @@ struct FActorRegistryState
      */
     [[nodiscard]] Lumen::UInt32 AcquireSlot () noexcept
     {
-        Lumen::HAL::FSpinGuard Guard( Lock );
+        Lumen::HAL::TLockGuard<Lumen::HAL::FPlatformSpinLockMutex> Guard( Lock );
 
         if ( const Lumen::UInt32 Recycled = FreeHead; Recycled != 0U )
         {
@@ -252,7 +253,7 @@ void Lumen::Internal::FActorRegistry::Unregister ( AActor *InActor ) noexcept
 
     Slot->Actor.store( nullptr, std::memory_order_release );
 
-    HAL::FSpinGuard Guard( GRegistry.Lock );
+    HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( GRegistry.Lock );
     Slot->NextFree     = GRegistry.FreeHead;
     GRegistry.FreeHead = SlotIndex;
 }
@@ -329,7 +330,7 @@ void Lumen::Internal::FActorRegistry::ReleaseId ( ActorID InId ) noexcept
 
     Slot->Actor.store( nullptr, std::memory_order_release );
 
-    HAL::FSpinGuard Guard( GRegistry.Lock );
+    HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( GRegistry.Lock );
     Slot->NextFree     = GRegistry.FreeHead;
     GRegistry.FreeHead = ActorIdSlotIndex( InId );
 }

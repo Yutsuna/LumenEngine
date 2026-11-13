@@ -14,7 +14,7 @@
 #include <Templates/Map.hpp>
 #include <Templates/Vector.hpp>
 
-#include <HAL/SharedMutex.hpp>
+#include <HAL/PlatformMutex.hpp>
 #include <Maths/Matrix.hpp>
 
 #include <Thread/TripleBuffer.hpp>
@@ -94,7 +94,7 @@ private:
 
 private:
 
-    mutable FSharedMutex RegistryMutex;
+    mutable HAL::FPlatformSharedMutex RegistryMutex;
     FSpatialRegistryData WorkingData;
     Thread::TTripleBuffer<FSpatialRegistryData> SnapshotBuffer;
 

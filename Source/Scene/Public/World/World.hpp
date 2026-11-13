@@ -14,7 +14,7 @@
 #include <Templates/Map.hpp>
 #include <Templates/Vector.hpp>
 
-#include <HAL/Mutex.hpp>
+#include <HAL/PlatformMutex.hpp>
 
 #include <Memory/SharedPtr.hpp>
 
@@ -87,7 +87,7 @@ private:
     TMap<ActorID, TSharedPtr<AActor>> Actors;
     TVector<TSharedPtr<AActor>> ActiveActors;
 
-    mutable FMutex DeferredMutex;
+    mutable HAL::FPlatformMutex DeferredMutex;
     TVector<FDeferredCommand> DeferredCommands;
 
     Bool bNeedsSorting    = false;

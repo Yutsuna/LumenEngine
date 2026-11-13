@@ -36,7 +36,7 @@ LUMEN_FORCE_INLINE Lumen::Bool SortActiveActors ( const Lumen::TSharedPtr<Lumen:
 
 Lumen::FWorld::~FWorld () noexcept
 {
-    TUniqueLock<FMutex> Lock( DeferredMutex );
+    HAL::TUniqueLock<HAL::FPlatformMutex> Lock( DeferredMutex );
 
     for ( const FDeferredCommand &Command : DeferredCommands )
     {
@@ -57,7 +57,7 @@ void Lumen::FWorld::Broadcast ( const FMessage &InMessage )
             World.Broadcast( Msg );
         } };
 
-        TUniqueLock<FMutex> Lock( DeferredMutex );
+        HAL::TUniqueLock<HAL::FPlatformMutex> Lock( DeferredMutex );
         DeferredCommands.push_back( std::move( Command ) );
         return;
     }
@@ -78,7 +78,7 @@ void Lumen::FWorld::DestroyActor ( ActorID InId )
             World.DestroyActorImpl( InId );
         } };
 
-        TUniqueLock<FMutex> Lock( DeferredMutex );
+        HAL::TUniqueLock<HAL::FPlatformMutex> Lock( DeferredMutex );
         DeferredCommands.push_back( std::move( Command ) );
         return;
     }
@@ -151,7 +151,7 @@ void Lumen::FWorld::ApplyDeferredCommands () noexcept
      */
     decltype( DeferredCommands ) Batch;
     {
-        TUniqueLock<FMutex> Lock( DeferredMutex );
+        HAL::TUniqueLock<HAL::FPlatformMutex> Lock( DeferredMutex );
         Batch = std::move( DeferredCommands );
         DeferredCommands.clear();
     }
