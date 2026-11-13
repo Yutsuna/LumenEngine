@@ -13,11 +13,11 @@ Some headers are currently thin aliases over `std` (`TVector`, `TArray`,
 `TMap`, `TPair`, `TQueue`, `TVariant`, `TFunction`) or over `std::atomic`
 (`TAtomic`, `FAtomicFlag`); `TSpan` is also an alias. Always use the Lumen
 name anyway: aliases may be replaced by real implementations later, and the
-name keeps call sites consistent. Hand-written replacements exist for
-optional/expected, threads, stop tokens, condition variables, atomic bitsets,
-locks, the HAL and the algorithms.
+name keeps call sites consistent. Hand-written replacements exist for memory
+ownership (unique/shared), optional/expected, threads, stop tokens, condition
+variables, atomic bitsets, locks, the HAL and the algorithms.
 
-### Containers, strings, ownership
+### Core basics, containers, strings, ownership
 
 | Area / header | Provides | Use when |
 | --- | --- | --- |
@@ -28,11 +28,12 @@ locks, the HAL and the algorithms.
 | `Templates/Queue.hpp` | `TQueue<T>` | FIFO (`std::queue` equivalent) |
 | `Templates/Variant.hpp` | `TVariant<…>` | type-safe union |
 | `Templates/Optional.hpp` | `TOptional<T>` | maybe-value (hand-written) |
-| `Templates/Expected.hpp` (+ `Unexpected.hpp`, `Monadic.hpp`, `MonadicDetails.hpp`) | `TExpected<T, E>`, `TUnexpected<E>`, `FMonadic`, `Transform`/`AndThen`/`OrElse` | error propagation without exceptions |
+| `Templates/Expected.hpp` (+ `Unexpected.hpp`, `Monadic.hpp`, `MonadicDetails.hpp`) | `TExpected<T, E>`, `TUnexpected<E>`, `MakeUnexpected`, `Unexpect`, `FMonadic`, `Transform`/`AndThen`/`OrElse`/`Inspect`/`ValueOr` (`TOptional` and non-array `TUniquePtr` also inherit `FMonadic`) | error propagation without exceptions |
 | `Templates/Function.hpp` | `TFunction<Signature>` | type-erased callable (`std::function` equivalent) |
-| `String/String.hpp`, `StringView.hpp`, `StringUtils.hpp` | `FString`, `FStringView` | all text handling (currently aliases; TODO real types) |
-| `Memory/UniquePtr.hpp`, `SharedPtr.hpp`, `Span.hpp` | `TUniquePtr`/`MakeUnique`, `TSharedPtr`/`TSharedRef`/`MakeShared`/`MakeShareable`, `TSpan` | memory ownership (no raw `new`) |
-| `Core/CoreTypes.hpp` | `Int8`…`UInt64`, `Float32/64`, `Bool`, `USize`, `ISize`, `UPtr/IPtr`, `NullPtrType`, `TAtomic<T>`, `FAtomicFlag` | Lumen typedefs and atomics |
+| `String/String.hpp`, `StringView.hpp`, `StringUtils.hpp` | `FString`, `FStringView`; `IsSpace`, `ToLower`/`ToLowerInline`, `EqualsIgnoreCase`, `StripParam`/`StripDashes`/`AsOption` | all text handling (currently aliases; TODO real types) |
+| `Memory/UniquePtr.hpp`, `SharedPtr.hpp`, `Span.hpp` | `TUniquePtr`/`MakeUnique`, `TSharedPtr`/`TSharedRef`, `MakeShared` (returns `TSharedRef`)/`MakeSharedRef`/`MakeShareable`, `StaticCastSharedPtr`/`StaticCastSharedRef`, `TSpan` | memory ownership (no raw `new`) |
+| `Core/CoreTypes.hpp` | `Int8`…`UInt64`, `Float32/64`, `AnsiChar`, `WideChar`, `Byte`, `Bool`, `USize`, `ISize`, `UPtr/IPtr`, `NullPtrType`, `AlwaysFalseV`, `TVoid`/`TVoidT`, `TAtomic<T>`, `FAtomicFlag` | Lumen typedefs, compile-time helpers and atomics |
+| `Core/CoreDefinitions.hpp` | `LUMEN_PLATFORM_{UNIX,WINDOWS,LINUX,MACOS}`, `LUMEN_ARCH_*`, `LUMEN_COMPILER_*`, `LUMEN_PATH_SEPARATOR`, `LUMEN_NEWLINE`, `LUMEN_SHARED_LIB_EXTENSION`, `LUMEN_EXIT_SUCCESS`/`LUMEN_EXIT_FAILURE`, `LUMEN_FORCE_INLINE`/`LUMEN_NO_INLINE`, `LUMEN_UNUSED`, `LUMEN_DISABLE_UBSAN` | platform/compiler gating, path/exit constants and inline attributes |
 
 ### Algorithms and utilities
 
@@ -40,10 +41,10 @@ locks, the HAL and the algorithms.
 | --- | --- | --- |
 | `Algo/Sort.hpp` (+ `IntroSort.hpp`, `MergeSort.hpp`, `QuickSort.hpp`, `HeapSort.hpp`, `InsertionSort.hpp`) | `Algo::Sort`, `Algo::StableSort` (declared in `Sort.hpp`, merge-sort implementation in `MergeSort.hpp`), `Algo::IntroSort`, `Algo::QuickSort`, `Algo::HeapSort`, `Algo::InsertionSort` | sorting without `std::sort`; prefer `Sort` (introsort, in-place, O(n log n) worst case), `StableSort` only when stability is required |
 | `Algo/Find.hpp` | `Algo::Find`, `FindIf`, `FindIfNot`, `FindIfEqual` (+ `…OrNone` returning `TOptional`) | searching ranges without `std::find` |
-| `Algo/ForEach.hpp` | `Algo::ForEach`, predicate-filtered `ForEach` | iterating ranges |
+| `Algo/ForEach.hpp` | `Algo::ForEach`, predicate-filtered `ForEach`, `Algo::ForEachUntil` (early-exit variants) | iterating ranges |
 | `Templates/Hash.hpp` | `FHash::TypeHash<T>()` | compile-time stable type hashing |
 | `Templates/Invoke.hpp` | `Invoke`, `TInvokeResult`/`TInvokeResultT`, `TIsInvocable`/`TIsInvocableV` | invoking callables/member pointers without `std::invoke` |
-| `Templates/AtomicBitset.hpp` | `FAtomicBitset` (`Set`/`Clear`/`Test`/`ForEachSetBitAndClear`) | concurrent dirty tracking / flag sets |
+| `Templates/AtomicBitset.hpp` | `FAtomicBitset` (`Resize`/`ClearAll`/`GetNumBits`, `Set`/`Clear`/`Test`/`ForEachSetBitAndClear`) | concurrent dirty tracking / flag sets |
 | `Core/EnumFlags.hpp`, `NonCopyable.hpp`, `NonMovable.hpp` | `LUMEN_ENUM_FLAGS`, `FNonCopyable`, `FNonMovable` | bitmask enums, reuse control |
 | `Concepts/*.hpp` | `CConstructibleFrom`, `CConvertibleTo`, `CIsSame`/`CSameAs`, `CIsStringLike`, `CTriviallyCopyable`, `CIsInvocable`, `CIsLockable`, `CSortableRange` | constraining templates |
 
@@ -75,8 +76,8 @@ locks, the HAL and the algorithms.
 | `Benchmarks/Benchmark.hpp` (framework) | `LUMEN_BENCHMARK*` | benchmarks (see `rules/testing.md`) |
 
 Source lives in `Source/Core/Private/**`, mirroring the `Public/` topics
-(`Templates/`, `Thread/`, `Logging/`, `Filesystem/`, `HAL/`, `Memory/`,
-`Tests/`, `Benchmarks/`). Tests live in
+(`Core/`, `Templates/`, `Thread/`, `Logging/`, `Filesystem/`, `HAL/`,
+`Memory/`, `Tests/`, `Benchmarks/`); `Algo/` is header-only. Tests live in
 `Source/Core/Tests/{Functional,Integration}`.
 
 ## Notes for agents

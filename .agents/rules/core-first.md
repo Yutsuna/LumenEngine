@@ -37,6 +37,14 @@ rule — use the Lumen name.
 
 | Need | std | Lumen Core |
 | --- | --- | --- |
+| Boolean | `bool` | `Bool` (`Core/CoreTypes.hpp`) |
+| Character | `char` / `wchar_t` / `unsigned char` | `AnsiChar` / `WideChar` / `Byte` |
+| Fixed-width integer | `std::int8_t`…`std::uint64_t`, `short` / `int` / `long long` | `Int8`…`UInt64` |
+| Floating point | `float` / `double` | `Float32` / `Float64` |
+| Size / index | `size_t` / `ptrdiff_t` | `USize` / `ISize` |
+| Pointer-sized integer | `uintptr_t` / `intptr_t` | `UPtr` / `IPtr` |
+| Null pointer type | `std::nullptr_t` | `NullPtrType` |
+| Dependent false / void helper | `std::false_type` / `std::void_t` | `AlwaysFalseV` / `TVoidT` |
 | Dynamic array | `std::vector` | `TVector<T>` (`Templates/Vector.hpp`) |
 | Fixed array | `std::array` | `TArray<T, N>` (`Templates/Array.hpp`) |
 | Hash map | `std::unordered_map` | `TMap<K, V>` (`Templates/Map.hpp`) |
@@ -49,7 +57,7 @@ rule — use the Lumen name.
 | String / view | `std::string` / `std::string_view` | `FString` / `FStringView` |
 | Span | `std::span` | `TSpan<T>` (`Memory/Span.hpp`) |
 | Unique ownership | `std::unique_ptr` / `std::make_unique` | `TUniquePtr<T>` / `MakeUnique<T>` |
-| Shared ownership | `std::shared_ptr` / `std::make_shared` | `TSharedPtr<T>` / `TSharedRef<T>` / `MakeShared<T>` |
+| Shared ownership | `std::shared_ptr` / `std::make_shared` | `TSharedPtr<T>` / `TSharedRef<T>`; `MakeShared<T>()` returns a `TSharedRef<T>`, `MakeShareable(ptr)` adopts a raw pointer, `MakeSharedRef` builds from an existing controller, `StaticCastSharedPtr`/`StaticCastSharedRef` for casts (`Memory/SharedPtr.hpp`) |
 | Thread | `std::thread`, `std::jthread` | `FThread` (`Thread/Thread.hpp`) |
 | Cooperative stop | `std::stop_token` / `std::stop_source` / `std::stop_callback` | `FStopToken` / `FStopSource` / `FStopCallback` |
 | Mutex | `std::mutex` | `HAL::FPlatformMutex` (`HAL/PlatformMutex.hpp`) |
@@ -63,8 +71,15 @@ rule — use the Lumen name.
 | Invoke | `std::invoke` | `Invoke` (`Templates/Invoke.hpp`) |
 | Sort | `std::sort` / `std::stable_sort` | `Algo::Sort` / `Algo::StableSort` |
 | Find | `std::find*` | `Algo::Find*` (`Algo/Find.hpp`) |
-| For-each | `std::for_each` | `Algo::ForEach` (`Algo/ForEach.hpp`) |
+| For-each | `std::for_each` | `Algo::ForEach` / `Algo::ForEachUntil` (`Algo/ForEach.hpp`) |
 | Type hash | `std::hash` (where applicable) | `FHash::TypeHash<T>()` |
+
+Platform, compiler and build-level definitions come from
+`Core/CoreDefinitions.hpp`: gate platform code with `LUMEN_PLATFORM_*`,
+`LUMEN_ARCH_*` and `LUMEN_COMPILER_*` instead of raw `_WIN32`, `__linux__`,
+`__clang__`, etc.; use `LUMEN_FORCE_INLINE`/`LUMEN_NO_INLINE`,
+`LUMEN_UNUSED` and `LUMEN_EXIT_SUCCESS`/`LUMEN_EXIT_FAILURE` instead of
+compiler-specific attributes or literal exit codes.
 
 Non-atomic `std::bitset`, `std::tuple`, `std::ranges` plumbing and other
 facilities with no Core equivalent remain allowed until Core grows one.
@@ -80,15 +95,16 @@ throwing; they are part of the type system:
   pre-built errors carried by `TUnexpected` from `Templates/Unexpected.hpp`).
 - **Pipeline** → combine results with the **Monadic** operations of
   `Templates/Monadic.hpp`: `Transform` (T->U), `AndThen` (bind into another
-  valid value), `OrElse` (recover from an error). Do not unwrap with ad-hoc
-  `if (opt) {...}` chains across a public API; express the whole flow
-  monadically.
+  valid value), `OrElse` (recover from an error), `Inspect` (peek without
+  changing the container) and `ValueOr` (unwrap with a fallback). Do not
+  unwrap with ad-hoc `if (opt) {...}` chains across a public API; express the
+  whole flow monadically.
 
 Why this is enforced:
 
 - **Paradigm** — error handling and absence are explicit in signatures;
-  `Transform`/`AndThen`/`OrElse` compose failure handling once, instead of
-  repeating checks at every call site.
+  `Transform`/`AndThen`/`OrElse`/`Inspect`/`ValueOr` compose failure handling
+  once, instead of repeating checks at every call site.
 - **Safety** — nothing can escape a `noexcept` frame or an actor boundary;
   the compiler forces callers to consume the `TOptional`/expected value, so
   ignored error states become review findings rather than runtime surprises.
