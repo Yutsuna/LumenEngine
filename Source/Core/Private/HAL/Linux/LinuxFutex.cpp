@@ -11,7 +11,6 @@
 
 extern "C"
 {
-
     #include <errno.h>
     #include <limits.h>
     #include <linux/futex.h>
@@ -62,7 +61,7 @@ void Lumen::HAL::FLinuxFutex::WakeAll ( TAtomic<UInt32> &InAddress ) noexcept
 
 Lumen::UInt32 *Lumen::HAL::FLinuxFutex::Raw ( TAtomic<UInt32> &InAddress ) noexcept
 {
-    /** INFO: std::atomic<UInt32> is lock-free and 4 bytes */
+    /** INFO: TAtomic<UInt32> is lock-free and 4 bytes */
     return reinterpret_cast<UInt32 *>( &InAddress );
 }
 

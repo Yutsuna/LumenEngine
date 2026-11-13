@@ -51,7 +51,7 @@ void Lumen::HAL::FMacOSFutex::WakeAll ( TAtomic<UInt32> &InAddress ) noexcept
 
 Lumen::UInt32 *Lumen::HAL::FMacOSFutex::Raw ( TAtomic<UInt32> &InAddress ) noexcept
 {
-    /** INFO: std::atomic<UInt32> is lock-free and 4 bytes (static_asserts in the header), so this is the usual futex idiom */
+    /** INFO: TAtomic<UInt32> is lock-free and 4 bytes (static_asserts in the header), so this is the usual futex idiom */
     return reinterpret_cast<UInt32 *>( &InAddress );
 }
 

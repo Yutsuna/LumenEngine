@@ -5,6 +5,10 @@
 
 #pragma once
 
+#if defined( _GLIBCXX_THREAD )
+    #warning "<thread> include detected. Please prefer only using <HAL/PlatformThread.hpp>."
+#endif
+
 #include <Core/CoreDefinitions.hpp>
 
 #if defined( LUMEN_PLATFORM_UNIX )

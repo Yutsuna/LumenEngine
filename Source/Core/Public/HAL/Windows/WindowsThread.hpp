@@ -15,6 +15,8 @@
     #include <Core/NonCopyable.hpp>
     #include <CoreExport.hpp>
 
+extern "C"
+{
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
     #endif
@@ -22,6 +24,7 @@
         #define NOMINMAX
     #endif
     #include <windows.h>
+}
 
 namespace Lumen
 {

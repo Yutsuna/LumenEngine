@@ -27,7 +27,7 @@ namespace HAL
      */
     namespace ESystemSignal
     {
-        enum Type : UInt8
+        enum CORE_EXPORT Type : UInt8
         {
             None      = 0,
             Interrupt = SIGINT,

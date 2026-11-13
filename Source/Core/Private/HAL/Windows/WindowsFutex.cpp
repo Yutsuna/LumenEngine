@@ -7,6 +7,8 @@
 
 #if defined( LUMEN_PLATFORM_WINDOWS )
 
+extern "C"
+{
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
     #endif
@@ -14,6 +16,7 @@
         #define NOMINMAX
     #endif
     #include <windows.h>
+}
 
     #if defined( LUMEN_COMPILER_MSVC )
         #pragma comment( lib, "Synchronization.lib" )
@@ -68,7 +71,7 @@ void Lumen::HAL::FWindowsFutex::WakeAll ( TAtomic<UInt32> &InAddress ) noexcept
 
 Lumen::UInt32 *Lumen::HAL::FWindowsFutex::Raw ( TAtomic<UInt32> &InAddress ) noexcept
 {
-    /** INFO: std::atomic<UInt32> is lock-free and 4 bytes (static_asserts in the header), so this is the usual futex idiom */
+    /** INFO: TAtomic<UInt32> is lock-free and 4 bytes (static_asserts in the header), so this is the usual futex idiom */
     return reinterpret_cast<UInt32 *>( &InAddress );
 }
 

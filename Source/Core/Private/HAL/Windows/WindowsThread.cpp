@@ -13,6 +13,7 @@
 
 Lumen::HAL::FWindowsThread::FId::FId ( DWORD InId ) noexcept : Value( InId )
 {
+    /* */
 }
 
 Lumen::Bool Lumen::HAL::FWindowsThread::FId::IsValid () const noexcept

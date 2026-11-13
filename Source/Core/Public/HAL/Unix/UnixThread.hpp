@@ -19,8 +19,14 @@
 
 namespace Lumen
 {
+
 namespace HAL
 {
+
+    /**
+     * @class FUnixThread
+     * @brief Represents a POSIX thread, providing ownership and operations.
+     */
     class CORE_EXPORT FUnixThread final : public FNonCopyable
     {
     public:
@@ -69,7 +75,9 @@ namespace HAL
         pthread_t Thread{};
         Bool bJoinable = false;
     };
+
 } // namespace HAL
+
 } // namespace Lumen
 
 #endif
