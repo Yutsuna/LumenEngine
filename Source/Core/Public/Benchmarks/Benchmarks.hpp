@@ -24,7 +24,7 @@
  * LUMEN_BENCHMARK_RANGE( Memory, Copy, 64, 1 << 20 )
  * {
  *     const Lumen::USize Size = static_cast<Lumen::USize>( State.GetArgument() );
- *     Lumen::TVector<char> Source( Size ), Dest( Size );
+ *     Lumen::TVector<AnsiChar> Source( Size ), Dest( Size );
  *     State.SetBytesPerIteration( Source.size() );
  *     for ( auto _ : State )
  *     {

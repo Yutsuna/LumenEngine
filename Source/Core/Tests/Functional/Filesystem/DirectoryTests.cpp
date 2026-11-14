@@ -11,7 +11,7 @@
 namespace
 {
 
-Lumen::Filesystem::FPath GetTestPath ( const char *InName )
+Lumen::Filesystem::FPath GetTestPath ( const Lumen::AnsiChar *InName )
 {
     return Lumen::Filesystem::FPath( "LumenFilesystemTests" ) / Lumen::FStringView( InName );
 }
@@ -20,7 +20,7 @@ struct FScopedTestDir
 {
     Lumen::Filesystem::FPath Path;
 
-    explicit FScopedTestDir ( const char *InName, bool bCreate = true ) : Path( GetTestPath( InName ) )
+    explicit FScopedTestDir ( const Lumen::AnsiChar *InName, bool bCreate = true ) : Path( GetTestPath( InName ) )
     {
         Lumen::Filesystem::FDirectory::Delete( Path, true );
         if ( bCreate )

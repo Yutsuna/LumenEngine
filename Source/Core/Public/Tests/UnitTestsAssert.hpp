@@ -26,7 +26,7 @@ namespace Tests
 {
 
     template <typename T>
-    concept CFormattableOrEnum = std::formattable<std::remove_cvref_t<T>, char> or std::is_enum_v<std::remove_cvref_t<T>>;
+    concept CFormattableOrEnum = std::formattable<std::remove_cvref_t<T>, AnsiChar> or std::is_enum_v<std::remove_cvref_t<T>>;
 
     template <typename T> constexpr decltype( auto ) ToPrintable ( const T &Value ) noexcept
     {
@@ -34,7 +34,7 @@ namespace Tests
         {
             return std::to_underlying( Value );
         }
-        else if constexpr ( std::formattable<std::remove_cvref_t<T>, char> )
+        else if constexpr ( std::formattable<std::remove_cvref_t<T>, AnsiChar> )
         {
             return Value;
         }
