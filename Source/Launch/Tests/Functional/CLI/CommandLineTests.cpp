@@ -255,4 +255,111 @@ LUMEN_TEST( FCommandLine_ForEachOption, StripsDashesAndValues )
     LUMEN_CHECK_TRUE( Names[2].empty() );
 }
 
+LUMEN_TEST( FCommandLine_HasSwitch, RejectsPositionalArgument )
+{
+    const auto Holder                       = MakeCommandLine( { "Lumen", "ProjectDirectory" } );
+    const Launch::FCommandLine &CommandLine = Holder.CommandLine;
+
+    LUMEN_CHECK_FALSE( CommandLine.HasSwitch( "ProjectDirectory" ) );
+}
+
+LUMEN_TEST( FCommandLine_GetValue, ReturnsEmptyValueForBareEqualSign )
+{
+    const auto Holder                       = MakeCommandLine( { "Lumen", "-fps=" } );
+    const Launch::FCommandLine &CommandLine = Holder.CommandLine;
+    const auto Result                       = CommandLine.GetValue( "fps" );
+
+    LUMEN_CHECK_HAS_VALUE( Result );
+    LUMEN_CHECK_TRUE( Result->empty() );
+}
+
+LUMEN_TEST( FCommandLine_GetValue, KeepsFirstOccurrenceForRepeatedKeys )
+{
+    const auto Holder                       = MakeCommandLine( { "Lumen", "-fps=30", "-fps=60" } );
+    const Launch::FCommandLine &CommandLine = Holder.CommandLine;
+    const auto Result                       = CommandLine.GetValue( "fps" );
+
+    LUMEN_CHECK_HAS_VALUE( Result );
+    LUMEN_CHECK_TRUE( *Result == "30" );
+}
+
+LUMEN_TEST( FCommandLine_GetValue, ReportsMissingArgumentForValuelessSwitch )
+{
+    const auto Holder                       = MakeCommandLine( { "Lumen", "-fps" } );
+    const Launch::FCommandLine &CommandLine = Holder.CommandLine;
+    const auto Result                       = CommandLine.GetValue( "fps" );
+
+    LUMEN_CHECK_HAS_ERROR( Result );
+    LUMEN_CHECK_EQ( Result.Error().Code, Launch::ELaunchErrorCode::MissingArgument );
+}
+
+LUMEN_TEST( FCommandLine_GetNumber, ParsesNegativeInteger )
+{
+    const auto Holder                       = MakeCommandLine( { "Lumen", "-offset=-7" } );
+    const Launch::FCommandLine &CommandLine = Holder.CommandLine;
+    const auto Result                       = CommandLine.GetNumber<Int32>( "offset" );
+
+    LUMEN_CHECK_HAS_VALUE( Result );
+    LUMEN_CHECK_EQ( *Result, -7 );
+}
+
+LUMEN_TEST( FCommandLine_GetNumber, ReportsInvalidArgumentForTrailingCharacters )
+{
+    const auto Holder                       = MakeCommandLine( { "Lumen", "-maxframes=12abc" } );
+    const Launch::FCommandLine &CommandLine = Holder.CommandLine;
+    const auto Result                       = CommandLine.GetNumber<UInt64>( "maxframes" );
+
+    LUMEN_CHECK_HAS_ERROR( Result );
+    LUMEN_CHECK_EQ( Result.Error().Code, Launch::ELaunchErrorCode::InvalidArgument );
+}
+
+LUMEN_TEST( FCommandLine_GetNumber, ReportsInvalidArgumentForOutOfRangeValue )
+{
+    const auto Holder                       = MakeCommandLine( { "Lumen", "-maxframes=99999999999999999999999" } );
+    const Launch::FCommandLine &CommandLine = Holder.CommandLine;
+    const auto Result                       = CommandLine.GetNumber<UInt64>( "maxframes" );
+
+    LUMEN_CHECK_HAS_ERROR( Result );
+    LUMEN_CHECK_EQ( Result.Error().Code, Launch::ELaunchErrorCode::InvalidArgument );
+}
+
+LUMEN_TEST( FCommandLine_GetNumberOr, ReportsInvalidArgumentDespiteFallback )
+{
+    const auto Holder                       = MakeCommandLine( { "Lumen", "-fps=abc" } );
+    const Launch::FCommandLine &CommandLine = Holder.CommandLine;
+    const auto Result                       = CommandLine.GetNumberOr<Float64>( "fps", 60.0 );
+
+    LUMEN_CHECK_HAS_ERROR( Result );
+    LUMEN_CHECK_EQ( Result.Error().Code, Launch::ELaunchErrorCode::InvalidArgument );
+}
+
+LUMEN_TEST( FCommandLine_ForEachOption, ForwardsRawArgument )
+{
+    const auto Holder                       = MakeCommandLine( { "Lumen", "-a=1", "positional" } );
+    const Launch::FCommandLine &CommandLine = Holder.CommandLine;
+
+    TVector<FStringView> RawArguments;
+    CommandLine.ForEachOption( [&RawArguments] ( const AnsiChar *const Raw, const FStringView ) noexcept
+    {
+        RawArguments.push_back( Raw );
+    } );
+
+    LUMEN_CHECK_EQ( RawArguments.size(), 2ULL );
+    LUMEN_CHECK_TRUE( RawArguments[0] == "-a=1" );
+    LUMEN_CHECK_TRUE( RawArguments[1] == "positional" );
+}
+
+LUMEN_TEST( FCommandLine_ForEachOption, VisitsNothingWithoutArguments )
+{
+    const Launch::FCommandLine CommandLine;
+
+    UInt32 Count = 0U;
+    CommandLine.ForEachOption( [&Count] ( const AnsiChar *const, const FStringView ) noexcept
+    {
+        ++Count;
+    } );
+
+    LUMEN_CHECK_EQ( Count, 0U );
+}
+
 } // namespace Lumen
