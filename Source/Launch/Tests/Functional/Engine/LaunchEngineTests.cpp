@@ -59,4 +59,15 @@ LUMEN_TEST( GuardedMain, FailsWithUnknownOption )
     LUMEN_CHECK_EQ( ExitCode, static_cast<Int32>( Launch::ELaunchErrorCode::InvalidArgument ) );
 }
 
+LUMEN_TEST( GuardedMain, SucceedsWhenHelpIsRequested )
+{
+    /** INFO: Help reports a None error code, which GuardedMain turns into a successful exit. */
+    const auto Arguments = MakeArgv( { "Lumen", "-help" } );
+
+    Launch::FLaunchEngineLoop::ResetExitRequest();
+    const Int32 ExitCode = Launch::GuardedMain( static_cast<Int32>( Arguments.size() ), Arguments.data() );
+
+    LUMEN_CHECK_EQ( ExitCode, LUMEN_EXIT_SUCCESS );
+}
+
 } // namespace Lumen

@@ -7,6 +7,8 @@
 
 #include <Tests/UnitTest.hpp>
 
+#include <new>
+
 namespace Lumen
 {
 
@@ -19,6 +21,20 @@ LUMEN_TEST( FLaunchProcessGuard_Construct, DoesNotCrash )
     const Launch::FLaunchProcessGuard Guard;
 
     LUMEN_CHECK_TRUE( true );
+}
+
+LUMEN_TEST( FLaunchProcessGuard_Construct, ReplacesTheNewHandlerWhileAlive )
+{
+    const std::new_handler InitialHandler = std::get_new_handler();
+
+    {
+        const Launch::FLaunchProcessGuard Guard;
+
+        LUMEN_CHECK_TRUE( std::get_new_handler() != nullptr );
+        LUMEN_CHECK_TRUE( std::get_new_handler() != InitialHandler );
+    }
+
+    LUMEN_CHECK_TRUE( std::get_new_handler() == InitialHandler );
 }
 
 LUMEN_TEST( FLaunchProcessGuard_Lifetime, NestedGuardsAreSafe )

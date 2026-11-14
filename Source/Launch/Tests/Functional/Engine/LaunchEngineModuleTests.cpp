@@ -70,6 +70,11 @@ LUMEN_TEST( MakeApplicationModule_Headless, ReturnsValidModule )
     LUMEN_CHECK_HAS_VALUE( Result );
     LUMEN_CHECK_TRUE( static_cast<Bool>( *Result ) );
     LUMEN_CHECK_TRUE( ( *Result )->GetName() == "Application" );
+    LUMEN_CHECK_TRUE( HasAnyFlags( ( *Result )->GetTraits(), Launch::EModuleTraits::Tick ) );
+    LUMEN_CHECK_FALSE( HasAnyFlags( ( *Result )->GetTraits(), Launch::EModuleTraits::FixedTick ) );
+
+    /** INFO: Ticking without a platform application must be a safe no-op. */
+    ( *Result )->Tick( 0.016, 0.5 );
 }
 
 LUMEN_TEST( MakeWindowModule_Headless, ReturnsValidModule )
@@ -82,6 +87,21 @@ LUMEN_TEST( MakeWindowModule_Headless, ReturnsValidModule )
     LUMEN_CHECK_HAS_VALUE( Result );
     LUMEN_CHECK_TRUE( static_cast<Bool>( *Result ) );
     LUMEN_CHECK_TRUE( ( *Result )->GetName() == "Window" );
+    LUMEN_CHECK_EQ( ( *Result )->GetTraits(), Launch::EModuleTraits::None );
+}
+
+LUMEN_TEST( MakeWindowModule_NotHeadless, FailsWithoutApplication )
+{
+    /** NOTE: Relies on no earlier test having created a platform application (only headless ones are). */
+    LUMEN_CHECK_FALSE( Launch::GetApplication().IsValid() );
+
+    const Launch::FLaunchEngineConfig Config;
+
+    const auto Result = Launch::MakeWindowModule( Config );
+
+    LUMEN_CHECK_HAS_ERROR( Result );
+    LUMEN_CHECK_EQ( Result.Error().Stage, Launch::ELaunchStage::Init );
+    LUMEN_CHECK_EQ( Result.Error().Code, Launch::ELaunchErrorCode::ModuleCreationFailed );
 }
 
 LUMEN_TEST( GetApplication_Headless, ReturnsNull )

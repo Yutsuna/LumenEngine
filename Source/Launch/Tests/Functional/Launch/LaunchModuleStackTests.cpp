@@ -18,11 +18,12 @@ namespace Lumen
 namespace
 {
 
-    UInt32 GFixedTickCount  = 0U;
-    Float64 GLastFixedDelta = 0.0;
-    UInt32 GTickCount       = 0U;
-    Float64 GLastDelta      = 0.0;
-    Float64 GLastAlpha      = 0.0;
+    UInt32 GFixedTickCount    = 0U;
+    Float64 GLastFixedDelta   = 0.0;
+    UInt32 GTickCount         = 0U;
+    Float64 GLastDelta        = 0.0;
+    Float64 GLastAlpha        = 0.0;
+    Float64 GFactoryFixedStep = -1.0;
 
     class FFixedTickModule final : public Launch::IEngineModule
     {
@@ -57,6 +58,34 @@ namespace
         [[nodiscard]] Launch::EModuleTraits GetTraits () const noexcept override
         {
             return Launch::EModuleTraits::Tick;
+        }
+
+        void Tick ( const Float64 InDeltaSeconds, const Float64 InAlpha ) noexcept override
+        {
+            GLastDelta = InDeltaSeconds;
+            GLastAlpha = InAlpha;
+            ++GTickCount;
+        }
+    };
+
+    class FHybridModule final : public Launch::IEngineModule
+    {
+    public:
+
+        [[nodiscard]] FStringView GetName () const noexcept override
+        {
+            return "Hybrid";
+        }
+
+        [[nodiscard]] Launch::EModuleTraits GetTraits () const noexcept override
+        {
+            return Launch::EModuleTraits::FixedTick | Launch::EModuleTraits::Tick;
+        }
+
+        void FixedTick ( const Float64 InFixedDeltaSeconds ) noexcept override
+        {
+            GLastFixedDelta = InFixedDeltaSeconds;
+            ++GFixedTickCount;
         }
 
         void Tick ( const Float64 InDeltaSeconds, const Float64 InAlpha ) noexcept override
@@ -122,6 +151,20 @@ namespace
     [[nodiscard]] Launch::TLaunchResult<TUniquePtr<Launch::IEngineModule>>
     MakeNoOpModule ( const Launch::FLaunchEngineConfig & ) noexcept
     {
+        return MakeUnique<FNoOpModule>();
+    }
+
+    [[nodiscard]] Launch::TLaunchResult<TUniquePtr<Launch::IEngineModule>>
+    MakeHybridModule ( const Launch::FLaunchEngineConfig & ) noexcept
+    {
+        return MakeUnique<FHybridModule>();
+    }
+
+    /** @brief Records the FixedStep it received so tests can assert config forwarding. */
+    [[nodiscard]] Launch::TLaunchResult<TUniquePtr<Launch::IEngineModule>>
+    MakeConfigProbeModule ( const Launch::FLaunchEngineConfig &InConfig ) noexcept
+    {
+        GFactoryFixedStep = InConfig.FixedStep;
         return MakeUnique<FNoOpModule>();
     }
 
@@ -249,6 +292,7 @@ LUMEN_TEST( FModuleStack_FixedTick, DispatchesOnlyToFixedTickModules )
     static constexpr Launch::FModuleDescriptor Descriptors[] = {
         Launch::FModuleDescriptor{ .Name = "FixedTick", .Create = &MakeFixedTickModule },
         Launch::FModuleDescriptor{ .Name = "Tick", .Create = &MakeTickModule },
+        Launch::FModuleDescriptor{ .Name = "Hybrid", .Create = &MakeHybridModule },
     };
 
     const auto Started = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -256,7 +300,7 @@ LUMEN_TEST( FModuleStack_FixedTick, DispatchesOnlyToFixedTickModules )
 
     Stack.FixedTick( 0.016 );
 
-    LUMEN_CHECK_EQ( GFixedTickCount, 1U );
+    LUMEN_CHECK_EQ( GFixedTickCount, 2U );
     LUMEN_CHECK_EQ( GLastFixedDelta, 0.016 );
     LUMEN_CHECK_EQ( GTickCount, 0U );
 }
@@ -271,6 +315,7 @@ LUMEN_TEST( FModuleStack_Tick, DispatchesOnlyToTickModules )
     static constexpr Launch::FModuleDescriptor Descriptors[] = {
         Launch::FModuleDescriptor{ .Name = "FixedTick", .Create = &MakeFixedTickModule },
         Launch::FModuleDescriptor{ .Name = "Tick", .Create = &MakeTickModule },
+        Launch::FModuleDescriptor{ .Name = "Hybrid", .Create = &MakeHybridModule },
     };
 
     const auto Started = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -278,10 +323,80 @@ LUMEN_TEST( FModuleStack_Tick, DispatchesOnlyToTickModules )
 
     Stack.Tick( 0.016, 0.5 );
 
-    LUMEN_CHECK_EQ( GTickCount, 1U );
+    LUMEN_CHECK_EQ( GTickCount, 2U );
     LUMEN_CHECK_EQ( GLastDelta, 0.016 );
     LUMEN_CHECK_EQ( GLastAlpha, 0.5 );
     LUMEN_CHECK_EQ( GFixedTickCount, 0U );
+}
+
+LUMEN_TEST( FModuleStack_StartAll, ForwardsConfigToFactories )
+{
+    GFactoryFixedStep = -1.0;
+
+    Launch::FModuleStack Stack;
+
+    Launch::FLaunchEngineConfig Config;
+    Config.FixedStep = 0.125;
+
+    static constexpr Launch::FModuleDescriptor Descriptors[] = {
+        Launch::FModuleDescriptor{ .Name = "Probe", .Create = &MakeConfigProbeModule },
+    };
+
+    const auto Started = Stack.StartAll( Descriptors, Config );
+
+    LUMEN_CHECK_HAS_VALUE( Started );
+    LUMEN_CHECK_EQ( GFactoryFixedStep, 0.125 );
+}
+
+LUMEN_TEST( FModuleStack_StartAll, AcceptsEmptyDescriptorList )
+{
+    Launch::FModuleStack Stack;
+
+    const auto Result = Stack.StartAll( {}, Launch::FLaunchEngineConfig{} );
+
+    LUMEN_CHECK_HAS_VALUE( Result );
+    LUMEN_CHECK_EQ( Stack.Num(), 0ULL );
+}
+
+LUMEN_TEST( FModuleStack_StartAll, ReportsInitStageOnFailure )
+{
+    Launch::FModuleStack Stack;
+
+    static constexpr Launch::FModuleDescriptor Descriptors[] = {
+        Launch::FModuleDescriptor{ .Name = "Failing", .Create = &MakeFailingModule },
+    };
+
+    const auto Result = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
+
+    LUMEN_CHECK_HAS_ERROR( Result );
+    LUMEN_CHECK_EQ( Result.Error().Stage, Launch::ELaunchStage::Init );
+}
+
+LUMEN_TEST( FModuleStack_StartAll, KeepsStartedModulesWhenALaterFactoryFails )
+{
+    GLifetimeEvents.clear();
+
+    Launch::FModuleStack Stack;
+
+    static constexpr Launch::FModuleDescriptor Descriptors[] = {
+        Launch::FModuleDescriptor{ .Name = "First", .Create = &MakeFirstTrackerModule },
+        Launch::FModuleDescriptor{ .Name = "Failing", .Create = &MakeFailingModule },
+    };
+
+    const auto Result = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
+
+    LUMEN_CHECK_HAS_ERROR( Result );
+    LUMEN_CHECK_EQ( Stack.Num(), 1ULL );
+
+    const USize EventsBeforeTeardown = GLifetimeEvents.size();
+
+    Stack.ShutdownAll();
+
+    /** INFO: The kept module must be torn down exactly once, by the explicit shutdown. */
+    LUMEN_CHECK_TRUE( GLifetimeEvents.size() > EventsBeforeTeardown );
+    LUMEN_CHECK_TRUE( GLifetimeEvents[EventsBeforeTeardown] == "Stop" );
+    LUMEN_CHECK_TRUE( GLifetimeEvents[EventsBeforeTeardown + 1] == "First" );
+    LUMEN_CHECK_EQ( GLifetimeEvents.size(), EventsBeforeTeardown + 2ULL );
 }
 
 LUMEN_TEST( FModuleStack_ShutdownAll, TearsDownInReverseStartupOrder )
@@ -320,27 +435,35 @@ LUMEN_TEST( FModuleStack_ShutdownAll, TearsDownInReverseStartupOrder )
 
 LUMEN_TEST( FModuleStack_ShutdownAll, IsIdempotent )
 {
+    GLifetimeEvents.clear();
+
     Launch::FModuleStack Stack;
 
     static constexpr Launch::FModuleDescriptor Descriptors[] = {
-        Launch::FModuleDescriptor{ .Name = "NoOp", .Create = &MakeNoOpModule },
+        Launch::FModuleDescriptor{ .Name = "First", .Create = &MakeFirstTrackerModule },
     };
 
     const auto Started = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
     LUMEN_CHECK_HAS_VALUE( Started );
 
     Stack.ShutdownAll();
+    const USize EventsAfterFirstShutdown = GLifetimeEvents.size();
+
     Stack.ShutdownAll();
 
     LUMEN_CHECK_EQ( Stack.Num(), 0ULL );
+    LUMEN_CHECK_EQ( GLifetimeEvents.size(), EventsAfterFirstShutdown );
 }
 
 LUMEN_TEST( FModuleStack_Move, TransfersOwnership )
 {
+    GLifetimeEvents.clear();
+
     Launch::FModuleStack Source;
 
     static constexpr Launch::FModuleDescriptor Descriptors[] = {
-        Launch::FModuleDescriptor{ .Name = "NoOp", .Create = &MakeNoOpModule },
+        Launch::FModuleDescriptor{ .Name = "First", .Create = &MakeFirstTrackerModule },
+        Launch::FModuleDescriptor{ .Name = "Second", .Create = &MakeSecondTrackerModule },
     };
 
     const auto Started = Source.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -349,23 +472,42 @@ LUMEN_TEST( FModuleStack_Move, TransfersOwnership )
     Launch::FModuleStack Destination( std::move( Source ) );
 
     LUMEN_CHECK_EQ( Source.Num(), 0ULL );
-    LUMEN_CHECK_EQ( Destination.Num(), 1ULL );
+    LUMEN_CHECK_EQ( Destination.Num(), 2ULL );
+
+    Destination.ShutdownAll();
+
+    /** INFO: The moved-to stack owns the modules and tears them down in reverse order. */
+    LUMEN_CHECK_TRUE( GLifetimeEvents[GLifetimeEvents.size() - 4] == "Stop" );
+    LUMEN_CHECK_TRUE( GLifetimeEvents[GLifetimeEvents.size() - 3] == "Second" );
+    LUMEN_CHECK_TRUE( GLifetimeEvents[GLifetimeEvents.size() - 2] == "Stop" );
+    LUMEN_CHECK_TRUE( GLifetimeEvents[GLifetimeEvents.size() - 1] == "First" );
 }
 
-LUMEN_TEST( FModuleStack_Destructor, TearsDownModules )
+LUMEN_TEST( FModuleStack_Destructor, TearsDownModulesInReverseOrder )
 {
+    GLifetimeEvents.clear();
+
     {
         Launch::FModuleStack Stack;
 
         static constexpr Launch::FModuleDescriptor Descriptors[] = {
-            Launch::FModuleDescriptor{ .Name = "NoOp", .Create = &MakeNoOpModule },
+            Launch::FModuleDescriptor{ .Name = "First", .Create = &MakeFirstTrackerModule },
+            Launch::FModuleDescriptor{ .Name = "Second", .Create = &MakeSecondTrackerModule },
+            Launch::FModuleDescriptor{ .Name = "Third", .Create = &MakeThirdTrackerModule },
         };
 
         const auto Started = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
         LUMEN_CHECK_HAS_VALUE( Started );
     }
 
-    LUMEN_CHECK_TRUE( true );
+    LUMEN_CHECK_EQ( GLifetimeEvents.size(), 12ULL );
+
+    LUMEN_CHECK_TRUE( GLifetimeEvents[6] == "Stop" );
+    LUMEN_CHECK_TRUE( GLifetimeEvents[7] == "Third" );
+    LUMEN_CHECK_TRUE( GLifetimeEvents[8] == "Stop" );
+    LUMEN_CHECK_TRUE( GLifetimeEvents[9] == "Second" );
+    LUMEN_CHECK_TRUE( GLifetimeEvents[10] == "Stop" );
+    LUMEN_CHECK_TRUE( GLifetimeEvents[11] == "First" );
 }
 
 } // namespace Lumen

@@ -64,6 +64,34 @@ LUMEN_TEST( FFrameClock_BeginFrame, AlphaIsNormalizedRemainder )
     LUMEN_CHECK_TRUE( Step.Alpha < 1.0 );
 }
 
+LUMEN_TEST( FFrameClock_BeginFrame, ClampsTimeRegressionToZero )
+{
+    Launch::FFrameClock Clock( 0.016, 0.1, 1.0 );
+
+    const Launch::FFrameStep Step = Clock.BeginFrame( 0.5 );
+
+    LUMEN_CHECK_TRUE( Step.DeltaSeconds == 0.0 );
+    LUMEN_CHECK_EQ( Step.FixedSteps, 0U );
+    LUMEN_CHECK_TRUE( Step.Alpha == 0.0 );
+}
+
+LUMEN_TEST( FFrameClock_BeginFrame, CarriesAccumulatorAcrossFrames )
+{
+    Launch::FFrameClock Clock( 0.01, 0.1, 0.0 );
+
+    const Launch::FFrameStep FirstStep  = Clock.BeginFrame( 0.025 );
+    const Launch::FFrameStep SecondStep = Clock.BeginFrame( 0.025 );
+
+    LUMEN_CHECK_EQ( FirstStep.FixedSteps, 2U );
+    LUMEN_CHECK_TRUE( FirstStep.Alpha >= 0.0 );
+    LUMEN_CHECK_TRUE( FirstStep.Alpha < 1.0 );
+
+    /** INFO: No new time elapsed: the leftover accumulator must not produce a step again. */
+    LUMEN_CHECK_TRUE( SecondStep.DeltaSeconds == 0.0 );
+    LUMEN_CHECK_EQ( SecondStep.FixedSteps, 0U );
+    LUMEN_CHECK_EQ( SecondStep.Alpha, FirstStep.Alpha );
+}
+
 LUMEN_TEST( FFrameClock_ElapsedSeconds, GrowsWithTime )
 {
     Launch::FFrameClock Clock( 0.016, 0.1 );
@@ -96,6 +124,16 @@ LUMEN_TEST( FFrameLimiter_Wait, RespectsBudget )
     const Float64 End = HAL::FPlatformTime::Seconds();
 
     LUMEN_CHECK_TRUE( ( End - Start ) >= 0.01 );
+}
+
+LUMEN_TEST( FFrameStep, CopyPreservesValues )
+{
+    const Launch::FFrameStep Step{ .DeltaSeconds = 0.016, .FixedSteps = 1U, .Alpha = 0.5 };
+    const Launch::FFrameStep Copy = Step;
+
+    LUMEN_CHECK_TRUE( Copy.DeltaSeconds == 0.016 );
+    LUMEN_CHECK_EQ( Copy.FixedSteps, 1U );
+    LUMEN_CHECK_TRUE( Copy.Alpha == 0.5 );
 }
 
 } // namespace Lumen
