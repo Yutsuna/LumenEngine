@@ -7,8 +7,10 @@
 #include "Device/NullDevice.hpp"
 #include <Resources/RHIBufferDesc.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
     LUMEN_TEST( NullBindings, AppliesKnownWritesAndTracksDirtyState )
@@ -43,4 +45,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

@@ -10,8 +10,10 @@
 #include <Device/IRHIDevice.hpp>
 #include <Resources/RHIBufferDesc.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
     LUMEN_TEST( RHIBindingsConformance, CreatesLayoutSetAndDescriptorAllocator )
@@ -50,4 +52,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

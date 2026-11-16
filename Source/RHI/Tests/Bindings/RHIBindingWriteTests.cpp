@@ -10,8 +10,10 @@
 #include <Resources/RHIBufferDesc.hpp>
 #include <Resources/RHITextureDesc.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
     LUMEN_TEST( RHIBindingWrite, RequiresNonNullResourceForEveryPayloadKind )
@@ -45,4 +47,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

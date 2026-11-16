@@ -5,8 +5,10 @@
 
 #include "Bindings/NullBindings.hpp"
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
     class FTrackingDescriptorBackend final : public IRHIDescriptorPoolBackend

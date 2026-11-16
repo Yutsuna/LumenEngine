@@ -7,82 +7,89 @@
 #include "Types/RHIObjectForward.hpp"
 #include <Bindings/IRHIBindingSet.hpp>
 #include <Bindings/RHIDescriptorAllocatorBase.hpp>
-namespace Lumen::Tests
+
+namespace Lumen
 {
 
-/**
- * @class FNullBindingLayout
- * @brief Immutable Null layout.
- */
-class FNullBindingLayout final : public IRHIBindingLayout
+namespace Tests
 {
-public:
 
-    FNullBindingLayout ( const FRHIBindingLayoutDesc &InDesc, FRHIObjectId InId ) noexcept;
-    LUMEN_RHI_OBJECT_DECLARATIONS;
-    const FRHIBindingLayoutDesc &GetDesc () const noexcept override;
+    /**
+     * @class FNullBindingLayout
+     * @brief Immutable Null layout.
+     */
+    class FNullBindingLayout final : public IRHIBindingLayout
+    {
+    public:
 
-private:
+        FNullBindingLayout ( const FRHIBindingLayoutDesc &InDesc, FRHIObjectId InId ) noexcept;
+        LUMEN_RHI_OBJECT_DECLARATIONS;
+        const FRHIBindingLayoutDesc &GetDesc () const noexcept override;
 
-    FRHIObjectBase Identity;
-    FRHIBindingLayoutDesc Desc;
-};
+    private:
 
-/**
- * @class FNullBindingSet
- * @brief Null set storing validated writes and a dirty flag.
- */
-class FNullBindingSet final : public IRHIBindingSet
-{
-public:
+        FRHIObjectBase Identity;
+        FRHIBindingLayoutDesc Desc;
+    };
 
-    FNullBindingSet ( TSharedRef<IRHIBindingLayout> InLayout, FRHIObjectId InId ) noexcept;
-    LUMEN_RHI_OBJECT_DECLARATIONS;
-    TSharedRef<IRHIBindingLayout> GetLayout () const noexcept override;
-    TExpected<void, FRHIError> Write ( TSpan<const FRHIBindingWrite> InWrites ) noexcept override;
-    Bool IsDirty () const noexcept override;
-    void ClearDirty () noexcept override;
+    /**
+     * @class FNullBindingSet
+     * @brief Null set storing validated writes and a dirty flag.
+     */
+    class FNullBindingSet final : public IRHIBindingSet
+    {
+    public:
 
-private:
+        FNullBindingSet ( TSharedRef<IRHIBindingLayout> InLayout, FRHIObjectId InId ) noexcept;
+        LUMEN_RHI_OBJECT_DECLARATIONS;
+        TSharedRef<IRHIBindingLayout> GetLayout () const noexcept override;
+        TExpected<void, FRHIError> Write ( TSpan<const FRHIBindingWrite> InWrites ) noexcept override;
+        Bool IsDirty () const noexcept override;
+        void ClearDirty () noexcept override;
 
-    FRHIObjectBase Identity;
-    TSharedRef<IRHIBindingLayout> Layout;
-    TVector<FRHIBindingWrite> Writes;
-    Bool bDirty = false;
-};
+    private:
 
-/**
- * @class FNullDescriptorPoolBackend
- * @brief Deterministic native-pool token provider.
- */
-class FNullDescriptorPoolBackend final : public IRHIDescriptorPoolBackend
-{
-public:
+        FRHIObjectBase Identity;
+        TSharedRef<IRHIBindingLayout> Layout;
+        TVector<FRHIBindingWrite> Writes;
+        Bool bDirty = false;
+    };
 
-    FNullDescriptorPoolBackend () noexcept;
-    TExpected<UInt64, FRHIError> CreatePool ( UInt32 InCapacity ) noexcept override;
-    void ReleasePool ( UInt64 InPool ) noexcept override;
+    /**
+     * @class FNullDescriptorPoolBackend
+     * @brief Deterministic native-pool token provider.
+     */
+    class FNullDescriptorPoolBackend final : public IRHIDescriptorPoolBackend
+    {
+    public:
 
-private:
+        FNullDescriptorPoolBackend () noexcept;
+        TExpected<UInt64, FRHIError> CreatePool ( UInt32 InCapacity ) noexcept override;
+        void ReleasePool ( UInt64 InPool ) noexcept override;
 
-    UInt64 NextPool = 1ULL;
-};
+    private:
 
-/**
- * @class FNullDescriptorAllocator
- * @brief Descriptor allocator using the public common base.
- */
-class FNullDescriptorAllocator final : public FRHIDescriptorAllocatorBase
-{
-public:
+        UInt64 NextPool = 1ULL;
+    };
 
-    FNullDescriptorAllocator ( const FRHIDescriptorAllocatorDesc &InDesc,
-                               IRHIDescriptorPoolBackend &InBackend,
-                               FRHIObjectId InId ) noexcept;
-    LUMEN_RHI_OBJECT_DECLARATIONS;
+    /**
+     * @class FNullDescriptorAllocator
+     * @brief Descriptor allocator using the public common base.
+     */
+    class FNullDescriptorAllocator final : public FRHIDescriptorAllocatorBase
+    {
+    public:
 
-private:
+        FNullDescriptorAllocator ( const FRHIDescriptorAllocatorDesc &InDesc,
+                                   IRHIDescriptorPoolBackend &InBackend,
+                                   FRHIObjectId InId ) noexcept;
+        LUMEN_RHI_OBJECT_DECLARATIONS;
 
-    FRHIObjectBase Identity;
-};
-} // namespace Lumen::Tests
+    private:
+
+        FRHIObjectBase Identity;
+    };
+
+} // namespace Tests
+
+} // namespace Lumen
