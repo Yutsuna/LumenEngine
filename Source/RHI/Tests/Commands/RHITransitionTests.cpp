@@ -6,10 +6,13 @@
 #include "Device/NullDevice.hpp"
 #include <Commands/RHITransition.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
+
     LUMEN_TEST( RHITransition, ValidatesStatesResourcesAndSubresources )
     {
         Tests::FNullDevice Device;
@@ -38,4 +41,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

@@ -7,8 +7,10 @@
 #include <Templates/Hash.hpp>
 #include <cmath>
 #include <variant>
+
 namespace Lumen
 {
+
 namespace
 {
     TExpected<void, FRHIError> StateError ( FStringView InMessage ) noexcept
@@ -37,11 +39,19 @@ namespace
                static_cast<UInt64>( InOffset.Y ) + InExtent.Height <= Height and
                static_cast<UInt64>( InOffset.Z ) + InExtent.Depth <= Depth;
     }
+
 } // namespace
+
+/**
+ * Public
+ */
+
 Lumen::Tests::FNullCommandAllocator::FNullCommandAllocator ( const ERHIQueueType InQueueType, const FRHIObjectId InId ) noexcept
     : FRHICommandAllocatorBase( InQueueType ), Identity( InId, FHash::TypeHash<FNullCommandAllocator>() )
 {
+    /* */
 }
+
 LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullCommandAllocator )
 Lumen::Tests::FNullCommandList::FNullCommandList ( TSharedPtr<FNullCommandAllocator> InAllocator,
                                                    const FRHIObjectId InId ) noexcept
@@ -49,35 +59,43 @@ Lumen::Tests::FNullCommandList::FNullCommandList ( TSharedPtr<FNullCommandAlloca
 {
     Allocator->RegisterList( *this );
 }
+
 Lumen::Tests::FNullCommandList::~FNullCommandList () noexcept
 {
     Allocator->UnregisterList( *this );
 }
+
 LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullCommandList )
 Lumen::ERHIQueueType Lumen::Tests::FNullCommandList::GetQueueType () const noexcept
 {
     return Allocator->GetQueueType();
 }
+
 Lumen::ERHICommandListState Lumen::Tests::FNullCommandList::GetState () const noexcept
 {
     return State;
 }
+
 Lumen::FRHITimelineValue Lumen::Tests::FNullCommandList::GetCompletion () const noexcept
 {
     return Completion;
 }
+
 const Lumen::FRHICommandStream &Lumen::Tests::FNullCommandList::GetStream () const noexcept
 {
     return Stream;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::Begin () noexcept
 {
     return RHITransitionCommandList( State, ERHICommandListState::Recording );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::End () noexcept
 {
     return RHITransitionCommandList( State, ERHICommandListState::Executable );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::Reset () noexcept
 {
     if ( State == ERHICommandListState::Pending )
@@ -98,6 +116,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::Reset (
     DebugDepth = 0U;
     return {};
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::MarkPending ( const FRHITimelineValue InCompletion ) noexcept
 {
@@ -112,6 +131,7 @@ Lumen::Tests::FNullCommandList::MarkPending ( const FRHITimelineValue InCompleti
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::MarkCompleted ( const FRHITimelineValue InCompleted ) noexcept
 {
@@ -126,6 +146,7 @@ Lumen::Tests::FNullCommandList::MarkCompleted ( const FRHITimelineValue InComple
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::CheckRecording ( const Bool bAllowRendering ) const noexcept
 {
@@ -135,6 +156,7 @@ Lumen::Tests::FNullCommandList::CheckRecording ( const Bool bAllowRendering ) co
     }
     return {};
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::CheckRendering () const noexcept
 {
     if ( State != ERHICommandListState::Rendering )
@@ -143,6 +165,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::CheckRe
     }
     return {};
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::Transition ( const TSpan<const FRHITransition> InTransitions ) noexcept
 {
@@ -189,6 +212,7 @@ Lumen::Tests::FNullCommandList::Transition ( const TSpan<const FRHITransition> I
     }
     return {};
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::CopyBuffer ( TSharedRef<IRHIBuffer> InSource,
                                                                                       TSharedRef<IRHIBuffer> InDestination,
                                                                                       const FRHIBufferCopy &InCopy ) noexcept
@@ -213,6 +237,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::CopyBuf
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::CopyTexture ( TSharedRef<IRHITexture> InSource,
                                                                                        TSharedRef<IRHITexture> InDestination,
                                                                                        const FRHITextureCopy &InCopy ) noexcept
@@ -240,6 +265,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::CopyTex
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::CopyBufferToTexture (
     TSharedRef<IRHIBuffer> InSource, TSharedRef<IRHITexture> InDestination, const FRHIBufferTextureCopy &InCopy ) noexcept
 {
@@ -263,6 +289,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::CopyBuf
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::CopyTextureToBuffer (
     TSharedRef<IRHITexture> InSource, TSharedRef<IRHIBuffer> InDestination, const FRHIBufferTextureCopy &InCopy ) noexcept
 {
@@ -286,6 +313,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::CopyTex
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::BeginRendering ( const FRHIRenderingDesc &InDesc ) noexcept
 {
@@ -318,6 +346,7 @@ Lumen::Tests::FNullCommandList::BeginRendering ( const FRHIRenderingDesc &InDesc
     }
     return RHITransitionCommandList( State, ERHICommandListState::Rendering );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::EndRendering () noexcept
 {
     auto StateValid = CheckRendering();
@@ -332,6 +361,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::EndRend
     }
     return RHITransitionCommandList( State, ERHICommandListState::Recording );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::SetPipeline ( TSharedRef<IRHIPipeline> InPipeline ) noexcept
 {
@@ -348,6 +378,7 @@ Lumen::Tests::FNullCommandList::SetPipeline ( TSharedRef<IRHIPipeline> InPipelin
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::SetBindingSet ( const UInt32 InIndex, TSharedRef<IRHIBindingSet> InSet ) noexcept
 {
@@ -388,6 +419,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetVert
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetIndexBuffer (
     TSharedRef<IRHIBuffer> InBuffer, const UInt64 InOffset, const ERHIIndexFormat InFormat ) noexcept
 {
@@ -413,6 +445,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetInde
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::Draw ( const FRHIDrawArguments &InArguments ) noexcept
 {
     auto StateValid = CheckRendering();
@@ -427,6 +460,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::Draw ( 
     }
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::Draw ), InArguments );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::DrawIndexed ( const FRHIDrawIndexedArguments &InArguments ) noexcept
 {
@@ -442,6 +476,7 @@ Lumen::Tests::FNullCommandList::DrawIndexed ( const FRHIDrawIndexedArguments &In
     }
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::DrawIndexed ), InArguments );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::DrawIndirect ( TSharedRef<IRHIBuffer> InArguments, const FRHIIndirectArguments &InDesc ) noexcept
 {
@@ -463,6 +498,7 @@ Lumen::Tests::FNullCommandList::DrawIndirect ( TSharedRef<IRHIBuffer> InArgument
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::Dispatch ( const FRHIDispatchArguments &InArguments ) noexcept
 {
@@ -478,6 +514,7 @@ Lumen::Tests::FNullCommandList::Dispatch ( const FRHIDispatchArguments &InArgume
     }
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::Dispatch ), InArguments );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::DispatchIndirect ( TSharedRef<IRHIBuffer> InArguments,
                                                    const FRHIIndirectArguments &InDesc ) noexcept
@@ -500,6 +537,7 @@ Lumen::Tests::FNullCommandList::DispatchIndirect ( TSharedRef<IRHIBuffer> InArgu
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetViewport ( const FRHIViewport &InViewport ) noexcept
 {
     auto StateValid = CheckRendering();
@@ -513,6 +551,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetView
     }
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::SetViewport ), InViewport );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetScissor ( const FRHIRect2D &InScissor ) noexcept
 {
     auto StateValid = CheckRendering();
@@ -526,6 +565,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetScis
     }
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::SetScissor ), InScissor );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullCommandList::SetBlendConstants ( const Float32 ( &InConstants )[4] ) noexcept
 {
@@ -545,6 +585,7 @@ Lumen::Tests::FNullCommandList::SetBlendConstants ( const Float32 ( &InConstants
     }
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::SetBlendConstants ), Constants );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetDepthBias ( const Float32 InConstant,
                                                                                         const Float32 InSlope ) noexcept
 {
@@ -560,6 +601,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetDept
     const TArray<Float32, 2U> Values = { InConstant, InSlope };
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::SetDepthBias ), Values );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetStencilReference ( const UInt32 InReference ) noexcept
 {
     auto StateValid = CheckRendering();
@@ -580,6 +622,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::BeginQu
     }
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::BeginQuery ), InIndex );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::EndQuery ( IRHIQueryPool &InPool,
                                                                                     const UInt32 InIndex ) noexcept
 {
@@ -591,6 +634,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::EndQuer
     }
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::EndQuery ), InIndex );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::BeginDebugRegion ( const FStringView InName ) noexcept
 {
     auto StateValid = CheckRecording( true );
@@ -611,6 +655,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::BeginDe
     }
     return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::EndDebugRegion () noexcept
 {
     auto StateValid = CheckRecording( true );

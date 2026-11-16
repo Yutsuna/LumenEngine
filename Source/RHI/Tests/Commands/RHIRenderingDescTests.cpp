@@ -6,8 +6,10 @@
 #include "Device/NullDevice.hpp"
 #include <Commands/RHIRenderingDesc.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
     LUMEN_TEST( RHIRenderingDesc, ValidatesAttachmentsClearTypesAndArea )
@@ -42,4 +44,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

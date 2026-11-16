@@ -7,10 +7,13 @@
 #include <Commands/IRHICommandAllocator.hpp>
 #include <Commands/IRHICommandList.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
+
     LUMEN_TEST( RHICommandAllocatorBase, RefusesPendingResetAndRecyclesAfterCompletion )
     {
         Tests::FNullDevice Device;
@@ -27,4 +30,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

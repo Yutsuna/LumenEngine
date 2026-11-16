@@ -5,8 +5,10 @@
 
 #include <Commands/RHIDrawArguments.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
     LUMEN_TEST( RHIDrawArguments, RequireNonzeroDrawAndDispatchCounts )
@@ -39,4 +41,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

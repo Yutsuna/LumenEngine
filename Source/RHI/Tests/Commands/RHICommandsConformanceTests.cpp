@@ -9,10 +9,13 @@
 #include <Device/IRHIDevice.hpp>
 #include <Queue/IRHIQueue.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
+
     LUMEN_TEST( RHICommandsConformance, RecordsCopiesAndSubmitsExecutableList )
     {
         auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
@@ -35,4 +38,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

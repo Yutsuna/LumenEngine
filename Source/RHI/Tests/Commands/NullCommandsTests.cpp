@@ -8,8 +8,10 @@
 #include "Resources/NullResources.hpp"
 #include <Tests/UnitTest.hpp>
 #include <Utilities/RHIScopedDebugRegion.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
     LUMEN_TEST( NullCommands, RecordsDrawScopeAndClearsHistoryOnReset )
@@ -54,4 +56,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

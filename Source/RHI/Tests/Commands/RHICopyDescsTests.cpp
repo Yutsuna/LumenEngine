@@ -6,10 +6,13 @@
 #include <Commands/RHICopyDescs.hpp>
 #include <Tests/UnitTest.hpp>
 #include <limits>
+
 namespace Lumen
 {
+
 namespace
 {
+
     LUMEN_TEST( RHICopyDescs, BufferCopiesCheckBoundsOverflowAndOverlap )
     {
         FRHIBufferCopy Copy{ .SourceOffset = 0ULL, .DestinationOffset = 32ULL, .Size = 16ULL };
@@ -53,4 +56,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

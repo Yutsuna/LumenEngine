@@ -11,8 +11,10 @@
 #include <Pipelines/RHIPipelineLayoutDesc.hpp>
 #include <Shaders/RHIShaderDesc.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
     LUMEN_TEST( RHICommandsTierB, RejectsInvalidNestingAndRecordsIndirectDispatch )
@@ -36,4 +38,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

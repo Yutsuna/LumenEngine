@@ -5,8 +5,10 @@
 
 #include <Commands/RHICommandListState.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
     LUMEN_TEST( RHICommandListState, WalksRecordingRenderingSubmissionAndReset )
@@ -25,4 +27,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen

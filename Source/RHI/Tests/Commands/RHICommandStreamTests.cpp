@@ -6,10 +6,13 @@
 #include "Resources/NullResources.hpp"
 #include <Commands/RHICommandStream.hpp>
 #include <Tests/UnitTest.hpp>
+
 namespace Lumen
 {
+
 namespace
 {
+
     LUMEN_TEST( RHICommandStream, WritesReadsAndRecyclesChunks )
     {
         FRHICommandStream Stream( 64U );
@@ -37,4 +40,5 @@ namespace
     }
 
 } // namespace
+
 } // namespace Lumen
