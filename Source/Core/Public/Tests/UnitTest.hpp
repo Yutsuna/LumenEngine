@@ -91,6 +91,7 @@ namespace Tests
     };
 
 #define LUMEN_TEST( SuiteName, TestName )                                                                                        \
+    /* NOLINTNEXTLINE(misc-use-anonymous-namespace) */                                                                           \
     static void Lumen_Test_##SuiteName##_##TestName();                                                                           \
     static inline ::Lumen::Tests::FAutoRegisterUnitTest Lumen_Register_##SuiteName##_##TestName(                                 \
         #SuiteName, #TestName, ::Lumen::Tests::EUnitTestKind::Functional, &Lumen_Test_##SuiteName##_##TestName );                \
