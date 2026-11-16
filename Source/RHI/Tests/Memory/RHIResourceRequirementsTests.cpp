@@ -1,0 +1,24 @@
+/**
+ * @file RHIResourceRequirementsTests.cpp
+ * @brief Tests requirement conversion.
+ */
+
+#include <Memory/RHIResourceRequirements.hpp>
+#include <Tests/UnitTest.hpp>
+
+namespace Lumen
+{
+
+LUMEN_TEST( RHIResourceRequirements, ConvertsToValidatedAllocation )
+{
+    const FRHIResourceRequirements Requirements{
+        .Size = 64ULL, .Alignment = 16ULL, .PreferredMemoryClass = TOptional<ERHIMemoryClass>( ERHIMemoryClass::Upload ) };
+    const auto Desc = Requirements.ToAllocationDesc();
+
+    LUMEN_CHECK_TRUE( Desc.HasValue() );
+    LUMEN_CHECK_EQ( Desc->Size, 64ULL );
+    LUMEN_CHECK_TRUE( Desc->MemoryClass == ERHIMemoryClass::Upload );
+    LUMEN_CHECK_HAS_ERROR( FRHIResourceRequirements{}.ToAllocationDesc() );
+}
+
+} // namespace Lumen

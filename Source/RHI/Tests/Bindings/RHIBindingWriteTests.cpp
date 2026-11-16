@@ -1,0 +1,48 @@
+/**
+ * @file RHIBindingWriteTests.cpp
+ * @brief Tests typed binding resource validation.
+ */
+
+#include "Device/NullDevice.hpp"
+#include <Bindings/RHIBindingWrite.hpp>
+#include <Resources/IRHISampler.hpp>
+#include <Resources/IRHITextureView.hpp>
+#include <Resources/RHIBufferDesc.hpp>
+#include <Resources/RHITextureDesc.hpp>
+#include <Tests/UnitTest.hpp>
+namespace Lumen
+{
+namespace
+{
+    LUMEN_TEST( RHIBindingWrite, RequiresNonNullResourceForEveryPayloadKind )
+    {
+        FRHIBindingWrite Write;
+        LUMEN_CHECK_HAS_ERROR( Write.Validate() );
+        Tests::FNullDevice Device;
+        auto Buffer = Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::ShaderResource } );
+        LUMEN_CHECK_TRUE( Buffer.HasValue() );
+        Write.Resource = FRHIBufferBinding{ .Buffer = *Buffer, .Offset = 16ULL, .Size = 32ULL };
+        LUMEN_CHECK_TRUE( Write.Validate().HasValue() );
+        auto Texture = Device.CreateTexture( { .Extent         = { .Width = 4U, .Height = 4U, .Depth = 1U },
+                                               .Format         = ERHIFormat::RGBA8Unorm,
+                                               .Usage          = ERHIResourceUsage::ShaderResource,
+                                               .OptimizedClear = {} } );
+        LUMEN_CHECK_TRUE( Texture.HasValue() );
+        FRHITextureViewDesc ViewDesc;
+        ViewDesc.Texture = *Texture;
+        auto View        = Device.CreateTextureView( ViewDesc );
+        LUMEN_CHECK_TRUE( View.HasValue() );
+        Write.Resource = FRHITextureBinding{ .View = *View };
+        LUMEN_CHECK_TRUE( Write.Validate().HasValue() );
+        Write.Resource = FRHITextureBinding{};
+        LUMEN_CHECK_HAS_ERROR( Write.Validate() );
+        auto Sampler = Device.CreateSampler( {} );
+        LUMEN_CHECK_TRUE( Sampler.HasValue() );
+        Write.Resource = FRHISamplerBinding{ .Sampler = *Sampler };
+        LUMEN_CHECK_TRUE( Write.Validate().HasValue() );
+        Write.Resource = FRHISamplerBinding{};
+        LUMEN_CHECK_HAS_ERROR( Write.Validate() );
+    }
+
+} // namespace
+} // namespace Lumen

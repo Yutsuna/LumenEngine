@@ -1,0 +1,31 @@
+/**
+ * @file RHIBindingWrite.cpp
+ * @brief Implements typed binding write validation.
+ */
+
+#include <Bindings/RHIBindingWrite.hpp>
+#include <variant>
+Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBindingWrite::Validate () const noexcept
+{
+    const Bool bValid = std::visit( [] ( const auto &Payload )
+    {
+        if constexpr ( requires { Payload.Buffer; } )
+        {
+            return Payload.Buffer.IsValid();
+        }
+        else if constexpr ( requires { Payload.View; } )
+        {
+            return Payload.View.IsValid();
+        }
+        else
+        {
+            return Payload.Sampler.IsValid();
+        }
+    }, Resource );
+    if ( not bValid )
+    {
+        return TUnexpected<FRHIError>(
+            MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Binding write contains no resource" ) );
+    }
+    return {};
+}

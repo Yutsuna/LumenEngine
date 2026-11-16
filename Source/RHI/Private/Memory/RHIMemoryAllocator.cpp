@@ -1,0 +1,33 @@
+/**
+ * @file RHIMemoryAllocator.cpp
+ * @brief Implements the budgeted allocator facade.
+ */
+#include <Memory/RHIMemoryAllocator.hpp>
+Lumen::FRHIMemoryAllocator::FRHIMemoryAllocator ( IRHIAllocator &InAllocator, FRHIMemoryBudget &InBudget ) noexcept
+    : Allocator( &InAllocator ), Budget( &InBudget )
+{
+}
+Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
+Lumen::FRHIMemoryAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
+{
+    if ( not Budget->TryReserve( InDesc.Size ) )
+    {
+        return TUnexpected<FRHIError>(
+            FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Memory, "Memory budget exhausted" ) );
+    }
+    auto Result = Allocator->Allocate( InDesc );
+    if ( not Result )
+    {
+        Budget->Release( InDesc.Size );
+    }
+    return Result;
+}
+Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIMemoryAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+{
+    const auto Result = Allocator->Free( InAllocation );
+    if ( Result )
+    {
+        Budget->Release( InAllocation.Size );
+    }
+    return Result;
+}

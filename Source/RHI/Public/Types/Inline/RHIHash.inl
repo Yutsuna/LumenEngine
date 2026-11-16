@@ -1,0 +1,22 @@
+/**
+ * @file RHIHash.inl
+ * @brief Inline templates for RHI content hashing.
+ */
+#pragma once
+
+#include <Types/RHIHash.hpp>
+#include <memory>
+
+template <typename ValueType>
+    requires std::is_trivially_copyable_v<ValueType>
+Lumen::UInt64 Lumen::RHIHashValue ( const ValueType &InValue ) noexcept
+{
+    const auto *Bytes = reinterpret_cast<const Byte *>( std::addressof( InValue ) );
+    return RHIHashBytes( TSpan<const Byte>( Bytes, sizeof( ValueType ) ) );
+}
+
+template <typename ValueType>
+Lumen::USize Lumen::TRHIValueHasher<ValueType>::operator()( const ValueType &InValue ) const noexcept
+{
+    return static_cast<USize>( RHIHashValue( InValue ) );
+}

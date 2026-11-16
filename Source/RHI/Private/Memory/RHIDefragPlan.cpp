@@ -1,0 +1,28 @@
+/**
+ * @file RHIDefragPlan.cpp
+ * @brief Implements defragmentation plan validation.
+ */
+#include <Memory/RHIDefragPlan.hpp>
+#include <Utilities/RHIAlignment.hpp>
+Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDefragPlan::Validate () const noexcept
+{
+    for ( USize First = 0U; First < Moves.size(); ++First )
+    {
+        if ( not Moves[First].Source.IsValid() or not Moves[First].Destination.IsValid() or
+             Moves[First].Source.Size != Moves[First].Destination.Size )
+        {
+            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Invalid defragmentation move" ) );
+        }
+        for ( USize Second = First + 1U; Second < Moves.size(); ++Second )
+        {
+            const FRHIAllocation &Left  = Moves[First].Destination;
+            const FRHIAllocation &Right = Moves[Second].Destination;
+            if ( RHIRangesOverlap( Left.Offset, Left.Size, Right.Offset, Right.Size ) )
+            {
+                return TUnexpected<FRHIError>(
+                    MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Defragmentation destinations overlap" ) );
+            }
+        }
+    }
+    return {};
+}
