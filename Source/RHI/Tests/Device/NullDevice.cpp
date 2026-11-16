@@ -4,6 +4,7 @@
  */
 
 #include <Bindings/NullBindings.hpp>
+#include <Caches/NullCaches.hpp>
 #include <Commands/NullCommands.hpp>
 #include <Device/NullDevice.hpp>
 #include <Device/RHIBackendCast.hpp>
@@ -14,6 +15,8 @@
 #include <Memory/RHITransientResourceAllocator.hpp>
 #include <Memory/RHIUploadAllocator.hpp>
 #include <Pipelines/NullPipelines.hpp>
+#include <Presentation/NullPresentation.hpp>
+#include <Queries/NullQueries.hpp>
 #include <Queue/NullQueue.hpp>
 #include <Resources/NullResources.hpp>
 #include <Shaders/NullShaders.hpp>
@@ -394,8 +397,21 @@ Lumen::Tests::FNullDevice::CreateComputePipeline ( const FRHIComputePipelineDesc
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIPipelineCache>, Lumen::FRHIError>
 Lumen::Tests::FNullDevice::CreatePipelineCache ( const FRHIPipelineCacheDesc &InDesc ) noexcept
 {
-    static_cast<void>( InDesc );
-    return Unsupported<IRHIPipelineCache>( "CreatePipelineCache" );
+    if ( auto Error = CheckOperation( "CreatePipelineCache" ) )
+    {
+        return TUnexpected<FRHIError>( *Error );
+    }
+    if ( const auto Valid = InDesc.Validate(); not Valid )
+    {
+        return TUnexpected<FRHIError>( Valid.Error() );
+    }
+    auto Result = MakeShared<FNullPipelineCache>( InDesc, Desc.FaultPlan, NextObjectId() );
+    if ( const auto Initialized = Result->Initialize(); not Initialized )
+    {
+        return TUnexpected<FRHIError>( Initialized.Error() );
+    }
+    TrackObject( *Result );
+    return Result;
 }
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHICommandAllocator>, Lumen::FRHIError>
 Lumen::Tests::FNullDevice::CreateCommandAllocator ( const ERHIQueueType InQueueType ) noexcept
@@ -447,14 +463,60 @@ Lumen::Tests::FNullDevice::CreateSemaphore ( const FRHISemaphoreDesc &InDesc ) n
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISwapchain>, Lumen::FRHIError>
 Lumen::Tests::FNullDevice::CreateSwapchain ( const FRHISwapchainDesc &InDesc ) noexcept
 {
-    static_cast<void>( InDesc );
-    return Unsupported<IRHISwapchain>( "CreateSwapchain" );
+    if ( auto Error = CheckOperation( "CreateSwapchain" ) )
+    {
+        return TUnexpected<FRHIError>( *Error );
+    }
+    if ( not GetCapabilities().Supports( ERHICapabilityFlags::Presentation ) )
+    {
+        return TUnexpected<FRHIError>(
+            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Presentation, "Presentation was not negotiated" ) );
+    }
+    const auto SurfaceCapabilities = MakeNullSwapchainCapabilities();
+    if ( const auto Valid = InDesc.Validate( SurfaceCapabilities ); not Valid )
+    {
+        return TUnexpected<FRHIError>( Valid.Error() );
+    }
+    auto Result = MakeShared<FNullSwapchain>( InDesc, SurfaceCapabilities, *this, Desc.FaultPlan, NextObjectId() );
+    if ( const auto Initialized = Result->Initialize(); not Initialized )
+    {
+        return TUnexpected<FRHIError>( Initialized.Error() );
+    }
+    TrackObject( *Result );
+    return Result;
 }
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIQueryPool>, Lumen::FRHIError>
 Lumen::Tests::FNullDevice::CreateQueryPool ( const FRHIQueryPoolDesc &InDesc ) noexcept
 {
-    static_cast<void>( InDesc );
-    return Unsupported<IRHIQueryPool>( "CreateQueryPool" );
+    if ( auto Error = CheckOperation( "CreateQueryPool" ) )
+    {
+        return TUnexpected<FRHIError>( *Error );
+    }
+    if ( const auto Valid = InDesc.Validate(); not Valid )
+    {
+        return TUnexpected<FRHIError>( Valid.Error() );
+    }
+    ERHICapabilityFlags Required = ERHICapabilityFlags::None;
+    if ( InDesc.Type == ERHIQueryType::Occlusion )
+    {
+        Required = ERHICapabilityFlags::OcclusionQueries;
+    }
+    else if ( InDesc.Type == ERHIQueryType::Timestamp )
+    {
+        Required = ERHICapabilityFlags::TimestampQueries;
+    }
+    else if ( InDesc.Type == ERHIQueryType::PipelineStatistics )
+    {
+        Required = ERHICapabilityFlags::PipelineStatistics;
+    }
+    if ( not GetCapabilities().Supports( Required ) )
+    {
+        return TUnexpected<FRHIError>(
+            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Query, "Query type was not negotiated" ) );
+    }
+    auto Result = MakeShared<FNullQueryPool>( InDesc, Desc.FaultPlan, NextObjectId() );
+    TrackObject( *Result );
+    return Result;
 }
 
 void Lumen::Tests::FNullDevice::MarkLost () noexcept

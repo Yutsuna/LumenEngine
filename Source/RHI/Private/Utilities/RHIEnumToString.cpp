@@ -81,6 +81,7 @@ Lumen::FStringView Lumen::ToRHIString ( const ERHIErrorCode InValue ) noexcept
         RHI_ENUM_CASE( ERHIErrorCode::OutOfMemory );
         RHI_ENUM_CASE( ERHIErrorCode::DeviceLost );
         RHI_ENUM_CASE( ERHIErrorCode::DeviceClosed );
+        RHI_ENUM_CASE( ERHIErrorCode::OutOfDate );
         RHI_ENUM_CASE( ERHIErrorCode::Timeout );
         RHI_ENUM_CASE( ERHIErrorCode::NotFound );
         RHI_ENUM_CASE( ERHIErrorCode::AlreadyExists );
@@ -211,5 +212,99 @@ Lumen::FStringView Lumen::ToRHIString ( const ERHICapabilityFlags InValue ) noex
     }
     return "Unknown";
 }
+
+Lumen::FStringView Lumen::ToRHIString ( const ERHIPresentMode InValue ) noexcept
+{
+    switch ( InValue )
+    {
+        RHI_ENUM_CASE( ERHIPresentMode::Fifo );
+        RHI_ENUM_CASE( ERHIPresentMode::Immediate );
+        RHI_ENUM_CASE( ERHIPresentMode::Mailbox );
+        RHI_ENUM_CASE( ERHIPresentMode::Count );
+    }
+    return "Unknown";
+}
+
+Lumen::FStringView Lumen::ToRHIString ( const ERHIColorSpace InValue ) noexcept
+{
+    switch ( InValue )
+    {
+        RHI_ENUM_CASE( ERHIColorSpace::SrgbNonLinear );
+        RHI_ENUM_CASE( ERHIColorSpace::DisplayP3NonLinear );
+        RHI_ENUM_CASE( ERHIColorSpace::Hdr10St2084 );
+        RHI_ENUM_CASE( ERHIColorSpace::ExtendedSrgbLinear );
+        RHI_ENUM_CASE( ERHIColorSpace::Count );
+    }
+    return "Unknown";
+}
+
+Lumen::FStringView Lumen::ToRHIString ( const ERHISurfaceType InValue ) noexcept
+{
+    switch ( InValue )
+    {
+        RHI_ENUM_CASE( ERHISurfaceType::None );
+        RHI_ENUM_CASE( ERHISurfaceType::Null );
+        RHI_ENUM_CASE( ERHISurfaceType::Win32 );
+        RHI_ENUM_CASE( ERHISurfaceType::Xlib );
+        RHI_ENUM_CASE( ERHISurfaceType::Xcb );
+        RHI_ENUM_CASE( ERHISurfaceType::Wayland );
+        RHI_ENUM_CASE( ERHISurfaceType::Metal );
+        RHI_ENUM_CASE( ERHISurfaceType::Android );
+        RHI_ENUM_CASE( ERHISurfaceType::Count );
+    }
+    return "Unknown";
+}
+
+Lumen::FStringView Lumen::ToRHIString ( const ERHIQueryType InValue ) noexcept
+{
+    switch ( InValue )
+    {
+        RHI_ENUM_CASE( ERHIQueryType::Occlusion );
+        RHI_ENUM_CASE( ERHIQueryType::Timestamp );
+        RHI_ENUM_CASE( ERHIQueryType::PipelineStatistics );
+        RHI_ENUM_CASE( ERHIQueryType::Count );
+    }
+    return "Unknown";
+}
+
+Lumen::FStringView Lumen::ToRHIString ( const ERHIDebugSeverity InValue ) noexcept
+{
+    switch ( InValue )
+    {
+        RHI_ENUM_CASE( ERHIDebugSeverity::Info );
+        RHI_ENUM_CASE( ERHIDebugSeverity::Warning );
+        RHI_ENUM_CASE( ERHIDebugSeverity::Error );
+        RHI_ENUM_CASE( ERHIDebugSeverity::Fatal );
+        RHI_ENUM_CASE( ERHIDebugSeverity::Count );
+    }
+    return "Unknown";
+}
+
+Lumen::FStringView Lumen::ToRHIString ( const ERHIDebugCategory InValue ) noexcept
+{
+    switch ( InValue )
+    {
+        RHI_ENUM_CASE( ERHIDebugCategory::General );
+        RHI_ENUM_CASE( ERHIDebugCategory::Validation );
+        RHI_ENUM_CASE( ERHIDebugCategory::Performance );
+        RHI_ENUM_CASE( ERHIDebugCategory::Resource );
+        RHI_ENUM_CASE( ERHIDebugCategory::Synchronization );
+        RHI_ENUM_CASE( ERHIDebugCategory::Presentation );
+        RHI_ENUM_CASE( ERHIDebugCategory::Pipeline );
+        RHI_ENUM_CASE( ERHIDebugCategory::Count );
+    }
+    return "Unknown";
+}
+
+Lumen::FStringView Lumen::ToRHIString ( const ERHICacheEvictionPolicy InValue ) noexcept
+{
+    switch ( InValue )
+    {
+        RHI_ENUM_CASE( ERHICacheEvictionPolicy::None );
+        RHI_ENUM_CASE( ERHICacheEvictionPolicy::LeastRecentlyUsed );
+    }
+    return "Unknown";
+}
+
 
 #undef RHI_ENUM_CASE

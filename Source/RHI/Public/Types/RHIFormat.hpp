@@ -9,7 +9,10 @@
 namespace Lumen
 {
 
-/** @enum ERHIFormat @brief Backend-independent texel and vertex formats. */
+/**
+ * @enum ERHIFormat
+ * @brief Backend-independent texel and vertex formats.
+ */
 enum class ERHIFormat : UInt16
 {
     Unknown = 0,

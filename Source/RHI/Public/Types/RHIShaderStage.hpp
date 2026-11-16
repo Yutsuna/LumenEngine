@@ -10,7 +10,10 @@
 namespace Lumen
 {
 
-/** @enum ERHIShaderStage @brief Shader stage bits used by shaders and bindings. */
+/**
+ * @enum ERHIShaderStage
+ * @brief Shader stage bits used by shaders and bindings.
+ */
 enum class ERHIShaderStage : UInt32
 {
     None          = 0U,

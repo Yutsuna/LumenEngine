@@ -4,6 +4,8 @@
  */
 
 #include "Commands/NullCommands.hpp"
+#include <Device/RHIBackendCast.hpp>
+#include <Queries/NullQueries.hpp>
 #include <Templates/Hash.hpp>
 #include <cmath>
 #include <variant>
@@ -93,6 +95,10 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::Begin (
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::End () noexcept
 {
+    if ( ActiveQueryPool != nullptr )
+    {
+        return StateError( "Cannot end a command list with an active query" );
+    }
     return RHITransitionCommandList( State, ERHICommandListState::Executable );
 }
 
@@ -101,6 +107,10 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::Reset (
     if ( State == ERHICommandListState::Pending )
     {
         return StateError( "Cannot reset a pending Null command list" );
+    }
+    if ( ActiveQueryPool != nullptr )
+    {
+        return StateError( "Cannot reset a command list with an active query" );
     }
     if ( State != ERHICommandListState::Initial )
     {
@@ -614,25 +624,55 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetSten
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::BeginQuery ( IRHIQueryPool &InPool,
                                                                                       const UInt32 InIndex ) noexcept
 {
-    static_cast<void>( InPool );
     auto StateValid = CheckRecording( true );
     if ( not StateValid )
     {
         return StateValid;
     }
-    return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::BeginQuery ), InIndex );
+    auto *Pool = TryRHIBackendCast<FNullQueryPool>( InPool );
+    if ( Pool == nullptr or Pool->GetDesc().QueueType != GetQueueType() or ActiveQueryPool != nullptr )
+    {
+        return StateError( "Query pool is foreign, incompatible with the queue, or another query is active" );
+    }
+    const auto Begun = Pool->Begin( InIndex );
+    if ( not Begun )
+    {
+        return Begun;
+    }
+    auto Result = Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::BeginQuery ), InIndex );
+    if ( Result )
+    {
+        ActiveQueryPool  = Pool;
+        ActiveQueryIndex = InIndex;
+    }
+    return Result;
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::EndQuery ( IRHIQueryPool &InPool,
                                                                                     const UInt32 InIndex ) noexcept
 {
-    static_cast<void>( InPool );
     auto StateValid = CheckRecording( true );
     if ( not StateValid )
     {
         return StateValid;
     }
-    return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::EndQuery ), InIndex );
+    auto *Pool = TryRHIBackendCast<FNullQueryPool>( InPool );
+    if ( Pool == nullptr or Pool != ActiveQueryPool or InIndex != ActiveQueryIndex )
+    {
+        return StateError( "Ending query does not match the active query" );
+    }
+    const auto Ended = Pool->End( InIndex );
+    if ( not Ended )
+    {
+        return Ended;
+    }
+    auto Result = Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::EndQuery ), InIndex );
+    if ( Result )
+    {
+        ActiveQueryPool  = nullptr;
+        ActiveQueryIndex = 0U;
+    }
+    return Result;
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::BeginDebugRegion ( const FStringView InName ) noexcept

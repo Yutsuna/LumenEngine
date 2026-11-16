@@ -9,13 +9,19 @@
 #include <Types/RHIError.hpp>
 namespace Lumen
 {
-/** @enum ERHISamplerFilter @brief Min/mag/mip filtering modes. */
+/**
+ * @enum ERHISamplerFilter
+ * @brief Min/mag/mip filtering modes.
+ */
 enum class ERHISamplerFilter : UInt8
 {
     Nearest,
     Linear
 };
-/** @enum ERHISamplerAddressMode @brief Coordinate wrapping modes. */
+/**
+ * enum ERHISamplerAddressMode @brie
+ *  Coordinate wrapping modes.
+ */
 enum class ERHISamplerAddressMode : UInt8
 {
     Repeat,
@@ -23,7 +29,10 @@ enum class ERHISamplerAddressMode : UInt8
     ClampToEdge,
     ClampToBorder
 };
-/** @enum ERHICompareFunction @brief Depth and stencil comparison functions. */
+/**
+ * @enum ERHICompareFunction
+ * @brief Depth and stencil comparison functions.
+ */
 enum class ERHICompareFunction : UInt8
 {
     Never,

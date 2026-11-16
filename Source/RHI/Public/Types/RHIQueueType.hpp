@@ -9,7 +9,10 @@
 namespace Lumen
 {
 
-/** @enum ERHIQueueType @brief Work classes accepted by a queue. */
+/**
+ * @enum ERHIQueueType
+ * @brief Work classes accepted by a queue.
+ */
 enum class ERHIQueueType : UInt8
 {
     Graphics = 0,

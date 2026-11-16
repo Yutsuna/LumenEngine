@@ -9,7 +9,10 @@
 #include <Types/RHIError.hpp>
 namespace Lumen
 {
-/** @enum ERHIBlendFactor @brief Source/destination blend factors. */
+/**
+ * enum ERHIBlendFactor @brie
+ *  Source/destination blend factors.
+ */
 enum class ERHIBlendFactor : UInt8
 {
     Zero,
@@ -19,7 +22,10 @@ enum class ERHIBlendFactor : UInt8
     DestinationColor,
     InverseDestinationColor
 };
-/** @enum ERHIBlendOp @brief Color/alpha blend operations. */
+/**
+ * @enum ERHIBlendOp
+ * @brief Color/alpha blend operations.
+ */
 enum class ERHIBlendOp : UInt8
 {
     Add,

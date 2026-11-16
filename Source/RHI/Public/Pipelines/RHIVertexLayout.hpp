@@ -11,7 +11,10 @@
 #include <Types/RHIHash.hpp>
 namespace Lumen
 {
-/** @enum ERHIVertexInputRate @brief Per-vertex or per-instance stepping. */
+/**
+ * @enum ERHIVertexInputRate
+ * @brief Per-vertex or per-instance stepping.
+ */
 enum class ERHIVertexInputRate : UInt8
 {
     Vertex,

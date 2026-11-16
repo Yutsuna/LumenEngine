@@ -9,7 +9,10 @@
 #include <Types/RHIError.hpp>
 namespace Lumen
 {
-/** @enum ERHIStencilOp @brief Operations applied after stencil tests. */
+/**
+ * @enum ERHIStencilOp
+ * @brief Operations applied after stencil tests.
+ */
 enum class ERHIStencilOp : UInt8
 {
     Keep,

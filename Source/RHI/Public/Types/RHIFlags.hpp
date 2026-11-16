@@ -10,7 +10,10 @@
 namespace Lumen
 {
 
-/** @enum ERHIObjectFlags @brief Portable flags shared by creatable objects. */
+/**
+ * @enum ERHIObjectFlags
+ * @brief Portable flags shared by creatable objects.
+ */
 enum class ERHIObjectFlags : UInt32
 {
     None                 = 0U,

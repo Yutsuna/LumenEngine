@@ -7,7 +7,10 @@
 #include <RHIExport.hpp>
 namespace Lumen
 {
-/** @enum ERHIResourceUsage @brief Operations a resource may be used for. */
+/**
+ * @enum ERHIResourceUsage
+ * @brief Operations a resource may be used for.
+ */
 enum class ERHIResourceUsage : UInt32
 {
     None             = 0U,

@@ -7,7 +7,10 @@
 #include <Core/CoreTypes.hpp>
 namespace Lumen
 {
-/** @enum ERHIPrimitiveTopology @brief Portable primitive topologies. */
+/**
+ * @enum ERHIPrimitiveTopology
+ * @brief Portable primitive topologies.
+ */
 enum class ERHIPrimitiveTopology : UInt8
 {
     PointList,

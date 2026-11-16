@@ -9,7 +9,10 @@
 namespace Lumen
 {
 
-/** @enum ERHISampleCount @brief Power-of-two sample counts exposed by the RHI. */
+/**
+ * @enum ERHISampleCount
+ * @brief Power-of-two sample counts exposed by the RHI.
+ */
 enum class ERHISampleCount : UInt8
 {
     Count1  = 1U,

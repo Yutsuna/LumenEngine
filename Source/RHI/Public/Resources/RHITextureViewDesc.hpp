@@ -11,7 +11,10 @@
 namespace Lumen
 {
 class IRHITexture;
-/** @enum ERHITextureViewType @brief Logical view dimensions. */
+/**
+ * @enum ERHITextureViewType
+ * @brief Logical view dimensions.
+ */
 enum class ERHITextureViewType : UInt8
 {
     Texture1D,

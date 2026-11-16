@@ -7,7 +7,10 @@
 #include <Core/CoreTypes.hpp>
 namespace Lumen
 {
-/** @enum ERHIBindingType @brief Portable descriptor classes. */
+/**
+ * @enum ERHIBindingType
+ * @brief Portable descriptor classes.
+ */
 enum class ERHIBindingType : UInt8
 {
     ConstantBuffer,

@@ -13,7 +13,10 @@
 namespace Lumen
 {
 
-/** @enum ERHIFormatAspect @brief Data planes present in a format. */
+/**
+ * @enum ERHIFormatAspect
+ * @brief Data planes present in a format.
+ */
 enum class ERHIFormatAspect : UInt8
 {
     None    = 0U,

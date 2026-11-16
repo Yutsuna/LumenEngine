@@ -8,7 +8,10 @@
 #include <RHIExport.hpp>
 namespace Lumen
 {
-/** @enum ERHIShaderFormat @brief Portable shader payloads understood by backends. */
+/**
+ * @enum ERHIShaderFormat
+ * @brief Portable shader payloads understood by backends.
+ */
 enum class ERHIShaderFormat : UInt8
 {
     Null,

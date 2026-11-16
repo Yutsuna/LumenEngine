@@ -14,7 +14,10 @@
 namespace Lumen
 {
 
-/** @enum ERHIErrorCode @brief Stable high-level failure codes. */
+/**
+ * @enum ERHIErrorCode
+ * @brief Stable high-level failure codes.
+ */
 enum class ERHIErrorCode : UInt16
 {
     InvalidArgument,
@@ -23,6 +26,7 @@ enum class ERHIErrorCode : UInt16
     OutOfMemory,
     DeviceLost,
     DeviceClosed,
+    OutOfDate,
     Timeout,
     NotFound,
     AlreadyExists,
@@ -32,7 +36,10 @@ enum class ERHIErrorCode : UInt16
     InternalFailure,
 };
 
-/** @enum ERHIErrorCondition @brief Subsystem or condition that caused a failure. */
+/**
+ * @enum ERHIErrorCondition
+ * @brief Subsystem or condition that caused a failure.
+ */
 enum class ERHIErrorCondition : UInt16
 {
     None,

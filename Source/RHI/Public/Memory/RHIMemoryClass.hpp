@@ -6,7 +6,10 @@
 #include <Core/CoreTypes.hpp>
 namespace Lumen
 {
-/** @enum ERHIMemoryClass @brief Device, upload, and readback memory categories. */
+/**
+ * @enum ERHIMemoryClass
+ * @brief Device, upload, and readback memory categories.
+ */
 enum class ERHIMemoryClass : UInt8
 {
     DeviceLocal,

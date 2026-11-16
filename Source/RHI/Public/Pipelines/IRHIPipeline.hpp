@@ -8,7 +8,10 @@
 #include <Types/IRHIObject.hpp>
 namespace Lumen
 {
-/** @enum ERHIPipelineType @brief Pipeline work class. */
+/**
+ * @enum ERHIPipelineType
+ * @brief Pipeline work class.
+ */
 enum class ERHIPipelineType : UInt8
 {
     Graphics,

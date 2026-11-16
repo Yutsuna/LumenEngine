@@ -9,7 +9,10 @@
 namespace Lumen
 {
 
-/** @enum ERHIDeviceStatus @brief Operational state shared by device and child objects. */
+/**
+ * @enum ERHIDeviceStatus
+ * @brief Operational state shared by device and child objects.
+ */
 enum class ERHIDeviceStatus : UInt8
 {
     Ready,

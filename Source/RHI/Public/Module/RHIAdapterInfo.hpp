@@ -14,7 +14,10 @@
 namespace Lumen
 {
 
-/** @enum ERHIAdapterType @brief Broad adapter class used for selection and diagnostics. */
+/**
+ * @enum ERHIAdapterType
+ * @brief Broad adapter class used for selection and diagnostics.
+ */
 enum class ERHIAdapterType : UInt8
 {
     Unknown,

@@ -11,7 +11,10 @@
 namespace Lumen
 {
 
-/** @enum ERHIResourceState @brief Resource access states used by barriers. */
+/**
+ * @enum ERHIResourceState
+ * @brief Resource access states used by barriers.
+ */
 enum class ERHIResourceState : UInt32
 {
     Undefined          = 0U,

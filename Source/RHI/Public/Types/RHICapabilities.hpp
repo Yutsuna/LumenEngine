@@ -12,7 +12,10 @@
 namespace Lumen
 {
 
-/** @enum ERHICapabilityFlags @brief Optional features a backend may advertise. */
+/**
+ * @enum ERHICapabilityFlags
+ * @brief Optional features a backend may advertise.
+ */
 enum class ERHICapabilityFlags : UInt64
 {
     None                      = 0ULL,

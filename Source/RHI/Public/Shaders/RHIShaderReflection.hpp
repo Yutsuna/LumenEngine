@@ -10,7 +10,10 @@
 #include <Types/RHIShaderStage.hpp>
 namespace Lumen
 {
-/** @enum ERHIShaderBindingKind @brief Resource classes found by reflection. */
+/**
+ * @enum ERHIShaderBindingKind
+ * @brief Resource classes found by reflection.
+ */
 enum class ERHIShaderBindingKind : UInt8
 {
     ConstantBuffer,

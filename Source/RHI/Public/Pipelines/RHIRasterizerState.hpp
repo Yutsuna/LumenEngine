@@ -8,21 +8,30 @@
 #include <Types/RHIError.hpp>
 namespace Lumen
 {
-/** @enum ERHIFillMode @brief Polygon fill modes. */
+/**
+ * @enum ERHIFillMode
+ * @brief Polygon fill modes.
+ */
 enum class ERHIFillMode : UInt8
 {
     Solid,
     Wireframe,
     Point
 };
-/** @enum ERHICullMode @brief Face culling modes. */
+/**
+ * @enum ERHICullMode
+ * @brief Face culling modes.
+ */
 enum class ERHICullMode : UInt8
 {
     None,
     Front,
     Back
 };
-/** @enum ERHIFrontFace @brief Winding defining the front face. */
+/**
+ * @enum ERHIFrontFace
+ * @brief Winding defining the front face.
+ */
 enum class ERHIFrontFace : UInt8
 {
     CounterClockwise,

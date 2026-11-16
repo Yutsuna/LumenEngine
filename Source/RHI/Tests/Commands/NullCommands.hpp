@@ -16,6 +16,8 @@ namespace Lumen
 namespace Tests
 {
 
+    class FNullQueryPool;
+
     enum class ERHINullCommandOpcode : UInt32
     {
         Transition = 1U,
@@ -122,7 +124,9 @@ namespace Tests
         FRHITimelineValue Completion;
         FRHICommandStream Stream;
         TOptional<ERHIPipelineType> BoundPipeline;
-        UInt32 DebugDepth = 0U;
+        FNullQueryPool *ActiveQueryPool = nullptr;
+        UInt32 ActiveQueryIndex         = 0U;
+        UInt32 DebugDepth               = 0U;
     };
 
 } // namespace Tests

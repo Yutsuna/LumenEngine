@@ -7,7 +7,10 @@
 #include <Core/EnumFlags.hpp>
 namespace Lumen
 {
-/** @enum ERHIDynamicState @brief Dynamic viewport/scissor/blend/depth states. */
+/**
+ * @enum ERHIDynamicState
+ * @brief Dynamic viewport/scissor/blend/depth states.
+ */
 enum class ERHIDynamicState : UInt32
 {
     None             = 0U,
