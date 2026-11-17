@@ -10,7 +10,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRasterizerState::Validate ()
     if ( Fill > ERHIFillMode::Point or Cull > ERHICullMode::Back or FrontFace > ERHIFrontFace::Clockwise or
          not std::isfinite( DepthBiasConstant ) or not std::isfinite( DepthBiasSlope ) )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Invalid rasterizer state" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Invalid rasterizer state" ) );
     }
     return {};
 }

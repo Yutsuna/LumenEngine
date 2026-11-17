@@ -14,7 +14,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBlendState::Validate () cons
              Attachment.SourceAlpha > ERHIBlendFactor::InverseDestinationColor or
              Attachment.DestinationAlpha > ERHIBlendFactor::InverseDestinationColor )
         {
-            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Invalid blend attachment" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Invalid blend attachment" ) );
         }
     }
     return {};

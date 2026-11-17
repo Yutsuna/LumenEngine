@@ -12,7 +12,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDepthStencilState::Validate 
          Back.FailOp > ERHIStencilOp::DecrementWrap or Back.DepthFailOp > ERHIStencilOp::DecrementWrap or
          Back.PassOp > ERHIStencilOp::DecrementWrap )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Invalid depth-stencil state" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Invalid depth-stencil state" ) );
     }
     return {};
 }

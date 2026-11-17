@@ -10,7 +10,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIVertexLayout::Validate () co
     {
         if ( Attributes[First].Format == ERHIFormat::Unknown or Attributes[First].Format >= ERHIFormat::Count )
         {
-            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Unknown vertex format" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Unknown vertex format" ) );
         }
         Bool bHasBuffer = false;
         for ( const auto &Buffer : Buffers )
@@ -19,15 +19,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIVertexLayout::Validate () co
         }
         if ( not bHasBuffer )
         {
-            return TUnexpected<FRHIError>(
-                MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Vertex attribute has no buffer" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Vertex attribute has no buffer" ) );
         }
         for ( USize Second = First + 1U; Second < Attributes.size(); ++Second )
         {
             if ( Attributes[First].Location == Attributes[Second].Location )
             {
-                return TUnexpected<FRHIError>(
-                    MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Duplicate vertex location" ) );
+                return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Duplicate vertex location" ) );
             }
         }
     }
@@ -35,15 +33,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIVertexLayout::Validate () co
     {
         if ( Buffers[First].Stride == 0U )
         {
-            return TUnexpected<FRHIError>(
-                MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Vertex buffer stride is zero" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Vertex buffer stride is zero" ) );
         }
         for ( USize Second = First + 1U; Second < Buffers.size(); ++Second )
         {
             if ( Buffers[First].Slot == Buffers[Second].Slot )
             {
-                return TUnexpected<FRHIError>(
-                    MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Duplicate vertex buffer slot" ) );
+                return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Duplicate vertex buffer slot" ) );
             }
         }
     }

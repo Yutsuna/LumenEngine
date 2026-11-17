@@ -8,8 +8,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIComputePipelineDesc::Validat
 {
     if ( not Shader or not Layout or Shader->GetDesc().Stage != ERHIShaderStage::Compute )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Compute pipeline requires compute shader and layout" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Compute pipeline requires compute shader and layout" ) );
     }
     return {};
 }

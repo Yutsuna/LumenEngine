@@ -8,7 +8,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIMultisampleState::Validate (
 {
     if ( ToSampleCount( Count ) == 0U or SampleMask == 0U )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Invalid multisample state" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Invalid multisample state" ) );
     }
     return {};
 }

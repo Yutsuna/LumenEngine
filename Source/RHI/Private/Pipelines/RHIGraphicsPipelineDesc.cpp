@@ -12,15 +12,14 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIGraphicsPipelineDesc::Valida
          not DepthStencil.Validate() or not Rasterizer.Validate() or not Multisample.Validate() or
          Topology > ERHIPrimitiveTopology::PatchList or ( static_cast<UInt32>( DynamicStates ) & ~0x1FU ) != 0U )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Invalid graphics pipeline" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Invalid graphics pipeline" ) );
     }
     for ( const ERHIFormat Format : ColorFormats )
     {
         const auto Info = TryGetRHIFormatInfo( Format );
         if ( not Info or not Info->HasColor() )
         {
-            return TUnexpected<FRHIError>(
-                MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Invalid color attachment format" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Invalid color attachment format" ) );
         }
     }
     if ( DepthStencilFormat != ERHIFormat::Unknown )
@@ -28,8 +27,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIGraphicsPipelineDesc::Valida
         const auto Info = TryGetRHIFormatInfo( DepthStencilFormat );
         if ( not Info or ( not Info->HasDepth() and not Info->HasStencil() ) )
         {
-            return TUnexpected<FRHIError>(
-                MakeRHIInvalidArgument( ERHIErrorCondition::Pipeline, "Invalid depth-stencil attachment format" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Invalid depth-stencil attachment format" ) );
         }
     }
     return {};
