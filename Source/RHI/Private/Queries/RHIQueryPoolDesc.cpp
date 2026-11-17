@@ -30,8 +30,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIQueryPoolDesc::Validate () c
         QueueType == ERHIQueueType::Graphics or ( Type == ERHIQueryType::Timestamp and QueueType == ERHIQueueType::Compute );
     if ( Type >= ERHIQueryType::Count or Count == 0U or QueueType >= ERHIQueueType::Count or not bQueueCompatible )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Query, "Invalid query type, count, or queue compatibility" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidQuery( "Invalid query type, count, or queue compatibility" ) );
     }
     return {};
 }
