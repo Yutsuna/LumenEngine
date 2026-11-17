@@ -15,12 +15,11 @@ Lumen::FRHIMemoryAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
         return TUnexpected<FRHIError>(
             FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Memory, "Memory budget exhausted" ) );
     }
-    auto Result = Allocator->Allocate( InDesc );
-    if ( not Result )
+    return Allocator->Allocate( InDesc ).OrElse( [this, &InDesc] ( const FRHIError &InError )
     {
         Budget->Release( InDesc.Size );
-    }
-    return Result;
+        return TExpected<FRHIAllocation, FRHIError>( TUnexpected<FRHIError>( InError ) );
+    } );
 }
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIMemoryAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {

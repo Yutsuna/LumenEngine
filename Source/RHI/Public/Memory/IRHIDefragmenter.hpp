@@ -17,7 +17,11 @@ class IRHIDefragmenter : public IRHIObject
 {
 public:
 
-    /** @brief Builds a plan for the supplied live allocations. */
+    /**
+     * @brief Builds a validated plan of non-overlapping moves.
+     * @param InAllocations Live allocations to be relocated.
+     * @return The plan, or InvalidArgument for overlapping or pinned inputs.
+     */
     [[nodiscard]] virtual TExpected<FRHIDefragPlan, FRHIError>
     BuildPlan ( TSpan<const FRHIAllocation> InAllocations ) noexcept = 0;
     /** @brief Schedules a previously validated plan. */

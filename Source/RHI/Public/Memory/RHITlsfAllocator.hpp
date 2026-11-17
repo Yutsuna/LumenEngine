@@ -20,9 +20,26 @@ public:
 
     /** @brief Creates an allocator over InCapacity bytes. */
     explicit FRHITlsfAllocator ( UInt64 InCapacity ) noexcept;
+    /**
+     * @brief Reserves an aligned range.
+     * @param InDesc Size, alignment and memory class of the request.
+     * @return The placed allocation, or InvalidArgument / OutOfMemory with the Memory condition.
+     */
     TExpected<FRHIAllocation, FRHIError> Allocate ( const FRHIAllocationDesc &InDesc ) noexcept override;
+    /**
+     * @brief Returns a range to the allocator.
+     * @param InAllocation Allocation previously returned by Allocate.
+     * @return Success, or InvalidArgument for a foreign, invalid or double free.
+     */
     TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept override;
+    /**
+     * @brief Reclaims all ranges; callers must ensure no GPU work uses them.
+     */
     void Reset () noexcept override;
+    /**
+     * @brief Returns a coherent snapshot of allocation statistics.
+     * @return Current capacity, usage and counts.
+     */
     FRHIAllocatorStats GetStats () const noexcept override;
 
 private:

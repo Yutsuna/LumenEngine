@@ -19,7 +19,11 @@ public:
 
     /** @brief Begins a batch scope. */
     virtual void BeginBatch () noexcept = 0;
-    /** @brief Places all requests in InBatch, respecting aliasing lifetimes. */
+    /**
+     * @brief Places a batch of transient requests in reusable memory.
+     * @param InBatch Requests with compatible requirements and lifetimes.
+     * @return The placed allocations, or InvalidArgument / OutOfMemory on failure.
+     */
     [[nodiscard]] virtual TExpected<TVector<FRHITransientAllocation>, FRHIError>
     Allocate ( const FRHITransientBatch &InBatch ) noexcept = 0;
     /** @brief Ends the current batch scope. */
