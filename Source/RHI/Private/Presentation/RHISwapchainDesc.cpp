@@ -17,8 +17,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISwapchainDesc::Validate () c
          not IsValidRHIResourceUsage( ImageUsage ) or not HasAnyFlags( ImageUsage, ERHIResourceUsage::RenderTarget ) or
          HasAnyFlags( ImageUsage, ERHIResourceUsage::DepthStencil ) )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Presentation,
-                                                               "Invalid swapchain format, extent, image count, or usage" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Invalid swapchain format, extent, image count, or usage" ) );
     }
     return {};
 }

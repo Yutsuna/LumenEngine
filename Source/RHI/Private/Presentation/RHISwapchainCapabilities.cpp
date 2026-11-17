@@ -11,8 +11,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISwapchainCapabilities::Valid
          MinImageCount == 0U or MaxImageCount < MinImageCount or MaxExtent.Width < MinExtent.Width or
          MaxExtent.Height < MinExtent.Height or MaxExtent.Depth < MinExtent.Depth )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Presentation, "Invalid swapchain capability ranges" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Invalid swapchain capability ranges" ) );
     }
     return {};
 }

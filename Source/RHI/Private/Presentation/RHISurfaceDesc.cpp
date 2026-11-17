@@ -11,8 +11,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISurfaceDesc::Validate () con
     if ( Type == ERHISurfaceType::None or Type >= ERHISurfaceType::Count or NativeWindow == 0U or not InitialExtent.IsValid() or
          ( bNeedsDisplay and NativeDisplay == 0U ) )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Presentation, "Invalid native surface payload or initial extent" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Invalid native surface payload or initial extent" ) );
     }
     return {};
 }
