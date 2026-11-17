@@ -25,7 +25,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBindingWrite::Validate () co
     if ( not bValid )
     {
         return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Binding write contains no resource" ) );
+            MakeRHIInvalidBinding( "Binding write contains no resource" ) );
     }
     return {};
 }

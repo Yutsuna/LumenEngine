@@ -28,7 +28,7 @@ Lumen::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
 {
     if ( InCount == 0U )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Descriptor count is zero" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Descriptor count is zero" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( FPool &Pool : Pools )
@@ -79,7 +79,7 @@ Lumen::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllo
 {
     if ( InAllocation.Count == 0U )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Invalid descriptor range" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Invalid descriptor range" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Bool bActive = false;
@@ -94,7 +94,7 @@ Lumen::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllo
     }
     if ( not bActive )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Descriptor range is not active" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Descriptor range is not active" ) );
     }
     for ( FPool &Pool : Pools )
     {
@@ -110,7 +110,7 @@ Lumen::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllo
             return {};
         }
     }
-    return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Descriptor pool is not present" ) );
+    return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Descriptor pool is not present" ) );
 }
 
 void Lumen::FRHIDescriptorAllocatorBase::Reset () noexcept

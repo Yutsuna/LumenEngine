@@ -8,7 +8,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDescriptorAllocatorDesc::Val
 {
     if ( InitialCapacity == 0U or MaximumCapacity < InitialCapacity )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Invalid descriptor capacities" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Invalid descriptor capacities" ) );
     }
     return {};
 }

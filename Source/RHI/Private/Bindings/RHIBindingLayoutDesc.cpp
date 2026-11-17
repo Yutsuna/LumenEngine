@@ -11,13 +11,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBindingLayoutDesc::Validate 
     {
         if ( Entries[First].Count == 0U or Entries[First].Stages == ERHIShaderStage::None )
         {
-            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Invalid binding entry" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Invalid binding entry" ) );
         }
         for ( USize Second = First + 1U; Second < Entries.size(); ++Second )
         {
             if ( Entries[First].Slot == Entries[Second].Slot )
             {
-                return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Duplicate binding slot" ) );
+                return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Duplicate binding slot" ) );
             }
         }
     }
