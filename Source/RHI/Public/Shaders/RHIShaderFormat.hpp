@@ -10,25 +10,24 @@ namespace Lumen
 {
 /**
  * @enum ERHIShaderFormat
- * @brief Portable shader payloads understood by backends.
- * @details Each value identifies a payload representation a backend may accept.
- *          Backends advertise the formats they support through capabilities,
- *          and callers must negotiate a format before creating a shader package.
+ * @brief Portable shader payload representations understood by backends.
+ * @details Each value identifies a representation a backend may accept, not a
+ *          particular shading language or bytecode encoding. Backends advertise
+ *          the representations they support through capabilities, and callers
+ *          must negotiate a format before creating a shader package.
  */
 enum class ERHIShaderFormat : UInt8
 {
     /** @brief No payload; the format is unspecified. */
     Null,
     /** @brief Portable intermediate bytecode payload. */
-    SPIRV,
-    /** @brief Backend-compiled bytecode payload. */
-    DXIL,
-    /** @brief Legacy backend-compiled bytecode payload. */
-    DXBC,
-    /** @brief High-level shading-language source payload. */
-    GLSL,
-    /** @brief High-level shading-language source payload with a C-like syntax. */
-    HLSL
+    PortableBytecode,
+    /** @brief Backend-compiled bytecode payload; the encoding is backend-defined. */
+    BackendBytecode,
+    /** @brief High-level shading-language source payload; the language is backend-defined. */
+    Source,
+    /** @brief Sentinel for range checks; not a usable payload. */
+    Count
 };
 
 /**

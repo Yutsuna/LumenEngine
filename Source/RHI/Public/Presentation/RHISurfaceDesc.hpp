@@ -1,6 +1,6 @@
 /**
  * @file RHISurfaceDesc.hpp
- * @brief Defines the isolated native-window payload used for presentation.
+ * @brief Defines the isolated, backend-neutral surface payload used for presentation.
  */
 #pragma once
 
@@ -13,34 +13,33 @@ namespace Lumen
 
 /**
  * @enum ERHISurfaceType
- * @brief Identifies the native handles carried by a surface descriptor.
+ * @brief Portable category of the opaque payload carried by a surface descriptor.
+ * @details The concrete backend binding is negotiated through capabilities; the
+ *          RHI records only the category and the opaque handles it carries.
  */
 enum class ERHISurfaceType : UInt8
 {
-    None,
-    Null,
-    Win32,
-    Xlib,
-    Xcb,
-    Wayland,
-    Metal,
-    Android,
+    None,   ///< No payload.
+    Null,   ///< Synthetic payload for headless and test backends.
+    Window, ///< Opaque window handle, optionally paired with a display handle.
     Count
 };
 
 /**
  * @struct FRHISurfaceDesc
- * @brief Non-owning native surface identifiers and its initial pixel extent.
+ * @brief Non-owning opaque surface handles and its initial pixel extent.
  * @details Handles are opaque integer values and are never dereferenced by the portable RHI.
+ *          bRequiresDisplay declares whether the payload also carries a display handle.
  */
 struct RHI_EXPORT FRHISurfaceDesc
 {
-    ERHISurfaceType Type = ERHISurfaceType::None;
-    UPtr NativeWindow    = 0U;
-    UPtr NativeDisplay   = 0U;
+    ERHISurfaceType Type  = ERHISurfaceType::None;
+    UPtr NativeWindow     = 0U;
+    UPtr NativeDisplay    = 0U;
+    Bool bRequiresDisplay = false;
     FRHIExtent3D InitialExtent;
 
-    /** @return Success when the payload type and required handles are coherent. */
+    /** @return Success when the payload category and required handles are coherent. */
     [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
 };
 

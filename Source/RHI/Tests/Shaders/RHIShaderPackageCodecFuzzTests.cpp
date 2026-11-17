@@ -18,7 +18,7 @@ namespace
         Entry.Bytecode                 = { 4U, 3U, 2U, 1U };
         Entry.Stage                    = ERHIShaderStage::Compute;
         Entry.EntryPoint               = "MainCS";
-        Entry.Format                   = ERHIShaderFormat::DXIL;
+        Entry.Format                   = ERHIShaderFormat::BackendBytecode;
         Entry.Reflection.WorkgroupSize = { 8U, 8U, 1U };
         Entry.Reflection.Bindings.push_back(
             { .Slot = 5U, .Kind = ERHIShaderBindingKind::ReadWriteBuffer, .Count = 2U, .Stages = ERHIShaderStage::Compute } );

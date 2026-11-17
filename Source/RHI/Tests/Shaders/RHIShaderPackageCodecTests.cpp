@@ -24,7 +24,7 @@ namespace
             Entry.Bytecode                       = { 4U, 3U, 2U, 1U };
             Entry.Stage                          = ERHIShaderStage::Compute;
             Entry.EntryPoint                     = "MainCS";
-            Entry.Format                         = ERHIShaderFormat::DXIL;
+            Entry.Format                         = ERHIShaderFormat::BackendBytecode;
             Entry.Reflection.WorkgroupSize       = { 8U, 8U, 1U };
             Entry.Reflection.InlineConstantBytes = 32U;
             Entry.Reflection.Bindings.push_back(
@@ -50,7 +50,7 @@ namespace
         const FRHIShaderPackageEntry &Entry = Decoded->GetEntries()[0];
         LUMEN_CHECK_EQ( Entry.Stage, ERHIShaderStage::Compute );
         LUMEN_CHECK_EQ( Entry.EntryPoint, FString( "MainCS" ) );
-        LUMEN_CHECK_EQ( Entry.Format, ERHIShaderFormat::DXIL );
+        LUMEN_CHECK_EQ( Entry.Format, ERHIShaderFormat::BackendBytecode );
         LUMEN_CHECK_EQ( Entry.Bytecode.size(), 4U );
         LUMEN_CHECK_EQ( Entry.Bytecode[0], 4U );
         LUMEN_CHECK_EQ( Entry.Reflection.WorkgroupSize[0], 8U );

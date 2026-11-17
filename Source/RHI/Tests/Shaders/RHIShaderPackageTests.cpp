@@ -21,7 +21,7 @@ namespace
         Entry.Bytecode   = { 1U, 2U, 3U };
         Entry.Stage      = ERHIShaderStage::Pixel;
         Entry.EntryPoint = "Shade";
-        Entry.Format     = ERHIShaderFormat::SPIRV;
+        Entry.Format     = ERHIShaderFormat::PortableBytecode;
         Entry.Reflection.Bindings.push_back( { .Slot = 2U, .Stages = ERHIShaderStage::Pixel } );
         const FRHIShaderDesc Desc = Entry.GetDesc();
         LUMEN_CHECK_EQ( Desc.Bytecode.data(), Entry.Bytecode.data() );

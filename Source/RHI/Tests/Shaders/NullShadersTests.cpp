@@ -18,13 +18,13 @@ namespace
         Desc.Bytecode   = TSpan<const Byte>( Bytecode.data(), Bytecode.size() );
         Desc.Stage      = ERHIShaderStage::Compute;
         Desc.EntryPoint = "ComputeMain";
-        Desc.Format     = ERHIShaderFormat::SPIRV;
+        Desc.Format     = ERHIShaderFormat::PortableBytecode;
         Tests::FNullShader Shader( Desc, FRHIObjectId{ 7ULL } );
         Bytecode[0] = 99U;
         LUMEN_CHECK_EQ( Shader.GetId().GetValue(), 7ULL );
         LUMEN_CHECK_EQ( Shader.GetDesc().Bytecode[0], 1U );
         LUMEN_CHECK_EQ( Shader.GetDesc().EntryPoint, FString( "ComputeMain" ) );
-        LUMEN_CHECK_EQ( Shader.GetDesc().Format, ERHIShaderFormat::SPIRV );
+        LUMEN_CHECK_EQ( Shader.GetDesc().Format, ERHIShaderFormat::PortableBytecode );
     }
 
 } // namespace

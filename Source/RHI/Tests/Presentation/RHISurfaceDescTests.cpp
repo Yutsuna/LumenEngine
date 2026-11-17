@@ -1,6 +1,6 @@
 /**
  * @file RHISurfaceDescTests.cpp
- * @brief Tests native surface payload validation.
+ * @brief Tests backend-neutral surface payload validation.
  */
 
 #include <Presentation/RHISurfaceDesc.hpp>
@@ -19,8 +19,9 @@ namespace
         Desc.InitialExtent = { 1280U, 720U, 1U };
         LUMEN_CHECK_TRUE( Desc.Validate().HasValue() );
 
-        Desc.Type          = ERHISurfaceType::Wayland;
-        Desc.NativeDisplay = 2U;
+        Desc.Type             = ERHISurfaceType::Window;
+        Desc.NativeDisplay    = 2U;
+        Desc.bRequiresDisplay = true;
         LUMEN_CHECK_TRUE( Desc.Validate().HasValue() );
     }
 
@@ -28,9 +29,10 @@ namespace
     {
         LUMEN_CHECK_HAS_ERROR( FRHISurfaceDesc{}.Validate() );
         FRHISurfaceDesc Desc;
-        Desc.Type          = ERHISurfaceType::Xcb;
-        Desc.NativeWindow  = 1U;
-        Desc.InitialExtent = { 1U, 1U, 1U };
+        Desc.Type             = ERHISurfaceType::Window;
+        Desc.NativeWindow     = 1U;
+        Desc.InitialExtent    = { 1U, 1U, 1U };
+        Desc.bRequiresDisplay = true;
         LUMEN_CHECK_HAS_ERROR( Desc.Validate() );
         Desc.NativeDisplay = 2U;
         Desc.InitialExtent = { 0U, 1U, 1U };
