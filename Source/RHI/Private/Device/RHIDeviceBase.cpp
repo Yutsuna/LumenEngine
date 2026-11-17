@@ -2,6 +2,7 @@
  * @file RHIDeviceBase.cpp
  * @brief Implements common device status and non-owning child tracking.
  */
+
 #include <Device/RHIDeviceBase.hpp>
 #include <HAL/LockGuard.hpp>
 #include <Templates/Hash.hpp>

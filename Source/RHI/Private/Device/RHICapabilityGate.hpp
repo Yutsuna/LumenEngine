@@ -2,6 +2,7 @@
  * @file RHICapabilityGate.hpp
  * @brief Declares the pure device requirement gate.
  */
+
 #pragma once
 
 #include <Module/RHIAdapterInfo.hpp>

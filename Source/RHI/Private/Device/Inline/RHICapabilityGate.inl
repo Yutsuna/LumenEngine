@@ -2,6 +2,7 @@
  * @file RHICapabilityGate.inl
  * @brief Inline implementation of the private capability gate.
  */
+
 #pragma once
 
 #include "../RHICapabilityGate.hpp"
