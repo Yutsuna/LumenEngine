@@ -19,7 +19,7 @@ struct FScopedTestDir
 {
     Lumen::Filesystem::FPath Path;
 
-    explicit FScopedTestDir ( const Lumen::AnsiChar *InName, bool bCreate = true ) : Path( GetTestPath( InName ) )
+    explicit FScopedTestDir ( const Lumen::AnsiChar *InName, Bool bCreate = true ) : Path( GetTestPath( InName ) )
     {
         Lumen::Filesystem::FDirectory::Delete( Path, true );
         if ( bCreate )

@@ -149,17 +149,27 @@ public:
 
     /** @brief Inspect the container, calling the given function if the container is not empty. */
     template <class Self, class Func>
-        requires Concepts::CMonadic<Self> and Concepts::CIsInvocable<Func, MonadicInternal::TConstElementRef<Self>>
+        requires Concepts::CMonadic<Self> and
+                 ( MonadicInternal::CIsVoidValue<Self> ? Concepts::CIsInvocable<Func>
+                                                       : Concepts::CIsInvocable<Func, MonadicInternal::TInspectRef<Self>> )
     constexpr auto Inspect ( this Self &&InSelf, Func &&InFunc ) noexcept(
         noexcept( MonadicInternal::Has( std::declval<const MonadicInternal::TSelfType<Self> &>() ) ) and
-        std::is_nothrow_invocable_v<Func, MonadicInternal::TConstElementRef<Self>> and
+        ( MonadicInternal::CIsVoidValue<Self> ? std::is_nothrow_invocable_v<Func>
+                                              : std::is_nothrow_invocable_v<Func, MonadicInternal::TInspectRef<Self>> ) and
         ( std::is_lvalue_reference_v<Self> or std::is_nothrow_move_constructible_v<MonadicInternal::TSelfType<Self>> ) )
         -> std::conditional_t<std::is_lvalue_reference_v<Self>, Self, MonadicInternal::TSelfType<Self>>
     {
         if ( MonadicInternal::Has( InSelf ) ) [[likely]]
         {
-            Invoke( std::forward<Func>( InFunc ),
-                    static_cast<MonadicInternal::TConstElementRef<Self>>( *std::forward<Self>( InSelf ) ) );
+            if constexpr ( MonadicInternal::CIsVoidValue<Self> )
+            {
+                Invoke( std::forward<Func>( InFunc ) );
+            }
+            else
+            {
+                Invoke( std::forward<Func>( InFunc ),
+                        static_cast<MonadicInternal::TConstElementRef<Self>>( *std::forward<Self>( InSelf ) ) );
+            }
         }
         return std::forward<Self>( InSelf );
     }

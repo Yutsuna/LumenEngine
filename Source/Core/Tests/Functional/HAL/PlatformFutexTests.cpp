@@ -47,7 +47,7 @@ namespace
      * @brief Polls until Predicate returns true, or TimeoutSeconds elapses.
      * @returns The last evaluated predicate value.
      */
-    template <typename PredicateType> bool WaitUntil ( PredicateType Predicate, const Float64 TimeoutSeconds = 1.0 )
+    template <typename PredicateType> Bool WaitUntil ( PredicateType Predicate, const Float64 TimeoutSeconds = 1.0 )
     {
         const Float64 Deadline = FPlatformTime::Seconds() + TimeoutSeconds;
         while ( FPlatformTime::Seconds() < Deadline )
@@ -96,7 +96,7 @@ LUMEN_TEST( FPlatformFutex_Wait, BlocksUntilWokenByWakeAll )
     State->Word = 1;
     FPlatformFutex::WakeAll( State->Word );
 
-    const bool bWoken = WaitUntil( [State] ()
+    const Bool bWoken = WaitUntil( [State] ()
     {
         return static_cast<UInt32>( State->WokenCount ) >= 1U;
     } );
@@ -129,7 +129,7 @@ LUMEN_TEST( FPlatformFutex_WaitFor, ReturnsTrueWhenWoken )
     FPlatformFutex::WakeAll( State->Word );
 
     const Float64 Start   = FPlatformTime::Seconds();
-    const bool bReturned  = WaitUntil( [Result] ()
+    const Bool bReturned  = WaitUntil( [Result] ()
     {
         return static_cast<UInt32>( Result->Returned ) == 1U;
     } );
@@ -273,7 +273,7 @@ LUMEN_TEST( FPlatformFutex_WakeAll, WakesAllWaiters )
     State->Word = 1;
     FPlatformFutex::WakeAll( State->Word );
 
-    const bool bAllWoken = WaitUntil( [State] ()
+    const Bool bAllWoken = WaitUntil( [State] ()
     {
         return static_cast<UInt32>( State->WokenCount ) >= WaiterCount;
     } );

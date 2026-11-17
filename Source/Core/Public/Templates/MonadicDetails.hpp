@@ -71,6 +71,22 @@ namespace MonadicInternal
     /** @brief True if `*Self` has type `void` (i.e. `TExpected<void, E>`). */
     template <class Self> inline constexpr Bool CIsVoidValue = std::is_void_v<std::remove_cvref_t<TValueRef<Self>>>;
 
+    namespace Internal
+    {
+        template <class Self, Bool = CIsVoidValue<Self>> struct TInspectRefImpl
+        {
+            using Type = TConstElementRef<Self>;
+        };
+        template <class Self> struct TInspectRefImpl<Self, true>
+        {
+            using Type = std::nullptr_t;
+        };
+    } // namespace Internal
+
+    /** @brief Reference passed to Inspect callbacks; degrades to nullptr_t for void value types so constraints stay well-formed.
+     */
+    template <class Self> using TInspectRef = typename Internal::TInspectRefImpl<Self>::Type;
+
     template <class MonadicType>
     inline constexpr Bool bNothrowHas = []
     {
@@ -163,7 +179,7 @@ namespace MonadicInternal
     /** @brief AndThen : Bind a value into another value if it is valid. */
     namespace Internal
     {
-        template <class Self, class Func, bool = CIsVoidValue<Self>> struct TBindOutImpl;
+        template <class Self, class Func, Bool = CIsVoidValue<Self>> struct TBindOutImpl;
 
         template <class Self, class Func> struct TBindOutImpl<Self, Func, true>
         {

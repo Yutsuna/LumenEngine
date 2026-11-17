@@ -83,7 +83,7 @@ template <typename TFunc, typename... TArgs> struct TIsInvocable : Internal::TIs
  * @trait TIsInvocableV
  * @brief Alias variable for TIsInvocable<...>::Value
  */
-template <typename TFunc, typename... TArgs> inline constexpr bool TIsInvocableV = TIsInvocable<TFunc, TArgs...>::Value;
+template <typename TFunc, typename... TArgs> inline constexpr Bool TIsInvocableV = TIsInvocable<TFunc, TArgs...>::Value;
 
 /**
  * @concept CIsInvocable
