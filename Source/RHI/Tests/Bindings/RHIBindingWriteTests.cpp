@@ -25,7 +25,7 @@ namespace
         LUMEN_CHECK_TRUE( Buffer.HasValue() );
         Write.Resource = FRHIBufferBinding{ .Buffer = *Buffer, .Offset = 16ULL, .Size = 32ULL };
         LUMEN_CHECK_TRUE( Write.Validate().HasValue() );
-        auto Texture = Device.CreateTexture( { .Extent         = { .Width = 4U, .Height = 4U, .Depth = 1U },
+        auto Texture = Device.CreateTexture( { .Extent         = { 4U, 4U, 1U },
                                                .Format         = ERHIFormat::RGBA8Unorm,
                                                .Usage          = ERHIResourceUsage::ShaderResource,
                                                .OptimizedClear = {} } );

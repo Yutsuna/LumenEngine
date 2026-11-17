@@ -11,12 +11,12 @@ namespace Lumen
 
 LUMEN_TEST( RHICopyFootprint, ComputesAlignedAndCompressedLayouts )
 {
-    const auto Color = ComputeRHICopyFootprint( ERHIFormat::RGBA8Unorm, { .Width = 3U, .Height = 2U, .Depth = 1U }, 0ULL, 16ULL );
+    const auto Color = ComputeRHICopyFootprint( ERHIFormat::RGBA8Unorm, { 3U, 2U, 1U }, 0ULL, 16ULL );
     LUMEN_CHECK_TRUE( Color.HasValue() );
     LUMEN_CHECK_EQ( Color->RowPitch, 16ULL );
     LUMEN_CHECK_EQ( Color->TotalSize, 32ULL );
 
-    const auto Compressed = ComputeRHICopyFootprint( ERHIFormat::BC7RGBAUnorm, { .Width = 9U, .Height = 9U, .Depth = 1U } );
+    const auto Compressed = ComputeRHICopyFootprint( ERHIFormat::BC7RGBAUnorm, { 9U, 9U, 1U } );
     LUMEN_CHECK_TRUE( Compressed.HasValue() );
     LUMEN_CHECK_EQ( Compressed->RowCount, 3U );
     LUMEN_CHECK_EQ( Compressed->RowPitch, 48ULL );

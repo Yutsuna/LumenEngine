@@ -158,7 +158,15 @@ struct RHI_EXPORT FRHIError
                                                                                 const Lumen::FStringView InMessage ) noexcept;
 /** @brief Creates a Not found error */
 [[nodiscard]] LUMEN_FORCE_INLINE RHI_EXPORT FRHIError MakeRHINotFound ( const Lumen::ERHIErrorCondition Condition,
+                                                                        const Lumen::FStringView InMessage ) noexcept;
+
+/** @brief Creates an out-of-date error */
+[[nodiscard]] LUMEN_FORCE_INLINE RHI_EXPORT FRHIError MakeRHIOutOfDate ( const Lumen::ERHIErrorCondition Condition,
                                                                          const Lumen::FStringView InMessage ) noexcept;
+
+/** @brief Creates a backend failure error */
+[[nodiscard]] LUMEN_FORCE_INLINE RHI_EXPORT FRHIError MakeRHIBackendFailure ( const Lumen::ERHIErrorCondition Condition,
+                                                                              const Lumen::FStringView InMessage ) noexcept;
 
 } // namespace Lumen
 

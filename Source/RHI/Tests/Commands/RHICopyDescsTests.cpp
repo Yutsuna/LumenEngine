@@ -29,7 +29,7 @@ namespace
     LUMEN_TEST( RHICopyDescs, TextureCopiesCheckOffsetsExtentsAndAspects )
     {
         FRHITextureCopy Copy;
-        Copy.Extent = { .Width = 4U, .Height = 4U, .Depth = 1U };
+        Copy.Extent = { 4U, 4U, 1U };
         LUMEN_CHECK_TRUE( Copy.Validate( ERHIFormat::RGBA8Unorm ).HasValue() );
         Copy.Aspect = ERHIFormatAspect::Depth;
         LUMEN_CHECK_HAS_ERROR( Copy.Validate( ERHIFormat::RGBA8Unorm ) );
@@ -44,7 +44,7 @@ namespace
     LUMEN_TEST( RHICopyDescs, BufferTextureCopiesValidatePitchesAndSize )
     {
         FRHIBufferTextureCopy Copy;
-        Copy.Extent = { .Width = 4U, .Height = 4U, .Depth = 1U };
+        Copy.Extent = { 4U, 4U, 1U };
         LUMEN_CHECK_TRUE( Copy.Validate( ERHIFormat::RGBA8Unorm ).HasValue() );
         Copy.RowPitch = 15ULL;
         LUMEN_CHECK_HAS_ERROR( Copy.Validate( ERHIFormat::RGBA8Unorm ) );

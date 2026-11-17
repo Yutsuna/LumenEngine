@@ -42,7 +42,7 @@ namespace
         TArray<UInt64, 1U> Result = {};
         LUMEN_CHECK_HAS_ERROR( Pool.ReadResults( 0U, 1U, Result, { 9ULL } ) );
         LUMEN_CHECK_TRUE( Pool.ReadResults( 0U, 1U, Result, { 10ULL } ).HasValue() );
-        FaultPlan->AddFailure( "ReadResults", 1U, MakeRHIUnsupported( BackendFailure, ERHIErrorCondition::Query, "planned" ) );
+        FaultPlan->AddFailure( "ReadResults", 1U, MakeRHIBackendFailure( ERHIErrorCondition::Query, "planned" ) );
         LUMEN_CHECK_HAS_ERROR( Pool.ReadResults( 0U, 1U, Result, { 10ULL } ) );
         LUMEN_CHECK_HAS_ERROR( Pool.ReadResults( 0U, 2U, Result, { 10ULL } ) );
     }

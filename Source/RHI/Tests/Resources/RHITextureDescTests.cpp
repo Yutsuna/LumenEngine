@@ -11,7 +11,7 @@ namespace Lumen
 
 LUMEN_TEST( RHITextureDesc, ValidatesFormatExtentAndCounts )
 {
-    const FRHITextureDesc Valid{ .Extent         = { .Width = 32U, .Height = 16U, .Depth = 1U },
+    const FRHITextureDesc Valid{ .Extent         = { 32U, 16U, 1U },
                                  .Format         = ERHIFormat::RGBA8Unorm,
                                  .Usage          = ERHIResourceUsage::RenderTarget,
                                  .OptimizedClear = {} };

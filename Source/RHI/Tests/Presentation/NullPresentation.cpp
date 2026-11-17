@@ -84,8 +84,7 @@ Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::Tests::FNull
     }
     if ( bOutOfDate )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIUnsupported( OutOfDate, ERHIErrorCondition::Presentation, "Null swapchain is out of date" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfDate( ERHIErrorCondition::Presentation, "Null swapchain is out of date" ) );
     }
     const UInt32 ImageCount = static_cast<UInt32>( Images.size() );
     if ( ImageCount == 0U )
@@ -153,8 +152,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Present (
     }
     if ( bOutOfDate )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIUnsupported( OutOfDate, ERHIErrorCondition::Presentation, "Null swapchain is out of date" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfDate( ERHIErrorCondition::Presentation, "Null swapchain is out of date" ) );
     }
     if ( InQueue.GetType() != ERHIQueueType::Graphics or InImage.ImageIndex >= Images.size() or not InImage.Image or
          not InImage.AcquireSemaphore or not InImage.PresentSemaphore )

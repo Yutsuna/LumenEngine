@@ -131,7 +131,7 @@ Lumen::Tests::FNullDevice::GetQueue ( const ERHIQueueType InType, const UInt32 I
             ++CurrentIndex;
         }
     }
-    return TUnexpected<FRHIError>( MakeRHINotFound(ERHIErrorCondition::Queue, "Null queue was not requested" ) );
+    return TUnexpected<FRHIError>( MakeRHINotFound( ERHIErrorCondition::Queue, "Null queue was not requested" ) );
 }
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBuffer>, Lumen::FRHIError>
 Lumen::Tests::FNullDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcept

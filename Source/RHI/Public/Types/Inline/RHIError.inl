@@ -159,8 +159,27 @@ Lumen::FRHIError Lumen::MakeRHIValidationFailed ( const Lumen::ERHIErrorConditio
  * Not Found
  */
 
-Lumen::FRHIError Lumen::MakeRHINotFound ( const Lumen::ERHIErrorCondition Condition,
-                                          const Lumen::FStringView InMessage ) noexcept
+Lumen::FRHIError Lumen::MakeRHINotFound ( const Lumen::ERHIErrorCondition Condition, const Lumen::FStringView InMessage ) noexcept
 {
     return FRHIError{ ERHIErrorCode::NotFound, Condition, InMessage };
+}
+
+/**
+ * Out Of Date
+ */
+
+Lumen::FRHIError Lumen::MakeRHIOutOfDate ( const Lumen::ERHIErrorCondition Condition,
+                                           const Lumen::FStringView InMessage ) noexcept
+{
+    return FRHIError{ ERHIErrorCode::OutOfDate, Condition, InMessage };
+}
+
+/**
+ * Backend Failure
+ */
+
+Lumen::FRHIError Lumen::MakeRHIBackendFailure ( const Lumen::ERHIErrorCondition Condition,
+                                                const Lumen::FStringView InMessage ) noexcept
+{
+    return FRHIError{ ERHIErrorCode::BackendFailure, Condition, InMessage };
 }

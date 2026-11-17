@@ -25,7 +25,7 @@ namespace
         BufferTransition.After = ERHIResourceState::CopySource;
         FRHITransition Variant = BufferTransition;
         LUMEN_CHECK_TRUE( ValidateRHITransition( Variant ).HasValue() );
-        auto Texture = *Device.CreateTexture( { .Extent         = { .Width = 4U, .Height = 4U, .Depth = 1U },
+        auto Texture = *Device.CreateTexture( { .Extent         = { 4U, 4U, 1U },
                                                 .Format         = ERHIFormat::RGBA8Unorm,
                                                 .MipCount       = 2U,
                                                 .Usage          = ERHIResourceUsage::CopySource,

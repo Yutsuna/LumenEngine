@@ -20,7 +20,7 @@ namespace
         Tests::FNullCommandList List( Allocator, FRHIObjectId{ 2ULL } );
         LUMEN_CHECK_HAS_ERROR( List.Draw( { .VertexCount = 3U } ) );
         LUMEN_CHECK_TRUE( List.Begin().HasValue() );
-        FRHITextureDesc TextureDesc{ .Extent         = { .Width = 4U, .Height = 4U, .Depth = 1U },
+        FRHITextureDesc TextureDesc{ .Extent         = { 4U, 4U, 1U },
                                      .Format         = ERHIFormat::RGBA8Unorm,
                                      .Usage          = ERHIResourceUsage::RenderTarget,
                                      .OptimizedClear = {} };
@@ -29,7 +29,7 @@ namespace
         ViewDesc.Texture = StaticCastSharedRef<IRHITexture>( Texture );
         auto View        = MakeShared<Tests::FNullTextureView>( ViewDesc, FRHIObjectId{ 4ULL } );
         FRHIRenderingDesc Rendering;
-        Rendering.Area = { .X = 0, .Y = 0, .Width = 4U, .Height = 4U };
+        Rendering.Area = { 0, 0, 4U, 4U };
         Rendering.ColorAttachments.push_back(
             { .View = View, .LoadOp = ERHIRenderingLoadOp::Load, .StoreOp = ERHIRenderingStoreOp::Store, .ClearValue = {} } );
         LUMEN_CHECK_TRUE( List.BeginRendering( Rendering ).HasValue() );

@@ -84,7 +84,7 @@ namespace
         auto List      = *( *Device )->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         FRHIRenderingDesc Rendering;
-        Rendering.Area = { .X = 0, .Y = 0, .Width = 16U, .Height = 16U };
+        Rendering.Area = { 0, 0, 16U, 16U };
         FRHIRenderingAttachment Attachment;
         Attachment.View = *View;
         Rendering.ColorAttachments.push_back( Attachment );

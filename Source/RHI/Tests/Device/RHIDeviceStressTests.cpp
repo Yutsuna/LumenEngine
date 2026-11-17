@@ -32,8 +32,7 @@ namespace
         for ( UInt32 Occurrence = 1U; Occurrence <= 16U; ++Occurrence )
         {
             auto Plan = MakeShared<Tests::FNullFaultPlan>();
-            Plan->AddFailure( "CreateBuffer", Occurrence,
-                              MakeRHIUnsupported( BackendFailure, ERHIErrorCondition::Resource, "scheduled" ) );
+            Plan->AddFailure( "CreateBuffer", Occurrence, MakeRHIBackendFailure( ERHIErrorCondition::Resource, "scheduled" ) );
             Tests::FNullDeviceDesc Desc;
             Desc.FaultPlan = Plan;
             Tests::FNullDevice Device( Desc );

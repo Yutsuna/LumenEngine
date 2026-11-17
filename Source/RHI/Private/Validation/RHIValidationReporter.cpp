@@ -27,7 +27,7 @@ void Lumen::FRHIValidationReporter::Report ( const ERHIValidationMessageCode InC
     if ( Desc.bDeduplicateMessages )
     {
         HAL::TLockGuard<HAL::FPlatformMutex> Lock( Mutex );
-        if ( SeenMessages.contains( Key ))
+        if ( SeenMessages.contains( Key ) )
         {
             return;
         }

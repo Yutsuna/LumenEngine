@@ -17,8 +17,7 @@ inline Lumen::TExpected<void, Lumen::FRHIError> Lumen::CheckRHICapabilityGate ( 
     }
     if ( InDesc.AdapterId and *InDesc.AdapterId != InAdapter.AdapterId )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHINotFound(ERHIErrorCondition::Device, "Requested adapter is not present" ) );
+        return TUnexpected<FRHIError>( MakeRHINotFound( ERHIErrorCondition::Device, "Requested adapter is not present" ) );
     }
     if ( not InAdapter.Capabilities.Supports( InDesc.RequiredCapabilities.Features ) )
     {
