@@ -10,7 +10,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIPipelineCacheDesc::Validate 
     if ( MaxEntries == 0U or MaxBytes == 0ULL or BackendVersion == 0ULL or static_cast<UInt64>( InitialData.size() ) > MaxBytes )
     {
         return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Cache, "Invalid pipeline cache capacity, version, or initial data" ) );
+            MakeRHIInvalidCache( "Invalid pipeline cache capacity, version, or initial data" ) );
     }
     return {};
 }
