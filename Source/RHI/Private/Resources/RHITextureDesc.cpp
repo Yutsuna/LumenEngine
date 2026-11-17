@@ -10,7 +10,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITextureDesc::Validate () con
          LayerCount == 0U or ToSampleCount( SampleCount ) == 0U or not IsValidRHIResourceUsage( Usage ) or
          not IsValidRHIResourceState( InitialState ) )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Resource, "Invalid texture description" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidResource( "Invalid texture description" ) );
     }
     return {};
 }

@@ -7,7 +7,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBufferDesc::Validate () cons
 {
     if ( Size == 0ULL or not IsValidRHIResourceUsage( Usage ) or not IsValidRHIResourceState( InitialState ) )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Resource, "Invalid buffer description" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidResource( "Invalid buffer description" ) );
     }
     return {};
 }
