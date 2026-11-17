@@ -71,7 +71,7 @@ variables, atomic bitsets, locks, the HAL and the algorithms.
 | `HAL/PlatformSignal.hpp` | `HAL::FPlatformSignal` (alias `HAL::FSignal`), `ESystemSignal`, `Bind`/`Raise`/`Dispatch`/`Unbind`/`Reset` | OS signal trapping (never `std::signal` handling directly) |
 | `Filesystem/Path.hpp`, `File.hpp`, `Directory.hpp`, `IFileSystem.hpp`, `IFileHandle.hpp` | `FPath`, file/dir abstractions behind interfaces | any file/dir work |
 | `Logging/Logger.hpp`, `LoggingCategory.hpp`, `LoggingVerbosity.hpp` | `FLogger`, `FLogCategory`, verbosity levels | all diagnostics (tests init/shutdown it) |
-| `Meta/Reflection.hpp`, `Overloaded.hpp`, `SerializeToJSON.hpp` | C++26 reflection-based introspection (`CReflected` concept), visitors | field iteration, serialization |
+| `Meta/Reflection.hpp`, `Overloaded.hpp`, `SerializeToJSON.hpp` | C++26 reflection-based introspection (`CReflected` concept), visitors, `Meta::EnumName` (unqualified) and `Meta::EnumQualifiedName` (qualified) enum-name helpers | field iteration, serialization, enum → name conversion |
 | `Tests/UnitTest.hpp` (framework) | `LUMEN_TEST`, `LUMEN_INTEGRATION_TEST`, `LUMEN_CHECK*` | unit tests (see `rules/testing.md`) |
 | `Benchmarks/Benchmark.hpp` (framework) | `LUMEN_BENCHMARK*` | benchmarks (see `rules/testing.md`) |
 

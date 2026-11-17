@@ -6,11 +6,12 @@
 #pragma once
 
 #include <Core/CoreTypes.hpp>
+
 #include <String/String.hpp>
+#include <String/StringView.hpp>
 
 #include <Concepts/SameAs.hpp>
 
-#include <string_view>
 #include <type_traits>
 #include <variant>
 
@@ -30,7 +31,7 @@ namespace Meta
     namespace Internal
     {
         /** @brief The one field name reflection skips: source-location plumbing. */
-        inline constexpr std::string_view HiddenField = "Loc";
+        inline constexpr FStringView HiddenField = "Loc";
     } // namespace Internal
 
     /** @brief A type is Reflected when field iteration can walk it: an aggregate class. */
@@ -80,7 +81,7 @@ namespace Meta
     /** @brief Enumerator name of Value, or "<unknown>" for out-of-range values. */
     template <typename TEnum>
         requires std::is_enum_v<TEnum>
-    [[nodiscard]] constexpr std::string_view EnumName ( TEnum Value )
+    [[nodiscard]] constexpr FStringView EnumName ( TEnum Value ) noexcept
     {
 #if LUMEN_HAS_REFLECTION
         template for ( constexpr auto Enumerator : std::define_static_array( std::meta::enumerators_of( ^^TEnum ) ) )
@@ -97,12 +98,33 @@ namespace Meta
 #endif
     }
 
+    /** @brief Qualified enumerator name of Value ("EColor::Red"), or "<unknown>" for out-of-range values. */
+    template <typename TEnum>
+        requires std::is_enum_v<TEnum>
+    [[nodiscard]] constexpr FStringView EnumQualifiedName ( TEnum Value ) noexcept
+    {
+#if LUMEN_HAS_REFLECTION
+        template for ( constexpr auto Enumerator : std::define_static_array( std::meta::enumerators_of( ^^TEnum ) ) )
+        {
+            if ( Value == [:Enumerator:] )
+            {
+                return std::define_static_string( FString( std::meta::identifier_of( ^^TEnum ) ) +
+                                                  "::" + std::meta::identifier_of( Enumerator ) );
+            }
+        }
+        return "<unknown>";
+#else
+        static_cast<void>( Value );
+        return "<unknown>";
+#endif
+    }
+
     /** @brief Unqualified type name of T ("FLaunchEngineConfig", "FString"), aliases resolved. */
-    template <typename TType> [[nodiscard]] consteval std::string_view TypeName ()
+    template <typename TType> [[nodiscard]] consteval FStringView TypeName ()
     {
 #if LUMEN_HAS_REFLECTION
         constexpr std::meta::info Type = std::meta::dealias( ^^std::remove_cvref_t<TType> );
-        constexpr std::string_view Name =
+        constexpr FStringView Name =
             std::meta::has_identifier( Type ) ? std::meta::identifier_of( Type ) : std::meta::display_string_of( Type );
         return Name;
 #else
@@ -111,10 +133,10 @@ namespace Meta
     }
 
     /** @brief Type name of the active alternative of a variant (monostate → "None"). */
-    template <typename... Alts> [[nodiscard]] constexpr std::string_view ActiveName ( const std::variant<Alts...> &Node )
+    template <typename... Alts> [[nodiscard]] constexpr FStringView ActiveName ( const std::variant<Alts...> &Node )
     {
 #if LUMEN_HAS_REFLECTION
-        return std::visit( [] ( const auto &Alt ) -> std::string_view
+        return std::visit( [] ( const auto &Alt ) -> FStringView
         {
             using TObject = std::remove_cvref_t<decltype( Alt )>;
             if constexpr ( Concepts::CSameAs<TObject, std::monostate> )
