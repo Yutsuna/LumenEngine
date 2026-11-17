@@ -30,9 +30,14 @@ Lumen::Tests::FNullModule::EnumerateAdapters () const noexcept
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDevice>, Lumen::FRHIError>
 Lumen::Tests::FNullModule::CreateDevice ( const FRHIDeviceDesc &InDesc ) noexcept
 {
-    if ( const auto Gate = CheckRHICapabilityGate( Desc.Adapter, InDesc ); not Gate )
+    return CheckRHICapabilityGate( Desc.Adapter, InDesc )
+        .OrElse(
+            [] ( const FRHIError &InError ) noexcept -> TExpected<void, FRHIError>
     {
-        return TUnexpected<FRHIError>( Gate.Error() );
-    }
-    return MakeShared<FNullDevice>( Desc );
+        return TUnexpected<FRHIError>( InError );
+    } )
+        .AndThen( [this] () noexcept -> TExpected<TSharedRef<IRHIDevice>, FRHIError>
+    {
+        return MakeShared<FNullDevice>( Desc );
+    } );
 }

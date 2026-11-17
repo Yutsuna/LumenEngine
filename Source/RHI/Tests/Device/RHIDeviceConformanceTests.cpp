@@ -19,7 +19,7 @@ namespace
 
     LUMEN_TEST( RHIDeviceConformance, DevicePublishesNegotiatedContract )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         LUMEN_CHECK_TRUE( ( *Device )->GetLimits().Validate().HasValue() );
         LUMEN_CHECK_TRUE( ( *Device )->GetCapabilities().Validate().HasValue() );
@@ -29,32 +29,33 @@ namespace
 
     LUMEN_TEST( RHIDeviceConformance, InvalidFactoriesReturnStructuredErrors )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
 
-        const auto Buffer = ( *Device )->CreateBuffer( {} );
+        const TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer = ( *Device )->CreateBuffer( {} );
         LUMEN_CHECK_HAS_ERROR( Buffer );
         LUMEN_CHECK_EQ( Buffer.Error().Code, ERHIErrorCode::InvalidArgument );
         LUMEN_CHECK_EQ( Buffer.Error().Condition, ERHIErrorCondition::Resource );
 
-        const auto Heap = ( *Device )->CreateHeap( {} );
+        const TExpected<TSharedRef<IRHIHeap>, FRHIError> Heap = ( *Device )->CreateHeap( {} );
         LUMEN_CHECK_HAS_ERROR( Heap );
         LUMEN_CHECK_EQ( Heap.Error().Code, ERHIErrorCode::InvalidArgument );
         LUMEN_CHECK_EQ( Heap.Error().Condition, ERHIErrorCondition::Memory );
 
-        const auto Upload = ( *Device )->CreateUploadAllocator( 0ULL );
+        const TExpected<TSharedRef<IRHIUploadAllocator>, FRHIError> Upload = ( *Device )->CreateUploadAllocator( 0ULL );
         LUMEN_CHECK_HAS_ERROR( Upload );
         LUMEN_CHECK_EQ( Upload.Error().Code, ERHIErrorCode::InvalidArgument );
         LUMEN_CHECK_EQ( Upload.Error().Condition, ERHIErrorCondition::Memory );
 
-        const auto Commands = ( *Device )->CreateCommandAllocator( ERHIQueueType::Count );
+        const TExpected<TSharedRef<IRHICommandAllocator>, FRHIError> Commands =
+            ( *Device )->CreateCommandAllocator( ERHIQueueType::Count );
         LUMEN_CHECK_HAS_ERROR( Commands );
         LUMEN_CHECK_EQ( Commands.Error().Code, ERHIErrorCode::InvalidArgument );
         LUMEN_CHECK_EQ( Commands.Error().Condition, ERHIErrorCondition::Command );
 
         FRHIQueryPoolDesc QueryDesc;
-        QueryDesc.Count  = 0U;
-        const auto Query = ( *Device )->CreateQueryPool( QueryDesc );
+        QueryDesc.Count                                             = 0U;
+        const TExpected<TSharedRef<IRHIQueryPool>, FRHIError> Query = ( *Device )->CreateQueryPool( QueryDesc );
         LUMEN_CHECK_HAS_ERROR( Query );
         LUMEN_CHECK_EQ( Query.Error().Code, ERHIErrorCode::InvalidArgument );
         LUMEN_CHECK_EQ( Query.Error().Condition, ERHIErrorCondition::Query );
@@ -62,13 +63,13 @@ namespace
 
     LUMEN_TEST( RHIDeviceConformance, ChildIdentitiesAreUniqueAndStable )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         FRHIBufferDesc Desc;
-        Desc.Size   = 64ULL;
-        Desc.Usage  = ERHIResourceUsage::CopySource;
-        auto First  = ( *Device )->CreateBuffer( Desc );
-        auto Second = ( *Device )->CreateBuffer( Desc );
+        Desc.Size                                           = 64ULL;
+        Desc.Usage                                          = ERHIResourceUsage::CopySource;
+        TExpected<TSharedRef<IRHIBuffer>, FRHIError> First  = ( *Device )->CreateBuffer( Desc );
+        TExpected<TSharedRef<IRHIBuffer>, FRHIError> Second = ( *Device )->CreateBuffer( Desc );
         LUMEN_CHECK_TRUE( First.HasValue() );
         LUMEN_CHECK_TRUE( Second.HasValue() );
         LUMEN_CHECK_NOT_EQ( ( *First )->GetId().GetValue(), ( *Second )->GetId().GetValue() );
@@ -80,9 +81,9 @@ namespace
 
     LUMEN_TEST( RHIDeviceConformance, DeviceLossBlocksCreationAndSubmission )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
-        auto Queue = ( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+        TExpected<TSharedRef<IRHIQueue>, FRHIError> Queue = ( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
         LUMEN_CHECK_TRUE( Queue.HasValue() );
         if ( not Tests::GetRHIConformanceDeviceFactory().InjectDeviceLost( **Device ) )
         {
@@ -90,14 +91,15 @@ namespace
         }
         LUMEN_CHECK_EQ( ( *Device )->GetStatus(), ERHIDeviceStatus::Lost );
 
-        const auto Buffer = ( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
+        const TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
+            ( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
         LUMEN_CHECK_HAS_ERROR( Buffer );
         LUMEN_CHECK_EQ( Buffer.Error().Code, ERHIErrorCode::DeviceLost );
         LUMEN_CHECK_EQ( Buffer.Error().Condition, ERHIErrorCondition::Device );
 
         FRHISubmitDesc Submit;
-        Submit.Completion     = { 1ULL };
-        const auto Submission = ( *Queue )->Submit( Submit );
+        Submit.Completion                           = { 1ULL };
+        const TExpected<void, FRHIError> Submission = ( *Queue )->Submit( Submit );
         LUMEN_CHECK_HAS_ERROR( Submission );
         LUMEN_CHECK_EQ( Submission.Error().Code, ERHIErrorCode::DeviceLost );
     }

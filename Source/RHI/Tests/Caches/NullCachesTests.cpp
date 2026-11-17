@@ -31,9 +31,9 @@ namespace
         FRHIPipelineCacheDesc Desc;
         Desc.MaxEntries = 2U;
         Tests::FNullPipelineCache Cache( Desc, MakeShared<Tests::FNullFaultPlan>(), FRHIObjectId{ 1ULL } );
-        const auto First  = MakeKey( 1ULL );
-        const auto Second = MakeKey( 2ULL );
-        const auto Third  = MakeKey( 3ULL );
+        const FRHIPipelineCompatibility First  = MakeKey( 1ULL );
+        const FRHIPipelineCompatibility Second = MakeKey( 2ULL );
+        const FRHIPipelineCompatibility Third  = MakeKey( 3ULL );
         LUMEN_CHECK_TRUE( Cache.Insert( First, MakePipeline( First ) ).HasValue() );
         LUMEN_CHECK_TRUE( Cache.Insert( Second, MakePipeline( Second ) ).HasValue() );
         LUMEN_CHECK_TRUE( Cache.Find( First ).IsValid() );
@@ -48,11 +48,11 @@ namespace
     LUMEN_TEST( NullCaches, SerializesDeterministicallyAndRestoresMetadata )
     {
         Tests::FNullPipelineCache Cache( {}, MakeShared<Tests::FNullFaultPlan>(), FRHIObjectId{ 2ULL } );
-        const auto Key = MakeKey( 7ULL );
+        const FRHIPipelineCompatibility Key = MakeKey( 7ULL );
         LUMEN_CHECK_TRUE( Cache.Insert( Key, MakePipeline( Key ) ).HasValue() );
-        auto Serialized = Cache.Serialize();
+        TExpected<TVector<Byte>, FRHIError> Serialized = Cache.Serialize();
         LUMEN_CHECK_TRUE( Serialized.HasValue() );
-        const auto Again = Cache.Serialize();
+        const TExpected<TVector<Byte>, FRHIError> Again = Cache.Serialize();
         LUMEN_CHECK_TRUE( Again.HasValue() );
         LUMEN_CHECK_TRUE( *Serialized == *Again );
 
@@ -64,7 +64,7 @@ namespace
         LUMEN_CHECK_FALSE( Restored.Find( Key ).IsValid() );
         LUMEN_CHECK_TRUE( Restored.Insert( Key, MakePipeline( Key ) ).HasValue() );
         LUMEN_CHECK_TRUE( Restored.Find( Key ).IsValid() );
-        const auto RoundTrip = Restored.Serialize();
+        const TExpected<TVector<Byte>, FRHIError> RoundTrip = Restored.Serialize();
         LUMEN_CHECK_TRUE( RoundTrip.HasValue() );
         LUMEN_CHECK_TRUE( *RoundTrip == *Serialized );
     }
@@ -72,10 +72,10 @@ namespace
     LUMEN_TEST( NullCaches, RejectsCorruptionAndCapacityOverflow )
     {
         Tests::FNullPipelineCache Cache( {}, MakeShared<Tests::FNullFaultPlan>(), FRHIObjectId{ 4ULL } );
-        const auto Key = MakeKey( 4ULL );
+        const FRHIPipelineCompatibility Key = MakeKey( 4ULL );
         LUMEN_CHECK_TRUE( Cache.Insert( Key, MakePipeline( Key ) ).HasValue() );
-        auto Data = *Cache.Serialize();
-        Data[0]   = static_cast<Byte>( 'X' );
+        TVector<Byte> Data = *Cache.Serialize();
+        Data[0]            = static_cast<Byte>( 'X' );
         FRHIPipelineCacheDesc CorruptedDesc;
         CorruptedDesc.InitialData = Data;
         Tests::FNullPipelineCache Corrupted( CorruptedDesc, MakeShared<Tests::FNullFaultPlan>(), FRHIObjectId{ 5ULL } );
@@ -86,7 +86,7 @@ namespace
         BoundedDesc.bAllowEviction = false;
         Tests::FNullPipelineCache Bounded( BoundedDesc, MakeShared<Tests::FNullFaultPlan>(), FRHIObjectId{ 6ULL } );
         LUMEN_CHECK_TRUE( Bounded.Insert( Key, MakePipeline( Key ) ).HasValue() );
-        const auto Other = MakeKey( 5ULL );
+        const FRHIPipelineCompatibility Other = MakeKey( 5ULL );
         LUMEN_CHECK_HAS_ERROR( Bounded.Insert( Other, MakePipeline( Other ) ) );
         LUMEN_CHECK_TRUE( Bounded.Find( Key ).IsValid() );
     }

@@ -28,7 +28,7 @@ namespace
         LUMEN_CHECK_EQ( Desc.Stage, Entry.Stage );
         FRHIShaderPackage Package;
         LUMEN_CHECK_TRUE( Package.AddEntry( std::move( Entry ) ).HasValue() );
-        auto Found = Package.Find( ERHIShaderStage::Pixel, "Shade" );
+        TOptional<FRHIShaderDesc> Found = Package.Find( ERHIShaderStage::Pixel, "Shade" );
         LUMEN_CHECK_TRUE( Found.HasValue() );
         LUMEN_CHECK_EQ( Found->Bytecode.size(), 3U );
         LUMEN_CHECK_EQ( Found->Reflection.Bindings[0].Slot, 2U );

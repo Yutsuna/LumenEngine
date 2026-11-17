@@ -16,7 +16,8 @@ namespace
 {
     LUMEN_TEST( NullCommands, RecordsDrawScopeAndClearsHistoryOnReset )
     {
-        auto Allocator = MakeShared<Tests::FNullCommandAllocator>( ERHIQueueType::Graphics, FRHIObjectId{ 1ULL } );
+        TSharedRef<Tests::FNullCommandAllocator> Allocator =
+            MakeShared<Tests::FNullCommandAllocator>( ERHIQueueType::Graphics, FRHIObjectId{ 1ULL } );
         Tests::FNullCommandList List( Allocator, FRHIObjectId{ 2ULL } );
         LUMEN_CHECK_HAS_ERROR( List.Draw( { .VertexCount = 3U } ) );
         LUMEN_CHECK_TRUE( List.Begin().HasValue() );
@@ -24,17 +25,18 @@ namespace
                                      .Format         = ERHIFormat::RGBA8Unorm,
                                      .Usage          = ERHIResourceUsage::RenderTarget,
                                      .OptimizedClear = {} };
-        auto Texture = MakeShared<Tests::FNullTexture>( TextureDesc, FRHIResourceRequirements{}, FRHIObjectId{ 3ULL } );
+        TSharedRef<Tests::FNullTexture> Texture =
+            MakeShared<Tests::FNullTexture>( TextureDesc, FRHIResourceRequirements{}, FRHIObjectId{ 3ULL } );
         FRHITextureViewDesc ViewDesc;
-        ViewDesc.Texture = StaticCastSharedRef<IRHITexture>( Texture );
-        auto View        = MakeShared<Tests::FNullTextureView>( ViewDesc, FRHIObjectId{ 4ULL } );
+        ViewDesc.Texture                         = StaticCastSharedRef<IRHITexture>( Texture );
+        TSharedRef<Tests::FNullTextureView> View = MakeShared<Tests::FNullTextureView>( ViewDesc, FRHIObjectId{ 4ULL } );
         FRHIRenderingDesc Rendering;
         Rendering.Area = { 0, 0, 4U, 4U };
         Rendering.ColorAttachments.push_back(
             { .View = View, .LoadOp = ERHIRenderingLoadOp::Load, .StoreOp = ERHIRenderingStoreOp::Store, .ClearValue = {} } );
         LUMEN_CHECK_TRUE( List.BeginRendering( Rendering ).HasValue() );
         LUMEN_CHECK_HAS_ERROR( List.BeginRendering( Rendering ) );
-        auto Pipeline =
+        TSharedRef<Tests::FNullPipeline> Pipeline =
             MakeShared<Tests::FNullPipeline>( ERHIPipelineType::Graphics, FRHIPipelineCompatibility{}, FRHIObjectId{ 5ULL } );
         LUMEN_CHECK_TRUE( List.SetPipeline( Pipeline ).HasValue() );
         {
@@ -46,7 +48,7 @@ namespace
         LUMEN_CHECK_EQ( List.GetState(), ERHICommandListState::Executable );
         LUMEN_CHECK_EQ( List.GetStream().GetCommandCount(), 6U );
         LUMEN_CHECK_TRUE( List.GetStream().GetRetainedCount() >= 2U );
-        auto Draw =
+        const TExpected<FRHIDrawArguments, FRHIError> Draw =
             List.GetStream().ReadPayload<FRHIDrawArguments>( 3U, static_cast<UInt32>( Tests::ERHINullCommandOpcode::Draw ) );
         LUMEN_CHECK_TRUE( Draw.HasValue() );
         LUMEN_CHECK_EQ( Draw->VertexCount, 3U );

@@ -31,14 +31,14 @@ namespace
     {
         Tests::FRecordingDebugSink Sink;
         {
-            auto Device = Tests::Validation::MakeDevice( Sink );
+            TSharedRef<IRHIDevice> Device = Tests::Validation::MakeDevice( Sink );
             {
-                auto Buffer  = Tests::Validation::MakeBuffer( Device );
-                auto Texture = Tests::Validation::MakeTexture( Device );
+                TSharedRef<IRHIBuffer> Buffer   = Tests::Validation::MakeBuffer( Device );
+                TSharedRef<IRHITexture> Texture = Tests::Validation::MakeTexture( Device );
                 LUMEN_CHECK_TRUE( Buffer->GetId().IsValid() );
                 LUMEN_CHECK_TRUE( Texture->GetId().IsValid() );
             }
-            auto Queue = Device->GetQueue( ERHIQueueType::Graphics, 0U );
+            TExpected<TSharedRef<IRHIQueue>, FRHIError> Queue = Device->GetQueue( ERHIQueueType::Graphics, 0U );
             LUMEN_CHECK_TRUE( Queue.HasValue() );
         }
         LUMEN_CHECK_EQ( Sink.GetCount(), 0U );

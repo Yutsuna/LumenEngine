@@ -12,8 +12,9 @@ namespace
 {
     LUMEN_TEST( NullQueue, SignalsTimelinesConsumesBinaryWaitsAndRejectsRegression )
     {
-        auto Timeline = MakeShared<Tests::FNullSemaphore>( FRHISemaphoreDesc{}, FRHIObjectId{ 1ULL } );
-        auto Binary   = MakeShared<Tests::FNullSemaphore>(
+        TSharedRef<Tests::FNullSemaphore> Timeline =
+            MakeShared<Tests::FNullSemaphore>( FRHISemaphoreDesc{}, FRHIObjectId{ 1ULL } );
+        TSharedRef<Tests::FNullSemaphore> Binary = MakeShared<Tests::FNullSemaphore>(
             FRHISemaphoreDesc{ .Type = ERHISemaphoreType::Binary, .InitialValue = 1ULL, .DebugName = "Binary" },
             FRHIObjectId{ 2ULL } );
         Tests::FNullQueue Queue( ERHIQueueType::Graphics, 0U, nullptr, FRHIObjectId{ 3ULL } );

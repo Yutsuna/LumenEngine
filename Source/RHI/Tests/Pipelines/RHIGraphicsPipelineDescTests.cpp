@@ -22,8 +22,8 @@ namespace
         TSharedRef<IRHIShader> MakeShader ( Tests::FNullDevice &Device, const ERHIShaderStage Stage )
         {
             FRHIShaderDesc Desc;
-            Desc.Stage  = Stage;
-            auto Shader = Device.CreateShader( Desc );
+            Desc.Stage                                          = Stage;
+            TExpected<TSharedRef<IRHIShader>, FRHIError> Shader = Device.CreateShader( Desc );
             LUMEN_CHECK_TRUE( Shader.HasValue() );
             return *Shader;
         }

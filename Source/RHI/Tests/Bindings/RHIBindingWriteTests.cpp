@@ -21,24 +21,26 @@ namespace
         FRHIBindingWrite Write;
         LUMEN_CHECK_HAS_ERROR( Write.Validate() );
         Tests::FNullDevice Device;
-        auto Buffer = Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::ShaderResource } );
+        TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
+            Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::ShaderResource } );
         LUMEN_CHECK_TRUE( Buffer.HasValue() );
         Write.Resource = FRHIBufferBinding{ .Buffer = *Buffer, .Offset = 16ULL, .Size = 32ULL };
         LUMEN_CHECK_TRUE( Write.Validate().HasValue() );
-        auto Texture = Device.CreateTexture( { .Extent         = { 4U, 4U, 1U },
-                                               .Format         = ERHIFormat::RGBA8Unorm,
-                                               .Usage          = ERHIResourceUsage::ShaderResource,
-                                               .OptimizedClear = {} } );
+        TExpected<TSharedRef<IRHITexture>, FRHIError> Texture =
+            Device.CreateTexture( { .Extent         = { 4U, 4U, 1U },
+                                    .Format         = ERHIFormat::RGBA8Unorm,
+                                    .Usage          = ERHIResourceUsage::ShaderResource,
+                                    .OptimizedClear = {} } );
         LUMEN_CHECK_TRUE( Texture.HasValue() );
         FRHITextureViewDesc ViewDesc;
-        ViewDesc.Texture = *Texture;
-        auto View        = Device.CreateTextureView( ViewDesc );
+        ViewDesc.Texture                                       = *Texture;
+        TExpected<TSharedRef<IRHITextureView>, FRHIError> View = Device.CreateTextureView( ViewDesc );
         LUMEN_CHECK_TRUE( View.HasValue() );
         Write.Resource = FRHITextureBinding{ .View = *View };
         LUMEN_CHECK_TRUE( Write.Validate().HasValue() );
         Write.Resource = FRHITextureBinding{};
         LUMEN_CHECK_HAS_ERROR( Write.Validate() );
-        auto Sampler = Device.CreateSampler( {} );
+        TExpected<TSharedRef<IRHISampler>, FRHIError> Sampler = Device.CreateSampler( {} );
         LUMEN_CHECK_TRUE( Sampler.HasValue() );
         Write.Resource = FRHISamplerBinding{ .Sampler = *Sampler };
         LUMEN_CHECK_TRUE( Write.Validate().HasValue() );

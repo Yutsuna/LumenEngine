@@ -20,7 +20,7 @@ namespace
     {
         for ( UInt32 Index = 0U; Index < 128U; ++Index )
         {
-            auto Device = MakeShared<Tests::FNullDevice>();
+            TSharedRef<Tests::FNullDevice> Device = MakeShared<Tests::FNullDevice>();
             Device->SetDebugName( "StressDevice" );
             LUMEN_CHECK_TRUE( Device->GetDebugName() == "StressDevice" );
             LUMEN_CHECK_TRUE( Device->WaitIdle().HasValue() );
@@ -31,14 +31,15 @@ namespace
     {
         for ( UInt32 Occurrence = 1U; Occurrence <= 16U; ++Occurrence )
         {
-            auto Plan = MakeShared<Tests::FNullFaultPlan>();
+            TSharedRef<Tests::FNullFaultPlan> Plan = MakeShared<Tests::FNullFaultPlan>();
             Plan->AddFailure( "CreateBuffer", Occurrence, MakeRHIBackendFailure( ERHIErrorCondition::Resource, "scheduled" ) );
             Tests::FNullDeviceDesc Desc;
             Desc.FaultPlan = Plan;
             Tests::FNullDevice Device( Desc );
             for ( UInt32 Call = 1U; Call <= 20U; ++Call )
             {
-                auto Buffer = Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
+                TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
+                    Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
                 if ( Call == Occurrence )
                 {
                     LUMEN_CHECK_HAS_ERROR( Buffer );
@@ -69,7 +70,8 @@ namespace
             {
                 for ( UInt32 Index = 0U; Index < 128U; ++Index )
                 {
-                    auto Buffer = Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
+                    TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
+                        Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
                     if ( not Buffer )
                     {
                         Failures.fetch_add( 1U );
@@ -108,7 +110,8 @@ namespace
             {
                 for ( UInt32 Index = 0U; Index < 256U; ++Index )
                 {
-                    auto Buffer = Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
+                    TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
+                        Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
                     if ( not Buffer and Buffer.Error().Code != ERHIErrorCode::DeviceLost )
                     {
                         Failures.fetch_add( 1U );

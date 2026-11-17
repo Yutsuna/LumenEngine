@@ -30,7 +30,7 @@ namespace
         LUMEN_CHECK_HAS_ERROR( Semaphore.Signal( 1ULL ) );
         LUMEN_CHECK_TRUE( Semaphore.Signal( 3ULL ).HasValue() );
         LUMEN_CHECK_TRUE( Semaphore.Wait( 3ULL, 0.0 ).HasValue() );
-        auto Timeout = Semaphore.Wait( 4ULL, 0.0 );
+        TExpected<void, FRHIError> Timeout = Semaphore.Wait( 4ULL, 0.0 );
         LUMEN_CHECK_HAS_ERROR( Timeout );
         LUMEN_CHECK_EQ( Timeout.Error().Code, ERHIErrorCode::Timeout );
     }

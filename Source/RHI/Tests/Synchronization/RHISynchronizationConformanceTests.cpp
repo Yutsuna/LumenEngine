@@ -16,16 +16,16 @@ namespace
 
     LUMEN_TEST( RHISynchronizationConformance, TimelineWaitGatesDeferredLifetime )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
-        auto Semaphore = *( *Device )->CreateSemaphore( {} );
+        TSharedRef<IRHISemaphore> Semaphore = *( *Device )->CreateSemaphore( {} );
         FRHIDeferredReleaseQueue Releases;
-        UInt32 Destroyed              = 0U;
-        const auto IncrementDestroyed = [&Destroyed]
+        UInt32 Destroyed                           = 0U;
+        const TFunction<void()> IncrementDestroyed = [&Destroyed]
         {
             ++Destroyed;
         };
-        const auto Enqueued = Releases.Enqueue( { 3ULL }, IncrementDestroyed );
+        const TExpected<void, FRHIError> Enqueued = Releases.Enqueue( { 3ULL }, IncrementDestroyed );
         LUMEN_CHECK_TRUE( Enqueued.HasValue() );
         LUMEN_CHECK_EQ( Releases.Poll( { Semaphore->GetValue() } ), 0U );
         LUMEN_CHECK_TRUE( Semaphore->Signal( 3ULL ).HasValue() );
@@ -36,22 +36,22 @@ namespace
 
     LUMEN_TEST( RHISynchronizationConformance, BinaryAndTimelineSemaphoresKeepDistinctSemantics )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         FRHISemaphoreDesc BinaryDesc;
-        BinaryDesc.Type = ERHISemaphoreType::Binary;
-        auto Binary     = ( *Device )->CreateSemaphore( BinaryDesc );
+        BinaryDesc.Type                                        = ERHISemaphoreType::Binary;
+        TExpected<TSharedRef<IRHISemaphore>, FRHIError> Binary = ( *Device )->CreateSemaphore( BinaryDesc );
         LUMEN_CHECK_TRUE( Binary.HasValue() );
         LUMEN_CHECK_TRUE( ( *Binary )->Signal( 1ULL ).HasValue() );
         LUMEN_CHECK_TRUE( ( *Binary )->Wait( 1ULL, 0.0 ).HasValue() );
         LUMEN_CHECK_EQ( ( *Binary )->GetValue(), 0ULL );
-        const auto BinaryTimeout = ( *Binary )->Wait( 1ULL, 0.0 );
+        const TExpected<void, FRHIError> BinaryTimeout = ( *Binary )->Wait( 1ULL, 0.0 );
         LUMEN_CHECK_HAS_ERROR( BinaryTimeout );
         LUMEN_CHECK_EQ( BinaryTimeout.Error().Code, ERHIErrorCode::Timeout );
 
         FRHISemaphoreDesc TimelineDesc;
-        TimelineDesc.Type = ERHISemaphoreType::Timeline;
-        auto Timeline     = ( *Device )->CreateSemaphore( TimelineDesc );
+        TimelineDesc.Type                                        = ERHISemaphoreType::Timeline;
+        TExpected<TSharedRef<IRHISemaphore>, FRHIError> Timeline = ( *Device )->CreateSemaphore( TimelineDesc );
         if ( not( *Device )->GetCapabilities().Supports( ERHICapabilityFlags::TimelineSemaphores ) )
         {
             LUMEN_CHECK_HAS_ERROR( Timeline );
@@ -62,10 +62,10 @@ namespace
         LUMEN_CHECK_TRUE( Timeline.HasValue() );
         LUMEN_CHECK_TRUE( ( *Timeline )->Signal( 3ULL ).HasValue() );
         LUMEN_CHECK_TRUE( ( *Timeline )->Wait( 3ULL, 0.0 ).HasValue() );
-        const auto Regression = ( *Timeline )->Signal( 2ULL );
+        const TExpected<void, FRHIError> Regression = ( *Timeline )->Signal( 2ULL );
         LUMEN_CHECK_HAS_ERROR( Regression );
         LUMEN_CHECK_EQ( Regression.Error().Code, ERHIErrorCode::InvalidState );
-        const auto Timeout = ( *Timeline )->Wait( 4ULL, 0.0 );
+        const TExpected<void, FRHIError> Timeout = ( *Timeline )->Wait( 4ULL, 0.0 );
         LUMEN_CHECK_HAS_ERROR( Timeout );
         LUMEN_CHECK_EQ( Timeout.Error().Code, ERHIErrorCode::Timeout );
     }
@@ -73,8 +73,8 @@ namespace
     LUMEN_TEST( RHISynchronizationConformance, DeferredShutdownDrainsAndRejectsNewEntries )
     {
         FRHIDeferredReleaseQueue Releases;
-        UInt32 Destroyed              = 0U;
-        const auto IncrementDestroyed = [&Destroyed]
+        UInt32 Destroyed                           = 0U;
+        const TFunction<void()> IncrementDestroyed = [&Destroyed]
         {
             ++Destroyed;
         };
@@ -84,7 +84,7 @@ namespace
         LUMEN_CHECK_EQ( Destroyed, 1U );
         LUMEN_CHECK_EQ( Releases.GetSize(), 0U );
         LUMEN_CHECK_EQ( Releases.Poll( { 99ULL } ), 0U );
-        const auto Enqueued = Releases.Enqueue( {}, IncrementDestroyed );
+        const TExpected<void, FRHIError> Enqueued = Releases.Enqueue( {}, IncrementDestroyed );
         LUMEN_CHECK_HAS_ERROR( Enqueued );
         LUMEN_CHECK_EQ( Enqueued.Error().Code, ERHIErrorCode::InvalidState );
         LUMEN_CHECK_EQ( Releases.Drain(), 0U );

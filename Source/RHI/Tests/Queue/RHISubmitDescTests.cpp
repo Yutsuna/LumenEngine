@@ -12,7 +12,8 @@ namespace
 {
     LUMEN_TEST( RHISubmitDesc, ValidatesSignalsWaitsDuplicatesAndCompletion )
     {
-        auto Semaphore = MakeShared<Tests::FNullSemaphore>( FRHISemaphoreDesc{}, FRHIObjectId{ 1ULL } );
+        TSharedRef<Tests::FNullSemaphore> Semaphore =
+            MakeShared<Tests::FNullSemaphore>( FRHISemaphoreDesc{}, FRHIObjectId{ 1ULL } );
         FRHISubmitDesc Desc;
         Desc.Signals    = { { .Semaphore = Semaphore, .Value = 1ULL } };
         Desc.Completion = { 1ULL };
@@ -30,7 +31,7 @@ namespace
     }
     LUMEN_TEST( RHISubmitDesc, BinaryOperationsRequireOne )
     {
-        auto Semaphore = MakeShared<Tests::FNullSemaphore>(
+        TSharedRef<Tests::FNullSemaphore> Semaphore = MakeShared<Tests::FNullSemaphore>(
             FRHISemaphoreDesc{ .Type = ERHISemaphoreType::Binary, .InitialValue = 0ULL, .DebugName = "Binary" },
             FRHIObjectId{ 1ULL } );
         FRHISubmitDesc Desc;

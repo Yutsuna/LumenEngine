@@ -27,7 +27,7 @@ namespace
 
         for ( UInt32 Index = 0U; Index < 512U; ++Index )
         {
-            auto Allocation = Allocator.Allocate( { .Size = 64ULL, .Alignment = 16ULL } );
+            const TExpected<FRHIAllocation, FRHIError> Allocation = Allocator.Allocate( { .Size = 64ULL, .Alignment = 16ULL } );
             LUMEN_CHECK_TRUE( Allocation.HasValue() );
             LUMEN_CHECK_TRUE( Allocator.Free( *Allocation ).HasValue() );
         }
@@ -53,7 +53,8 @@ namespace
             }
             else
             {
-                auto Allocation = Ring.Allocate( { .Size = Random.Next( 96ULL ) + 1ULL, .Alignment = 16ULL } );
+                const TExpected<FRHIAllocation, FRHIError> Allocation =
+                    Ring.Allocate( { .Size = Random.Next( 96ULL ) + 1ULL, .Alignment = 16ULL } );
                 if ( Allocation )
                 {
                     for ( const FRHIAllocation &Other : RingActive )
@@ -72,7 +73,8 @@ namespace
             }
             else
             {
-                auto Allocation = Pool.Allocate( { .Size = Random.Next( 64ULL ) + 1ULL, .Alignment = 16ULL } );
+                const TExpected<FRHIAllocation, FRHIError> Allocation =
+                    Pool.Allocate( { .Size = Random.Next( 64ULL ) + 1ULL, .Alignment = 16ULL } );
                 if ( Allocation )
                 {
                     for ( const FRHIAllocation &Other : PoolActive )
@@ -95,8 +97,8 @@ namespace
         LUMEN_CHECK_EQ( Ring.GetStats().Used, 0ULL );
         LUMEN_CHECK_EQ( Pool.GetStats().Used, 0ULL );
 
-        auto RingAllocation = Ring.Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
-        auto PoolAllocation = Pool.Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
+        const TExpected<FRHIAllocation, FRHIError> RingAllocation = Ring.Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
+        const TExpected<FRHIAllocation, FRHIError> PoolAllocation = Pool.Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
         LUMEN_CHECK_TRUE( RingAllocation.HasValue() );
         LUMEN_CHECK_TRUE( PoolAllocation.HasValue() );
         LUMEN_CHECK_TRUE( Ring.Free( *RingAllocation ).HasValue() );
@@ -113,8 +115,8 @@ namespace
             Bool bExhausted = false;
             for ( UInt32 Index = 0U; Index < 16U; ++Index )
             {
-                auto Allocation = Linear.Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
-                bExhausted      = bExhausted or not Allocation;
+                const TExpected<FRHIAllocation, FRHIError> Allocation = Linear.Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
+                bExhausted                                            = bExhausted or not Allocation;
             }
             LUMEN_CHECK_TRUE( bExhausted );
             Linear.Reset();
@@ -143,7 +145,8 @@ namespace
                     }
                     else
                     {
-                        auto Allocation = Allocator.Allocate( { .Size = Random.Next( 96ULL ) + 1ULL, .Alignment = 16ULL } );
+                        const TExpected<FRHIAllocation, FRHIError> Allocation =
+                            Allocator.Allocate( { .Size = Random.Next( 96ULL ) + 1ULL, .Alignment = 16ULL } );
                         if ( Allocation )
                         {
                             for ( const FRHIAllocation &Other : Active )
@@ -177,24 +180,26 @@ namespace
     LUMEN_TEST( RHIMemoryStress, StagingRingsRecycleInterleavedRanges )
     {
         Tests::FNullDevice Device;
-        auto Upload   = *Device.CreateUploadAllocator( 2048ULL );
-        auto Readback = *Device.CreateReadbackAllocator( 2048ULL );
+        const TSharedRef<IRHIUploadAllocator> Upload     = *Device.CreateUploadAllocator( 2048ULL );
+        const TSharedRef<IRHIReadbackAllocator> Readback = *Device.CreateReadbackAllocator( 2048ULL );
         Tests::FRHITestRandom Random( 0x53544147494E47ULL );
         TVector<FRHIAllocation> UploadActive;
         TVector<FRHIAllocation> ReadbackActive;
 
         for ( UInt32 Step = 0U; Step < 256U; ++Step )
         {
-            auto UploadAllocation = Upload->Allocate( { .Size = Random.Next( 64ULL ) + 1ULL, .Alignment = 16ULL } );
+            TExpected<FRHIUploadAllocation, FRHIError> UploadAllocation =
+                Upload->Allocate( { .Size = Random.Next( 64ULL ) + 1ULL, .Alignment = 16ULL } );
             if ( UploadAllocation )
             {
                 UploadAllocation->MappedData[0] = static_cast<Byte>( Step );
                 UploadActive.push_back( UploadAllocation->Allocation );
             }
-            auto ReadbackAllocation = Readback->Allocate( { .Size = Random.Next( 64ULL ) + 1ULL, .Alignment = 16ULL } );
+            const TExpected<FRHIAllocation, FRHIError> ReadbackAllocation =
+                Readback->Allocate( { .Size = Random.Next( 64ULL ) + 1ULL, .Alignment = 16ULL } );
             if ( ReadbackAllocation )
             {
-                auto Mapped = Readback->Map( *ReadbackAllocation );
+                const TExpected<FRHIReadbackAllocation, FRHIError> Mapped = Readback->Map( *ReadbackAllocation );
                 if ( not Mapped or Mapped->MappedData.size() != ReadbackAllocation->Size )
                 {
                     LUMEN_CHECK_TRUE( false );
@@ -227,7 +232,7 @@ namespace
     LUMEN_TEST( RHIMemoryStress, TransientBatchesNeverAliasOverlappingLifetimes )
     {
         Tests::FNullDevice Device;
-        auto Allocator = *Device.CreateTransientResourceAllocator();
+        const TSharedRef<IRHITransientResourceAllocator> Allocator = *Device.CreateTransientResourceAllocator();
         Tests::FRHITestRandom Random( 0x5452414E5349454EULL );
         for ( UInt32 Pass = 0U; Pass < 128U; ++Pass )
         {
@@ -242,15 +247,15 @@ namespace
                 Batch.Requests.push_back( Request );
             }
             Allocator->BeginBatch();
-            auto Allocations = Allocator->Allocate( Batch );
+            const TExpected<TVector<FRHITransientAllocation>, FRHIError> Allocations = Allocator->Allocate( Batch );
             Allocator->EndBatch();
             LUMEN_CHECK_TRUE( Allocations.HasValue() );
             for ( USize First = 0U; First < Allocations->size(); ++First )
             {
                 for ( USize Second = First + 1U; Second < Allocations->size(); ++Second )
                 {
-                    const auto &Left  = ( *Allocations )[First];
-                    const auto &Right = ( *Allocations )[Second];
+                    const FRHITransientAllocation &Left  = ( *Allocations )[First];
+                    const FRHITransientAllocation &Right = ( *Allocations )[Second];
                     if ( Left.Lifetime.Overlaps( Right.Lifetime ) )
                     {
                         LUMEN_CHECK_FALSE( RHIRangesOverlap( Left.Allocation.Offset, Left.Allocation.Size,

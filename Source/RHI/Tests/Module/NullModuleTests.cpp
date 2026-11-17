@@ -13,7 +13,7 @@ LUMEN_TEST( NullModule, DiscoversAdapterAndCreatesDevice )
 {
     Tests::FNullModule Module;
     LUMEN_CHECK_EQ( Module.GetApiVersion().Major, 1U );
-    const auto Adapters = Module.EnumerateAdapters();
+    const TExpected<TVector<FRHIAdapterInfo>, FRHIError> Adapters = Module.EnumerateAdapters();
     LUMEN_CHECK_TRUE( Adapters.HasValue() );
     LUMEN_CHECK_EQ( Adapters->size(), 1U );
     LUMEN_CHECK_TRUE( Module.CreateDevice( FRHIDeviceDesc{} ).HasValue() );

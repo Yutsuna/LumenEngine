@@ -13,9 +13,9 @@ namespace Lumen
 LUMEN_TEST( RHIReadbackAllocator, MapsAllocatedRangeAndRecycles )
 {
     Tests::FNullDevice Device;
-    auto Allocator  = *Device.CreateReadbackAllocator( 256ULL );
-    auto Allocation = Allocator->Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
-    auto Mapped     = Allocator->Map( *Allocation );
+    const TSharedRef<IRHIReadbackAllocator> Allocator         = *Device.CreateReadbackAllocator( 256ULL );
+    const TExpected<FRHIAllocation, FRHIError> Allocation     = Allocator->Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
+    const TExpected<FRHIReadbackAllocation, FRHIError> Mapped = Allocator->Map( *Allocation );
 
     LUMEN_CHECK_TRUE( Mapped.HasValue() );
     LUMEN_CHECK_EQ( Mapped->MappedData.size(), 32U );

@@ -184,7 +184,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Initi
     {
         ++Sequence;
         FEntry Entry{ .Pipeline = {}, .Bytes = GetKeyBytes( Key ), .LastUsed = Sequence };
-        const auto Inserted = Entries.emplace( Key, std::move( Entry ) );
+        const std::pair<TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator, Bool> Inserted =
+            Entries.emplace( Key, std::move( Entry ) );
         if ( not Inserted.second )
         {
             return TUnexpected<FRHIError>( CorruptedCacheError() );
@@ -202,7 +203,7 @@ const Lumen::FRHIPipelineCacheDesc &Lumen::Tests::FNullPipelineCache::GetDesc ()
 Lumen::TSharedPtr<Lumen::IRHIPipeline> Lumen::Tests::FNullPipelineCache::Find ( const FRHIPipelineCompatibility &InKey ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Found = Entries.find( InKey );
+    const TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Found = Entries.find( InKey );
     if ( Found == Entries.end() or not Found->second.Pipeline )
     {
         Stats.OnLookup( false );
@@ -219,7 +220,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Inser
 {
     if ( FaultPlan )
     {
-        if ( auto Error = FaultPlan->ShouldFail( "PipelineCacheInsert" ) )
+        if ( const TOptional<FRHIError> Error = FaultPlan->ShouldFail( "PipelineCacheInsert" ); Error.HasValue() )
         {
             return TUnexpected<FRHIError>( *Error );
         }
@@ -229,7 +230,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Inser
         return TUnexpected<FRHIError>( MakeRHIInvalidCache( "Pipeline cache key does not match the pipeline" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Existing = Entries.find( InKey );
+    const TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Existing = Entries.find( InKey );
     if ( Existing != Entries.end() )
     {
         Stats.OnRemove( Existing->second.Bytes );
@@ -250,7 +251,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Inser
 void Lumen::Tests::FNullPipelineCache::Remove ( const FRHIPipelineCompatibility &InKey ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Found = Entries.find( InKey );
+    const TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Found = Entries.find( InKey );
     if ( Found != Entries.end() )
     {
         Stats.OnRemove( Found->second.Bytes );
@@ -274,7 +275,7 @@ Lumen::TExpected<Lumen::TVector<Lumen::Byte>, Lumen::FRHIError> Lumen::Tests::FN
 {
     if ( FaultPlan )
     {
-        if ( auto Error = FaultPlan->ShouldFail( "PipelineCacheSerialize" ) )
+        if ( const TOptional<FRHIError> Error = FaultPlan->ShouldFail( "PipelineCacheSerialize" ); Error.HasValue() )
         {
             return TUnexpected<FRHIError>( *Error );
         }
@@ -341,8 +342,9 @@ Lumen::Bool Lumen::Tests::FNullPipelineCache::MakeRoom ( const UInt64 InBytes ) 
 
 void Lumen::Tests::FNullPipelineCache::EvictOne () noexcept
 {
-    auto Oldest = Entries.begin();
-    for ( auto Iterator = Entries.begin(); Iterator != Entries.end(); ++Iterator )
+    TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Oldest = Entries.begin();
+    for ( TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Iterator = Entries.begin();
+          Iterator != Entries.end(); ++Iterator )
     {
         if ( Iterator->second.LastUsed < Oldest->second.LastUsed )
         {

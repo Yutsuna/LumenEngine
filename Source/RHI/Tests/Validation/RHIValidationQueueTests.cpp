@@ -15,10 +15,10 @@ namespace
     LUMEN_TEST( RHIValidationQueue, RejectsNonExecutableListsAndMonotonicityViolations )
     {
         Tests::FRecordingDebugSink Sink;
-        auto Device    = Tests::Validation::MakeDevice( Sink );
-        auto Queue     = *Device->GetQueue( ERHIQueueType::Graphics, 0U );
-        auto Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List      = *Device->CreateCommandList( Allocator );
+        TSharedRef<IRHIDevice> Device              = Tests::Validation::MakeDevice( Sink );
+        TSharedRef<IRHIQueue> Queue                = *Device->GetQueue( ERHIQueueType::Graphics, 0U );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         FRHISubmitDesc Submit;
         Submit.CommandLists = { List };
         Submit.Completion   = { 1ULL };
@@ -27,8 +27,8 @@ namespace
         LUMEN_CHECK_TRUE( List->End().HasValue() );
         LUMEN_CHECK_TRUE( Queue->Submit( Submit ).HasValue() );
         LUMEN_CHECK_EQ( Queue->Submit( Submit ).Error().Code, ERHIErrorCode::ValidationFailed );
-        auto ComputeQueue = *Device->GetQueue( ERHIQueueType::Compute, 0U );
-        Submit.Completion = { 2ULL };
+        TSharedRef<IRHIQueue> ComputeQueue = *Device->GetQueue( ERHIQueueType::Compute, 0U );
+        Submit.Completion                  = { 2ULL };
         LUMEN_CHECK_EQ( ComputeQueue->Submit( Submit ).Error().Code, ERHIErrorCode::ValidationFailed );
         LUMEN_CHECK_TRUE( Sink.ContainsCode( static_cast<UInt32>( ERHIValidationMessageCode::InvalidQueueSubmission ) ) );
     }
@@ -36,15 +36,15 @@ namespace
     LUMEN_TEST( RHIValidationQueue, RejectsUnsignaledWaitsBeforeBackendSubmission )
     {
         Tests::FRecordingDebugSink Sink;
-        auto Device    = Tests::Validation::MakeDevice( Sink );
-        auto Queue     = *Device->GetQueue( ERHIQueueType::Graphics, 0U );
-        auto Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List      = *Device->CreateCommandList( Allocator );
+        TSharedRef<IRHIDevice> Device              = Tests::Validation::MakeDevice( Sink );
+        TSharedRef<IRHIQueue> Queue                = *Device->GetQueue( ERHIQueueType::Graphics, 0U );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         LUMEN_CHECK_TRUE( List->End().HasValue() );
         FRHISemaphoreDesc SemaphoreDesc;
-        SemaphoreDesc.Type = ERHISemaphoreType::Timeline;
-        auto Semaphore     = *Device->CreateSemaphore( SemaphoreDesc );
+        SemaphoreDesc.Type                  = ERHISemaphoreType::Timeline;
+        TSharedRef<IRHISemaphore> Semaphore = *Device->CreateSemaphore( SemaphoreDesc );
         FRHISubmitDesc Submit;
         Submit.CommandLists = { List };
         Submit.Waits.push_back( { .Semaphore = Semaphore, .Value = 1ULL } );

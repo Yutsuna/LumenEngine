@@ -29,7 +29,7 @@ Lumen::TSharedRef<Lumen::IRHIModule> Lumen::Tests::FNullConformanceDeviceFactory
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDevice>, Lumen::FRHIError>
 Lumen::Tests::FNullConformanceDeviceFactory::CreateDevice ( const Bool bEnableValidation ) noexcept
 {
-    auto Device = GetModule()->CreateDevice( FRHIDeviceDesc{} );
+    TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = GetModule()->CreateDevice( FRHIDeviceDesc{} );
     if ( not Device or not bEnableValidation )
     {
         return Device;

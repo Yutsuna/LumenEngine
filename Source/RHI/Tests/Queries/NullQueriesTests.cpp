@@ -33,8 +33,8 @@ namespace
     LUMEN_TEST( NullQueries, HonorsAvailabilityAndFaultInjection )
     {
         FRHIQueryPoolDesc Desc;
-        Desc.Type      = ERHIQueryType::Timestamp;
-        auto FaultPlan = MakeShared<Tests::FNullFaultPlan>();
+        Desc.Type                                   = ERHIQueryType::Timestamp;
+        TSharedRef<Tests::FNullFaultPlan> FaultPlan = MakeShared<Tests::FNullFaultPlan>();
         Tests::FNullQueryPool Pool( Desc, FaultPlan, FRHIObjectId{ 2ULL } );
         Pool.SetNextAvailability( { 10ULL } );
         LUMEN_CHECK_TRUE( Pool.Begin( 0U ).HasValue() );

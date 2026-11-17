@@ -19,7 +19,7 @@ template <typename PayloadType>
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandStream::Write ( const UInt32 InOpcode,
                                                                            const PayloadType &InPayload ) noexcept
 {
-    const auto *Bytes = reinterpret_cast<const Byte *>( std::addressof( InPayload ) );
+    const Byte *Bytes = reinterpret_cast<const Byte *>( std::addressof( InPayload ) );
     return WritePayload( InOpcode, TSpan<const Byte>( Bytes, sizeof( PayloadType ) ) );
 }
 

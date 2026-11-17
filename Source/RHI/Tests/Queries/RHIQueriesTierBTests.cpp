@@ -18,9 +18,9 @@ namespace
     {
         Tests::FNullDevice Device;
         FRHIQueryPoolDesc Desc;
-        auto Pool      = *Device.CreateQueryPool( Desc );
-        auto Allocator = *Device.CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List      = *Device.CreateCommandList( Allocator );
+        TSharedRef<IRHIQueryPool> Pool             = *Device.CreateQueryPool( Desc );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device.CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device.CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         LUMEN_CHECK_TRUE( List->BeginQuery( *Pool, 0U ).HasValue() );
         LUMEN_CHECK_HAS_ERROR( List->BeginQuery( *Pool, 0U ) );

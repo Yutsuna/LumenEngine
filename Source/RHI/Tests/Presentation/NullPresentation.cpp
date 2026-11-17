@@ -77,7 +77,7 @@ Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::Tests::FNull
     }
     if ( FaultPlan )
     {
-        if ( auto Error = FaultPlan->ShouldFail( "AcquireNextImage" ) )
+        if ( const TOptional<FRHIError> Error = FaultPlan->ShouldFail( "AcquireNextImage" ) )
         {
             return TUnexpected<FRHIError>( *Error );
         }
@@ -109,13 +109,13 @@ Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::Tests::FNull
     }
     if ( PresentSemaphores[Selected]->GetValue() != 0ULL )
     {
-        const auto Reclaimed = PresentSemaphores[Selected]->Wait( 1ULL, 0.0 );
+        const TExpected<void, FRHIError> Reclaimed = PresentSemaphores[Selected]->Wait( 1ULL, 0.0 );
         if ( not Reclaimed )
         {
             return TUnexpected<FRHIError>( Reclaimed.Error() );
         }
     }
-    const auto Signaled = AcquireSemaphores[Selected]->Signal( 1ULL );
+    const TExpected<void, FRHIError> Signaled = AcquireSemaphores[Selected]->Signal( 1ULL );
     if ( not Signaled )
     {
         return TUnexpected<FRHIError>( Signaled.Error() );
@@ -145,7 +145,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Present (
     }
     if ( FaultPlan )
     {
-        if ( auto Error = FaultPlan->ShouldFail( "Present" ) )
+        if ( const TOptional<FRHIError> Error = FaultPlan->ShouldFail( "Present" ) )
         {
             return TUnexpected<FRHIError>( *Error );
         }
@@ -172,7 +172,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Present (
         {
             return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Render-complete semaphore must be binary" ) );
         }
-        const auto Waited = InRenderComplete->Wait( 1ULL, 0.0 );
+        const TExpected<void, FRHIError> Waited = InRenderComplete->Wait( 1ULL, 0.0 );
         if ( not Waited )
         {
             return Waited;
@@ -180,13 +180,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Present (
     }
     if ( AcquireSemaphores[Index]->GetValue() != 0ULL )
     {
-        const auto Consumed = AcquireSemaphores[Index]->Wait( 1ULL, 0.0 );
+        const TExpected<void, FRHIError> Consumed = AcquireSemaphores[Index]->Wait( 1ULL, 0.0 );
         if ( not Consumed )
         {
             return Consumed;
         }
     }
-    const auto Signaled = PresentSemaphores[Index]->Signal( 1ULL );
+    const TExpected<void, FRHIError> Signaled = PresentSemaphores[Index]->Signal( 1ULL );
     if ( not Signaled )
     {
         return Signaled;
@@ -207,7 +207,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Resize ( 
     }
     if ( FaultPlan )
     {
-        if ( auto Error = FaultPlan->ShouldFail( "Resize" ) )
+        if ( const TOptional<FRHIError> Error = FaultPlan->ShouldFail( "Resize" ) )
         {
             return TUnexpected<FRHIError>( *Error );
         }
@@ -220,17 +220,17 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Resize ( 
                                                       "Cannot resize while an image is acquired" ) );
         }
     }
-    FRHISwapchainDesc NewDesc     = Desc;
-    NewDesc.Extent                = InExtent;
-    NewDesc.Surface.InitialExtent = InExtent;
-    const auto Valid              = NewDesc.Validate( Capabilities );
+    FRHISwapchainDesc NewDesc              = Desc;
+    NewDesc.Extent                         = InExtent;
+    NewDesc.Surface.InitialExtent          = InExtent;
+    const TExpected<void, FRHIError> Valid = NewDesc.Validate( Capabilities );
     if ( not Valid )
     {
         return Valid;
     }
-    const FRHISwapchainDesc PreviousDesc = Desc;
-    Desc                                 = NewDesc;
-    const auto Rebuilt                   = RebuildImages();
+    const FRHISwapchainDesc PreviousDesc     = Desc;
+    Desc                                     = NewDesc;
+    const TExpected<void, FRHIError> Rebuilt = RebuildImages();
     if ( not Rebuilt )
     {
         Desc = PreviousDesc;
@@ -269,23 +269,23 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::RebuildIm
     for ( UInt32 Index = 0U; Index < Desc.ImageCount; ++Index )
     {
         FRHITextureDesc TextureDesc;
-        TextureDesc.Extent       = Desc.Extent;
-        TextureDesc.Format       = Desc.Format;
-        TextureDesc.Usage        = Desc.ImageUsage;
-        TextureDesc.InitialState = ERHIResourceState::Present;
-        auto Texture             = Device->CreateTexture( TextureDesc );
+        TextureDesc.Extent                                          = Desc.Extent;
+        TextureDesc.Format                                          = Desc.Format;
+        TextureDesc.Usage                                           = Desc.ImageUsage;
+        TextureDesc.InitialState                                    = ERHIResourceState::Present;
+        const TExpected<TSharedRef<IRHITexture>, FRHIError> Texture = Device->CreateTexture( TextureDesc );
         if ( not Texture )
         {
             return TUnexpected<FRHIError>( Texture.Error() );
         }
         FRHISemaphoreDesc SemaphoreDesc;
-        SemaphoreDesc.Type = ERHISemaphoreType::Binary;
-        auto Acquire       = Device->CreateSemaphore( SemaphoreDesc );
+        SemaphoreDesc.Type                                            = ERHISemaphoreType::Binary;
+        const TExpected<TSharedRef<IRHISemaphore>, FRHIError> Acquire = Device->CreateSemaphore( SemaphoreDesc );
         if ( not Acquire )
         {
             return TUnexpected<FRHIError>( Acquire.Error() );
         }
-        auto Present = Device->CreateSemaphore( SemaphoreDesc );
+        const TExpected<TSharedRef<IRHISemaphore>, FRHIError> Present = Device->CreateSemaphore( SemaphoreDesc );
         if ( not Present )
         {
             return TUnexpected<FRHIError>( Present.Error() );

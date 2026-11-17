@@ -13,8 +13,8 @@ namespace Lumen
 LUMEN_TEST( RHIUploadAllocator, ProvidesWritableAlignedStorage )
 {
     Tests::FNullDevice Device;
-    auto Allocator  = *Device.CreateUploadAllocator( 256ULL );
-    auto Allocation = Allocator->Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
+    const TSharedRef<IRHIUploadAllocator> Allocator       = *Device.CreateUploadAllocator( 256ULL );
+    TExpected<FRHIUploadAllocation, FRHIError> Allocation = Allocator->Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
 
     LUMEN_CHECK_TRUE( Allocation.HasValue() );
     Allocation->MappedData[0] = 0xABU;

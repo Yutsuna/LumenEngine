@@ -15,13 +15,13 @@ namespace
     LUMEN_TEST( RHIRenderingDesc, ValidatesAttachmentsClearTypesAndArea )
     {
         Tests::FNullDevice Device;
-        auto Texture = *Device.CreateTexture( { .Extent         = { 16U, 8U, 1U },
-                                                .Format         = ERHIFormat::RGBA8Unorm,
-                                                .Usage          = ERHIResourceUsage::RenderTarget,
-                                                .OptimizedClear = {} } );
+        TSharedRef<IRHITexture> Texture = *Device.CreateTexture( { .Extent         = { 16U, 8U, 1U },
+                                                                   .Format         = ERHIFormat::RGBA8Unorm,
+                                                                   .Usage          = ERHIResourceUsage::RenderTarget,
+                                                                   .OptimizedClear = {} } );
         FRHITextureViewDesc ViewDesc;
-        ViewDesc.Texture = Texture;
-        auto View        = *Device.CreateTextureView( ViewDesc );
+        ViewDesc.Texture                 = Texture;
+        TSharedRef<IRHITextureView> View = *Device.CreateTextureView( ViewDesc );
         FRHIRenderingDesc Desc;
         Desc.Area = { 0, 0, 16U, 8U };
         Desc.ColorAttachments.push_back(

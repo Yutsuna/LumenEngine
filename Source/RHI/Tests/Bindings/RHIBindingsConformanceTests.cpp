@@ -19,32 +19,34 @@ namespace
 {
     LUMEN_TEST( RHIBindingsConformance, CreatesLayoutSetAndDescriptorAllocator )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         FRHIBindingLayoutDesc LayoutDesc;
         LayoutDesc.Entries.push_back( { .Slot = 0U, .Type = ERHIBindingType::ReadOnlyBuffer } );
-        auto Layout = ( *Device )->CreateBindingLayout( LayoutDesc );
+        TExpected<TSharedRef<IRHIBindingLayout>, FRHIError> Layout = ( *Device )->CreateBindingLayout( LayoutDesc );
         LUMEN_CHECK_TRUE( Layout.HasValue() );
-        auto Set = ( *Device )->CreateBindingSet( *Layout );
+        TExpected<TSharedRef<IRHIBindingSet>, FRHIError> Set = ( *Device )->CreateBindingSet( *Layout );
         LUMEN_CHECK_TRUE( Set.HasValue() );
         LUMEN_CHECK_EQ( ( *Set )->GetLayout()->GetId().GetValue(), ( *Layout )->GetId().GetValue() );
-        auto Buffer = ( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::ShaderResource } );
+        TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
+            ( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::ShaderResource } );
         LUMEN_CHECK_TRUE( Buffer.HasValue() );
         const FRHIBindingWrite Write{ .Slot = 0U, .Resource = FRHIBufferBinding{ .Buffer = *Buffer } };
         LUMEN_CHECK_TRUE( ( *Set )->Write( TSpan<const FRHIBindingWrite>( &Write, 1U ) ).HasValue() );
         LUMEN_CHECK_TRUE( ( *Set )->IsDirty() );
         ( *Set )->ClearDirty();
         LUMEN_CHECK_FALSE( ( *Set )->IsDirty() );
-        auto Allocator = ( *Device )->CreateDescriptorAllocator( { .InitialCapacity = 4U, .MaximumCapacity = 8U } );
+        TExpected<TSharedRef<IRHIDescriptorAllocator>, FRHIError> Allocator =
+            ( *Device )->CreateDescriptorAllocator( { .InitialCapacity = 4U, .MaximumCapacity = 8U } );
         LUMEN_CHECK_TRUE( Allocator.HasValue() );
-        auto Allocation = ( *Allocator )->Allocate( 2U );
+        TExpected<FRHIDescriptorAllocation, FRHIError> Allocation = ( *Allocator )->Allocate( 2U );
         LUMEN_CHECK_TRUE( Allocation.HasValue() );
         LUMEN_CHECK_EQ( Allocation->Count, 2U );
         LUMEN_CHECK_TRUE( ( *Allocator )->Free( *Allocation ).HasValue() );
     }
     LUMEN_TEST( RHIBindingsConformance, RejectsInvalidLayoutsAndAllocatorPolicies )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         FRHIBindingLayoutDesc LayoutDesc;
         LayoutDesc.Entries.push_back( { .Count = 0U } );
@@ -54,55 +56,57 @@ namespace
 
     LUMEN_TEST( RHIBindingsConformance, RejectsInvalidWritesAtomically )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         FRHIBindingLayoutDesc LayoutDesc;
         LayoutDesc.Entries.push_back( { .Slot = 0U, .Type = ERHIBindingType::ReadOnlyBuffer } );
-        auto Layout = ( *Device )->CreateBindingLayout( LayoutDesc );
+        TExpected<TSharedRef<IRHIBindingLayout>, FRHIError> Layout = ( *Device )->CreateBindingLayout( LayoutDesc );
         LUMEN_CHECK_TRUE( Layout.HasValue() );
-        auto Set = ( *Device )->CreateBindingSet( *Layout );
+        TExpected<TSharedRef<IRHIBindingSet>, FRHIError> Set = ( *Device )->CreateBindingSet( *Layout );
         LUMEN_CHECK_TRUE( Set.HasValue() );
         ( *Set )->ClearDirty();
 
-        auto Sampler = ( *Device )->CreateSampler( FRHISamplerDesc{} );
+        TExpected<TSharedRef<IRHISampler>, FRHIError> Sampler = ( *Device )->CreateSampler( FRHISamplerDesc{} );
         LUMEN_CHECK_TRUE( Sampler.HasValue() );
         const FRHIBindingWrite WrongType{ .Slot = 0U, .Resource = FRHISamplerBinding{ .Sampler = *Sampler } };
-        const auto WrongTypeResult = ( *Set )->Write( TSpan<const FRHIBindingWrite>( &WrongType, 1U ) );
+        const TExpected<void, FRHIError> WrongTypeResult = ( *Set )->Write( TSpan<const FRHIBindingWrite>( &WrongType, 1U ) );
         LUMEN_CHECK_HAS_ERROR( WrongTypeResult );
         LUMEN_CHECK_EQ( WrongTypeResult.Error().Condition, ERHIErrorCondition::Binding );
         LUMEN_CHECK_FALSE( ( *Set )->IsDirty() );
 
-        auto Buffer = ( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::ShaderResource } );
+        TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
+            ( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::ShaderResource } );
         LUMEN_CHECK_TRUE( Buffer.HasValue() );
         const FRHIBindingWrite UnknownSlot{ .Slot = 99U, .Resource = FRHIBufferBinding{ .Buffer = *Buffer } };
-        const auto UnknownSlotResult = ( *Set )->Write( TSpan<const FRHIBindingWrite>( &UnknownSlot, 1U ) );
+        const TExpected<void, FRHIError> UnknownSlotResult = ( *Set )->Write( TSpan<const FRHIBindingWrite>( &UnknownSlot, 1U ) );
         LUMEN_CHECK_HAS_ERROR( UnknownSlotResult );
         LUMEN_CHECK_FALSE( ( *Set )->IsDirty() );
     }
 
     LUMEN_TEST( RHIBindingsConformance, DescriptorRangesExhaustRecycleAndReset )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
-        auto Allocator = ( *Device )->CreateDescriptorAllocator( { .InitialCapacity = 4U, .MaximumCapacity = 8U } );
+        TExpected<TSharedRef<IRHIDescriptorAllocator>, FRHIError> Allocator =
+            ( *Device )->CreateDescriptorAllocator( { .InitialCapacity = 4U, .MaximumCapacity = 8U } );
         LUMEN_CHECK_TRUE( Allocator.HasValue() );
-        auto First = ( *Allocator )->Allocate( 4U );
+        TExpected<FRHIDescriptorAllocation, FRHIError> First = ( *Allocator )->Allocate( 4U );
         LUMEN_CHECK_TRUE( First.HasValue() );
-        auto Growth = ( *Allocator )->Allocate( 4U );
+        TExpected<FRHIDescriptorAllocation, FRHIError> Growth = ( *Allocator )->Allocate( 4U );
         LUMEN_CHECK_TRUE( Growth.HasValue() );
         LUMEN_CHECK_EQ( Growth->Offset, 4U );
-        const auto Exhausted = ( *Allocator )->Allocate( 1U );
+        const TExpected<FRHIDescriptorAllocation, FRHIError> Exhausted = ( *Allocator )->Allocate( 1U );
         LUMEN_CHECK_HAS_ERROR( Exhausted );
         LUMEN_CHECK_EQ( Exhausted.Error().Code, ERHIErrorCode::OutOfMemory );
         LUMEN_CHECK_EQ( Exhausted.Error().Condition, ERHIErrorCondition::Binding );
         LUMEN_CHECK_TRUE( ( *Allocator )->Free( *First ).HasValue() );
-        auto Reused = ( *Allocator )->Allocate( 4U );
+        TExpected<FRHIDescriptorAllocation, FRHIError> Reused = ( *Allocator )->Allocate( 4U );
         LUMEN_CHECK_TRUE( Reused.HasValue() );
         LUMEN_CHECK_EQ( Reused->Offset, First->Offset );
         LUMEN_CHECK_TRUE( ( *Allocator )->Free( *Reused ).HasValue() );
         LUMEN_CHECK_TRUE( ( *Allocator )->Free( *Growth ).HasValue() );
         ( *Allocator )->Reset();
-        auto AfterReset = ( *Allocator )->Allocate( 4U );
+        TExpected<FRHIDescriptorAllocation, FRHIError> AfterReset = ( *Allocator )->Allocate( 4U );
         LUMEN_CHECK_TRUE( AfterReset.HasValue() );
         LUMEN_CHECK_EQ( AfterReset->Offset, 0U );
         LUMEN_CHECK_TRUE( ( *Allocator )->Free( *AfterReset ).HasValue() );
@@ -110,11 +114,11 @@ namespace
 
     LUMEN_TEST( RHIBindingsConformance, BindlessLayoutsFollowCapabilityNegotiation )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         FRHIBindingLayoutDesc LayoutDesc;
         LayoutDesc.Entries.push_back( { .Slot = 0U, .bBindless = true } );
-        auto Layout = ( *Device )->CreateBindingLayout( LayoutDesc );
+        TExpected<TSharedRef<IRHIBindingLayout>, FRHIError> Layout = ( *Device )->CreateBindingLayout( LayoutDesc );
         if ( ( *Device )->GetCapabilities().Supports( ERHICapabilityFlags::BindlessResources ) )
         {
             LUMEN_CHECK_TRUE( Layout.HasValue() );

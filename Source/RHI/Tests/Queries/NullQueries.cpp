@@ -39,7 +39,7 @@ Lumen::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
 {
     if ( FaultPlan )
     {
-        if ( auto Error = FaultPlan->ShouldFail( "ReadResults" ) )
+        if ( TOptional<FRHIError> Error = FaultPlan->ShouldFail( "ReadResults" ) )
         {
             return TUnexpected<FRHIError>( *Error );
         }
@@ -53,7 +53,7 @@ Lumen::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( UInt32 QueryOffset = 0U; QueryOffset < InQueryCount; ++QueryOffset )
     {
-        const auto &Entry = Entries[InFirstQuery + QueryOffset];
+        const FEntry &Entry = Entries[InFirstQuery + QueryOffset];
         if ( not Entry.bAvailable or not IsRHICompletionReached( InCompleted, Entry.Availability ) )
         {
             return TUnexpected<FRHIError>(
@@ -69,7 +69,7 @@ Lumen::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::Begin ( const UInt32 InIndex ) noexcept
 {
-    if ( auto Error = CheckFault( "BeginQuery" ) )
+    if ( TOptional<FRHIError> Error = CheckFault( "BeginQuery" ) )
     {
         return TUnexpected<FRHIError>( *Error );
     }
@@ -78,7 +78,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::Begin ( c
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidQuery( "Query index is out of range" ) );
     }
-    auto &Entry = Entries[InIndex];
+    FEntry &Entry = Entries[InIndex];
     if ( Entry.bActive )
     {
         return TUnexpected<FRHIError>(
@@ -91,7 +91,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::Begin ( c
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::End ( const UInt32 InIndex ) noexcept
 {
-    if ( auto Error = CheckFault( "EndQuery" ) )
+    if ( TOptional<FRHIError> Error = CheckFault( "EndQuery" ) )
     {
         return TUnexpected<FRHIError>( *Error );
     }
@@ -100,7 +100,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::End ( con
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidQuery( "Query index is out of range" ) );
     }
-    auto &Entry = Entries[InIndex];
+    FEntry &Entry = Entries[InIndex];
     if ( not Entry.bActive )
     {
         return TUnexpected<FRHIError>(
@@ -138,7 +138,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::SetQueryV
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidQuery( "Cannot set an invalid or active query result" ) );
     }
-    auto &Entry        = Entries[InIndex];
+    FEntry &Entry      = Entries[InIndex];
     Entry.Values[0]    = InValue;
     Entry.Availability = InAvailability;
     Entry.bAvailable   = true;

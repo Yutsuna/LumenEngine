@@ -24,17 +24,17 @@ namespace
     LUMEN_TEST( RHIObjectCache, ReusesValuesAndCountsHitsAndMisses )
     {
         FCache Cache( 4U );
-        const auto Factory = []
+        const TFunction<TExpected<TSharedRef<FCachedValue>, FRHIError>()> Factory = []
         {
             return TExpected<TSharedRef<FCachedValue>, FRHIError>( MakeShared<FCachedValue>( 7U ) );
         };
-        auto First = Cache.GetOrCreate( 7U, Factory, 16ULL );
+        TExpected<TSharedPtr<FCachedValue>, FRHIError> First = Cache.GetOrCreate( 7U, Factory, 16ULL );
         LUMEN_CHECK_TRUE( First.HasValue() );
-        auto Second = Cache.GetOrCreate( 7U, Factory, 16ULL );
+        TExpected<TSharedPtr<FCachedValue>, FRHIError> Second = Cache.GetOrCreate( 7U, Factory, 16ULL );
         LUMEN_CHECK_TRUE( Second.HasValue() );
         LUMEN_CHECK_TRUE( *First == *Second );
         LUMEN_CHECK_EQ( ( *First )->Value, 7U );
-        const auto Stats = Cache.GetStats();
+        const FRHICacheStats Stats = Cache.GetStats();
         LUMEN_CHECK_EQ( Stats.Hits, 1ULL );
         LUMEN_CHECK_EQ( Stats.Misses, 1ULL );
         LUMEN_CHECK_EQ( Stats.EntryCount, 1ULL );
@@ -45,14 +45,14 @@ namespace
     LUMEN_TEST( RHIObjectCache, EvictsTheLeastRecentlyUsedEntry )
     {
         FCache Cache( 2U );
-        const auto Factory = [] ( const UInt32 Key )
+        const TFunction<TExpected<TSharedRef<FCachedValue>, FRHIError>( const UInt32 )> Factory = [] ( const UInt32 Key )
         {
             return TExpected<TSharedRef<FCachedValue>, FRHIError>( MakeShared<FCachedValue>( Key ) );
         };
         LUMEN_CHECK_TRUE( Cache.Store( 1U, MakeShared<FCachedValue>( 1U ), 8ULL ).HasValue() );
         LUMEN_CHECK_TRUE( Cache.Store( 2U, MakeShared<FCachedValue>( 2U ), 8ULL ).HasValue() );
         LUMEN_CHECK_TRUE( Cache.Find( 1U ).IsValid() );
-        auto Third = Cache.GetOrCreate( 3U, [&Factory]
+        TExpected<TSharedPtr<FCachedValue>, FRHIError> Third = Cache.GetOrCreate( 3U, [&Factory]
         {
             return Factory( 3U );
         }, 8ULL );
@@ -69,7 +69,7 @@ namespace
     LUMEN_TEST( RHIObjectCache, DoesNotInsertFailedOrRejectedCreations )
     {
         FCache Cache( 1U, ERHICacheEvictionPolicy::None );
-        const auto Failure = Cache.GetOrCreate( 9U, []
+        const TExpected<TSharedPtr<FCachedValue>, FRHIError> Failure = Cache.GetOrCreate( 9U, []
         {
             return TExpected<TSharedRef<FCachedValue>, FRHIError>(
                 TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Cache, "factory" ) ) );
@@ -77,7 +77,7 @@ namespace
         LUMEN_CHECK_HAS_ERROR( Failure );
         LUMEN_CHECK_EQ( Cache.GetEntryCount(), 0U );
         LUMEN_CHECK_TRUE( Cache.Store( 1U, MakeShared<FCachedValue>( 1U ), 8ULL ).HasValue() );
-        auto Rejected = Cache.GetOrCreate( 2U, []
+        TExpected<TSharedPtr<FCachedValue>, FRHIError> Rejected = Cache.GetOrCreate( 2U, []
         {
             return TExpected<TSharedRef<FCachedValue>, FRHIError>( MakeShared<FCachedValue>( 2U ) );
         }, 8ULL );

@@ -13,9 +13,9 @@ namespace
     LUMEN_TEST( RHIValidationDefrag, PreservesEmptyPlansAndRejectsInvalidMoves )
     {
         Tests::FRecordingDebugSink Sink;
-        auto Device       = Tests::Validation::MakeDevice( Sink );
-        auto Defragmenter = *Device->CreateDefragmenter();
-        auto Empty        = *Defragmenter->BuildPlan( {} );
+        TSharedRef<IRHIDevice> Device             = Tests::Validation::MakeDevice( Sink );
+        TSharedRef<IRHIDefragmenter> Defragmenter = *Device->CreateDefragmenter();
+        FRHIDefragPlan Empty                      = *Defragmenter->BuildPlan( {} );
         LUMEN_CHECK_TRUE( Defragmenter->Execute( Empty ).HasValue() );
         FRHIAllocation Source;
         Source.Id        = FRHIAllocationId{ 1ULL };

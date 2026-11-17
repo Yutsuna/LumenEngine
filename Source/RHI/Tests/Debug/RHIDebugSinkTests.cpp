@@ -17,7 +17,7 @@ namespace
         Tests::FRecordingDebugSink Sink;
         Sink.Emit( FRHIDebugMessage( ERHIDebugSeverity::Info, ERHIDebugCategory::General, 1U, "first" ) );
         Sink.Emit( FRHIDebugMessage( ERHIDebugSeverity::Error, ERHIDebugCategory::Resource, 2U, "second" ) );
-        const auto Messages = Sink.GetMessages();
+        const TVector<FRHIDebugMessage> Messages = Sink.GetMessages();
         LUMEN_CHECK_EQ( Messages.size(), 2U );
         LUMEN_CHECK_EQ( Messages[0].Code, 1U );
         LUMEN_CHECK_EQ( Messages[1].Code, 2U );

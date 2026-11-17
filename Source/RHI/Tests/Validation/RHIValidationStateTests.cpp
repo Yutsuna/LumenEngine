@@ -14,13 +14,13 @@ namespace
     LUMEN_TEST( RHIValidationState, TracksCategoriesAndRemovesDestroyedObjects )
     {
         Tests::FRecordingDebugSink Sink;
-        auto Device      = Tests::Validation::MakeDevice( Sink );
-        auto *Validation = dynamic_cast<FRHIValidationDevice *>( Device.Get() );
+        TSharedRef<IRHIDevice> Device = Tests::Validation::MakeDevice( Sink );
+        auto *Validation              = dynamic_cast<FRHIValidationDevice *>( Device.Get() );
         LUMEN_CHECK_TRUE( Validation != nullptr );
         const auto &State        = Validation->GetState();
         const USize InitialCount = State->GetLiveObjectCount();
         {
-            auto Buffer = Tests::Validation::MakeBuffer( Device );
+            TSharedRef<IRHIBuffer> Buffer = Tests::Validation::MakeBuffer( Device );
             LUMEN_CHECK_TRUE( State->Contains( *Buffer ) );
             LUMEN_CHECK_TRUE( State->ValidateObject( *Buffer, ERHIValidationObjectKind::Buffer ).HasValue() );
             LUMEN_CHECK_HAS_ERROR( State->ValidateObject( *Buffer, ERHIValidationObjectKind::Texture ) );
@@ -33,10 +33,10 @@ namespace
     LUMEN_TEST( RHIValidationState, SupportsConcurrentRegistryReaders )
     {
         Tests::FRecordingDebugSink Sink;
-        auto Device       = Tests::Validation::MakeDevice( Sink );
-        auto Buffer       = Tests::Validation::MakeBuffer( Device );
-        auto *Validation  = dynamic_cast<FRHIValidationDevice *>( Device.Get() );
-        const auto &State = Validation->GetState();
+        TSharedRef<IRHIDevice> Device = Tests::Validation::MakeDevice( Sink );
+        TSharedRef<IRHIBuffer> Buffer = Tests::Validation::MakeBuffer( Device );
+        auto *Validation              = dynamic_cast<FRHIValidationDevice *>( Device.Get() );
+        const auto &State             = Validation->GetState();
         TAtomic<UInt32> Failures( 0U );
         TVector<FThread> Readers;
         for ( UInt32 Index = 0U; Index < 4U; ++Index )

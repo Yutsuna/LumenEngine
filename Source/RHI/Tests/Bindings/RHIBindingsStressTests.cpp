@@ -24,9 +24,9 @@ namespace
         Tests::FNullDevice Device;
         FRHIBindingLayoutDesc LayoutDesc;
         LayoutDesc.Entries.push_back( { .Slot = 0U, .Type = ERHIBindingType::ReadOnlyBuffer } );
-        auto Layout = *Device.CreateBindingLayout( LayoutDesc );
-        auto Set    = *Device.CreateBindingSet( Layout );
-        auto Buffer = *Device.CreateBuffer( { .Size = 256ULL, .Usage = ERHIResourceUsage::ShaderResource } );
+        TSharedRef<IRHIBindingLayout> Layout = *Device.CreateBindingLayout( LayoutDesc );
+        TSharedRef<IRHIBindingSet> Set       = *Device.CreateBindingSet( Layout );
+        TSharedRef<IRHIBuffer> Buffer = *Device.CreateBuffer( { .Size = 256ULL, .Usage = ERHIResourceUsage::ShaderResource } );
         Set->ClearDirty();
         TAtomic<UInt32> Failures{ 0U };
         TVector<FThread> Workers;
@@ -60,7 +60,8 @@ namespace
     LUMEN_TEST( RHIBindingsStress, ConcurrentDescriptorRangesNeverOverlapAndRecycle )
     {
         Tests::FNullDevice Device;
-        auto Allocator = *Device.CreateDescriptorAllocator( { .InitialCapacity = 256U, .MaximumCapacity = 256U } );
+        TSharedRef<IRHIDescriptorAllocator> Allocator =
+            *Device.CreateDescriptorAllocator( { .InitialCapacity = 256U, .MaximumCapacity = 256U } );
         TVector<FRHIDescriptorAllocation> Registry;
         HAL::FPlatformRecursiveSharedMutex RegistryMutex;
         TAtomic<UInt32> Failures{ 0U };
@@ -97,7 +98,8 @@ namespace
                     }
                     else
                     {
-                        auto Allocation = Allocator->Allocate( static_cast<UInt32>( Random.Next( 8ULL ) + 1ULL ) );
+                        TExpected<FRHIDescriptorAllocation, FRHIError> Allocation =
+                            Allocator->Allocate( static_cast<UInt32>( Random.Next( 8ULL ) + 1ULL ) );
                         if ( Allocation )
                         {
                             HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( RegistryMutex );
@@ -140,12 +142,12 @@ namespace
         }
         LUMEN_CHECK_TRUE( Registry.empty() );
         LUMEN_CHECK_EQ( Failures.load(), 0U );
-        auto Full = Allocator->Allocate( 256U );
+        TExpected<FRHIDescriptorAllocation, FRHIError> Full = Allocator->Allocate( 256U );
         LUMEN_CHECK_TRUE( Full.HasValue() );
         LUMEN_CHECK_HAS_ERROR( Allocator->Allocate( 1U ) );
         LUMEN_CHECK_TRUE( Allocator->Free( *Full ).HasValue() );
         Allocator->Reset();
-        auto AfterReset = Allocator->Allocate( 256U );
+        TExpected<FRHIDescriptorAllocation, FRHIError> AfterReset = Allocator->Allocate( 256U );
         LUMEN_CHECK_TRUE( AfterReset.HasValue() );
         LUMEN_CHECK_TRUE( Allocator->Free( *AfterReset ).HasValue() );
     }

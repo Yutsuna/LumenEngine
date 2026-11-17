@@ -43,12 +43,12 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
     }
     if ( FaultPlan )
     {
-        if ( auto Error = FaultPlan->ShouldFail( "Submit" ) )
+        if ( const TOptional<FRHIError> Error = FaultPlan->ShouldFail( "Submit" ) )
         {
             return TUnexpected<FRHIError>( *Error );
         }
     }
-    auto Valid = InDesc.Validate();
+    const TExpected<void, FRHIError> Valid = InDesc.Validate();
     if ( not Valid )
     {
         return Valid;
@@ -77,7 +77,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
     {
         if ( Wait.Semaphore->GetDesc().Type == ERHISemaphoreType::Binary )
         {
-            const auto Result = Wait.Semaphore->Wait( 1ULL, 0.0 );
+            const TExpected<void, FRHIError> Result = Wait.Semaphore->Wait( 1ULL, 0.0 );
             if ( not Result )
             {
                 return Result;
@@ -86,7 +86,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
     }
     for ( const auto &List : InDesc.CommandLists )
     {
-        const auto Result = List->MarkPending( InDesc.Completion );
+        const TExpected<void, FRHIError> Result = List->MarkPending( InDesc.Completion );
         if ( not Result )
         {
             return Result;
@@ -94,7 +94,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
     }
     for ( const auto &Signal : InDesc.Signals )
     {
-        const auto Result = Signal.Semaphore->Signal( Signal.Value );
+        const TExpected<void, FRHIError> Result = Signal.Semaphore->Signal( Signal.Value );
         if ( not Result )
         {
             return Result;
@@ -104,7 +104,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
     ++SubmitCount;
     for ( const auto &List : InDesc.CommandLists )
     {
-        const auto Result = List->MarkCompleted( Completed );
+        const TExpected<void, FRHIError> Result = List->MarkCompleted( Completed );
         if ( not Result )
         {
             return Result;
@@ -132,7 +132,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Wait ( const 
         return TUnexpected<FRHIError>( MakeRHIInvalidQueue( "Negative queue timeout" ) );
     }
     HAL::TUniqueLock<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Reached = [this, InValue]
+    const TFunction<Bool()> Reached = [this, InValue]
     {
         return bLost or IsRHICompletionReached( Completed, InValue );
     };

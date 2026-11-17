@@ -17,11 +17,11 @@ namespace
         UInt32 First  = 0U;
         UInt32 Second = 0U;
 
-        const auto IncrementFirst = [&First]
+        const TFunction<void()> IncrementFirst = [&First]
         {
             ++First;
         };
-        const auto IncrementSecond = [&Second]
+        const TFunction<void()> IncrementSecond = [&Second]
         {
             ++Second;
         };
@@ -45,7 +45,7 @@ namespace
         FRHIDeferredReleaseQueue Queue;
         UInt32 Calls = 0U;
 
-        const auto IncrementCalls = [&Calls]
+        const TFunction<void()> IncrementCalls = [&Calls]
         {
             ++Calls;
         };

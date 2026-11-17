@@ -13,10 +13,10 @@ namespace
     LUMEN_TEST( RHIValidationTransition, RejectsMismatchedBufferStateWithoutRecording )
     {
         Tests::FRecordingDebugSink Sink;
-        auto Device    = Tests::Validation::MakeDevice( Sink );
-        auto Buffer    = Tests::Validation::MakeBuffer( Device, 64ULL, ERHIResourceUsage::CopySource );
-        auto Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List      = *Device->CreateCommandList( Allocator );
+        TSharedRef<IRHIDevice> Device = Tests::Validation::MakeDevice( Sink );
+        TSharedRef<IRHIBuffer> Buffer = Tests::Validation::MakeBuffer( Device, 64ULL, ERHIResourceUsage::CopySource );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         FRHIBufferTransition BufferTransition;
         BufferTransition.Buffer   = Buffer;
@@ -48,10 +48,10 @@ namespace
     LUMEN_TEST( RHIValidationTransition, TracksTextureMipsAndLayersIndependently )
     {
         Tests::FRecordingDebugSink Sink;
-        auto Device    = Tests::Validation::MakeDevice( Sink );
-        auto Texture   = Tests::Validation::MakeTexture( Device, 2U, 2U );
-        auto Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List      = *Device->CreateCommandList( Allocator );
+        TSharedRef<IRHIDevice> Device              = Tests::Validation::MakeDevice( Sink );
+        TSharedRef<IRHITexture> Texture            = Tests::Validation::MakeTexture( Device, 2U, 2U );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         FRHITextureTransition TextureTransition;
         TextureTransition.Texture = Texture;
@@ -74,10 +74,10 @@ namespace
     LUMEN_TEST( RHIValidationTransition, ValidatesQueueOwnershipTransfers )
     {
         Tests::FRecordingDebugSink Sink;
-        auto Device    = Tests::Validation::MakeDevice( Sink );
-        auto Buffer    = Tests::Validation::MakeBuffer( Device );
-        auto Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List      = *Device->CreateCommandList( Allocator );
+        TSharedRef<IRHIDevice> Device              = Tests::Validation::MakeDevice( Sink );
+        TSharedRef<IRHIBuffer> Buffer              = Tests::Validation::MakeBuffer( Device );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         FRHIBufferTransition BufferTransition;
         BufferTransition.Buffer           = Buffer;

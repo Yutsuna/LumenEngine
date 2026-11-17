@@ -21,13 +21,13 @@ namespace
         {
             Producers.emplace_back( [&Queue, &Released]
             {
-                const auto IncrementReleased = [&Released]
+                const TFunction<void()> IncrementReleased = [&Released]
                 {
                     Released.fetch_add( 1U );
                 };
                 for ( UInt32 Index = 0U; Index < 128U; ++Index )
                 {
-                    const auto Enqueued = Queue.Enqueue( { 1ULL }, IncrementReleased );
+                    const TExpected<void, FRHIError> Enqueued = Queue.Enqueue( { 1ULL }, IncrementReleased );
                     if ( not Enqueued )
                     {
                         return;
@@ -54,7 +54,7 @@ namespace
         {
             Producers.emplace_back( [&Queue, &Released]
             {
-                const auto IncrementReleased = [&Released]
+                const TFunction<void()> IncrementReleased = [&Released]
                 {
                     Released.fetch_add( 1U );
                 };

@@ -57,7 +57,7 @@ Lumen::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWri
         {
             return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Binding slot is absent from layout" ) );
         }
-        const auto Valid = std::visit( [Entry] ( const auto &Payload )
+        const Bool Valid = std::visit( [Entry] ( const auto &Payload )
         {
             if constexpr ( requires { Payload.Buffer; } )
             {
@@ -68,7 +68,7 @@ Lumen::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWri
                 {
                     return false;
                 }
-                const auto &Desc = Payload.Buffer->GetDesc();
+                const FRHIBufferDesc &Desc = Payload.Buffer->GetDesc();
                 const ERHIResourceUsage Required =
                     Entry->Type == ERHIBindingType::ConstantBuffer    ? ERHIResourceUsage::ConstantBuffer
                     : Entry->Type == ERHIBindingType::ReadWriteBuffer ? ERHIResourceUsage::UnorderedAccess

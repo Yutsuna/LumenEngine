@@ -17,17 +17,17 @@ namespace
 {
     LUMEN_TEST( RHIValidationConformance, CopiesSubmitsAndRecyclesWithValidation )
     {
-        auto DeviceResult = Tests::GetRHIConformanceDeviceFactory().CreateDevice( true );
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> DeviceResult = Tests::GetRHIConformanceDeviceFactory().CreateDevice( true );
         LUMEN_CHECK_TRUE( DeviceResult.HasValue() );
-        auto Device      = *DeviceResult;
-        auto Source      = Tests::Validation::MakeBuffer( Device, 64ULL, ERHIResourceUsage::CopySource );
-        auto Destination = Tests::Validation::MakeBuffer( Device, 64ULL, ERHIResourceUsage::CopyDestination );
-        auto Allocator   = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List        = *Device->CreateCommandList( Allocator );
+        TSharedRef<IRHIDevice> Device      = *DeviceResult;
+        TSharedRef<IRHIBuffer> Source      = Tests::Validation::MakeBuffer( Device, 64ULL, ERHIResourceUsage::CopySource );
+        TSharedRef<IRHIBuffer> Destination = Tests::Validation::MakeBuffer( Device, 64ULL, ERHIResourceUsage::CopyDestination );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         LUMEN_CHECK_TRUE( List->CopyBuffer( Source, Destination, { .Size = 64ULL } ).HasValue() );
         LUMEN_CHECK_TRUE( List->End().HasValue() );
-        auto Queue = *Device->GetQueue( ERHIQueueType::Graphics, 0U );
+        TSharedRef<IRHIQueue> Queue = *Device->GetQueue( ERHIQueueType::Graphics, 0U );
         FRHISubmitDesc Submit;
         Submit.CommandLists = { List };
         Submit.Completion   = { 1ULL };
@@ -40,27 +40,27 @@ namespace
 
     LUMEN_TEST( RHIValidationConformance, PreservesBindingAndQueryResults )
     {
-        auto Device = *Tests::GetRHIConformanceDeviceFactory().CreateDevice( true );
+        TSharedRef<IRHIDevice> Device = *Tests::GetRHIConformanceDeviceFactory().CreateDevice( true );
         FRHIBindingLayoutDesc LayoutDesc;
         LayoutDesc.Entries.push_back( { .Slot = 0U, .Type = ERHIBindingType::ReadOnlyBuffer } );
-        auto Layout = *Device->CreateBindingLayout( LayoutDesc );
-        auto Set    = *Device->CreateBindingSet( Layout );
-        auto Buffer = Tests::Validation::MakeBuffer( Device );
+        TSharedRef<IRHIBindingLayout> Layout = *Device->CreateBindingLayout( LayoutDesc );
+        TSharedRef<IRHIBindingSet> Set       = *Device->CreateBindingSet( Layout );
+        TSharedRef<IRHIBuffer> Buffer        = Tests::Validation::MakeBuffer( Device );
         FRHIBindingWrite Write;
         Write.Resource = FRHIBufferBinding{ .Buffer = Buffer };
         LUMEN_CHECK_TRUE( Set->Write( TSpan<const FRHIBindingWrite>( &Write, 1U ) ).HasValue() );
         FRHIQueryPoolDesc QueryDesc;
-        QueryDesc.Count = 2U;
-        auto Pool       = *Device->CreateQueryPool( QueryDesc );
-        auto Allocator  = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List       = *Device->CreateCommandList( Allocator );
+        QueryDesc.Count                            = 2U;
+        TSharedRef<IRHIQueryPool> Pool             = *Device->CreateQueryPool( QueryDesc );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         LUMEN_CHECK_TRUE( List->BeginQuery( *Pool, 0U ).HasValue() );
         LUMEN_CHECK_TRUE( List->EndQuery( *Pool, 0U ).HasValue() );
         LUMEN_CHECK_TRUE( List->BeginQuery( *Pool, 1U ).HasValue() );
         LUMEN_CHECK_TRUE( List->EndQuery( *Pool, 1U ).HasValue() );
         LUMEN_CHECK_TRUE( List->End().HasValue() );
-        auto Queue = *Device->GetQueue( ERHIQueueType::Graphics, 0U );
+        TSharedRef<IRHIQueue> Queue = *Device->GetQueue( ERHIQueueType::Graphics, 0U );
         FRHISubmitDesc Submit;
         Submit.CommandLists = { List };
         Submit.Completion   = { 1ULL };

@@ -16,9 +16,9 @@ namespace
     LUMEN_TEST( RHIValidationCommandList, RejectsIllegalLifecycleAndUnclosedDebugScope )
     {
         Tests::FRecordingDebugSink Sink;
-        auto Device    = Tests::Validation::MakeDevice( Sink );
-        auto Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List      = *Device->CreateCommandList( Allocator );
+        TSharedRef<IRHIDevice> Device              = Tests::Validation::MakeDevice( Sink );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         LUMEN_CHECK_EQ( List->End().Error().Code, ERHIErrorCode::ValidationFailed );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         const FRHIDrawArguments DrawArguments{ .VertexCount = 3U };
@@ -34,13 +34,13 @@ namespace
     LUMEN_TEST( RHIValidationCommandList, ValidatesRenderingPipelineAndForwardsUnwrappedViews )
     {
         Tests::FRecordingDebugSink Sink;
-        auto Device  = Tests::Validation::MakeDevice( Sink );
-        auto Texture = Tests::Validation::MakeTexture( Device );
+        TSharedRef<IRHIDevice> Device   = Tests::Validation::MakeDevice( Sink );
+        TSharedRef<IRHITexture> Texture = Tests::Validation::MakeTexture( Device );
         FRHITextureViewDesc ViewDesc;
-        ViewDesc.Texture = Texture;
-        auto View        = *Device->CreateTextureView( ViewDesc );
-        auto Allocator   = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List        = *Device->CreateCommandList( Allocator );
+        ViewDesc.Texture                           = Texture;
+        TSharedRef<IRHITextureView> View           = *Device->CreateTextureView( ViewDesc );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         FRHIRenderingDesc Rendering;
         Rendering.Area = { 0, 0, 16U, 16U };
@@ -50,7 +50,7 @@ namespace
         LUMEN_CHECK_TRUE( List->BeginRendering( Rendering ).HasValue() );
         const FRHIDrawArguments DrawArguments{ .VertexCount = 3U };
         LUMEN_CHECK_EQ( List->Draw( DrawArguments ).Error().Code, ERHIErrorCode::ValidationFailed );
-        auto Pipeline =
+        TSharedRef<Tests::FNullPipeline> Pipeline =
             MakeShared<Tests::FNullPipeline>( ERHIPipelineType::Graphics, FRHIPipelineCompatibility{}, FRHIObjectId{ 10000ULL } );
         LUMEN_CHECK_TRUE( List->SetPipeline( Pipeline ).HasValue() );
         LUMEN_CHECK_TRUE( List->Draw( DrawArguments ).HasValue() );

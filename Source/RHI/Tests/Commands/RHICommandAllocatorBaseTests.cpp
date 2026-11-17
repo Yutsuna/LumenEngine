@@ -17,8 +17,8 @@ namespace
     LUMEN_TEST( RHICommandAllocatorBase, RefusesPendingResetAndRecyclesAfterCompletion )
     {
         Tests::FNullDevice Device;
-        auto Allocator = *Device.CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List      = *Device.CreateCommandList( Allocator );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device.CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device.CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         LUMEN_CHECK_TRUE( List->End().HasValue() );
         LUMEN_CHECK_TRUE( List->MarkPending( { 4ULL } ).HasValue() );

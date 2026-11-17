@@ -43,9 +43,9 @@ namespace
 
             if ( not Bytes.empty() )
             {
-                auto Mutated      = Bytes;
-                const USize Index = static_cast<USize>( Random.Next( Mutated.size() ) );
-                Mutated[Index]    = static_cast<Byte>( Mutated[Index] ^ 1U );
+                TVector<Byte> Mutated = Bytes;
+                const USize Index     = static_cast<USize>( Random.Next( Mutated.size() ) );
+                Mutated[Index]        = static_cast<Byte>( Mutated[Index] ^ 1U );
                 LUMEN_CHECK_NOT_EQ( Hash, RHIHashBytes( Mutated ) );
             }
         }

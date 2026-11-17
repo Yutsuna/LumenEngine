@@ -42,7 +42,7 @@ namespace
         Reporter.Report( ERHIValidationMessageCode::InvalidBinding, "visible" );
         Reporter.Report( ERHIValidationMessageCode::InvalidBinding, "duplicate" );
         LUMEN_CHECK_EQ( Sink.GetCount(), 1U );
-        const auto Messages = Sink.GetMessages();
+        const TVector<FRHIDebugMessage> Messages = Sink.GetMessages();
         LUMEN_CHECK_EQ( Messages[0].Severity, ERHIDebugSeverity::Fatal );
         LUMEN_CHECK_EQ( Messages[0].Category, ERHIDebugCategory::Validation );
         Desc.bDeduplicateMessages = false;

@@ -16,10 +16,10 @@ namespace
 {
     LUMEN_TEST( RHIQueueConformance, SubmitsSignalsAndWaitsForCompletion )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
-        auto Queue     = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
-        auto Semaphore = *( *Device )->CreateSemaphore( {} );
+        TSharedRef<IRHIQueue> Queue         = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+        TSharedRef<IRHISemaphore> Semaphore = *( *Device )->CreateSemaphore( {} );
         FRHISubmitDesc Desc;
         Desc.Signals    = { { .Semaphore = Semaphore, .Value = 7ULL } };
         Desc.Completion = { 1ULL };
@@ -33,43 +33,43 @@ namespace
 
     LUMEN_TEST( RHIQueueConformance, RejectsRegressionUnsignaledWaitsAndInvalidLists )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
-        auto Queue         = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
-        auto Semaphore     = *( *Device )->CreateSemaphore( {} );
-        auto WorkSemaphore = *( *Device )->CreateSemaphore( {} );
+        TSharedRef<IRHIQueue> Queue             = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+        TSharedRef<IRHISemaphore> Semaphore     = *( *Device )->CreateSemaphore( {} );
+        TSharedRef<IRHISemaphore> WorkSemaphore = *( *Device )->CreateSemaphore( {} );
         FRHISubmitDesc Desc;
-        Desc.Completion       = { 1ULL };
-        Desc.Waits            = { { .Semaphore = Semaphore, .Value = 3ULL } };
-        Desc.Signals          = { { .Semaphore = WorkSemaphore, .Value = 1ULL } };
-        const auto Unsignaled = Queue->Submit( Desc );
+        Desc.Completion                             = { 1ULL };
+        Desc.Waits                                  = { { .Semaphore = Semaphore, .Value = 3ULL } };
+        Desc.Signals                                = { { .Semaphore = WorkSemaphore, .Value = 1ULL } };
+        const TExpected<void, FRHIError> Unsignaled = Queue->Submit( Desc );
         LUMEN_CHECK_HAS_ERROR( Unsignaled );
         LUMEN_CHECK_EQ( Unsignaled.Error().Code, ERHIErrorCode::InvalidState );
         LUMEN_CHECK_EQ( Unsignaled.Error().Condition, ERHIErrorCondition::Queue );
         LUMEN_CHECK_TRUE( Semaphore->Signal( 3ULL ).HasValue() );
         LUMEN_CHECK_TRUE( Queue->Submit( Desc ).HasValue() );
-        const auto Regressed = Queue->Submit( Desc );
+        const TExpected<void, FRHIError> Regressed = Queue->Submit( Desc );
         LUMEN_CHECK_HAS_ERROR( Regressed );
         LUMEN_CHECK_EQ( Regressed.Error().Condition, ERHIErrorCondition::Queue );
-        const auto Timeout = Queue->Wait( { 99ULL }, 0.0 );
+        const TExpected<void, FRHIError> Timeout = Queue->Wait( { 99ULL }, 0.0 );
         LUMEN_CHECK_HAS_ERROR( Timeout );
         LUMEN_CHECK_EQ( Timeout.Error().Code, ERHIErrorCode::Timeout );
 
-        auto Allocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List      = *( *Device )->CreateCommandList( Allocator );
+        TSharedRef<IRHICommandAllocator> Allocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *( *Device )->CreateCommandList( Allocator );
         FRHISubmitDesc InvalidList;
         InvalidList.CommandLists = { List };
         InvalidList.Completion   = { 2ULL };
         LUMEN_CHECK_HAS_ERROR( Queue->Submit( InvalidList ) );
 
-        auto ComputeAllocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Compute );
-        auto ComputeList      = *( *Device )->CreateCommandList( ComputeAllocator );
+        TSharedRef<IRHICommandAllocator> ComputeAllocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Compute );
+        TSharedRef<IRHICommandList> ComputeList           = *( *Device )->CreateCommandList( ComputeAllocator );
         LUMEN_CHECK_TRUE( ComputeList->Begin().HasValue() );
         LUMEN_CHECK_TRUE( ComputeList->End().HasValue() );
         FRHISubmitDesc WrongQueue;
-        WrongQueue.CommandLists = { ComputeList };
-        WrongQueue.Completion   = { 2ULL };
-        const auto Mismatch     = Queue->Submit( WrongQueue );
+        WrongQueue.CommandLists                   = { ComputeList };
+        WrongQueue.Completion                     = { 2ULL };
+        const TExpected<void, FRHIError> Mismatch = Queue->Submit( WrongQueue );
         LUMEN_CHECK_HAS_ERROR( Mismatch );
         LUMEN_CHECK_EQ( Mismatch.Error().Code, ERHIErrorCode::InvalidArgument );
         LUMEN_CHECK_EQ( Mismatch.Error().Condition, ERHIErrorCondition::Queue );

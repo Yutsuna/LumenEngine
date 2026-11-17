@@ -12,8 +12,8 @@ namespace Lumen
 LUMEN_TEST( RHILinearAllocator, AlignsExhaustsAndResets )
 {
     FRHILinearAllocator Allocator( 128ULL );
-    auto First  = Allocator.Allocate( { 8ULL, 16ULL } );
-    auto Second = Allocator.Allocate( { 8ULL, 16ULL } );
+    const TExpected<FRHIAllocation, FRHIError> First  = Allocator.Allocate( { 8ULL, 16ULL } );
+    const TExpected<FRHIAllocation, FRHIError> Second = Allocator.Allocate( { 8ULL, 16ULL } );
     LUMEN_CHECK_EQ( First->Offset, 0ULL );
     LUMEN_CHECK_EQ( Second->Offset, 16ULL );
     LUMEN_CHECK_HAS_ERROR( Allocator.Allocate( { 256ULL, 1ULL } ) );

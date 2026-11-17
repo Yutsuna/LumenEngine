@@ -20,7 +20,7 @@ LUMEN_TEST( RHIError, PreservesCauseAndAddsContext )
     LUMEN_CHECK_TRUE( Context.Message.find( "CreateBuffer" ) != FString::npos );
 
     const TExpected<UInt32, FRHIError> Failure{ TUnexpected<FRHIError>( Error ) };
-    const auto Recovered = Failure.ValueOr( 7U );
+    const UInt32 Recovered = Failure.ValueOr( 7U );
     LUMEN_CHECK_EQ( Recovered, 7U );
 }
 

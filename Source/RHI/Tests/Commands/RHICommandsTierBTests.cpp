@@ -20,14 +20,15 @@ namespace
     LUMEN_TEST( RHICommandsTierB, RejectsInvalidNestingAndRecordsIndirectDispatch )
     {
         Tests::FNullDevice Device;
-        auto Allocator = *Device.CreateCommandAllocator( ERHIQueueType::Compute );
-        auto List      = *Device.CreateCommandList( Allocator );
-        auto Layout    = *Device.CreatePipelineLayout( {} );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device.CreateCommandAllocator( ERHIQueueType::Compute );
+        TSharedRef<IRHICommandList> List           = *Device.CreateCommandList( Allocator );
+        TSharedRef<IRHIPipelineLayout> Layout      = *Device.CreatePipelineLayout( {} );
         FRHIShaderDesc ShaderDesc;
-        ShaderDesc.Stage = ERHIShaderStage::Compute;
-        auto Shader      = *Device.CreateShader( ShaderDesc );
-        auto Pipeline    = *Device.CreateComputePipeline( { .Shader = Shader, .Layout = Layout } );
-        auto Arguments   = *Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::IndirectArgument } );
+        ShaderDesc.Stage                  = ERHIShaderStage::Compute;
+        TSharedRef<IRHIShader> Shader     = *Device.CreateShader( ShaderDesc );
+        TSharedRef<IRHIPipeline> Pipeline = *Device.CreateComputePipeline( { .Shader = Shader, .Layout = Layout } );
+        TSharedRef<IRHIBuffer> Arguments =
+            *Device.CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::IndirectArgument } );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         LUMEN_CHECK_TRUE( List->SetPipeline( Pipeline ).HasValue() );
         LUMEN_CHECK_TRUE( List->DispatchIndirect( Arguments, { .Count = 2U, .Stride = 16U } ).HasValue() );

@@ -21,7 +21,7 @@ namespace
         Tracker.OnInsert( 32ULL );
         Tracker.OnEvict( 32ULL );
         Tracker.OnRemove( 64ULL );
-        const auto Stats = Tracker.Snapshot();
+        const FRHICacheStats Stats = Tracker.Snapshot();
         LUMEN_CHECK_EQ( Stats.Hits, 1ULL );
         LUMEN_CHECK_EQ( Stats.Misses, 1ULL );
         LUMEN_CHECK_EQ( Stats.Insertions, 2ULL );
@@ -52,7 +52,7 @@ namespace
         {
             Worker.Join();
         }
-        const auto Stats = Tracker.Snapshot();
+        const FRHICacheStats Stats = Tracker.Snapshot();
         LUMEN_CHECK_EQ( Stats.EntryCount, 4ULL );
         LUMEN_CHECK_EQ( Stats.Bytes, 64ULL );
         LUMEN_CHECK_EQ( Stats.Hits + Stats.Misses, 256ULL );

@@ -51,7 +51,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSemaphore::Wait ( co
         return TUnexpected<FRHIError>( MakeRHIInvalidSynchronization( "Invalid semaphore wait" ) );
     }
     HAL::TUniqueLock<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Reached = [this, InValue]
+    const TFunction<Bool()> Reached = [this, InValue]
     {
         return Value >= InValue;
     };

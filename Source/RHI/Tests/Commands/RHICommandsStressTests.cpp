@@ -28,7 +28,8 @@ namespace
         for ( USize Index = 0U; Index < Stream.GetCommandCount(); ++Index )
         {
             const UInt32 Opcode = static_cast<UInt32>( Index ) % 17U;
-            auto Arguments      = Stream.ReadPayload<FRHIDispatchArguments>( Index, Opcode );
+            const TExpected<FRHIDispatchArguments, FRHIError> Arguments =
+                Stream.ReadPayload<FRHIDispatchArguments>( Index, Opcode );
             LUMEN_CHECK_TRUE( Arguments.HasValue() );
             LUMEN_CHECK_EQ( Arguments->GroupCountX, static_cast<UInt32>( Index ) + 1U );
             LUMEN_CHECK_EQ( Arguments->GroupCountY, 2U );
@@ -48,11 +49,12 @@ namespace
     LUMEN_TEST( RHICommandsStress, RepeatedRecordSubmitResetKeepsStreamsBounded )
     {
         Tests::FNullDevice Device;
-        auto Allocator   = *Device.CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List        = *Device.CreateCommandList( Allocator );
-        auto Source      = *Device.CreateBuffer( { .Size = 256ULL, .Usage = ERHIResourceUsage::CopySource } );
-        auto Destination = *Device.CreateBuffer( { .Size = 256ULL, .Usage = ERHIResourceUsage::CopyDestination } );
-        auto Queue       = *Device.GetQueue( ERHIQueueType::Graphics, 0U );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device.CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device.CreateCommandList( Allocator );
+        TSharedRef<IRHIBuffer> Source = *Device.CreateBuffer( { .Size = 256ULL, .Usage = ERHIResourceUsage::CopySource } );
+        TSharedRef<IRHIBuffer> Destination =
+            *Device.CreateBuffer( { .Size = 256ULL, .Usage = ERHIResourceUsage::CopyDestination } );
+        TSharedRef<IRHIQueue> Queue = *Device.GetQueue( ERHIQueueType::Graphics, 0U );
 
         for ( UInt32 Pass = 0U; Pass < 128U; ++Pass )
         {

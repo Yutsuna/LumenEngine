@@ -32,8 +32,8 @@ namespace
                 Active.erase( Active.begin() + static_cast<ISize>( Index ) );
                 continue;
             }
-            const UInt64 Size = Random.Next( 64ULL ) + 1ULL;
-            auto Allocation   = Allocator.Allocate( { .Size = Size, .Alignment = 16ULL } );
+            const UInt64 Size                                     = Random.Next( 64ULL ) + 1ULL;
+            const TExpected<FRHIAllocation, FRHIError> Allocation = Allocator.Allocate( { .Size = Size, .Alignment = 16ULL } );
             if ( not Allocation )
             {
                 continue;
@@ -72,7 +72,8 @@ namespace
             }
             else
             {
-                auto Allocation = Ring.Allocate( { .Size = Random.Next( 96ULL ) + 1ULL, .Alignment = 16ULL } );
+                const TExpected<FRHIAllocation, FRHIError> Allocation =
+                    Ring.Allocate( { .Size = Random.Next( 96ULL ) + 1ULL, .Alignment = 16ULL } );
                 if ( Allocation )
                 {
                     for ( const FRHIAllocation &Other : RingActive )
@@ -92,7 +93,8 @@ namespace
             }
             else
             {
-                auto Allocation = Pool.Allocate( { .Size = Random.Next( 64ULL ) + 1ULL, .Alignment = 16ULL } );
+                const TExpected<FRHIAllocation, FRHIError> Allocation =
+                    Pool.Allocate( { .Size = Random.Next( 64ULL ) + 1ULL, .Alignment = 16ULL } );
                 if ( Allocation )
                 {
                     for ( const FRHIAllocation &Other : PoolActive )
@@ -127,7 +129,8 @@ namespace
             {
                 const UInt64 Size      = Random.Next( 96ULL ) + 1ULL;
                 const UInt64 Alignment = 1ULL << Random.Next( 6ULL );
-                auto Allocation        = Allocator.Allocate( { .Size = Size, .Alignment = Alignment } );
+                const TExpected<FRHIAllocation, FRHIError> Allocation =
+                    Allocator.Allocate( { .Size = Size, .Alignment = Alignment } );
                 if ( Allocation )
                 {
                     LUMEN_CHECK_EQ( Allocation->Offset % Alignment, 0ULL );

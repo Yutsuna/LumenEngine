@@ -42,12 +42,12 @@ namespace
 
     LUMEN_TEST( RHIShaderPackageCodec, RoundTripsOwnedEntriesAndReflection )
     {
-        auto Encoded = EncodeRHIShaderPackage( MakePackage() );
+        TExpected<TVector<Byte>, FRHIError> Encoded = EncodeRHIShaderPackage( MakePackage() );
         LUMEN_CHECK_TRUE( Encoded.HasValue() );
-        auto Decoded = DecodeRHIShaderPackage( *Encoded );
+        TExpected<FRHIShaderPackage, FRHIError> Decoded = DecodeRHIShaderPackage( *Encoded );
         LUMEN_CHECK_TRUE( Decoded.HasValue() );
         LUMEN_CHECK_EQ( Decoded->GetEntries().size(), 1U );
-        const auto &Entry = Decoded->GetEntries()[0];
+        const FRHIShaderPackageEntry &Entry = Decoded->GetEntries()[0];
         LUMEN_CHECK_EQ( Entry.Stage, ERHIShaderStage::Compute );
         LUMEN_CHECK_EQ( Entry.EntryPoint, FString( "MainCS" ) );
         LUMEN_CHECK_EQ( Entry.Format, ERHIShaderFormat::DXIL );
@@ -63,47 +63,47 @@ namespace
     LUMEN_TEST( RHIShaderPackageCodec, RejectsBadHeadersTruncationAndTrailingBytes )
     {
         LUMEN_CHECK_HAS_ERROR( DecodeRHIShaderPackage( {} ) );
-        auto Result  = EncodeRHIShaderPackage( MakePackage() );
-        auto Encoded = Result.ValueOr( TVector<Byte>{} );
+        TExpected<TVector<Byte>, FRHIError> Result = EncodeRHIShaderPackage( MakePackage() );
+        TVector<Byte> Encoded                      = Result.ValueOr( TVector<Byte>{} );
         if ( Encoded.size() <= 12U )
         {
             LUMEN_CHECK_TRUE( Result.HasValue() );
             return;
         }
-        auto BadMagic = Encoded;
-        BadMagic[0]   = 0U;
+        TVector<Byte> BadMagic = Encoded;
+        BadMagic[0]            = 0U;
         LUMEN_CHECK_HAS_ERROR( DecodeRHIShaderPackage( BadMagic ) );
-        auto BadVersion = Encoded;
-        BadVersion[4]   = 2U;
+        TVector<Byte> BadVersion = Encoded;
+        BadVersion[4]            = 2U;
         LUMEN_CHECK_HAS_ERROR( DecodeRHIShaderPackage( BadVersion ) );
-        auto Truncated = Encoded;
+        TVector<Byte> Truncated = Encoded;
         Truncated.pop_back();
         LUMEN_CHECK_HAS_ERROR( DecodeRHIShaderPackage( Truncated ) );
-        auto Trailing = Encoded;
+        TVector<Byte> Trailing = Encoded;
         Trailing.push_back( 0U );
         LUMEN_CHECK_HAS_ERROR( DecodeRHIShaderPackage( Trailing ) );
     }
 
     LUMEN_TEST( RHIShaderPackageCodec, RejectsInvalidDecodedShaderMetadata )
     {
-        auto Result  = EncodeRHIShaderPackage( MakePackage() );
-        auto Encoded = Result.ValueOr( TVector<Byte>{} );
+        TExpected<TVector<Byte>, FRHIError> Result = EncodeRHIShaderPackage( MakePackage() );
+        TVector<Byte> Encoded                      = Result.ValueOr( TVector<Byte>{} );
         if ( Encoded.size() <= 12U )
         {
             LUMEN_CHECK_TRUE( Result.HasValue() );
             return;
         }
-        auto InvalidStage = Encoded;
-        InvalidStage[12]  = 0U;
+        TVector<Byte> InvalidStage = Encoded;
+        InvalidStage[12]           = 0U;
         LUMEN_CHECK_HAS_ERROR( DecodeRHIShaderPackage( InvalidStage ) );
     }
 
     LUMEN_TEST( RHIShaderPackageCodec, RoundTripsEmptyPackage )
     {
         const FRHIShaderPackage Package;
-        auto Encoded = EncodeRHIShaderPackage( Package );
+        TExpected<TVector<Byte>, FRHIError> Encoded = EncodeRHIShaderPackage( Package );
         LUMEN_CHECK_TRUE( Encoded.HasValue() );
-        auto Decoded = DecodeRHIShaderPackage( *Encoded );
+        TExpected<FRHIShaderPackage, FRHIError> Decoded = DecodeRHIShaderPackage( *Encoded );
         LUMEN_CHECK_TRUE( Decoded.HasValue() );
         LUMEN_CHECK_TRUE( Decoded->GetEntries().empty() );
     }

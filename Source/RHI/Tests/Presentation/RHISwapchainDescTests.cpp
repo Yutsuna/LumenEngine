@@ -23,15 +23,15 @@ namespace
 
     LUMEN_TEST( RHISwapchainDesc, AcceptsSupportedConfiguration )
     {
-        const auto Desc = MakeDesc();
+        const FRHISwapchainDesc Desc = MakeDesc();
         LUMEN_CHECK_TRUE( Desc.Validate().HasValue() );
         LUMEN_CHECK_TRUE( Desc.Validate( Tests::MakeNullSwapchainCapabilities() ).HasValue() );
     }
 
     LUMEN_TEST( RHISwapchainDesc, RejectsInvalidAndUnsupportedConfigurations )
     {
-        auto Desc       = MakeDesc();
-        Desc.ImageCount = 1U;
+        FRHISwapchainDesc Desc = MakeDesc();
+        Desc.ImageCount        = 1U;
         LUMEN_CHECK_HAS_ERROR( Desc.Validate() );
         Desc            = MakeDesc();
         Desc.ImageUsage = ERHIResourceUsage::ShaderResource;

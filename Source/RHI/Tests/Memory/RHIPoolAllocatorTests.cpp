@@ -12,8 +12,8 @@ namespace Lumen
 LUMEN_TEST( RHIPoolAllocator, AllocatesRecyclesAndRejectsWrongClass )
 {
     FRHIPoolAllocator Allocator( 64ULL, 2U );
-    auto First  = Allocator.Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
-    auto Second = Allocator.Allocate( { .Size = 64ULL, .Alignment = 64ULL } );
+    const TExpected<FRHIAllocation, FRHIError> First  = Allocator.Allocate( { .Size = 32ULL, .Alignment = 16ULL } );
+    const TExpected<FRHIAllocation, FRHIError> Second = Allocator.Allocate( { .Size = 64ULL, .Alignment = 64ULL } );
 
     LUMEN_CHECK_TRUE( First.HasValue() and Second.HasValue() );
     LUMEN_CHECK_HAS_ERROR( Allocator.Allocate( { 1ULL, 1ULL } ) );

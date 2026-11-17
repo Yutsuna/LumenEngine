@@ -24,7 +24,7 @@ namespace
             { .Slot = 5U, .Kind = ERHIShaderBindingKind::ReadWriteBuffer, .Count = 2U, .Stages = ERHIShaderStage::Compute } );
         FRHIShaderPackage Package;
         LUMEN_CHECK_TRUE( Package.AddEntry( std::move( Entry ) ).HasValue() );
-        auto Encoded = EncodeRHIShaderPackage( Package );
+        TExpected<TVector<Byte>, FRHIError> Encoded = EncodeRHIShaderPackage( Package );
         LUMEN_CHECK_TRUE( Encoded.HasValue() );
         return *Encoded;
     }
@@ -33,7 +33,7 @@ namespace
     {
         if ( Result )
         {
-            auto Encoded = EncodeRHIShaderPackage( *Result );
+            const TExpected<TVector<Byte>, FRHIError> Encoded = EncodeRHIShaderPackage( *Result );
             LUMEN_CHECK_TRUE( Encoded.HasValue() );
             LUMEN_CHECK_TRUE( DecodeRHIShaderPackage( *Encoded ).HasValue() );
             return;
@@ -49,23 +49,24 @@ namespace
         LUMEN_CHECK_TRUE( Encoded.size() > 52U );
         for ( USize Size = 0U; Size < Encoded.size(); ++Size )
         {
-            const auto Result = DecodeRHIShaderPackage( TSpan<const Byte>( Encoded.data(), Size ) );
+            const TExpected<FRHIShaderPackage, FRHIError> Result =
+                DecodeRHIShaderPackage( TSpan<const Byte>( Encoded.data(), Size ) );
             LUMEN_CHECK_HAS_ERROR( Result );
             LUMEN_CHECK_EQ( Result.Error().Code, ERHIErrorCode::CorruptedData );
         }
 
-        auto UnknownVersion = Encoded;
-        UnknownVersion[4]   = 0xFFU;
+        TVector<Byte> UnknownVersion = Encoded;
+        UnknownVersion[4]            = 0xFFU;
         LUMEN_CHECK_HAS_ERROR( DecodeRHIShaderPackage( UnknownVersion ) );
 
-        auto BytecodeLength = Encoded;
+        TVector<Byte> BytecodeLength = Encoded;
         for ( USize Index = 14U; Index < 18U; ++Index )
         {
             BytecodeLength[Index] = 0xFFU;
         }
         LUMEN_CHECK_HAS_ERROR( DecodeRHIShaderPackage( BytecodeLength ) );
 
-        auto BindingCount = Encoded;
+        TVector<Byte> BindingCount = Encoded;
         for ( USize Index = 48U; Index < 52U; ++Index )
         {
             BindingCount[Index] = 0xFFU;
@@ -93,7 +94,7 @@ namespace
         Tests::FRHITestRandom Random( 0x4C5248494D555441ULL );
         for ( UInt32 Iteration = 0U; Iteration < 512U; ++Iteration )
         {
-            auto Mutated              = Encoded;
+            TVector<Byte> Mutated     = Encoded;
             const USize MutationCount = static_cast<USize>( Random.Next( 4ULL ) + 1ULL );
             for ( USize Mutation = 0U; Mutation < MutationCount; ++Mutation )
             {

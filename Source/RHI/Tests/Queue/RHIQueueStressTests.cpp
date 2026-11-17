@@ -14,7 +14,8 @@ namespace
 {
     LUMEN_TEST( RHIQueueStress, ConcurrentWaitersObserveEveryCompletedValue )
     {
-        auto Semaphore = MakeShared<Tests::FNullSemaphore>( FRHISemaphoreDesc{}, FRHIObjectId{ 1ULL } );
+        TSharedRef<Tests::FNullSemaphore> Semaphore =
+            MakeShared<Tests::FNullSemaphore>( FRHISemaphoreDesc{}, FRHIObjectId{ 1ULL } );
         Tests::FNullQueue Queue( ERHIQueueType::Graphics, 0U, nullptr, FRHIObjectId{ 2ULL } );
         TAtomic<UInt32> Failures{ 0U };
         TVector<FThread> Waiters;
@@ -57,15 +58,17 @@ namespace
         {
             Producers.emplace_back( [&Queue, &NextCompletion, &Successes, &Failures, Producer]
             {
-                auto Allocator =
+                TSharedRef<Tests::FNullCommandAllocator> Allocator =
                     MakeShared<Tests::FNullCommandAllocator>( ERHIQueueType::Graphics, FRHIObjectId{ 100ULL + Producer * 2ULL } );
-                auto List = MakeShared<Tests::FNullCommandList>( Allocator, FRHIObjectId{ 101ULL + Producer * 2ULL } );
+                TSharedRef<Tests::FNullCommandList> List =
+                    MakeShared<Tests::FNullCommandList>( Allocator, FRHIObjectId{ 101ULL + Producer * 2ULL } );
                 if ( not List->Begin() or not List->End() )
                 {
                     Failures.fetch_add( 1U );
                     return;
                 }
-                auto Semaphore   = MakeShared<Tests::FNullSemaphore>( FRHISemaphoreDesc{}, FRHIObjectId{ 200ULL + Producer } );
+                TSharedRef<Tests::FNullSemaphore> Semaphore =
+                    MakeShared<Tests::FNullSemaphore>( FRHISemaphoreDesc{}, FRHIObjectId{ 200ULL + Producer } );
                 UInt32 Completed = 0U;
                 UInt32 Attempts  = 0U;
                 while ( Completed < 64U and Attempts < 4096U )

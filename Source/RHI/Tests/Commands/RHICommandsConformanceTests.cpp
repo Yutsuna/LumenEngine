@@ -19,35 +19,38 @@ namespace
 
     TSharedRef<IRHIPipeline> CreateGraphicsPipeline ( IRHIDevice &Device )
     {
-        auto Layout = Device.CreatePipelineLayout( {} );
+        const TExpected<TSharedRef<IRHIPipelineLayout>, FRHIError> Layout = Device.CreatePipelineLayout( {} );
         LUMEN_CHECK_TRUE( Layout.HasValue() );
-        auto VertexShader = Tests::GetRHIConformanceDeviceFactory().CreateShader( Device, ERHIShaderStage::Vertex );
-        auto PixelShader  = Tests::GetRHIConformanceDeviceFactory().CreateShader( Device, ERHIShaderStage::Pixel );
+        const TExpected<TSharedRef<IRHIShader>, FRHIError> VertexShader =
+            Tests::GetRHIConformanceDeviceFactory().CreateShader( Device, ERHIShaderStage::Vertex );
+        const TExpected<TSharedRef<IRHIShader>, FRHIError> PixelShader =
+            Tests::GetRHIConformanceDeviceFactory().CreateShader( Device, ERHIShaderStage::Pixel );
         LUMEN_CHECK_TRUE( VertexShader.HasValue() );
         LUMEN_CHECK_TRUE( PixelShader.HasValue() );
         FRHIGraphicsPipelineDesc Desc;
-        Desc.VertexShader = *VertexShader;
-        Desc.PixelShader  = *PixelShader;
-        Desc.Layout       = *Layout;
-        Desc.ColorFormats = { ERHIFormat::RGBA8Unorm };
-        auto Pipeline     = Device.CreateGraphicsPipeline( Desc );
+        Desc.VertexShader                                             = *VertexShader;
+        Desc.PixelShader                                              = *PixelShader;
+        Desc.Layout                                                   = *Layout;
+        Desc.ColorFormats                                             = { ERHIFormat::RGBA8Unorm };
+        const TExpected<TSharedRef<IRHIPipeline>, FRHIError> Pipeline = Device.CreateGraphicsPipeline( Desc );
         LUMEN_CHECK_TRUE( Pipeline.HasValue() );
         return *Pipeline;
     }
 
     LUMEN_TEST( RHICommandsConformance, RecordsCopiesAndSubmitsExecutableList )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        const TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
-        auto Allocator   = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List        = *( *Device )->CreateCommandList( Allocator );
-        auto Source      = *( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
-        auto Destination = *( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopyDestination } );
+        TSharedRef<IRHICommandAllocator> Allocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *( *Device )->CreateCommandList( Allocator );
+        TSharedRef<IRHIBuffer> Source = *( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
+        TSharedRef<IRHIBuffer> Destination =
+            *( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopyDestination } );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         LUMEN_CHECK_TRUE( List->CopyBuffer( Source, Destination, { .Size = 64ULL } ).HasValue() );
         LUMEN_CHECK_TRUE( List->End().HasValue() );
         LUMEN_CHECK_TRUE( List->GetStream().GetRetainedCount() >= 2U );
-        auto Queue = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+        TSharedRef<IRHIQueue> Queue = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
         FRHISubmitDesc Submit;
         Submit.CommandLists = { List };
         Submit.Completion   = { 1ULL };
@@ -60,28 +63,29 @@ namespace
 
     LUMEN_TEST( RHICommandsConformance, RecordsDynamicRenderingAndRebindsCompatiblePipelines )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        const TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         if ( not( *Device )->GetCapabilities().Supports( ERHICapabilityFlags::DynamicRendering ) )
         {
             return;
         }
-        auto Texture = ( *Device )->CreateTexture( { .Extent         = { 16U, 16U, 1U },
-                                                     .Format         = ERHIFormat::RGBA8Unorm,
-                                                     .Usage          = ERHIResourceUsage::RenderTarget,
-                                                     .OptimizedClear = {} } );
+        const TExpected<TSharedRef<IRHITexture>, FRHIError> Texture =
+            ( *Device )->CreateTexture( { .Extent         = { 16U, 16U, 1U },
+                                          .Format         = ERHIFormat::RGBA8Unorm,
+                                          .Usage          = ERHIResourceUsage::RenderTarget,
+                                          .OptimizedClear = {} } );
         LUMEN_CHECK_TRUE( Texture.HasValue() );
         FRHITextureViewDesc ViewDesc;
-        ViewDesc.Texture = *Texture;
-        auto View        = ( *Device )->CreateTextureView( ViewDesc );
+        ViewDesc.Texture                                             = *Texture;
+        const TExpected<TSharedRef<IRHITextureView>, FRHIError> View = ( *Device )->CreateTextureView( ViewDesc );
         LUMEN_CHECK_TRUE( View.HasValue() );
-        auto FirstPipeline  = CreateGraphicsPipeline( **Device );
-        auto SecondPipeline = CreateGraphicsPipeline( **Device );
+        TSharedRef<IRHIPipeline> FirstPipeline  = CreateGraphicsPipeline( **Device );
+        TSharedRef<IRHIPipeline> SecondPipeline = CreateGraphicsPipeline( **Device );
         LUMEN_CHECK_NOT_EQ( FirstPipeline->GetId().GetValue(), SecondPipeline->GetId().GetValue() );
         LUMEN_CHECK_TRUE( FirstPipeline->GetCompatibility() == SecondPipeline->GetCompatibility() );
 
-        auto Allocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List      = *( *Device )->CreateCommandList( Allocator );
+        TSharedRef<IRHICommandAllocator> Allocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *( *Device )->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         FRHIRenderingDesc Rendering;
         Rendering.Area = { 0, 0, 16U, 16U };
@@ -96,7 +100,7 @@ namespace
         LUMEN_CHECK_TRUE( List->EndRendering().HasValue() );
         LUMEN_CHECK_TRUE( List->End().HasValue() );
 
-        auto Queue = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+        TSharedRef<IRHIQueue> Queue = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
         FRHISubmitDesc Submit;
         Submit.CommandLists = { List };
         Submit.Completion   = { 1ULL };
@@ -106,20 +110,21 @@ namespace
 
     LUMEN_TEST( RHICommandsConformance, RejectsInvalidLifecycleCopiesAndTransitions )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        const TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
-        auto Allocator      = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
-        auto List           = *( *Device )->CreateCommandList( Allocator );
-        const auto EarlyEnd = List->End();
+        TSharedRef<IRHICommandAllocator> Allocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *( *Device )->CreateCommandList( Allocator );
+        const TExpected<void, FRHIError> EarlyEnd  = List->End();
         LUMEN_CHECK_HAS_ERROR( EarlyEnd );
         LUMEN_CHECK_EQ( EarlyEnd.Error().Code, ERHIErrorCode::InvalidState );
         LUMEN_CHECK_EQ( EarlyEnd.Error().Condition, ERHIErrorCondition::Command );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
         LUMEN_CHECK_HAS_ERROR( List->Draw( { .VertexCount = 3U } ) );
 
-        auto Source          = *( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
-        auto Destination     = *( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopyDestination } );
-        const auto EmptyCopy = List->CopyBuffer( Source, Destination, {} );
+        TSharedRef<IRHIBuffer> Source = *( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
+        TSharedRef<IRHIBuffer> Destination =
+            *( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopyDestination } );
+        const TExpected<void, FRHIError> EmptyCopy = List->CopyBuffer( Source, Destination, {} );
         LUMEN_CHECK_HAS_ERROR( EmptyCopy );
         LUMEN_CHECK_EQ( EmptyCopy.Error().Code, ERHIErrorCode::InvalidArgument );
         LUMEN_CHECK_EQ( EmptyCopy.Error().Condition, ERHIErrorCondition::Command );

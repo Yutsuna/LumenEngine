@@ -22,13 +22,13 @@ namespace
         }
         LUMEN_CHECK_EQ( Stream.GetCommandCount(), 40U );
         LUMEN_CHECK_TRUE( Stream.GetChunkCount() > 1U );
-        auto Payload = Stream.ReadPayload<UInt32>( 39U, 7U );
+        const TExpected<UInt32, FRHIError> Payload = Stream.ReadPayload<UInt32>( 39U, 7U );
         LUMEN_CHECK_TRUE( Payload.HasValue() );
         LUMEN_CHECK_EQ( *Payload, 39U );
         LUMEN_CHECK_HAS_ERROR( Stream.Read( 40U ) );
         LUMEN_CHECK_HAS_ERROR( Stream.ReadPayload<UInt64>( 0U, 7U ) );
-        auto Object = MakeShared<Tests::FNullBuffer>( FRHIBufferDesc{ .Size = 16ULL, .Usage = ERHIResourceUsage::CopySource },
-                                                      FRHIObjectId{ 1ULL } );
+        TSharedRef<Tests::FNullBuffer> Object = MakeShared<Tests::FNullBuffer>(
+            FRHIBufferDesc{ .Size = 16ULL, .Usage = ERHIResourceUsage::CopySource }, FRHIObjectId{ 1ULL } );
         Stream.Retain( StaticCastSharedRef<IRHIObject>( Object ) );
         LUMEN_CHECK_EQ( Stream.GetRetainedCount(), 1U );
         const USize AllocatedChunks = Stream.GetChunkCount();

@@ -28,11 +28,11 @@ namespace
     LUMEN_TEST( RHIPresentationTierB, RejectsExhaustionStaleTokensAndWrongQueues )
     {
         Tests::FNullDevice Device;
-        auto Swapchain = *Device.CreateSwapchain( MakeDesc() );
-        auto Graphics  = *Device.GetQueue( ERHIQueueType::Graphics, 0U );
-        auto Copy      = *Device.GetQueue( ERHIQueueType::Copy, 0U );
-        auto First     = *Swapchain->AcquireNextImage();
-        auto Second    = *Swapchain->AcquireNextImage();
+        const TSharedRef<IRHISwapchain> Swapchain = *Device.CreateSwapchain( MakeDesc() );
+        const TSharedRef<IRHIQueue> Graphics      = *Device.GetQueue( ERHIQueueType::Graphics, 0U );
+        const TSharedRef<IRHIQueue> Copy          = *Device.GetQueue( ERHIQueueType::Copy, 0U );
+        const FRHIAcquiredImage First             = *Swapchain->AcquireNextImage();
+        const FRHIAcquiredImage Second            = *Swapchain->AcquireNextImage();
         LUMEN_CHECK_HAS_ERROR( Swapchain->AcquireNextImage() );
         LUMEN_CHECK_HAS_ERROR( Swapchain->Present( *Copy, First, nullptr ) );
         LUMEN_CHECK_TRUE( Swapchain->Present( *Graphics, First, nullptr ).HasValue() );
@@ -43,15 +43,16 @@ namespace
     LUMEN_TEST( RHIPresentationTierB, ReportsSuboptimalAndOutOfDateExplicitly )
     {
         Tests::FNullDevice Device;
-        auto Created       = *Device.CreateSwapchain( MakeDesc() );
-        auto NullSwapchain = *TryRHIBackendCast<Tests::FNullSwapchain>( StaticCastSharedRef<IRHIObject>( Created ) );
+        const TSharedRef<IRHISwapchain> Created = *Device.CreateSwapchain( MakeDesc() );
+        const TSharedPtr<Tests::FNullSwapchain> NullSwapchain =
+            *TryRHIBackendCast<Tests::FNullSwapchain>( StaticCastSharedRef<IRHIObject>( Created ) );
         NullSwapchain->MarkSuboptimal();
-        auto Acquired = *Created->AcquireNextImage();
+        const FRHIAcquiredImage Acquired = *Created->AcquireNextImage();
         LUMEN_CHECK_TRUE( Acquired.bSuboptimal );
-        auto Queue = *Device.GetQueue( ERHIQueueType::Graphics, 0U );
+        const TSharedRef<IRHIQueue> Queue = *Device.GetQueue( ERHIQueueType::Graphics, 0U );
         LUMEN_CHECK_TRUE( Created->Present( *Queue, Acquired, nullptr ).HasValue() );
         NullSwapchain->MarkOutOfDate();
-        const auto Result = Created->AcquireNextImage();
+        const TExpected<FRHIAcquiredImage, FRHIError> Result = Created->AcquireNextImage();
         LUMEN_CHECK_TRUE( Result.Error().Code == ERHIErrorCode::OutOfDate );
         LUMEN_CHECK_TRUE( Created->Resize( { 512U, 512U, 1U } ).HasValue() );
         LUMEN_CHECK_TRUE( Created->AcquireNextImage().HasValue() );

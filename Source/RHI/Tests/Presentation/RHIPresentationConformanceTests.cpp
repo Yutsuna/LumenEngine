@@ -16,38 +16,42 @@ namespace
 
     LUMEN_TEST( RHIPresentationConformance, PresentsAndRecreatesAnImageRing )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         if ( not( *Device )->GetCapabilities().Supports( ERHICapabilityFlags::Presentation ) )
         {
             return;
         }
-        auto Swapchain = Tests::GetRHIConformanceDeviceFactory().CreateSwapchain( **Device );
+        TExpected<TSharedRef<IRHISwapchain>, FRHIError> Swapchain =
+            Tests::GetRHIConformanceDeviceFactory().CreateSwapchain( **Device );
         LUMEN_CHECK_TRUE( Swapchain.HasValue() );
-        auto Queue    = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
-        auto Acquired = ( *Swapchain )->AcquireNextImage();
+        const TSharedRef<IRHIQueue> Queue                = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+        TExpected<FRHIAcquiredImage, FRHIError> Acquired = ( *Swapchain )->AcquireNextImage();
         LUMEN_CHECK_TRUE( Acquired.HasValue() );
         LUMEN_CHECK_TRUE( Acquired->Image.Get() != nullptr );
         LUMEN_CHECK_TRUE( ( *Swapchain )->Present( *Queue, *Acquired, nullptr ).HasValue() );
         LUMEN_CHECK_TRUE( ( *Swapchain )->Resize( { 640U, 400U, 1U } ).HasValue() );
         LUMEN_CHECK_EQ( ( *Swapchain )->GetDesc().Extent.Width, 640U );
 
-        auto Replacement = Tests::GetRHIConformanceDeviceFactory().CreateSwapchain( **Device, *Swapchain );
+        TExpected<TSharedRef<IRHISwapchain>, FRHIError> Replacement =
+            Tests::GetRHIConformanceDeviceFactory().CreateSwapchain( **Device, *Swapchain );
         LUMEN_CHECK_TRUE( Replacement.HasValue() );
         LUMEN_CHECK_TRUE( ( *Replacement )->GetDesc().OldSwapchain.Get() == ( *Swapchain ).Get() );
     }
 
     LUMEN_TEST( RHIPresentationConformance, RejectsExhaustionStaleTokensAndInvalidResize )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         if ( not( *Device )->GetCapabilities().Supports( ERHICapabilityFlags::Presentation ) )
         {
             return;
         }
-        auto Swapchain = Tests::GetRHIConformanceDeviceFactory().CreateSwapchain( **Device );
+        TExpected<TSharedRef<IRHISwapchain>, FRHIError> Swapchain =
+            Tests::GetRHIConformanceDeviceFactory().CreateSwapchain( **Device );
         LUMEN_CHECK_TRUE( Swapchain.HasValue() );
-        const auto InvalidImage = ( *Swapchain )->GetImage( ( *Swapchain )->GetImageCount() );
+        const TExpected<TSharedRef<IRHITexture>, FRHIError> InvalidImage =
+            ( *Swapchain )->GetImage( ( *Swapchain )->GetImageCount() );
         LUMEN_CHECK_HAS_ERROR( InvalidImage );
         LUMEN_CHECK_EQ( InvalidImage.Error().Code, ERHIErrorCode::InvalidArgument );
         LUMEN_CHECK_EQ( InvalidImage.Error().Condition, ERHIErrorCondition::Presentation );
@@ -55,20 +59,20 @@ namespace
         TVector<FRHIAcquiredImage> AcquiredImages;
         for ( UInt32 Index = 0U; Index < ( *Swapchain )->GetImageCount(); ++Index )
         {
-            auto Acquired = ( *Swapchain )->AcquireNextImage();
+            TExpected<FRHIAcquiredImage, FRHIError> Acquired = ( *Swapchain )->AcquireNextImage();
             LUMEN_CHECK_TRUE( Acquired.HasValue() );
             AcquiredImages.push_back( *Acquired );
         }
-        const auto Exhausted = ( *Swapchain )->AcquireNextImage();
+        const TExpected<FRHIAcquiredImage, FRHIError> Exhausted = ( *Swapchain )->AcquireNextImage();
         LUMEN_CHECK_HAS_ERROR( Exhausted );
         LUMEN_CHECK_EQ( Exhausted.Error().Code, ERHIErrorCode::InvalidState );
-        const auto InvalidResize = ( *Swapchain )->Resize( { 640U, 400U, 1U } );
+        const TExpected<void, FRHIError> InvalidResize = ( *Swapchain )->Resize( { 640U, 400U, 1U } );
         LUMEN_CHECK_HAS_ERROR( InvalidResize );
         LUMEN_CHECK_EQ( InvalidResize.Error().Condition, ERHIErrorCondition::Presentation );
 
-        auto Queue = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+        const TSharedRef<IRHIQueue> Queue = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
         LUMEN_CHECK_TRUE( ( *Swapchain )->Present( *Queue, AcquiredImages[0], nullptr ).HasValue() );
-        const auto Stale = ( *Swapchain )->Present( *Queue, AcquiredImages[0], nullptr );
+        const TExpected<void, FRHIError> Stale = ( *Swapchain )->Present( *Queue, AcquiredImages[0], nullptr );
         LUMEN_CHECK_HAS_ERROR( Stale );
         LUMEN_CHECK_EQ( Stale.Error().Code, ERHIErrorCode::InvalidState );
         for ( USize Index = 1U; Index < AcquiredImages.size(); ++Index )
@@ -80,17 +84,18 @@ namespace
 
     LUMEN_TEST( RHIPresentationConformance, ReportsOutOfDateAndDeviceLossExplicitly )
     {
-        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         if ( not( *Device )->GetCapabilities().Supports( ERHICapabilityFlags::Presentation ) )
         {
             return;
         }
-        auto Swapchain = Tests::GetRHIConformanceDeviceFactory().CreateSwapchain( **Device );
+        TExpected<TSharedRef<IRHISwapchain>, FRHIError> Swapchain =
+            Tests::GetRHIConformanceDeviceFactory().CreateSwapchain( **Device );
         LUMEN_CHECK_TRUE( Swapchain.HasValue() );
         if ( Tests::GetRHIConformanceDeviceFactory().InjectSwapchainOutOfDate( **Swapchain ) )
         {
-            const auto OutOfDate = ( *Swapchain )->AcquireNextImage();
+            const TExpected<FRHIAcquiredImage, FRHIError> OutOfDate = ( *Swapchain )->AcquireNextImage();
             LUMEN_CHECK_HAS_ERROR( OutOfDate );
             LUMEN_CHECK_EQ( OutOfDate.Error().Code, ERHIErrorCode::OutOfDate );
             LUMEN_CHECK_EQ( OutOfDate.Error().Condition, ERHIErrorCondition::Presentation );
@@ -102,10 +107,11 @@ namespace
         {
             return;
         }
-        const auto Replacement = Tests::GetRHIConformanceDeviceFactory().CreateSwapchain( **Device );
+        const TExpected<TSharedRef<IRHISwapchain>, FRHIError> Replacement =
+            Tests::GetRHIConformanceDeviceFactory().CreateSwapchain( **Device );
         LUMEN_CHECK_HAS_ERROR( Replacement );
         LUMEN_CHECK_EQ( Replacement.Error().Code, ERHIErrorCode::DeviceLost );
-        const auto Acquired = ( *Swapchain )->AcquireNextImage();
+        const TExpected<FRHIAcquiredImage, FRHIError> Acquired = ( *Swapchain )->AcquireNextImage();
         LUMEN_CHECK_HAS_ERROR( Acquired );
         LUMEN_CHECK_EQ( Acquired.Error().Code, ERHIErrorCode::DeviceLost );
     }

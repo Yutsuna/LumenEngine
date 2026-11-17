@@ -16,9 +16,9 @@ LUMEN_TEST( RHITextureViewDesc, ValidatesAgainstParent )
 {
     Tests::FNullDevice Device;
     FRHITextureDesc TextureDesc;
-    TextureDesc.Format   = ERHIFormat::RGBA8Unorm;
-    TextureDesc.MipCount = 4U;
-    auto Texture         = Device.CreateTexture( TextureDesc );
+    TextureDesc.Format                                          = ERHIFormat::RGBA8Unorm;
+    TextureDesc.MipCount                                        = 4U;
+    const TExpected<TSharedRef<IRHITexture>, FRHIError> Texture = Device.CreateTexture( TextureDesc );
     FRHITextureViewDesc Desc;
     Desc.Texture = *Texture;
     LUMEN_CHECK_TRUE( Desc.Validate().HasValue() );

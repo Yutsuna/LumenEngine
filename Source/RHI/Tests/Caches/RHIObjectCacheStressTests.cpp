@@ -31,9 +31,9 @@ namespace
             {
                 for ( UInt32 Index = 0U; Index < 128U; ++Index )
                 {
-                    const UInt32 Key = ( Index + Worker ) % 16U;
-                    auto Result      = Cache.GetOrCreate( Key, [Key]
-                         {
+                    const UInt32 Key                                            = ( Index + Worker ) % 16U;
+                    const TExpected<TSharedPtr<FCachedValue>, FRHIError> Result = Cache.GetOrCreate( Key, [Key]
+                    {
                         return TExpected<TSharedRef<FCachedValue>, FRHIError>( MakeShared<FCachedValue>( Key ) );
                     }, 8ULL );
                     if ( not Result or ( *Result )->Value != Key )
@@ -47,7 +47,7 @@ namespace
         {
             Worker.Join();
         }
-        const auto Stats = Cache.GetStats();
+        const FRHICacheStats Stats = Cache.GetStats();
         LUMEN_CHECK_EQ( Failures.load(), 0U );
         LUMEN_CHECK_EQ( Stats.Hits + Stats.Misses, 512ULL );
         LUMEN_CHECK_TRUE( Stats.EntryCount <= 8ULL );

@@ -13,7 +13,8 @@ namespace Lumen
 LUMEN_TEST( RHIResourcesTierB, RejectsDeviceLocalMapAndCreationAfterLoss )
 {
     Tests::FNullDevice Device;
-    auto Buffer = Device.CreateBuffer( { .Size = 16ULL, .Usage = ERHIResourceUsage::CopyDestination } );
+    const TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
+        Device.CreateBuffer( { .Size = 16ULL, .Usage = ERHIResourceUsage::CopyDestination } );
     LUMEN_CHECK_HAS_ERROR( ( *Buffer )->Map( 0ULL, 1ULL ) );
     Device.MarkLost();
     LUMEN_CHECK_HAS_ERROR( Device.CreateBuffer( { .Size = 16ULL } ) );
