@@ -10,15 +10,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIShaderReflection::Validate (
     {
         if ( Bindings[First].Count == 0U )
         {
-            return TUnexpected<FRHIError>(
-                MakeRHIInvalidArgument( ERHIErrorCondition::Shader, "Reflected binding count is zero" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidShader( "Reflected binding count is zero" ) );
         }
         for ( USize Second = First + 1U; Second < Bindings.size(); ++Second )
         {
             if ( Bindings[First].Slot == Bindings[Second].Slot )
             {
-                return TUnexpected<FRHIError>(
-                    MakeRHIInvalidArgument( ERHIErrorCondition::Shader, "Duplicate reflected binding slot" ) );
+                return TUnexpected<FRHIError>( MakeRHIInvalidShader( "Duplicate reflected binding slot" ) );
             }
         }
     }

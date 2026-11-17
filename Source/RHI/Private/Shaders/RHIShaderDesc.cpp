@@ -10,7 +10,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIShaderDesc::Validate () cons
     if ( StageBits == 0U or ( StageBits & ( StageBits - 1U ) ) != 0U or EntryPoint.empty() or
          not IsKnownRHIShaderFormat( Format ) or not Reflection.Validate() )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Shader, "Invalid shader description" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidShader( "Invalid shader description" ) );
     }
     return {};
 }
