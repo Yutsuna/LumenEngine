@@ -38,7 +38,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHILinearAllocator::Free ( cons
 {
     if ( not InAllocation.IsValid() )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Invalid linear allocation" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Invalid linear allocation" ) );
     }
     return {};
 }

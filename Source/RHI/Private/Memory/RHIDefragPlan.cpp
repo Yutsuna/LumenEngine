@@ -11,7 +11,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDefragPlan::Validate () cons
         if ( not Moves[First].Source.IsValid() or not Moves[First].Destination.IsValid() or
              Moves[First].Source.Size != Moves[First].Destination.Size )
         {
-            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Invalid defragmentation move" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Invalid defragmentation move" ) );
         }
         for ( USize Second = First + 1U; Second < Moves.size(); ++Second )
         {
@@ -19,8 +19,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDefragPlan::Validate () cons
             const FRHIAllocation &Right = Moves[Second].Destination;
             if ( RHIRangesOverlap( Left.Offset, Left.Size, Right.Offset, Right.Size ) )
             {
-                return TUnexpected<FRHIError>(
-                    MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Defragmentation destinations overlap" ) );
+                return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Defragmentation destinations overlap" ) );
             }
         }
     }

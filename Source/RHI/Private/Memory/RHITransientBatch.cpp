@@ -13,7 +13,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITransientBatch::Validate () 
     {
         if ( not Request.Validate() )
         {
-            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Invalid transient request" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Invalid transient request" ) );
         }
     }
     return {};

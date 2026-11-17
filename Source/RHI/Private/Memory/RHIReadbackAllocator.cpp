@@ -23,7 +23,7 @@ Lumen::FRHIReadbackAllocator::Map ( const FRHIAllocation &InAllocation ) noexcep
     if ( not InAllocation.IsValid() or InAllocation.Offset > Capacity or
          InAllocation.Size > Capacity - static_cast<USize>( InAllocation.Offset ) )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Readback range exceeds storage" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Readback range exceeds storage" ) );
     }
     return FRHIReadbackAllocation{ InAllocation, TSpan<const Byte>( Storage.Get() + static_cast<USize>( InAllocation.Offset ),
                                                                     static_cast<USize>( InAllocation.Size ) ) };

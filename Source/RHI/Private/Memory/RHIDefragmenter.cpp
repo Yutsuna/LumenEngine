@@ -16,7 +16,7 @@ Lumen::FRHIDefragmenter::BuildPlan ( const TSpan<const FRHIAllocation> InAllocat
     {
         if ( not Allocation.IsValid() )
         {
-            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Invalid live allocation" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Invalid live allocation" ) );
         }
     }
     return FRHIDefragPlan{};

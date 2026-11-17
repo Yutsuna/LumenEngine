@@ -8,8 +8,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIAllocationDesc::Validate () 
 {
     if ( Size == 0ULL or not RHIIsPowerOfTwo( Alignment ) )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Allocation size and alignment are invalid" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Allocation size and alignment are invalid" ) );
     }
     return {};
 }

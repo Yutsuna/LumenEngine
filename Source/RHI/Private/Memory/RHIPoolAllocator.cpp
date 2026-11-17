@@ -43,7 +43,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIPoolAllocator::Free ( const 
     if ( not InAllocation.IsValid() or SlotSize == 0ULL or InAllocation.Offset % SlotSize != 0ULL or
          InAllocation.Offset / SlotSize >= Stats.Capacity / SlotSize )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Invalid pool allocation" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Invalid pool allocation" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( USize Index = 0U; Index < ActiveAllocations.size(); ++Index )
@@ -56,7 +56,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIPoolAllocator::Free ( const 
             return {};
         }
     }
-    return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Pool allocation is not active" ) );
+    return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Pool allocation is not active" ) );
 }
 void Lumen::FRHIPoolAllocator::Reset () noexcept
 {

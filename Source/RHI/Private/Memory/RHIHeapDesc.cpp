@@ -7,7 +7,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIHeapDesc::Validate () const 
 {
     if ( Size == 0ULL )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Heap size must be nonzero" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Heap size must be nonzero" ) );
     }
     return {};
 }

@@ -24,7 +24,7 @@ Lumen::FRHIUploadAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
     const auto End = RHICheckedAdd( static_cast<USize>( Allocation->Offset ), static_cast<USize>( Allocation->Size ) );
     if ( not End or *End > Capacity )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Upload range exceeds storage" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Upload range exceeds storage" ) );
     }
     return FRHIUploadAllocation{ *Allocation, TSpan<Byte>( Storage.Get() + static_cast<USize>( Allocation->Offset ),
                                                            static_cast<USize>( Allocation->Size ) ) };

@@ -65,7 +65,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRingAllocator::Free ( const 
             return {};
         }
     }
-    return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Ring allocation is not active" ) );
+    return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Ring allocation is not active" ) );
 }
 void Lumen::FRHIRingAllocator::Reset () noexcept
 {

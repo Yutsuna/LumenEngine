@@ -88,7 +88,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const 
     }
     if ( not bFound )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "TLSF allocation is not active" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "TLSF allocation is not active" ) );
     }
     TVector<FFreeRange> Ranges;
     for ( auto &List : Buckets )
