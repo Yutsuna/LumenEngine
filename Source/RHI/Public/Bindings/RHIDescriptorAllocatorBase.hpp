@@ -3,14 +3,20 @@
  * @brief Declares the backend-neutral descriptor allocator implementation.
  */
 #pragma once
+
+#include <RHIExport.hpp>
+
 #include <Bindings/IRHIDescriptorAllocator.hpp>
 #include <Bindings/IRHIDescriptorPoolBackend.hpp>
 #include <Bindings/RHIDescriptorAllocatorDesc.hpp>
+
 #include <HAL/PlatformMutex.hpp>
+
 #include <Memory/IndiceAllocator.hpp>
 #include <Memory/UniquePtr.hpp>
-#include <RHIExport.hpp>
+
 #include <Templates/Vector.hpp>
+
 namespace Lumen
 {
 
