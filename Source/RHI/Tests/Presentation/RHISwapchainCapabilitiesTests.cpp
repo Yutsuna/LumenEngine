@@ -17,7 +17,8 @@ namespace
         LUMEN_CHECK_TRUE( Capabilities.Validate().HasValue() );
         LUMEN_CHECK_TRUE(
             Capabilities.Supports( ERHIFormat::RGBA8Unorm, ERHIColorSpace::SrgbNonLinear, ERHIPresentMode::Mailbox ) );
-        LUMEN_CHECK_FALSE( Capabilities.Supports( ERHIFormat::BC7RGBAUnorm, ERHIColorSpace::SrgbNonLinear, ERHIPresentMode::Fifo ) );
+        LUMEN_CHECK_FALSE(
+            Capabilities.Supports( ERHIFormat::BC7RGBAUnorm, ERHIColorSpace::SrgbNonLinear, ERHIPresentMode::Fifo ) );
         const auto Clamped = Capabilities.ClampExtent( { 0U, 50000U, 1U } );
         LUMEN_CHECK_EQ( Clamped.Width, 1U );
         LUMEN_CHECK_EQ( Clamped.Height, 16384U );

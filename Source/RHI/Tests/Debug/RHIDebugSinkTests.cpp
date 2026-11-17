@@ -37,10 +37,8 @@ namespace
             {
                 for ( UInt32 Index = 0U; Index < 32U; ++Index )
                 {
-                    Sink.Emit( FRHIDebugMessage( ERHIDebugSeverity::Warning,
-                                                 ERHIDebugCategory::Synchronization,
-                                                 Producer * 32U + Index,
-                                                 "concurrent" ) );
+                    Sink.Emit( FRHIDebugMessage( ERHIDebugSeverity::Warning, ERHIDebugCategory::Synchronization,
+                                                 Producer * 32U + Index, "concurrent" ) );
                 }
             } );
         }

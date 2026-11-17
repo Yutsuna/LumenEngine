@@ -21,9 +21,9 @@ namespace
         Desc.MaxEntries = 1U;
         Desc.MaxBytes   = 0ULL;
         LUMEN_CHECK_HAS_ERROR( Desc.Validate() );
-        Desc.MaxBytes = 4ULL;
+        Desc.MaxBytes                  = 4ULL;
         const TArray<Byte, 5U> Initial = {};
-        Desc.InitialData = Initial;
+        Desc.InitialData               = Initial;
         LUMEN_CHECK_HAS_ERROR( Desc.Validate() );
         Desc.MaxBytes = 5ULL;
         LUMEN_CHECK_TRUE( Desc.Validate().HasValue() );

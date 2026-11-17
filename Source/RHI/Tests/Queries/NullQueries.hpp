@@ -17,7 +17,10 @@ namespace Lumen
 namespace Tests
 {
 
-    /** @class FNullQueryPool @brief Query storage with controllable values and availability timelines. */
+    /**
+     * @class FNullQueryPool
+     * @brief Query storage with controllable values and availability timelines.
+     */
     class FNullQueryPool final : public IRHIQueryPool
     {
     public:

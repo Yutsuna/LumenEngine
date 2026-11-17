@@ -20,7 +20,10 @@ namespace Tests
     /** @return Capabilities accepted by every Null native surface. */
     [[nodiscard]] FRHISwapchainCapabilities MakeNullSwapchainCapabilities () noexcept;
 
-    /** @class FNullSwapchain @brief CPU-owned swapchain ring with explicit acquire/present state. */
+    /**
+     * @class FNullSwapchain
+     * @brief CPU-owned swapchain ring with explicit acquire/present state.
+     */
     class FNullSwapchain final : public IRHISwapchain
     {
     public:

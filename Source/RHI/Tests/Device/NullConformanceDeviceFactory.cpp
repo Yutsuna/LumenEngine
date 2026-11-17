@@ -5,6 +5,7 @@
 
 #include "Device/NullConformanceDeviceFactory.hpp"
 #include "Module/NullModule.hpp"
+#include <Validation/RHIValidation.hpp>
 
 /**
  * Public
@@ -24,12 +25,12 @@ Lumen::TSharedRef<Lumen::IRHIModule> Lumen::Tests::FNullConformanceDeviceFactory
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDevice>, Lumen::FRHIError>
 Lumen::Tests::FNullConformanceDeviceFactory::CreateDevice ( const Bool bEnableValidation ) noexcept
 {
-    if ( bEnableValidation )
+    auto Device = GetModule()->CreateDevice( FRHIDeviceDesc{} );
+    if ( not Device or not bEnableValidation )
     {
-        return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Device, "Validation is not wired yet" ) );
+        return Device;
     }
-    return GetModule()->CreateDevice( FRHIDeviceDesc{} );
+    return WrapRHIDevice( *Device );
 }
 
 Lumen::Tests::IRHIConformanceDeviceFactory &Lumen::Tests::GetRHIConformanceDeviceFactory () noexcept

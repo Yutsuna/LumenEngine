@@ -13,8 +13,7 @@ namespace
 
     struct FCachedValue
     {
-        explicit FCachedValue ( const UInt32 InValue ) noexcept
-            : Value( InValue )
+        explicit FCachedValue ( const UInt32 InValue ) noexcept : Value( InValue )
         {
         }
         UInt32 Value = 0U;
@@ -46,14 +45,17 @@ namespace
     LUMEN_TEST( RHIObjectCache, EvictsTheLeastRecentlyUsedEntry )
     {
         FCache Cache( 2U );
-        const auto Factory = []( const UInt32 Key )
+        const auto Factory = [] ( const UInt32 Key )
         {
             return TExpected<TSharedRef<FCachedValue>, FRHIError>( MakeShared<FCachedValue>( Key ) );
         };
         LUMEN_CHECK_TRUE( Cache.Store( 1U, MakeShared<FCachedValue>( 1U ), 8ULL ).HasValue() );
         LUMEN_CHECK_TRUE( Cache.Store( 2U, MakeShared<FCachedValue>( 2U ), 8ULL ).HasValue() );
         LUMEN_CHECK_TRUE( Cache.Find( 1U ).IsValid() );
-        auto Third = Cache.GetOrCreate( 3U, [&Factory] { return Factory( 3U ); }, 8ULL );
+        auto Third = Cache.GetOrCreate( 3U, [&Factory]
+        {
+            return Factory( 3U );
+        }, 8ULL );
         LUMEN_CHECK_TRUE( Third.HasValue() );
         LUMEN_CHECK_TRUE( Cache.Find( 1U ).IsValid() );
         LUMEN_CHECK_FALSE( Cache.Find( 2U ).IsValid() );
@@ -67,24 +69,18 @@ namespace
     LUMEN_TEST( RHIObjectCache, DoesNotInsertFailedOrRejectedCreations )
     {
         FCache Cache( 1U, ERHICacheEvictionPolicy::None );
-        const auto Failure = Cache.GetOrCreate( 9U,
-                                                []
-                                                {
-                                                    return TExpected<TSharedRef<FCachedValue>, FRHIError>(
-                                                        TUnexpected<FRHIError>( FRHIError(
-                                                            ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Cache, "factory" ) ) );
-                                                },
-                                                8ULL );
+        const auto Failure = Cache.GetOrCreate( 9U, []
+        {
+            return TExpected<TSharedRef<FCachedValue>, FRHIError>(
+                TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Cache, "factory" ) ) );
+        }, 8ULL );
         LUMEN_CHECK_HAS_ERROR( Failure );
         LUMEN_CHECK_EQ( Cache.GetEntryCount(), 0U );
         LUMEN_CHECK_TRUE( Cache.Store( 1U, MakeShared<FCachedValue>( 1U ), 8ULL ).HasValue() );
-        auto Rejected = Cache.GetOrCreate( 2U,
-                                           []
-                                           {
-                                               return TExpected<TSharedRef<FCachedValue>, FRHIError>(
-                                                   MakeShared<FCachedValue>( 2U ) );
-                                           },
-                                           8ULL );
+        auto Rejected = Cache.GetOrCreate( 2U, []
+        {
+            return TExpected<TSharedRef<FCachedValue>, FRHIError>( MakeShared<FCachedValue>( 2U ) );
+        }, 8ULL );
         LUMEN_CHECK_HAS_ERROR( Rejected );
         LUMEN_CHECK_EQ( Cache.GetEntryCount(), 1U );
         LUMEN_CHECK_TRUE( Cache.Find( 1U ).IsValid() );

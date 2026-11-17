@@ -13,7 +13,10 @@ namespace Lumen
 namespace Tests
 {
 
-    /** @class FRecordingDebugSink @brief Retains an ordered copy of every emitted diagnostic. */
+    /**
+     * @class FRecordingDebugSink
+     * @brief Retains an ordered copy of every emitted diagnostic.
+     */
     class FRecordingDebugSink final : public IRHIDebugSink
     {
     public:

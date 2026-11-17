@@ -306,5 +306,4 @@ Lumen::FStringView Lumen::ToRHIString ( const ERHICacheEvictionPolicy InValue ) 
     return "Unknown";
 }
 
-
 #undef RHI_ENUM_CASE

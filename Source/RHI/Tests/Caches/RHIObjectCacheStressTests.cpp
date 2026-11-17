@@ -14,8 +14,7 @@ namespace
 
     struct FCachedValue
     {
-        explicit FCachedValue ( const UInt32 InValue ) noexcept
-            : Value( InValue )
+        explicit FCachedValue ( const UInt32 InValue ) noexcept : Value( InValue )
         {
         }
         UInt32 Value = 0U;
@@ -33,13 +32,10 @@ namespace
                 for ( UInt32 Index = 0U; Index < 128U; ++Index )
                 {
                     const UInt32 Key = ( Index + Worker ) % 16U;
-                    auto Result      = Cache.GetOrCreate( Key,
-                                                          [Key]
-                                                          {
-                                                              return TExpected<TSharedRef<FCachedValue>, FRHIError>(
-                                                                  MakeShared<FCachedValue>( Key ) );
-                                                          },
-                                                          8ULL );
+                    auto Result      = Cache.GetOrCreate( Key, [Key]
+                         {
+                        return TExpected<TSharedRef<FCachedValue>, FRHIError>( MakeShared<FCachedValue>( Key ) );
+                    }, 8ULL );
                     if ( not Result or ( *Result )->Value != Key )
                     {
                         Failures.fetch_add( 1U );

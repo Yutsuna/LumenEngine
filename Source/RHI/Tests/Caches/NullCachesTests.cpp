@@ -82,8 +82,8 @@ namespace
         LUMEN_CHECK_HAS_ERROR( Corrupted.Initialize() );
 
         FRHIPipelineCacheDesc BoundedDesc;
-        BoundedDesc.MaxEntries      = 1U;
-        BoundedDesc.bAllowEviction  = false;
+        BoundedDesc.MaxEntries     = 1U;
+        BoundedDesc.bAllowEviction = false;
         Tests::FNullPipelineCache Bounded( BoundedDesc, MakeShared<Tests::FNullFaultPlan>(), FRHIObjectId{ 6ULL } );
         LUMEN_CHECK_TRUE( Bounded.Insert( Key, MakePipeline( Key ) ).HasValue() );
         const auto Other = MakeKey( 5ULL );

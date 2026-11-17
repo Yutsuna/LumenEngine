@@ -22,7 +22,10 @@ namespace Tests
         [[nodiscard]] USize operator()( const FRHIPipelineCompatibility &InKey ) const noexcept;
     };
 
-    /** @class FNullPipelineCache @brief Thread-safe LRU pipeline cache with opaque metadata serialization. */
+    /**
+     * @class FNullPipelineCache
+     * @brief Thread-safe LRU pipeline cache with opaque metadata serialization.
+     */
     class FNullPipelineCache final : public IRHIPipelineCache
     {
     public:
