@@ -145,6 +145,11 @@ Lumen::Tests::FNullDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcep
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
+    if ( InDesc.Size > GetLimits().MaxBufferSize )
+    {
+        return TUnexpected<FRHIError>(
+            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Limit, "Buffer exceeds the published size limit" ) );
+    }
     auto Result = MakeShared<FNullBuffer>( InDesc, NextObjectId() );
     TrackObject( *Result );
     return Result;
@@ -159,6 +164,12 @@ Lumen::Tests::FNullDevice::CreateTexture ( const FRHITextureDesc &InDesc ) noexc
     if ( const auto Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
+    }
+    if ( InDesc.Extent.Width > GetLimits().MaxTextureDimension2D or InDesc.Extent.Height > GetLimits().MaxTextureDimension2D or
+         InDesc.Extent.Depth > GetLimits().MaxTextureDimension3D or InDesc.LayerCount > GetLimits().MaxTextureArrayLayers )
+    {
+        return TUnexpected<FRHIError>(
+            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Limit, "Texture exceeds a published dimension limit" ) );
     }
     const auto Footprint = ComputeRHICopyFootprint( InDesc.Format, InDesc.Extent, 0ULL, GetLimits().MinTextureRowAlignment );
     if ( not Footprint )
@@ -290,6 +301,14 @@ Lumen::Tests::FNullDevice::CreateBindingLayout ( const FRHIBindingLayoutDesc &In
     if ( const auto Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
+    }
+    for ( const FRHIBindingLayoutEntry &Entry : InDesc.Entries )
+    {
+        if ( Entry.bBindless and not GetCapabilities().Supports( ERHICapabilityFlags::BindlessResources ) )
+        {
+            return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Capability,
+                                                      "Bindless resources were not negotiated" ) );
+        }
     }
     auto Result = MakeShared<FNullBindingLayout>( InDesc, NextObjectId() );
     TrackObject( *Result );
@@ -455,6 +474,12 @@ Lumen::Tests::FNullDevice::CreateSemaphore ( const FRHISemaphoreDesc &InDesc ) n
     if ( const auto Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
+    }
+    if ( InDesc.Type == ERHISemaphoreType::Timeline and
+         not GetCapabilities().Supports( ERHICapabilityFlags::TimelineSemaphores ) )
+    {
+        return TUnexpected<FRHIError>(
+            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Capability, "Timeline semaphores were not negotiated" ) );
     }
     auto Result = MakeShared<FNullSemaphore>( InDesc, NextObjectId() );
     TrackObject( *Result );

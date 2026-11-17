@@ -11,6 +11,19 @@ Lumen::FRHIObjectBase::FRHIObjectBase ( const FRHIObjectId InId, const UInt64 In
 {
 }
 
+Lumen::FRHIObjectBase::~FRHIObjectBase () noexcept
+{
+    if ( DestructionCallback )
+    {
+        DestructionCallback();
+    }
+}
+
+void Lumen::FRHIObjectBase::SetDestructionCallback ( TFunction<void()> InCallback ) noexcept
+{
+    DestructionCallback = std::move( InCallback );
+}
+
 Lumen::FString Lumen::FRHIObjectBase::GetDebugName () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( DebugNameMutex );

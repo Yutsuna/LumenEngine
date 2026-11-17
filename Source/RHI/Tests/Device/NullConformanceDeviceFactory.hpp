@@ -26,6 +26,12 @@ namespace Tests
         explicit FNullConformanceDeviceFactory ( FNullDeviceDesc InDesc = {} ) noexcept;
         TSharedRef<IRHIModule> GetModule () const noexcept override;
         TExpected<TSharedRef<IRHIDevice>, FRHIError> CreateDevice ( Bool bEnableValidation = false ) noexcept override;
+        TExpected<TSharedRef<IRHIShader>, FRHIError> CreateShader ( IRHIDevice &InDevice,
+                                                                    ERHIShaderStage InStage ) const noexcept override;
+        TExpected<TSharedRef<IRHISwapchain>, FRHIError>
+        CreateSwapchain ( IRHIDevice &InDevice, const TSharedPtr<IRHISwapchain> &InOldSwapchain = {} ) const noexcept override;
+        Bool InjectDeviceLost ( IRHIDevice &InDevice ) const noexcept override;
+        Bool InjectSwapchainOutOfDate ( IRHISwapchain &InSwapchain ) const noexcept override;
 
     private:
 

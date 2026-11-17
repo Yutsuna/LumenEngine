@@ -10,7 +10,8 @@
     [[nodiscard]] FRHIObjectId GetId() const noexcept override;                                                                  \
     [[nodiscard]] FString GetDebugName() const noexcept override;                                                                \
     void SetDebugName( FStringView InName ) noexcept override;                                                                   \
-    [[nodiscard]] UInt64 GetBackendTypeTag() const noexcept override
+    [[nodiscard]] UInt64 GetBackendTypeTag() const noexcept override;                                                            \
+    [[nodiscard]] FRHIObjectBase &GetRHIObjectBase() noexcept
 
 #define LUMEN_RHI_OBJECT_FORWARDERS( Class )                                                                                     \
     Lumen::FRHIObjectId Lumen::Class::GetId() const noexcept                                                                     \
@@ -28,4 +29,8 @@
     Lumen::UInt64 Lumen::Class::GetBackendTypeTag() const noexcept                                                               \
     {                                                                                                                            \
         return Identity.GetBackendTypeTag();                                                                                     \
+    }                                                                                                                            \
+    Lumen::FRHIObjectBase &Lumen::Class::GetRHIObjectBase() noexcept                                                             \
+    {                                                                                                                            \
+        return Identity;                                                                                                         \
     }

@@ -10,7 +10,7 @@ Lumen::FRHIDeviceBase::FRHIDeviceBase ( const FRHICapabilities InCapabilities,
                                         const FRHILimits InLimits,
                                         const UInt64 InBackendTypeTag ) noexcept
     : Identity( FRHIObjectId{ 1ULL }, InBackendTypeTag ), Capabilities( InCapabilities ), Limits( InLimits ),
-      Status( ERHIDeviceStatus::Ready )
+      Status( ERHIDeviceStatus::Ready ), Registry( MakeShared<FObjectRegistry>() )
 {
 }
 
@@ -56,8 +56,8 @@ Lumen::ERHIDeviceStatus Lumen::FRHIDeviceBase::GetStatus () const noexcept
 
 Lumen::USize Lumen::FRHIDeviceBase::GetTrackedObjectCount () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( ObjectsMutex );
-    return Objects.size();
+    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
+    return Registry->Objects.size();
 }
 
 void Lumen::FRHIDeviceBase::SetStatus ( const ERHIDeviceStatus InStatus ) noexcept
@@ -74,21 +74,36 @@ Lumen::FRHIObjectId Lumen::FRHIDeviceBase::NextObjectId () noexcept
     return Identifiers.Next<FRHIObjectIdTag>();
 }
 
-void Lumen::FRHIDeviceBase::TrackObject ( IRHIObject &InObject ) noexcept
+void Lumen::FRHIDeviceBase::TrackObject ( IRHIObject &InObject, FRHIObjectBase &InBase ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( ObjectsMutex );
-    Objects.emplace_back( &InObject );
+    {
+        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
+        Registry->Objects.emplace_back( &InObject );
+    }
+    InBase.SetDestructionCallback( [Registry = Registry, &InObject]
+    {
+        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
+        for ( USize Index = 0U; Index < Registry->Objects.size(); ++Index )
+        {
+            if ( Registry->Objects[Index] == &InObject )
+            {
+                Registry->Objects[Index] = Registry->Objects.back();
+                Registry->Objects.pop_back();
+                return;
+            }
+        }
+    } );
 }
 
 void Lumen::FRHIDeviceBase::UntrackObject ( IRHIObject &InObject ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( ObjectsMutex );
-    for ( USize Index = 0U; Index < Objects.size(); ++Index )
+    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
+    for ( USize Index = 0U; Index < Registry->Objects.size(); ++Index )
     {
-        if ( Objects[Index] == &InObject )
+        if ( Registry->Objects[Index] == &InObject )
         {
-            Objects[Index] = Objects.back();
-            Objects.pop_back();
+            Registry->Objects[Index] = Registry->Objects.back();
+            Registry->Objects.pop_back();
             return;
         }
     }

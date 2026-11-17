@@ -20,6 +20,10 @@ namespace
     {
         auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
+        if ( not( *Device )->GetCapabilities().Supports( ERHICapabilityFlags::OcclusionQueries ) )
+        {
+            return;
+        }
         FRHIQueryPoolDesc Desc;
         Desc.Count = 2U;
         auto Pool  = ( *Device )->CreateQueryPool( Desc );
@@ -43,19 +47,75 @@ namespace
         LUMEN_CHECK_EQ( Results[1], 2ULL );
     }
 
-    LUMEN_TEST( RHIQueriesConformance, CreatesEveryAdvertisedQueryType )
+    LUMEN_TEST( RHIQueriesConformance, QueryTypesFollowAdvertisedCapabilities )
     {
         auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
-        FRHIQueryPoolDesc Desc;
-        Desc.Type      = ERHIQueryType::Timestamp;
-        Desc.QueueType = ERHIQueueType::Compute;
-        LUMEN_CHECK_TRUE( ( *Device )->CreateQueryPool( Desc ).HasValue() );
-        Desc.Type      = ERHIQueryType::PipelineStatistics;
-        Desc.QueueType = ERHIQueueType::Graphics;
-        LUMEN_CHECK_TRUE( ( *Device )->CreateQueryPool( Desc ).HasValue() );
-        Desc.QueueType = ERHIQueueType::Copy;
-        LUMEN_CHECK_HAS_ERROR( ( *Device )->CreateQueryPool( Desc ) );
+        const TArray<ERHIQueryType, 3U> Types          = { ERHIQueryType::Occlusion, ERHIQueryType::Timestamp,
+                                                           ERHIQueryType::PipelineStatistics };
+        const TArray<ERHICapabilityFlags, 3U> Required = { ERHICapabilityFlags::OcclusionQueries,
+                                                           ERHICapabilityFlags::TimestampQueries,
+                                                           ERHICapabilityFlags::PipelineStatistics };
+        for ( USize Index = 0U; Index < Types.size(); ++Index )
+        {
+            FRHIQueryPoolDesc Desc;
+            Desc.Type      = Types[Index];
+            Desc.QueueType = Desc.Type == ERHIQueryType::Timestamp ? ERHIQueueType::Compute : ERHIQueueType::Graphics;
+            auto Pool      = ( *Device )->CreateQueryPool( Desc );
+            if ( ( *Device )->GetCapabilities().Supports( Required[Index] ) )
+            {
+                LUMEN_CHECK_TRUE( Pool.HasValue() );
+            }
+            else
+            {
+                LUMEN_CHECK_HAS_ERROR( Pool );
+                LUMEN_CHECK_EQ( Pool.Error().Code, ERHIErrorCode::Unsupported );
+                LUMEN_CHECK_EQ( Pool.Error().Condition, ERHIErrorCondition::Query );
+            }
+        }
+
+        FRHIQueryPoolDesc InvalidQueueDesc;
+        InvalidQueueDesc.Type      = ERHIQueryType::PipelineStatistics;
+        InvalidQueueDesc.QueueType = ERHIQueueType::Copy;
+        const auto InvalidQueue    = ( *Device )->CreateQueryPool( InvalidQueueDesc );
+        LUMEN_CHECK_HAS_ERROR( InvalidQueue );
+        LUMEN_CHECK_EQ( InvalidQueue.Error().Code, ERHIErrorCode::InvalidArgument );
+        LUMEN_CHECK_EQ( InvalidQueue.Error().Condition, ERHIErrorCondition::Query );
+    }
+
+    LUMEN_TEST( RHIQueriesConformance, ResetMakesResultsUnavailableAndChecksRanges )
+    {
+        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        LUMEN_CHECK_TRUE( Device.HasValue() );
+        if ( not( *Device )->GetCapabilities().Supports( ERHICapabilityFlags::OcclusionQueries ) )
+        {
+            return;
+        }
+        auto Pool      = *( *Device )->CreateQueryPool( {} );
+        auto Allocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
+        auto List      = *( *Device )->CreateCommandList( Allocator );
+        LUMEN_CHECK_TRUE( List->Begin().HasValue() );
+        const auto InvalidIndex = List->BeginQuery( *Pool, 1U );
+        LUMEN_CHECK_HAS_ERROR( InvalidIndex );
+        LUMEN_CHECK_EQ( InvalidIndex.Error().Condition, ERHIErrorCondition::Query );
+        LUMEN_CHECK_TRUE( List->BeginQuery( *Pool, 0U ).HasValue() );
+        LUMEN_CHECK_TRUE( List->EndQuery( *Pool, 0U ).HasValue() );
+        LUMEN_CHECK_TRUE( List->End().HasValue() );
+        auto Queue = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+        FRHISubmitDesc Submit;
+        Submit.CommandLists = { List };
+        Submit.Completion   = { 1ULL };
+        LUMEN_CHECK_TRUE( Queue->Submit( Submit ).HasValue() );
+
+        TArray<UInt64, 1U> Result = {};
+        LUMEN_CHECK_TRUE( Pool->ReadResults( 0U, 1U, Result, Queue->GetCompletedValue() ).HasValue() );
+        Pool->Reset();
+        const auto Unavailable = Pool->ReadResults( 0U, 1U, Result, Queue->GetCompletedValue() );
+        LUMEN_CHECK_HAS_ERROR( Unavailable );
+        LUMEN_CHECK_EQ( Unavailable.Error().Code, ERHIErrorCode::InvalidState );
+        const auto InvalidRange = Pool->ReadResults( 0U, 2U, Result, Queue->GetCompletedValue() );
+        LUMEN_CHECK_HAS_ERROR( InvalidRange );
+        LUMEN_CHECK_EQ( InvalidRange.Error().Code, ERHIErrorCode::InvalidArgument );
     }
 
 } // namespace

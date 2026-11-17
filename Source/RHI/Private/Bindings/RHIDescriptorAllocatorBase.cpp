@@ -1,24 +1,28 @@
 /**
  * @file RHIDescriptorAllocatorBase.cpp
- * @brief Implements descriptor free-list allocation.
+ * @brief Implements descriptor free lists, pool growth, and range recycling.
  */
 
 #include <Bindings/RHIDescriptorAllocatorBase.hpp>
 #include <HAL/LockGuard.hpp>
+
 Lumen::FRHIDescriptorAllocatorBase::FRHIDescriptorAllocatorBase ( const FRHIDescriptorAllocatorDesc &InDesc,
                                                                   IRHIDescriptorPoolBackend &InBackend ) noexcept
-    : Desc( InDesc ), Indices( MakeUnique<FIndiceAllocator>( InDesc.InitialCapacity ) ), Backend( &InBackend )
+    : Desc( InDesc ), Backend( &InBackend )
 {
     const auto Pool = Backend->CreatePool( InDesc.InitialCapacity );
     if ( Pool )
     {
-        Pools.push_back( *Pool );
+        Pools.push_back(
+            FPool{ .BaseOffset = 0U, .BackendPool = *Pool, .Indices = MakeUnique<FIndiceAllocator>( InDesc.InitialCapacity ) } );
     }
 }
+
 Lumen::FRHIDescriptorAllocatorBase::~FRHIDescriptorAllocatorBase () noexcept
 {
     ReleasePools();
 }
+
 Lumen::TExpected<Lumen::FRHIDescriptorAllocation, Lumen::FRHIError>
 Lumen::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
 {
@@ -27,14 +31,49 @@ Lumen::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
         return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Descriptor count is zero" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Allocation = Indices->Allocate( InCount );
-    if ( not Allocation )
+    for ( FPool &Pool : Pools )
+    {
+        const auto Allocation = Pool.Indices->Allocate( InCount );
+        if ( Allocation )
+        {
+            const FRHIDescriptorAllocation Result{ Pool.BaseOffset + Allocation->Start, Allocation->Count };
+            Active.push_back( Result );
+            return Result;
+        }
+    }
+
+    UInt32 BaseOffset = 0U;
+    if ( not Pools.empty() )
+    {
+        const FPool &Last = Pools.back();
+        BaseOffset        = Last.BaseOffset + Last.Indices->GetCapacity();
+    }
+    if ( BaseOffset >= Desc.MaximumCapacity or InCount > Desc.MaximumCapacity - BaseOffset )
     {
         return TUnexpected<FRHIError>(
             FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Binding, "Descriptor allocator exhausted" ) );
     }
-    return FRHIDescriptorAllocation{ Allocation->Start, Allocation->Count };
+    const UInt32 Remaining = Desc.MaximumCapacity - BaseOffset;
+    const UInt32 Requested = Desc.InitialCapacity < InCount ? InCount : Desc.InitialCapacity;
+    const UInt32 Capacity  = Remaining < Requested ? Remaining : Requested;
+    const auto BackendPool = Backend->CreatePool( Capacity );
+    if ( not BackendPool )
+    {
+        return TUnexpected<FRHIError>( BackendPool.Error() );
+    }
+    Pools.push_back(
+        FPool{ .BaseOffset = BaseOffset, .BackendPool = *BackendPool, .Indices = MakeUnique<FIndiceAllocator>( Capacity ) } );
+    const auto Allocation = Pools.back().Indices->Allocate( InCount );
+    if ( not Allocation )
+    {
+        return TUnexpected<FRHIError>(
+            FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Binding, "Descriptor pool growth failed" ) );
+    }
+    const FRHIDescriptorAllocation Result{ BaseOffset + Allocation->Start, Allocation->Count };
+    Active.push_back( Result );
+    return Result;
 }
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllocation ) noexcept
 {
@@ -43,19 +82,55 @@ Lumen::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllo
         return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Invalid descriptor range" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    Indices->Free( FIndiceAllocation( InAllocation.Offset, InAllocation.Count ) );
-    return {};
+    Bool bActive = false;
+    for ( USize Index = 0U; Index < Active.size(); ++Index )
+    {
+        if ( Active[Index].Offset == InAllocation.Offset and Active[Index].Count == InAllocation.Count )
+        {
+            Active.erase( Active.begin() + static_cast<ISize>( Index ) );
+            bActive = true;
+            break;
+        }
+    }
+    if ( not bActive )
+    {
+        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Descriptor range is not active" ) );
+    }
+    for ( FPool &Pool : Pools )
+    {
+        if ( InAllocation.Offset < Pool.BaseOffset )
+        {
+            continue;
+        }
+        const UInt32 LocalOffset = InAllocation.Offset - Pool.BaseOffset;
+        const UInt32 Capacity    = Pool.Indices->GetCapacity();
+        if ( LocalOffset < Capacity and InAllocation.Count <= Capacity - LocalOffset )
+        {
+            Pool.Indices->Free( FIndiceAllocation( LocalOffset, InAllocation.Count ) );
+            return {};
+        }
+    }
+    return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Descriptor pool is not present" ) );
 }
+
 void Lumen::FRHIDescriptorAllocatorBase::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    Indices = MakeUnique<FIndiceAllocator>( Desc.InitialCapacity );
+    ReleasePools();
+    Pools.clear();
+    Active.clear();
+    const auto Pool = Backend->CreatePool( Desc.InitialCapacity );
+    if ( Pool )
+    {
+        Pools.push_back(
+            FPool{ .BaseOffset = 0U, .BackendPool = *Pool, .Indices = MakeUnique<FIndiceAllocator>( Desc.InitialCapacity ) } );
+    }
 }
+
 void Lumen::FRHIDescriptorAllocatorBase::ReleasePools () noexcept
 {
-    for ( const UInt64 Pool : Pools )
+    for ( const FPool &Pool : Pools )
     {
-        Backend->ReleasePool( Pool );
+        Backend->ReleasePool( Pool.BackendPool );
     }
-    Pools.clear();
 }

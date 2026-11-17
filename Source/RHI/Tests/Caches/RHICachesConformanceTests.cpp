@@ -20,9 +20,7 @@ namespace
         auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
         auto Layout = *( *Device )->CreatePipelineLayout( {} );
-        FRHIShaderDesc ShaderDesc;
-        ShaderDesc.Stage = ERHIShaderStage::Compute;
-        auto Shader      = *( *Device )->CreateShader( ShaderDesc );
+        auto Shader = *Tests::GetRHIConformanceDeviceFactory().CreateShader( **Device, ERHIShaderStage::Compute );
         FRHIComputePipelineDesc PipelineDesc;
         PipelineDesc.Layout = Layout;
         PipelineDesc.Shader = Shader;

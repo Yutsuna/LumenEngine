@@ -44,8 +44,12 @@ LUMEN_TEST( RHIDescriptorAllocatorBase, AllocatesFreesAndReusesContiguousRanges 
     LUMEN_CHECK_TRUE( Second.HasValue() );
     LUMEN_CHECK_EQ( First->Offset, 0U );
     LUMEN_CHECK_EQ( Second->Offset, 2U );
-    LUMEN_CHECK_HAS_ERROR( Allocator.Allocate( 1U ) );
+    auto Third = Allocator.Allocate( 1U );
+    LUMEN_CHECK_TRUE( Third.HasValue() );
+    LUMEN_CHECK_EQ( Third->Offset, 4U );
+    LUMEN_CHECK_EQ( Backend.CreateCount, 2U );
     LUMEN_CHECK_TRUE( Allocator.Free( *First ).HasValue() );
+    LUMEN_CHECK_HAS_ERROR( Allocator.Free( *First ) );
     auto Reused = Allocator.Allocate( 2U );
     LUMEN_CHECK_TRUE( Reused.HasValue() );
     LUMEN_CHECK_EQ( Reused->Offset, 0U );

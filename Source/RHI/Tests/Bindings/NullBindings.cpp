@@ -4,7 +4,12 @@
  */
 
 #include "Bindings/NullBindings.hpp"
+#include <HAL/LockGuard.hpp>
+#include <Resources/IRHIBuffer.hpp>
+#include <Resources/IRHITexture.hpp>
+#include <Resources/IRHITextureView.hpp>
 #include <Templates/Hash.hpp>
+#include <variant>
 
 Lumen::Tests::FNullBindingLayout::FNullBindingLayout ( const FRHIBindingLayoutDesc &InDesc, const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FNullBindingLayout>() ), Desc( InDesc )
@@ -32,21 +37,70 @@ Lumen::TSharedRef<Lumen::IRHIBindingLayout> Lumen::Tests::FNullBindingSet::GetLa
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWrites ) noexcept
 {
+    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( const FRHIBindingWrite &Write : InWrites )
     {
         if ( not Write.Validate() )
         {
             return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Invalid binding write" ) );
         }
-        Bool bFound = false;
-        for ( const auto &Entry : Layout->GetDesc().Entries )
+        const FRHIBindingLayoutEntry *Entry = nullptr;
+        for ( const FRHIBindingLayoutEntry &Candidate : Layout->GetDesc().Entries )
         {
-            bFound = bFound or Entry.Slot == Write.Slot;
+            if ( Candidate.Slot == Write.Slot )
+            {
+                Entry = &Candidate;
+                break;
+            }
         }
-        if ( not bFound )
+        if ( Entry == nullptr )
         {
             return TUnexpected<FRHIError>(
                 MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Binding slot is absent from layout" ) );
+        }
+        const auto Valid = std::visit( [Entry] ( const auto &Payload )
+        {
+            if constexpr ( requires { Payload.Buffer; } )
+            {
+                const Bool bTypeMatches = Entry->Type == ERHIBindingType::ConstantBuffer or
+                                          Entry->Type == ERHIBindingType::ReadOnlyBuffer or
+                                          Entry->Type == ERHIBindingType::ReadWriteBuffer;
+                if ( not bTypeMatches )
+                {
+                    return false;
+                }
+                const auto &Desc = Payload.Buffer->GetDesc();
+                const ERHIResourceUsage Required =
+                    Entry->Type == ERHIBindingType::ConstantBuffer    ? ERHIResourceUsage::ConstantBuffer
+                    : Entry->Type == ERHIBindingType::ReadWriteBuffer ? ERHIResourceUsage::UnorderedAccess
+                                                                      : ERHIResourceUsage::ShaderResource;
+                return Payload.Offset <= Desc.Size and Payload.Size <= Desc.Size - Payload.Offset and
+                       HasAnyFlags( Desc.Usage, Required );
+            }
+            else if constexpr ( requires { Payload.View; } )
+            {
+                const Bool bTypeMatches = Entry->Type == ERHIBindingType::Texture or
+                                          Entry->Type == ERHIBindingType::StorageTexture or
+                                          Entry->Type == ERHIBindingType::CombinedTextureSampler;
+                const TSharedPtr<IRHITexture> Texture = Payload.View->GetTexture();
+                if ( not bTypeMatches or not Texture )
+                {
+                    return false;
+                }
+                const ERHIResourceUsage Required = Entry->Type == ERHIBindingType::StorageTexture
+                                                       ? ERHIResourceUsage::UnorderedAccess
+                                                       : ERHIResourceUsage::ShaderResource;
+                return HasAnyFlags( Texture->GetUsage(), Required );
+            }
+            else
+            {
+                return Entry->Type == ERHIBindingType::Sampler;
+            }
+        }, Write.Resource );
+        if ( not Valid )
+        {
+            return TUnexpected<FRHIError>(
+                MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Binding resource does not match its layout entry" ) );
         }
     }
     Writes.assign( InWrites.begin(), InWrites.end() );
@@ -56,11 +110,13 @@ Lumen::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWri
 
 Lumen::Bool Lumen::Tests::FNullBindingSet::IsDirty () const noexcept
 {
+    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return bDirty;
 }
 
 void Lumen::Tests::FNullBindingSet::ClearDirty () noexcept
 {
+    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     bDirty = false;
 }
 

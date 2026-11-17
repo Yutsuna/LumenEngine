@@ -48,7 +48,7 @@ namespace
         Batch.Requests.push_back( MakeRequest( 1ULL, 2ULL ) );
         Allocator->BeginBatch();
         auto Disjoint = *Allocator->Allocate( Batch );
-        LUMEN_CHECK_NOT_EQ( Disjoint[0].Allocation.Offset, Disjoint[1].Allocation.Offset );
+        LUMEN_CHECK_EQ( Disjoint[0].Allocation.Offset, Disjoint[1].Allocation.Offset );
         Allocator->EndBatch();
         Batch.Requests[1].Lifetime = { 0ULL, 2ULL };
         Allocator->BeginBatch();

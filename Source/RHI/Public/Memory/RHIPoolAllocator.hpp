@@ -30,6 +30,7 @@ private:
 
     UInt64 SlotSize;
     TUniquePtr<FIndiceHeapAllocator> Slots;
+    TVector<FRHIAllocationId> ActiveAllocations;
     UInt64 NextId = 1ULL;
     FRHIAllocatorStats Stats;
     mutable HAL::FPlatformRecursiveSharedMutex Mutex;

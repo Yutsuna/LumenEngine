@@ -23,9 +23,7 @@ namespace
 
         TSharedRef<IRHIShader> CreateShader ( IRHIDevice &Device, const ERHIShaderStage Stage )
         {
-            FRHIShaderDesc Desc;
-            Desc.Stage  = Stage;
-            auto Shader = Device.CreateShader( Desc );
+            auto Shader = Tests::GetRHIConformanceDeviceFactory().CreateShader( Device, Stage );
             LUMEN_CHECK_TRUE( Shader.HasValue() );
             return *Shader;
         }
@@ -76,9 +74,47 @@ namespace
         auto Pipeline = ( *Device )->CreateComputePipeline( Desc );
         LUMEN_CHECK_TRUE( Pipeline.HasValue() );
         LUMEN_CHECK_EQ( ( *Pipeline )->GetType(), ERHIPipelineType::Compute );
-        Desc.Shader = CreateShader( **Device, ERHIShaderStage::Vertex );
-        LUMEN_CHECK_HAS_ERROR( ( *Device )->CreateComputePipeline( Desc ) );
+        Desc.Shader           = CreateShader( **Device, ERHIShaderStage::Vertex );
+        const auto WrongStage = ( *Device )->CreateComputePipeline( Desc );
+        LUMEN_CHECK_HAS_ERROR( WrongStage );
+        LUMEN_CHECK_EQ( WrongStage.Error().Code, ERHIErrorCode::InvalidArgument );
+        LUMEN_CHECK_EQ( WrongStage.Error().Condition, ERHIErrorCondition::Pipeline );
         LUMEN_CHECK_HAS_ERROR( ( *Device )->CreateGraphicsPipeline( {} ) );
+    }
+
+    LUMEN_TEST( RHIPipelinesConformance, EquivalentLayoutsHaveStableCompatibilityAndDistinctIdentities )
+    {
+        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        LUMEN_CHECK_TRUE( Device.HasValue() );
+        FRHIBindingLayoutDesc BindingDesc;
+        BindingDesc.Entries.push_back( { .Slot = 0U, .Type = ERHIBindingType::ReadOnlyBuffer } );
+        auto FirstBindingLayout  = ( *Device )->CreateBindingLayout( BindingDesc );
+        auto SecondBindingLayout = ( *Device )->CreateBindingLayout( BindingDesc );
+        LUMEN_CHECK_TRUE( FirstBindingLayout.HasValue() );
+        LUMEN_CHECK_TRUE( SecondBindingLayout.HasValue() );
+
+        FRHIPipelineLayoutDesc FirstLayoutDesc;
+        FirstLayoutDesc.BindingLayouts.push_back( *FirstBindingLayout );
+        FRHIPipelineLayoutDesc SecondLayoutDesc;
+        SecondLayoutDesc.BindingLayouts.push_back( *SecondBindingLayout );
+        auto FirstLayout  = ( *Device )->CreatePipelineLayout( FirstLayoutDesc );
+        auto SecondLayout = ( *Device )->CreatePipelineLayout( SecondLayoutDesc );
+        LUMEN_CHECK_TRUE( FirstLayout.HasValue() );
+        LUMEN_CHECK_TRUE( SecondLayout.HasValue() );
+
+        FRHIComputePipelineDesc FirstDesc;
+        FirstDesc.Shader = CreateShader( **Device, ERHIShaderStage::Compute );
+        FirstDesc.Layout = *FirstLayout;
+        FRHIComputePipelineDesc SecondDesc;
+        SecondDesc.Shader   = CreateShader( **Device, ERHIShaderStage::Compute );
+        SecondDesc.Layout   = *SecondLayout;
+        auto FirstPipeline  = ( *Device )->CreateComputePipeline( FirstDesc );
+        auto SecondPipeline = ( *Device )->CreateComputePipeline( SecondDesc );
+        LUMEN_CHECK_TRUE( FirstPipeline.HasValue() );
+        LUMEN_CHECK_TRUE( SecondPipeline.HasValue() );
+        LUMEN_CHECK_NOT_EQ( ( *FirstPipeline )->GetId().GetValue(), ( *SecondPipeline )->GetId().GetValue() );
+        LUMEN_CHECK_TRUE( ( *FirstPipeline )->GetCompatibility() == ( *SecondPipeline )->GetCompatibility() );
+        LUMEN_CHECK_EQ( ( *FirstPipeline )->GetCompatibility().GetHash(), ( *SecondPipeline )->GetCompatibility().GetHash() );
     }
 
 } // namespace

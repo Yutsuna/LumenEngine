@@ -29,12 +29,14 @@ Lumen::FRHIPoolAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
         return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Memory, "Pool exhausted" ) );
     }
     Stats.OnAllocate( SlotSize );
-    return FRHIAllocation{ FRHIAllocationId{ NextId++ },
-                           static_cast<UInt64>( Slot->Start ) * SlotSize,
-                           SlotSize,
-                           SlotSize,
-                           InDesc.MemoryClass,
-                           nullptr };
+    const FRHIAllocation Result{ FRHIAllocationId{ NextId++ },
+                                 static_cast<UInt64>( Slot->Start ) * SlotSize,
+                                 SlotSize,
+                                 SlotSize,
+                                 InDesc.MemoryClass,
+                                 nullptr };
+    ActiveAllocations.push_back( Result.Id );
+    return Result;
 }
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIPoolAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
@@ -44,16 +46,25 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIPoolAllocator::Free ( const 
         return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Invalid pool allocation" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    Slots->Free( FIndiceAllocation( static_cast<UInt32>( InAllocation.Offset / SlotSize ), 1U ) );
-    Stats.OnFree( SlotSize );
-    return {};
+    for ( USize Index = 0U; Index < ActiveAllocations.size(); ++Index )
+    {
+        if ( ActiveAllocations[Index] == InAllocation.Id )
+        {
+            ActiveAllocations.erase( ActiveAllocations.begin() + static_cast<ISize>( Index ) );
+            Slots->Free( FIndiceAllocation( static_cast<UInt32>( InAllocation.Offset / SlotSize ), 1U ) );
+            Stats.OnFree( SlotSize );
+            return {};
+        }
+    }
+    return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Pool allocation is not active" ) );
 }
 void Lumen::FRHIPoolAllocator::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const UInt32 Count = static_cast<UInt32>( SlotSize == 0ULL ? 0ULL : Stats.Capacity / SlotSize );
     Slots              = MakeUnique<FIndiceHeapAllocator>( Count );
-    Stats.Used         = 0ULL;
+    ActiveAllocations.clear();
+    Stats.Used = 0ULL;
 }
 Lumen::FRHIAllocatorStats Lumen::FRHIPoolAllocator::GetStats () const noexcept
 {

@@ -7,6 +7,7 @@
 #include "Types/RHIObjectForward.hpp"
 #include <Bindings/IRHIBindingSet.hpp>
 #include <Bindings/RHIDescriptorAllocatorBase.hpp>
+#include <HAL/PlatformMutex.hpp>
 
 namespace Lumen
 {
@@ -53,6 +54,7 @@ namespace Tests
         TSharedRef<IRHIBindingLayout> Layout;
         TVector<FRHIBindingWrite> Writes;
         Bool bDirty = false;
+        mutable HAL::FPlatformRecursiveSharedMutex Mutex;
     };
 
     /**

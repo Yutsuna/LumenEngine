@@ -36,10 +36,19 @@ protected:
 
 private:
 
+    struct FPool
+    {
+        UInt32 BaseOffset  = 0U;
+        UInt64 BackendPool = 0ULL;
+        TUniquePtr<FIndiceAllocator> Indices;
+    };
+
+private:
+
     FRHIDescriptorAllocatorDesc Desc;
-    TUniquePtr<FIndiceAllocator> Indices;
     IRHIDescriptorPoolBackend *Backend;
-    TVector<UInt64> Pools;
+    TVector<FPool> Pools;
+    TVector<FRHIDescriptorAllocation> Active;
     mutable HAL::FPlatformRecursiveSharedMutex Mutex;
 };
 } // namespace Lumen

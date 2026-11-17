@@ -28,17 +28,18 @@ Lumen::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch &InBa
     }
     TVector<FRHITransientAllocation> Results;
     TVector<Bool> Released;
-    for ( const FRHITransientDesc &Request : InBatch.Requests )
+    for ( USize RequestIndex = 0U; RequestIndex < InBatch.Requests.size(); ++RequestIndex )
     {
-        auto Allocation = Allocator.Allocate( *Request.Requirements.ToAllocationDesc() );
-        if ( not Allocation )
-        {
-            return TUnexpected<FRHIError>( Allocation.Error() );
-        }
-        FRHITransientAllocation Result{ *Allocation, {}, Request.Lifetime };
+        const FRHITransientDesc &Request = InBatch.Requests[RequestIndex];
         for ( USize Index = 0U; Index < Results.size(); ++Index )
         {
-            if ( not Released[Index] and not Results[Index].Lifetime.Overlaps( Request.Lifetime ) )
+            Bool bOverlapsRemainingRequest = Released[Index];
+            for ( USize FutureIndex = RequestIndex; FutureIndex < InBatch.Requests.size(); ++FutureIndex )
+            {
+                bOverlapsRemainingRequest =
+                    bOverlapsRemainingRequest or Results[Index].Lifetime.Overlaps( InBatch.Requests[FutureIndex].Lifetime );
+            }
+            if ( not bOverlapsRemainingRequest )
             {
                 const auto Freed = Allocator.Free( Results[Index].Allocation );
                 if ( not Freed )
@@ -46,10 +47,14 @@ Lumen::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch &InBa
                     return TUnexpected<FRHIError>( Freed.Error() );
                 }
                 Released[Index] = true;
-                break;
             }
         }
-        Results.push_back( Result );
+        auto Allocation = Allocator.Allocate( *Request.Requirements.ToAllocationDesc() );
+        if ( not Allocation )
+        {
+            return TUnexpected<FRHIError>( Allocation.Error() );
+        }
+        Results.push_back( FRHITransientAllocation{ *Allocation, {}, Request.Lifetime } );
         Released.push_back( false );
     }
     return Results;

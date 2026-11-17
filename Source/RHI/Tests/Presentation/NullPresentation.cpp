@@ -70,6 +70,12 @@ Lumen::Tests::FNullSwapchain::GetImage ( const UInt32 InIndex ) const noexcept
 Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::AcquireNextImage () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    if ( Device->GetStatus() != ERHIDeviceStatus::Ready )
+    {
+        const ERHIErrorCode Code =
+            Device->GetStatus() == ERHIDeviceStatus::Lost ? ERHIErrorCode::DeviceLost : ERHIErrorCode::DeviceClosed;
+        return TUnexpected<FRHIError>( FRHIError( Code, ERHIErrorCondition::Device, "Swapchain device is unavailable" ) );
+    }
     if ( FaultPlan )
     {
         if ( auto Error = FaultPlan->ShouldFail( "AcquireNextImage" ) )
@@ -133,6 +139,12 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Present (
                                                                                  IRHISemaphore *InRenderComplete ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    if ( Device->GetStatus() != ERHIDeviceStatus::Ready )
+    {
+        const ERHIErrorCode Code =
+            Device->GetStatus() == ERHIDeviceStatus::Lost ? ERHIErrorCode::DeviceLost : ERHIErrorCode::DeviceClosed;
+        return TUnexpected<FRHIError>( FRHIError( Code, ERHIErrorCondition::Device, "Swapchain device is unavailable" ) );
+    }
     if ( FaultPlan )
     {
         if ( auto Error = FaultPlan->ShouldFail( "Present" ) )
@@ -192,6 +204,12 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Present (
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    if ( Device->GetStatus() != ERHIDeviceStatus::Ready )
+    {
+        const ERHIErrorCode Code =
+            Device->GetStatus() == ERHIDeviceStatus::Lost ? ERHIErrorCode::DeviceLost : ERHIErrorCode::DeviceClosed;
+        return TUnexpected<FRHIError>( FRHIError( Code, ERHIErrorCondition::Device, "Swapchain device is unavailable" ) );
+    }
     if ( FaultPlan )
     {
         if ( auto Error = FaultPlan->ShouldFail( "Resize" ) )

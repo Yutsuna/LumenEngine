@@ -6,7 +6,6 @@
 #include <Device/IRHIDevice.hpp>
 #include <Device/RHIConformanceDeviceFactory.hpp>
 #include <Shaders/IRHIShader.hpp>
-#include <Templates/Array.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
@@ -18,17 +17,38 @@ namespace
     {
         auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
         LUMEN_CHECK_TRUE( Device.HasValue() );
-        const TArray<Byte, 4U> Bytecode = { 1U, 2U, 3U, 4U };
-        FRHIShaderDesc Desc;
-        Desc.Bytecode = TSpan<const Byte>( Bytecode.data(), Bytecode.size() );
-        Desc.Stage    = ERHIShaderStage::Vertex;
-        Desc.Format   = ERHIShaderFormat::SPIRV;
-        auto Shader   = ( *Device )->CreateShader( Desc );
+        auto Shader = Tests::GetRHIConformanceDeviceFactory().CreateShader( **Device, ERHIShaderStage::Vertex );
         LUMEN_CHECK_TRUE( Shader.HasValue() );
         LUMEN_CHECK_EQ( ( *Shader )->GetDesc().Stage, ERHIShaderStage::Vertex );
-        LUMEN_CHECK_EQ( ( *Shader )->GetDesc().Bytecode.size(), Bytecode.size() );
-        Desc.Stage = ERHIShaderStage::None;
-        LUMEN_CHECK_HAS_ERROR( ( *Device )->CreateShader( Desc ) );
+        LUMEN_CHECK_TRUE( ( *Shader )->GetId().IsValid() );
+
+        FRHIShaderDesc InvalidDesc = ( *Shader )->GetDesc();
+        InvalidDesc.Stage          = ERHIShaderStage::None;
+        const auto InvalidStage    = ( *Device )->CreateShader( InvalidDesc );
+        LUMEN_CHECK_HAS_ERROR( InvalidStage );
+        LUMEN_CHECK_EQ( InvalidStage.Error().Code, ERHIErrorCode::InvalidArgument );
+        LUMEN_CHECK_EQ( InvalidStage.Error().Condition, ERHIErrorCondition::Shader );
+    }
+
+    LUMEN_TEST( RHIShadersConformance, RejectsEmptyEntryPointsAndUnknownFormats )
+    {
+        auto Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+        LUMEN_CHECK_TRUE( Device.HasValue() );
+        auto Shader = Tests::GetRHIConformanceDeviceFactory().CreateShader( **Device, ERHIShaderStage::Compute );
+        LUMEN_CHECK_TRUE( Shader.HasValue() );
+
+        FRHIShaderDesc Desc        = ( *Shader )->GetDesc();
+        Desc.EntryPoint            = "";
+        const auto EmptyEntryPoint = ( *Device )->CreateShader( Desc );
+        LUMEN_CHECK_HAS_ERROR( EmptyEntryPoint );
+        LUMEN_CHECK_EQ( EmptyEntryPoint.Error().Condition, ERHIErrorCondition::Shader );
+
+        Desc              = ( *Shader )->GetDesc();
+        Desc.Format       = static_cast<ERHIShaderFormat>( 255U );
+        const auto Format = ( *Device )->CreateShader( Desc );
+        LUMEN_CHECK_HAS_ERROR( Format );
+        LUMEN_CHECK_EQ( Format.Error().Code, ERHIErrorCode::InvalidArgument );
+        LUMEN_CHECK_EQ( Format.Error().Condition, ERHIErrorCondition::Shader );
     }
 
 } // namespace
