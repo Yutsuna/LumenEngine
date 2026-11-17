@@ -14,8 +14,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDeferredReleaseQueue::Enqueu
 {
     if ( not InRelease )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Synchronization, "Release callback is empty" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidSynchronization( "Release callback is empty" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bShutdown )

@@ -8,8 +8,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISemaphoreDesc::Validate () c
 {
     if ( Type > ERHISemaphoreType::Timeline or ( Type == ERHISemaphoreType::Binary and InitialValue > 1ULL ) )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Synchronization, "Invalid semaphore type or initial value" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidSynchronization( "Invalid semaphore type or initial value" ) );
     }
     return {};
 }
