@@ -25,8 +25,25 @@ public:
     /** @brief Uses a validated policy and a backend pool provider. */
     FRHIDescriptorAllocatorBase ( const FRHIDescriptorAllocatorDesc &InDesc, IRHIDescriptorPoolBackend &InBackend ) noexcept;
     ~FRHIDescriptorAllocatorBase () noexcept override;
+
+    /**
+     * @brief Reserves a contiguous range of descriptor slots.
+     * @param InCount Number of consecutive slots to reserve.
+     * @return The allocated range, or InvalidArgument for an invalid count, OutOfMemory when a native pool cannot grow, or
+     * DeviceLost / DeviceClosed.
+     */
     TExpected<FRHIDescriptorAllocation, FRHIError> Allocate ( UInt32 InCount ) noexcept override;
+
+    /**
+     * @brief Returns a previously allocated descriptor range to the free list.
+     * @param InAllocation Range previously returned by Allocate.
+     * @return Success, or InvalidArgument when the range is foreign or already free.
+     */
     TExpected<void, FRHIError> Free ( FRHIDescriptorAllocation InAllocation ) noexcept override;
+
+    /**
+     * @brief Reclaims all descriptor slots; callers must ensure no GPU work still uses them.
+     */
     void Reset () noexcept override;
 
 protected:
