@@ -39,7 +39,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bLost )
     {
-        return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::DeviceLost, ERHIErrorCondition::Queue, "Null queue is lost" ) );
+        return TUnexpected<FRHIError>( MakeRHIUnsupported( DeviceLost, ERHIErrorCondition::Queue, "Null queue is lost" ) );
     }
     if ( FaultPlan )
     {
@@ -62,8 +62,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
     {
         if ( List->GetQueueType() != Type )
         {
-            return TUnexpected<FRHIError>(
-                MakeRHIInvalidArgument( ERHIErrorCondition::Queue, "Command list queue type mismatch" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidQueue( "Command list queue type mismatch" ) );
         }
     }
     for ( const auto &Wait : InDesc.Waits )
@@ -120,7 +119,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::WaitIdle () n
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bLost )
     {
-        return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::DeviceLost, ERHIErrorCondition::Queue, "Null queue is lost" ) );
+        return TUnexpected<FRHIError>( MakeRHIUnsupported( DeviceLost, ERHIErrorCondition::Queue, "Null queue is lost" ) );
     }
     return {};
 }
@@ -130,7 +129,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Wait ( const 
 {
     if ( InTimeoutSeconds < 0.0 )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Queue, "Negative queue timeout" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidQueue( "Negative queue timeout" ) );
     }
     HAL::TUniqueLock<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const auto Reached = [this, InValue]
@@ -139,11 +138,11 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Wait ( const 
     };
     if ( not Condition.WaitFor( Lock, InTimeoutSeconds, Reached ) )
     {
-        return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::Timeout, ERHIErrorCondition::Queue, "Queue wait timed out" ) );
+        return TUnexpected<FRHIError>( MakeRHIUnsupported( Timeout, ERHIErrorCondition::Queue, "Queue wait timed out" ) );
     }
     if ( bLost )
     {
-        return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::DeviceLost, ERHIErrorCondition::Queue, "Null queue is lost" ) );
+        return TUnexpected<FRHIError>( MakeRHIUnsupported( DeviceLost, ERHIErrorCondition::Queue, "Null queue is lost" ) );
     }
     return {};
 }

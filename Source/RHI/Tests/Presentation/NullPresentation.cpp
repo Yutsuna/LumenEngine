@@ -61,8 +61,7 @@ Lumen::Tests::FNullSwapchain::GetImage ( const UInt32 InIndex ) const noexcept
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( InIndex >= Images.size() )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Presentation, "Swapchain image index is out of range" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Swapchain image index is out of range" ) );
     }
     return Images[InIndex];
 }
@@ -86,7 +85,7 @@ Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::Tests::FNull
     if ( bOutOfDate )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::OutOfDate, ERHIErrorCondition::Presentation, "Null swapchain is out of date" ) );
+            MakeRHIUnsupported( OutOfDate, ERHIErrorCondition::Presentation, "Null swapchain is out of date" ) );
     }
     const UInt32 ImageCount = static_cast<UInt32>( Images.size() );
     if ( ImageCount == 0U )
@@ -155,13 +154,12 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Present (
     if ( bOutOfDate )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::OutOfDate, ERHIErrorCondition::Presentation, "Null swapchain is out of date" ) );
+            MakeRHIUnsupported( OutOfDate, ERHIErrorCondition::Presentation, "Null swapchain is out of date" ) );
     }
     if ( InQueue.GetType() != ERHIQueueType::Graphics or InImage.ImageIndex >= Images.size() or not InImage.Image or
          not InImage.AcquireSemaphore or not InImage.PresentSemaphore )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Presentation, "Invalid presentation queue or acquired image" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Invalid presentation queue or acquired image" ) );
     }
     const UInt32 Index = InImage.ImageIndex;
     if ( not Acquired[Index] or InImage.Image != Images[Index] or InImage.AcquireSemaphore != AcquireSemaphores[Index] or
@@ -174,8 +172,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Present (
     {
         if ( InRenderComplete->GetDesc().Type != ERHISemaphoreType::Binary )
         {
-            return TUnexpected<FRHIError>(
-                MakeRHIInvalidArgument( ERHIErrorCondition::Presentation, "Render-complete semaphore must be binary" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Render-complete semaphore must be binary" ) );
         }
         const auto Waited = InRenderComplete->Wait( 1ULL, 0.0 );
         if ( not Waited )

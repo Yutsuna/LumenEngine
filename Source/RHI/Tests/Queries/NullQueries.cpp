@@ -48,8 +48,7 @@ Lumen::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
     if ( InFirstQuery > Desc.Count or InQueryCount > Desc.Count - InFirstQuery or
          InDestination.size() < static_cast<USize>( InQueryCount ) * ValueCount )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Query, "Query readback range or destination is invalid" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidQuery( "Query readback range or destination is invalid" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( UInt32 QueryOffset = 0U; QueryOffset < InQueryCount; ++QueryOffset )
@@ -77,7 +76,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::Begin ( c
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( InIndex >= Entries.size() )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Query, "Query index is out of range" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidQuery( "Query index is out of range" ) );
     }
     auto &Entry = Entries[InIndex];
     if ( Entry.bActive )
@@ -99,7 +98,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::End ( con
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( InIndex >= Entries.size() )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Query, "Query index is out of range" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidQuery( "Query index is out of range" ) );
     }
     auto &Entry = Entries[InIndex];
     if ( not Entry.bActive )
@@ -137,8 +136,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::SetQueryV
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( InIndex >= Entries.size() or Entries[InIndex].bActive )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Query, "Cannot set an invalid or active query result" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidQuery( "Cannot set an invalid or active query result" ) );
     }
     auto &Entry        = Entries[InIndex];
     Entry.Values[0]    = InValue;

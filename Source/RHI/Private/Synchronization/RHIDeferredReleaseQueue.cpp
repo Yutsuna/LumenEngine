@@ -19,8 +19,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDeferredReleaseQueue::Enqueu
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bShutdown )
     {
-        return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::InvalidState, ERHIErrorCondition::Synchronization,
-                                                  "Deferred release queue is shut down" ) );
+        return TUnexpected<FRHIError>(
+            MakeRHIInvalidState( ERHIErrorCondition::Synchronization, "Deferred release queue is shut down" ) );
     }
     Entries.push_back( { InRequired, std::move( InRelease ) } );
     return {};

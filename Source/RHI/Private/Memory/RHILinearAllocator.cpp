@@ -21,14 +21,12 @@ Lumen::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
     const auto Offset = RHIAlignUp( Current, InDesc.Alignment );
     if ( not Offset )
     {
-        return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Memory, "Linear alignment overflow" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Linear alignment overflow" ) );
     }
     const auto End = RHICheckedAdd( *Offset, InDesc.Size );
     if ( not End or *End > Capacity )
     {
-        return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Memory, "Linear allocator exhausted" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Linear allocator exhausted" ) );
     }
     Current = *End;
     Stats.OnAllocate( InDesc.Size );

@@ -72,7 +72,7 @@ namespace
         const auto Failure = Cache.GetOrCreate( 9U, []
         {
             return TExpected<TSharedRef<FCachedValue>, FRHIError>(
-                TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Cache, "factory" ) ) );
+                TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Cache, "factory" ) ) );
         }, 8ULL );
         LUMEN_CHECK_HAS_ERROR( Failure );
         LUMEN_CHECK_EQ( Cache.GetEntryCount(), 0U );

@@ -3,8 +3,11 @@
  * @brief Implements binding layout validation and hashing.
  */
 
+#include <Algo/ForEach.hpp>
 #include <Algo/Sort.hpp>
+
 #include <Bindings/RHIBindingLayoutDesc.hpp>
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBindingLayoutDesc::Validate () const noexcept
 {
     for ( USize First = 0U; First < Entries.size(); ++First )
@@ -23,21 +26,24 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBindingLayoutDesc::Validate 
     }
     return {};
 }
+
 Lumen::UInt64 Lumen::FRHIBindingLayoutDesc::GetHash () const noexcept
 {
     TVector<FRHIBindingLayoutEntry> Sorted = Entries;
-    Algo::Sort( Sorted, [] ( const auto &Left, const auto &Right )
+    Algo::Sort( Sorted, [] ( const FRHIBindingLayoutEntry &Left, const FRHIBindingLayoutEntry &Right ) noexcept -> Bool
     {
         return Left.Slot < Right.Slot;
     } );
+
     UInt64 Hash = 0ULL;
-    for ( const auto &Entry : Sorted )
+
+    Algo::ForEach( Sorted, [&Hash] ( const auto &Entry ) noexcept -> void
     {
         Hash = RHIHashCombine( Hash, RHIHashValue( Entry.Slot ) );
         Hash = RHIHashCombine( Hash, RHIHashValue( Entry.Type ) );
         Hash = RHIHashCombine( Hash, RHIHashValue( Entry.Count ) );
         Hash = RHIHashCombine( Hash, RHIHashValue( Entry.Stages ) );
         Hash = RHIHashCombine( Hash, RHIHashValue( Entry.bBindless ) );
-    }
+    } );
     return Hash;
 }

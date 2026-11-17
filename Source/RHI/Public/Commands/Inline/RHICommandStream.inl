@@ -27,7 +27,7 @@ Lumen::FRHICommandStream::ReadPayload ( const USize InIndex, const UInt32 InExpe
     if ( View->Opcode != InExpectedOpcode or View->Payload.size() != sizeof( PayloadType ) )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::CorruptedData, ERHIErrorCondition::Command, "Command payload type or opcode mismatch" ) );
+            MakeRHIUnsupported( CorruptedData, ERHIErrorCondition::Command, "Command payload type or opcode mismatch" ) );
     }
     PayloadType Payload;
     std::memcpy( std::addressof( Payload ), View->Payload.data(), sizeof( PayloadType ) );

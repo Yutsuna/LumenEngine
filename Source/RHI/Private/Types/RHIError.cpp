@@ -20,8 +20,3 @@ Lumen::FRHIError Lumen::FRHIError::WithContext ( const FStringView InOperation )
     Context += Message;
     return FRHIError( Code, Condition, Context, NativeCode );
 }
-
-Lumen::FRHIError Lumen::MakeRHIInvalidArgument ( const ERHIErrorCondition InCondition, const FStringView InMessage ) noexcept
-{
-    return FRHIError( ERHIErrorCode::InvalidArgument, InCondition, InMessage );
-}

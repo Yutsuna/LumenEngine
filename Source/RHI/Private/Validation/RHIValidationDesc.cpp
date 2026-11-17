@@ -8,16 +8,16 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationDesc::Validate () 
 {
     if ( Level >= ERHIValidationLevel::Count )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Device, "Unknown validation level" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidDevice( "Unknown validation level" ) );
     }
     constexpr UInt32 ValidFlags = static_cast<UInt32>( ERHIValidationFlags::All );
     if ( ( static_cast<UInt32>( Flags ) & ~ValidFlags ) != 0U )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Device, "Unknown validation flags" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidDevice( "Unknown validation flags" ) );
     }
     if ( MinimumSeverity >= ERHIDebugSeverity::Count )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Device, "Unknown validation severity" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidDevice( "Unknown validation severity" ) );
     }
     return {};
 }

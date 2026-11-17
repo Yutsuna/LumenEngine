@@ -7,8 +7,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISamplerDesc::Validate () con
 {
     if ( MinLod < 0.0F or MaxLod < MinLod or MaxAnisotropy == 0U )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidResource( "Invalid sampler LOD or anisotropy" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidResource( "Invalid sampler LOD or anisotropy" ) );
     }
     return {};
 }

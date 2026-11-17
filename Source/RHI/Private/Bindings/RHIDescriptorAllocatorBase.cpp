@@ -4,17 +4,24 @@
  */
 
 #include <Bindings/RHIDescriptorAllocatorBase.hpp>
+
+#include <Algo/ForEach.hpp>
 #include <HAL/LockGuard.hpp>
 
 Lumen::FRHIDescriptorAllocatorBase::FRHIDescriptorAllocatorBase ( const FRHIDescriptorAllocatorDesc &InDesc,
                                                                   IRHIDescriptorPoolBackend &InBackend ) noexcept
     : Desc( InDesc ), Backend( &InBackend )
 {
-    const auto Pool = Backend->CreatePool( InDesc.InitialCapacity );
+    const TExpected<UInt64, FRHIError> Pool = Backend->CreatePool( InDesc.InitialCapacity );
+
     if ( Pool )
     {
-        Pools.push_back(
-            FPool{ .BaseOffset = 0U, .BackendPool = *Pool, .Indices = MakeUnique<FIndiceAllocator>( InDesc.InitialCapacity ) } );
+        FPool PoolData = {
+            .BaseOffset  = 0U,
+            .BackendPool = *Pool,
+            .Indices     = MakeUnique<FIndiceAllocator>( InDesc.InitialCapacity ),
+        };
+        Pools.push_back( std::move( PoolData ) );
     }
 }
 
@@ -31,12 +38,15 @@ Lumen::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
         return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Descriptor count is zero" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+
+    /** TODO: Maybe Algo::ForEach ? */
     for ( FPool &Pool : Pools )
     {
-        const auto Allocation = Pool.Indices->Allocate( InCount );
+        /** TODO: Maybe Monadic */
+        const TOptional<FIndiceAllocation> Allocation = Pool.Indices->Allocate( InCount );
         if ( Allocation )
         {
-            const FRHIDescriptorAllocation Result{ Pool.BaseOffset + Allocation->Start, Allocation->Count };
+            const FRHIDescriptorAllocation Result = { .Offset = Pool.BaseOffset + Allocation->Start, .Count = Allocation->Count };
             Active.push_back( Result );
             return Result;
         }
@@ -50,13 +60,14 @@ Lumen::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
     }
     if ( BaseOffset >= Desc.MaximumCapacity or InCount > Desc.MaximumCapacity - BaseOffset )
     {
-        return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Binding, "Descriptor allocator exhausted" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Binding, "Descriptor allocator exhausted" ) );
     }
-    const UInt32 Remaining = Desc.MaximumCapacity - BaseOffset;
-    const UInt32 Requested = Desc.InitialCapacity < InCount ? InCount : Desc.InitialCapacity;
-    const UInt32 Capacity  = Remaining < Requested ? Remaining : Requested;
-    const auto BackendPool = Backend->CreatePool( Capacity );
+
+    const UInt32 Remaining                         = Desc.MaximumCapacity - BaseOffset;
+    const UInt32 Requested                         = Desc.InitialCapacity < InCount ? InCount : Desc.InitialCapacity;
+    const UInt32 Capacity                          = Remaining < Requested ? Remaining : Requested;
+    const TExpected<UInt64, FRHIError> BackendPool = Backend->CreatePool( Capacity );
+
     if ( not BackendPool )
     {
         return TUnexpected<FRHIError>( BackendPool.Error() );
@@ -66,10 +77,9 @@ Lumen::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
     const auto Allocation = Pools.back().Indices->Allocate( InCount );
     if ( not Allocation )
     {
-        return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Binding, "Descriptor pool growth failed" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Binding, "Descriptor pool growth failed" ) );
     }
-    const FRHIDescriptorAllocation Result{ BaseOffset + Allocation->Start, Allocation->Count };
+    const FRHIDescriptorAllocation Result{ .Offset = BaseOffset + Allocation->Start, .Count = Allocation->Count };
     Active.push_back( Result );
     return Result;
 }
@@ -119,7 +129,8 @@ void Lumen::FRHIDescriptorAllocatorBase::Reset () noexcept
     ReleasePools();
     Pools.clear();
     Active.clear();
-    const auto Pool = Backend->CreatePool( Desc.InitialCapacity );
+    const TExpected<UInt64, FRHIError> Pool = Backend->CreatePool( Desc.InitialCapacity );
+
     if ( Pool )
     {
         Pools.push_back(
@@ -129,8 +140,8 @@ void Lumen::FRHIDescriptorAllocatorBase::Reset () noexcept
 
 void Lumen::FRHIDescriptorAllocatorBase::ReleasePools () noexcept
 {
-    for ( const FPool &Pool : Pools )
+    Algo::ForEach( Pools, [&] ( const FPool &Pool ) noexcept -> void
     {
         Backend->ReleasePool( Pool.BackendPool );
-    }
+    } );
 }

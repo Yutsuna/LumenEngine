@@ -4,6 +4,7 @@
  */
 
 #include <Bindings/RHIDescriptorAllocatorDesc.hpp>
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDescriptorAllocatorDesc::Validate () const noexcept
 {
     if ( InitialCapacity == 0U or MaximumCapacity < InitialCapacity )

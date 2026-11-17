@@ -29,7 +29,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::RHITransitionCommandList ( ERHIC
     if ( not CanRHITransitionCommandList( InOutState, InTo ) )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::InvalidState, ERHIErrorCondition::Command, "Illegal command-list lifecycle transition" ) );
+            MakeRHIInvalidState( ERHIErrorCondition::Command, "Illegal command-list lifecycle transition" ) );
     }
     InOutState = InTo;
     return {};

@@ -28,8 +28,7 @@ Lumen::TExpected<Lumen::TSpan<Lumen::Byte>, Lumen::FRHIError> Lumen::Tests::FNul
 {
     if ( not IsRHICpuAccessible( Desc.MemoryClass ) or InOffset > Desc.Size or InSize > Desc.Size - InOffset )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Null heap mapping is outside or not CPU visible" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Null heap mapping is outside or not CPU visible" ) );
     }
     return TSpan<Byte>( Storage.Get() + static_cast<USize>( InOffset ), static_cast<USize>( InSize ) );
 }

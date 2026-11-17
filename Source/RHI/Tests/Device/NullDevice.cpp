@@ -131,8 +131,7 @@ Lumen::Tests::FNullDevice::GetQueue ( const ERHIQueueType InType, const UInt32 I
             ++CurrentIndex;
         }
     }
-    return TUnexpected<FRHIError>(
-        FRHIError( ERHIErrorCode::NotFound, ERHIErrorCondition::Queue, "Null queue was not requested" ) );
+    return TUnexpected<FRHIError>( MakeRHIUnsupported( NotFound, ERHIErrorCondition::Queue, "Null queue was not requested" ) );
 }
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBuffer>, Lumen::FRHIError>
 Lumen::Tests::FNullDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcept
@@ -148,7 +147,7 @@ Lumen::Tests::FNullDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcep
     if ( InDesc.Size > GetLimits().MaxBufferSize )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Limit, "Buffer exceeds the published size limit" ) );
+            MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Limit, "Buffer exceeds the published size limit" ) );
     }
     auto Result = MakeShared<FNullBuffer>( InDesc, NextObjectId() );
     TrackObject( *Result );
@@ -169,7 +168,7 @@ Lumen::Tests::FNullDevice::CreateTexture ( const FRHITextureDesc &InDesc ) noexc
          InDesc.Extent.Depth > GetLimits().MaxTextureDimension3D or InDesc.LayerCount > GetLimits().MaxTextureArrayLayers )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Limit, "Texture exceeds a published dimension limit" ) );
+            MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Limit, "Texture exceeds a published dimension limit" ) );
     }
     const auto Footprint = ComputeRHICopyFootprint( InDesc.Format, InDesc.Extent, 0ULL, GetLimits().MinTextureRowAlignment );
     if ( not Footprint )
@@ -248,7 +247,7 @@ Lumen::Tests::FNullDevice::CreateUploadAllocator ( const UInt64 InCapacity ) noe
     }
     if ( InCapacity == 0ULL )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Upload capacity is zero" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Upload capacity is zero" ) );
     }
     auto Result = MakeShared<FRHIUploadAllocator>( InCapacity, NextObjectId() );
     TrackObject( *Result );
@@ -263,7 +262,7 @@ Lumen::Tests::FNullDevice::CreateReadbackAllocator ( const UInt64 InCapacity ) n
     }
     if ( InCapacity == 0ULL )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Memory, "Readback capacity is zero" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Readback capacity is zero" ) );
     }
     auto Result = MakeShared<FRHIReadbackAllocator>( InCapacity, NextObjectId() );
     TrackObject( *Result );
@@ -306,8 +305,8 @@ Lumen::Tests::FNullDevice::CreateBindingLayout ( const FRHIBindingLayoutDesc &In
     {
         if ( Entry.bBindless and not GetCapabilities().Supports( ERHICapabilityFlags::BindlessResources ) )
         {
-            return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Capability,
-                                                      "Bindless resources were not negotiated" ) );
+            return TUnexpected<FRHIError>(
+                MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Capability, "Bindless resources were not negotiated" ) );
         }
     }
     auto Result = MakeShared<FNullBindingLayout>( InDesc, NextObjectId() );
@@ -479,7 +478,7 @@ Lumen::Tests::FNullDevice::CreateSemaphore ( const FRHISemaphoreDesc &InDesc ) n
          not GetCapabilities().Supports( ERHICapabilityFlags::TimelineSemaphores ) )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Capability, "Timeline semaphores were not negotiated" ) );
+            MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Capability, "Timeline semaphores were not negotiated" ) );
     }
     auto Result = MakeShared<FNullSemaphore>( InDesc, NextObjectId() );
     TrackObject( *Result );
@@ -495,7 +494,7 @@ Lumen::Tests::FNullDevice::CreateSwapchain ( const FRHISwapchainDesc &InDesc ) n
     if ( not GetCapabilities().Supports( ERHICapabilityFlags::Presentation ) )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Presentation, "Presentation was not negotiated" ) );
+            MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Presentation, "Presentation was not negotiated" ) );
     }
     const auto SurfaceCapabilities = MakeNullSwapchainCapabilities();
     if ( const auto Valid = InDesc.Validate( SurfaceCapabilities ); not Valid )
@@ -537,7 +536,7 @@ Lumen::Tests::FNullDevice::CreateQueryPool ( const FRHIQueryPoolDesc &InDesc ) n
     if ( not GetCapabilities().Supports( Required ) )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Query, "Query type was not negotiated" ) );
+            MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Query, "Query type was not negotiated" ) );
     }
     auto Result = MakeShared<FNullQueryPool>( InDesc, Desc.FaultPlan, NextObjectId() );
     TrackObject( *Result );

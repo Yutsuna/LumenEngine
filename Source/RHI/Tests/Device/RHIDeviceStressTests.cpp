@@ -33,7 +33,7 @@ namespace
         {
             auto Plan = MakeShared<Tests::FNullFaultPlan>();
             Plan->AddFailure( "CreateBuffer", Occurrence,
-                              FRHIError( ERHIErrorCode::BackendFailure, ERHIErrorCondition::Resource, "scheduled" ) );
+                              MakeRHIUnsupported( BackendFailure, ERHIErrorCondition::Resource, "scheduled" ) );
             Tests::FNullDeviceDesc Desc;
             Desc.FaultPlan = Plan;
             Tests::FNullDevice Device( Desc );

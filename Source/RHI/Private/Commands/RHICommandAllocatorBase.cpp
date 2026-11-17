@@ -21,7 +21,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandAllocatorBase::Reset 
              not IsRHICompletionReached( InCompleted, List->GetCompletion() ) )
         {
             return TUnexpected<FRHIError>(
-                FRHIError( ERHIErrorCode::InvalidState, ERHIErrorCondition::Command, "Cannot recycle pending command lists" ) );
+                MakeRHIInvalidState( ERHIErrorCondition::Command, "Cannot recycle pending command lists" ) );
         }
     }
     for ( IRHICommandList *List : Lists )

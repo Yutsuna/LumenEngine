@@ -19,8 +19,7 @@ Lumen::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch &InBa
 {
     if ( not bInBatch )
     {
-        return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::InvalidState, ERHIErrorCondition::Memory, "Transient batch is not active" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidState( ERHIErrorCondition::Memory, "Transient batch is not active" ) );
     }
     if ( const auto Valid = InBatch.Validate(); not Valid )
     {

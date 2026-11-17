@@ -25,7 +25,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandStream::WritePayload 
     const auto PayloadSize = RHICheckedCast<UInt32>( InPayload.size() );
     if ( not PayloadSize )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Command, "Command payload is too large" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidCommand( "Command payload is too large" ) );
     }
     if ( Chunks.empty() )
     {

@@ -42,7 +42,7 @@ Lumen::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWri
     {
         if ( not Write.Validate() )
         {
-            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Invalid binding write" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Invalid binding write" ) );
         }
         const FRHIBindingLayoutEntry *Entry = nullptr;
         for ( const FRHIBindingLayoutEntry &Candidate : Layout->GetDesc().Entries )
@@ -55,8 +55,7 @@ Lumen::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWri
         }
         if ( Entry == nullptr )
         {
-            return TUnexpected<FRHIError>(
-                MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Binding slot is absent from layout" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Binding slot is absent from layout" ) );
         }
         const auto Valid = std::visit( [Entry] ( const auto &Payload )
         {
@@ -99,8 +98,7 @@ Lumen::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWri
         }, Write.Resource );
         if ( not Valid )
         {
-            return TUnexpected<FRHIError>(
-                MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Binding resource does not match its layout entry" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Binding resource does not match its layout entry" ) );
         }
     }
     Writes.assign( InWrites.begin(), InWrites.end() );
@@ -126,7 +124,7 @@ Lumen::Tests::FNullDescriptorPoolBackend::CreatePool ( const UInt32 InCapacity )
 {
     if ( InCapacity == 0U )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Null pool capacity is zero" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Null pool capacity is zero" ) );
     }
     return NextPool++;
 }

@@ -50,8 +50,7 @@ Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
         }
         Start = 0ULL;
     }
-    return TUnexpected<FRHIError>(
-        FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Memory, "Ring has no completed contiguous range" ) );
+    return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Ring has no completed contiguous range" ) );
 }
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRingAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {

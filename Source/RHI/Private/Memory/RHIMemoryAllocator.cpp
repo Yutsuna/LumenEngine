@@ -12,8 +12,7 @@ Lumen::FRHIMemoryAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
 {
     if ( not Budget->TryReserve( InDesc.Size ) )
     {
-        return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Memory, "Memory budget exhausted" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Memory budget exhausted" ) );
     }
     return Allocator->Allocate( InDesc ).OrElse( [this, &InDesc] ( const FRHIError &InError )
     {

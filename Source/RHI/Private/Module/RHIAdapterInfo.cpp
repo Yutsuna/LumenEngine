@@ -8,8 +8,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIAdapterInfo::Validate () con
 {
     if ( AdapterId == 0ULL or Name.empty() or BackendName.empty() or QueueFamilies.empty() )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Device, "Adapter requires identity and at least one queue family" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidDevice( "Adapter requires identity and at least one queue family" ) );
     }
     if ( not Capabilities.Validate() )
     {
@@ -23,7 +22,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIAdapterInfo::Validate () con
     {
         if ( Family.Count == 0U or Family.Type >= ERHIQueueType::Count )
         {
-            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Queue, "Invalid adapter queue family" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidQueue( "Invalid adapter queue family" ) );
         }
     }
     return {};

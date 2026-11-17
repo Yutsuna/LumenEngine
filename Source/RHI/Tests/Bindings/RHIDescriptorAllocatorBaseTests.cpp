@@ -19,7 +19,7 @@ namespace
         {
             if ( InCapacity == 0U )
             {
-                return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Binding, "Zero capacity" ) );
+                return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Zero capacity" ) );
             }
             ++CreateCount;
             return 42ULL;

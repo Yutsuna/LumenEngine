@@ -110,7 +110,7 @@ namespace
 
     FRHIError CorruptedCacheError () noexcept
     {
-        return FRHIError( ERHIErrorCode::CorruptedData, ERHIErrorCondition::Cache, "Invalid Null pipeline cache data" );
+        return MakeRHIUnsupported( CorruptedData, ERHIErrorCondition::Cache, "Invalid Null pipeline cache data" );
     }
 
 } // namespace
@@ -226,8 +226,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Inser
     }
     if ( not( InKey == InPipeline->GetCompatibility() ) )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Cache, "Pipeline cache key does not match the pipeline" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidCache( "Pipeline cache key does not match the pipeline" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const auto Existing = Entries.find( InKey );
@@ -239,8 +238,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Inser
     const UInt64 KeyBytes = GetKeyBytes( InKey );
     if ( not MakeRoom( KeyBytes ) )
     {
-        return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Cache, "Pipeline cache capacity is exhausted" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Cache, "Pipeline cache capacity is exhausted" ) );
     }
     ++Sequence;
     FEntry Entry{ .Pipeline = InPipeline, .Bytes = KeyBytes, .LastUsed = Sequence };

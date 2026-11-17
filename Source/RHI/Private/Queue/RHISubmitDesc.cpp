@@ -14,8 +14,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISubmitDesc::Validate () cons
     {
         if ( List->GetState() != ERHICommandListState::Executable )
         {
-            return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::InvalidState, ERHIErrorCondition::Queue,
-                                                      "Only executable command lists can be submitted" ) );
+            return TUnexpected<FRHIError>(
+                MakeRHIInvalidState( ERHIErrorCondition::Queue, "Only executable command lists can be submitted" ) );
         }
     }
     for ( USize First = 0U; First < Signals.size(); ++First )

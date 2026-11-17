@@ -20,13 +20,13 @@ Lumen::FRHIPoolAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
     if ( InDesc.Size > SlotSize or InDesc.Alignment > SlotSize )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::Unsupported, ERHIErrorCondition::Memory, "Allocation exceeds the pool slot class" ) );
+            MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Memory, "Allocation exceeds the pool slot class" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const auto Slot = Slots->Allocate( 1U );
     if ( not Slot )
     {
-        return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Memory, "Pool exhausted" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Pool exhausted" ) );
     }
     Stats.OnAllocate( SlotSize );
     const FRHIAllocation Result{ FRHIAllocationId{ NextId++ },

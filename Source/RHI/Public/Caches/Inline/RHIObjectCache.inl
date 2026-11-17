@@ -52,8 +52,7 @@ Lumen::TRHIObjectCache<KeyType, ValueType, HashType>::GetOrCreate (
     }
     if ( not MakeRoom() )
     {
-        return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Cache, "Object cache capacity is exhausted" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Cache, "Object cache capacity is exhausted" ) );
     }
     ++Sequence;
     FEntry Entry{ .Value = *Created, .Bytes = InBytes, .LastUsed = Sequence };
@@ -75,8 +74,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::TRHIObjectCache<KeyType, ValueTy
     }
     if ( not MakeRoom() )
     {
-        return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Cache, "Object cache capacity is exhausted" ) );
+        return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Cache, "Object cache capacity is exhausted" ) );
     }
     ++Sequence;
     FEntry Entry{ .Value = InValue, .Bytes = InBytes, .LastUsed = Sequence };

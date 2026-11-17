@@ -47,7 +47,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationReporter::Reject (
                                                                                  const IRHIObject *InObject ) const noexcept
 {
     Report( InCode, InMessage, InObject );
-    return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::ValidationFailed, InCondition, InMessage ) );
+    return TUnexpected<FRHIError>( MakeRHIUnsupported( ValidationFailed, InCondition, InMessage ) );
 }
 
 const Lumen::FRHIValidationDesc &Lumen::FRHIValidationReporter::GetDesc () const noexcept

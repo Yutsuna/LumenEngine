@@ -70,8 +70,7 @@ Lumen::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
             return FRHIAllocation{ Id, *Offset, InDesc.Size, InDesc.Alignment, InDesc.MemoryClass, nullptr };
         }
     }
-    return TUnexpected<FRHIError>(
-        FRHIError( ERHIErrorCode::OutOfMemory, ERHIErrorCondition::Memory, "TLSF allocator exhausted" ) );
+    return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "TLSF allocator exhausted" ) );
 }
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {

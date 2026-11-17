@@ -48,7 +48,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSemaphore::Wait ( co
 {
     if ( InTimeoutSeconds < 0.0 or ( Desc.Type == ERHISemaphoreType::Binary and InValue != 1ULL ) )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Synchronization, "Invalid semaphore wait" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidSynchronization( "Invalid semaphore wait" ) );
     }
     HAL::TUniqueLock<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const auto Reached = [this, InValue]
@@ -58,7 +58,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSemaphore::Wait ( co
     if ( not Condition.WaitFor( Lock, InTimeoutSeconds, Reached ) )
     {
         return TUnexpected<FRHIError>(
-            FRHIError( ERHIErrorCode::Timeout, ERHIErrorCondition::Synchronization, "Semaphore wait timed out" ) );
+            MakeRHIUnsupported( Timeout, ERHIErrorCondition::Synchronization, "Semaphore wait timed out" ) );
     }
     if ( Desc.Type == ERHISemaphoreType::Binary )
     {
