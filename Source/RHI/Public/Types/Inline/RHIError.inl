@@ -113,5 +113,5 @@ LUMEN_FORCE_INLINE Lumen::FRHIError Lumen::MakeRHIUnsupported ( const Lumen::ERH
 LUMEN_FORCE_INLINE Lumen::FRHIError Lumen::MakeRHIInvalidState ( const Lumen::ERHIErrorCondition Condition,
                                                                  const Lumen::FStringView InMessage ) noexcept
 {
-    return FRHIError{ ERHIErrorCode::InvalidState, ERHIErrorCondition::None, InMessage };
+    return FRHIError{ ERHIErrorCode::InvalidState, Condition, InMessage };
 }
