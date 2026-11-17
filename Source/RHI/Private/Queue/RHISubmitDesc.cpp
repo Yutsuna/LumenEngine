@@ -9,7 +9,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISubmitDesc::Validate () cons
     if ( not Completion.IsValid() or ( CommandLists.empty() and Signals.empty() ) )
     {
         return TUnexpected<FRHIError>(
-            MakeRHIInvalidArgument( ERHIErrorCondition::Queue, "Submission has no work or completion value" ) );
+            MakeRHIInvalidQueue( "Submission has no work or completion value" ) );
     }
     for ( const auto &List : CommandLists )
     {
@@ -27,14 +27,14 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISubmitDesc::Validate () cons
              ( Signal.Semaphore->GetDesc().Type == ERHISemaphoreType::Timeline and
                Signal.Value <= Signal.Semaphore->GetValue() ) )
         {
-            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Queue, "Invalid semaphore signal" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidQueue( "Invalid semaphore signal" ) );
         }
         for ( USize Second = First + 1U; Second < Signals.size(); ++Second )
         {
             if ( Signals[Second].Semaphore.Get() == Signal.Semaphore.Get() )
             {
                 return TUnexpected<FRHIError>(
-                    MakeRHIInvalidArgument( ERHIErrorCondition::Queue, "Duplicate semaphore signal" ) );
+                    MakeRHIInvalidQueue( "Duplicate semaphore signal" ) );
             }
         }
     }
@@ -42,7 +42,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISubmitDesc::Validate () cons
     {
         if ( not Wait.Semaphore or ( Wait.Semaphore->GetDesc().Type == ERHISemaphoreType::Binary and Wait.Value != 1ULL ) )
         {
-            return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Queue, "Invalid semaphore wait" ) );
+            return TUnexpected<FRHIError>( MakeRHIInvalidQueue( "Invalid semaphore wait" ) );
         }
     }
     return {};
