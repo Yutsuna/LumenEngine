@@ -83,7 +83,9 @@ composition. Absence uses `TOptional`; failure uses `TExpected` and
 `TUnexpected`. Engine code is non-throwing. Device status is atomic: after loss
 or closure, creation and submission fail with `DeviceLost` or `DeviceClosed`;
 polling, diagnostics and safe cleanup remain available. No failure path throws
-or terminates by default.
+or terminates by default. A missing capability is reported as
+`ERHIErrorCode::Unsupported` with `ERHIErrorCondition::Capability`; there is no
+`UnsupportedFeature` enumerator.
 
 ## Threading model
 
@@ -100,8 +102,9 @@ access legal. Semaphore values and device status are atomic; timeline values
 never regress.
 
 Caches, shared allocators, object registries and deferred release queues are
-thread-safe. Binding-set writes are serialized per set and track dirty entries.
-Validation uses fine-grained shared locking for read-mostly registries and
+thread-safe. Binding-set writes are serialized per set by a mutex and tracked
+with a single coarse dirty flag (`IsDirty()` / `ClearDirty()`). Validation uses
+fine-grained shared locking for read-mostly registries and
 exclusive locking for graph changes. Core SPMC queues are not used for MPSC
 submission; triple buffers are not used for ownership.
 
@@ -144,8 +147,8 @@ views retain their texture and expose a validated format and subresource range.
 Samplers are immutable and cacheable.
 
 Binding layouts describe immutable slots, descriptor types, counts, stages and
-bindless flags. Sets retain written resources and track dirty entries.
-`FRHIBindingWrite` is a typed variant covering buffers, texture views and
+bindless flags. Sets retain written resources and expose a single dirty flag
+(`IsDirty()` / `ClearDirty()`). `FRHIBindingWrite` is a typed variant covering buffers, texture views and
 samplers; no untyped native descriptor enters the portable API.
 
 Shader packages own their bytecode and reflection. The versioned codec
