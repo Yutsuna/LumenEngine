@@ -19,6 +19,10 @@ struct RHI_EXPORT FRHIBufferTransition
     ERHIResourceState After        = ERHIResourceState::Undefined;
     ERHIQueueType SourceQueue      = ERHIQueueType::Graphics;
     ERHIQueueType DestinationQueue = ERHIQueueType::Graphics;
+    /**
+     * @brief Validates the buffer barrier states and queue transfer.
+     * @return Success, or a structured FRHIError with the relevant condition.
+     */
     [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
 };
 struct RHI_EXPORT FRHITextureTransition
@@ -29,6 +33,10 @@ struct RHI_EXPORT FRHITextureTransition
     ERHIResourceState After        = ERHIResourceState::Undefined;
     ERHIQueueType SourceQueue      = ERHIQueueType::Graphics;
     ERHIQueueType DestinationQueue = ERHIQueueType::Graphics;
+    /**
+     * @brief Validates the texture barrier states, subresources and queue transfer.
+     * @return Success, or a structured FRHIError with the relevant condition.
+     */
     [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
 };
 using FRHITransition = TVariant<FRHIBufferTransition, FRHITextureTransition>;

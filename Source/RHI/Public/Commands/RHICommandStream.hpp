@@ -32,6 +32,10 @@ class RHI_EXPORT FRHICommandStream final
 {
 public:
 
+    /**
+     * @brief Creates a stream with a fixed chunk capacity.
+     * @param InChunkCapacity Byte capacity of each storage chunk.
+     */
     explicit FRHICommandStream ( USize InChunkCapacity = 4096U ) noexcept;
     /** @brief Appends a raw payload; a command never crosses a chunk boundary. */
     TExpected<void, FRHIError> WritePayload ( UInt32 InOpcode, TSpan<const Byte> InPayload ) noexcept;
@@ -47,10 +51,29 @@ public:
     [[nodiscard]] TExpected<PayloadType, FRHIError> ReadPayload ( USize InIndex, UInt32 InExpectedOpcode ) const noexcept;
     /** @brief Retains an object until Clear or stream destruction. */
     void Retain ( TSharedPtr<IRHIObject> InObject ) noexcept;
+    /**
+     * @brief Keeps an object alive until Clear or stream destruction.
+     * @param InObject Object referenced by a recorded command.
+     */
     template <typename ObjectType> void Retain ( const TSharedRef<ObjectType> &InObject ) noexcept;
+    /**
+     * @brief Drops all recorded commands and releases retained object references.
+     */
     void Clear () noexcept;
+    /**
+     * @brief Returns the number of recorded commands.
+     * @return Record count.
+     */
     [[nodiscard]] USize GetCommandCount () const noexcept;
+    /**
+     * @brief Returns the number of allocated storage chunks.
+     * @return Chunk count.
+     */
     [[nodiscard]] USize GetChunkCount () const noexcept;
+    /**
+     * @brief Returns the number of retained object references.
+     * @return Retained reference count.
+     */
     [[nodiscard]] USize GetRetainedCount () const noexcept;
 
 private:

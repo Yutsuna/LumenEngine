@@ -20,6 +20,10 @@ class IRHIQueryPool : public IRHIObject
 {
 public:
 
+    /**
+     * @brief Returns the immutable query pool descriptor.
+     * @return A reference owned by the pool.
+     */
     [[nodiscard]] virtual const FRHIQueryPoolDesc &GetDesc () const noexcept = 0;
     /** @brief Makes every result unavailable; the caller must externally order this with GPU use. */
     virtual void Reset () noexcept = 0;

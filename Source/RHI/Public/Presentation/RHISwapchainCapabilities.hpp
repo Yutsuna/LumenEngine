@@ -33,6 +33,13 @@ struct RHI_EXPORT FRHISwapchainCapabilities
     [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
     /** @return True when the exact format, color space, and mode combination is advertised. */
     [[nodiscard]] Bool
+    /**
+     * @brief Tests whether an exact presentation combination is advertised.
+     * @param InFormat Pixel format to test.
+     * @param InColorSpace Color space to test.
+     * @param InPresentMode Present mode to test.
+     * @return True only when all three values are listed as supported.
+     */
     Supports ( ERHIFormat InFormat, ERHIColorSpace InColorSpace, ERHIPresentMode InPresentMode ) const noexcept;
     /** @return InExtent clamped to the supported inclusive extent range. */
     [[nodiscard]] FRHIExtent3D ClampExtent ( const FRHIExtent3D &InExtent ) const noexcept;

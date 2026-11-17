@@ -18,6 +18,10 @@ struct RHI_EXPORT FRHISemaphoreDesc
     ERHISemaphoreType Type = ERHISemaphoreType::Timeline;
     UInt64 InitialValue    = 0ULL;
     FString DebugName;
+    /**
+     * @brief Validates the semaphore type, initial value and debug name.
+     * @return Success, or a structured FRHIError with the relevant condition.
+     */
     [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
 };
 } // namespace Lumen

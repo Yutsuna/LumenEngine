@@ -22,12 +22,40 @@ class RHI_EXPORT FRHIDeviceBase : public IRHIDevice
 public:
 
     ~FRHIDeviceBase () noexcept override;
+    /**
+     * @brief Returns the device identifier.
+     * @return The stable identifier.
+     */
     [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+    /**
+     * @brief Returns a copy of the debug name.
+     * @return The current debug name.
+     */
     [[nodiscard]] FString GetDebugName () const noexcept override;
+    /**
+     * @brief Sets the debug name under the object lock.
+     * @param InName Name copied into owned storage.
+     */
     void SetDebugName ( FStringView InName ) noexcept override;
+    /**
+     * @brief Returns the concrete backend type tag.
+     * @return The tag used by backend casts.
+     */
     [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+    /**
+     * @brief Returns the negotiated capabilities.
+     * @return Immutable capabilities owned by the device.
+     */
     [[nodiscard]] const FRHICapabilities &GetCapabilities () const noexcept override;
+    /**
+     * @brief Returns the negotiated limits.
+     * @return Immutable limits owned by the device.
+     */
     [[nodiscard]] const FRHILimits &GetLimits () const noexcept override;
+    /**
+     * @brief Returns the current device status.
+     * @return Ready, lost or closed status.
+     */
     [[nodiscard]] ERHIDeviceStatus GetStatus () const noexcept override;
 
     /** @return Number of currently registered live children. */
@@ -66,6 +94,7 @@ private:
         HAL::FPlatformRecursiveSharedMutex Mutex;
     };
 
+    /** @brief Registers a child and its destruction callback under the registry lock. */
     void TrackObject ( IRHIObject &InObject, FRHIObjectBase &InBase ) noexcept;
 
 private:

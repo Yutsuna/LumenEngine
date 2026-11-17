@@ -59,6 +59,7 @@ struct RHI_EXPORT FRHIDebugMessage
     TOptional<ERHIQueueType> Queue;
     TOptional<FRHITimelineValue> Submission;
 
+    /** @brief Creates an empty message with default severity and category. */
     FRHIDebugMessage () noexcept = default;
     FRHIDebugMessage ( ERHIDebugSeverity InSeverity,
                        ERHIDebugCategory InCategory,

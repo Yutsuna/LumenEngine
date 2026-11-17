@@ -25,9 +25,25 @@ public:
     FRHIObjectBase ( FRHIObjectId InId, UInt64 InBackendTypeTag ) noexcept;
     ~FRHIObjectBase () noexcept override;
 
+    /**
+     * @brief Returns the immutable object identifier.
+     * @return The stable identifier.
+     */
     [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+    /**
+     * @brief Returns a copy of the debug name.
+     * @return The current debug name.
+     */
     [[nodiscard]] FString GetDebugName () const noexcept override;
+    /**
+     * @brief Sets the debug name under the internal lock.
+     * @param InName Name copied into owned storage.
+     */
     void SetDebugName ( FStringView InName ) noexcept override;
+    /**
+     * @brief Returns the concrete backend type tag.
+     * @return The tag used by backend casts.
+     */
     [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
     /** @brief Installs the non-owning registry callback invoked during destruction. */
     void SetDestructionCallback ( TFunction<void()> InCallback ) noexcept;

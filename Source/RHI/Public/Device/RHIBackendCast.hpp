@@ -15,7 +15,11 @@ namespace Lumen
 /** @return Pointer to BackendType when the object's concrete tag matches, otherwise empty. */
 template <typename BackendType> [[nodiscard]] BackendType *TryRHIBackendCast ( IRHIObject &InObject ) noexcept;
 
-/** @return Shared pointer to BackendType when the object's concrete tag matches. */
+/**
+ * @brief Casts a shared reference to a backend type after checking its tag.
+ * @param InObject Object whose backend type tag is checked.
+ * @return A shared pointer to BackendType when the tag matches, otherwise empty.
+ */
 template <typename BackendType>
 [[nodiscard]] TOptional<TSharedPtr<BackendType>> TryRHIBackendCast ( const TSharedRef<IRHIObject> &InObject ) noexcept;
 

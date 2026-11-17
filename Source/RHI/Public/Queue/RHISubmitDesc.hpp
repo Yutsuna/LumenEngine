@@ -20,6 +20,10 @@ struct RHI_EXPORT FRHISubmitDesc
     TVector<FRHISemaphoreOperation> Waits;
     TVector<FRHISemaphoreOperation> Signals;
     FRHITimelineValue Completion;
+    /**
+     * @brief Validates command lists, semaphore operations and completion value.
+     * @return Success, or a structured FRHIError with the relevant condition.
+     */
     [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
 };
 } // namespace Lumen
