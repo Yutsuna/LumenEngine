@@ -8,8 +8,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISubmitDesc::Validate () cons
 {
     if ( not Completion.IsValid() or ( CommandLists.empty() and Signals.empty() ) )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIInvalidQueue( "Submission has no work or completion value" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidQueue( "Submission has no work or completion value" ) );
     }
     for ( const auto &List : CommandLists )
     {
@@ -33,8 +32,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISubmitDesc::Validate () cons
         {
             if ( Signals[Second].Semaphore.Get() == Signal.Semaphore.Get() )
             {
-                return TUnexpected<FRHIError>(
-                    MakeRHIInvalidQueue( "Duplicate semaphore signal" ) );
+                return TUnexpected<FRHIError>( MakeRHIInvalidQueue( "Duplicate semaphore signal" ) );
             }
         }
     }
