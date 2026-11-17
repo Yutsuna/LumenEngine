@@ -31,50 +31,55 @@ Lumen::FRHITimelineValue Lumen::FRHIValidationQueue::GetCompletedValue () const 
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationQueue::Submit ( const FRHISubmitDesc &InDesc ) noexcept
 {
-    auto Valid = InDesc.Validate();
-    if ( not Valid )
+    return InDesc.Validate()
+        .OrElse(
+            [this] ( const FRHIError &InError ) noexcept -> TExpected<void, FRHIError>
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission, ERHIErrorCondition::Queue,
-                                             Valid.Error().Message, this );
-    }
-    if ( InDesc.Completion <= GetCompletedValue() )
+                                             InError.Message, this );
+    } )
+        .AndThen( [this, &InDesc] () noexcept -> TExpected<void, FRHIError>
     {
-        return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission, ERHIErrorCondition::Queue,
-                                             "Queue completion values must increase", this );
-    }
-    FRHISubmitDesc Unwrapped;
-    Unwrapped.Completion = InDesc.Completion;
-    Unwrapped.CommandLists.reserve( InDesc.CommandLists.size() );
-    for ( const auto &List : InDesc.CommandLists )
-    {
-        auto Owned = State->ValidateObject( *List, ERHIValidationObjectKind::CommandList );
-        if ( not Owned )
-        {
-            return Owned;
-        }
-        if ( List->GetQueueType() != GetType() )
+        if ( InDesc.Completion <= GetCompletedValue() )
         {
             return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission, ERHIErrorCondition::Queue,
-                                                 "Command list queue type mismatch", this );
+                                                 "Queue completion values must increase", this );
         }
-        Unwrapped.CommandLists.push_back( UnwrapRHIShared( List ) );
-    }
-    Unwrapped.Waits = InDesc.Waits;
-    for ( auto &Wait : Unwrapped.Waits )
-    {
-        Wait.Semaphore = UnwrapRHIShared( Wait.Semaphore );
-        if ( Wait.Semaphore->GetValue() < Wait.Value )
+        FRHISubmitDesc Unwrapped;
+        Unwrapped.Completion = InDesc.Completion;
+        Unwrapped.CommandLists.reserve( InDesc.CommandLists.size() );
+        for ( const TSharedRef<IRHICommandList> &List : InDesc.CommandLists )
         {
-            return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission,
-                                                 ERHIErrorCondition::Synchronization, "Submission wait is not signaled", this );
+            const TExpected<void, FRHIError> Owned = State->ValidateObject( *List, ERHIValidationObjectKind::CommandList );
+            if ( not Owned )
+            {
+                return Owned;
+            }
+            if ( List->GetQueueType() != GetType() )
+            {
+                return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission, ERHIErrorCondition::Queue,
+                                                     "Command list queue type mismatch", this );
+            }
+            Unwrapped.CommandLists.push_back( UnwrapRHIShared( List ) );
         }
-    }
-    Unwrapped.Signals = InDesc.Signals;
-    for ( auto &Signal : Unwrapped.Signals )
-    {
-        Signal.Semaphore = UnwrapRHIShared( Signal.Semaphore );
-    }
-    return Underlying->Submit( Unwrapped );
+        Unwrapped.Waits = InDesc.Waits;
+        for ( FRHISemaphoreOperation &Wait : Unwrapped.Waits )
+        {
+            Wait.Semaphore = UnwrapRHIShared( Wait.Semaphore );
+            if ( Wait.Semaphore->GetValue() < Wait.Value )
+            {
+                return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission,
+                                                     ERHIErrorCondition::Synchronization, "Submission wait is not signaled",
+                                                     this );
+            }
+        }
+        Unwrapped.Signals = InDesc.Signals;
+        for ( FRHISemaphoreOperation &Signal : Unwrapped.Signals )
+        {
+            Signal.Semaphore = UnwrapRHIShared( Signal.Semaphore );
+        }
+        return Underlying->Submit( Unwrapped );
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationQueue::WaitIdle () noexcept

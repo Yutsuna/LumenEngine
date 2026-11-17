@@ -38,15 +38,14 @@ Lumen::FRHIValidationCommandAllocator::Reset ( const FRHITimelineValue InComplet
                                                  "Cannot recycle a command list before its completion", this );
         }
     }
-    auto Result = Underlying->Reset( InCompleted );
-    if ( Result )
+    return Underlying->Reset( InCompleted )
+        .Inspect( [this] () noexcept
     {
         for ( FRHIValidationCommandList *List : Lists )
         {
             List->OnAllocatorReset();
         }
-    }
-    return Result;
+    } );
 }
 
 void Lumen::FRHIValidationCommandAllocator::RegisterList ( FRHIValidationCommandList &InList ) noexcept

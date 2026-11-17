@@ -22,12 +22,11 @@ constexpr Lumen::TOptional<ValueType> Lumen::RHIAlignUp ( const ValueType InValu
     {
         return {};
     }
-    const TOptional<ValueType> WithPadding = RHICheckedAdd( InValue, static_cast<ValueType>( InAlignment - 1U ) );
-    if ( not WithPadding )
+    return RHICheckedAdd( InValue, static_cast<ValueType>( InAlignment - 1U ) )
+        .Transform( [InAlignment] ( const ValueType InPadded ) noexcept -> ValueType
     {
-        return {};
-    }
-    return TOptional<ValueType>( static_cast<ValueType>( *WithPadding & ~( InAlignment - 1U ) ) );
+        return static_cast<ValueType>( InPadded & ~( InAlignment - 1U ) );
+    } );
 }
 
 template <typename ValueType>

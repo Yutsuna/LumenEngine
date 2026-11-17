@@ -42,57 +42,61 @@ Lumen::FRHIValidationTransientResourceAllocator::Allocate ( const FRHITransientB
                                                      "Transient batch is not active", this )
                                            .Error() );
     }
-    auto Valid = InBatch.Validate();
-    if ( not Valid )
+    return InBatch.Validate()
+        .OrElse(
+            [this] ( const FRHIError &InError ) noexcept -> TExpected<void, FRHIError>
     {
-        return TUnexpected<FRHIError>( State->GetReporter()
-                                           ->Reject( ERHIValidationMessageCode::InvalidTransientBatch, ERHIErrorCondition::Memory,
-                                                     Valid.Error().Message, this )
-                                           .Error() );
-    }
-    auto Result = Underlying->Allocate( InBatch );
-    if ( not Result )
+        return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidTransientBatch, ERHIErrorCondition::Memory,
+                                             InError.Message, this );
+    } )
+        .AndThen(
+            [this, &InBatch] () noexcept -> TExpected<TVector<FRHITransientAllocation>, FRHIError>
     {
-        return Result;
-    }
-    if ( Result->size() != InBatch.Requests.size() )
+        return Underlying->Allocate( InBatch );
+    } )
+        .AndThen( [this, &InBatch] ( TVector<FRHITransientAllocation> InAllocations ) noexcept
+                      -> TExpected<TVector<FRHITransientAllocation>, FRHIError>
     {
-        return TUnexpected<FRHIError>( State->GetReporter()
-                                           ->Reject( ERHIValidationMessageCode::InvalidTransientBatch, ERHIErrorCondition::Memory,
-                                                     "Backend returned the wrong transient allocation count", this )
-                                           .Error() );
-    }
-    for ( USize Index = 0U; Index < Result->size(); ++Index )
-    {
-        const FRHITransientAllocation &Allocation = ( *Result )[Index];
-        if ( not Allocation.Allocation.IsValid() or Allocation.Lifetime.Begin != InBatch.Requests[Index].Lifetime.Begin or
-             Allocation.Lifetime.End != InBatch.Requests[Index].Lifetime.End )
+        if ( InAllocations.size() != InBatch.Requests.size() )
         {
             return TUnexpected<FRHIError>( State->GetReporter()
                                                ->Reject( ERHIValidationMessageCode::InvalidTransientBatch,
                                                          ERHIErrorCondition::Memory,
-                                                         "Backend returned an invalid transient lifetime", this )
+                                                         "Backend returned the wrong transient allocation count", this )
                                                .Error() );
         }
-        for ( const FRHITransientAllocation &Active : ActiveAllocations )
+        for ( USize Index = 0U; Index < InAllocations.size(); ++Index )
         {
-            if ( Active.Lifetime.Overlaps( Allocation.Lifetime ) and
-                 RHIRangesOverlap( Active.Allocation.Offset, Active.Allocation.Size, Allocation.Allocation.Offset,
-                                   Allocation.Allocation.Size ) )
+            const FRHITransientAllocation &Allocation = InAllocations[Index];
+            if ( not Allocation.Allocation.IsValid() or Allocation.Lifetime.Begin != InBatch.Requests[Index].Lifetime.Begin or
+                 Allocation.Lifetime.End != InBatch.Requests[Index].Lifetime.End )
             {
                 return TUnexpected<FRHIError>( State->GetReporter()
                                                    ->Reject( ERHIValidationMessageCode::InvalidTransientBatch,
                                                              ERHIErrorCondition::Memory,
-                                                             "Overlapping transient lifetimes alias memory", this )
+                                                             "Backend returned an invalid transient lifetime", this )
                                                    .Error() );
             }
+            for ( const FRHITransientAllocation &Active : ActiveAllocations )
+            {
+                if ( Active.Lifetime.Overlaps( Allocation.Lifetime ) and
+                     RHIRangesOverlap( Active.Allocation.Offset, Active.Allocation.Size, Allocation.Allocation.Offset,
+                                       Allocation.Allocation.Size ) )
+                {
+                    return TUnexpected<FRHIError>( State->GetReporter()
+                                                       ->Reject( ERHIValidationMessageCode::InvalidTransientBatch,
+                                                                 ERHIErrorCondition::Memory,
+                                                                 "Overlapping transient lifetimes alias memory", this )
+                                                       .Error() );
+                }
+            }
         }
-    }
-    for ( const FRHITransientAllocation &Allocation : *Result )
-    {
-        ActiveAllocations.push_back( Allocation );
-    }
-    return Result;
+        for ( const FRHITransientAllocation &Allocation : InAllocations )
+        {
+            ActiveAllocations.push_back( Allocation );
+        }
+        return InAllocations;
+    } );
 }
 
 void Lumen::FRHIValidationTransientResourceAllocator::EndBatch () noexcept

@@ -22,10 +22,9 @@ Lumen::FRHIMemoryAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
 }
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIMemoryAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
-    const auto Result = Allocator->Free( InAllocation );
-    if ( Result )
+    return Allocator->Free( InAllocation )
+        .Inspect( [this, &InAllocation] () noexcept
     {
         Budget->Release( InAllocation.Size );
-    }
-    return Result;
+    } );
 }

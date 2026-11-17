@@ -8,18 +8,16 @@
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDevice>, Lumen::FRHIError>
 Lumen::WrapRHIDevice ( const TSharedRef<IRHIDevice> &InDevice, const FRHIValidationDesc &InDesc ) noexcept
 {
-    auto Valid = InDesc.Validate();
-    if ( not Valid )
+    return InDesc.Validate().AndThen( [&InDevice, &InDesc] () noexcept -> TExpected<TSharedRef<IRHIDevice>, FRHIError>
     {
-        return TUnexpected<FRHIError>( Valid.Error() );
-    }
-    if ( InDesc.Level == ERHIValidationLevel::Disabled )
-    {
-        return InDevice;
-    }
-    auto Reporter = MakeShared<FRHIValidationReporter>( InDesc );
-    auto State    = MakeShared<FRHIValidationState>( Reporter );
-    return MakeShared<FRHIValidationDevice>( InDevice, State );
+        if ( InDesc.Level == ERHIValidationLevel::Disabled )
+        {
+            return InDevice;
+        }
+        const TSharedRef<FRHIValidationReporter> Reporter = MakeShared<FRHIValidationReporter>( InDesc );
+        const TSharedPtr<FRHIValidationState> State       = MakeShared<FRHIValidationState>( Reporter );
+        return MakeShared<FRHIValidationDevice>( InDevice, State );
+    } );
 }
 
 Lumen::IRHIObject *Lumen::UnwrapRHIObject ( IRHIObject *InObject ) noexcept

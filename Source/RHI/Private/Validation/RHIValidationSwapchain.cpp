@@ -45,11 +45,10 @@ void Lumen::FRHIValidationSwapchain::RebuildImages () noexcept
     NewImages.reserve( Count );
     for ( UInt32 Index = 0U; Index < Count; ++Index )
     {
-        auto Image = Underlying->GetImage( Index );
-        if ( Image )
+        Underlying->GetImage( Index ).Inspect( [this, &NewImages] ( const TSharedRef<IRHITexture> &InImage ) noexcept
         {
-            NewImages.push_back( MakeShared<FRHIValidationTexture>( *Image, State ) );
-        }
+            NewImages.push_back( MakeShared<FRHIValidationTexture>( InImage, State ) );
+        } );
     }
     Images = std::move( NewImages );
     Acquired.assign( Images.size(), false );
@@ -83,47 +82,44 @@ Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::FRHIValidati
                                                      ERHIErrorCondition::Presentation, "Every swapchain image is acquired", this )
                                            .Error() );
     }
-    auto Result = Underlying->AcquireNextImage();
-    if ( not Result )
+    return Underlying->AcquireNextImage().AndThen(
+        [this] ( FRHIAcquiredImage InImage ) noexcept -> TExpected<FRHIAcquiredImage, FRHIError>
     {
-        return Result;
-    }
-    if ( Result->ImageIndex >= Images.size() )
-    {
-        return TUnexpected<FRHIError>( State->GetReporter()
-                                           ->Reject( ERHIValidationMessageCode::InvalidPresentation,
-                                                     ERHIErrorCondition::Presentation, "Backend returned an invalid image index",
-                                                     this )
-                                           .Error() );
-    }
-    Acquired[Result->ImageIndex] = true;
-    Result->Image                = Images[Result->ImageIndex];
-    return Result;
+        if ( InImage.ImageIndex >= Images.size() )
+        {
+            return TUnexpected<FRHIError>( State->GetReporter()
+                                               ->Reject( ERHIValidationMessageCode::InvalidPresentation,
+                                                         ERHIErrorCondition::Presentation,
+                                                         "Backend returned an invalid image index", this )
+                                               .Error() );
+        }
+        Acquired[InImage.ImageIndex] = true;
+        InImage.Image                = Images[InImage.ImageIndex];
+        return InImage;
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationSwapchain::Present ( IRHIQueue &InQueue,
                                                                                    const FRHIAcquiredImage &InImage,
                                                                                    IRHISemaphore *InRenderComplete ) noexcept
 {
-    auto QueueValid = State->ValidateObject( InQueue, ERHIValidationObjectKind::Queue );
-    if ( not QueueValid )
+    return State->ValidateObject( InQueue, ERHIValidationObjectKind::Queue )
+        .AndThen( [this, &InQueue, &InImage, InRenderComplete] () noexcept -> TExpected<void, FRHIError>
     {
-        return QueueValid;
-    }
-    if ( InImage.ImageIndex >= Images.size() or not InImage.Image or not Acquired[InImage.ImageIndex] or
-         InImage.Image.Get() != Images[InImage.ImageIndex].Get() )
-    {
-        return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidPresentation, ERHIErrorCondition::Presentation,
-                                             "Acquired image token is stale or already presented", this );
-    }
-    FRHIAcquiredImage Unwrapped = InImage;
-    Unwrapped.Image             = UnwrapRHIShared( InImage.Image );
-    auto Result                 = Underlying->Present( *UnwrapRHI( &InQueue ), Unwrapped, UnwrapRHI( InRenderComplete ) );
-    if ( Result )
-    {
-        Acquired[InImage.ImageIndex] = false;
-    }
-    return Result;
+        if ( InImage.ImageIndex >= Images.size() or not InImage.Image or not Acquired[InImage.ImageIndex] or
+             InImage.Image.Get() != Images[InImage.ImageIndex].Get() )
+        {
+            return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidPresentation, ERHIErrorCondition::Presentation,
+                                                 "Acquired image token is stale or already presented", this );
+        }
+        FRHIAcquiredImage Unwrapped = InImage;
+        Unwrapped.Image             = UnwrapRHIShared( InImage.Image );
+        return Underlying->Present( *UnwrapRHI( &InQueue ), Unwrapped, UnwrapRHI( InRenderComplete ) )
+            .Inspect( [this, &InImage] () noexcept
+        {
+            Acquired[InImage.ImageIndex] = false;
+        } );
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
@@ -136,10 +132,9 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationSwapchain::Resize 
                                                  "Cannot resize while an image is acquired", this );
         }
     }
-    auto Result = Underlying->Resize( InExtent );
-    if ( Result )
+    return Underlying->Resize( InExtent )
+        .Inspect( [this] () noexcept
     {
         RebuildImages();
-    }
-    return Result;
+    } );
 }

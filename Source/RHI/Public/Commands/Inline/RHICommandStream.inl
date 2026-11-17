@@ -29,19 +29,19 @@ Lumen::TExpected<PayloadType, Lumen::FRHIError>
 
 Lumen::FRHICommandStream::ReadPayload ( const USize InIndex, const UInt32 InExpectedOpcode ) const noexcept
 {
-    TExpected<FRHICommandView, FRHIError> View = Read( InIndex );
-    if ( not View )
+    return Read( InIndex ).AndThen(
+        [InExpectedOpcode] ( const FRHICommandView &InView ) noexcept -> TExpected<PayloadType, FRHIError>
     {
-        return View.Error();
-    }
-    if ( View->Opcode != InExpectedOpcode or View->Payload.size() != sizeof( PayloadType ) )
-    {
-        return MakeRHICorrupted( ERHIErrorCondition::Command, "Command payload type or opcode mismatch" );
-    }
+        if ( InView.Opcode != InExpectedOpcode or InView.Payload.size() != sizeof( PayloadType ) )
+        {
+            return TUnexpected<FRHIError>(
+                MakeRHICorrupted( ERHIErrorCondition::Command, "Command payload type or opcode mismatch" ) );
+        }
 
-    PayloadType Payload;
-    std::memcpy( std::addressof( Payload ), View->Payload.data(), sizeof( PayloadType ) );
-    return Payload;
+        PayloadType Payload;
+        std::memcpy( std::addressof( Payload ), InView.Payload.data(), sizeof( PayloadType ) );
+        return Payload;
+    } );
 }
 
 template <typename ObjectType>

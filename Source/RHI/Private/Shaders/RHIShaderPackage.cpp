@@ -10,7 +10,7 @@ Lumen::FRHIShaderDesc Lumen::FRHIShaderPackageEntry::GetDesc () const noexcept
 }
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIShaderPackage::AddEntry ( FRHIShaderPackageEntry InEntry ) noexcept
 {
-    if ( const auto Valid = InEntry.GetDesc().Validate(); not Valid )
+    if ( const TExpected<void, FRHIError> Valid = InEntry.GetDesc().Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }

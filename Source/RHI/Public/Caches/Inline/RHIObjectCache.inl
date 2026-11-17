@@ -18,7 +18,7 @@ template <typename KeyType, typename ValueType, typename HashType>
 Lumen::TSharedPtr<ValueType> Lumen::TRHIObjectCache<KeyType, ValueType, HashType>::Find ( const KeyType &InKey ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Found = Entries.find( InKey );
+    const typename TMap<KeyType, FEntry, HashType>::iterator Found = Entries.find( InKey );
     if ( Found == Entries.end() )
     {
         Stats.OnLookup( false );
@@ -39,13 +39,13 @@ Lumen::TRHIObjectCache<KeyType, ValueType, HashType>::GetOrCreate (
     {
         return Existing;
     }
-    auto Created = InFactory();
+    const TExpected<TSharedRef<ValueType>, FRHIError> Created = InFactory();
     if ( not Created )
     {
         return TUnexpected<FRHIError>( Created.Error() );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Existing = Entries.find( InKey );
+    const typename TMap<KeyType, FEntry, HashType>::iterator Existing = Entries.find( InKey );
     if ( Existing != Entries.end() )
     {
         return Existing->second.Value;
@@ -66,7 +66,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::TRHIObjectCache<KeyType, ValueTy
     const KeyType &InKey, TSharedRef<ValueType> InValue, const UInt64 InBytes ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Existing = Entries.find( InKey );
+    const typename TMap<KeyType, FEntry, HashType>::iterator Existing = Entries.find( InKey );
     if ( Existing != Entries.end() )
     {
         Stats.OnRemove( Existing->second.Bytes );
@@ -87,7 +87,7 @@ template <typename KeyType, typename ValueType, typename HashType>
 void Lumen::TRHIObjectCache<KeyType, ValueType, HashType>::Remove ( const KeyType &InKey ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Found = Entries.find( InKey );
+    const typename TMap<KeyType, FEntry, HashType>::iterator Found = Entries.find( InKey );
     if ( Found != Entries.end() )
     {
         Stats.OnRemove( Found->second.Bytes );
@@ -133,8 +133,8 @@ Lumen::Bool Lumen::TRHIObjectCache<KeyType, ValueType, HashType>::MakeRoom () no
 template <typename KeyType, typename ValueType, typename HashType>
 void Lumen::TRHIObjectCache<KeyType, ValueType, HashType>::EvictOne () noexcept
 {
-    auto Oldest = Entries.begin();
-    for ( auto Iterator = Entries.begin(); Iterator != Entries.end(); ++Iterator )
+    typename TMap<KeyType, FEntry, HashType>::iterator Oldest = Entries.begin();
+    for ( typename TMap<KeyType, FEntry, HashType>::iterator Iterator = Entries.begin(); Iterator != Entries.end(); ++Iterator )
     {
         if ( Iterator->second.LastUsed < Oldest->second.LastUsed )
         {

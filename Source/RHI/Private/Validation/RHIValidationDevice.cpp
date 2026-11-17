@@ -44,45 +44,42 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationDevice::WaitIdle (
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIQueue>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::GetQueue ( const ERHIQueueType InType, const UInt32 InIndex ) noexcept
 {
-    auto Result = Underlying->GetQueue( InType, InIndex );
-    if ( not Result )
+    return Underlying->GetQueue( InType, InIndex )
+        .AndThen( [this] ( TSharedRef<IRHIQueue> &&InQueue ) noexcept -> TExpected<TSharedRef<IRHIQueue>, FRHIError>
     {
-        return Result;
-    }
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( QueueMutex );
-    IRHIObject *BackendQueue = UnwrapRHIObject( Result->Get() );
-    for ( const auto &Queue : Queues )
-    {
-        if ( UnwrapRHIObject( Queue.Get() ) == BackendQueue )
+        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( QueueMutex );
+        IRHIObject *BackendQueue = UnwrapRHIObject( InQueue.Get() );
+        for ( const TSharedRef<IRHIQueue> &Queue : Queues )
         {
-            return Queue;
+            if ( UnwrapRHIObject( Queue.Get() ) == BackendQueue )
+            {
+                return TExpected<TSharedRef<IRHIQueue>, FRHIError>( Queue );
+            }
         }
-    }
-    TSharedRef<IRHIQueue> Wrapped = MakeShared<FRHIValidationQueue>( *Result, State );
-    Queues.push_back( Wrapped );
-    return Wrapped;
+        const TSharedRef<IRHIQueue> Wrapped = MakeShared<FRHIValidationQueue>( InQueue, State );
+        Queues.push_back( Wrapped );
+        return TExpected<TSharedRef<IRHIQueue>, FRHIError>( Wrapped );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBuffer>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcept
 {
-    auto Result = Underlying->CreateBuffer( InDesc );
-    if ( not Result )
+    return Underlying->CreateBuffer( InDesc ).Transform(
+        [this] ( TSharedRef<IRHIBuffer> &&InBuffer ) noexcept -> TSharedRef<IRHIBuffer>
     {
-        return Result;
-    }
-    return MakeShared<FRHIValidationBuffer>( *Result, State );
+        return MakeShared<FRHIValidationBuffer>( std::move( InBuffer ), State );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITexture>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::CreateTexture ( const FRHITextureDesc &InDesc ) noexcept
 {
-    auto Result = Underlying->CreateTexture( InDesc );
-    if ( not Result )
+    return Underlying->CreateTexture( InDesc ).Transform(
+        [this] ( TSharedRef<IRHITexture> &&InTexture ) noexcept -> TSharedRef<IRHITexture>
     {
-        return Result;
-    }
-    return MakeShared<FRHIValidationTexture>( *Result, State );
+        return MakeShared<FRHIValidationTexture>( std::move( InTexture ), State );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITextureView>, Lumen::FRHIError>
@@ -95,30 +92,27 @@ Lumen::FRHIValidationDevice::CreateTextureView ( const FRHITextureViewDesc &InDe
                                                      "Texture view has no parent", this )
                                            .Error() );
     }
-    auto Owned = State->ValidateObject( *InDesc.Texture, ERHIValidationObjectKind::Texture );
-    if ( not Owned )
+    return State->ValidateObject( *InDesc.Texture, ERHIValidationObjectKind::Texture )
+        .AndThen( [this, &InDesc] () noexcept -> TExpected<TSharedRef<IRHITextureView>, FRHIError>
     {
-        return TUnexpected<FRHIError>( Owned.Error() );
-    }
-    FRHITextureViewDesc Unwrapped = InDesc;
-    Unwrapped.Texture             = UnwrapRHIShared( InDesc.Texture );
-    auto Result                   = Underlying->CreateTextureView( Unwrapped );
-    if ( not Result )
-    {
-        return Result;
-    }
-    return MakeShared<FRHIValidationTextureView>( *Result, InDesc.Texture, State );
+        FRHITextureViewDesc Unwrapped = InDesc;
+        Unwrapped.Texture             = UnwrapRHIShared( InDesc.Texture );
+        return Underlying->CreateTextureView( Unwrapped )
+            .Transform( [this, &InDesc] ( TSharedRef<IRHITextureView> &&InView ) noexcept -> TSharedRef<IRHITextureView>
+        {
+            return MakeShared<FRHIValidationTextureView>( std::move( InView ), InDesc.Texture, State );
+        } );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISampler>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::CreateSampler ( const FRHISamplerDesc &InDesc ) noexcept
 {
-    auto Result = Underlying->CreateSampler( InDesc );
-    if ( not Result )
+    return Underlying->CreateSampler( InDesc ).Transform(
+        [this] ( TSharedRef<IRHISampler> &&InSampler ) noexcept -> TSharedRef<IRHISampler>
     {
-        return Result;
-    }
-    return MakeShared<FRHIValidationSampler>( *Result, State );
+        return MakeShared<FRHIValidationSampler>( std::move( InSampler ), State );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIHeap>, Lumen::FRHIError>
@@ -148,12 +142,11 @@ Lumen::FRHIValidationDevice::CreateReadbackAllocator ( const UInt64 InCapacity )
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITransientResourceAllocator>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::CreateTransientResourceAllocator () noexcept
 {
-    auto Result = Underlying->CreateTransientResourceAllocator();
-    if ( not Result )
+    return Underlying->CreateTransientResourceAllocator().Transform(
+        [this] ( TSharedRef<IRHITransientResourceAllocator> &&InAllocator ) noexcept -> TSharedRef<IRHITransientResourceAllocator>
     {
-        return Result;
-    }
-    return MakeShared<FRHIValidationTransientResourceAllocator>( *Result, State );
+        return MakeShared<FRHIValidationTransientResourceAllocator>( std::move( InAllocator ), State );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDefragmenter>, Lumen::FRHIError>
@@ -165,28 +158,25 @@ Lumen::FRHIValidationDevice::CreateDefragmenter () noexcept
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBindingLayout>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::CreateBindingLayout ( const FRHIBindingLayoutDesc &InDesc ) noexcept
 {
-    auto Result = Underlying->CreateBindingLayout( InDesc );
-    if ( not Result )
+    return Underlying->CreateBindingLayout( InDesc ).Transform(
+        [this] ( TSharedRef<IRHIBindingLayout> &&InLayout ) noexcept -> TSharedRef<IRHIBindingLayout>
     {
-        return Result;
-    }
-    return MakeShared<FRHIValidationBindingLayout>( *Result, State );
+        return MakeShared<FRHIValidationBindingLayout>( std::move( InLayout ), State );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBindingSet>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::CreateBindingSet ( const TSharedRef<IRHIBindingLayout> &InLayout ) noexcept
 {
-    auto Owned = State->ValidateObject( *InLayout, ERHIValidationObjectKind::BindingLayout );
-    if ( not Owned )
+    return State->ValidateObject( *InLayout, ERHIValidationObjectKind::BindingLayout )
+        .AndThen( [this, &InLayout] () noexcept -> TExpected<TSharedRef<IRHIBindingSet>, FRHIError>
     {
-        return TUnexpected<FRHIError>( Owned.Error() );
-    }
-    auto Result = Underlying->CreateBindingSet( UnwrapRHIShared( InLayout ) );
-    if ( not Result )
-    {
-        return Result;
-    }
-    return MakeShared<FRHIValidationBindingSet>( *Result, InLayout, State );
+        return Underlying->CreateBindingSet( UnwrapRHIShared( InLayout ) )
+            .Transform( [this, &InLayout] ( TSharedRef<IRHIBindingSet> &&InSet ) noexcept -> TSharedRef<IRHIBindingSet>
+        {
+            return MakeShared<FRHIValidationBindingSet>( std::move( InSet ), InLayout, State );
+        } );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDescriptorAllocator>, Lumen::FRHIError>
@@ -207,9 +197,9 @@ Lumen::FRHIValidationDevice::CreatePipelineLayout ( const FRHIPipelineLayoutDesc
     FRHIPipelineLayoutDesc Unwrapped;
     Unwrapped.InlineConstants = InDesc.InlineConstants;
     Unwrapped.BindingLayouts.reserve( InDesc.BindingLayouts.size() );
-    for ( const auto &Layout : InDesc.BindingLayouts )
+    for ( const TSharedRef<IRHIBindingLayout> &Layout : InDesc.BindingLayouts )
     {
-        auto Owned = State->ValidateObject( *Layout, ERHIValidationObjectKind::BindingLayout );
+        const TExpected<void, FRHIError> Owned = State->ValidateObject( *Layout, ERHIValidationObjectKind::BindingLayout );
         if ( not Owned )
         {
             return TUnexpected<FRHIError>( Owned.Error() );
@@ -240,38 +230,35 @@ Lumen::FRHIValidationDevice::CreatePipelineCache ( const FRHIPipelineCacheDesc &
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHICommandAllocator>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::CreateCommandAllocator ( const ERHIQueueType InQueueType ) noexcept
 {
-    auto Result = Underlying->CreateCommandAllocator( InQueueType );
-    if ( not Result )
+    return Underlying->CreateCommandAllocator( InQueueType )
+        .Transform( [this] ( TSharedRef<IRHICommandAllocator> &&InAllocator ) noexcept -> TSharedRef<IRHICommandAllocator>
     {
-        return Result;
-    }
-    return MakeShared<FRHIValidationCommandAllocator>( *Result, State );
+        return MakeShared<FRHIValidationCommandAllocator>( std::move( InAllocator ), State );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHICommandList>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::CreateCommandList ( const TSharedRef<IRHICommandAllocator> &InAllocator ) noexcept
 {
-    auto Owned = State->ValidateObject( *InAllocator, ERHIValidationObjectKind::CommandAllocator );
-    if ( not Owned )
+    return State->ValidateObject( *InAllocator, ERHIValidationObjectKind::CommandAllocator )
+        .AndThen( [this, &InAllocator] () noexcept -> TExpected<TSharedRef<IRHICommandList>, FRHIError>
     {
-        return TUnexpected<FRHIError>( Owned.Error() );
-    }
-    auto *ValidationAllocator = dynamic_cast<FRHIValidationCommandAllocator *>( InAllocator.Get() );
-    if ( ValidationAllocator == nullptr )
-    {
-        return TUnexpected<FRHIError>( State->GetReporter()
-                                           ->Reject( ERHIValidationMessageCode::ForeignObject, ERHIErrorCondition::Command,
-                                                     "Command allocator belongs to another validation layer", this )
-                                           .Error() );
-    }
-    auto Result = Underlying->CreateCommandList( UnwrapRHIShared( InAllocator ) );
-    if ( not Result )
-    {
-        return Result;
-    }
-    const TSharedRef<FRHIValidationCommandAllocator> Allocator =
-        StaticCastSharedRef<FRHIValidationCommandAllocator>( InAllocator );
-    return MakeShared<FRHIValidationCommandList>( *Result, Allocator, State );
+        auto *ValidationAllocator = dynamic_cast<FRHIValidationCommandAllocator *>( InAllocator.Get() );
+        if ( ValidationAllocator == nullptr )
+        {
+            return TUnexpected<FRHIError>( State->GetReporter()
+                                               ->Reject( ERHIValidationMessageCode::ForeignObject, ERHIErrorCondition::Command,
+                                                         "Command allocator belongs to another validation layer", this )
+                                               .Error() );
+        }
+        return Underlying->CreateCommandList( UnwrapRHIShared( InAllocator ) )
+            .Transform( [this, &InAllocator] ( TSharedRef<IRHICommandList> &&InList ) noexcept -> TSharedRef<IRHICommandList>
+        {
+            const TSharedRef<FRHIValidationCommandAllocator> Allocator =
+                StaticCastSharedRef<FRHIValidationCommandAllocator>( InAllocator );
+            return MakeShared<FRHIValidationCommandList>( std::move( InList ), Allocator, State );
+        } );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISemaphore>, Lumen::FRHIError>
@@ -283,12 +270,11 @@ Lumen::FRHIValidationDevice::CreateSemaphore ( const FRHISemaphoreDesc &InDesc )
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISwapchain>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::CreateSwapchain ( const FRHISwapchainDesc &InDesc ) noexcept
 {
-    auto Result = Underlying->CreateSwapchain( InDesc );
-    if ( not Result )
+    return Underlying->CreateSwapchain( InDesc ).Transform(
+        [this] ( TSharedRef<IRHISwapchain> &&InSwapchain ) noexcept -> TSharedRef<IRHISwapchain>
     {
-        return Result;
-    }
-    return MakeShared<FRHIValidationSwapchain>( *Result, State );
+        return MakeShared<FRHIValidationSwapchain>( std::move( InSwapchain ), State );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIQueryPool>, Lumen::FRHIError>

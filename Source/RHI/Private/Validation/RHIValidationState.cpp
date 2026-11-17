@@ -54,7 +54,7 @@ void Lumen::FRHIValidationState::TrackResource ( IRHIResource &InResource, const
 void Lumen::FRHIValidationState::Untrack ( IRHIObject &InObject ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
-    const auto Found = Objects.find( UnwrapRHIObject( &InObject )->GetId().GetValue() );
+    const TMap<UInt64, FEntry>::iterator Found = Objects.find( UnwrapRHIObject( &InObject )->GetId().GetValue() );
     if ( Found != Objects.end() and Found->second.Object == UnwrapRHIObject( &InObject ) )
     {
         Objects.erase( Found );
@@ -66,7 +66,7 @@ Lumen::FRHIValidationState::ValidateObject ( const IRHIObject &InObject, const E
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InObject );
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
-    const auto Found = Objects.find( Unwrapped->GetId().GetValue() );
+    const TMap<UInt64, FEntry>::const_iterator Found = Objects.find( Unwrapped->GetId().GetValue() );
     if ( Found == Objects.end() or Found->second.Object != Unwrapped )
     {
         return Reporter->Reject( ERHIValidationMessageCode::ForeignObject, ERHIErrorCondition::Resource,
@@ -84,7 +84,7 @@ Lumen::Bool Lumen::FRHIValidationState::Contains ( const IRHIObject &InObject ) 
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InObject );
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
-    const auto Found = Objects.find( Unwrapped->GetId().GetValue() );
+    const TMap<UInt64, FEntry>::const_iterator Found = Objects.find( Unwrapped->GetId().GetValue() );
     return Found != Objects.end() and Found->second.Object == Unwrapped;
 }
 
@@ -111,7 +111,7 @@ Lumen::FRHIValidationState::GetResourceState ( const IRHIResource &InResource ) 
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InResource );
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
-    const auto Found = Objects.find( Unwrapped->GetId().GetValue() );
+    const TMap<UInt64, FEntry>::const_iterator Found = Objects.find( Unwrapped->GetId().GetValue() );
     if ( Found == Objects.end() or Found->second.States.empty() )
     {
         return {};
@@ -133,7 +133,7 @@ Lumen::TOptional<Lumen::ERHIResourceState> Lumen::FRHIValidationState::GetTextur
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InTexture );
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
-    const auto Found = Objects.find( Unwrapped->GetId().GetValue() );
+    const TMap<UInt64, FEntry>::const_iterator Found = Objects.find( Unwrapped->GetId().GetValue() );
     if ( Found == Objects.end() or Found->second.Kind != ERHIValidationObjectKind::Texture or
          InMip >= InTexture.GetDesc().MipCount or InLayer >= InTexture.GetDesc().LayerCount )
     {
@@ -179,16 +179,17 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationState::TransitionB
         return Reporter->Reject( ERHIValidationMessageCode::InvalidResourceTransition, ERHIErrorCondition::Resource,
                                  "Buffer transition has no resource" );
     }
-    IRHIBuffer &Buffer = *UnwrapRHI( InTransition.Buffer.Get() );
-    auto Valid         = ValidateObject( Buffer, ERHIValidationObjectKind::Buffer );
+    IRHIBuffer &Buffer                     = *UnwrapRHI( InTransition.Buffer.Get() );
+    const TExpected<void, FRHIError> Valid = ValidateObject( Buffer, ERHIValidationObjectKind::Buffer );
     if ( not Valid )
     {
         return Valid;
     }
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
-    FEntry &Entry        = Objects.find( Buffer.GetId().GetValue() )->second;
-    auto TransitionValid = ValidateTransition( Buffer, Entry, InTransition.Before, InTransition.After, InTransition.SourceQueue,
-                                               InTransition.DestinationQueue, InRecordingQueue );
+    FEntry &Entry = Objects.find( Buffer.GetId().GetValue() )->second;
+    const TExpected<void, FRHIError> TransitionValid =
+        ValidateTransition( Buffer, Entry, InTransition.Before, InTransition.After, InTransition.SourceQueue,
+                            InTransition.DestinationQueue, InRecordingQueue );
     if ( not TransitionValid )
     {
         return TransitionValid;
@@ -214,8 +215,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationState::TransitionT
         return Reporter->Reject( ERHIValidationMessageCode::InvalidResourceTransition, ERHIErrorCondition::Resource,
                                  "Texture transition has no resource" );
     }
-    IRHITexture &Texture = *UnwrapRHI( InTransition.Texture.Get() );
-    auto Valid           = ValidateObject( Texture, ERHIValidationObjectKind::Texture );
+    IRHITexture &Texture                   = *UnwrapRHI( InTransition.Texture.Get() );
+    const TExpected<void, FRHIError> Valid = ValidateObject( Texture, ERHIValidationObjectKind::Texture );
     if ( not Valid )
     {
         return Valid;
@@ -226,9 +227,10 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationState::TransitionT
                                  "Texture transition range is out of bounds", &Texture );
     }
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
-    FEntry &Entry        = Objects.find( Texture.GetId().GetValue() )->second;
-    auto TransitionValid = ValidateTransition( Texture, Entry, InTransition.Before, InTransition.After, InTransition.SourceQueue,
-                                               InTransition.DestinationQueue, InRecordingQueue );
+    FEntry &Entry = Objects.find( Texture.GetId().GetValue() )->second;
+    const TExpected<void, FRHIError> TransitionValid =
+        ValidateTransition( Texture, Entry, InTransition.Before, InTransition.After, InTransition.SourceQueue,
+                            InTransition.DestinationQueue, InRecordingQueue );
     if ( not TransitionValid )
     {
         return TransitionValid;

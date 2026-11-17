@@ -16,7 +16,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIGraphicsPipelineDesc::Valida
     }
     for ( const ERHIFormat Format : ColorFormats )
     {
-        const auto Info = TryGetRHIFormatInfo( Format );
+        const TOptional<FRHIFormatInfo> Info = TryGetRHIFormatInfo( Format );
         if ( not Info or not Info->HasColor() )
         {
             return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Invalid color attachment format" ) );
@@ -24,7 +24,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIGraphicsPipelineDesc::Valida
     }
     if ( DepthStencilFormat != ERHIFormat::Unknown )
     {
-        const auto Info = TryGetRHIFormatInfo( DepthStencilFormat );
+        const TOptional<FRHIFormatInfo> Info = TryGetRHIFormatInfo( DepthStencilFormat );
         if ( not Info or ( not Info->HasDepth() and not Info->HasStencil() ) )
         {
             return TUnexpected<FRHIError>( MakeRHIInvalidPipeline( "Invalid depth-stencil attachment format" ) );

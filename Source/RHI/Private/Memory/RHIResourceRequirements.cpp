@@ -6,7 +6,7 @@
 Lumen::TExpected<Lumen::FRHIAllocationDesc, Lumen::FRHIError> Lumen::FRHIResourceRequirements::ToAllocationDesc () const noexcept
 {
     const FRHIAllocationDesc Desc{ Size, Alignment, PreferredMemoryClass.ValueOr( ERHIMemoryClass::DeviceLocal ) };
-    if ( const auto Valid = Desc.Validate(); not Valid )
+    if ( const TExpected<void, FRHIError> Valid = Desc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }

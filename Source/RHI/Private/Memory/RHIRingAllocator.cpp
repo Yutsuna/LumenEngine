@@ -13,7 +13,7 @@ Lumen::FRHIRingAllocator::FRHIRingAllocator ( const UInt64 InCapacity ) noexcept
 Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
 Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
-    if ( const auto Valid = InDesc.Validate(); not Valid )
+    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -21,13 +21,13 @@ Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
     UInt64 Start = Cursor;
     for ( UInt32 Attempt = 0U; Attempt < 2U; ++Attempt )
     {
-        const auto Aligned = RHIAlignUp( Start, InDesc.Alignment );
+        const TOptional<UInt64> Aligned = RHIAlignUp( Start, InDesc.Alignment );
         if ( not Aligned )
         {
             break;
         }
-        const auto End = RHICheckedAdd( *Aligned, InDesc.Size );
-        Bool bOverlaps = false;
+        const TOptional<UInt64> End = RHICheckedAdd( *Aligned, InDesc.Size );
+        Bool bOverlaps              = false;
         if ( End and *End <= Capacity )
         {
             for ( const FRHIAllocation &Other : Active )

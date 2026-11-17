@@ -37,7 +37,7 @@ void Lumen::FRHITlsfAllocator::InsertFreeRange ( const FFreeRange InRange ) noex
 Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
 Lumen::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
-    if ( const auto Valid = InDesc.Validate(); not Valid )
+    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -50,8 +50,8 @@ Lumen::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
         auto &List = Buckets[BucketIndex];
         for ( USize RangeIndex = 0U; RangeIndex < List.size(); ++RangeIndex )
         {
-            const FFreeRange Range = List[RangeIndex];
-            const auto Offset      = RHIAlignUp( Range.Offset, InDesc.Alignment );
+            const FFreeRange Range         = List[RangeIndex];
+            const TOptional<UInt64> Offset = RHIAlignUp( Range.Offset, InDesc.Alignment );
             if ( not Offset or *Offset < Range.Offset )
             {
                 continue;

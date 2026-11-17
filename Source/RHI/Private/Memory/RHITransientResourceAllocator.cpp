@@ -21,7 +21,7 @@ Lumen::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch &InBa
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidState( ERHIErrorCondition::Memory, "Transient batch is not active" ) );
     }
-    if ( const auto Valid = InBatch.Validate(); not Valid )
+    if ( const TExpected<void, FRHIError> Valid = InBatch.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -40,7 +40,7 @@ Lumen::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch &InBa
             }
             if ( not bOverlapsRemainingRequest )
             {
-                const auto Freed = Allocator.Free( Results[Index].Allocation );
+                const TExpected<void, FRHIError> Freed = Allocator.Free( Results[Index].Allocation );
                 if ( not Freed )
                 {
                     return TUnexpected<FRHIError>( Freed.Error() );
@@ -48,7 +48,7 @@ Lumen::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch &InBa
                 Released[Index] = true;
             }
         }
-        auto Allocation = Allocator.Allocate( *Request.Requirements.ToAllocationDesc() );
+        const TExpected<FRHIAllocation, FRHIError> Allocation = Allocator.Allocate( *Request.Requirements.ToAllocationDesc() );
         if ( not Allocation )
         {
             return TUnexpected<FRHIError>( Allocation.Error() );

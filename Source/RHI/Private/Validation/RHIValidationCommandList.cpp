@@ -82,17 +82,16 @@ Lumen::FRHIValidationCommandList::ValidateTexture ( const IRHITexture &InTexture
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CheckDraw ( const ERHIPipelineType InType,
                                                                                        const Bool bRendering ) const noexcept
 {
-    auto Scope = bRendering ? CheckRendering() : CheckRecording( false );
-    if ( not Scope )
+    return ( bRendering ? CheckRendering() : CheckRecording( false ) )
+        .AndThen( [this, InType] () noexcept -> TExpected<void, FRHIError>
     {
-        return Scope;
-    }
-    if ( not BoundPipeline or *BoundPipeline != InType )
-    {
-        return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Pipeline,
-                                             "Command has no compatible bound pipeline", this );
-    }
-    return {};
+        if ( not BoundPipeline or *BoundPipeline != InType )
+        {
+            return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Pipeline,
+                                                 "Command has no compatible bound pipeline", this );
+        }
+        return {};
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Begin () noexcept
@@ -122,15 +121,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Reset
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Command,
                                              "Cannot reset a pending list or one with an active query", this );
     }
-    auto Result = Underlying->Reset();
-    if ( Result )
+    return Underlying->Reset().Inspect( [this] () noexcept
     {
         BoundPipeline.Reset();
         ActiveQueryPool  = nullptr;
         ActiveQueryIndex = 0U;
         DebugDepth       = 0U;
-    }
-    return Result;
+    } );
 }
 
 void Lumen::FRHIValidationCommandList::OnAllocatorReset () noexcept
@@ -166,109 +163,112 @@ Lumen::FRHIValidationCommandList::MarkCompleted ( const FRHITimelineValue InComp
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::Transition ( const TSpan<const FRHITransition> InTransitions ) noexcept
 {
-    auto Scope = CheckRecording( true );
-    if ( not Scope )
+    return CheckRecording( true ).AndThen( [this, &InTransitions] () noexcept -> TExpected<void, FRHIError>
     {
-        return Scope;
-    }
-    const Bool bTrackStates = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::ResourceStates );
-    TVector<FRHITransition> Unwrapped;
-    Unwrapped.reserve( InTransitions.size() );
-    for ( const FRHITransition &Transition : InTransitions )
-    {
-        if ( const auto *Buffer = std::get_if<FRHIBufferTransition>( &Transition ) )
+        const Bool bTrackStates = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::ResourceStates );
+        TVector<FRHITransition> Unwrapped;
+        Unwrapped.reserve( InTransitions.size() );
+        for ( const FRHITransition &Transition : InTransitions )
         {
-            if ( not Buffer->Buffer )
+            if ( const FRHIBufferTransition *Buffer = std::get_if<FRHIBufferTransition>( &Transition ) )
+            {
+                if ( not Buffer->Buffer )
+                {
+                    return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidResourceTransition,
+                                                         ERHIErrorCondition::Resource, "Buffer transition has no resource",
+                                                         this );
+                }
+                const TExpected<void, FRHIError> Owned = ValidateBuffer( *Buffer->Buffer );
+                if ( not Owned )
+                {
+                    return Owned;
+                }
+                if ( bTrackStates )
+                {
+                    const TExpected<void, FRHIError> Valid = State->TransitionBuffer( *Buffer, GetQueueType(), false );
+                    if ( not Valid )
+                    {
+                        return Valid;
+                    }
+                }
+                FRHIBufferTransition Copy = *Buffer;
+                Copy.Buffer               = UnwrapRHIShared( Buffer->Buffer );
+                Unwrapped.push_back( FRHITransition( Copy ) );
+            }
+            else if ( const FRHITextureTransition *Texture = std::get_if<FRHITextureTransition>( &Transition ) )
+            {
+                if ( not Texture->Texture )
+                {
+                    return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidResourceTransition,
+                                                         ERHIErrorCondition::Resource, "Texture transition has no resource",
+                                                         this );
+                }
+                const TExpected<void, FRHIError> Owned = ValidateTexture( *Texture->Texture );
+                if ( not Owned )
+                {
+                    return Owned;
+                }
+                if ( bTrackStates )
+                {
+                    const TExpected<void, FRHIError> Valid = State->TransitionTexture( *Texture, GetQueueType(), false );
+                    if ( not Valid )
+                    {
+                        return Valid;
+                    }
+                }
+                FRHITextureTransition Copy = *Texture;
+                Copy.Texture               = UnwrapRHIShared( Texture->Texture );
+                Unwrapped.push_back( FRHITransition( Copy ) );
+            }
+            else
             {
                 return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidResourceTransition,
-                                                     ERHIErrorCondition::Resource, "Buffer transition has no resource", this );
+                                                     ERHIErrorCondition::Resource, "Transition has no active payload", this );
             }
-            auto Owned = ValidateBuffer( *Buffer->Buffer );
-            if ( not Owned )
+        }
+        const TExpected<void, FRHIError> Forwarded = Underlying->Transition( Unwrapped );
+        if ( not bTrackStates )
+        {
+            return Forwarded;
+        }
+        return Forwarded.AndThen( [this, &InTransitions] () noexcept -> TExpected<void, FRHIError>
+        {
+            for ( const FRHITransition &Transition : InTransitions )
             {
-                return Owned;
-            }
-            if ( bTrackStates )
-            {
-                auto Valid = State->TransitionBuffer( *Buffer, GetQueueType(), false );
-                if ( not Valid )
+                if ( const FRHIBufferTransition *Buffer = std::get_if<FRHIBufferTransition>( &Transition ) )
                 {
-                    return Valid;
+                    const TExpected<void, FRHIError> Applied = State->TransitionBuffer( *Buffer, GetQueueType() );
+                    if ( not Applied )
+                    {
+                        return Applied;
+                    }
+                }
+                else
+                {
+                    const FRHITextureTransition &Texture     = std::get<FRHITextureTransition>( Transition );
+                    const TExpected<void, FRHIError> Applied = State->TransitionTexture( Texture, GetQueueType() );
+                    if ( not Applied )
+                    {
+                        return Applied;
+                    }
                 }
             }
-            FRHIBufferTransition Copy = *Buffer;
-            Copy.Buffer               = UnwrapRHIShared( Buffer->Buffer );
-            Unwrapped.push_back( FRHITransition( Copy ) );
-        }
-        else if ( const auto *Texture = std::get_if<FRHITextureTransition>( &Transition ) )
-        {
-            if ( not Texture->Texture )
-            {
-                return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidResourceTransition,
-                                                     ERHIErrorCondition::Resource, "Texture transition has no resource", this );
-            }
-            auto Owned = ValidateTexture( *Texture->Texture );
-            if ( not Owned )
-            {
-                return Owned;
-            }
-            if ( bTrackStates )
-            {
-                auto Valid = State->TransitionTexture( *Texture, GetQueueType(), false );
-                if ( not Valid )
-                {
-                    return Valid;
-                }
-            }
-            FRHITextureTransition Copy = *Texture;
-            Copy.Texture               = UnwrapRHIShared( Texture->Texture );
-            Unwrapped.push_back( FRHITransition( Copy ) );
-        }
-        else
-        {
-            return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidResourceTransition,
-                                                 ERHIErrorCondition::Resource, "Transition has no active payload", this );
-        }
-    }
-    auto Result = Underlying->Transition( Unwrapped );
-    if ( not Result or not bTrackStates )
-    {
-        return Result;
-    }
-    for ( const FRHITransition &Transition : InTransitions )
-    {
-        if ( const auto *Buffer = std::get_if<FRHIBufferTransition>( &Transition ) )
-        {
-            auto Applied = State->TransitionBuffer( *Buffer, GetQueueType() );
-            if ( not Applied )
-            {
-                return Applied;
-            }
-        }
-        else
-        {
-            const auto &Texture = std::get<FRHITextureTransition>( Transition );
-            auto Applied        = State->TransitionTexture( Texture, GetQueueType() );
-            if ( not Applied )
-            {
-                return Applied;
-            }
-        }
-    }
-    return Result;
+            return TExpected<void, FRHIError>();
+        } );
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyBuffer ( TSharedRef<IRHIBuffer> InSource,
                                                                                         TSharedRef<IRHIBuffer> InDestination,
                                                                                         const FRHIBufferCopy &InCopy ) noexcept
 {
-    auto Scope = CheckRecording( true );
+    const TExpected<void, FRHIError> Scope            = CheckRecording( true );
+    const TExpected<void, FRHIError> SourceValid      = ValidateBuffer( *InSource );
+    const TExpected<void, FRHIError> DestinationValid = ValidateBuffer( *InDestination );
     if ( not Scope )
     {
         return Scope;
     }
-    auto SourceValid      = ValidateBuffer( *InSource );
-    auto DestinationValid = ValidateBuffer( *InDestination );
     if ( not SourceValid )
     {
         return SourceValid;
@@ -284,13 +284,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyT
                                                                                          TSharedRef<IRHITexture> InDestination,
                                                                                          const FRHITextureCopy &InCopy ) noexcept
 {
-    auto Scope = CheckRecording( true );
+    const TExpected<void, FRHIError> Scope            = CheckRecording( true );
+    const TExpected<void, FRHIError> SourceValid      = ValidateTexture( *InSource );
+    const TExpected<void, FRHIError> DestinationValid = ValidateTexture( *InDestination );
     if ( not Scope )
     {
         return Scope;
     }
-    auto SourceValid      = ValidateTexture( *InSource );
-    auto DestinationValid = ValidateTexture( *InDestination );
     if ( not SourceValid )
     {
         return SourceValid;
@@ -305,13 +305,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyT
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyBufferToTexture (
     TSharedRef<IRHIBuffer> InSource, TSharedRef<IRHITexture> InDestination, const FRHIBufferTextureCopy &InCopy ) noexcept
 {
-    auto Scope = CheckRecording( true );
+    const TExpected<void, FRHIError> Scope            = CheckRecording( true );
+    const TExpected<void, FRHIError> SourceValid      = ValidateBuffer( *InSource );
+    const TExpected<void, FRHIError> DestinationValid = ValidateTexture( *InDestination );
     if ( not Scope )
     {
         return Scope;
     }
-    auto SourceValid      = ValidateBuffer( *InSource );
-    auto DestinationValid = ValidateTexture( *InDestination );
     if ( not SourceValid )
     {
         return SourceValid;
@@ -326,13 +326,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyB
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyTextureToBuffer (
     TSharedRef<IRHITexture> InSource, TSharedRef<IRHIBuffer> InDestination, const FRHIBufferTextureCopy &InCopy ) noexcept
 {
-    auto Scope = CheckRecording( true );
+    const TExpected<void, FRHIError> Scope            = CheckRecording( true );
+    const TExpected<void, FRHIError> SourceValid      = ValidateTexture( *InSource );
+    const TExpected<void, FRHIError> DestinationValid = ValidateBuffer( *InDestination );
     if ( not Scope )
     {
         return Scope;
     }
-    auto SourceValid      = ValidateTexture( *InSource );
-    auto DestinationValid = ValidateBuffer( *InDestination );
     if ( not SourceValid )
     {
         return SourceValid;
@@ -347,12 +347,12 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyT
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::BeginRendering ( const FRHIRenderingDesc &InDesc ) noexcept
 {
-    auto Scope = CheckRecording( false );
+    const TExpected<void, FRHIError> Scope = CheckRecording( false );
     if ( not Scope )
     {
         return Scope;
     }
-    auto Valid = InDesc.Validate();
+    const TExpected<void, FRHIError> Valid = InDesc.Validate();
     if ( not Valid )
     {
         return Valid;
@@ -362,7 +362,7 @@ Lumen::FRHIValidationCommandList::BeginRendering ( const FRHIRenderingDesc &InDe
     Unwrapped.ColorAttachments.reserve( InDesc.ColorAttachments.size() );
     for ( FRHIRenderingAttachment Attachment : InDesc.ColorAttachments )
     {
-        auto Owned = State->ValidateObject( *Attachment.View, ERHIValidationObjectKind::TextureView );
+        const TExpected<void, FRHIError> Owned = State->ValidateObject( *Attachment.View, ERHIValidationObjectKind::TextureView );
         if ( not Owned )
         {
             return Owned;
@@ -373,7 +373,8 @@ Lumen::FRHIValidationCommandList::BeginRendering ( const FRHIRenderingDesc &InDe
     Unwrapped.DepthStencilAttachment = InDesc.DepthStencilAttachment;
     if ( Unwrapped.DepthStencilAttachment.View )
     {
-        auto Owned = State->ValidateObject( *Unwrapped.DepthStencilAttachment.View, ERHIValidationObjectKind::TextureView );
+        const TExpected<void, FRHIError> Owned =
+            State->ValidateObject( *Unwrapped.DepthStencilAttachment.View, ERHIValidationObjectKind::TextureView );
         if ( not Owned )
         {
             return Owned;
@@ -385,7 +386,7 @@ Lumen::FRHIValidationCommandList::BeginRendering ( const FRHIRenderingDesc &InDe
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndRendering () noexcept
 {
-    auto Scope = CheckRendering();
+    const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
     {
         return Scope;
@@ -396,7 +397,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndRe
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::SetPipeline ( TSharedRef<IRHIPipeline> InPipeline ) noexcept
 {
-    auto Scope = CheckRecording( true );
+    const TExpected<void, FRHIError> Scope = CheckRecording( true );
     if ( not Scope )
     {
         return Scope;
@@ -406,36 +407,34 @@ Lumen::FRHIValidationCommandList::SetPipeline ( TSharedRef<IRHIPipeline> InPipel
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Pipeline,
                                              "Pipeline type does not match the current rendering scope", this );
     }
-    auto Result = Underlying->SetPipeline( InPipeline );
-    if ( Result )
+    return Underlying->SetPipeline( InPipeline )
+        .Inspect( [this, &InPipeline] () noexcept
     {
         BoundPipeline.Emplace( InPipeline->GetType() );
-    }
-    return Result;
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::SetBindingSet ( const UInt32 InIndex, TSharedRef<IRHIBindingSet> InSet ) noexcept
 {
-    auto Scope = CheckRecording( true );
-    if ( not Scope )
+    return CheckRecording( true )
+        .AndThen(
+            [this, &InSet] () noexcept -> TExpected<void, FRHIError>
     {
-        return Scope;
-    }
-    auto Owned = State->ValidateObject( *InSet, ERHIValidationObjectKind::BindingSet );
-    if ( not Owned )
+        return State->ValidateObject( *InSet, ERHIValidationObjectKind::BindingSet );
+    } )
+        .AndThen( [this, InIndex, &InSet] () noexcept -> TExpected<void, FRHIError>
     {
-        return Owned;
-    }
-    return Underlying->SetBindingSet( InIndex, UnwrapRHIShared( InSet ) );
+        return Underlying->SetBindingSet( InIndex, UnwrapRHIShared( InSet ) );
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetVertexBuffer ( const UInt32 InSlot,
                                                                                              TSharedRef<IRHIBuffer> InBuffer,
                                                                                              const UInt64 InOffset ) noexcept
 {
-    auto Scope = CheckRendering();
-    auto Owned = ValidateBuffer( *InBuffer );
+    const TExpected<void, FRHIError> Scope = CheckRendering();
+    const TExpected<void, FRHIError> Owned = ValidateBuffer( *InBuffer );
     if ( not Scope )
     {
         return Scope;
@@ -450,8 +449,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetVe
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetIndexBuffer (
     TSharedRef<IRHIBuffer> InBuffer, const UInt64 InOffset, const ERHIIndexFormat InFormat ) noexcept
 {
-    auto Scope = CheckRendering();
-    auto Owned = ValidateBuffer( *InBuffer );
+    const TExpected<void, FRHIError> Scope = CheckRendering();
+    const TExpected<void, FRHIError> Owned = ValidateBuffer( *InBuffer );
     if ( not Scope )
     {
         return Scope;
@@ -465,31 +464,29 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetIn
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Draw ( const FRHIDrawArguments &InArguments ) noexcept
 {
-    auto Valid = CheckDraw( ERHIPipelineType::Graphics, true );
-    if ( not Valid )
+    return CheckDraw( ERHIPipelineType::Graphics, true )
+        .AndThen( [this, &InArguments] () noexcept -> TExpected<void, FRHIError>
     {
-        return Valid;
-    }
-    return Underlying->Draw( InArguments );
+        return Underlying->Draw( InArguments );
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::DrawIndexed ( const FRHIDrawIndexedArguments &InArguments ) noexcept
 {
-    auto Valid = CheckDraw( ERHIPipelineType::Graphics, true );
-    if ( not Valid )
+    return CheckDraw( ERHIPipelineType::Graphics, true )
+        .AndThen( [this, &InArguments] () noexcept -> TExpected<void, FRHIError>
     {
-        return Valid;
-    }
-    return Underlying->DrawIndexed( InArguments );
+        return Underlying->DrawIndexed( InArguments );
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::DrawIndirect ( TSharedRef<IRHIBuffer> InArguments,
                                                  const FRHIIndirectArguments &InDesc ) noexcept
 {
-    auto Valid = CheckDraw( ERHIPipelineType::Graphics, true );
-    auto Owned = ValidateBuffer( *InArguments );
+    const TExpected<void, FRHIError> Valid = CheckDraw( ERHIPipelineType::Graphics, true );
+    const TExpected<void, FRHIError> Owned = ValidateBuffer( *InArguments );
     if ( not Valid )
     {
         return Valid;
@@ -504,20 +501,19 @@ Lumen::FRHIValidationCommandList::DrawIndirect ( TSharedRef<IRHIBuffer> InArgume
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::Dispatch ( const FRHIDispatchArguments &InArguments ) noexcept
 {
-    auto Valid = CheckDraw( ERHIPipelineType::Compute, false );
-    if ( not Valid )
+    return CheckDraw( ERHIPipelineType::Compute, false )
+        .AndThen( [this, &InArguments] () noexcept -> TExpected<void, FRHIError>
     {
-        return Valid;
-    }
-    return Underlying->Dispatch( InArguments );
+        return Underlying->Dispatch( InArguments );
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::DispatchIndirect ( TSharedRef<IRHIBuffer> InArguments,
                                                      const FRHIIndirectArguments &InDesc ) noexcept
 {
-    auto Valid = CheckDraw( ERHIPipelineType::Compute, false );
-    auto Owned = ValidateBuffer( *InArguments );
+    const TExpected<void, FRHIError> Valid = CheckDraw( ERHIPipelineType::Compute, false );
+    const TExpected<void, FRHIError> Owned = ValidateBuffer( *InArguments );
     if ( not Valid )
     {
         return Valid;
@@ -531,7 +527,7 @@ Lumen::FRHIValidationCommandList::DispatchIndirect ( TSharedRef<IRHIBuffer> InAr
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetViewport ( const FRHIViewport &InViewport ) noexcept
 {
-    auto Scope = CheckRendering();
+    const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
     {
         return Scope;
@@ -541,7 +537,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetVi
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetScissor ( const FRHIRect2D &InScissor ) noexcept
 {
-    auto Scope = CheckRendering();
+    const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
     {
         return Scope;
@@ -552,7 +548,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetSc
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::SetBlendConstants ( const Float32 ( &InConstants )[4] ) noexcept
 {
-    auto Scope = CheckRendering();
+    const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
     {
         return Scope;
@@ -563,7 +559,7 @@ Lumen::FRHIValidationCommandList::SetBlendConstants ( const Float32 ( &InConstan
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetDepthBias ( const Float32 InConstant,
                                                                                           const Float32 InSlope ) noexcept
 {
-    auto Scope = CheckRendering();
+    const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
     {
         return Scope;
@@ -574,7 +570,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetDe
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::SetStencilReference ( const UInt32 InReference ) noexcept
 {
-    auto Scope = CheckRendering();
+    const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
     {
         return Scope;
@@ -585,7 +581,7 @@ Lumen::FRHIValidationCommandList::SetStencilReference ( const UInt32 InReference
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::BeginQuery ( IRHIQueryPool &InPool,
                                                                                         const UInt32 InIndex ) noexcept
 {
-    auto Scope = CheckRecording( true );
+    const TExpected<void, FRHIError> Scope = CheckRecording( true );
     if ( not Scope )
     {
         return Scope;
@@ -595,19 +591,18 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Begin
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Query,
                                              "Another query is already active", this );
     }
-    auto Result = Underlying->BeginQuery( InPool, InIndex );
-    if ( Result )
+    return Underlying->BeginQuery( InPool, InIndex )
+        .Inspect( [this, &InPool, InIndex] () noexcept
     {
         ActiveQueryPool  = &InPool;
         ActiveQueryIndex = InIndex;
-    }
-    return Result;
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndQuery ( IRHIQueryPool &InPool,
                                                                                       const UInt32 InIndex ) noexcept
 {
-    auto Scope = CheckRecording( true );
+    const TExpected<void, FRHIError> Scope = CheckRecording( true );
     if ( not Scope )
     {
         return Scope;
@@ -617,33 +612,30 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndQu
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Query,
                                              "Ending query does not match the active query", this );
     }
-    auto Result = Underlying->EndQuery( InPool, InIndex );
-    if ( Result )
+    return Underlying->EndQuery( InPool, InIndex )
+        .Inspect( [this] () noexcept
     {
         ActiveQueryPool  = nullptr;
         ActiveQueryIndex = 0U;
-    }
-    return Result;
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::BeginDebugRegion ( const FStringView InName ) noexcept
 {
-    auto Scope = CheckRecording( true );
+    const TExpected<void, FRHIError> Scope = CheckRecording( true );
     if ( not Scope )
     {
         return Scope;
     }
-    auto Result = Underlying->BeginDebugRegion( InName );
-    if ( Result )
+    return Underlying->BeginDebugRegion( InName ).Inspect( [this] () noexcept
     {
         ++DebugDepth;
-    }
-    return Result;
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndDebugRegion () noexcept
 {
-    auto Scope = CheckRecording( true );
+    const TExpected<void, FRHIError> Scope = CheckRecording( true );
     if ( not Scope )
     {
         return Scope;
@@ -653,10 +645,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndDe
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Command,
                                              "No debug region is active", this );
     }
-    auto Result = Underlying->EndDebugRegion();
-    if ( Result )
+    return Underlying->EndDebugRegion().Inspect( [this] () noexcept
     {
         --DebugDepth;
-    }
-    return Result;
+    } );
 }

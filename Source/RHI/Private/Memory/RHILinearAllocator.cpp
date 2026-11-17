@@ -13,17 +13,17 @@ Lumen::FRHILinearAllocator::FRHILinearAllocator ( const UInt64 InCapacity ) noex
 Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
 Lumen::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
-    if ( const auto Valid = InDesc.Validate(); not Valid )
+    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const auto Offset = RHIAlignUp( Current, InDesc.Alignment );
+    const TOptional<UInt64> Offset = RHIAlignUp( Current, InDesc.Alignment );
     if ( not Offset )
     {
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Linear alignment overflow" ) );
     }
-    const auto End = RHICheckedAdd( *Offset, InDesc.Size );
+    const TOptional<UInt64> End = RHICheckedAdd( *Offset, InDesc.Size );
     if ( not End or *End > Capacity )
     {
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Linear allocator exhausted" ) );

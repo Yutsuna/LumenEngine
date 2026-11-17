@@ -65,7 +65,7 @@ Lumen::EncodeRHIShaderPackage ( const FRHIShaderPackage &InPackage ) noexcept
     TVector<Byte> Result;
     WriteBytes( Result, TSpan<const Byte>( reinterpret_cast<const Byte *>( "LRHI" ), 4U ) );
     WriteValue( Result, 1U );
-    const auto Count = RHICheckedCast<UInt32>( InPackage.GetEntries().size() );
+    const TOptional<UInt32> Count = RHICheckedCast<UInt32>( InPackage.GetEntries().size() );
     if ( not Count )
     {
         return TUnexpected<FRHIError>( CodecError() );
@@ -73,9 +73,9 @@ Lumen::EncodeRHIShaderPackage ( const FRHIShaderPackage &InPackage ) noexcept
     WriteValue( Result, *Count );
     for ( const FRHIShaderPackageEntry &Entry : InPackage.GetEntries() )
     {
-        const auto ByteCount    = RHICheckedCast<UInt32>( Entry.Bytecode.size() );
-        const auto EntryCount   = RHICheckedCast<UInt32>( Entry.EntryPoint.size() );
-        const auto BindingCount = RHICheckedCast<UInt32>( Entry.Reflection.Bindings.size() );
+        const TOptional<UInt32> ByteCount    = RHICheckedCast<UInt32>( Entry.Bytecode.size() );
+        const TOptional<UInt32> EntryCount   = RHICheckedCast<UInt32>( Entry.EntryPoint.size() );
+        const TOptional<UInt32> BindingCount = RHICheckedCast<UInt32>( Entry.Reflection.Bindings.size() );
         if ( not ByteCount or not EntryCount or not BindingCount )
         {
             return TUnexpected<FRHIError>( CodecError() );
@@ -143,7 +143,7 @@ Lumen::DecodeRHIShaderPackage ( const TSpan<const Byte> InBytes ) noexcept
             }
             Entry.Reflection.Bindings.push_back( Binding );
         }
-        if ( const auto Added = Package.AddEntry( std::move( Entry ) ); not Added )
+        if ( const TExpected<void, FRHIError> Added = Package.AddEntry( std::move( Entry ) ); not Added )
         {
             return TUnexpected<FRHIError>( Added.Error() );
         }

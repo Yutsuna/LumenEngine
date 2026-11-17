@@ -50,8 +50,8 @@ Lumen::TSharedRef<Lumen::IRHIBindingLayout> Lumen::FRHIValidationBindingSet::Get
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &InWrite ) const noexcept
 {
-    const auto &Reporter                = State->GetReporter();
-    const FRHIBindingLayoutEntry *Entry = nullptr;
+    const TSharedPtr<FRHIValidationReporter> &Reporter = State->GetReporter();
+    const FRHIBindingLayoutEntry *Entry                = nullptr;
     for ( const FRHIBindingLayoutEntry &Candidate : Layout->GetDesc().Entries )
     {
         if ( Candidate.Slot == InWrite.Slot )
@@ -65,8 +65,7 @@ Lumen::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &InWrite
         return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                  "Binding slot is absent from the validated layout", this );
     }
-    auto Valid = InWrite.Validate();
-    if ( not Valid )
+    if ( not InWrite.Validate() )
     {
         return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                  "Binding write contains no resource", this );
@@ -81,12 +80,12 @@ Lumen::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &InWrite
                 return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                          "Buffer type does not match the layout entry", this );
             }
-            auto Owned = State->ValidateObject( *Payload.Buffer, ERHIValidationObjectKind::Buffer );
+            const TExpected<void, FRHIError> Owned = State->ValidateObject( *Payload.Buffer, ERHIValidationObjectKind::Buffer );
             if ( not Owned )
             {
                 return Owned;
             }
-            const auto &Desc                 = Payload.Buffer->GetDesc();
+            const FRHIBufferDesc &Desc       = Payload.Buffer->GetDesc();
             const ERHIResourceUsage Required = Entry->Type == ERHIBindingType::ConstantBuffer ? ERHIResourceUsage::ConstantBuffer
                                                : Entry->Type == ERHIBindingType::ReadWriteBuffer
                                                    ? ERHIResourceUsage::UnorderedAccess
@@ -106,7 +105,8 @@ Lumen::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &InWrite
                 return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                          "Texture type does not match the layout entry", this );
             }
-            auto Owned = State->ValidateObject( *Payload.View, ERHIValidationObjectKind::TextureView );
+            const TExpected<void, FRHIError> Owned =
+                State->ValidateObject( *Payload.View, ERHIValidationObjectKind::TextureView );
             if ( not Owned )
             {
                 return Owned;
@@ -146,7 +146,7 @@ Lumen::FRHIValidationBindingSet::Write ( const TSpan<const FRHIBindingWrite> InW
     {
         for ( const FRHIBindingWrite &Write : InWrites )
         {
-            auto Valid = ValidateWrite( Write );
+            const TExpected<void, FRHIError> Valid = ValidateWrite( Write );
             if ( not Valid )
             {
                 return Valid;

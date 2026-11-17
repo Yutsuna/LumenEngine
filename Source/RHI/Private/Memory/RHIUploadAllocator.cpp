@@ -16,18 +16,18 @@ Lumen::FRHIUploadAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
 {
     FRHIAllocationDesc UploadDesc = InDesc;
     UploadDesc.MemoryClass        = ERHIMemoryClass::Upload;
-    auto Allocation               = Ring.Allocate( UploadDesc );
-    if ( not Allocation )
+    return Ring.Allocate( UploadDesc )
+        .AndThen( [this] ( const FRHIAllocation &InAllocation ) noexcept -> TExpected<FRHIUploadAllocation, FRHIError>
     {
-        return TUnexpected<FRHIError>( Allocation.Error() );
-    }
-    const auto End = RHICheckedAdd( static_cast<USize>( Allocation->Offset ), static_cast<USize>( Allocation->Size ) );
-    if ( not End or *End > Capacity )
-    {
-        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Upload range exceeds storage" ) );
-    }
-    return FRHIUploadAllocation{ *Allocation, TSpan<Byte>( Storage.Get() + static_cast<USize>( Allocation->Offset ),
-                                                           static_cast<USize>( Allocation->Size ) ) };
+        const TOptional<USize> End =
+            RHICheckedAdd( static_cast<USize>( InAllocation.Offset ), static_cast<USize>( InAllocation.Size ) );
+        if ( not End or *End > Capacity )
+        {
+            return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Upload range exceeds storage" ) );
+        }
+        return FRHIUploadAllocation{ InAllocation, TSpan<Byte>( Storage.Get() + static_cast<USize>( InAllocation.Offset ),
+                                                                static_cast<USize>( InAllocation.Size ) ) };
+    } );
 }
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIUploadAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {

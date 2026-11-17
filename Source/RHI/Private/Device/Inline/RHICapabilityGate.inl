@@ -11,7 +11,7 @@
 inline Lumen::TExpected<void, Lumen::FRHIError> Lumen::CheckRHICapabilityGate ( const FRHIAdapterInfo &InAdapter,
                                                                                 const FRHIDeviceDesc &InDesc ) noexcept
 {
-    if ( const auto Valid = InDesc.Validate(); not Valid )
+    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }

@@ -22,7 +22,7 @@ Lumen::FRHICommandStream::FRHICommandStream ( const USize InChunkCapacity ) noex
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandStream::WritePayload ( const UInt32 InOpcode,
                                                                                   const TSpan<const Byte> InPayload ) noexcept
 {
-    const auto PayloadSize = RHICheckedCast<UInt32>( InPayload.size() );
+    const TOptional<UInt32> PayloadSize = RHICheckedCast<UInt32>( InPayload.size() );
     if ( not PayloadSize )
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidCommand( "Command payload is too large" ) );
@@ -32,8 +32,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandStream::WritePayload 
         Chunks.emplace_back();
         CurrentChunk = 0U;
     }
-    const auto AlignedOffset = RHIAlignUp( Chunks[CurrentChunk].size(), alignof( FHeader ) );
-    const auto Required =
+    const TOptional<USize> AlignedOffset = RHIAlignUp( Chunks[CurrentChunk].size(), alignof( FHeader ) );
+    const TOptional<USize> Required =
         AlignedOffset ? RHICheckedAdd( *AlignedOffset - Chunks[CurrentChunk].size() + sizeof( FHeader ), InPayload.size() )
                       : TOptional<USize>{};
     if ( not Required )
@@ -72,8 +72,9 @@ Lumen::TExpected<Lumen::FRHICommandView, Lumen::FRHIError> Lumen::FRHICommandStr
         return TUnexpected<FRHIError>( StreamError( "Command chunk is invalid" ) );
     }
     const TVector<Byte> &Chunk = Chunks[Record.ChunkIndex];
-    const auto End             = RHICheckedAdd( Record.Offset, sizeof( FHeader ) );
-    const auto PayloadEnd      = End ? RHICheckedAdd( *End, static_cast<USize>( Record.PayloadSize ) ) : TOptional<USize>{};
+    const TOptional<USize> End = RHICheckedAdd( Record.Offset, sizeof( FHeader ) );
+    const TOptional<USize> PayloadEnd =
+        End ? RHICheckedAdd( *End, static_cast<USize>( Record.PayloadSize ) ) : TOptional<USize>{};
     if ( not PayloadEnd or *PayloadEnd > Chunk.size() or Record.Offset % alignof( FHeader ) != 0U )
     {
         return TUnexpected<FRHIError>( StreamError( "Command range is truncated or misaligned" ) );

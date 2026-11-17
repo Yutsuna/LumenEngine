@@ -28,7 +28,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandAllocatorBase::Reset 
     {
         if ( List->GetState() == ERHICommandListState::Pending )
         {
-            const auto Completed = List->MarkCompleted( InCompleted );
+            const TExpected<void, FRHIError> Completed = List->MarkCompleted( InCompleted );
             if ( not Completed )
             {
                 return TUnexpected<FRHIError>( Completed.Error() );
@@ -36,7 +36,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandAllocatorBase::Reset 
         }
         if ( List->GetState() != ERHICommandListState::Initial )
         {
-            const auto ResetResult = List->Reset();
+            const TExpected<void, FRHIError> ResetResult = List->Reset();
             if ( not ResetResult )
             {
                 return TUnexpected<FRHIError>( ResetResult.Error() );

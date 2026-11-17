@@ -41,7 +41,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingDesc::Validate () c
             MakeRHIInvalidArgument( ERHIErrorCondition::Command, "Rendering area or attachments are empty" ) );
     }
 
-    for ( const auto &Attachment : ColorAttachments )
+    for ( const FRHIRenderingAttachment &Attachment : ColorAttachments )
     {
         const Lumen::TExpected<void, Lumen::FRHIError> Valid = Attachment.Validate( false );
         if ( not Valid )
@@ -72,7 +72,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingDesc::Validate () c
             MakeRHIInvalidArgument( ERHIErrorCondition::Command, "Rendering area exceeds attachment extent" ) );
     }
 
-    for ( const auto &Attachment : ColorAttachments )
+    for ( const FRHIRenderingAttachment &Attachment : ColorAttachments )
     {
         if ( Attachment.View->GetTexture()->GetDesc().SampleCount != Texture->GetDesc().SampleCount )
         {

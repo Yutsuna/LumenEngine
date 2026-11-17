@@ -13,7 +13,7 @@ LUMEN_RHI_OBJECT_FORWARDERS( FRHIBufferPool )
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBuffer>, Lumen::FRHIError>
 Lumen::FRHIBufferPool::Acquire ( const FRHIBufferDesc &InDesc ) noexcept
 {
-    if ( const auto Valid = InDesc.Validate(); not Valid )
+    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }

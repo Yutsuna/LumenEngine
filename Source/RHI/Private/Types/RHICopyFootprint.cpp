@@ -11,7 +11,7 @@
 Lumen::TExpected<Lumen::FRHICopyFootprint, Lumen::FRHIError> Lumen::ComputeRHICopyFootprint (
     const ERHIFormat InFormat, const FRHIExtent3D InExtent, const UInt64 InOffset, const UInt64 InRowAlignment ) noexcept
 {
-    const auto Info = TryGetRHIFormatInfo( InFormat );
+    const TOptional<FRHIFormatInfo> Info = TryGetRHIFormatInfo( InFormat );
     if ( not Info or InFormat == ERHIFormat::Unknown or not InExtent.IsValid() or not RHIIsPowerOfTwo( InRowAlignment ) )
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidArgument(
@@ -25,14 +25,16 @@ Lumen::TExpected<Lumen::FRHICopyFootprint, Lumen::FRHIError> Lumen::ComputeRHICo
         return TUnexpected<FRHIError>( MakeRHIInvalidResource( "Copy block count overflow" ) );
     }
 
-    const auto TightPitch = RHICheckedMultiply( static_cast<UInt64>( *BlocksX ), static_cast<UInt64>( Info->BytesPerBlock ) );
+    const TOptional<UInt64> TightPitch =
+        RHICheckedMultiply( static_cast<UInt64>( *BlocksX ), static_cast<UInt64>( Info->BytesPerBlock ) );
     if ( not TightPitch )
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidResource( "Copy row pitch overflow" ) );
     }
-    const auto RowPitch   = RHIAlignUp( *TightPitch, InRowAlignment );
-    const auto SlicePitch = RowPitch ? RHICheckedMultiply( *RowPitch, static_cast<UInt64>( *BlocksY ) ) : TOptional<UInt64>{};
-    const auto TotalSize =
+    const TOptional<UInt64> RowPitch = RHIAlignUp( *TightPitch, InRowAlignment );
+    const TOptional<UInt64> SlicePitch =
+        RowPitch ? RHICheckedMultiply( *RowPitch, static_cast<UInt64>( *BlocksY ) ) : TOptional<UInt64>{};
+    const TOptional<UInt64> TotalSize =
         SlicePitch ? RHICheckedMultiply( *SlicePitch, static_cast<UInt64>( InExtent.Depth ) ) : TOptional<UInt64>{};
     if ( not RowPitch or not SlicePitch or not TotalSize )
     {

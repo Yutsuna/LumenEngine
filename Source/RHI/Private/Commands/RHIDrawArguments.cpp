@@ -45,10 +45,10 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIIndirectArguments::Validate 
     {
         return InvalidArguments( "Indirect arguments have invalid count, stride, or alignment" );
     }
-    const auto CommandsSize = RHICheckedMultiply( static_cast<UInt64>( Count - 1U ), static_cast<UInt64>( Stride ) );
-    const auto RequiredSize =
+    const TOptional<UInt64> CommandsSize = RHICheckedMultiply( static_cast<UInt64>( Count - 1U ), static_cast<UInt64>( Stride ) );
+    const TOptional<UInt64> RequiredSize =
         CommandsSize ? RHICheckedAdd( *CommandsSize, static_cast<UInt64>( InMinimumStride ) ) : TOptional<UInt64>{};
-    const auto End = RequiredSize ? RHICheckedAdd( Offset, *RequiredSize ) : TOptional<UInt64>{};
+    const TOptional<UInt64> End = RequiredSize ? RHICheckedAdd( Offset, *RequiredSize ) : TOptional<UInt64>{};
     if ( not End or *End > InBufferSize )
     {
         return InvalidArguments( "Indirect arguments exceed the buffer" );

@@ -53,12 +53,11 @@ Lumen::TExpected<Lumen::TSpan<Lumen::Byte>, Lumen::FRHIError> Lumen::FRHIValidat
                                                      "Buffer is already mapped", this )
                                            .Error() );
     }
-    auto Result = Underlying->Map( InOffset, InSize );
-    if ( Result )
+    return Underlying->Map( InOffset, InSize )
+        .Inspect( [this] ( const TSpan<Byte> & ) noexcept
     {
         bMapped = true;
-    }
-    return Result;
+    } );
 }
 
 void Lumen::FRHIValidationBuffer::Unmap () noexcept
