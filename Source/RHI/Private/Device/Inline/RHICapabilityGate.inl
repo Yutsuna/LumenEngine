@@ -6,6 +6,7 @@
 #pragma once
 
 #include "../RHICapabilityGate.hpp"
+#include "Types/RHIError.hpp"
 
 inline Lumen::TExpected<void, Lumen::FRHIError> Lumen::CheckRHICapabilityGate ( const FRHIAdapterInfo &InAdapter,
                                                                                 const FRHIDeviceDesc &InDesc ) noexcept
@@ -17,12 +18,12 @@ inline Lumen::TExpected<void, Lumen::FRHIError> Lumen::CheckRHICapabilityGate ( 
     if ( InDesc.AdapterId and *InDesc.AdapterId != InAdapter.AdapterId )
     {
         return TUnexpected<FRHIError>(
-            MakeRHIUnsupported( NotFound, ERHIErrorCondition::Device, "Requested adapter is not present" ) );
+            MakeRHINotFound(ERHIErrorCondition::Device, "Requested adapter is not present" ) );
     }
     if ( not InAdapter.Capabilities.Supports( InDesc.RequiredCapabilities.Features ) )
     {
         return TUnexpected<FRHIError>(
-            MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Capability, "Adapter does not provide all required features" ) );
+            MakeRHIUnsupported( ERHIErrorCondition::Capability, "Adapter does not provide all required features" ) );
     }
     for ( const FRHIQueueRequest &Request : InDesc.Queues )
     {
@@ -36,8 +37,8 @@ inline Lumen::TExpected<void, Lumen::FRHIError> Lumen::CheckRHICapabilityGate ( 
         }
         if ( Request.Count > Available )
         {
-            return TUnexpected<FRHIError>( MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Queue,
-                                                               "Adapter does not provide the requested queue count" ) );
+            return TUnexpected<FRHIError>(
+                MakeRHIUnsupported( ERHIErrorCondition::Queue, "Adapter does not provide the requested queue count" ) );
         }
     }
     return {};

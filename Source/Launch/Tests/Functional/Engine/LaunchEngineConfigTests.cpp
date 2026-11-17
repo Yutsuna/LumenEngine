@@ -3,6 +3,7 @@
  * @brief Functional tests for FLaunchEngineConfig defaults and traits.
  */
 
+#include "Concepts/TriviallyCopyable.hpp"
 #include <Engine/LaunchEngineConfig.hpp>
 
 #include <HAL/PlatformTime.hpp>
@@ -19,8 +20,8 @@ namespace Lumen
 
 LUMEN_TEST( FLaunchEngineConfig_Traits, IsTriviallyCopyable )
 {
-    static_assert( std::is_trivially_copyable_v<Launch::FLaunchEngineConfig> );
-    LUMEN_CHECK_TRUE( std::is_trivially_copyable_v<Launch::FLaunchEngineConfig> );
+    static_assert( ::Lumen::Concepts::CTriviallyCopyable<Launch::FLaunchEngineConfig> );
+    LUMEN_CHECK_TRUE( ::Lumen::Concepts::CTriviallyCopyable<Launch::FLaunchEngineConfig> );
 }
 
 LUMEN_TEST( FLaunchEngineConfig_Defaults, AreCoherent )

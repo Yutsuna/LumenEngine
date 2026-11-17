@@ -6,8 +6,6 @@
 #include <Commands/RHIRenderingDesc.hpp>
 #include <Types/RHIFormatInfo.hpp>
 
-#include <Algo/ForEach.hpp>
-
 #include <variant>
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingAttachment::Validate ( const Bool bDepthStencil ) const noexcept
@@ -42,15 +40,15 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingDesc::Validate () c
         return TUnexpected<FRHIError>(
             MakeRHIInvalidArgument( ERHIErrorCondition::Command, "Rendering area or attachments are empty" ) );
     }
-    Algo::ForEach( ColorAttachments,
-                   [] ( const FRHIRenderingAttachment &Attachment ) noexcept -> Lumen::TExpected<void, Lumen::FRHIError>
+
+    for ( const auto &Attachment : ColorAttachments )
     {
         const Lumen::TExpected<void, Lumen::FRHIError> Valid = Attachment.Validate( false );
         if ( not Valid )
         {
             return Valid;
         }
-    } );
+    }
     if ( DepthStencilAttachment.View )
     {
         const Lumen::TExpected<void, Lumen::FRHIError> Valid = DepthStencilAttachment.Validate( true );
@@ -74,14 +72,14 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingDesc::Validate () c
             MakeRHIInvalidArgument( ERHIErrorCondition::Command, "Rendering area exceeds attachment extent" ) );
     }
 
-    Algo::ForEach( ColorAttachments, [&] ( const auto &Attachment ) noexcept -> TExpected<void, FRHIError>
+    for ( const auto &Attachment : ColorAttachments )
     {
         if ( Attachment.View->GetTexture()->GetDesc().SampleCount != Texture->GetDesc().SampleCount )
         {
             return TUnexpected<FRHIError>(
                 MakeRHIInvalidArgument( ERHIErrorCondition::Command, "Attachment sample counts differ" ) );
         }
-    } );
+    }
 
     if ( DepthStencilAttachment.View and
          DepthStencilAttachment.View->GetTexture()->GetDesc().SampleCount != Texture->GetDesc().SampleCount )

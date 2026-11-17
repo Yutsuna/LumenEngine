@@ -16,8 +16,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICapabilities::Validate () co
     const UInt64 RawFeatures   = static_cast<UInt64>( Features );
     if ( ( RawFeatures & ~KnownMask ) != 0ULL )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Capability, "Unknown capability bits are set" ) );
+        return TUnexpected<FRHIError>( MakeRHIUnsupported( ERHIErrorCondition::Capability, "Unknown capability bits are set" ) );
     }
     return {};
 }

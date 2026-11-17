@@ -103,7 +103,7 @@ LUMEN_TEST( FMessage_Layout, MatchesCacheLineContract )
     static_assert( sizeof( FMessage ) == 128, "FMessage should be exactly 128 bytes for performance reasons." );
     static_assert( alignof( FMessage ) == 64, "FMessage must be aligned to a whole CPU cache line." );
     static_assert( FMessage::MaxPayloadSize == 112, "The inline buffer must be 112 bytes." );
-    static_assert( std::is_trivially_copyable_v<FMessage>, "FMessage travels lock-free and must stay trivially copyable." );
+    static_assert( Concepts::CTriviallyCopyable<FMessage>, "FMessage travels lock-free and must stay trivially copyable." );
 
     LUMEN_CHECK_EQ( sizeof( FMessage ), 128ULL );
     LUMEN_CHECK_EQ( alignof( FMessage ), 64ULL );

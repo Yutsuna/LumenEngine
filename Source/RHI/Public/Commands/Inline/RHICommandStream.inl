@@ -4,36 +4,49 @@
  */
 
 #pragma once
+
 #include <Commands/RHICommandStream.hpp>
+#include <Concepts/TriviallyCopyable.hpp>
 #include <cstring>
+
+/**
+ * Public
+ */
+
 template <typename PayloadType>
-    requires std::is_trivially_copyable_v<PayloadType>
+    requires Lumen::Concepts::CTriviallyCopyable<PayloadType>
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandStream::Write ( const UInt32 InOpcode,
                                                                            const PayloadType &InPayload ) noexcept
 {
     const auto *Bytes = reinterpret_cast<const Byte *>( std::addressof( InPayload ) );
     return WritePayload( InOpcode, TSpan<const Byte>( Bytes, sizeof( PayloadType ) ) );
 }
+
 template <typename PayloadType>
-    requires std::is_trivially_copyable_v<PayloadType>
+    requires Lumen::Concepts::CTriviallyCopyable<PayloadType>
 Lumen::TExpected<PayloadType, Lumen::FRHIError>
+
 Lumen::FRHICommandStream::ReadPayload ( const USize InIndex, const UInt32 InExpectedOpcode ) const noexcept
 {
-    auto View = Read( InIndex );
+    TExpected<FRHICommandView, FRHIError> View = Read( InIndex );
     if ( not View )
     {
-        return TUnexpected<FRHIError>( View.Error() );
+        return View.Error();
     }
     if ( View->Opcode != InExpectedOpcode or View->Payload.size() != sizeof( PayloadType ) )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIUnsupported( CorruptedData, ERHIErrorCondition::Command, "Command payload type or opcode mismatch" ) );
+        return MakeRHICorrupted( ERHIErrorCondition::Command, "Command payload type or opcode mismatch" );
     }
+
     PayloadType Payload;
     std::memcpy( std::addressof( Payload ), View->Payload.data(), sizeof( PayloadType ) );
     return Payload;
 }
-template <typename ObjectType> void Lumen::FRHICommandStream::Retain ( const TSharedRef<ObjectType> &InObject ) noexcept
+
+template <typename ObjectType>
+
+void Lumen::FRHICommandStream::Retain ( const TSharedRef<ObjectType> &InObject ) noexcept
 {
     RetainedObjects.push_back( StaticCastSharedRef<IRHIObject>( InObject ) );
 }

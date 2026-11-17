@@ -39,7 +39,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bLost )
     {
-        return TUnexpected<FRHIError>( MakeRHIUnsupported( DeviceLost, ERHIErrorCondition::Queue, "Null queue is lost" ) );
+        return TUnexpected<FRHIError>( MakeRHIDeviceLost( ERHIErrorCondition::Queue, "Null queue is lost" ) );
     }
     if ( FaultPlan )
     {
@@ -119,7 +119,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::WaitIdle () n
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bLost )
     {
-        return TUnexpected<FRHIError>( MakeRHIUnsupported( DeviceLost, ERHIErrorCondition::Queue, "Null queue is lost" ) );
+        return TUnexpected<FRHIError>( MakeRHIDeviceLost( ERHIErrorCondition::Queue, "Null queue is lost" ) );
     }
     return {};
 }
@@ -138,11 +138,11 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Wait ( const 
     };
     if ( not Condition.WaitFor( Lock, InTimeoutSeconds, Reached ) )
     {
-        return TUnexpected<FRHIError>( MakeRHIUnsupported( Timeout, ERHIErrorCondition::Queue, "Queue wait timed out" ) );
+        return TUnexpected<FRHIError>( MakeRHITimeout( ERHIErrorCondition::Queue, "Queue wait timed out" ) );
     }
     if ( bLost )
     {
-        return TUnexpected<FRHIError>( MakeRHIUnsupported( DeviceLost, ERHIErrorCondition::Queue, "Null queue is lost" ) );
+        return TUnexpected<FRHIError>( MakeRHIDeviceLost( ERHIErrorCondition::Queue, "Null queue is lost" ) );
     }
     return {};
 }

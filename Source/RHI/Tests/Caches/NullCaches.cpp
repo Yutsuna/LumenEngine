@@ -110,7 +110,7 @@ namespace
 
     FRHIError CorruptedCacheError () noexcept
     {
-        return MakeRHIUnsupported( CorruptedData, ERHIErrorCondition::Cache, "Invalid Null pipeline cache data" );
+        return MakeRHICorrupted( ERHIErrorCondition::Cache, "Invalid Null pipeline cache data" );
     }
 
 } // namespace

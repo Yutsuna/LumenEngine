@@ -57,8 +57,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSemaphore::Wait ( co
     };
     if ( not Condition.WaitFor( Lock, InTimeoutSeconds, Reached ) )
     {
-        return TUnexpected<FRHIError>(
-            MakeRHIUnsupported( Timeout, ERHIErrorCondition::Synchronization, "Semaphore wait timed out" ) );
+        return TUnexpected<FRHIError>( MakeRHITimeout( ERHIErrorCondition::Synchronization, "Semaphore wait timed out" ) );
     }
     if ( Desc.Type == ERHISemaphoreType::Binary )
     {

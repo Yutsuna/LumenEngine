@@ -3,6 +3,7 @@
  * @brief Exhaustive functional tests for Maths::TVec and NormalizePlane.
  */
 
+#include "Concepts/TriviallyCopyable.hpp"
 #include <Maths/Vec.hpp>
 #include <Tests/UnitTest.hpp>
 
@@ -47,7 +48,7 @@ static_assert( std::is_constructible_v<Maths::TVec<Float32, 3>, const Maths::TVe
 
 /** Default-constructible and trivially copyable. */
 static_assert( std::is_default_constructible_v<Maths::FVec3f> );
-static_assert( std::is_trivially_copyable_v<Maths::FVec3f> );
+static_assert( Concepts::CTriviallyCopyable<Maths::FVec3f> );
 
 /** operator<=> yields the component's comparison category (strong for ints, partial for floats). */
 static_assert(

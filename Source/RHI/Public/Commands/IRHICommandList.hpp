@@ -4,21 +4,31 @@
  */
 
 #pragma once
+
 #include <Bindings/IRHIBindingSet.hpp>
+
 #include <Commands/RHICommandListState.hpp>
 #include <Commands/RHICommandStream.hpp>
 #include <Commands/RHICopyDescs.hpp>
 #include <Commands/RHIDrawArguments.hpp>
 #include <Commands/RHIRenderingDesc.hpp>
 #include <Commands/RHITransition.hpp>
+
 #include <Pipelines/IRHIPipeline.hpp>
 #include <Pipelines/RHIPrimitiveTopology.hpp>
+
+#include <Memory/SharedPtr.hpp>
+
+#include <Types/IRHIObject.hpp>
 #include <Types/RHITimeline.hpp>
 #include <Types/RHIViewport.hpp>
+
 namespace Lumen
 {
+
 class IRHIBindingSet;
 class IRHIQueryPool;
+
 /**
  * @class IRHICommandList
  * @brief A re-usable recorder of graphics, compute and copy commands.

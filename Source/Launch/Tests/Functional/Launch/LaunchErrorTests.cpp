@@ -18,8 +18,8 @@ namespace Lumen
 
 LUMEN_TEST( FLaunchError_Traits, IsTriviallyCopyable )
 {
-    static_assert( Concepts::CTriviallyCopyable<Launch::FLaunchError> );
-    LUMEN_CHECK_TRUE( Concepts::CTriviallyCopyable<Launch::FLaunchError> );
+    static_assert( ::Lumen::Concepts::CTriviallyCopyable<Launch::FLaunchError> );
+    LUMEN_CHECK_TRUE( ::Lumen::Concepts::CTriviallyCopyable<Launch::FLaunchError> );
 }
 
 LUMEN_TEST( FLaunchError_ToExitCode, ReturnsNumericErrorCode )

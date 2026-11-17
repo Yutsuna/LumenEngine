@@ -90,8 +90,8 @@ Lumen::FRHIError Lumen::MakeRHIInvalidDevice ( const FStringView InMessage ) noe
  * OutOfMemory
  */
 
-LUMEN_FORCE_INLINE Lumen::FRHIError Lumen::MakeRHIOutOfMemory ( const Lumen::ERHIErrorCondition Condition,
-                                                                const Lumen::FStringView Message ) noexcept
+Lumen::FRHIError Lumen::MakeRHIOutOfMemory ( const Lumen::ERHIErrorCondition Condition,
+                                             const Lumen::FStringView Message ) noexcept
 {
     return FRHIError{ ERHIErrorCode::OutOfMemory, Condition, Message };
 }
@@ -100,8 +100,8 @@ LUMEN_FORCE_INLINE Lumen::FRHIError Lumen::MakeRHIOutOfMemory ( const Lumen::ERH
  * Unsupported
  */
 
-LUMEN_FORCE_INLINE Lumen::FRHIError Lumen::MakeRHIUnsupported ( const Lumen::ERHIErrorCondition Condition,
-                                                                const Lumen::FStringView InMessage ) noexcept
+Lumen::FRHIError Lumen::MakeRHIUnsupported ( const Lumen::ERHIErrorCondition Condition,
+                                             const Lumen::FStringView InMessage ) noexcept
 {
     return FRHIError{ ERHIErrorCode::Unsupported, Condition, InMessage };
 }
@@ -110,8 +110,57 @@ LUMEN_FORCE_INLINE Lumen::FRHIError Lumen::MakeRHIUnsupported ( const Lumen::ERH
  * Invalid State
  */
 
-LUMEN_FORCE_INLINE Lumen::FRHIError Lumen::MakeRHIInvalidState ( const Lumen::ERHIErrorCondition Condition,
-                                                                 const Lumen::FStringView InMessage ) noexcept
+Lumen::FRHIError Lumen::MakeRHIInvalidState ( const Lumen::ERHIErrorCondition Condition,
+                                              const Lumen::FStringView InMessage ) noexcept
 {
     return FRHIError{ ERHIErrorCode::InvalidState, Condition, InMessage };
+}
+
+/**
+ * Corrupted
+ */
+
+Lumen::FRHIError Lumen::MakeRHICorrupted ( const Lumen::ERHIErrorCondition Condition,
+                                           const Lumen::FStringView InMessage ) noexcept
+{
+    return FRHIError{ ERHIErrorCode::CorruptedData, Condition, InMessage };
+}
+
+/**
+ * Timed Out
+ */
+
+Lumen::FRHIError Lumen::MakeRHITimeout ( const Lumen::ERHIErrorCondition Condition, const Lumen::FStringView InMessage ) noexcept
+{
+    return FRHIError{ ERHIErrorCode::Timeout, Condition, InMessage };
+}
+
+/**
+ * Device Lost
+ */
+
+Lumen::FRHIError Lumen::MakeRHIDeviceLost ( const Lumen::ERHIErrorCondition Condition,
+                                            const Lumen::FStringView InMessage ) noexcept
+{
+    return FRHIError{ ERHIErrorCode::DeviceLost, Condition, InMessage };
+}
+
+/**
+ * Validation Failed
+ */
+
+Lumen::FRHIError Lumen::MakeRHIValidationFailed ( const Lumen::ERHIErrorCondition Condition,
+                                                  const Lumen::FStringView InMessage ) noexcept
+{
+    return FRHIError{ ERHIErrorCode::ValidationFailed, Condition, InMessage };
+}
+
+/**
+ * Not Found
+ */
+
+Lumen::FRHIError Lumen::MakeRHINotFound ( const Lumen::ERHIErrorCondition Condition,
+                                          const Lumen::FStringView InMessage ) noexcept
+{
+    return FRHIError{ ERHIErrorCode::NotFound, Condition, InMessage };
 }

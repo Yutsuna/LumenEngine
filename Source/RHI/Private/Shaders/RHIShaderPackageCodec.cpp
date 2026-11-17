@@ -2,6 +2,7 @@
  * @file RHIShaderPackageCodec.cpp
  * @brief Implements bounded versioned shader package serialization.
  */
+#include "Concepts/TriviallyCopyable.hpp"
 #include <Shaders/RHIShaderPackageCodec.hpp>
 #include <Utilities/RHICheckedMath.hpp>
 #include <cstring>
@@ -13,7 +14,7 @@ namespace
 {
 
     template <typename ValueType>
-        requires std::is_trivially_copyable_v<ValueType>
+        requires Concepts::CTriviallyCopyable<ValueType>
     void WriteValue ( TVector<Byte> &OutBytes, const ValueType &InValue ) noexcept
     {
         const auto *Begin = reinterpret_cast<const Byte *>( std::addressof( InValue ) );
@@ -21,7 +22,7 @@ namespace
     }
 
     template <typename ValueType>
-        requires std::is_trivially_copyable_v<ValueType>
+        requires Concepts::CTriviallyCopyable<ValueType>
     Bool ReadValue ( TSpan<const Byte> InBytes, USize &InOutOffset, ValueType &OutValue ) noexcept
     {
         if ( InOutOffset > InBytes.size() or sizeof( ValueType ) > InBytes.size() - InOutOffset )

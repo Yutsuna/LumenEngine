@@ -41,8 +41,8 @@ Lumen::FRHISwapchainDesc::Validate ( const FRHISwapchainCapabilities &InCapabili
          Extent.Width > InCapabilities.MaxExtent.Width or Extent.Height > InCapabilities.MaxExtent.Height or
          Extent.Depth > InCapabilities.MaxExtent.Depth )
     {
-        return TUnexpected<FRHIError>( MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Presentation,
-                                                           "Requested swapchain configuration is not supported" ) );
+        return TUnexpected<FRHIError>(
+            MakeRHIUnsupported( ERHIErrorCondition::Presentation, "Requested swapchain configuration is not supported" ) );
     }
     return {};
 }

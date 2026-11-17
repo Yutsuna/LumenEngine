@@ -4,6 +4,7 @@
  */
 
 #pragma once
+#include "Concepts/TriviallyCopyable.hpp"
 #include <Memory/SharedPtr.hpp>
 #include <Memory/Span.hpp>
 #include <RHIExport.hpp>
@@ -41,13 +42,13 @@ public:
     TExpected<void, FRHIError> WritePayload ( UInt32 InOpcode, TSpan<const Byte> InPayload ) noexcept;
     /** @brief Appends one trivially copyable payload. */
     template <typename PayloadType>
-        requires std::is_trivially_copyable_v<PayloadType>
+        requires Concepts::CTriviallyCopyable<PayloadType>
     TExpected<void, FRHIError> Write ( UInt32 InOpcode, const PayloadType &InPayload ) noexcept;
     /** @brief Reads and validates one command by index. */
     [[nodiscard]] TExpected<FRHICommandView, FRHIError> Read ( USize InIndex ) const noexcept;
     /** @brief Decodes one typed command after checking opcode and payload size. */
     template <typename PayloadType>
-        requires std::is_trivially_copyable_v<PayloadType>
+        requires Concepts::CTriviallyCopyable<PayloadType>
     [[nodiscard]] TExpected<PayloadType, FRHIError> ReadPayload ( USize InIndex, UInt32 InExpectedOpcode ) const noexcept;
     /** @brief Retains an object until Clear or stream destruction. */
     void Retain ( TSharedPtr<IRHIObject> InObject ) noexcept;

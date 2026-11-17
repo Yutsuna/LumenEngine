@@ -212,7 +212,7 @@ Lumen::Tests::FNullCommandList::Transition ( const TSpan<const FRHITransition> I
         else
         {
             return TUnexpected<FRHIError>(
-                MakeRHIUnsupported( CorruptedData, ERHIErrorCondition::Command, "Transition variant has no active payload" ) );
+                MakeRHICorrupted( ERHIErrorCondition::Command, "Transition variant has no active payload" ) );
         }
         auto Result = Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::Transition ), Record );
         if ( not Result )

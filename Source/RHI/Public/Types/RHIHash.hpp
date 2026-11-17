@@ -2,12 +2,16 @@
  * @file RHIHash.hpp
  * @brief Defines deterministic content hashing for RHI values.
  */
+
 #pragma once
 
-#include <Core/CoreTypes.hpp>
-#include <Memory/Span.hpp>
 #include <RHIExport.hpp>
-#include <type_traits>
+
+#include <Core/CoreTypes.hpp>
+
+#include <Concepts/TriviallyCopyable.hpp>
+
+#include <Memory/Span.hpp>
 
 namespace Lumen
 {
@@ -20,7 +24,7 @@ namespace Lumen
 
 /** @brief Hashes the object representation of a trivially copyable value. */
 template <typename ValueType>
-    requires std::is_trivially_copyable_v<ValueType>
+    requires Concepts::CTriviallyCopyable<ValueType>
 [[nodiscard]] UInt64 RHIHashValue ( const ValueType &InValue ) noexcept;
 
 /**

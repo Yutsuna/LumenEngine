@@ -27,7 +27,7 @@ void Lumen::FRHIValidationReporter::Report ( const ERHIValidationMessageCode InC
     if ( Desc.bDeduplicateMessages )
     {
         HAL::TLockGuard<HAL::FPlatformMutex> Lock( Mutex );
-        if ( SeenMessages.find( Key ) != SeenMessages.end() )
+        if ( SeenMessages.contains( Key ))
         {
             return;
         }
@@ -47,7 +47,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationReporter::Reject (
                                                                                  const IRHIObject *InObject ) const noexcept
 {
     Report( InCode, InMessage, InObject );
-    return TUnexpected<FRHIError>( MakeRHIUnsupported( ValidationFailed, InCondition, InMessage ) );
+    return TUnexpected<FRHIError>( MakeRHIValidationFailed( InCondition, InMessage ) );
 }
 
 const Lumen::FRHIValidationDesc &Lumen::FRHIValidationReporter::GetDesc () const noexcept

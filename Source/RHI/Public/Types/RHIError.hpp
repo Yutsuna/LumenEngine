@@ -141,6 +141,25 @@ struct RHI_EXPORT FRHIError
 [[nodiscard]] LUMEN_FORCE_INLINE RHI_EXPORT FRHIError MakeRHIInvalidState ( ERHIErrorCondition Condition,
                                                                             FStringView InMessage ) noexcept;
 
+/** @brief Creates a corrupted error */
+[[nodiscard]] LUMEN_FORCE_INLINE RHI_EXPORT FRHIError MakeRHICorrupted ( ERHIErrorCondition Condition,
+                                                                         FStringView InMessage ) noexcept;
+
+/** @brief Creates a timeout error */
+[[nodiscard]] LUMEN_FORCE_INLINE RHI_EXPORT FRHIError MakeRHITimeout ( const Lumen::ERHIErrorCondition Condition,
+                                                                       const Lumen::FStringView InMessage ) noexcept;
+
+/** @brief Creates a device lost error */
+[[nodiscard]] LUMEN_FORCE_INLINE RHI_EXPORT FRHIError MakeRHIDeviceLost ( const Lumen::ERHIErrorCondition Condition,
+                                                                          const Lumen::FStringView InMessage ) noexcept;
+
+/** @brief Creates a validation failed error */
+[[nodiscard]] LUMEN_FORCE_INLINE RHI_EXPORT FRHIError MakeRHIValidationFailed ( const Lumen::ERHIErrorCondition Condition,
+                                                                                const Lumen::FStringView InMessage ) noexcept;
+/** @brief Creates a Not found error */
+[[nodiscard]] LUMEN_FORCE_INLINE RHI_EXPORT FRHIError MakeRHINotFound ( const Lumen::ERHIErrorCondition Condition,
+                                                                         const Lumen::FStringView InMessage ) noexcept;
+
 } // namespace Lumen
 
 #include "Inline/RHIError.inl"

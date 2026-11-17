@@ -19,5 +19,5 @@ Lumen::Tests::FNullDevice::Unsupported ( const FStringView InOperation ) noexcep
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    return TUnexpected<FRHIError>( MakeRHIUnsupported( Unsupported, ERHIErrorCondition::Device, InOperation ) );
+    return TUnexpected<FRHIError>( MakeRHIUnsupported( ERHIErrorCondition::Device, InOperation ) );
 }
