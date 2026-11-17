@@ -98,6 +98,7 @@ namespace Tests
     static void Lumen_Test_##SuiteName##_##TestName()
 
 #define LUMEN_INTEGRATION_TEST( SuiteName, TestName )                                                                            \
+    /* NOLINTNEXTLINE(misc-use-anonymous-namespace) */                                                                           \
     static void Lumen_IntegrationTest_##SuiteName##_##TestName();                                                                \
     static inline ::Lumen::Tests::FAutoRegisterUnitTest Lumen_RegisterIntegration_##SuiteName##_##TestName(                      \
         #SuiteName, #TestName, ::Lumen::Tests::EUnitTestKind::Integration, &Lumen_IntegrationTest_##SuiteName##_##TestName );    \
