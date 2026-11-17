@@ -91,18 +91,20 @@ namespace Tests
     };
 
 #define LUMEN_TEST( SuiteName, TestName )                                                                                        \
-    /* NOLINTNEXTLINE(misc-use-anonymous-namespace) */                                                                           \
-    static void Lumen_Test_##SuiteName##_##TestName();                                                                           \
+    /* NOLINT(misc-use-anonymous-namespace) */                                                                                   \
+    static void Lumen_Test_##SuiteName##_##TestName(); /* NOLINT(misc-use-anonymous-namespace) */                                \
+    /* NOLINT(misc-use-anonymous-namespace) */                                                                                   \
     static inline ::Lumen::Tests::FAutoRegisterUnitTest Lumen_Register_##SuiteName##_##TestName(                                 \
         #SuiteName, #TestName, ::Lumen::Tests::EUnitTestKind::Functional, &Lumen_Test_##SuiteName##_##TestName );                \
-    static void Lumen_Test_##SuiteName##_##TestName()
+    static void Lumen_Test_##SuiteName##_##TestName() /* NOLINT(misc-use-anonymous-namespace) */
 
 #define LUMEN_INTEGRATION_TEST( SuiteName, TestName )                                                                            \
-    /* NOLINTNEXTLINE(misc-use-anonymous-namespace) */                                                                           \
-    static void Lumen_IntegrationTest_##SuiteName##_##TestName();                                                                \
+    /* NOLINT(misc-use-anonymous-namespace) */                                                                                   \
+    static void Lumen_IntegrationTest_##SuiteName##_##TestName(); /* NOLINT(misc-use-anonymous-namespace) */                     \
+    /* NOLINT(misc-use-anonymous-namespace) */                                                                                   \
     static inline ::Lumen::Tests::FAutoRegisterUnitTest Lumen_RegisterIntegration_##SuiteName##_##TestName(                      \
         #SuiteName, #TestName, ::Lumen::Tests::EUnitTestKind::Integration, &Lumen_IntegrationTest_##SuiteName##_##TestName );    \
-    static void Lumen_IntegrationTest_##SuiteName##_##TestName()
+    static void Lumen_IntegrationTest_##SuiteName##_##TestName() /* NOLINT(misc-use-anonymous-namespace) */
 
 } // namespace Tests
 
