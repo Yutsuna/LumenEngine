@@ -12,17 +12,12 @@ Lumen::FRHIDescriptorAllocatorBase::FRHIDescriptorAllocatorBase ( const FRHIDesc
                                                                   IRHIDescriptorPoolBackend &InBackend ) noexcept
     : Desc( InDesc ), Backend( &InBackend )
 {
-    const TExpected<UInt64, FRHIError> Pool = Backend->CreatePool( InDesc.InitialCapacity );
-
-    if ( Pool )
+    Backend->CreatePool( InDesc.InitialCapacity )
+        .Inspect( [this, &InDesc] ( const UInt64 InPool ) noexcept
     {
-        FPool PoolData = {
-            .BaseOffset  = 0U,
-            .BackendPool = *Pool,
-            .Indices     = MakeUnique<FIndiceAllocator>( InDesc.InitialCapacity ),
-        };
-        Pools.push_back( std::move( PoolData ) );
-    }
+        Pools.push_back(
+            FPool{ .BaseOffset = 0U, .BackendPool = InPool, .Indices = MakeUnique<FIndiceAllocator>( InDesc.InitialCapacity ) } );
+    } );
 }
 
 Lumen::FRHIDescriptorAllocatorBase::~FRHIDescriptorAllocatorBase () noexcept
@@ -39,10 +34,9 @@ Lumen::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
-    /** TODO: Maybe Algo::ForEach ? */
+    /** NOTE: Algo::ForEachUntil does not fit here — the allocation is both probe and result. */
     for ( FPool &Pool : Pools )
     {
-        /** TODO: Maybe Monadic */
         const TOptional<FIndiceAllocation> Allocation = Pool.Indices->Allocate( InCount );
         if ( Allocation )
         {
@@ -74,7 +68,7 @@ Lumen::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
     }
     Pools.push_back(
         FPool{ .BaseOffset = BaseOffset, .BackendPool = *BackendPool, .Indices = MakeUnique<FIndiceAllocator>( Capacity ) } );
-    const auto Allocation = Pools.back().Indices->Allocate( InCount );
+    const TOptional<FIndiceAllocation> Allocation = Pools.back().Indices->Allocate( InCount );
     if ( not Allocation )
     {
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Binding, "Descriptor pool growth failed" ) );
