@@ -45,8 +45,8 @@ read-only — you produce a findings report, you fix nothing.
    `AGENTS.md` when checking pointers-to-`AGENTS.md`, and excluding your own
    `documentation.md` when checking whether agents are cross-referenced —
    but include it when checking README coverage, since it must be listed).
-   Enumerate using the harness's directory-listing capability; the read-only
-   shell allow-list deliberately excludes `find`/`ls`, do not bypass it.
+   Enumerate with the harness's directory-listing capability. Stay read-only:
+   no edits and no state-changing commands.
 2. **Index coverage** — for `.agents/AGENTS.md`:
    - every path referenced in the "Read on demand" table exists;
    - every file present under `rules/`, `workflows/`, `agents/`,
@@ -128,6 +128,7 @@ refs).
   and the evidence that contradicts it.
 - Do not review code or coding style — that is `reviewer-norme`'s job.
   You audit the `.agents/` corpus as an instruction system only.
+- Performance is out of scope, as it is for every reviewer in this corpus.
 - The content-quality of the rules ("is the standard good?") is out of
   scope; you check that the corpus is internally consistent and that the
   repository matches its claims.

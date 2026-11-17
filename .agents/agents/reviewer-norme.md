@@ -50,7 +50,7 @@ the modules touched.
 3. Module exports & boundaries — flag Public symbols missing `<MODULE>_EXPORT`
    and `#include <SceneExport.hpp>`-style generated-export includes, and
    internals that should not be exported (see `.agents/AGENTS.md` module
-   table; full architecture rules doc is pending and may be added later).
+   table and `.agents/modules/<Module>.md` for module-specific architecture).
 4. `.agents/modules/<TouchedModule>.md` for module-specific contracts.
 
 ## What to flag

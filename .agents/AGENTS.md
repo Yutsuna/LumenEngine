@@ -27,13 +27,14 @@ treat it as mandatory. Do not preload everything.
 | --- | --- | --- |
 | `Core` | built (shared library) | `modules/Core.md` |
 | `Maths` | built (shared library) | `modules/Maths.md` |
-| `RHI` | configured but empty stubs (listed in `ModuleNames`, every source/header is a 0-byte placeholder) | `modules/RHI.md` |
+| `RHI` | built (shared library; Null + validation backends, 240 tests) | `modules/RHI.md` |
 | `Scene` | built (shared library) | `modules/Scene.md` |
 | `AppCore` | built (shared library) | `modules/AppCore.md` |
 | `Launch` | built (executable entry point) | `modules/Launch.md` |
 | `Renderer`, `RHIOpenGL`, `RHIVulkan` | **not built yet** (empty stubs, absent from `ModuleNames`) | `modules/Renderer.md`, `modules/RHIOpenGL.md`, `modules/RHIVulkan.md` |
 
-A module is only compiled if listed in `ModuleNames` (`Source/meson.build`).
+A module is compiled only if listed in `ModuleNames` (`Source/meson.build`) and
+has a `meson.build` in its `Source/` directory.
 
 ## Fast facts (always apply)
 
