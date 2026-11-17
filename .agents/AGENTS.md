@@ -39,7 +39,7 @@ has a `meson.build` in its `Source/` directory.
 ## Fast facts (always apply)
 
 - All commands run inside the Nix devshell (`.envrc`/`direnv`), e.g.
-  `nix develop --command meson compile -C Build`. `Build/` is gitignored.
+  `meson compile -C Build`. `Build/` is gitignored.
 - Prefer the Lumen Core library over `std` (threads, locks, stop tokens,
   condition variables, containers, algorithms…). Use `std` only when Core has
   no equivalent yet — see `rules/core-first.md`.

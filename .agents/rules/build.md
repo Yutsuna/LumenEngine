@@ -6,9 +6,9 @@ All commands run in the Nix devshell (`.envrc`/`direnv` wires it
 automatically). What CI runs exactly (`.github/workflows/Ci.yml`):
 
 ```sh
-nix develop --command meson setup Build     # first configure; Build/ is gitignored
-nix develop --command meson compile -C Build
-nix develop --command meson test -C Build
+meson setup Build     # first configure; Build/ is gitignored
+meson compile -C Build
+meson test -C Build
 ```
 
 Focused verification:
