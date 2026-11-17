@@ -5,7 +5,6 @@
 #pragma once
 
 #include <Core/CoreTypes.hpp>
-#include <compare>
 
 namespace Lumen
 {
