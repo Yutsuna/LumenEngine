@@ -245,7 +245,8 @@ must implement; the Null backend exercises the portable error paths.
 configure time, so reconfigure after adding or removing one and build
 `RHITests` explicitly. Run the suite with `meson test -C Build --suite RHI`.
 
-Deterministic fuzz tests use logged seeds and a simple reference model; stress
+Deterministic fuzz tests use literal seeds recorded in the test source (not
+emitted at runtime) and a simple reference model; stress
 tests are bounded and run under sanitizers. Sanitizer builds are configured
 manually with `-Db_sanitize=address,undefined` (Debug ASan/UBSan) or
 `-Db_sanitize=thread` (TSan); see `commands/build-debug.md` and
@@ -284,5 +285,5 @@ Only the Null and validation backends exist; no real graphics backend is
 implemented or claimed to be validated. Optional shader formats, query types
 and presentation results are supplied or gated by the conformance factory, so a
 real backend must validate them independently. Fuzz determinism holds for the
-logged corpus and is not a collision-freedom proof. Inline and template
+recorded seed values and is not a collision-freedom proof. Inline and template
 implementations live in neighboring `Inline/` directories.
