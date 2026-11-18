@@ -27,7 +27,7 @@ treat it as mandatory. Do not preload everything.
 | --- | --- | --- |
 | `Core` | built (shared library) | `modules/Core.md` |
 | `Maths` | built (shared library) | `modules/Maths.md` |
-| `RHI` | built (shared library; Null + validation backends, 240 tests) | `modules/RHI.md` |
+| `RHI` | built (shared library; Null + validation backends) | `modules/RHI.md` |
 | `Scene` | built (shared library) | `modules/Scene.md` |
 | `AppCore` | built (shared library) | `modules/AppCore.md` |
 | `Launch` | built (executable entry point) | `modules/Launch.md` |

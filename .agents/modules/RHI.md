@@ -3,7 +3,7 @@
 - **Type:** shared library (`Source/RHI/meson.build`), depends on `Core` and
   `Maths`.
 - **Status:** built. The public layers, the Null backend and the validation
-  decorator are implemented; `RHITests` contains 240 tests.
+  decorator are implemented.
 - **Role:** the hardware-independent contract between the renderer and graphics
   backends. RHI defines portable values, interfaces, allocation algorithms,
   validation and test backends. It is backend-neutral: no vendor-, API- or
