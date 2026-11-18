@@ -4,7 +4,9 @@
  */
 
 #pragma once
+
 #include <Queue/RHISubmitDesc.hpp>
+
 namespace Lumen
 {
 /**
@@ -66,4 +68,5 @@ public:
      */
     virtual TExpected<void, FRHIError> Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept = 0;
 };
+
 } // namespace Lumen
