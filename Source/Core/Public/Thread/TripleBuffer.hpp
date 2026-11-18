@@ -5,12 +5,13 @@
 
 #pragma once
 
+#include "Concepts/IsInvocable.hpp"
 #include <Core/CoreTypes.hpp>
 #include <Core/EnumFlags.hpp>
 #include <Core/NonCopyable.hpp>
 #include <Core/NonMovable.hpp>
 
-#include <HAL/Mutex.hpp>
+#include <HAL/PlatformMutex.hpp>
 
 #include <Memory/UniquePtr.hpp>
 
@@ -136,7 +137,7 @@ namespace Thread
          * @param InEditor A callable taking a reference to the mutable BufferType.
          */
         template <typename Callable>
-            requires std::is_invocable_v<Callable, BufferType &>
+            requires Concepts::CIsInvocable<Callable, BufferType &>
         void WriteBuffer ( Callable &&InEditor );
 
         /**
@@ -163,7 +164,7 @@ namespace Thread
         TUniquePtr<BufferType[]> OwnedBuffers;
         BufferType *Buffers = nullptr;
         TAtomic<Internal::FBufferFlag::Type> BufferFlags;
-        alignas( 64 ) FMutex WriteMutex;
+        alignas( 64 ) HAL::FPlatformMutex WriteMutex;
     };
 
     static constexpr inline USize TripleBufferCount = 3U;

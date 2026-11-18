@@ -8,12 +8,13 @@
 #include <Actor/ActorRegistry.hpp>
 #include <Actor/ActorTypes.hpp>
 
+#include <Thread/Thread.hpp>
+
 #include <Messages/EngineMessageTypes.hpp>
 
 #include <Templates/Vector.hpp>
 #include <Tests/UnitTest.hpp>
 
-#include <thread>
 #include <type_traits>
 
 namespace Lumen
@@ -375,11 +376,11 @@ LUMEN_TEST( AActor_Threading, MultipleProducersEnqueueToSingleActor )
     constexpr UInt32 MessagesPerProducer = 100U;
     constexpr UInt32 TargetTotal         = ThreadsCount * MessagesPerProducer;
 
-    std::thread Producers[ThreadsCount];
+    FThread Producers[ThreadsCount];
 
     for ( UInt32 Index = 0U; Index < ThreadsCount; ++Index )
     {
-        Producers[Index] = std::thread( [&Actor, &PushedCount, Index] ()
+        Producers[Index] = FThread( [&Actor, &PushedCount, Index] ()
         {
             for ( UInt32 Message = 0U; Message < MessagesPerProducer; ++Message )
             {
@@ -389,9 +390,9 @@ LUMEN_TEST( AActor_Threading, MultipleProducersEnqueueToSingleActor )
         } );
     }
 
-    for ( std::thread &Producer : Producers )
+    for ( FThread &Producer : Producers )
     {
-        Producer.join();
+        Producer.Join();
     }
 
     LUMEN_CHECK_EQ( PushedCount.load( std::memory_order_relaxed ), TargetTotal );

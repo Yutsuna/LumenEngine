@@ -8,6 +8,8 @@
 #include <Actor/ActorRegistry.hpp>
 #include <Actor/ActorTypes.hpp>
 
+#include <HAL/LockGuard.hpp>
+
 #include <World/World.hpp>
 
 #include <Logging/Logger.hpp>
@@ -63,7 +65,7 @@ template <typename ActorType, typename... Args> Lumen::FActorRef Lumen::FWorld::
     } };
 
     {
-        TUniqueLock<FMutex> Lock( DeferredMutex );
+        HAL::TUniqueLock<HAL::FPlatformMutex> Lock( DeferredMutex );
         DeferredCommands.push_back( std::move( Command ) );
     }
 

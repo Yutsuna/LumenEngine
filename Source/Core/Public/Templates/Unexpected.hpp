@@ -5,8 +5,11 @@
 
 #pragma once
 
+#include <Core/CoreTypes.hpp>
+
 #include <Concepts/ConstructibleFrom.hpp>
 
+#include <type_traits>
 #include <utility>
 
 namespace Lumen
@@ -32,19 +35,23 @@ template <class ErrorType> class TUnexpected
 
 public:
 
-    constexpr explicit TUnexpected ( const ErrorType &InError ) noexcept : Err( InError )
+    constexpr explicit TUnexpected ( const ErrorType &InError ) noexcept( std::is_nothrow_copy_constructible_v<ErrorType> )
+        : Err( InError )
     {
         /** Empty */
     }
 
-    constexpr explicit TUnexpected ( ErrorType &&InError ) noexcept : Err( std::move( InError ) )
+    constexpr explicit TUnexpected ( ErrorType &&InError ) noexcept( std::is_nothrow_move_constructible_v<ErrorType> )
+        : Err( std::move( InError ) )
     {
         /** Empty */
     }
 
     template <class... Args>
         requires Concepts::CConstructibleFrom<ErrorType, Args...>
-    constexpr explicit TUnexpected( std::in_place_t, Args &&...InArgs ) noexcept : Err( std::forward<Args>( InArgs )... )
+    constexpr explicit TUnexpected( std::in_place_t,
+                                    Args &&...InArgs ) noexcept( std::is_nothrow_constructible_v<ErrorType, Args...> )
+        : Err( std::forward<Args>( InArgs )... )
     {
         /** Empty */
     }
@@ -67,9 +74,14 @@ private:
 /** @brief Deduction guide for TUnexpected */
 template <class ErrorType> TUnexpected( ErrorType ) noexcept -> TUnexpected<ErrorType>;
 
+/** @brief Trait: whether a type is a TUnexpected specialization */
+template <typename Type> inline constexpr Bool IsUnexpectedV                              = false;
+template <typename ErrorType> inline constexpr Bool IsUnexpectedV<TUnexpected<ErrorType>> = true;
+
 /** @brief Helper function to create a TUnexpected */
 template <class ErrorType>
-[[nodiscard]] constexpr TUnexpected<std::decay_t<ErrorType>> MakeUnexpected ( ErrorType &&InError ) noexcept
+[[nodiscard]] constexpr TUnexpected<std::decay_t<ErrorType>>
+MakeUnexpected ( ErrorType &&InError ) noexcept( std::is_nothrow_constructible_v<std::decay_t<ErrorType>, ErrorType> )
 {
     return TUnexpected<std::decay_t<ErrorType>>( std::forward<ErrorType>( InError ) );
 }

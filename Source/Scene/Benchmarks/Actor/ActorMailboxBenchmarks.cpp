@@ -12,8 +12,6 @@
 
 #include <Messages/EngineMessageTypes.hpp>
 
-#include <thread>
-
 namespace
 {
 
@@ -129,11 +127,11 @@ LUMEN_MACRO_BENCHMARK( FMailBox, MpscContentionExchange )
             }
         };
 
-        std::thread ProducerThreads[ProducerCount];
+        FThread ProducerThreads[ProducerCount];
 
-        for ( std::thread &ProducerThread : ProducerThreads )
+        for ( FThread &ProducerThread : ProducerThreads )
         {
-            ProducerThread = std::thread( ProducerLoop );
+            ProducerThread = FThread( ProducerLoop );
         }
 
         Lumen::USize ReceivedCount = 0U;
@@ -149,13 +147,13 @@ LUMEN_MACRO_BENCHMARK( FMailBox, MpscContentionExchange )
             }
             else
             {
-                std::this_thread::yield();
+                FThread::Yield();
             }
         }
 
-        for ( std::thread &ProducerThread : ProducerThreads )
+        for ( FThread &ProducerThread : ProducerThreads )
         {
-            ProducerThread.join();
+            ProducerThread.Join();
         }
 
         Lumen::Benchmarks::DoNotOptimize( ReceivedCount );

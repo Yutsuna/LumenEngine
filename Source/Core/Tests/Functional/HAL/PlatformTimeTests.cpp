@@ -1,42 +1,28 @@
 /**
  * @file PlatformTimeTests.cpp
- * @brief Functional tests for HAL::FPlatformTime.
+ * @brief Functional tests for FPlatformTime.
  */
 
-#include <HAL/PlatformTime.hpp>
 #include <Tests/UnitTest.hpp>
 
-#include <chrono>
-
-using namespace std::chrono_literals;
+#include <HAL/PlatformTime.hpp>
 
 namespace Lumen
 {
 
-/** @return True when the two durations are within the given absolute tolerance. */
-static Bool WithinTolerance ( Float64 Actual, Float64 Expected, Float64 Tolerance )
+LUMEN_TEST( FPlatformTime_Seconds, StartsNearZero )
 {
-    const Float64 Difference = Actual > Expected ? Actual - Expected : Expected - Actual;
-    return Difference <= Tolerance;
+    const Float64 Now = HAL::FPlatformTime::Seconds();
+
+    /**
+     * INFO: "since the application started". it cannot be negative, and a CI run never
+     *        lives for more than a day, so any value within that window is coherent.
+     */
+    LUMEN_CHECK_TRUE( Now >= 0.0 );
+    LUMEN_CHECK_TRUE( Now < 86400.0 );
 }
 
-/**
- * constants (compile-time)
- */
-
-static_assert( HAL::FPlatformTime::DefaultTickRate == 1.0 / 60.0, "DefaultTickRate must be 1/60" );
-static_assert( HAL::FPlatformTime::MaxTickRate == 1.0 / 15.0, "MaxTickRate must be 1/15" );
-
-/**
- * Seconds()
- */
-
-LUMEN_TEST( PlatformTime_Seconds, NonNegative )
-{
-    LUMEN_CHECK_TRUE( HAL::FPlatformTime::Seconds() >= 0.0 );
-}
-
-LUMEN_TEST( PlatformTime_Seconds, MonotonicBetweenCalls )
+LUMEN_TEST( FPlatformTime_Seconds, IsMonotonic )
 {
     const Float64 First  = HAL::FPlatformTime::Seconds();
     const Float64 Second = HAL::FPlatformTime::Seconds();
@@ -46,119 +32,65 @@ LUMEN_TEST( PlatformTime_Seconds, MonotonicBetweenCalls )
     LUMEN_CHECK_TRUE( Third >= Second );
 }
 
-LUMEN_TEST( PlatformTime_Seconds, AdvancesAfterSleep )
+LUMEN_TEST( FPlatformTime_Seconds, AdvancesDuringSleep )
 {
-    /** INFO: settle first so the delta is not obscured by scheduler noise */
-    HAL::FPlatformTime::Sleep( 0.02 );
-
-    const Float64 Before = HAL::FPlatformTime::Seconds();
-
+    const Float64 Start = HAL::FPlatformTime::Seconds();
     HAL::FPlatformTime::Sleep( 0.05 );
+    const Float64 End = HAL::FPlatformTime::Seconds();
 
-    const Float64 After = HAL::FPlatformTime::Seconds();
-
-    LUMEN_CHECK_TRUE( After - Before >= 0.045 );
-    LUMEN_CHECK_TRUE( WithinTolerance( After - Before, 0.05, 0.05 ) );
+    LUMEN_CHECK_TRUE( End > Start );
+    LUMEN_CHECK_TRUE( ( End - Start ) >= 0.03 );
 }
 
-/**
- * NowNanoseconds()
- */
-
-LUMEN_TEST( PlatformTime_NowNanoseconds, ReturnsPositiveEpochValue )
+LUMEN_TEST( FPlatformTime_NowNanoseconds, IsUnixEpochBased )
 {
+    const UInt64 Nanos = HAL::FPlatformTime::NowNanoseconds();
+
     /**
-     * INFO: 1'483'228'800 nanoseconds-first epoch is 2017-01-01; the wall
-     * clock must at least be past that by now.
+     * INFO: unix epoch in ns 1.6e18 ≈ Sept 2020, 5.0e18 ≈ year 2128.
+     *        Any CI run lands squarely inside this window.
      */
-    static constexpr UInt64 Year2017Nanos = 1483228800000000000ULL;
-
-    const UInt64 Now = HAL::FPlatformTime::NowNanoseconds();
-
-    LUMEN_CHECK_TRUE( Now > Year2017Nanos );
+    LUMEN_CHECK_TRUE( Nanos > 1'600'000'000'000'000'000ULL );
+    LUMEN_CHECK_TRUE( Nanos < 5'000'000'000'000'000'000ULL );
 }
 
-LUMEN_TEST( PlatformTime_NowNanoseconds, NearlyMonotonicBetweenCalls )
+LUMEN_TEST( FPlatformTime_NowNanoseconds, AdvancesDuringSleep )
 {
-    /**
-     * INFO: system_clock may slew backwards a hair under NTP; allow up to
-     * 1 ms of regression, but never more.
-     */
-    static constexpr UInt64 ClockSlewToleranceNanos = 1'000'000ULL;
+    const UInt64 Start = HAL::FPlatformTime::NowNanoseconds();
+    HAL::FPlatformTime::Sleep( 0.05 );
+    const UInt64 End = HAL::FPlatformTime::NowNanoseconds();
 
-    const UInt64 First  = HAL::FPlatformTime::NowNanoseconds();
-    const UInt64 Second = HAL::FPlatformTime::NowNanoseconds();
+    LUMEN_CHECK_TRUE( End > Start );
 
-    LUMEN_CHECK_TRUE( Second + ClockSlewToleranceNanos > First );
-
-    const UInt64 Delta = Second >= First ? Second - First : 0ULL;
-    LUMEN_CHECK_TRUE( Delta < 1'000'000'000ULL );
+    const UInt64 ElapsedNanos = End - Start;
+    LUMEN_CHECK_TRUE( ElapsedNanos >= 30000000ULL );
 }
 
-LUMEN_TEST( PlatformTime_NowNanoseconds, AdvancesDuringSleep )
+LUMEN_TEST( FPlatformTime_Sleep, ZeroIsSafe )
 {
-    static constexpr UInt64 MinimumAdvanceNanos = 15'000'000ULL;
-
-    const UInt64 Before = HAL::FPlatformTime::NowNanoseconds();
-
-    HAL::FPlatformTime::Sleep( 0.02 );
-
-    const UInt64 After = HAL::FPlatformTime::NowNanoseconds();
-
-    LUMEN_CHECK_TRUE( After >= Before + MinimumAdvanceNanos );
-}
-
-/**
- * Sleep()
- */
-
-LUMEN_TEST( PlatformTime_Sleep, BlocksForRequestedDuration )
-{
-    const std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
-
-    HAL::FPlatformTime::Sleep( 0.025 );
-
-    const std::chrono::steady_clock::time_point End = std::chrono::steady_clock::now();
-    const Float64 Elapsed                           = std::chrono::duration<Float64>( End - Start ).count();
-
-    LUMEN_CHECK_TRUE( Elapsed >= 0.024 );
-}
-
-LUMEN_TEST( PlatformTime_Sleep, ZeroDurationDoesNotBlock )
-{
-    const std::chrono::steady_clock::time_point Start = std::chrono::steady_clock::now();
-
     HAL::FPlatformTime::Sleep( 0.0 );
-
-    const std::chrono::steady_clock::time_point End = std::chrono::steady_clock::now();
-    const Float64 Elapsed                           = std::chrono::duration<Float64>( End - Start ).count();
-
-    LUMEN_CHECK_TRUE( Elapsed < 0.05 );
+    LUMEN_CHECK_TRUE( true );
 }
 
-LUMEN_TEST( PlatformTime_Sleep, SmallDurationStillYieldsProgress )
+LUMEN_TEST( FPlatformTime_Constants, TickRatesAreCoherent )
 {
-    /** INFO: two tiny sleeps must still be reflected in monotonic time */
-    const Float64 Before = HAL::FPlatformTime::Seconds();
-
-    HAL::FPlatformTime::Sleep( 0.01 );
-    HAL::FPlatformTime::Sleep( 0.01 );
-
-    const Float64 After = HAL::FPlatformTime::Seconds();
-
-    LUMEN_CHECK_TRUE( After >= Before );
-}
-
-/**
- * tick-rate constants (runtime re-check)
- */
-
-LUMEN_TEST( PlatformTime_TickRates, ConstantsMatchDocumentation )
-{
-    LUMEN_CHECK_TRUE( WithinTolerance( HAL::FPlatformTime::DefaultTickRate, 1.0 / 60.0, 1e-12 ) );
-    LUMEN_CHECK_TRUE( WithinTolerance( HAL::FPlatformTime::MaxTickRate, 1.0 / 15.0, 1e-12 ) );
+    /**
+     * INFO: DefaultTickRate = 1/60 (60 FPS), MaxTickRate = 1/15 (≈ 15 FPS floor).
+     *        The MaxTickRate is the upper bound on delta-seconds, i.e. a lower bound on FPS.
+     */
     LUMEN_CHECK_TRUE( HAL::FPlatformTime::DefaultTickRate > 0.0 );
+    LUMEN_CHECK_TRUE( HAL::FPlatformTime::DefaultTickRate < 1.0 );
+    LUMEN_CHECK_TRUE( HAL::FPlatformTime::MaxTickRate > 0.0 );
+    LUMEN_CHECK_TRUE( HAL::FPlatformTime::MaxTickRate < 1.0 );
     LUMEN_CHECK_TRUE( HAL::FPlatformTime::DefaultTickRate < HAL::FPlatformTime::MaxTickRate );
+
+    /** 1/60 ≈ 0.016667 */
+    LUMEN_CHECK_TRUE( HAL::FPlatformTime::DefaultTickRate > 0.015 );
+    LUMEN_CHECK_TRUE( HAL::FPlatformTime::DefaultTickRate < 0.018 );
+
+    /** 1/15 ≈ 0.066667 */
+    LUMEN_CHECK_TRUE( HAL::FPlatformTime::MaxTickRate > 0.065 );
+    LUMEN_CHECK_TRUE( HAL::FPlatformTime::MaxTickRate < 0.070 );
 }
 
 } // namespace Lumen

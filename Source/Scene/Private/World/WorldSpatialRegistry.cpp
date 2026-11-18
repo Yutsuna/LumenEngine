@@ -42,7 +42,7 @@ Lumen::FSpatialRegistry &Lumen::FSpatialRegistry::Get () noexcept
 
 void Lumen::FSpatialRegistry::RegisterSpatialEntity ( ActorID InId )
 {
-    TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
+    HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( RegistryMutex );
 
     if ( WorkingData.IDToIndex.contains( InId ) )
     {
@@ -60,7 +60,7 @@ void Lumen::FSpatialRegistry::RegisterSpatialEntity ( ActorID InId )
 
 void Lumen::FSpatialRegistry::UnregisterSpatialEntity ( ActorID InId )
 {
-    TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
+    HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( RegistryMutex );
     const FSpatialRegistryData::FMapIterator It = WorkingData.IDToIndex.find( InId );
 
     if ( It == WorkingData.IDToIndex.end() )
@@ -89,7 +89,7 @@ void Lumen::FSpatialRegistry::UnregisterSpatialEntity ( ActorID InId )
 
 void Lumen::FSpatialRegistry::UpdateTransform ( ActorID InId, const Maths::FMat4x4f &InTransform ) noexcept
 {
-    TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
+    HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( RegistryMutex );
     const FSpatialRegistryData::FMapIterator It = WorkingData.IDToIndex.find( InId );
 
     if ( It != WorkingData.IDToIndex.end() )
@@ -102,7 +102,7 @@ void Lumen::FSpatialRegistry::UpdateTransform ( ActorID InId, const Maths::FMat4
 
 void Lumen::FSpatialRegistry::Publish () noexcept
 {
-    TSharedUniqueLock<FSharedMutex> Lock( RegistryMutex );
+    HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( RegistryMutex );
 
     /**
      * INFO: Drain Pending into every buffer's tracker BEFORE writing to the

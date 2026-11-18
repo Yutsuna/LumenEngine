@@ -11,6 +11,8 @@
 #include <Concepts/ConstructibleFrom.hpp>
 #include <Concepts/SameAs.hpp>
 
+#include <cassert>
+
 namespace Lumen
 {
 
@@ -30,33 +32,49 @@ public:
 public:
 
     /** @brief Constructs TExpected with a value */
-    constexpr TExpected ( const ValueType &InValue ) noexcept : Val( InValue ), bHasValue( true )
+    constexpr TExpected ( const ValueType &InValue ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> )
+        : Val( InValue ), bHasValue( true )
     {
         /** Empty */
     }
 
     /** @brief Constructs TExpected with a value passed by rvalue reference */
-    constexpr TExpected ( ValueType &&InValue ) noexcept : Val( std::move( InValue ) ), bHasValue( true )
+    constexpr TExpected ( ValueType &&InValue ) noexcept( std::is_nothrow_move_constructible_v<ValueType> )
+        : Val( std::move( InValue ) ), bHasValue( true )
     {
         /** Empty */
     }
 
     /** @brief Constructs TExpected with an Error */
-    constexpr explicit TExpected ( FUnexpect, const ErrorType &InError ) noexcept : Err( InError ), bHasValue( false )
+    constexpr explicit TExpected ( FUnexpect,
+                                   const ErrorType &InError ) noexcept( std::is_nothrow_copy_constructible_v<ErrorType> )
+        : Err( InError ), bHasValue( false )
     {
         /** Empty */
     }
 
     /** @brief Constructs TExpected with an Error passed by rvalue reference */
-    constexpr explicit TExpected ( FUnexpect, ErrorType &&InError ) noexcept : Err( std::move( InError ) ), bHasValue( false )
+    constexpr explicit TExpected ( FUnexpect, ErrorType &&InError ) noexcept( std::is_nothrow_move_constructible_v<ErrorType> )
+        : Err( std::move( InError ) ), bHasValue( false )
     {
         /** Empty */
     }
 
-    /** @brief Constructs TExpected with a TUnexpected */
+    /** @brief Constructs TExpected from a TUnexpected lvalue (copies the error) */
     template <class OtherErrorType>
-        requires Concepts::CConstructibleFrom<ErrorType, OtherErrorType>
-    constexpr TExpected( TUnexpected<OtherErrorType> InUnexpected ) noexcept
+        requires Concepts::CConstructibleFrom<ErrorType, const OtherErrorType &>
+    constexpr TExpected( const TUnexpected<OtherErrorType> &InUnexpected ) noexcept(
+        std::is_nothrow_constructible_v<ErrorType, const OtherErrorType &> )
+        : Err( InUnexpected.Value() ), bHasValue( false )
+    {
+        /** Empty */
+    }
+
+    /** @brief Constructs TExpected from a TUnexpected rvalue (moves the error) */
+    template <class OtherErrorType>
+        requires Concepts::CConstructibleFrom<ErrorType, OtherErrorType &&>
+    constexpr TExpected( TUnexpected<OtherErrorType> &&InUnexpected ) noexcept(
+        std::is_nothrow_constructible_v<ErrorType, OtherErrorType &&> )
         : Err( std::move( InUnexpected ).Value() ), bHasValue( false )
     {
         /** Empty */
@@ -73,7 +91,9 @@ public:
 public:
 
     /** @brief Copy constructor */
-    constexpr TExpected ( const TExpected &Other ) noexcept : bHasValue( Other.bHasValue )
+    constexpr TExpected ( const TExpected &Other ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> &&
+                                                             std::is_nothrow_copy_constructible_v<ErrorType> )
+        : bHasValue( Other.bHasValue )
     {
         if ( bHasValue )
         {
@@ -103,6 +123,7 @@ public:
     /** @brief Constructs TExpected with a value convertible to ValueType (e.g. upcasting smart pointers). */
     template <class OtherValueType>
         requires( not Concepts::CSameAs<std::remove_cvref_t<OtherValueType>, TExpected> and
+                  not IsUnexpectedV<std::remove_cvref_t<OtherValueType>> and
                   Concepts::CConstructibleFrom<ValueType, OtherValueType> )
     constexpr TExpected( OtherValueType &&InValue ) noexcept( std::is_nothrow_constructible_v<ValueType, OtherValueType> )
         : Val( std::forward<OtherValueType>( InValue ) ), bHasValue( true )
@@ -111,7 +132,10 @@ public:
     }
 
     /** @brief Copy assignment operator */
-    constexpr TExpected &operator=( const TExpected &Other ) noexcept
+    constexpr TExpected &operator=( const TExpected &Other ) noexcept( std::is_nothrow_copy_assignable_v<ValueType> &&
+                                                                       std::is_nothrow_copy_assignable_v<ErrorType> &&
+                                                                       std::is_nothrow_copy_constructible_v<ValueType> &&
+                                                                       std::is_nothrow_copy_constructible_v<ErrorType> )
     {
         if ( this == std::addressof( Other ) )
         {
@@ -191,21 +215,24 @@ public:
         return bHasValue;
     }
 
-    /** @brief Dereference operator */
+    /** @brief Dereference operator. Undefined behavior if the expected holds an error. */
     constexpr decltype( auto ) operator*( this auto &&Self ) noexcept
     {
+        assert( Self.bHasValue );
         return ( std::forward<decltype( Self )>( Self ).Val );
     }
 
-    /** @brief Arrow operator */
+    /** @brief Arrow operator. Undefined behavior if the expected holds an error. */
     constexpr auto *operator->( this auto &&Self ) noexcept
     {
+        assert( Self.bHasValue );
         return std::addressof( std::forward<decltype( Self )>( Self ).Val );
     }
 
-    /** @brief Error accessor */
+    /** @brief Error accessor. Undefined behavior if the expected holds a value. */
     constexpr decltype( auto ) Error ( this auto &&Self ) noexcept
     {
+        assert( not Self.bHasValue );
         return ( std::forward<decltype( Self )>( Self ).Err );
     }
 
@@ -260,19 +287,32 @@ public:
         /** Empty */
     }
 
-    constexpr explicit TExpected ( FUnexpect, const ErrorType &InError ) noexcept : Err( InError ), bHasValue( false )
+    constexpr explicit TExpected ( FUnexpect,
+                                   const ErrorType &InError ) noexcept( std::is_nothrow_copy_constructible_v<ErrorType> )
+        : Err( InError ), bHasValue( false )
     {
         /** Empty */
     }
 
-    constexpr explicit TExpected ( FUnexpect, ErrorType &&InError ) noexcept : Err( std::move( InError ) ), bHasValue( false )
+    constexpr explicit TExpected ( FUnexpect, ErrorType &&InError ) noexcept( std::is_nothrow_move_constructible_v<ErrorType> )
+        : Err( std::move( InError ) ), bHasValue( false )
     {
         /** Empty */
     }
 
     template <class OtherErrorType>
-        requires Concepts::CConstructibleFrom<ErrorType, OtherErrorType>
-    constexpr TExpected( TUnexpected<OtherErrorType> InUnexpected ) noexcept
+        requires Concepts::CConstructibleFrom<ErrorType, const OtherErrorType &>
+    constexpr TExpected( const TUnexpected<OtherErrorType> &InUnexpected ) noexcept(
+        std::is_nothrow_constructible_v<ErrorType, const OtherErrorType &> )
+        : Err( InUnexpected.Value() ), bHasValue( false )
+    {
+        /** Empty */
+    }
+
+    template <class OtherErrorType>
+        requires Concepts::CConstructibleFrom<ErrorType, OtherErrorType &&>
+    constexpr TExpected( TUnexpected<OtherErrorType> &&InUnexpected ) noexcept(
+        std::is_nothrow_constructible_v<ErrorType, OtherErrorType &&> )
         : Err( std::move( InUnexpected ).Value() ), bHasValue( false )
     {
         /** Empty */
@@ -286,7 +326,8 @@ public:
         }
     }
 
-    constexpr TExpected ( const TExpected &Other ) noexcept : bHasValue( Other.bHasValue )
+    constexpr TExpected ( const TExpected &Other ) noexcept( std::is_nothrow_copy_constructible_v<ErrorType> )
+        : bHasValue( Other.bHasValue )
     {
         if ( not bHasValue )
         {
@@ -303,7 +344,8 @@ public:
         }
     }
 
-    constexpr TExpected &operator=( const TExpected &Other ) noexcept
+    constexpr TExpected &operator=( const TExpected &Other ) noexcept( std::is_nothrow_copy_assignable_v<ErrorType> &&
+                                                                       std::is_nothrow_copy_constructible_v<ErrorType> )
     {
         if ( this == std::addressof( Other ) )
         {
@@ -367,8 +409,10 @@ public:
         /** Empty */
     }
 
+    /** @brief Error accessor. Undefined behavior if the expected holds success. */
     constexpr decltype( auto ) Error ( this auto &&Self ) noexcept
     {
+        assert( not Self.bHasValue );
         return ( std::forward<decltype( Self )>( Self ).Err );
     }
 

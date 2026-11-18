@@ -6,6 +6,8 @@
 #pragma once
 
 #include <CoreExport.hpp>
+
+#include <Concepts/IsInvocable.hpp>
 #include <Templates/MonadicDetails.hpp>
 
 #include <concepts>
@@ -30,7 +32,7 @@ namespace Concepts
      * @brief Test the transformable state (T -> U).
      */
     template <class Self, class Func>
-    concept CTransformable = CMonadic<Self> and std::invocable<Func, MonadicInternal::TValueRef<Self>> and
+    concept CTransformable = CMonadic<Self> and Concepts::CIsInvocable<Func, MonadicInternal::TValueRef<Self>> and
                              ( not std::is_void_v<MonadicInternal::TTransformResult<Self, Func>> ) and
                              requires { typename MonadicInternal::TTransformOut<Self, Func>; };
 
@@ -39,10 +41,11 @@ namespace Concepts
      * @brief Test the bindable state
      */
     template <class Self, class Func>
-    concept CBindable = CMonadic<Self> and
-                        ( MonadicInternal::CIsVoidValue<Self> ? std::invocable<Func>
-                                                              : std::invocable<Func, MonadicInternal::TValueRef<Self>> ) and
-                        CMonadic<MonadicInternal::TBindOut<Self, Func>>;
+    concept CBindable =
+        CMonadic<Self> and
+        ( MonadicInternal::CIsVoidValue<Self> ? Concepts::CIsInvocable<Func>
+                                              : Concepts::CIsInvocable<Func, MonadicInternal::TValueRef<Self>> ) and
+        CMonadic<MonadicInternal::TBindOut<Self, Func>>;
 
     /**
      * @concept CRecoverable
@@ -114,11 +117,11 @@ public:
         {
             if constexpr ( MonadicInternal::CIsVoidValue<Self> )
             {
-                return std::invoke( std::forward<Func>( InFunc ) );
+                return Invoke( std::forward<Func>( InFunc ) );
             }
             else
             {
-                return std::invoke( std::forward<Func>( InFunc ), *std::forward<Self>( InSelf ) );
+                return Invoke( std::forward<Func>( InFunc ), *std::forward<Self>( InSelf ) );
             }
         }
         return MonadicInternal::MakeFailure<Out>( std::forward<Self>( InSelf ) );
@@ -146,24 +149,34 @@ public:
 
     /** @brief Inspect the container, calling the given function if the container is not empty. */
     template <class Self, class Func>
-        requires Concepts::CMonadic<Self> && std::invocable<Func, MonadicInternal::TConstElementRef<Self>>
+        requires Concepts::CMonadic<Self> and
+                 ( MonadicInternal::CIsVoidValue<Self> ? Concepts::CIsInvocable<Func>
+                                                       : Concepts::CIsInvocable<Func, MonadicInternal::TInspectRef<Self>> )
     constexpr auto Inspect ( this Self &&InSelf, Func &&InFunc ) noexcept(
         noexcept( MonadicInternal::Has( std::declval<const MonadicInternal::TSelfType<Self> &>() ) ) and
-        std::is_nothrow_invocable_v<Func, MonadicInternal::TConstElementRef<Self>> and
+        ( MonadicInternal::CIsVoidValue<Self> ? std::is_nothrow_invocable_v<Func>
+                                              : std::is_nothrow_invocable_v<Func, MonadicInternal::TInspectRef<Self>> ) and
         ( std::is_lvalue_reference_v<Self> or std::is_nothrow_move_constructible_v<MonadicInternal::TSelfType<Self>> ) )
         -> std::conditional_t<std::is_lvalue_reference_v<Self>, Self, MonadicInternal::TSelfType<Self>>
     {
         if ( MonadicInternal::Has( InSelf ) ) [[likely]]
         {
-            std::invoke( std::forward<Func>( InFunc ),
-                         static_cast<MonadicInternal::TConstElementRef<Self>>( *std::forward<Self>( InSelf ) ) );
+            if constexpr ( MonadicInternal::CIsVoidValue<Self> )
+            {
+                Invoke( std::forward<Func>( InFunc ) );
+            }
+            else
+            {
+                Invoke( std::forward<Func>( InFunc ),
+                        static_cast<MonadicInternal::TConstElementRef<Self>>( *std::forward<Self>( InSelf ) ) );
+            }
         }
         return std::forward<Self>( InSelf );
     }
 
 public:
 
-    /** @brief ValueOr.  Pas disponible pour void (pas de valeur) — SFINAE silencieuse. */
+    /** @brief ValueOr. Not available for void value types (no value) - silently SFINAE'd out. */
     template <class Self, class U>
         requires Concepts::CMonadic<Self> and std::convertible_to<U, std::remove_cvref_t<MonadicInternal::TValueRef<Self>>> and
                  std::convertible_to<MonadicInternal::TValueRef<Self>, std::remove_cvref_t<MonadicInternal::TValueRef<Self>>>

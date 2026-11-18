@@ -1,5 +1,5 @@
 /**
- * @file MonadicInternals.hpp
+ * @file MonadicDetails.hpp
  * @brief Monadic details implementation
  */
 
@@ -9,6 +9,7 @@
 
 #include <Concepts/ConvertibleTo.hpp>
 #include <Concepts/SameAs.hpp>
+#include <Templates/Invoke.hpp>
 
 #include <functional>
 
@@ -69,6 +70,22 @@ namespace MonadicInternal
 
     /** @brief True if `*Self` has type `void` (i.e. `TExpected<void, E>`). */
     template <class Self> inline constexpr Bool CIsVoidValue = std::is_void_v<std::remove_cvref_t<TValueRef<Self>>>;
+
+    namespace Internal
+    {
+        template <class Self, Bool = CIsVoidValue<Self>> struct TInspectRefImpl
+        {
+            using Type = TConstElementRef<Self>;
+        };
+        template <class Self> struct TInspectRefImpl<Self, true>
+        {
+            using Type = std::nullptr_t;
+        };
+    } // namespace Internal
+
+    /** @brief Reference passed to Inspect callbacks; degrades to nullptr_t for void value types so constraints stay well-formed.
+     */
+    template <class Self> using TInspectRef = typename Internal::TInspectRefImpl<Self>::Type;
 
     template <class MonadicType>
     inline constexpr Bool bNothrowHas = []
@@ -147,18 +164,22 @@ namespace MonadicInternal
         }
         else
         {
-            return Out( std::invoke( std::forward<Func>( InFunc ), std::forward<Array>( Arg ) ) );
+            return Out( Invoke( std::forward<Func>( InFunc ), std::forward<Array>( Arg ) ) );
         }
     }
 
-    /** @brief Transform a value into another value. */
-    template <class Self, class Func> using TTransformResult = std::remove_cv_t<std::invoke_result_t<Func, TValueRef<Self>>>;
+    /**
+     * @brief Transform a value into another value.
+     * @details References are decayed: a callable returning U& yields TContainer<U>, never a
+     *          container of references (which would be ill-formed and could dangle).
+     */
+    template <class Self, class Func> using TTransformResult = std::remove_cvref_t<std::invoke_result_t<Func, TValueRef<Self>>>;
     template <class Self, class Func> using TTransformOut    = TSelfType<Self>::template Rebind<TTransformResult<Self, Func>>;
 
     /** @brief AndThen : Bind a value into another value if it is valid. */
     namespace Internal
     {
-        template <class Self, class Func, bool = CIsVoidValue<Self>> struct TBindOutImpl;
+        template <class Self, class Func, Bool = CIsVoidValue<Self>> struct TBindOutImpl;
 
         template <class Self, class Func> struct TBindOutImpl<Self, Func, true>
         {
@@ -179,14 +200,14 @@ namespace MonadicInternal
     constexpr decltype( auto ) InvokeRecover ( Self &&Container, Func &&InFunc ) noexcept(
         std::is_nothrow_invocable_v<Func, decltype( std::forward<Self>( Container ).Error() )> )
     {
-        return std::invoke( std::forward<Func>( InFunc ), std::forward<Self>( Container ).Error() );
+        return Invoke( std::forward<Func>( InFunc ), std::forward<Self>( Container ).Error() );
     }
 
     template <class Self, class Func>
         requires( not Concepts::CHasError<Self> )
     constexpr decltype( auto ) InvokeRecover ( Self &&, Func &&InFunc ) noexcept( std::is_nothrow_invocable_v<Func> )
     {
-        return std::invoke( std::forward<Func>( InFunc ) );
+        return Invoke( std::forward<Func>( InFunc ) );
     }
 
 } // namespace MonadicInternal

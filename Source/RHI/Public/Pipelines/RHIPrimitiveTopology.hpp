@@ -1,0 +1,27 @@
+/**
+ * @file RHIPrimitiveTopology.hpp
+ * @brief Defines primitive assembly modes.
+ */
+
+#pragma once
+
+#include <Core/CoreTypes.hpp>
+
+namespace Lumen
+{
+
+/**
+ * @enum ERHIPrimitiveTopology
+ * @brief Portable primitive topologies.
+ */
+enum class ERHIPrimitiveTopology : UInt8
+{
+    PointList,
+    LineList,
+    LineStrip,
+    TriangleList,
+    TriangleStrip,
+    PatchList
+};
+
+} // namespace Lumen

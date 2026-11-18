@@ -27,17 +27,22 @@ treat it as mandatory. Do not preload everything.
 | --- | --- | --- |
 | `Core` | built (shared library) | `modules/Core.md` |
 | `Maths` | built (shared library) | `modules/Maths.md` |
+| `RHI` | built (shared library; Null + validation backends) | `modules/RHI.md` |
 | `Scene` | built (shared library) | `modules/Scene.md` |
 | `AppCore` | built (shared library) | `modules/AppCore.md` |
 | `Launch` | built (executable entry point) | `modules/Launch.md` |
-| `Renderer`, `RHI`, `RHIOpenGL`, `RHIVulkan` | **not built yet** (empty stubs, absent from `ModuleNames`) | `modules/*.md` |
+| `Renderer`, `RHIOpenGL`, `RHIVulkan` | **not built yet** (empty stubs, absent from `ModuleNames`) | `modules/Renderer.md`, `modules/RHIOpenGL.md`, `modules/RHIVulkan.md` |
 
-A module is only compiled if listed in `ModuleNames` (`Source/meson.build`).
+A module is compiled only if listed in `ModuleNames` (`Source/meson.build`) and
+has a `meson.build` in its `Source/` directory.
 
 ## Fast facts (always apply)
 
 - All commands run inside the Nix devshell (`.envrc`/`direnv`), e.g.
-  `nix develop --command meson compile -C Build`. `Build/` is gitignored.
+  `meson compile -C Build`. `Build/` is gitignored.
+- Prefer the Lumen Core library over `std` (threads, locks, stop tokens,
+  condition variables, containers, algorithms…). Use `std` only when Core has
+  no equivalent yet — see `rules/core-first.md`.
 - `VERSION.md` is a single line read by `meson.build` — it *is* the project
   version. Keep it to one line.
 - Test/benchmark binaries exit with **84** on failure, not 1.

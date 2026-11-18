@@ -1,0 +1,47 @@
+/**
+ * @file RHIAdapterInfo.hpp
+ * @brief Declares immutable adapter discovery information.
+ */
+#pragma once
+
+#include <RHIExport.hpp>
+#include <String/String.hpp>
+#include <Templates/Vector.hpp>
+#include <Types/RHICapabilities.hpp>
+#include <Types/RHILimits.hpp>
+#include <Types/RHIQueueType.hpp>
+
+namespace Lumen
+{
+
+/**
+ * @enum ERHIAdapterType
+ * @brief Broad adapter class used for selection and diagnostics.
+ */
+enum class ERHIAdapterType : UInt8
+{
+    Unknown,
+    Discrete,
+    Integrated,
+    Software
+};
+
+/**
+ * @struct FRHIAdapterInfo
+ * @brief Capabilities and identity of one physical adapter.
+ */
+struct RHI_EXPORT FRHIAdapterInfo
+{
+    UInt64 AdapterId = 0ULL;
+    FString Name;
+    FString BackendName;
+    ERHIAdapterType Type = ERHIAdapterType::Unknown;
+    FRHICapabilities Capabilities;
+    FRHILimits Limits;
+    TVector<FRHIQueueFamilyInfo> QueueFamilies;
+
+    /** @return Success when identity, limits, and at least one queue are valid. */
+    [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+};
+
+} // namespace Lumen

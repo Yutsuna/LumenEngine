@@ -3,6 +3,7 @@
  * @brief Exhaustive functional tests for Maths::FVertex.
  */
 
+#include "Concepts/TriviallyCopyable.hpp"
 #include "Maths/Macros.hpp"
 #include "Maths/Matrix.hpp"
 #include <Maths/Vec.hpp>
@@ -29,7 +30,7 @@ static_assert( std::is_same_v<decltype( Maths::FVertex{}.UV ), Maths::FVec2f> );
 static_assert( std::is_same_v<decltype( Maths::FVertex{}.Tangent ), Maths::FVec3f> );
 
 /** Trivially copyable (a vertex buffer needs that). */
-static_assert( std::is_trivially_copyable_v<Maths::FVertex> );
+static_assert( Concepts::CTriviallyCopyable<Maths::FVertex> );
 
 /** Default-constructible and equality-comparable at compile time. */
 static_assert( std::is_default_constructible_v<Maths::FVertex> );

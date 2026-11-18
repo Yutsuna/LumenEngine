@@ -3,10 +3,12 @@
  * @brief Exhaustive functional tests for Maths::TVec and NormalizePlane.
  */
 
+#include "Concepts/TriviallyCopyable.hpp"
 #include <Maths/Vec.hpp>
 #include <Tests/UnitTest.hpp>
 
 #include <cmath>
+#include <compare>
 #include <limits>
 #include <type_traits>
 #include <utility>
@@ -46,7 +48,17 @@ static_assert( std::is_constructible_v<Maths::TVec<Float32, 3>, const Maths::TVe
 
 /** Default-constructible and trivially copyable. */
 static_assert( std::is_default_constructible_v<Maths::FVec3f> );
-static_assert( std::is_trivially_copyable_v<Maths::FVec3f> );
+static_assert( Concepts::CTriviallyCopyable<Maths::FVec3f> );
+
+/** operator<=> yields the component's comparison category (strong for ints, partial for floats). */
+static_assert(
+    std::is_same_v<decltype( std::declval<Maths::FVec3i>() <=> std::declval<Maths::FVec3i>() ), std::strong_ordering> );
+static_assert(
+    std::is_same_v<decltype( std::declval<Maths::FVec3u>() <=> std::declval<Maths::FVec3u>() ), std::strong_ordering> );
+static_assert(
+    std::is_same_v<decltype( std::declval<Maths::FVec3f>() <=> std::declval<Maths::FVec3f>() ), std::partial_ordering> );
+static_assert(
+    std::is_same_v<decltype( std::declval<Maths::FVec4f>() <=> std::declval<Maths::FVec4f>() ), std::partial_ordering> );
 
 /**
  *  Construction
@@ -224,6 +236,22 @@ LUMEN_TEST( Vec_Components, Vec2WidthHeightAliasesXY )
     LUMEN_CHECK_EQ( V.X, 100.0F );
 }
 
+LUMEN_TEST( Vec_Components, Vec3WidthHeightDepthAliasesXYZ )
+{
+    Maths::FVec3u V( 4U, 8U, 2U );
+    LUMEN_CHECK_EQ( V.Width, 4U );
+    LUMEN_CHECK_EQ( V.Height, 8U );
+    LUMEN_CHECK_EQ( V.Depth, 2U );
+
+    V.Height = 100U;
+    LUMEN_CHECK_EQ( V.Y, 100U );
+    LUMEN_CHECK_EQ( V.Data[1], 100U );
+
+    V.Depth = 9U;
+    LUMEN_CHECK_EQ( V.Z, 9U );
+    LUMEN_CHECK_EQ( V.Data[2], 9U );
+}
+
 LUMEN_TEST( Vec_Components, DataArray )
 {
     Maths::FVec4f V( 1.0F, 2.0F, 3.0F, 4.0F );
@@ -292,6 +320,89 @@ LUMEN_TEST( Vec_Compare, NegativeZeroEqualsPositiveZero )
     const Maths::FVec2f A( -0.0F, 0.0F );
     const Maths::FVec2f B( 0.0F, -0.0F );
     LUMEN_CHECK_TRUE( A == B );
+}
+
+LUMEN_TEST( Vec_Compare, ThreeWayEqual )
+{
+    const Maths::FVec3i A( 1, 2, 3 );
+    const Maths::FVec3i B( 1, 2, 3 );
+
+    LUMEN_CHECK_TRUE( ( A <=> B ) == 0 );
+    LUMEN_CHECK_FALSE( A < B );
+    LUMEN_CHECK_FALSE( A > B );
+    LUMEN_CHECK_TRUE( A <= B );
+    LUMEN_CHECK_TRUE( A >= B );
+}
+
+LUMEN_TEST( Vec_Compare, ThreeWayFirstDifferingComponentDecides )
+{
+    /** Lexicographic: the first differing component dominates later ones. */
+    const Maths::FVec3i Small( 1, 99, 99 );
+    const Maths::FVec3i Large( 2, 0, 0 );
+
+    LUMEN_CHECK_TRUE( ( Small <=> Large ) < 0 );
+    LUMEN_CHECK_TRUE( ( Large <=> Small ) > 0 );
+    LUMEN_CHECK_TRUE( Small < Large );
+    LUMEN_CHECK_TRUE( Large > Small );
+}
+
+LUMEN_TEST( Vec_Compare, ThreeWayLaterComponentDecides )
+{
+    const Maths::FVec3i Small( 1, 2, 3 );
+    const Maths::FVec3i Middle( 1, 2, 0 );
+    const Maths::FVec3i Large( 1, 2, 4 );
+
+    LUMEN_CHECK_TRUE( ( Small <=> Large ) < 0 );
+    LUMEN_CHECK_TRUE( ( Middle <=> Large ) < 0 );
+    LUMEN_CHECK_TRUE( ( Large <=> Middle ) > 0 );
+}
+
+LUMEN_TEST( Vec_Compare, ThreeWayAllDimensions )
+{
+    LUMEN_CHECK_TRUE( ( Maths::FVec2i( 1, 2 ) <=> Maths::FVec2i( 1, 3 ) ) < 0 );
+    LUMEN_CHECK_TRUE( ( Maths::FVec3i( 1, 2, 3 ) <=> Maths::FVec3i( 1, 2, 3 ) ) == 0 );
+    LUMEN_CHECK_TRUE( ( Maths::FVec4i( 1, 2, 3, 4 ) <=> Maths::FVec4i( 1, 2, 3, 5 ) ) < 0 );
+}
+
+LUMEN_TEST( Vec_Compare, ThreeWayUnsignedAndNegative )
+{
+    LUMEN_CHECK_TRUE( ( Maths::FVec3u( 1U, 2U, 3U ) <=> Maths::FVec3u( 1U, 2U, 4U ) ) < 0 );
+    LUMEN_CHECK_TRUE( ( Maths::FVec3i( -1, 0, 0 ) <=> Maths::FVec3i( 0, 0, 0 ) ) < 0 );
+}
+
+LUMEN_TEST( Vec_Compare, ThreeWayFloatPartialOrdering )
+{
+    const Maths::FVec3f Small( 1.0F, 2.0F, 3.0F );
+    const Maths::FVec3f Large( 1.0F, 2.0F, 4.0F );
+    const Maths::FVec3f Same( 1.0F, 2.0F, 3.0F );
+
+    LUMEN_CHECK_TRUE( ( Small <=> Large ) < 0 );
+    LUMEN_CHECK_TRUE( ( Large <=> Small ) > 0 );
+    LUMEN_CHECK_TRUE( ( Small <=> Same ) == 0 );
+}
+
+LUMEN_TEST( Vec_Compare, ThreeWayNaNIsUnordered )
+{
+    const Float32 Nan = std::numeric_limits<Float32>::quiet_NaN();
+    const Maths::FVec3f A( 1.0F, Nan, 3.0F );
+    const Maths::FVec3f B( 1.0F, 2.0F, 3.0F );
+
+    /** partial_ordering with NaN is unordered: it compares equal to none of <, >, ==. */
+    const auto Result = A <=> B;
+    LUMEN_CHECK_FALSE( Result == 0 );
+    LUMEN_CHECK_FALSE( Result < 0 );
+    LUMEN_CHECK_FALSE( Result > 0 );
+}
+
+LUMEN_TEST( Vec_Compare, ThreeWayConstexpr )
+{
+    constexpr Maths::FVec3i A( 1, 2, 3 );
+    constexpr Maths::FVec3i B( 1, 2, 4 );
+
+    static_assert( ( A <=> B ) < 0 );
+    static_assert( ( B <=> A ) > 0 );
+    static_assert( ( A <=> A ) == 0 );
+    static_assert( A < B );
 }
 
 /**

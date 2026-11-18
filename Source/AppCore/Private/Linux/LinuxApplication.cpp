@@ -3,7 +3,6 @@
  * @brief Implementation of the FLinuxApplication class for Linux-specific application management.
  */
 
-#include "Templates/Optional.hpp"
 #include <Linux/LinuxApplication.hpp>
 
 #if defined( LUMEN_PLATFORM_LINUX )
@@ -11,7 +10,9 @@
     #include <Linux/LinuxBackend.hpp>
     #include <Linux/LinuxWindow.hpp>
 
-    #include <HAL/Signal.hpp>
+    #include <HAL/PlatformSignal.hpp>
+
+    #include <Templates/Optional.hpp>
 
     #include <Generic/GenericApplicationInput.hpp>
     #include <Generic/GenericApplicationMessageHandler.hpp>
@@ -129,7 +130,7 @@ namespace
     inline void SendQuitEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler )
     {
         MessageHandler->OnQuit();
-        FSignal::Raise( ESystemSignal::Terminate );
+        HAL::FPlatformSignal::Raise( HAL::ESystemSignal::Terminate );
     }
 
     inline void SendWindowCloseRequestedEvent ( const TSharedPtr<FGenericApplicationMessageHandler> &MessageHandler )

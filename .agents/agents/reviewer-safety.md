@@ -40,7 +40,7 @@ yourself with `git diff`.
 
 1. `.agents/AGENTS.md` (index) — then the module docs for the code under
    review (`.agents/modules/<Module>.md`).
-2. `rules/core-first.md` — you must know what Core guarantees (wait-free
+2. `rules/core-first.md` — you must know what Core guarantees (lock-free
    queues, `FLogger`, `TOptional`, `TExpected`…) to judge contracts.
 
 ## What to hunt for

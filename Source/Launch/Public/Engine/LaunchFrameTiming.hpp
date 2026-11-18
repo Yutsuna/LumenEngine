@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Concepts/TriviallyCopyable.hpp"
 #include <Core/CoreTypes.hpp>
 #include <type_traits>
 
@@ -23,7 +24,7 @@ namespace Launch
         Float64 Alpha        = 0.0;
     };
 
-    static_assert( std::is_trivially_copyable_v<FFrameStep>, "FFrameStep is returned by value every frame." );
+    static_assert( ::Lumen::Concepts::CTriviallyCopyable<FFrameStep>, "FFrameStep is returned by value every frame." );
 
     /**
      * @class FFrameClock

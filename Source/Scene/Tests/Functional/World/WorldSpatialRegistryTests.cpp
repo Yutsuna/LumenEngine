@@ -5,11 +5,11 @@
 
 #include <World/WorldSpatialRegistry.hpp>
 
+#include <Thread/Thread.hpp>
+
 #include <Maths/Matrix.hpp>
 #include <Maths/Vec.hpp>
 #include <Tests/UnitTest.hpp>
-
-#include <thread>
 
 namespace Lumen
 {
@@ -368,11 +368,11 @@ LUMEN_TEST( FSpatialRegistry_Threading, UpdatesAndPublishesConcurrently )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    std::thread Producers[3];
+    FThread Producers[3];
 
     for ( USize Index = 0ULL; Index < 3ULL; ++Index )
     {
-        Producers[Index] = std::thread( [] ( const ActorID InEntityId ) noexcept -> void
+        Producers[Index] = FThread( [] ( const ActorID InEntityId ) noexcept -> void
         {
             constexpr Float32 ThreadFinalOffset = 10.0F;
 
@@ -383,7 +383,7 @@ LUMEN_TEST( FSpatialRegistry_Threading, UpdatesAndPublishesConcurrently )
         }, EntityIds[Index] );
     }
 
-    std::thread Consumer( [&] () noexcept -> void
+    FThread Consumer( [&] () noexcept -> void
     {
         for ( UInt32 Cycle = 0U; Cycle < 64U; ++Cycle )
         {
@@ -392,12 +392,12 @@ LUMEN_TEST( FSpatialRegistry_Threading, UpdatesAndPublishesConcurrently )
         }
     } );
 
-    for ( std::thread &Producer : Producers )
+    for ( FThread &Producer : Producers )
     {
-        Producer.join();
+        Producer.Join();
     }
 
-    Consumer.join();
+    Consumer.Join();
 
     /** INFO: One final publication after joining captures the last writes. */
     Session.Registry.Publish();
@@ -461,11 +461,11 @@ LUMEN_TEST( FSpatialRegistry_UpdateTransform, ConcurrentSameEntityWritesSerializ
         MakeTranslation( 4.0F, 4.0F, 4.0F ),
     };
 
-    std::thread Writers[ThreadCount];
+    FThread Writers[ThreadCount];
 
     for ( UInt32 Index = 0U; Index < ThreadCount; ++Index )
     {
-        Writers[Index] = std::thread( [Index, EntityId, &ThreadTransforms] ()
+        Writers[Index] = FThread( [Index, EntityId, &ThreadTransforms] ()
         {
             for ( UInt32 Step = 0U; Step < WritesPerThread; ++Step )
             {
@@ -474,7 +474,7 @@ LUMEN_TEST( FSpatialRegistry_UpdateTransform, ConcurrentSameEntityWritesSerializ
         } );
     }
 
-    std::thread Publisher( [] ()
+    FThread Publisher( [] ()
     {
         for ( UInt32 Cycle = 0U; Cycle < 250U; ++Cycle )
         {
@@ -483,12 +483,12 @@ LUMEN_TEST( FSpatialRegistry_UpdateTransform, ConcurrentSameEntityWritesSerializ
         }
     } );
 
-    for ( std::thread &Writer : Writers )
+    for ( FThread &Writer : Writers )
     {
-        Writer.join();
+        Writer.Join();
     }
 
-    Publisher.join();
+    Publisher.Join();
 
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();

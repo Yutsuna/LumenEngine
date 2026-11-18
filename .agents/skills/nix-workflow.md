@@ -56,7 +56,7 @@ Nix/shell.nix        — mkShell wrapping deps with dev env hooks
 nix develop                      # enter the devshell (direnv does it automatically)
 nix build                        # build packages.default → ./result symlink
 nix flake show                   # inspect outputs
-nix develop --command meson test -C Build   # CI-style, non-interactive
+meson test -C Build   # CI-style, non-interactive
 ```
 
 ## Workflow when adding a dependency

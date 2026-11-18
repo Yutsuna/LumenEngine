@@ -7,11 +7,12 @@
 
 #include <Logging/LoggingCategory.hpp>
 
-#include <HAL/Mutex.hpp>
-#include <Templates/Queue.hpp>
+#include <HAL/PlatformMutex.hpp>
 
-#include <condition_variable>
-#include <thread>
+#include <Thread/Thread.hpp>
+
+#include <Templates/ConditionVariable.hpp>
+#include <Templates/Queue.hpp>
 
 namespace Lumen
 {
@@ -62,7 +63,7 @@ public:
 private:
 
     void EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message );
-    void FlushLogMessages ( std::stop_token &StopToken );
+    void FlushLogMessages ( const FStopToken &InStopToken );
     void CoutMessage ( const FLogMessage &LogMessage ) const noexcept;
 
 private:
@@ -72,12 +73,12 @@ private:
 
 private:
 
-    FMutex QueueMutex;    ///< Guards LogMessageQueue, WorkerThread and the writes to bIsAsync.
-    FMutex ShutdownMutex; ///< Serializes concurrent Shutdown() calls.
-    std::condition_variable_any Condition;
-    TQueue<FLogMessage> LogMessageQueue;
+    HAL::FPlatformMutex QueueMutex;      ///< Guards LogMessageQueue, WorkerThread and the writes to bIsAsync.
+    HAL::FPlatformMutex ShutdownMutex;   ///< Serializes concurrent Shutdown() calls.
+    FConditionVariable Condition;        ///< Manages synchronization for log message processing.
+    TQueue<FLogMessage> LogMessageQueue; ///< Holds log messages waiting to be processed.
+    FThread WorkerThread;                ///< Only access under QueueMutex.
 
-    std::jthread WorkerThread; ///< Only access under QueueMutex.
     TAtomic<Bool> bIsAsync{ false };
 };
 

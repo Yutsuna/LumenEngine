@@ -6,9 +6,9 @@ All commands run in the Nix devshell (`.envrc`/`direnv` wires it
 automatically). What CI runs exactly (`.github/workflows/Ci.yml`):
 
 ```sh
-nix develop --command meson setup Build     # first configure; Build/ is gitignored
-nix develop --command meson compile -C Build
-nix develop --command meson test -C Build
+meson setup Build     # first configure; Build/ is gitignored
+meson compile -C Build
+meson test -C Build
 ```
 
 Focused verification:
@@ -30,8 +30,10 @@ meson setup Build --reconfigure
 
 ## Toolchain (do not assume defaults)
 
-- Compiler **GCC 16** (forced in `Meson/Native.ini`), C++ **26**, C **23**,
-  `-freflection` passed project-wide (`meson.build`). Meson >= 1.10.
+- Compiler **GCC 16**, C++ **26**, C **23**, `-freflection` passed
+  project-wide (`meson.build`). Meson >= 1.10. The GCC 16 pin lives in the
+  Nix layer (`gcc16` in `Nix/deps.nix`, `gcc16Stdenv` in `Nix/package.nix`);
+  `Meson/Native.ini` only selects `gcc`/`g++` from that environment.
 - clangd cannot parse reflection code; `.clangd` strips `-freflection` for
   tooling. Don't "fix" that config by adding it back.
 - `meson.options`: `enable_testing`, `enable_benchmarking` (default true),

@@ -14,11 +14,10 @@
 #include <Memory/UniquePtr.hpp>
 #include <Templates/Vector.hpp>
 
-#include <algorithm>
-#include <cstring>
 #include <functional>
-#include <limits>
 
+extern "C"
+{
 #if defined( LUMEN_PLATFORM_WINDOWS )
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
@@ -40,6 +39,7 @@
         #include <sys/clonefile.h>
     #endif
 #endif
+}
 
 namespace Lumen
 {

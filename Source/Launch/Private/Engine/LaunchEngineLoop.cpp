@@ -122,4 +122,9 @@ Bool Launch::FLaunchEngineLoop::IsExitRequested () noexcept
     return GExitRequested.load( std::memory_order_acquire );
 }
 
+void Launch::FLaunchEngineLoop::ResetExitRequest () noexcept
+{
+    GExitRequested.store( false, std::memory_order_release );
+}
+
 } // namespace Lumen

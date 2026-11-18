@@ -28,7 +28,7 @@ description: Author and run Lumen benchmarks with LUMEN_BENCHMARK macros correct
 meson setup Build-Release --buildtype=release   # or the build-release command
 ninja -C Build-Release
 meson benchmark -C Build-Release
-Build/Source/Meson/Benchmarks/<Module>Benchmarks [Filter [report.json]]
+Build-Release/Source/Meson/Benchmarks/<Module>Benchmarks [Filter [report.json]]
 ```
 
 ## Checks

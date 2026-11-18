@@ -56,4 +56,11 @@ using IPtr = int;
 
 template <typename TObject> inline constexpr Bool AlwaysFalseV = false;
 
+template <typename...> struct TVoid
+{
+    using Type = void;
+};
+
+template <typename... Ts> using TVoidT = typename TVoid<Ts...>::Type;
+
 } // namespace Lumen

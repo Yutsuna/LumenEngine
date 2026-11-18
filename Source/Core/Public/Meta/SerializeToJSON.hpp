@@ -54,7 +54,7 @@ namespace Meta
 
     /**
      * @brief Serialize a reflected aggregate to JSON.
-     * @details bool -> true/false, numbers -> numbers (NaN/Inf -> null), enums -> enumerator name,
+     * @details Bool -> true/false, numbers -> numbers (NaN/Inf -> null), enums -> enumerator name,
      *          strings -> escaped strings, source_location -> "file:line", ranges -> arrays,
      *          TOptional/monostate -> null when empty, variant -> { "Type", "Value" },
      *          nested aggregates -> objects.

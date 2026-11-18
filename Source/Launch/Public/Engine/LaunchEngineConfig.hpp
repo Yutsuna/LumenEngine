@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Concepts/TriviallyCopyable.hpp"
 #include <Core/CoreTypes.hpp>
 
 #include <HAL/PlatformTime.hpp>
@@ -37,7 +38,8 @@ namespace Launch
         Bool bHeadless = false;
     };
 
-    static_assert( std::is_trivially_copyable_v<FLaunchEngineConfig>, "Modules copy the config out of the factory call." );
+    static_assert( ::Lumen::Concepts::CTriviallyCopyable<FLaunchEngineConfig>,
+                   "Modules copy the config out of the factory call." );
 
 } // namespace Launch
 

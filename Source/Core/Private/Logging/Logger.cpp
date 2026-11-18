@@ -4,22 +4,9 @@
  */
 
 #include <Core/CoreDefinitions.hpp>
-#include <Core/CoreTypes.hpp>
 
-#include <Logging/Logger.hpp>
-
-#include <HAL/PlatformTime.hpp>
-#include <HAL/Signal.hpp>
-
-#include <cerrno>
-#include <cstdio>
-#include <exception>
-#include <print>
-#include <string>
-#include <system_error>
-#include <thread>
-#include <utility>
-
+extern "C"
+{
 #if defined( LUMEN_PLATFORM_WINDOWS )
     #ifndef WIN32_LEAN_AND_MEAN
         #define WIN32_LEAN_AND_MEAN
@@ -32,6 +19,17 @@
 #elif defined( LUMEN_PLATFORM_UNIX ) || defined( LUMEN_PLATFORM_MACOS )
     #include <unistd.h>
 #endif
+}
+
+#include <Core/CoreTypes.hpp>
+
+#include <Logging/Logger.hpp>
+
+#include <HAL/LockGuard.hpp>
+#include <HAL/PlatformSignal.hpp>
+#include <HAL/PlatformTime.hpp>
+
+#include <print>
 
 namespace Lumen
 {
@@ -119,28 +117,17 @@ FLogger &FLogger::GetInstance () noexcept
 
 void FLogger::Initialize () noexcept
 {
-    try
-    {
-        const TLockGuard<FMutex> Lock( QueueMutex );
+    const HAL::TLockGuard<HAL::FPlatformMutex> Lock( QueueMutex );
 
-        if ( WorkerThread.joinable() )
-        {
-            return;
-        }
-        WorkerThread = std::jthread( [this] ( std::stop_token Token )
-        {
-            FlushLogMessages( Token );
-        } );
-        bIsAsync.store( true );
-    }
-    catch ( std::system_error &SystemError )
+    if ( WorkerThread.IsJoinable() )
     {
-        static constexpr const AnsiChar *const ErrorMessage = "Failed to start logger worker thread: System Error: ";
-        static constexpr const AnsiChar *const ErrorSuffix  = LUMEN_NEWLINE "Falling back to synchronous logging." LUMEN_NEWLINE;
-        Flush( ErrorMessage );
-        Flush( SystemError.what() );
-        Flush( ErrorSuffix );
+        return;
     }
+    WorkerThread = FThread( [this] ( FStopToken Token )
+    {
+        FlushLogMessages( Token );
+    } );
+    bIsAsync.store( WorkerThread.IsJoinable() );
 }
 
 void FLogger::Flush ( const AnsiChar *const String ) noexcept
@@ -164,21 +151,21 @@ FLogger::~FLogger ()
 void FLogger::Shutdown () noexcept
 {
     /** INFO: Serialize concurrent callers to avoid race conditions. */
-    const TLockGuard<FMutex> ShutdownLock( ShutdownMutex );
+    const HAL::TLockGuard<HAL::FPlatformMutex> ShutdownLock( ShutdownMutex );
 
-    std::jthread Worker;
+    FThread Worker;
 
     {
-        const TLockGuard<FMutex> Lock( QueueMutex );
+        const HAL::TLockGuard<HAL::FPlatformMutex> Lock( QueueMutex );
 
         bIsAsync.store( false );
         Worker = std::move( WorkerThread );
     }
 
-    if ( Worker.joinable() )
+    if ( Worker.IsJoinable() )
     {
-        Worker.request_stop();
-        Worker.join();
+        static_cast<void>( Worker.RequestStop() );
+        Worker.Join();
     }
 }
 
@@ -198,37 +185,40 @@ void FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbos
 
     const Bool bQueued = [&] -> Bool
     {
-        const TLockGuard<FMutex> Lock( QueueMutex );
-
-        if ( not bIsAsync.load() )
+        const HAL::TLockGuard<HAL::FPlatformMutex> Lock( QueueMutex );
+        const Bool bAsync = bIsAsync.load();
+        if ( bAsync ) [[likely]]
         {
-            return false;
+            LogMessageQueue.push( std::move( LogMessage ) );
         }
-        LogMessageQueue.push( std::move( LogMessage ) );
-        return true;
+        return bAsync;
     }();
 
     if ( bQueued )
     {
-        Condition.notify_one();
+        Condition.NotifyOne();
         return;
     }
 
     CoutMessage( LogMessage );
 }
 
-void FLogger::FlushLogMessages ( std::stop_token &StopToken )
+void FLogger::FlushLogMessages ( const FStopToken &InStopToken )
 {
     decltype( LogMessageQueue ) Batch;
+    FStopCallback StopCallback( InStopToken, [this]
+    {
+        Condition.NotifyAll();
+    } );
 
     for ( ;; )
     {
         {
-            TUniqueLock<FMutex> Lock( QueueMutex );
+            HAL::TUniqueLock<HAL::FPlatformMutex> Lock( QueueMutex );
 
-            Condition.wait( Lock, StopToken, [this]
+            Condition.Wait( Lock, [this, &InStopToken]
             {
-                return !LogMessageQueue.empty();
+                return InStopToken.StopRequested() or not LogMessageQueue.empty();
             } );
 
             if ( LogMessageQueue.empty() )
@@ -275,7 +265,7 @@ void FLogger::CoutMessage ( const FLogMessage &LogMessage ) const noexcept
     if ( LogMessage.Verbosity == ELogVerbosity::Fatal )
     {
         std::fflush( stdout );
-        FSignal::Raise( ESystemSignal::Terminate );
+        HAL::FPlatformSignal::Raise( HAL::ESystemSignal::Terminate );
     }
 }
 

@@ -12,7 +12,6 @@
 #include <Tests/UnitTestTypes.hpp>
 #include <Tests/UnitTestsAssert.hpp>
 
-#include <format>
 #include <source_location>
 
 namespace Lumen
@@ -36,13 +35,23 @@ namespace Tests
         void Register ( FUnitTestMetadata const &Metadata );
 
         /**
-         * @brief Run the unit tests
+         * @brief Run the unit tests using the compact output mode.
          * @param InSuiteFilter Wildcard or substring filter applied to SuiteName.
          * @param InKindFilter Optional filter applied to test kind.
          * @return Test run summary.
          */
         [[nodiscard]] FUnitTestTestRunSummary Run ( FStringView InSuiteFilter             = {},
                                                     TOptional<EUnitTestKind> InKindFilter = {} ) const;
+
+        /**
+         * @brief Run the unit tests with an explicit output mode.
+         * @param InSuiteFilter Wildcard or substring filter applied to SuiteName.
+         * @param InKindFilter Optional filter applied to test kind.
+         * @param OutputMode Controls the verbosity of the test report.
+         * @return Test run summary.
+         */
+        [[nodiscard]] FUnitTestTestRunSummary
+        Run ( FStringView InSuiteFilter, TOptional<EUnitTestKind> InKindFilter, EUnitTestOutputMode OutputMode ) const;
 
     public:
 
@@ -82,16 +91,20 @@ namespace Tests
     };
 
 #define LUMEN_TEST( SuiteName, TestName )                                                                                        \
-    static void Lumen_Test_##SuiteName##_##TestName();                                                                           \
+    /* NOLINT(misc-use-anonymous-namespace) */                                                                                   \
+    static void Lumen_Test_##SuiteName##_##TestName(); /* NOLINT(misc-use-anonymous-namespace) */                                \
+    /* NOLINT(misc-use-anonymous-namespace) */                                                                                   \
     static inline ::Lumen::Tests::FAutoRegisterUnitTest Lumen_Register_##SuiteName##_##TestName(                                 \
         #SuiteName, #TestName, ::Lumen::Tests::EUnitTestKind::Functional, &Lumen_Test_##SuiteName##_##TestName );                \
-    static void Lumen_Test_##SuiteName##_##TestName()
+    static void Lumen_Test_##SuiteName##_##TestName() /* NOLINT(misc-use-anonymous-namespace) */
 
 #define LUMEN_INTEGRATION_TEST( SuiteName, TestName )                                                                            \
-    static void Lumen_IntegrationTest_##SuiteName##_##TestName();                                                                \
+    /* NOLINT(misc-use-anonymous-namespace) */                                                                                   \
+    static void Lumen_IntegrationTest_##SuiteName##_##TestName(); /* NOLINT(misc-use-anonymous-namespace) */                     \
+    /* NOLINT(misc-use-anonymous-namespace) */                                                                                   \
     static inline ::Lumen::Tests::FAutoRegisterUnitTest Lumen_RegisterIntegration_##SuiteName##_##TestName(                      \
         #SuiteName, #TestName, ::Lumen::Tests::EUnitTestKind::Integration, &Lumen_IntegrationTest_##SuiteName##_##TestName );    \
-    static void Lumen_IntegrationTest_##SuiteName##_##TestName()
+    static void Lumen_IntegrationTest_##SuiteName##_##TestName() /* NOLINT(misc-use-anonymous-namespace) */
 
 } // namespace Tests
 

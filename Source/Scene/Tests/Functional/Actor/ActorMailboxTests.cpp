@@ -6,11 +6,11 @@
 #include <Actor/ActorMailbox.hpp>
 #include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
-#include <Templates/Optional.hpp>
-#include <Tests/UnitTest.hpp>
 
-#include <atomic>
-#include <thread>
+#include <Templates/Optional.hpp>
+#include <Thread/Thread.hpp>
+
+#include <Tests/UnitTest.hpp>
 
 namespace Lumen
 {
@@ -297,11 +297,11 @@ LUMEN_TEST( FMailBox_Threading, ManyProducersSingleConsumer )
     constexpr UInt32 MessagesPerProducer = 250U;
     constexpr UInt32 TargetTotal         = ThreadsCount * MessagesPerProducer;
 
-    std::thread Producers[ThreadsCount];
+    FThread Producers[ThreadsCount];
 
     for ( UInt32 Index = 0U; Index < ThreadsCount; ++Index )
     {
-        Producers[Index] = std::thread( [&Mailbox, &PushedCount] ()
+        Producers[Index] = FThread( [&Mailbox, &PushedCount] ()
         {
             for ( UInt32 Message = 0U; Message < MessagesPerProducer; ++Message )
             {
@@ -311,7 +311,7 @@ LUMEN_TEST( FMailBox_Threading, ManyProducersSingleConsumer )
         } );
     }
 
-    std::thread Consumer( [&] ()
+    FThread Consumer( [&] ()
     {
         for ( ;; )
         {
@@ -330,12 +330,12 @@ LUMEN_TEST( FMailBox_Threading, ManyProducersSingleConsumer )
         }
     } );
 
-    for ( std::thread &Producer : Producers )
+    for ( FThread &Producer : Producers )
     {
-        Producer.join();
+        Producer.Join();
     }
 
-    Consumer.join();
+    Consumer.Join();
 
     LUMEN_CHECK_EQ( ReceivedCount, TargetTotal );
     LUMEN_CHECK_TRUE( Mailbox.IsEmpty() );
@@ -350,11 +350,11 @@ LUMEN_TEST( FMailBox_Threading, AllProducedMessagesAreReceived )
     constexpr UInt32 MessagesPerProducer = 500U;
     constexpr UInt64 TargetTotal         = static_cast<UInt64>( ThreadsCount ) * MessagesPerProducer;
 
-    std::thread Producers[ThreadsCount];
+    FThread Producers[ThreadsCount];
 
     for ( UInt32 Index = 0U; Index < ThreadsCount; ++Index )
     {
-        Producers[Index] = std::thread( [Index, &Mailbox] ()
+        Producers[Index] = FThread( [Index, &Mailbox] ()
         {
             for ( UInt32 Message = 0U; Message < MessagesPerProducer; ++Message )
             {
@@ -363,9 +363,9 @@ LUMEN_TEST( FMailBox_Threading, AllProducedMessagesAreReceived )
         } );
     }
 
-    for ( std::thread &Producer : Producers )
+    for ( FThread &Producer : Producers )
     {
-        Producer.join();
+        Producer.Join();
     }
 
     for ( ;; )

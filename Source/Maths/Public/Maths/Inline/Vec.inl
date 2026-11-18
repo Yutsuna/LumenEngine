@@ -99,6 +99,20 @@ namespace Maths
 
     template <typename Type, USize Dimension>
         requires CVecDimension<Type, Dimension>
+    constexpr auto TVec<Type, Dimension>::operator<=>( const TVec<Type, Dimension> &Other ) const noexcept
+    {
+        for ( USize Index = 0; Index < Dimension; ++Index )
+        {
+            if ( const auto Comp = this->Data[Index] <=> Other.Data[Index]; Comp != 0 )
+            {
+                return Comp;
+            }
+        }
+        return this->Data[0] <=> Other.Data[0];
+    }
+
+    template <typename Type, USize Dimension>
+        requires CVecDimension<Type, Dimension>
     constexpr TVec<Type, Dimension> TVec<Type, Dimension>::operator+( const TVec &Other ) const noexcept
     {
         TVec Result;

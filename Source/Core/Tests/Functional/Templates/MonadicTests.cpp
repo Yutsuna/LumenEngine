@@ -520,6 +520,34 @@ LUMEN_TEST( Monadic_Inspect, Chained )
     LUMEN_CHECK_EQ( Total, 84 );
 }
 
+LUMEN_TEST( Monadic_Inspect, ExpectedVoidValueInvokesCallback )
+{
+    TExpected<void, EMonadicTestError> Expected;
+    Int32 Calls                               = 0;
+    TExpected<void, EMonadicTestError> Result = std::move( Expected )
+                                                    .Inspect( [&Calls] () noexcept
+    {
+        ++Calls;
+    } );
+
+    LUMEN_CHECK_EQ( Calls, 1 );
+    LUMEN_CHECK_TRUE( Result.HasValue() );
+}
+
+LUMEN_TEST( Monadic_Inspect, ExpectedVoidErrorSkipsCallback )
+{
+    TExpected<void, EMonadicTestError> Expected( FUnexpect{}, EMonadicTestError::ErrorA );
+    Int32 Calls                               = 0;
+    TExpected<void, EMonadicTestError> Result = std::move( Expected )
+                                                    .Inspect( [&Calls] () noexcept
+    {
+        ++Calls;
+    } );
+
+    LUMEN_CHECK_EQ( Calls, 0 );
+    LUMEN_CHECK_FALSE( Result.HasValue() );
+}
+
 /**
  * ValueOr
  */

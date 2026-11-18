@@ -8,7 +8,6 @@
 #include <HAL/PlatformTime.hpp>
 #include <Logging/Logger.hpp>
 
-#include <atomic>
 #include <exception>
 #include <format>
 #include <utility>

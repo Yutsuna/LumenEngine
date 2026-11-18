@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include "Concepts/TriviallyCopyable.hpp"
 #include <Core/CoreTypes.hpp>
 #include <String/StringView.hpp>
 #include <Templates/Expected.hpp>
@@ -58,7 +59,7 @@ namespace Launch
         }
     };
 
-    static_assert( std::is_trivially_copyable_v<FLaunchError>, "FLaunchError travels by value through TExpected." );
+    static_assert( ::Lumen::Concepts::CTriviallyCopyable<FLaunchError>, "FLaunchError travels by value through TExpected." );
 
     /** @brief Result type of every launch stage. */
     template <typename Type> using TLaunchResult = TExpected<Type, FLaunchError>;

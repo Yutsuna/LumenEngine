@@ -81,6 +81,9 @@ namespace Launch
 
         /** @return True if an exit request has been made, otherwise false. */
         [[nodiscard]] static Bool IsExitRequested () noexcept;
+
+        /** @brief Resets the global exit flag. INFO: intended for tests and guarded re-entry only. */
+        static void ResetExitRequest () noexcept;
     };
 
 } // namespace Launch

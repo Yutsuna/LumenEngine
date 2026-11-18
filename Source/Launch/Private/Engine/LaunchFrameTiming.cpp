@@ -6,9 +6,9 @@
 #include <Engine/LaunchFrameTiming.hpp>
 
 #include <HAL/PlatformTime.hpp>
+#include <Thread/Thread.hpp>
 
 #include <algorithm>
-#include <thread>
 
 namespace Lumen
 {
@@ -34,7 +34,7 @@ namespace
 
         while ( NowSeconds < InDeadline )
         {
-            std::this_thread::yield();
+            FThread::Yield();
             NowSeconds = HAL::FPlatformTime::Seconds();
         }
         return NowSeconds;

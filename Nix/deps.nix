@@ -7,6 +7,7 @@
     with pkgs;
     [
       gcc16
+      ccache
       meson
       ninja
       pkg-config

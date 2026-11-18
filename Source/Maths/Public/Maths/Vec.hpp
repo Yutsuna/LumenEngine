@@ -100,6 +100,10 @@ namespace Maths
                 {
                     Type S, T, P;
                 };
+                struct
+                {
+                    Type Width, Height, Depth;
+                };
                 Type Data[3];
             };
 
@@ -161,7 +165,7 @@ namespace Maths
 
     template <typename Type, USize Dimension>
         requires CVecDimension<Type, Dimension>
-    struct MATHS_EXPORT TVec final : Internal::TVecData<Type, Dimension>
+    struct MATHS_EXPORT TVec : Internal::TVecData<Type, Dimension>
     {
         constexpr TVec () noexcept;
 
@@ -197,6 +201,7 @@ namespace Maths
 
         constexpr Bool operator==( const TVec &Other ) const noexcept;
         constexpr Bool operator!=( const TVec &Other ) const noexcept;
+        constexpr auto operator<=>( const TVec &Other ) const noexcept;
 
         [[nodiscard]] constexpr TVec operator+( const TVec &Other ) const noexcept;
         [[nodiscard]] constexpr TVec operator-( const TVec &Other ) const noexcept;

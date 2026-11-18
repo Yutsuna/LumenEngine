@@ -5,10 +5,7 @@
 
 #pragma once
 
-#include <Core/CoreTypes.hpp>
-
-#include <HAL/Mutex.hpp>
-
+#include <HAL/LockGuard.hpp>
 #include <Thread/TripleBuffer.hpp>
 
 /**
@@ -141,7 +138,7 @@ template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::Sw
 
 template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( const BufferType &InData )
 {
-    TLockGuard<FMutex> LockGuard{ WriteMutex };
+    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -155,7 +152,7 @@ template <typename BufferType>
 void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( BufferType &&InData ) noexcept(
     std::is_nothrow_move_assignable_v<BufferType> )
 {
-    TLockGuard<FMutex> LockGuard{ WriteMutex };
+    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -167,10 +164,10 @@ void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( BufferType &&InData
 
 template <typename BufferType>
 template <typename Callable>
-    requires std::is_invocable_v<Callable, BufferType &>
+    requires Lumen::Concepts::CIsInvocable<Callable, BufferType &>
 void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( Callable &&InEditor )
 {
-    TLockGuard<FMutex> LockGuard{ WriteMutex };
+    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -183,7 +180,7 @@ void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( Callable &&InEditor
 
 template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::SwapWriteBuffers () noexcept
 {
-    TLockGuard<FMutex> LockGuard{ WriteMutex };
+    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
     PublishWrite();
 }
 

@@ -49,18 +49,66 @@ foreach ModuleDefinition : ModuleDefinitions
     CompileArguments = ALL_WARNINGS
 
     if ModuleType == 'Executable'
-        ModuleTarget = executable(
-            ModuleName, PrivateSources,
-            include_directories : IncludeDirectories,
-            dependencies : ResolvedDependencies,
-            cpp_args : CompileArguments,
-            c_args : CompileArguments,
-            install : true,
-        )
-        ModuleDependency = declare_dependency(
-            include_directories : IncludeDirectories,
-            dependencies : ResolvedDependencies,
-        )
+        MainFilePath = PrivatePath / 'Main.cpp'
+        MainSources = []
+        LibrarySources = PrivateSources
+
+        MainFile = files(MainFilePath)[0]
+        foreach SourcePath : PrivateSources
+            if SourcePath == MainFile
+                MainSources += SourcePath
+                LibrarySources = []
+                foreach OtherPath : PrivateSources
+                    if OtherPath != SourcePath
+                        LibrarySources += OtherPath
+                    endif
+                endforeach
+            endif
+        endforeach
+
+        if MainSources.length() == 0
+            MainSources = PrivateSources
+            LibrarySources = []
+        endif
+
+        if LibrarySources.length() > 0
+            ModuleLibrary = static_library(
+                ModuleName + 'Lib', LibrarySources,
+                include_directories : IncludeDirectories,
+                dependencies : ResolvedDependencies,
+                cpp_args : CompileArguments,
+                c_args : CompileArguments,
+                install : false,
+            )
+
+            ModuleTarget = executable(
+                ModuleName, MainSources,
+                include_directories : IncludeDirectories,
+                dependencies : ResolvedDependencies,
+                link_with : ModuleLibrary,
+                cpp_args : CompileArguments,
+                c_args : CompileArguments,
+                install : true,
+            )
+            ModuleDependency = declare_dependency(
+                include_directories : IncludeDirectories,
+                link_with : ModuleLibrary,
+                dependencies : ResolvedDependencies,
+            )
+        else
+            ModuleTarget = executable(
+                ModuleName, MainSources,
+                include_directories : IncludeDirectories,
+                dependencies : ResolvedDependencies,
+                cpp_args : CompileArguments,
+                c_args : CompileArguments,
+                install : true,
+            )
+            ModuleDependency = declare_dependency(
+                include_directories : IncludeDirectories,
+                dependencies : ResolvedDependencies,
+            )
+        endif
 
     elif ModuleType == 'SharedLibrary'
         ExportConfiguration = configuration_data()
