@@ -29,9 +29,21 @@ Lumen::UInt64 Lumen::Tests::FNullSemaphore::GetValue () const noexcept
     return Value;
 }
 
+void Lumen::Tests::FNullSemaphore::SetFailNextSignal ( const Bool bInFailNextSignal ) noexcept
+{
+    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    SignalFaultCount = bInFailNextSignal ? 1U : 0U;
+}
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSemaphore::Signal ( const UInt64 InValue ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    if ( SignalFaultCount > 0U )
+    {
+        --SignalFaultCount;
+        return TUnexpected<FRHIError>(
+            FRHIError( ERHIErrorCode::InvalidState, ERHIErrorCondition::Synchronization, "Semaphore signal fault injected" ) );
+    }
     if ( ( Desc.Type == ERHISemaphoreType::Binary and InValue != 1ULL ) or
          ( Desc.Type == ERHISemaphoreType::Timeline and InValue < Value ) )
     {

@@ -30,12 +30,15 @@ namespace Tests
         UInt64 GetValue () const noexcept override;
         TExpected<void, FRHIError> Signal ( UInt64 InValue ) noexcept override;
         TExpected<void, FRHIError> Wait ( UInt64 InValue, Float64 InTimeoutSeconds ) noexcept override;
+        /** @brief Arms or clears a one-shot fault that rejects the next Signal call. */
+        void SetFailNextSignal ( Bool bInFailNextSignal ) noexcept;
 
     private:
 
         FRHIObjectBase Identity;
         FRHISemaphoreDesc Desc;
-        UInt64 Value = 0ULL;
+        UInt64 Value            = 0ULL;
+        UInt32 SignalFaultCount = 0U;
         mutable HAL::FPlatformRecursiveSharedMutex Mutex;
         FConditionVariable Condition;
     };
