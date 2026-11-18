@@ -34,3 +34,5 @@ struct RHI_EXPORT FRHISubresourceRange
 };
 
 } // namespace Lumen
+
+#include "Inline/RHISubresourceRange.inl"
