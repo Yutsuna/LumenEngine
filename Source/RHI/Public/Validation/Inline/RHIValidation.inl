@@ -2,6 +2,7 @@
  * @file RHIValidation.inl
  * @brief Implements typed validation unwrapping.
  */
+
 #pragma once
 
 #include <Device/RHIBackendCast.hpp>

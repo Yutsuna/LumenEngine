@@ -2,10 +2,12 @@
  * @file RHIValidationDesc.hpp
  * @brief Defines validation coverage and diagnostic policy.
  */
+
 #pragma once
 
 #include <Core/EnumFlags.hpp>
 #include <Debug/RHIDebugMessage.hpp>
+#include <RHIExport.hpp>
 #include <Types/RHIError.hpp>
 
 namespace Lumen

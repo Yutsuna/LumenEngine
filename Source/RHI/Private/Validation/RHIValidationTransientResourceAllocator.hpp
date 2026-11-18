@@ -33,10 +33,6 @@ public:
     Allocate ( const FRHITransientBatch &InBatch ) noexcept override;
     void EndBatch () noexcept override;
 
-    /** @return Success only while the allocation is active and InFrame lies in its half-open lifetime. */
-    [[nodiscard]] TExpected<void, FRHIError> ValidateResourceUse ( const FRHITransientAllocation &InAllocation,
-                                                                   UInt64 InFrame ) const noexcept;
-
 private:
 
     TSharedRef<IRHITransientResourceAllocator> Underlying;

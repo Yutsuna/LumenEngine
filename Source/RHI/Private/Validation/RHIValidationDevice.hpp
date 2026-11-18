@@ -7,6 +7,7 @@
 #include "RHIValidationBindings.hpp"
 #include "RHIValidationCommandAllocator.hpp"
 #include "RHIValidationCommandList.hpp"
+#include "RHIValidationDefragmenter.hpp"
 #include "RHIValidationQueue.hpp"
 #include "RHIValidationResources.hpp"
 #include "RHIValidationSwapchain.hpp"

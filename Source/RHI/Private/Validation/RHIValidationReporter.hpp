@@ -26,7 +26,7 @@ enum class ERHIValidationMessageCode : UInt32
     InvalidQueueSubmission,
     InvalidPresentation,
     InvalidTransientBatch,
-    InvalidUnwrap
+    InvalidDefragPlan
 };
 
 /**

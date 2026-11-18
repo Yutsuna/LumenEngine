@@ -101,18 +101,6 @@ Lumen::USize Lumen::FRHIValidationState::GetLiveObjectCount () const noexcept
     return Objects.size();
 }
 
-Lumen::TVector<Lumen::FRHIObjectId> Lumen::FRHIValidationState::GetLiveObjectIds () const noexcept
-{
-    HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
-    TVector<FRHIObjectId> Result;
-    Result.reserve( Objects.size() );
-    for ( const auto &Pair : Objects )
-    {
-        Result.push_back( FRHIObjectId{ Pair.first } );
-    }
-    return Result;
-}
-
 Lumen::TOptional<Lumen::ERHIResourceState>
 Lumen::FRHIValidationState::GetResourceState ( const IRHIResource &InResource ) const noexcept
 {

@@ -114,27 +114,3 @@ void Lumen::FRHIValidationTransientResourceAllocator::EndBatch () noexcept
     ActiveAllocations.clear();
     bInBatch = false;
 }
-
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationTransientResourceAllocator::ValidateResourceUse ( const FRHITransientAllocation &InAllocation,
-                                                                       const UInt64 InFrame ) const noexcept
-{
-    if ( not State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::TransientResources ) )
-    {
-        return {};
-    }
-    if ( not bInBatch or InFrame < InAllocation.Lifetime.Begin or InFrame >= InAllocation.Lifetime.End )
-    {
-        return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidTransientBatch, ERHIErrorCondition::Memory,
-                                             "Transient resource is outside its active lifetime", this );
-    }
-    for ( const FRHITransientAllocation &Active : ActiveAllocations )
-    {
-        if ( Active.Allocation.Id == InAllocation.Allocation.Id )
-        {
-            return {};
-        }
-    }
-    return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidTransientBatch, ERHIErrorCondition::Memory,
-                                         "Transient allocation is foreign or expired", this );
-}

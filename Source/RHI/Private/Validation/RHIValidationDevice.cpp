@@ -152,7 +152,11 @@ Lumen::FRHIValidationDevice::CreateTransientResourceAllocator () noexcept
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDefragmenter>, Lumen::FRHIError>
 Lumen::FRHIValidationDevice::CreateDefragmenter () noexcept
 {
-    return Underlying->CreateDefragmenter();
+    return Underlying->CreateDefragmenter().Transform(
+        [this] ( TSharedRef<IRHIDefragmenter> &&InDefragmenter ) noexcept -> TSharedRef<IRHIDefragmenter>
+    {
+        return MakeShared<FRHIValidationDefragmenter>( std::move( InDefragmenter ), State );
+    } );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBindingLayout>, Lumen::FRHIError>

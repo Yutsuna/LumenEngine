@@ -2,9 +2,11 @@
  * @file RHIValidation.hpp
  * @brief Declares validation device decoration and safe backend unwrapping.
  */
+
 #pragma once
 
 #include <Device/IRHIDevice.hpp>
+#include <RHIExport.hpp>
 #include <Templates/Optional.hpp>
 #include <Validation/RHIValidationDesc.hpp>
 

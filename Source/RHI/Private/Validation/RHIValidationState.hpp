@@ -70,7 +70,8 @@ enum class ERHIValidationObjectKind : UInt8
     CommandList,
     Queue,
     Swapchain,
-    TransientAllocator
+    TransientAllocator,
+    Defragmenter
 };
 
 /**
@@ -93,7 +94,6 @@ public:
     /** @return True when the unwrapped object is currently tracked. */
     [[nodiscard]] Bool Contains ( const IRHIObject &InObject ) const noexcept;
     [[nodiscard]] USize GetLiveObjectCount () const noexcept;
-    [[nodiscard]] TVector<FRHIObjectId> GetLiveObjectIds () const noexcept;
     /** @return The state of a buffer, or of a texture when all its subresources agree. */
     [[nodiscard]] TOptional<ERHIResourceState> GetResourceState ( const IRHIResource &InResource ) const noexcept;
     /** @return The state of one texture subresource. */
