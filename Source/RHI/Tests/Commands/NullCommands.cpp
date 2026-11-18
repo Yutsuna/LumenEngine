@@ -30,7 +30,8 @@ namespace
                                 const FRHIExtent3D &InExtent ) noexcept
     {
         const FRHITextureDesc &Desc = InTexture.GetDesc();
-        if ( InMip >= Desc.MipCount or InLayer >= Desc.LayerCount or not InOffset.IsNonNegative() )
+        if ( InMip >= Desc.MipCount or InMip >= Desc.Extent.GetMaxMipLevelCount() or InLayer >= Desc.LayerCount or
+             not InOffset.IsNonNegative() )
         {
             return false;
         }
