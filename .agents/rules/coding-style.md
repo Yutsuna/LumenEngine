@@ -63,15 +63,20 @@ hack, and prefer reusing Core (`rules/core-first.md`).
   the topic, e.g. `Lumen::Tests`).
 - `.cpp` and `.inl`: **never** open `namespace Lumen { }` for the whole file.
   Qualify symbols explicitly with `Lumen::`.
-  Internal helpers may be `static` or in an anonymous namespace.
+  Internal helpers go in an anonymous namespace (`namespace { ... }`), not
+  `static` — that is the idiomatic C++ form and is friendlier to the linker.
 
 ## Comments
 
-- Doxygen `/** */` blocks with `@file`, `@brief`, `@class`, `@details`,
-  `@param`, `@return` — headers start with a `@file` + `@brief` block.
+- Doxygen `/** */` blocks. Authorised tags: `@file`, `@brief`, `@class`,
+  `@enum`, `@details`, `@tparam`, `@param`, `@return`, `@struct`. All are
+  valid; use whichever fits the declaration. Headers start with a `@file`
+  + `@brief` block, and public declarations carry the matching `@class`,
+  `@enum` or `@struct` tag plus a `@brief`.
 - One-liner notes use the same `/** */` doxygen style with the tags:
-  `NOTE:`, `INFO:`, `TODO:` (uppercase, followed by colon, at the start of
-  the comment, e.g. `/** NOTE: To be implemented by children */`).
+  `NOTE:`, `INFO:`, `TODO:`, `WARN:` (uppercase, followed by colon, at the
+  start of the comment, e.g. `/** NOTE: To be implemented by children */`).
+  All are valid; pick the one that matches the intent.
 - Comments explain intent and contracts, not restated code.
 
 ## Formatting
