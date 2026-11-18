@@ -2,14 +2,18 @@
  * @file RHIRingAllocator.cpp
  * @brief Implements circular range allocation with explicit retirement.
  */
+
 #include <HAL/LockGuard.hpp>
 #include <Memory/RHIRingAllocator.hpp>
+
 #include <Utilities/RHIAlignment.hpp>
 #include <Utilities/RHICheckedMath.hpp>
+
 Lumen::FRHIRingAllocator::FRHIRingAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
 {
     Stats.Capacity = InCapacity;
 }
+
 Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
 Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
@@ -17,8 +21,10 @@ Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
+
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     UInt64 Start = Cursor;
+
     for ( UInt32 Attempt = 0U; Attempt < 2U; ++Attempt )
     {
         const TOptional<UInt64> Aligned = RHIAlignUp( Start, InDesc.Alignment );
@@ -26,8 +32,10 @@ Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
         {
             break;
         }
+
         const TOptional<UInt64> End = RHICheckedAdd( *Aligned, InDesc.Size );
         Bool bOverlaps              = false;
+
         if ( End and *End <= Capacity )
         {
             for ( const FRHIAllocation &Other : Active )
@@ -40,8 +48,8 @@ Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
             }
             if ( not bOverlaps )
             {
-                FRHIAllocation Result{ FRHIAllocationId{ NextId++ }, *Aligned, InDesc.Size, InDesc.Alignment,
-                                       InDesc.MemoryClass,           nullptr };
+                FRHIAllocation Result{ .Id=FRHIAllocationId{ NextId++ }, .Offset=*Aligned, .Size=InDesc.Size, .Alignment=InDesc.Alignment,
+                                       .MemoryClass=InDesc.MemoryClass,           .Heap=nullptr };
                 Active.push_back( Result );
                 Cursor = *End == Capacity ? 0ULL : *End;
                 Stats.OnAllocate( InDesc.Size );
@@ -52,9 +60,11 @@ Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
     }
     return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Ring has no completed contiguous range" ) );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRingAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+
     for ( USize Index = 0U; Index < Active.size(); ++Index )
     {
         if ( Active[Index].Id == InAllocation.Id )
@@ -66,6 +76,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRingAllocator::Free ( const 
     }
     return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Ring allocation is not active" ) );
 }
+
 void Lumen::FRHIRingAllocator::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
@@ -73,6 +84,7 @@ void Lumen::FRHIRingAllocator::Reset () noexcept
     Cursor     = 0ULL;
     Stats.Used = 0ULL;
 }
+
 Lumen::FRHIAllocatorStats Lumen::FRHIRingAllocator::GetStats () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );

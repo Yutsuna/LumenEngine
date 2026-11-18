@@ -2,19 +2,23 @@
  * @file RHITlsfAllocator.cpp
  * @brief Implements two-level segregated free-list allocation.
  */
+
+#include "Algo/ForEach.hpp"
 #include <Algo/Sort.hpp>
 #include <HAL/LockGuard.hpp>
+
 #include <Memory/RHITlsfAllocator.hpp>
 #include <Utilities/RHIAlignment.hpp>
 #include <Utilities/RHICheckedMath.hpp>
 #include <bit>
+
 Lumen::FRHITlsfAllocator::FRHITlsfAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
 {
     Stats.Capacity = InCapacity;
     Buckets.resize( FirstLevelCount * SecondLevelCount );
     if ( InCapacity > 0ULL )
     {
-        InsertFreeRange( { 0ULL, InCapacity } );
+        InsertFreeRange( { .Offset=0ULL, .Size=InCapacity } );
     }
 }
 void Lumen::FRHITlsfAllocator::GetBucket ( const UInt64 InSize, USize &OutFirst, USize &OutSecond ) noexcept
@@ -30,10 +34,14 @@ void Lumen::FRHITlsfAllocator::InsertFreeRange ( const FFreeRange InRange ) noex
     {
         return;
     }
-    USize First = 0U, Second = 0U;
+
+    USize First = 0U;
+    USize Second = 0U;
+
     GetBucket( InRange.Size, First, Second );
-    Buckets[First * SecondLevelCount + Second].push_back( InRange );
+    Buckets[(First * SecondLevelCount) + Second].push_back( InRange );
 }
+
 Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
 Lumen::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
@@ -41,17 +49,22 @@ Lumen::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
+
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    USize First = 0U, Second = 0U;
+    USize First = 0U;
+    USize Second = 0U;
+
     GetBucket( InDesc.Size, First, Second );
-    const USize StartBucket = First * SecondLevelCount + Second;
+    const USize StartBucket = (First * SecondLevelCount) + Second;
     for ( USize BucketIndex = StartBucket; BucketIndex < Buckets.size(); ++BucketIndex )
     {
-        auto &List = Buckets[BucketIndex];
+        TVector<FFreeRange> &List = Buckets[BucketIndex];
+
         for ( USize RangeIndex = 0U; RangeIndex < List.size(); ++RangeIndex )
         {
             const FFreeRange Range         = List[RangeIndex];
             const TOptional<UInt64> Offset = RHIAlignUp( Range.Offset, InDesc.Alignment );
+
             if ( not Offset or *Offset < Range.Offset )
             {
                 continue;
@@ -62,20 +75,25 @@ Lumen::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
                 continue;
             }
             List.erase( List.begin() + static_cast<ISize>( RangeIndex ) );
-            InsertFreeRange( { Range.Offset, Prefix } );
-            InsertFreeRange( { *Offset + InDesc.Size, Range.Size - Prefix - InDesc.Size } );
+
+            InsertFreeRange( { .Offset=Range.Offset, .Size=Prefix } );
+            InsertFreeRange( { .Offset=*Offset + InDesc.Size, .Size=Range.Size - Prefix - InDesc.Size } );
+
             const FRHIAllocationId Id{ NextId++ };
             ActiveAllocations.push_back( Id );
             Stats.OnAllocate( InDesc.Size );
-            return FRHIAllocation{ Id, *Offset, InDesc.Size, InDesc.Alignment, InDesc.MemoryClass, nullptr };
+
+            return FRHIAllocation{ .Id=Id, .Offset=*Offset, .Size=InDesc.Size, .Alignment=InDesc.Alignment, .MemoryClass=InDesc.MemoryClass, .Heap=nullptr };
         }
     }
     return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "TLSF allocator exhausted" ) );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Bool bFound = false;
+
     for ( USize Index = 0U; Index < ActiveAllocations.size(); ++Index )
     {
         if ( ActiveAllocations[Index] == InAllocation.Id )
@@ -90,17 +108,23 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const 
         return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "TLSF allocation is not active" ) );
     }
     TVector<FFreeRange> Ranges;
-    for ( auto &List : Buckets )
+
+    Algo::ForEach( Buckets, [&Ranges]( TVector<FFreeRange> &List)
     {
         Ranges.insert( Ranges.end(), List.begin(), List.end() );
         List.clear();
-    }
+    });
+
     Ranges.push_back( { InAllocation.Offset, InAllocation.Size } );
+
     Algo::Sort( Ranges, [] ( const FFreeRange &Left, const FFreeRange &Right )
     {
         return Left.Offset < Right.Offset;
     } );
-    UInt64 CurrentOffset = 0ULL, CurrentSize = 0ULL;
+
+    UInt64 CurrentOffset = 0ULL;
+    UInt64 CurrentSize = 0ULL;
+
     for ( const FFreeRange &Range : Ranges )
     {
         if ( CurrentSize != 0ULL and Range.Offset <= CurrentOffset + CurrentSize )
@@ -111,7 +135,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const 
         {
             if ( CurrentSize != 0ULL )
             {
-                InsertFreeRange( { CurrentOffset, CurrentSize } );
+                InsertFreeRange( { .Offset=CurrentOffset, .Size=CurrentSize } );
             }
             CurrentOffset = Range.Offset;
             CurrentSize   = Range.Size;
@@ -119,14 +143,17 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const 
     }
     if ( CurrentSize != 0ULL )
     {
-        InsertFreeRange( { CurrentOffset, CurrentSize } );
+        InsertFreeRange( { .Offset=CurrentOffset, .Size=CurrentSize } );
     }
+
     Stats.OnFree( InAllocation.Size );
     return {};
 }
+
 void Lumen::FRHITlsfAllocator::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+
     for ( auto &List : Buckets )
     {
         List.clear();
@@ -134,10 +161,11 @@ void Lumen::FRHITlsfAllocator::Reset () noexcept
     ActiveAllocations.clear();
     if ( Capacity > 0ULL )
     {
-        InsertFreeRange( { 0ULL, Capacity } );
+        InsertFreeRange( { .Offset=0ULL, .Size=Capacity } );
     }
     Stats.Used = 0ULL;
 }
+
 Lumen::FRHIAllocatorStats Lumen::FRHITlsfAllocator::GetStats () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );

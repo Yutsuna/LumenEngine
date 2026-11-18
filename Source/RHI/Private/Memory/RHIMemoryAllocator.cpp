@@ -2,19 +2,25 @@
  * @file RHIMemoryAllocator.cpp
  * @brief Implements the budgeted allocator facade.
  */
+
 #include <Memory/RHIMemoryAllocator.hpp>
+
 Lumen::FRHIMemoryAllocator::FRHIMemoryAllocator ( IRHIAllocator &InAllocator, FRHIMemoryBudget &InBudget ) noexcept
     : Allocator( &InAllocator ), Budget( &InBudget )
 {
+    /* */
 }
+
 void Lumen::FRHIMemoryAllocator::RegisterObserver ( IRHIAllocationObserver &InObserver ) noexcept
 {
     GetRHIAllocationObserverRegistry().Register( InObserver );
 }
+
 void Lumen::FRHIMemoryAllocator::UnregisterObserver ( IRHIAllocationObserver &InObserver ) noexcept
 {
     GetRHIAllocationObserverRegistry().Unregister( InObserver );
 }
+
 Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
 Lumen::FRHIMemoryAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
@@ -34,6 +40,7 @@ Lumen::FRHIMemoryAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
         return TExpected<FRHIAllocation, FRHIError>( TUnexpected<FRHIError>( InError ) );
     } );
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIMemoryAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     return Allocator->Free( InAllocation )

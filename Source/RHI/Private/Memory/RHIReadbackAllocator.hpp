@@ -3,10 +3,14 @@
  * @brief Declares the mapped readback ring implementation.
  */
 #pragma once
+
 #include "../Types/RHIObjectForward.hpp"
+
 #include <Memory/IRHIReadbackAllocator.hpp>
 #include <Memory/RHIRingAllocator.hpp>
 #include <Memory/UniquePtr.hpp>
+#include <Templates/Map.hpp>
+
 namespace Lumen
 {
 
@@ -19,6 +23,7 @@ class RHI_EXPORT FRHIReadbackAllocator final : public IRHIReadbackAllocator
 public:
 
     LUMEN_RHI_OBJECT_DECLARATIONS;
+
     /** @brief Creates storage and a ring of InCapacity bytes. */
     FRHIReadbackAllocator ( UInt64 InCapacity, FRHIObjectId InId ) noexcept;
     TExpected<FRHIAllocation, FRHIError> Allocate ( const FRHIAllocationDesc &InDesc ) noexcept override;
@@ -31,5 +36,9 @@ private:
     FRHIRingAllocator Ring;
     TUniquePtr<Byte[]> Storage;
     USize Capacity = 0U;
+
+    /** @brief Ids issued by this allocator; foreign or released ids must not be mappable. */
+    TMap<UInt64, FRHIAllocationId> IssuedIds;
 };
+
 } // namespace Lumen

@@ -3,12 +3,14 @@
  * @brief Declares the device-backed buffer pool implementation.
  */
 #pragma once
+
 #include "../Types/RHIObjectForward.hpp"
 #include <Device/IRHIDevice.hpp>
 #include <Memory/IRHIBufferPool.hpp>
 #include <Resources/RHIBufferDesc.hpp>
 #include <Templates/Vector.hpp>
 #include <Types/RHITimeline.hpp>
+
 namespace Lumen
 {
 

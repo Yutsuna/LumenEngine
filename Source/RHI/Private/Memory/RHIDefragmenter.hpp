@@ -2,9 +2,12 @@
  * @file RHIDefragmenter.hpp
  * @brief Declares the backend-independent defragmenter.
  */
+
 #pragma once
+
 #include "../Types/RHIObjectForward.hpp"
 #include <Memory/IRHIDefragmenter.hpp>
+
 namespace Lumen
 {
 

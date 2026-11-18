@@ -2,8 +2,10 @@
  * @file RHIDefragPlan.cpp
  * @brief Implements defragmentation plan validation.
  */
+
 #include <Memory/RHIDefragPlan.hpp>
 #include <Utilities/RHIAlignment.hpp>
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDefragPlan::Validate () const noexcept
 {
     for ( USize First = 0U; First < Moves.size(); ++First )

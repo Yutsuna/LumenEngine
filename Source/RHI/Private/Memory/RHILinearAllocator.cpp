@@ -2,14 +2,17 @@
  * @file RHILinearAllocator.cpp
  * @brief Implements bounded bump allocation.
  */
+
 #include <HAL/LockGuard.hpp>
 #include <Memory/RHILinearAllocator.hpp>
 #include <Utilities/RHIAlignment.hpp>
 #include <Utilities/RHICheckedMath.hpp>
+
 Lumen::FRHILinearAllocator::FRHILinearAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
 {
     Stats.Capacity = InCapacity;
 }
+
 Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
 Lumen::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
@@ -23,15 +26,18 @@ Lumen::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
     {
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Linear alignment overflow" ) );
     }
+
     const TOptional<UInt64> End = RHICheckedAdd( *Offset, InDesc.Size );
     if ( not End or *End > Capacity )
     {
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Linear allocator exhausted" ) );
     }
+
     Current = *End;
     Stats.OnAllocate( InDesc.Size );
-    return FRHIAllocation{ FRHIAllocationId{ NextId++ }, *Offset, InDesc.Size, InDesc.Alignment, InDesc.MemoryClass, nullptr };
+    return FRHIAllocation{ .Id=FRHIAllocationId{ NextId++ }, .Offset=*Offset, .Size=InDesc.Size, .Alignment=InDesc.Alignment, .MemoryClass=InDesc.MemoryClass, .Heap=nullptr };
 }
+
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHILinearAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     if ( not InAllocation.IsValid() )
@@ -40,12 +46,14 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHILinearAllocator::Free ( cons
     }
     return {};
 }
+
 void Lumen::FRHILinearAllocator::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Current    = 0ULL;
     Stats.Used = 0ULL;
 }
+
 Lumen::FRHIAllocatorStats Lumen::FRHILinearAllocator::GetStats () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
