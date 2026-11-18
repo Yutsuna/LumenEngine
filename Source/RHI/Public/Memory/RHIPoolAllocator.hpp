@@ -24,13 +24,17 @@ class RHI_EXPORT FRHIPoolAllocator final : public IRHIAllocator
 {
 public:
 
-    /** @brief Creates InSlotCount slots of InSlotSize bytes. */
+    /**
+     * @brief Creates InSlotCount slots of InSlotSize bytes.
+     * @details A zero or non-power-of-two InSlotSize, or a capacity that overflows UInt64,
+     *          creates a disabled pool with zero capacity whose allocations all fail.
+     */
     FRHIPoolAllocator ( UInt64 InSlotSize, UInt32 InSlotCount ) noexcept;
 
     /**
      * @brief Reserves an aligned range.
      * @param InDesc Size, alignment and memory class of the request.
-     * @return The placed allocation, or InvalidArgument / OutOfMemory with the Memory condition.
+     * @return The placed allocation, or InvalidState / Unsupported / OutOfMemory with the Memory condition.
      */
     TExpected<FRHIAllocation, FRHIError> Allocate ( const FRHIAllocationDesc &InDesc ) noexcept override;
 
