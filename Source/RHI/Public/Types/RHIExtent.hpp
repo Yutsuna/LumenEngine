@@ -24,6 +24,9 @@ struct FRHIExtent3D : public Maths::FVec3u
 
     /** @return True when InPoint lies inside this extent. */
     [[nodiscard]] constexpr Bool Contains ( UInt32 InX, UInt32 InY, UInt32 InZ ) const noexcept;
+
+    /** @return Number of mip levels this extent can have (at least one, at most 32 for a UInt32 extent). */
+    [[nodiscard]] constexpr UInt32 GetMaxMipLevelCount () const noexcept;
 };
 
 /**

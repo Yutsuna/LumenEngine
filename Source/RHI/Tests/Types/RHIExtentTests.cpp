@@ -22,4 +22,12 @@ LUMEN_TEST( RHIExtent, ValidatesBounds )
     LUMEN_CHECK_TRUE( ( FRHIViewport{ 0.0F, 0.0F, 4.0F, 4.0F }.IsValid() ) );
 }
 
+LUMEN_TEST( RHIExtent, ComputesMaxMipLevelCount )
+{
+    LUMEN_CHECK_EQ( ( FRHIExtent3D{ 1U, 1U, 1U }.GetMaxMipLevelCount() ), 1U );
+    LUMEN_CHECK_EQ( ( FRHIExtent3D{ 16U, 8U, 1U }.GetMaxMipLevelCount() ), 5U );
+    LUMEN_CHECK_EQ( ( FRHIExtent3D{ 100U, 1U, 1U }.GetMaxMipLevelCount() ), 7U );
+    LUMEN_CHECK_EQ( ( FRHIExtent3D{ 0xFFFFFFFFU, 1U, 1U }.GetMaxMipLevelCount() ), 32U );
+}
+
 } // namespace Lumen

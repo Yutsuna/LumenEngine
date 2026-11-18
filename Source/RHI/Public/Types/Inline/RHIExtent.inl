@@ -32,6 +32,20 @@ constexpr Lumen::Bool Lumen::FRHIExtent3D::Contains ( const UInt32 InX, const UI
     return InX < Width and InY < Height and InZ < Depth;
 }
 
+constexpr Lumen::UInt32 Lumen::FRHIExtent3D::GetMaxMipLevelCount () const noexcept
+{
+    UInt32 MaxDimension = Width > Height ? Width : Height;
+    MaxDimension        = MaxDimension > Depth ? MaxDimension : Depth;
+    UInt32 Levels       = 1U;
+
+    while ( MaxDimension > 1U )
+    {
+        MaxDimension >>= 1U;
+        ++Levels;
+    }
+    return Levels;
+}
+
 /**
  * Offset3D
  */
@@ -40,6 +54,7 @@ constexpr Lumen::FRHIOffset3D::FRHIOffset3D () noexcept = default;
 
 constexpr Lumen::FRHIOffset3D::FRHIOffset3D ( Int32 InX, Int32 InY, Int32 InZ ) noexcept : TVec( InX, InY, InZ )
 {
+    /* */
 }
 
 constexpr Lumen::Bool Lumen::FRHIOffset3D::IsNonNegative () const noexcept

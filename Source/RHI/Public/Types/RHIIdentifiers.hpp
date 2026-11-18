@@ -21,8 +21,10 @@ template <typename TagType> struct TRHIId
 
     /** @return True when this is not the invalid zero identifier. */
     [[nodiscard]] constexpr Bool IsValid () const noexcept;
+
     /** @return Raw value for hashing and serialization only. */
     [[nodiscard]] constexpr UInt64 GetValue () const noexcept;
+
     friend constexpr auto operator<=>( const TRHIId &, const TRHIId & ) = default;
 };
 
