@@ -24,6 +24,18 @@ inline Lumen::TExpected<void, Lumen::FRHIError> Lumen::CheckRHICapabilityGate ( 
         return TUnexpected<FRHIError>(
             MakeRHIUnsupported( ERHIErrorCondition::Capability, "Adapter does not provide all required features" ) );
     }
+    const FRHICapabilities &Required = InDesc.RequiredCapabilities;
+    /** NOTE: A 0/0 requirement is unset; any nonzero request must be met by the adapter to avoid silent degradation. */
+    if ( Required.ShaderModelMajor != 0U or Required.ShaderModelMinor != 0U )
+    {
+        if ( Required.ShaderModelMajor > InAdapter.Capabilities.ShaderModelMajor or
+             ( Required.ShaderModelMajor == InAdapter.Capabilities.ShaderModelMajor and
+               Required.ShaderModelMinor > InAdapter.Capabilities.ShaderModelMinor ) )
+        {
+            return TUnexpected<FRHIError>(
+                MakeRHIUnsupported( ERHIErrorCondition::Capability, "Adapter does not provide the required shader model" ) );
+        }
+    }
     for ( const FRHIQueueRequest &Request : InDesc.Queues )
     {
         UInt32 Available = 0U;
