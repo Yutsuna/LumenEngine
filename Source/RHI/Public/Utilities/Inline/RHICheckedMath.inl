@@ -6,6 +6,8 @@
 
 #include <Utilities/RHICheckedMath.hpp>
 
+#include <type_traits>
+
 template <typename ValueType>
     requires std::is_unsigned_v<ValueType>
 constexpr Lumen::TOptional<ValueType> Lumen::RHICheckedAdd ( const ValueType InLeft, const ValueType InRight ) noexcept
@@ -48,8 +50,9 @@ constexpr Lumen::TOptional<DestinationType> Lumen::RHICheckedCast ( const Source
 {
     if constexpr ( std::is_signed_v<SourceType> == std::is_signed_v<DestinationType> )
     {
-        if ( InValue < static_cast<SourceType>( std::numeric_limits<DestinationType>::min() ) or
-             InValue > static_cast<SourceType>( std::numeric_limits<DestinationType>::max() ) )
+        using CommonType = std::common_type_t<SourceType, DestinationType>;
+        if ( static_cast<CommonType>( InValue ) < static_cast<CommonType>( std::numeric_limits<DestinationType>::min() ) or
+             static_cast<CommonType>( InValue ) > static_cast<CommonType>( std::numeric_limits<DestinationType>::max() ) )
         {
             return {};
         }

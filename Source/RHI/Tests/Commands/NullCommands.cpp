@@ -613,7 +613,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::SetSten
     }
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::SetStencilReference ), InReference );
 }
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::BeginQuery ( IRHIQueryPool &InPool,
+Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::BeginQuery ( TSharedRef<IRHIQueryPool> InPool,
                                                                                       const UInt32 InIndex ) noexcept
 {
     const TExpected<void, FRHIError> StateValid = CheckRecording( true );
@@ -621,25 +621,28 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::BeginQu
     {
         return StateValid;
     }
-    FNullQueryPool *Pool = TryRHIBackendCast<FNullQueryPool>( InPool );
-    if ( Pool == nullptr or Pool->GetDesc().QueueType != GetQueueType() or ActiveQueryPool != nullptr )
+    const TOptional<TSharedPtr<FNullQueryPool>> PoolRef =
+        TryRHIBackendCast<FNullQueryPool>( StaticCastSharedRef<IRHIObject>( InPool ) );
+    if ( not PoolRef or InPool->GetDesc().QueueType != GetQueueType() or ActiveQueryPool != nullptr )
     {
         return StateError( "Query pool is foreign, incompatible with the queue, or another query is active" );
     }
+    FNullQueryPool *const Pool             = PoolRef->Get();
     const TExpected<void, FRHIError> Begun = Pool->Begin( InIndex );
     if ( not Begun )
     {
         return Begun;
     }
     return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::BeginQuery ), InIndex )
-        .Inspect( [this, Pool, InIndex] () noexcept
+        .Inspect( [this, &InPool, Pool, InIndex] () noexcept
     {
+        Stream.Retain( StaticCastSharedRef<IRHIObject>( InPool ) );
         ActiveQueryPool  = Pool;
         ActiveQueryIndex = InIndex;
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::EndQuery ( IRHIQueryPool &InPool,
+Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::EndQuery ( TSharedRef<IRHIQueryPool> InPool,
                                                                                     const UInt32 InIndex ) noexcept
 {
     const TExpected<void, FRHIError> StateValid = CheckRecording( true );
@@ -647,11 +650,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullCommandList::EndQuer
     {
         return StateValid;
     }
-    FNullQueryPool *Pool = TryRHIBackendCast<FNullQueryPool>( InPool );
-    if ( Pool == nullptr or Pool != ActiveQueryPool or InIndex != ActiveQueryIndex )
+    const TOptional<TSharedPtr<FNullQueryPool>> PoolRef =
+        TryRHIBackendCast<FNullQueryPool>( StaticCastSharedRef<IRHIObject>( InPool ) );
+    if ( not PoolRef or PoolRef->Get() != ActiveQueryPool or InIndex != ActiveQueryIndex )
     {
         return StateError( "Ending query does not match the active query" );
     }
+    FNullQueryPool *const Pool             = PoolRef->Get();
     const TExpected<void, FRHIError> Ended = Pool->End( InIndex );
     if ( not Ended )
     {

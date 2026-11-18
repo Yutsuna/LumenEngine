@@ -72,8 +72,8 @@ public:
     [[nodiscard]] TExpected<void, FRHIError> SetBlendConstants ( const Float32 ( &InConstants )[4] ) noexcept override;
     [[nodiscard]] TExpected<void, FRHIError> SetDepthBias ( Float32 InConstant, Float32 InSlope ) noexcept override;
     [[nodiscard]] TExpected<void, FRHIError> SetStencilReference ( UInt32 InReference ) noexcept override;
-    [[nodiscard]] TExpected<void, FRHIError> BeginQuery ( IRHIQueryPool &InPool, UInt32 InIndex ) noexcept override;
-    [[nodiscard]] TExpected<void, FRHIError> EndQuery ( IRHIQueryPool &InPool, UInt32 InIndex ) noexcept override;
+    [[nodiscard]] TExpected<void, FRHIError> BeginQuery ( TSharedRef<IRHIQueryPool> InPool, UInt32 InIndex ) noexcept override;
+    [[nodiscard]] TExpected<void, FRHIError> EndQuery ( TSharedRef<IRHIQueryPool> InPool, UInt32 InIndex ) noexcept override;
     [[nodiscard]] TExpected<void, FRHIError> BeginDebugRegion ( FStringView InName ) noexcept override;
     [[nodiscard]] TExpected<void, FRHIError> EndDebugRegion () noexcept override;
     /** @brief Clears decorator-local bindings after the underlying allocator recycled this list. */

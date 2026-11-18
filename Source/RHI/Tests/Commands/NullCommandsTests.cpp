@@ -5,6 +5,7 @@
 
 #include "Commands/NullCommands.hpp"
 #include "Pipelines/NullPipelines.hpp"
+#include "Queries/NullQueries.hpp"
 #include "Resources/NullResources.hpp"
 #include <Tests/UnitTest.hpp>
 #include <Utilities/RHIScopedDebugRegion.hpp>
@@ -54,6 +55,25 @@ namespace
         LUMEN_CHECK_EQ( Draw->VertexCount, 3U );
         LUMEN_CHECK_TRUE( List.Reset().HasValue() );
         LUMEN_CHECK_EQ( List.GetStream().GetCommandCount(), 0U );
+        LUMEN_CHECK_EQ( List.GetStream().GetRetainedCount(), 0U );
+    }
+
+    LUMEN_TEST( NullCommands, BeginQueryRetainsPoolUntilReset )
+    {
+        TSharedRef<Tests::FNullCommandAllocator> Allocator =
+            MakeShared<Tests::FNullCommandAllocator>( ERHIQueueType::Graphics, FRHIObjectId{ 1ULL } );
+        Tests::FNullCommandList List( Allocator, FRHIObjectId{ 2ULL } );
+        const TSharedRef<Tests::FNullQueryPool> Pool =
+            MakeShared<Tests::FNullQueryPool>( FRHIQueryPoolDesc{}, MakeShared<Tests::FNullFaultPlan>(), FRHIObjectId{ 3ULL } );
+        const TSharedRef<IRHIQueryPool> QueryPool = StaticCastSharedRef<IRHIQueryPool>( Pool );
+        LUMEN_CHECK_EQ( List.GetStream().GetRetainedCount(), 0U );
+        LUMEN_CHECK_TRUE( List.Begin().HasValue() );
+        LUMEN_CHECK_TRUE( List.BeginQuery( QueryPool, 0U ).HasValue() );
+        LUMEN_CHECK_EQ( List.GetStream().GetRetainedCount(), 1U );
+        LUMEN_CHECK_TRUE( List.EndQuery( QueryPool, 0U ).HasValue() );
+        LUMEN_CHECK_EQ( List.GetStream().GetRetainedCount(), 1U );
+        LUMEN_CHECK_TRUE( List.End().HasValue() );
+        LUMEN_CHECK_TRUE( List.Reset().HasValue() );
         LUMEN_CHECK_EQ( List.GetStream().GetRetainedCount(), 0U );
     }
 

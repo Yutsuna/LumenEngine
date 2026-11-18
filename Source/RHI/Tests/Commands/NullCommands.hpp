@@ -106,8 +106,8 @@ namespace Tests
         TExpected<void, FRHIError> SetBlendConstants ( const Float32 ( &InConstants )[4] ) noexcept override;
         TExpected<void, FRHIError> SetDepthBias ( Float32 InConstant, Float32 InSlope ) noexcept override;
         TExpected<void, FRHIError> SetStencilReference ( UInt32 InReference ) noexcept override;
-        TExpected<void, FRHIError> BeginQuery ( IRHIQueryPool &InPool, UInt32 InIndex ) noexcept override;
-        TExpected<void, FRHIError> EndQuery ( IRHIQueryPool &InPool, UInt32 InIndex ) noexcept override;
+        TExpected<void, FRHIError> BeginQuery ( TSharedRef<IRHIQueryPool> InPool, UInt32 InIndex ) noexcept override;
+        TExpected<void, FRHIError> EndQuery ( TSharedRef<IRHIQueryPool> InPool, UInt32 InIndex ) noexcept override;
         TExpected<void, FRHIError> BeginDebugRegion ( FStringView InName ) noexcept override;
         TExpected<void, FRHIError> EndDebugRegion () noexcept override;
 

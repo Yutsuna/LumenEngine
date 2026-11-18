@@ -22,4 +22,22 @@ LUMEN_TEST( RHICheckedMath, DetectsOverflowAndInvalidConversions )
     LUMEN_CHECK_FALSE( RHICheckedCast<UInt8>( 256U ).HasValue() );
 }
 
+LUMEN_TEST( RHICheckedMath, SignedToSignedWideningPreservesValue )
+{
+    LUMEN_CHECK_EQ( RHICheckedCast<Int64>( Int32( 5 ) ).ValueOr( 0LL ), 5LL );
+    LUMEN_CHECK_EQ( RHICheckedCast<Int64>( Int32( -5 ) ).ValueOr( 0LL ), -5LL );
+}
+
+LUMEN_TEST( RHICheckedMath, SignedToSignedNarrowingRejectsOutOfRange )
+{
+    LUMEN_CHECK_FALSE( RHICheckedCast<Int32>( std::numeric_limits<Int64>::max() ).HasValue() );
+    LUMEN_CHECK_FALSE( RHICheckedCast<Int16>( Int32( 40000 ) ).HasValue() );
+}
+
+LUMEN_TEST( RHICheckedMath, UnsignedCastsRespectRange )
+{
+    LUMEN_CHECK_EQ( RHICheckedCast<UInt64>( UInt32( 7 ) ).ValueOr( 0ULL ), 7ULL );
+    LUMEN_CHECK_FALSE( RHICheckedCast<UInt8>( UInt32( 300 ) ).HasValue() );
+}
+
 } // namespace Lumen

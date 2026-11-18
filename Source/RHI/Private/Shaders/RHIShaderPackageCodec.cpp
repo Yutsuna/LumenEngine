@@ -4,6 +4,7 @@
  */
 #include "Concepts/TriviallyCopyable.hpp"
 #include <Shaders/RHIShaderPackageCodec.hpp>
+#include <Types/RHIHash.hpp>
 #include <Utilities/RHICheckedMath.hpp>
 #include <cstring>
 #include <type_traits>
@@ -95,6 +96,9 @@ Lumen::EncodeRHIShaderPackage ( const FRHIShaderPackage &InPackage ) noexcept
             WriteValue( Result, Binding );
         }
     }
+    /** NOTE: The checksum is appended last so all existing payload offsets remain unchanged. */
+    const UInt64 Checksum = RHIHashBytes( TSpan<const Byte>( Result.data(), Result.size() ) );
+    WriteValue( Result, Checksum );
     return Result;
 }
 
@@ -147,6 +151,21 @@ Lumen::DecodeRHIShaderPackage ( const TSpan<const Byte> InBytes ) noexcept
         {
             return TUnexpected<FRHIError>( Added.Error() );
         }
+    }
+    if ( InBytes.size() - Offset != sizeof( UInt64 ) )
+    {
+        return TUnexpected<FRHIError>( CodecError() );
+    }
+    const USize PayloadSize = Offset;
+    UInt64 StoredChecksum   = 0U;
+    if ( not ReadValue( InBytes, Offset, StoredChecksum ) )
+    {
+        return TUnexpected<FRHIError>( CodecError() );
+    }
+    const UInt64 ComputedChecksum = RHIHashBytes( TSpan<const Byte>( InBytes.data(), PayloadSize ) );
+    if ( ComputedChecksum != StoredChecksum )
+    {
+        return TUnexpected<FRHIError>( CodecError() );
     }
     if ( Offset != InBytes.size() )
     {

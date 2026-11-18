@@ -578,7 +578,7 @@ Lumen::FRHIValidationCommandList::SetStencilReference ( const UInt32 InReference
     return Underlying->SetStencilReference( InReference );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::BeginQuery ( IRHIQueryPool &InPool,
+Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::BeginQuery ( TSharedRef<IRHIQueryPool> InPool,
                                                                                         const UInt32 InIndex ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRecording( true );
@@ -594,12 +594,12 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Begin
     return Underlying->BeginQuery( InPool, InIndex )
         .Inspect( [this, &InPool, InIndex] () noexcept
     {
-        ActiveQueryPool  = &InPool;
+        ActiveQueryPool  = InPool.Get();
         ActiveQueryIndex = InIndex;
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndQuery ( IRHIQueryPool &InPool,
+Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndQuery ( TSharedRef<IRHIQueryPool> InPool,
                                                                                       const UInt32 InIndex ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRecording( true );
@@ -607,7 +607,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndQu
     {
         return Scope;
     }
-    if ( ActiveQueryPool != &InPool or ActiveQueryIndex != InIndex )
+    if ( ActiveQueryPool != InPool.Get() or ActiveQueryIndex != InIndex )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Query,
                                              "Ending query does not match the active query", this );

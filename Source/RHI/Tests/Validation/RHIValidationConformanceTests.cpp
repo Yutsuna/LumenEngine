@@ -55,10 +55,10 @@ namespace
         TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
         TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
-        LUMEN_CHECK_TRUE( List->BeginQuery( *Pool, 0U ).HasValue() );
-        LUMEN_CHECK_TRUE( List->EndQuery( *Pool, 0U ).HasValue() );
-        LUMEN_CHECK_TRUE( List->BeginQuery( *Pool, 1U ).HasValue() );
-        LUMEN_CHECK_TRUE( List->EndQuery( *Pool, 1U ).HasValue() );
+        LUMEN_CHECK_TRUE( List->BeginQuery( Pool, 0U ).HasValue() );
+        LUMEN_CHECK_TRUE( List->EndQuery( Pool, 0U ).HasValue() );
+        LUMEN_CHECK_TRUE( List->BeginQuery( Pool, 1U ).HasValue() );
+        LUMEN_CHECK_TRUE( List->EndQuery( Pool, 1U ).HasValue() );
         LUMEN_CHECK_TRUE( List->End().HasValue() );
         TSharedRef<IRHIQueue> Queue = *Device->GetQueue( ERHIQueueType::Graphics, 0U );
         FRHISubmitDesc Submit;

@@ -299,20 +299,21 @@ public:
 
     /**
      * @brief Begins a query inside a pool; gated by the pool's query capability.
-     * @param InPool Pool that owns the query index.
+     * @param InPool Shared reference to the pool that owns the query index; retained
+     *               with the recorded command until the allocator recycles the stream.
      * @param InIndex Index within the pool.
      * @return Success, or InvalidState if a query is already active, InvalidArgument
      *         for an invalid index, or Unsupported when the type is not negotiated.
      */
-    virtual TExpected<void, FRHIError> BeginQuery ( IRHIQueryPool &InPool, UInt32 InIndex ) noexcept = 0;
+    virtual TExpected<void, FRHIError> BeginQuery ( TSharedRef<IRHIQueryPool> InPool, UInt32 InIndex ) noexcept = 0;
 
     /**
      * @brief Ends the currently active query.
-     * @param InPool Pool that owns the query index.
+     * @param InPool Shared reference to the pool that owns the query index.
      * @param InIndex Index matching the active query.
      * @return Success, or InvalidState if no matching query is active.
      */
-    virtual TExpected<void, FRHIError> EndQuery ( IRHIQueryPool &InPool, UInt32 InIndex ) noexcept = 0;
+    virtual TExpected<void, FRHIError> EndQuery ( TSharedRef<IRHIQueryPool> InPool, UInt32 InIndex ) noexcept = 0;
 
     /**
      * @brief Opens a named debug region for diagnostic tooling.

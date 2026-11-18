@@ -106,5 +106,39 @@ namespace
         }
     }
 
+    LUMEN_TEST( RHIShaderPackageCodecFuzz, ChecksumRejectsPayloadAndChecksumTampering )
+    {
+        const TVector<Byte> Encoded = MakeEncodedPackage();
+        LUMEN_CHECK_HAS_VALUE( DecodeRHIShaderPackage( Encoded ) );
+
+        /** NOTE: The bytecode subsequence is located so no length field or trailing checksum byte is touched. */
+        USize BytecodeOffset = Encoded.size();
+        for ( USize Index = 0U; Index + 4U + sizeof( UInt64 ) <= Encoded.size(); ++Index )
+        {
+            if ( Encoded[Index] == static_cast<Byte>( 4U ) and Encoded[Index + 1U] == static_cast<Byte>( 3U ) and
+                 Encoded[Index + 2U] == static_cast<Byte>( 2U ) and Encoded[Index + 3U] == static_cast<Byte>( 1U ) )
+            {
+                BytecodeOffset = Index;
+                break;
+            }
+        }
+        LUMEN_CHECK_TRUE( BytecodeOffset != Encoded.size() );
+
+        TVector<Byte> MutatedBytecode   = Encoded;
+        MutatedBytecode[BytecodeOffset] = static_cast<Byte>( MutatedBytecode[BytecodeOffset] ^ static_cast<Byte>( 0xFFU ) );
+
+        const TExpected<FRHIShaderPackage, FRHIError> BytecodeResult = DecodeRHIShaderPackage( MutatedBytecode );
+        LUMEN_CHECK_HAS_ERROR( BytecodeResult );
+        LUMEN_CHECK_EQ( BytecodeResult.Error().Code, ERHIErrorCode::CorruptedData );
+
+        TVector<Byte> MutatedChecksum   = Encoded;
+        const USize ChecksumOffset      = MutatedChecksum.size() - sizeof( UInt64 );
+        MutatedChecksum[ChecksumOffset] = static_cast<Byte>( MutatedChecksum[ChecksumOffset] ^ static_cast<Byte>( 0xFFU ) );
+
+        const TExpected<FRHIShaderPackage, FRHIError> ChecksumResult = DecodeRHIShaderPackage( MutatedChecksum );
+        LUMEN_CHECK_HAS_ERROR( ChecksumResult );
+        LUMEN_CHECK_EQ( ChecksumResult.Error().Code, ERHIErrorCode::CorruptedData );
+    }
+
 } // namespace
 } // namespace Lumen

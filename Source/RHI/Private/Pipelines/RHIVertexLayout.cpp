@@ -47,14 +47,20 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIVertexLayout::Validate () co
 }
 Lumen::UInt64 Lumen::FRHIVertexLayout::GetHash () const noexcept
 {
+    /** NOTE: Hash declared fields only; struct padding is indeterminate and must not affect identity. */
     UInt64 Hash = 0ULL;
     for ( const auto &Buffer : Buffers )
     {
-        Hash = RHIHashCombine( Hash, RHIHashValue( Buffer ) );
+        Hash = RHIHashCombine( Hash, RHIHashValue( Buffer.Slot ) );
+        Hash = RHIHashCombine( Hash, RHIHashValue( Buffer.Stride ) );
+        Hash = RHIHashCombine( Hash, RHIHashValue( Buffer.Rate ) );
     }
     for ( const auto &Attribute : Attributes )
     {
-        Hash = RHIHashCombine( Hash, RHIHashValue( Attribute ) );
+        Hash = RHIHashCombine( Hash, RHIHashValue( Attribute.Location ) );
+        Hash = RHIHashCombine( Hash, RHIHashValue( Attribute.BufferSlot ) );
+        Hash = RHIHashCombine( Hash, RHIHashValue( Attribute.Format ) );
+        Hash = RHIHashCombine( Hash, RHIHashValue( Attribute.Offset ) );
     }
     return Hash;
 }

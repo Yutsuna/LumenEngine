@@ -22,10 +22,10 @@ namespace
         TSharedRef<IRHICommandAllocator> Allocator = *Device.CreateCommandAllocator( ERHIQueueType::Graphics );
         TSharedRef<IRHICommandList> List           = *Device.CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
-        LUMEN_CHECK_TRUE( List->BeginQuery( *Pool, 0U ).HasValue() );
-        LUMEN_CHECK_HAS_ERROR( List->BeginQuery( *Pool, 0U ) );
+        LUMEN_CHECK_TRUE( List->BeginQuery( Pool, 0U ).HasValue() );
+        LUMEN_CHECK_HAS_ERROR( List->BeginQuery( Pool, 0U ) );
         LUMEN_CHECK_HAS_ERROR( List->End() );
-        LUMEN_CHECK_TRUE( List->EndQuery( *Pool, 0U ).HasValue() );
+        LUMEN_CHECK_TRUE( List->EndQuery( Pool, 0U ).HasValue() );
         LUMEN_CHECK_TRUE( List->End().HasValue() );
     }
 

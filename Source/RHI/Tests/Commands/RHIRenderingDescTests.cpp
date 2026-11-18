@@ -3,9 +3,9 @@
  * @brief Tests dynamic-rendering attachments and render area.
  */
 
+#include <Commands/RHIRenderingDesc.hpp>
 #include <Device/NullDevice.hpp>
 #include <Resources/NullResources.hpp>
-#include <Commands/RHIRenderingDesc.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
