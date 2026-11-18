@@ -35,7 +35,12 @@ Lumen::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
 
     Current = *End;
     Stats.OnAllocate( InDesc.Size );
-    return FRHIAllocation{ .Id=FRHIAllocationId{ NextId++ }, .Offset=*Offset, .Size=InDesc.Size, .Alignment=InDesc.Alignment, .MemoryClass=InDesc.MemoryClass, .Heap=nullptr };
+    return FRHIAllocation{ .Id          = FRHIAllocationId{ NextId++ },
+                           .Offset      = *Offset,
+                           .Size        = InDesc.Size,
+                           .Alignment   = InDesc.Alignment,
+                           .MemoryClass = InDesc.MemoryClass,
+                           .Heap        = nullptr };
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHILinearAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept

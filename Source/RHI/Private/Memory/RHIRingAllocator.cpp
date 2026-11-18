@@ -48,8 +48,12 @@ Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
             }
             if ( not bOverlaps )
             {
-                FRHIAllocation Result{ .Id=FRHIAllocationId{ NextId++ }, .Offset=*Aligned, .Size=InDesc.Size, .Alignment=InDesc.Alignment,
-                                       .MemoryClass=InDesc.MemoryClass,           .Heap=nullptr };
+                FRHIAllocation Result{ .Id          = FRHIAllocationId{ NextId++ },
+                                       .Offset      = *Aligned,
+                                       .Size        = InDesc.Size,
+                                       .Alignment   = InDesc.Alignment,
+                                       .MemoryClass = InDesc.MemoryClass,
+                                       .Heap        = nullptr };
                 Active.push_back( Result );
                 Cursor = *End == Capacity ? 0ULL : *End;
                 Stats.OnAllocate( InDesc.Size );

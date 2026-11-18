@@ -12,17 +12,18 @@ namespace
 {
 
 /** @return True when two descriptors describe interchangeable buffer resources. */
-LUMEN_FORCE_INLINE Lumen::Bool AreBufferDescsCompatible ( const Lumen::FRHIBufferDesc &InLeft, const Lumen::FRHIBufferDesc &InRight ) noexcept
+LUMEN_FORCE_INLINE Lumen::Bool AreBufferDescsCompatible ( const Lumen::FRHIBufferDesc &InLeft,
+                                                          const Lumen::FRHIBufferDesc &InRight ) noexcept
 {
-    const Lumen::Bool bIsSameSize = InLeft.Size == InRight.Size;
-    const Lumen::Bool bIsSameUsage = InLeft.Usage == InRight.Usage;
-    const Lumen::Bool bIsSameMemoryClass = InLeft.MemoryClass == InRight.MemoryClass;
+    const Lumen::Bool bIsSameSize         = InLeft.Size == InRight.Size;
+    const Lumen::Bool bIsSameUsage        = InLeft.Usage == InRight.Usage;
+    const Lumen::Bool bIsSameMemoryClass  = InLeft.MemoryClass == InRight.MemoryClass;
     const Lumen::Bool bIsSameInitialState = InLeft.InitialState == InRight.InitialState;
 
     return bIsSameSize and bIsSameUsage and bIsSameMemoryClass and bIsSameInitialState;
 }
 
-}
+} // namespace
 
 /**
  * Public
@@ -59,7 +60,7 @@ Lumen::FRHIBufferPool::Acquire ( const FRHIBufferDesc &InDesc ) noexcept
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBufferPool::Release ( TSharedRef<IRHIBuffer> InBuffer,
                                                                           const FRHITimelineValue InCompletion ) noexcept
 {
-    Released.push_back( FEntry{ .Buffer=std::move( InBuffer ), .Completion=InCompletion } );
+    Released.push_back( FEntry{ .Buffer = std::move( InBuffer ), .Completion = InCompletion } );
     return {};
 }
 

@@ -18,7 +18,7 @@ Lumen::FRHITlsfAllocator::FRHITlsfAllocator ( const UInt64 InCapacity ) noexcept
     Buckets.resize( FirstLevelCount * SecondLevelCount );
     if ( InCapacity > 0ULL )
     {
-        InsertFreeRange( { .Offset=0ULL, .Size=InCapacity } );
+        InsertFreeRange( { .Offset = 0ULL, .Size = InCapacity } );
     }
 }
 void Lumen::FRHITlsfAllocator::GetBucket ( const UInt64 InSize, USize &OutFirst, USize &OutSecond ) noexcept
@@ -35,11 +35,11 @@ void Lumen::FRHITlsfAllocator::InsertFreeRange ( const FFreeRange InRange ) noex
         return;
     }
 
-    USize First = 0U;
+    USize First  = 0U;
     USize Second = 0U;
 
     GetBucket( InRange.Size, First, Second );
-    Buckets[(First * SecondLevelCount) + Second].push_back( InRange );
+    Buckets[( First * SecondLevelCount ) + Second].push_back( InRange );
 }
 
 Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
@@ -51,11 +51,11 @@ Lumen::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
     }
 
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    USize First = 0U;
+    USize First  = 0U;
     USize Second = 0U;
 
     GetBucket( InDesc.Size, First, Second );
-    const USize StartBucket = (First * SecondLevelCount) + Second;
+    const USize StartBucket = ( First * SecondLevelCount ) + Second;
     for ( USize BucketIndex = StartBucket; BucketIndex < Buckets.size(); ++BucketIndex )
     {
         TVector<FFreeRange> &List = Buckets[BucketIndex];
@@ -76,14 +76,19 @@ Lumen::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
             }
             List.erase( List.begin() + static_cast<ISize>( RangeIndex ) );
 
-            InsertFreeRange( { .Offset=Range.Offset, .Size=Prefix } );
-            InsertFreeRange( { .Offset=*Offset + InDesc.Size, .Size=Range.Size - Prefix - InDesc.Size } );
+            InsertFreeRange( { .Offset = Range.Offset, .Size = Prefix } );
+            InsertFreeRange( { .Offset = *Offset + InDesc.Size, .Size = Range.Size - Prefix - InDesc.Size } );
 
             const FRHIAllocationId Id{ NextId++ };
             ActiveAllocations.push_back( Id );
             Stats.OnAllocate( InDesc.Size );
 
-            return FRHIAllocation{ .Id=Id, .Offset=*Offset, .Size=InDesc.Size, .Alignment=InDesc.Alignment, .MemoryClass=InDesc.MemoryClass, .Heap=nullptr };
+            return FRHIAllocation{ .Id          = Id,
+                                   .Offset      = *Offset,
+                                   .Size        = InDesc.Size,
+                                   .Alignment   = InDesc.Alignment,
+                                   .MemoryClass = InDesc.MemoryClass,
+                                   .Heap        = nullptr };
         }
     }
     return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "TLSF allocator exhausted" ) );
@@ -109,11 +114,11 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const 
     }
     TVector<FFreeRange> Ranges;
 
-    Algo::ForEach( Buckets, [&Ranges]( TVector<FFreeRange> &List)
+    Algo::ForEach( Buckets, [&Ranges] ( TVector<FFreeRange> &List )
     {
         Ranges.insert( Ranges.end(), List.begin(), List.end() );
         List.clear();
-    });
+    } );
 
     Ranges.push_back( { InAllocation.Offset, InAllocation.Size } );
 
@@ -123,7 +128,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const 
     } );
 
     UInt64 CurrentOffset = 0ULL;
-    UInt64 CurrentSize = 0ULL;
+    UInt64 CurrentSize   = 0ULL;
 
     for ( const FFreeRange &Range : Ranges )
     {
@@ -135,7 +140,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const 
         {
             if ( CurrentSize != 0ULL )
             {
-                InsertFreeRange( { .Offset=CurrentOffset, .Size=CurrentSize } );
+                InsertFreeRange( { .Offset = CurrentOffset, .Size = CurrentSize } );
             }
             CurrentOffset = Range.Offset;
             CurrentSize   = Range.Size;
@@ -143,7 +148,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const 
     }
     if ( CurrentSize != 0ULL )
     {
-        InsertFreeRange( { .Offset=CurrentOffset, .Size=CurrentSize } );
+        InsertFreeRange( { .Offset = CurrentOffset, .Size = CurrentSize } );
     }
 
     Stats.OnFree( InAllocation.Size );
@@ -161,7 +166,7 @@ void Lumen::FRHITlsfAllocator::Reset () noexcept
     ActiveAllocations.clear();
     if ( Capacity > 0ULL )
     {
-        InsertFreeRange( { .Offset=0ULL, .Size=Capacity } );
+        InsertFreeRange( { .Offset = 0ULL, .Size = Capacity } );
     }
     Stats.Used = 0ULL;
 }

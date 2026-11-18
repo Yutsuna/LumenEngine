@@ -84,7 +84,7 @@ Lumen::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch &InBa
         {
             return TUnexpected<FRHIError>( Allocation.Error() );
         }
-        Results.push_back( FRHITransientAllocation{ .Allocation=*Allocation, .ResourceId={}, .Lifetime=Request.Lifetime } );
+        Results.push_back( FRHITransientAllocation{ .Allocation = *Allocation, .ResourceId = {}, .Lifetime = Request.Lifetime } );
         PlacedRequirements.push_back( Request.Requirements );
         Released.push_back( false );
     }

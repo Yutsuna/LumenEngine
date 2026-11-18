@@ -76,7 +76,7 @@ void Lumen::FRHIPoolAllocator::Reset () noexcept
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const UInt32 Count = static_cast<UInt32>( SlotSize == 0ULL ? 0ULL : Stats.Capacity / SlotSize );
 
-    Slots              = MakeUnique<FIndiceHeapAllocator>( Count );
+    Slots = MakeUnique<FIndiceHeapAllocator>( Count );
     ActiveAllocations.clear();
     Stats.Used = 0ULL;
 }
