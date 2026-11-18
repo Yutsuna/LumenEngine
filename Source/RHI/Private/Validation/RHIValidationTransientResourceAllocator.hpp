@@ -2,6 +2,7 @@
  * @file RHIValidationTransientResourceAllocator.hpp
  * @brief Declares transient batch and allocation-lifetime validation.
  */
+
 #pragma once
 
 #include "RHIValidationState.hpp"

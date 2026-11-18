@@ -2,6 +2,7 @@
  * @file RHIValidationCommandList.cpp
  * @brief Implements command recording validation and transparent forwarding.
  */
+
 #include "RHIValidationCommandList.hpp"
 #include "RHIValidationCommandAllocator.hpp"
 #include <Queries/IRHIQueryPool.hpp>

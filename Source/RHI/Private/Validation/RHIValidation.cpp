@@ -2,6 +2,7 @@
  * @file RHIValidation.cpp
  * @brief Implements validation decoration and recursive backend unwrapping.
  */
+
 #include "RHIValidationDevice.hpp"
 #include <Validation/RHIValidation.hpp>
 

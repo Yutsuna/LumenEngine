@@ -2,6 +2,7 @@
  * @file RHIValidationSwapchain.cpp
  * @brief Implements validated swapchain image acquisition and presentation.
  */
+
 #include "RHIValidationSwapchain.hpp"
 #include <Queue/IRHIQueue.hpp>
 #include <Synchronization/IRHISemaphore.hpp>

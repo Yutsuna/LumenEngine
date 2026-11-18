@@ -2,6 +2,7 @@
  * @file RHIValidationSwapchain.hpp
  * @brief Declares swapchain decoration and acquired-image token tracking.
  */
+
 #pragma once
 
 #include "RHIValidationResources.hpp"

@@ -2,6 +2,7 @@
  * @file RHIValidationCommandList.hpp
  * @brief Declares full command recording decoration and state validation.
  */
+
 #pragma once
 
 #include "RHIValidationState.hpp"

@@ -2,6 +2,7 @@
  * @file RHIValidationResources.cpp
  * @brief Implements resource forwarding and validation lifetime checks.
  */
+
 #include "RHIValidationResources.hpp"
 
 Lumen::FRHIValidationBuffer::FRHIValidationBuffer ( TSharedRef<IRHIBuffer> InUnderlying,

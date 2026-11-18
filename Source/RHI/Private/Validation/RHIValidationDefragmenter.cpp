@@ -2,6 +2,7 @@
  * @file RHIValidationDefragmenter.cpp
  * @brief Implements defragmentation plan validation.
  */
+
 #include "RHIValidationDefragmenter.hpp"
 
 Lumen::FRHIValidationDefragmenter::FRHIValidationDefragmenter ( TSharedRef<IRHIDefragmenter> InUnderlying,

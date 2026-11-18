@@ -2,6 +2,7 @@
  * @file RHIValidationBindings.cpp
  * @brief Implements binding write validation and backend unwrapping.
  */
+
 #include "RHIValidationBindings.hpp"
 #include <Resources/IRHISampler.hpp>
 #include <Resources/IRHITextureView.hpp>

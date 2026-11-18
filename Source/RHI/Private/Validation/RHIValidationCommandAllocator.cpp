@@ -2,6 +2,7 @@
  * @file RHIValidationCommandAllocator.cpp
  * @brief Implements validated command allocator recycling.
  */
+
 #include "RHIValidationCommandAllocator.hpp"
 #include "RHIValidationCommandList.hpp"
 #include <HAL/LockGuard.hpp>

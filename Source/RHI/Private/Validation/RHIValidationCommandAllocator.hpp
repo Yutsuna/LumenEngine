@@ -2,6 +2,7 @@
  * @file RHIValidationCommandAllocator.hpp
  * @brief Declares command allocator decoration and pending-list recycling checks.
  */
+
 #pragma once
 
 #include "RHIValidationState.hpp"

@@ -2,6 +2,7 @@
  * @file RHIValidationReporter.cpp
  * @brief Implements validation diagnostic filtering and rejection.
  */
+
 #include "RHIValidationReporter.hpp"
 #include <Debug/IRHIDebugSink.hpp>
 #include <HAL/LockGuard.hpp>
@@ -9,6 +10,7 @@
 
 Lumen::FRHIValidationReporter::FRHIValidationReporter ( const FRHIValidationDesc &InDesc ) noexcept : Desc( InDesc )
 {
+    /* */
 }
 
 void Lumen::FRHIValidationReporter::Report ( const ERHIValidationMessageCode InCode,

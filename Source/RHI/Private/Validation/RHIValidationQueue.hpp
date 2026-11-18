@@ -2,6 +2,7 @@
  * @file RHIValidationQueue.hpp
  * @brief Declares queue submission decoration and timeline checks.
  */
+
 #pragma once
 
 #include "RHIValidationState.hpp"

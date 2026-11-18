@@ -2,6 +2,7 @@
  * @file RHIValidationDefragmenter.hpp
  * @brief Declares defragmentation plan validation.
  */
+
 #pragma once
 
 #include "RHIValidationState.hpp"

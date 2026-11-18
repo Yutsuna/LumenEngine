@@ -2,6 +2,7 @@
  * @file RHIValidationDesc.cpp
  * @brief Implements validation descriptor checks and coverage selection.
  */
+
 #include <Validation/RHIValidationDesc.hpp>
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationDesc::Validate () const noexcept

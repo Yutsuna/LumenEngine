@@ -2,6 +2,7 @@
  * @file RHIValidationState.cpp
  * @brief Implements shared validation registries and subresource transitions.
  */
+
 #include "RHIValidationState.hpp"
 #include <HAL/LockGuard.hpp>
 #include <Validation/RHIValidation.hpp>

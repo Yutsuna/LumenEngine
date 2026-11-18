@@ -2,6 +2,7 @@
  * @file RHIValidationBindings.hpp
  * @brief Declares binding layout/set decorators and typed write checks.
  */
+
 #pragma once
 
 #include "RHIValidationState.hpp"

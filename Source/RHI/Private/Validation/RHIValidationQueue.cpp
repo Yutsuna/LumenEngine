@@ -2,6 +2,7 @@
  * @file RHIValidationQueue.cpp
  * @brief Implements validated queue submission and host waits.
  */
+
 #include "RHIValidationQueue.hpp"
 #include <Validation/RHIValidation.hpp>
 

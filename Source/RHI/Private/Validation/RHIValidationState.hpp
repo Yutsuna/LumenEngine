@@ -2,6 +2,7 @@
  * @file RHIValidationState.hpp
  * @brief Declares shared object ownership and subresource-state tracking.
  */
+
 #pragma once
 
 #include "RHIValidationReporter.hpp"

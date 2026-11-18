@@ -2,6 +2,7 @@
  * @file RHIValidationTransientResourceAllocator.cpp
  * @brief Implements transient batch and lifetime validation.
  */
+
 #include "RHIValidationTransientResourceAllocator.hpp"
 #include <Utilities/RHIAlignment.hpp>
 

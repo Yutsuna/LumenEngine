@@ -2,6 +2,7 @@
  * @file RHIValidationResources.hpp
  * @brief Declares resource decorators and mapping/lifetime checks.
  */
+
 #pragma once
 
 #include "RHIValidationState.hpp"
