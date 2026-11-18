@@ -2,6 +2,7 @@
  * @file RHIObjectBase.inl
  * @brief Inline getters of FRHIObjectBase.
  */
+
 #pragma once
 
 #include <Types/RHIObjectBase.hpp>

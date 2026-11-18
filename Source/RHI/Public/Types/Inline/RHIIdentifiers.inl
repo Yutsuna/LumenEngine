@@ -2,6 +2,7 @@
  * @file RHIIdentifiers.inl
  * @brief Inline implementation of typed RHI identifiers.
  */
+
 #pragma once
 
 #include <Types/RHIIdentifiers.hpp>
