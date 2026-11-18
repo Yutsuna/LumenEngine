@@ -4,10 +4,17 @@
  */
 
 #pragma once
+
 #include <Synchronization/RHISemaphoreDesc.hpp>
 #include <Types/IRHIObject.hpp>
+
 namespace Lumen
 {
+
+/**
+ * @class IRHISemaphore
+ * @brief Binary or timeline synchronization primitive owned by the device.
+ */
 class IRHISemaphore : public IRHIObject
 {
 public:
