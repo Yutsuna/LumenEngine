@@ -3,14 +3,14 @@
  * @brief Implements capability queries and validation.
  */
 
-#include <Types/RHICapabilities.hpp>
+#include <RHI/Types/RHICapabilities.hpp>
 
-Lumen::Bool Lumen::FRHICapabilities::Supports ( const ERHICapabilityFlags InRequired ) const noexcept
+Lumen::Bool Lumen::RHI::FRHICapabilities::Supports ( const ERHICapabilityFlags InRequired ) const noexcept
 {
     return ( Features & InRequired ) == InRequired;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICapabilities::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHICapabilities::Validate () const noexcept
 {
     constexpr UInt64 KnownMask = ( 1ULL << 18U ) - 1ULL;
     const UInt64 RawFeatures   = static_cast<UInt64>( Features );

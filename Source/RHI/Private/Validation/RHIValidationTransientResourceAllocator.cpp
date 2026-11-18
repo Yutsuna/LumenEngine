@@ -4,23 +4,23 @@
  */
 
 #include "RHIValidationTransientResourceAllocator.hpp"
-#include <Utilities/RHIAlignment.hpp>
+#include <RHI/Utilities/RHIAlignment.hpp>
 
-Lumen::FRHIValidationTransientResourceAllocator::FRHIValidationTransientResourceAllocator (
+Lumen::RHI::FRHIValidationTransientResourceAllocator::FRHIValidationTransientResourceAllocator (
     TSharedRef<IRHITransientResourceAllocator> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
 {
     State->Track( *Underlying, ERHIValidationObjectKind::TransientAllocator );
 }
 
-Lumen::FRHIValidationTransientResourceAllocator::~FRHIValidationTransientResourceAllocator () noexcept
+Lumen::RHI::FRHIValidationTransientResourceAllocator::~FRHIValidationTransientResourceAllocator () noexcept
 {
     State->Untrack( *Underlying );
 }
 
 LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationTransientResourceAllocator )
 
-void Lumen::FRHIValidationTransientResourceAllocator::BeginBatch () noexcept
+void Lumen::RHI::FRHIValidationTransientResourceAllocator::BeginBatch () noexcept
 {
     if ( bInBatch and State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::TransientResources ) )
     {
@@ -33,8 +33,8 @@ void Lumen::FRHIValidationTransientResourceAllocator::BeginBatch () noexcept
     bInBatch = true;
 }
 
-Lumen::TExpected<Lumen::TVector<Lumen::FRHITransientAllocation>, Lumen::FRHIError>
-Lumen::FRHIValidationTransientResourceAllocator::Allocate ( const FRHITransientBatch &InBatch ) noexcept
+Lumen::TExpected<Lumen::TVector<Lumen::RHI::FRHITransientAllocation>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationTransientResourceAllocator::Allocate ( const FRHITransientBatch &InBatch ) noexcept
 {
     const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::TransientResources );
     if ( bValidate and not bInBatch )
@@ -104,7 +104,7 @@ Lumen::FRHIValidationTransientResourceAllocator::Allocate ( const FRHITransientB
     } );
 }
 
-void Lumen::FRHIValidationTransientResourceAllocator::EndBatch () noexcept
+void Lumen::RHI::FRHIValidationTransientResourceAllocator::EndBatch () noexcept
 {
     if ( not bInBatch and State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::TransientResources ) )
     {

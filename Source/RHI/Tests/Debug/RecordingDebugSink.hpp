@@ -4,35 +4,40 @@
  */
 #pragma once
 
-#include <Debug/IRHIDebugSink.hpp>
 #include <HAL/PlatformMutex.hpp>
+#include <RHI/Debug/IRHIDebugSink.hpp>
 
 namespace Lumen
 {
 
-namespace Tests
+namespace RHI
 {
 
-    /**
-     * @class FRecordingDebugSink
-     * @brief Retains an ordered copy of every emitted diagnostic.
-     */
-    class FRecordingDebugSink final : public IRHIDebugSink
+    namespace Tests
     {
-    public:
 
-        void Emit ( const FRHIDebugMessage &InMessage ) noexcept override;
-        [[nodiscard]] TVector<FRHIDebugMessage> GetMessages () const noexcept;
-        [[nodiscard]] Bool ContainsCode ( UInt32 InCode ) const noexcept;
-        [[nodiscard]] USize GetCount ( ERHIDebugSeverity InMinimumSeverity = ERHIDebugSeverity::Info ) const noexcept;
-        void Clear () noexcept;
+        /**
+         * @class FRecordingDebugSink
+         * @brief Retains an ordered copy of every emitted diagnostic.
+         */
+        class FRecordingDebugSink final : public IRHIDebugSink
+        {
+        public:
 
-    private:
+            void Emit ( const FRHIDebugMessage &InMessage ) noexcept override;
+            [[nodiscard]] TVector<FRHIDebugMessage> GetMessages () const noexcept;
+            [[nodiscard]] Bool ContainsCode ( UInt32 InCode ) const noexcept;
+            [[nodiscard]] USize GetCount ( ERHIDebugSeverity InMinimumSeverity = ERHIDebugSeverity::Info ) const noexcept;
+            void Clear () noexcept;
 
-        TVector<FRHIDebugMessage> Messages;
-        mutable HAL::FPlatformRecursiveSharedMutex Mutex;
-    };
+        private:
 
-} // namespace Tests
+            TVector<FRHIDebugMessage> Messages;
+            mutable HAL::FPlatformRecursiveSharedMutex Mutex;
+        };
+
+    } // namespace Tests
+
+} // namespace RHI
 
 } // namespace Lumen

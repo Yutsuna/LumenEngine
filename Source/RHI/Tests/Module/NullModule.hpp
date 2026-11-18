@@ -5,35 +5,40 @@
 #pragma once
 
 #include <Device/NullDeviceDesc.hpp>
-#include <Module/IRHIModule.hpp>
+#include <RHI/Module/IRHIModule.hpp>
 
 namespace Lumen
 {
 
-namespace Tests
+namespace RHI
 {
 
-    /**
-     * @class FNullModule
-     * @brief Deterministic adapter discovery and device creation.
-     */
-    class FNullModule final : public IRHIModule
+    namespace Tests
     {
-    public:
 
-        /** @brief Creates a module with one configurable Null adapter. */
-        explicit FNullModule ( FNullDeviceDesc InDesc = {} ) noexcept;
+        /**
+         * @class FNullModule
+         * @brief Deterministic adapter discovery and device creation.
+         */
+        class FNullModule final : public IRHIModule
+        {
+        public:
 
-        [[nodiscard]] FRHIApiVersion GetApiVersion () const noexcept override;
-        [[nodiscard]] TExpected<TVector<FRHIAdapterInfo>, FRHIError> EnumerateAdapters () const noexcept override;
-        [[nodiscard]] TExpected<TSharedRef<IRHIDevice>, FRHIError>
-        CreateDevice ( const FRHIDeviceDesc &InDesc ) noexcept override;
+            /** @brief Creates a module with one configurable Null adapter. */
+            explicit FNullModule ( FNullDeviceDesc InDesc = {} ) noexcept;
 
-    private:
+            [[nodiscard]] FRHIApiVersion GetApiVersion () const noexcept override;
+            [[nodiscard]] TExpected<TVector<FRHIAdapterInfo>, FRHIError> EnumerateAdapters () const noexcept override;
+            [[nodiscard]] TExpected<TSharedRef<IRHIDevice>, FRHIError>
+            CreateDevice ( const FRHIDeviceDesc &InDesc ) noexcept override;
 
-        FNullDeviceDesc Desc;
-    };
+        private:
 
-} // namespace Tests
+            FNullDeviceDesc Desc;
+        };
+
+    } // namespace Tests
+
+} // namespace RHI
 
 } // namespace Lumen

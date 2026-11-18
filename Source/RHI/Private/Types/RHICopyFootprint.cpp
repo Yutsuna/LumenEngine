@@ -3,12 +3,12 @@
  * @brief Implements overflow-safe linear copy footprint calculation.
  */
 
-#include <Types/RHICopyFootprint.hpp>
-#include <Types/RHIFormatInfo.hpp>
-#include <Utilities/RHIAlignment.hpp>
-#include <Utilities/RHICheckedMath.hpp>
+#include <RHI/Types/RHICopyFootprint.hpp>
+#include <RHI/Types/RHIFormatInfo.hpp>
+#include <RHI/Utilities/RHIAlignment.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 
-Lumen::TExpected<Lumen::FRHICopyFootprint, Lumen::FRHIError> Lumen::ComputeRHICopyFootprint (
+Lumen::TExpected<Lumen::RHI::FRHICopyFootprint, Lumen::RHI::FRHIError> Lumen::RHI::ComputeRHICopyFootprint (
     const ERHIFormat InFormat, const FRHIExtent3D InExtent, const UInt64 InOffset, const UInt64 InRowAlignment ) noexcept
 {
     const TOptional<FRHIFormatInfo> Info = TryGetRHIFormatInfo( InFormat );

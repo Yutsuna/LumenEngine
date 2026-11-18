@@ -5,13 +5,13 @@
 
 #include "RHILog.hpp"
 
-const Lumen::FLogCategory &Lumen::GetRHILogCategory () noexcept
+const Lumen::FLogCategory &Lumen::RHI::GetRHILogCategory () noexcept
 {
     static const FLogCategory Category( static_cast<FStringView>( "RHI" ) );
     return Category;
 }
 
-Lumen::ELogVerbosity::Type Lumen::ToRHILogVerbosity ( const ERHIDebugSeverity InSeverity ) noexcept
+Lumen::ELogVerbosity::Type Lumen::RHI::ToRHILogVerbosity ( const ERHIDebugSeverity InSeverity ) noexcept
 {
     switch ( InSeverity )
     {
@@ -28,7 +28,7 @@ Lumen::ELogVerbosity::Type Lumen::ToRHILogVerbosity ( const ERHIDebugSeverity In
     }
 }
 
-void Lumen::LogRHIDebugMessage ( const FRHIDebugMessage &InMessage ) noexcept
+void Lumen::RHI::LogRHIDebugMessage ( const FRHIDebugMessage &InMessage ) noexcept
 {
     LUMEN_LOG( GetRHILogCategory(), ToRHILogVerbosity( InMessage.Severity ), "{}", InMessage.Message );
 }

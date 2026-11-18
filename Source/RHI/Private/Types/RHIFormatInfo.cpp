@@ -5,14 +5,14 @@
 
 #include "RHIFormatTable.hpp"
 
-const Lumen::FRHIFormatInfo &Lumen::GetRHIFormatInfo ( const ERHIFormat InFormat ) noexcept
+const Lumen::RHI::FRHIFormatInfo &Lumen::RHI::GetRHIFormatInfo ( const ERHIFormat InFormat ) noexcept
 {
     const TSpan<const FRHIFormatInfo> Table = GetRHIFormatTable();
     const USize Index                       = static_cast<USize>( InFormat );
     return Index < Table.size() ? Table[Index] : Table[0];
 }
 
-Lumen::TOptional<Lumen::FRHIFormatInfo> Lumen::TryGetRHIFormatInfo ( const ERHIFormat InFormat ) noexcept
+Lumen::TOptional<Lumen::RHI::FRHIFormatInfo> Lumen::RHI::TryGetRHIFormatInfo ( const ERHIFormat InFormat ) noexcept
 {
     const TSpan<const FRHIFormatInfo> Table = GetRHIFormatTable();
     const USize Index                       = static_cast<USize>( InFormat );

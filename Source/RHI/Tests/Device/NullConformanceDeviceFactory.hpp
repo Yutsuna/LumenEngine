@@ -11,33 +11,39 @@
 namespace Lumen
 {
 
-namespace Tests
+namespace RHI
 {
 
-    /**
-     * @class FNullConformanceDeviceFactory
-     * @brief Creates configurable Null modules and devices.
-     */
-    class FNullConformanceDeviceFactory final : public IRHIConformanceDeviceFactory
+    namespace Tests
     {
-    public:
 
-        /** @brief Uses default Null capabilities, or the supplied adapter/fault configuration. */
-        explicit FNullConformanceDeviceFactory ( FNullDeviceDesc InDesc = {} ) noexcept;
-        TSharedRef<IRHIModule> GetModule () const noexcept override;
-        TExpected<TSharedRef<IRHIDevice>, FRHIError> CreateDevice ( Bool bEnableValidation = false ) noexcept override;
-        TExpected<TSharedRef<IRHIShader>, FRHIError> CreateShader ( IRHIDevice &InDevice,
-                                                                    ERHIShaderStage InStage ) const noexcept override;
-        TExpected<TSharedRef<IRHISwapchain>, FRHIError>
-        CreateSwapchain ( IRHIDevice &InDevice, const TSharedPtr<IRHISwapchain> &InOldSwapchain = {} ) const noexcept override;
-        Bool InjectDeviceLost ( IRHIDevice &InDevice ) const noexcept override;
-        Bool InjectSwapchainOutOfDate ( IRHISwapchain &InSwapchain ) const noexcept override;
+        /**
+         * @class FNullConformanceDeviceFactory
+         * @brief Creates configurable Null modules and devices.
+         */
+        class FNullConformanceDeviceFactory final : public IRHIConformanceDeviceFactory
+        {
+        public:
 
-    private:
+            /** @brief Uses default Null capabilities, or the supplied adapter/fault configuration. */
+            explicit FNullConformanceDeviceFactory ( FNullDeviceDesc InDesc = {} ) noexcept;
+            TSharedRef<IRHIModule> GetModule () const noexcept override;
+            TExpected<TSharedRef<IRHIDevice>, FRHIError> CreateDevice ( Bool bEnableValidation = false ) noexcept override;
+            TExpected<TSharedRef<IRHIShader>, FRHIError> CreateShader ( IRHIDevice &InDevice,
+                                                                        ERHIShaderStage InStage ) const noexcept override;
+            TExpected<TSharedRef<IRHISwapchain>, FRHIError>
+            CreateSwapchain ( IRHIDevice &InDevice,
+                              const TSharedPtr<IRHISwapchain> &InOldSwapchain = {} ) const noexcept override;
+            Bool InjectDeviceLost ( IRHIDevice &InDevice ) const noexcept override;
+            Bool InjectSwapchainOutOfDate ( IRHISwapchain &InSwapchain ) const noexcept override;
 
-        FNullDeviceDesc Desc;
-    };
+        private:
 
-} // namespace Tests
+            FNullDeviceDesc Desc;
+        };
+
+    } // namespace Tests
+
+} // namespace RHI
 
 } // namespace Lumen

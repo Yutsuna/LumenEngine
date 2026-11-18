@@ -6,10 +6,10 @@
 #pragma once
 
 #include "../RHICapabilityGate.hpp"
-#include "Types/RHIError.hpp"
+#include "RHI/Types/RHIError.hpp"
 
-inline Lumen::TExpected<void, Lumen::FRHIError> Lumen::CheckRHICapabilityGate ( const FRHIAdapterInfo &InAdapter,
-                                                                                const FRHIDeviceDesc &InDesc ) noexcept
+inline Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::CheckRHICapabilityGate ( const FRHIAdapterInfo &InAdapter,
+                                                                                          const FRHIDeviceDesc &InDesc ) noexcept
 {
     if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {

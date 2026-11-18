@@ -3,12 +3,13 @@
  * @brief Implements dynamic-rendering descriptor validation.
  */
 
-#include <Commands/RHIRenderingDesc.hpp>
-#include <Types/RHIFormatInfo.hpp>
+#include <RHI/Commands/RHIRenderingDesc.hpp>
+#include <RHI/Types/RHIFormatInfo.hpp>
 
 #include <variant>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingAttachment::Validate ( const Bool bDepthStencil ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIRenderingAttachment::Validate ( const Bool bDepthStencil ) const noexcept
 {
     const TSharedPtr<IRHITexture> Texture = View ? View->GetTexture() : TSharedPtr<IRHITexture>{};
     if ( not Texture or LoadOp > ERHIRenderingLoadOp::DontCare or StoreOp > ERHIRenderingStoreOp::DontCare )
@@ -21,7 +22,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingAttachment::Validat
         Format = Texture->GetDesc().Format;
     }
 
-    const Lumen::TOptional<Lumen::FRHIFormatInfo> Info = TryGetRHIFormatInfo( Format );
+    const Lumen::TOptional<Lumen::RHI::FRHIFormatInfo> Info = TryGetRHIFormatInfo( Format );
     const Bool bAspectValid = Info and ( bDepthStencil ? ( Info->HasDepth() or Info->HasStencil() ) : Info->HasColor() );
     const Bool bClearValid  = bDepthStencil ? std::holds_alternative<FRHIDepthStencilClearValue>( ClearValue )
                                             : std::holds_alternative<FRHIColorClearValue>( ClearValue );
@@ -33,7 +34,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingAttachment::Validat
     return {};
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingDesc::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIRenderingDesc::Validate () const noexcept
 {
     if ( not Area.IsValid() or ( ColorAttachments.empty() and not DepthStencilAttachment.View ) )
     {
@@ -43,7 +44,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingDesc::Validate () c
 
     for ( const FRHIRenderingAttachment &Attachment : ColorAttachments )
     {
-        const Lumen::TExpected<void, Lumen::FRHIError> Valid = Attachment.Validate( false );
+        const Lumen::TExpected<void, Lumen::RHI::FRHIError> Valid = Attachment.Validate( false );
         if ( not Valid )
         {
             return Valid;
@@ -51,7 +52,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingDesc::Validate () c
     }
     if ( DepthStencilAttachment.View )
     {
-        const Lumen::TExpected<void, Lumen::FRHIError> Valid = DepthStencilAttachment.Validate( true );
+        const Lumen::TExpected<void, Lumen::RHI::FRHIError> Valid = DepthStencilAttachment.Validate( true );
         if ( not Valid )
         {
             return Valid;

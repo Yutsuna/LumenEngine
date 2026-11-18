@@ -7,12 +7,12 @@
 #include <Algo/Sort.hpp>
 #include <HAL/LockGuard.hpp>
 
-#include <Memory/RHITlsfAllocator.hpp>
-#include <Utilities/RHIAlignment.hpp>
-#include <Utilities/RHICheckedMath.hpp>
+#include <RHI/Memory/RHITlsfAllocator.hpp>
+#include <RHI/Utilities/RHIAlignment.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 #include <bit>
 
-Lumen::FRHITlsfAllocator::FRHITlsfAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
+Lumen::RHI::FRHITlsfAllocator::FRHITlsfAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
 {
     Stats.Capacity = InCapacity;
     Buckets.resize( FirstLevelCount * SecondLevelCount );
@@ -21,14 +21,14 @@ Lumen::FRHITlsfAllocator::FRHITlsfAllocator ( const UInt64 InCapacity ) noexcept
         InsertFreeRange( { .Offset = 0ULL, .Size = InCapacity } );
     }
 }
-void Lumen::FRHITlsfAllocator::GetBucket ( const UInt64 InSize, USize &OutFirst, USize &OutSecond ) noexcept
+void Lumen::RHI::FRHITlsfAllocator::GetBucket ( const UInt64 InSize, USize &OutFirst, USize &OutSecond ) noexcept
 {
     const UInt32 Bits  = InSize == 0ULL ? 0U : static_cast<UInt32>( std::bit_width( InSize ) );
     OutFirst           = Bits < FirstLevelCount ? Bits : FirstLevelCount - 1U;
     const UInt32 Shift = OutFirst > 4U ? static_cast<UInt32>( OutFirst - 4U ) : 0U;
     OutSecond          = static_cast<USize>( ( InSize >> Shift ) & 0xFULL );
 }
-void Lumen::FRHITlsfAllocator::InsertFreeRange ( const FFreeRange InRange ) noexcept
+void Lumen::RHI::FRHITlsfAllocator::InsertFreeRange ( const FFreeRange InRange ) noexcept
 {
     if ( InRange.Size == 0ULL )
     {
@@ -42,8 +42,8 @@ void Lumen::FRHITlsfAllocator::InsertFreeRange ( const FFreeRange InRange ) noex
     Buckets[( First * SecondLevelCount ) + Second].push_back( InRange );
 }
 
-Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
-Lumen::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
     if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
@@ -94,7 +94,7 @@ Lumen::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
     return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "TLSF allocator exhausted" ) );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHITlsfAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Bool bFound = false;
@@ -155,7 +155,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITlsfAllocator::Free ( const 
     return {};
 }
 
-void Lumen::FRHITlsfAllocator::Reset () noexcept
+void Lumen::RHI::FRHITlsfAllocator::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
@@ -171,7 +171,7 @@ void Lumen::FRHITlsfAllocator::Reset () noexcept
     Stats.Used = 0ULL;
 }
 
-Lumen::FRHIAllocatorStats Lumen::FRHITlsfAllocator::GetStats () const noexcept
+Lumen::RHI::FRHIAllocatorStats Lumen::RHI::FRHITlsfAllocator::GetStats () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Stats;

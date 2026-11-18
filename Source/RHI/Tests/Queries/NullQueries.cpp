@@ -7,9 +7,9 @@
 #include <Queries/NullQueries.hpp>
 #include <Templates/Hash.hpp>
 
-Lumen::Tests::FNullQueryPool::FNullQueryPool ( const FRHIQueryPoolDesc &InDesc,
-                                               TSharedPtr<FNullFaultPlan> InFaultPlan,
-                                               const FRHIObjectId InId ) noexcept
+Lumen::RHI::Tests::FNullQueryPool::FNullQueryPool ( const FRHIQueryPoolDesc &InDesc,
+                                                    TSharedPtr<FNullFaultPlan> InFaultPlan,
+                                                    const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FNullQueryPool>() ), Desc( InDesc ), FaultPlan( std::move( InFaultPlan ) ),
       Entries( InDesc.Count )
 {
@@ -17,12 +17,12 @@ Lumen::Tests::FNullQueryPool::FNullQueryPool ( const FRHIQueryPoolDesc &InDesc,
 
 LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullQueryPool )
 
-const Lumen::FRHIQueryPoolDesc &Lumen::Tests::FNullQueryPool::GetDesc () const noexcept
+const Lumen::RHI::FRHIQueryPoolDesc &Lumen::RHI::Tests::FNullQueryPool::GetDesc () const noexcept
 {
     return Desc;
 }
 
-void Lumen::Tests::FNullQueryPool::Reset () noexcept
+void Lumen::RHI::Tests::FNullQueryPool::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( auto &Entry : Entries )
@@ -31,11 +31,11 @@ void Lumen::Tests::FNullQueryPool::Reset () noexcept
     }
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
-                                            const UInt32 InQueryCount,
-                                            const TSpan<UInt64> InDestination,
-                                            const FRHITimelineValue InCompleted ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
+                                                 const UInt32 InQueryCount,
+                                                 const TSpan<UInt64> InDestination,
+                                                 const FRHITimelineValue InCompleted ) const noexcept
 {
     if ( FaultPlan )
     {
@@ -67,7 +67,7 @@ Lumen::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
     return {};
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::Begin ( const UInt32 InIndex ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueryPool::Begin ( const UInt32 InIndex ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckFault( "BeginQuery" ) )
     {
@@ -89,7 +89,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::Begin ( c
     return {};
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::End ( const UInt32 InIndex ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueryPool::End ( const UInt32 InIndex ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckFault( "EndQuery" ) )
     {
@@ -118,19 +118,19 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::End ( con
     return {};
 }
 
-void Lumen::Tests::FNullQueryPool::SetNextValue ( const UInt64 InValue ) noexcept
+void Lumen::RHI::Tests::FNullQueryPool::SetNextValue ( const UInt64 InValue ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     NextValue = InValue;
 }
 
-void Lumen::Tests::FNullQueryPool::SetNextAvailability ( const FRHITimelineValue InValue ) noexcept
+void Lumen::RHI::Tests::FNullQueryPool::SetNextAvailability ( const FRHITimelineValue InValue ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     NextAvailability = InValue;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::SetQueryValue (
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueryPool::SetQueryValue (
     const UInt32 InIndex, const UInt64 InValue, const FRHITimelineValue InAvailability ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
@@ -145,13 +145,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::SetQueryV
     return {};
 }
 
-Lumen::Bool Lumen::Tests::FNullQueryPool::IsActive ( const UInt32 InIndex ) const noexcept
+Lumen::Bool Lumen::RHI::Tests::FNullQueryPool::IsActive ( const UInt32 InIndex ) const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return InIndex < Entries.size() and Entries[InIndex].bActive;
 }
 
-Lumen::TOptional<Lumen::FRHIError> Lumen::Tests::FNullQueryPool::CheckFault ( const FStringView InOperation ) noexcept
+Lumen::TOptional<Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueryPool::CheckFault ( const FStringView InOperation ) noexcept
 {
     return FaultPlan ? FaultPlan->ShouldFail( InOperation ) : TOptional<FRHIError>{};
 }

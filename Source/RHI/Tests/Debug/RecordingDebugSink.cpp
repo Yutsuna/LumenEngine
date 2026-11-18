@@ -6,19 +6,19 @@
 #include <Debug/RecordingDebugSink.hpp>
 #include <HAL/LockGuard.hpp>
 
-void Lumen::Tests::FRecordingDebugSink::Emit ( const FRHIDebugMessage &InMessage ) noexcept
+void Lumen::RHI::Tests::FRecordingDebugSink::Emit ( const FRHIDebugMessage &InMessage ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Messages.push_back( InMessage );
 }
 
-Lumen::TVector<Lumen::FRHIDebugMessage> Lumen::Tests::FRecordingDebugSink::GetMessages () const noexcept
+Lumen::TVector<Lumen::RHI::FRHIDebugMessage> Lumen::RHI::Tests::FRecordingDebugSink::GetMessages () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Messages;
 }
 
-Lumen::Bool Lumen::Tests::FRecordingDebugSink::ContainsCode ( const UInt32 InCode ) const noexcept
+Lumen::Bool Lumen::RHI::Tests::FRecordingDebugSink::ContainsCode ( const UInt32 InCode ) const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( const auto &Message : Messages )
@@ -31,7 +31,7 @@ Lumen::Bool Lumen::Tests::FRecordingDebugSink::ContainsCode ( const UInt32 InCod
     return false;
 }
 
-Lumen::USize Lumen::Tests::FRecordingDebugSink::GetCount ( const ERHIDebugSeverity InMinimumSeverity ) const noexcept
+Lumen::USize Lumen::RHI::Tests::FRecordingDebugSink::GetCount ( const ERHIDebugSeverity InMinimumSeverity ) const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     USize Count = 0U;
@@ -45,7 +45,7 @@ Lumen::USize Lumen::Tests::FRecordingDebugSink::GetCount ( const ERHIDebugSeveri
     return Count;
 }
 
-void Lumen::Tests::FRecordingDebugSink::Clear () noexcept
+void Lumen::RHI::Tests::FRecordingDebugSink::Clear () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Messages.clear();

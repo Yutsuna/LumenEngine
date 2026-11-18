@@ -2,9 +2,9 @@
  * @file RHIAdapterInfo.cpp
  * @brief Implements adapter information validation.
  */
-#include <Module/RHIAdapterInfo.hpp>
+#include <RHI/Module/RHIAdapterInfo.hpp>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIAdapterInfo::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIAdapterInfo::Validate () const noexcept
 {
     if ( AdapterId == 0ULL or Name.empty() or BackendName.empty() or QueueFamilies.empty() )
     {

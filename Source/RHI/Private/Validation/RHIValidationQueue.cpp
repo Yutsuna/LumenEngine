@@ -4,33 +4,33 @@
  */
 
 #include "RHIValidationQueue.hpp"
-#include <Validation/RHIValidation.hpp>
+#include <RHI/Validation/RHIValidation.hpp>
 
-Lumen::FRHIValidationQueue::FRHIValidationQueue ( TSharedRef<IRHIQueue> InUnderlying,
-                                                  TSharedPtr<FRHIValidationState> InState ) noexcept
+Lumen::RHI::FRHIValidationQueue::FRHIValidationQueue ( TSharedRef<IRHIQueue> InUnderlying,
+                                                       TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
 {
     State->Track( *Underlying, ERHIValidationObjectKind::Queue );
 }
 
-Lumen::FRHIValidationQueue::~FRHIValidationQueue () noexcept
+Lumen::RHI::FRHIValidationQueue::~FRHIValidationQueue () noexcept
 {
     State->Untrack( *Underlying );
 }
 
 LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationQueue )
 
-Lumen::ERHIQueueType Lumen::FRHIValidationQueue::GetType () const noexcept
+Lumen::RHI::ERHIQueueType Lumen::RHI::FRHIValidationQueue::GetType () const noexcept
 {
     return Underlying->GetType();
 }
 
-Lumen::FRHITimelineValue Lumen::FRHIValidationQueue::GetCompletedValue () const noexcept
+Lumen::RHI::FRHITimelineValue Lumen::RHI::FRHIValidationQueue::GetCompletedValue () const noexcept
 {
     return Underlying->GetCompletedValue();
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationQueue::Submit ( const FRHISubmitDesc &InDesc ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationQueue::Submit ( const FRHISubmitDesc &InDesc ) noexcept
 {
     const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Queues );
     if ( bValidate )
@@ -85,13 +85,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationQueue::Submit ( co
     return Underlying->Submit( Unwrapped );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationQueue::WaitIdle () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationQueue::WaitIdle () noexcept
 {
     return Underlying->WaitIdle();
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationQueue::Wait ( const FRHITimelineValue InValue,
-                                                                            const Float64 InTimeoutSeconds ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationQueue::Wait ( const FRHITimelineValue InValue,
+                                                                                      const Float64 InTimeoutSeconds ) noexcept
 {
     return Underlying->Wait( InValue, InTimeoutSeconds );
 }

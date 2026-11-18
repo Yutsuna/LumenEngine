@@ -11,127 +11,133 @@
 namespace Lumen
 {
 
-namespace
+namespace RHI
 {
 
-    constexpr UInt32 PipelineCacheVersion      = 1U;
-    constexpr USize PipelineCacheHeaderSize    = 24U;
-    constexpr USize PipelineCacheKeyHeaderSize = 40U;
-
-    UInt64 GetKeyBytes ( const FRHIPipelineCompatibility &InKey ) noexcept
+    namespace
     {
-        return static_cast<UInt64>( PipelineCacheKeyHeaderSize + InKey.ColorFormats.size() * sizeof( UInt32 ) );
-    }
 
-    void WriteU32 ( TVector<Byte> &InData, const UInt32 InValue ) noexcept
-    {
-        for ( UInt32 ByteIndex = 0U; ByteIndex < 4U; ++ByteIndex )
+        constexpr UInt32 PipelineCacheVersion      = 1U;
+        constexpr USize PipelineCacheHeaderSize    = 24U;
+        constexpr USize PipelineCacheKeyHeaderSize = 40U;
+
+        UInt64 GetKeyBytes ( const FRHIPipelineCompatibility &InKey ) noexcept
         {
-            const UInt32 Shift = ByteIndex * 8U;
-            InData.push_back( static_cast<Byte>( ( InValue >> Shift ) & 0xffU ) );
+            return static_cast<UInt64>( PipelineCacheKeyHeaderSize + InKey.ColorFormats.size() * sizeof( UInt32 ) );
         }
-    }
 
-    void WriteU64 ( TVector<Byte> &InData, const UInt64 InValue ) noexcept
-    {
-        WriteU32( InData, static_cast<UInt32>( InValue & 0xffffffffULL ) );
-        WriteU32( InData, static_cast<UInt32>( InValue >> 32U ) );
-    }
+        void WriteU32 ( TVector<Byte> &InData, const UInt32 InValue ) noexcept
+        {
+            for ( UInt32 ByteIndex = 0U; ByteIndex < 4U; ++ByteIndex )
+            {
+                const UInt32 Shift = ByteIndex * 8U;
+                InData.push_back( static_cast<Byte>( ( InValue >> Shift ) & 0xffU ) );
+            }
+        }
 
-    Bool ReadU32 ( const TSpan<const Byte> InData, USize &InOutOffset, UInt32 &OutValue ) noexcept
-    {
-        if ( InOutOffset > InData.size() or InData.size() - InOutOffset < 4U )
+        void WriteU64 ( TVector<Byte> &InData, const UInt64 InValue ) noexcept
         {
-            return false;
+            WriteU32( InData, static_cast<UInt32>( InValue & 0xffffffffULL ) );
+            WriteU32( InData, static_cast<UInt32>( InValue >> 32U ) );
         }
-        OutValue = 0U;
-        for ( UInt32 ByteIndex = 0U; ByteIndex < 4U; ++ByteIndex )
-        {
-            const UInt32 Shift = ByteIndex * 8U;
-            OutValue |= static_cast<UInt32>( InData[InOutOffset + ByteIndex] ) << Shift;
-        }
-        InOutOffset += 4U;
-        return true;
-    }
 
-    Bool ReadU64 ( const TSpan<const Byte> InData, USize &InOutOffset, UInt64 &OutValue ) noexcept
-    {
-        UInt32 Low  = 0U;
-        UInt32 High = 0U;
-        if ( not ReadU32( InData, InOutOffset, Low ) or not ReadU32( InData, InOutOffset, High ) )
+        Bool ReadU32 ( const TSpan<const Byte> InData, USize &InOutOffset, UInt32 &OutValue ) noexcept
         {
-            return false;
-        }
-        OutValue = static_cast<UInt64>( Low ) | ( static_cast<UInt64>( High ) << 32U );
-        return true;
-    }
-
-    void WriteKey ( TVector<Byte> &InData, const FRHIPipelineCompatibility &InKey ) noexcept
-    {
-        WriteU64( InData, InKey.LayoutHash );
-        WriteU32( InData, static_cast<UInt32>( InKey.DepthStencilFormat ) );
-        WriteU32( InData, static_cast<UInt32>( InKey.SampleCount ) );
-        WriteU64( InData, InKey.VertexLayoutHash );
-        WriteU32( InData, static_cast<UInt32>( InKey.ColorFormats.size() ) );
-        WriteU32( InData, 0U );
-        for ( const ERHIFormat Format : InKey.ColorFormats )
-        {
-            WriteU32( InData, static_cast<UInt32>( Format ) );
-        }
-    }
-
-    Bool ReadKey ( const TSpan<const Byte> InData, USize &InOutOffset, FRHIPipelineCompatibility &OutKey ) noexcept
-    {
-        UInt32 DepthFormat = 0U;
-        UInt32 SampleCount = 0U;
-        UInt32 ColorCount  = 0U;
-        UInt32 Reserved    = 0U;
-        if ( not ReadU64( InData, InOutOffset, OutKey.LayoutHash ) or not ReadU32( InData, InOutOffset, DepthFormat ) or
-             not ReadU32( InData, InOutOffset, SampleCount ) or not ReadU64( InData, InOutOffset, OutKey.VertexLayoutHash ) or
-             not ReadU32( InData, InOutOffset, ColorCount ) or not ReadU32( InData, InOutOffset, Reserved ) or Reserved != 0U or
-             ColorCount > 64U or DepthFormat >= static_cast<UInt32>( ERHIFormat::Count ) or
-             ToSampleCount( static_cast<ERHISampleCount>( SampleCount ) ) == 0U )
-        {
-            return false;
-        }
-        OutKey.DepthStencilFormat = static_cast<ERHIFormat>( DepthFormat );
-        OutKey.SampleCount        = static_cast<ERHISampleCount>( SampleCount );
-        for ( UInt32 ColorIndex = 0U; ColorIndex < ColorCount; ++ColorIndex )
-        {
-            UInt32 Format = 0U;
-            if ( not ReadU32( InData, InOutOffset, Format ) or Format >= static_cast<UInt32>( ERHIFormat::Count ) )
+            if ( InOutOffset > InData.size() or InData.size() - InOutOffset < 4U )
             {
                 return false;
             }
-            OutKey.ColorFormats.push_back( static_cast<ERHIFormat>( Format ) );
+            OutValue = 0U;
+            for ( UInt32 ByteIndex = 0U; ByteIndex < 4U; ++ByteIndex )
+            {
+                const UInt32 Shift = ByteIndex * 8U;
+                OutValue |= static_cast<UInt32>( InData[InOutOffset + ByteIndex] ) << Shift;
+            }
+            InOutOffset += 4U;
+            return true;
         }
-        return true;
-    }
 
-    FRHIError CorruptedCacheError () noexcept
-    {
-        return MakeRHICorrupted( ERHIErrorCondition::Cache, "Invalid Null pipeline cache data" );
-    }
+        Bool ReadU64 ( const TSpan<const Byte> InData, USize &InOutOffset, UInt64 &OutValue ) noexcept
+        {
+            UInt32 Low  = 0U;
+            UInt32 High = 0U;
+            if ( not ReadU32( InData, InOutOffset, Low ) or not ReadU32( InData, InOutOffset, High ) )
+            {
+                return false;
+            }
+            OutValue = static_cast<UInt64>( Low ) | ( static_cast<UInt64>( High ) << 32U );
+            return true;
+        }
 
-} // namespace
+        void WriteKey ( TVector<Byte> &InData, const FRHIPipelineCompatibility &InKey ) noexcept
+        {
+            WriteU64( InData, InKey.LayoutHash );
+            WriteU32( InData, static_cast<UInt32>( InKey.DepthStencilFormat ) );
+            WriteU32( InData, static_cast<UInt32>( InKey.SampleCount ) );
+            WriteU64( InData, InKey.VertexLayoutHash );
+            WriteU32( InData, static_cast<UInt32>( InKey.ColorFormats.size() ) );
+            WriteU32( InData, 0U );
+            for ( const ERHIFormat Format : InKey.ColorFormats )
+            {
+                WriteU32( InData, static_cast<UInt32>( Format ) );
+            }
+        }
+
+        Bool ReadKey ( const TSpan<const Byte> InData, USize &InOutOffset, FRHIPipelineCompatibility &OutKey ) noexcept
+        {
+            UInt32 DepthFormat = 0U;
+            UInt32 SampleCount = 0U;
+            UInt32 ColorCount  = 0U;
+            UInt32 Reserved    = 0U;
+            if ( not ReadU64( InData, InOutOffset, OutKey.LayoutHash ) or not ReadU32( InData, InOutOffset, DepthFormat ) or
+                 not ReadU32( InData, InOutOffset, SampleCount ) or not ReadU64( InData, InOutOffset, OutKey.VertexLayoutHash ) or
+                 not ReadU32( InData, InOutOffset, ColorCount ) or not ReadU32( InData, InOutOffset, Reserved ) or
+                 Reserved != 0U or ColorCount > 64U or DepthFormat >= static_cast<UInt32>( ERHIFormat::Count ) or
+                 ToSampleCount( static_cast<ERHISampleCount>( SampleCount ) ) == 0U )
+            {
+                return false;
+            }
+            OutKey.DepthStencilFormat = static_cast<ERHIFormat>( DepthFormat );
+            OutKey.SampleCount        = static_cast<ERHISampleCount>( SampleCount );
+            for ( UInt32 ColorIndex = 0U; ColorIndex < ColorCount; ++ColorIndex )
+            {
+                UInt32 Format = 0U;
+                if ( not ReadU32( InData, InOutOffset, Format ) or Format >= static_cast<UInt32>( ERHIFormat::Count ) )
+                {
+                    return false;
+                }
+                OutKey.ColorFormats.push_back( static_cast<ERHIFormat>( Format ) );
+            }
+            return true;
+        }
+
+        FRHIError CorruptedCacheError () noexcept
+        {
+            return MakeRHICorrupted( ERHIErrorCondition::Cache, "Invalid Null pipeline cache data" );
+        }
+
+    } // namespace
+
+} // namespace RHI
 
 } // namespace Lumen
 
-Lumen::USize Lumen::Tests::FNullPipelineCompatibilityHasher::operator()( const FRHIPipelineCompatibility &InKey ) const noexcept
+Lumen::USize
+Lumen::RHI::Tests::FNullPipelineCompatibilityHasher::operator()( const FRHIPipelineCompatibility &InKey ) const noexcept
 {
     return static_cast<USize>( InKey.GetHash() );
 }
 
-Lumen::Tests::FNullPipelineCache::FNullPipelineCache ( const FRHIPipelineCacheDesc &InDesc,
-                                                       TSharedPtr<FNullFaultPlan> InFaultPlan,
-                                                       const FRHIObjectId InId ) noexcept
+Lumen::RHI::Tests::FNullPipelineCache::FNullPipelineCache ( const FRHIPipelineCacheDesc &InDesc,
+                                                            TSharedPtr<FNullFaultPlan> InFaultPlan,
+                                                            const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FNullPipelineCache>() ), Desc( InDesc ), FaultPlan( std::move( InFaultPlan ) )
 {
 }
 
 LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullPipelineCache )
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Initialize () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullPipelineCache::Initialize () noexcept
 {
     const TSpan<const Byte> InitialData = Desc.InitialData;
     Desc.InitialData                    = {};
@@ -195,13 +201,13 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Initi
     return {};
 }
 
-const Lumen::FRHIPipelineCacheDesc &Lumen::Tests::FNullPipelineCache::GetDesc () const noexcept
+const Lumen::RHI::FRHIPipelineCacheDesc &Lumen::RHI::Tests::FNullPipelineCache::GetDesc () const noexcept
 {
     return Desc;
 }
 
-Lumen::TOptional<Lumen::TSharedPtr<Lumen::IRHIPipeline>>
-Lumen::Tests::FNullPipelineCache::Find ( const FRHIPipelineCompatibility &InKey ) noexcept
+Lumen::TOptional<Lumen::TSharedPtr<Lumen::RHI::IRHIPipeline>>
+Lumen::RHI::Tests::FNullPipelineCache::Find ( const FRHIPipelineCompatibility &InKey ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Found = Entries.find( InKey );
@@ -216,8 +222,9 @@ Lumen::Tests::FNullPipelineCache::Find ( const FRHIPipelineCompatibility &InKey 
     return TOptional<TSharedPtr<IRHIPipeline>>( Found->second.Pipeline );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Insert ( const FRHIPipelineCompatibility &InKey,
-                                                                                    TSharedRef<IRHIPipeline> InPipeline ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullPipelineCache::Insert ( const FRHIPipelineCompatibility &InKey,
+                                                TSharedRef<IRHIPipeline> InPipeline ) noexcept
 {
     if ( FaultPlan )
     {
@@ -249,7 +256,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Inser
     return {};
 }
 
-void Lumen::Tests::FNullPipelineCache::Remove ( const FRHIPipelineCompatibility &InKey ) noexcept
+void Lumen::RHI::Tests::FNullPipelineCache::Remove ( const FRHIPipelineCompatibility &InKey ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Found = Entries.find( InKey );
@@ -260,19 +267,20 @@ void Lumen::Tests::FNullPipelineCache::Remove ( const FRHIPipelineCompatibility 
     }
 }
 
-void Lumen::Tests::FNullPipelineCache::Clear () noexcept
+void Lumen::RHI::Tests::FNullPipelineCache::Clear () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Entries.clear();
     Stats.Reset();
 }
 
-Lumen::FRHICacheStats Lumen::Tests::FNullPipelineCache::GetStats () const noexcept
+Lumen::RHI::FRHICacheStats Lumen::RHI::Tests::FNullPipelineCache::GetStats () const noexcept
 {
     return Stats.Snapshot();
 }
 
-Lumen::TExpected<Lumen::TVector<Lumen::Byte>, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Serialize () const noexcept
+Lumen::TExpected<Lumen::TVector<Lumen::Byte>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullPipelineCache::Serialize () const noexcept
 {
     if ( FaultPlan )
     {
@@ -327,7 +335,7 @@ Lumen::TExpected<Lumen::TVector<Lumen::Byte>, Lumen::FRHIError> Lumen::Tests::FN
     return Data;
 }
 
-Lumen::Bool Lumen::Tests::FNullPipelineCache::MakeRoom ( const UInt64 InBytes ) noexcept
+Lumen::Bool Lumen::RHI::Tests::FNullPipelineCache::MakeRoom ( const UInt64 InBytes ) noexcept
 {
     while ( Entries.size() >= Desc.MaxEntries or Stats.Snapshot().Bytes > Desc.MaxBytes or
             InBytes > Desc.MaxBytes - Stats.Snapshot().Bytes )
@@ -341,7 +349,7 @@ Lumen::Bool Lumen::Tests::FNullPipelineCache::MakeRoom ( const UInt64 InBytes ) 
     return true;
 }
 
-void Lumen::Tests::FNullPipelineCache::EvictOne () noexcept
+void Lumen::RHI::Tests::FNullPipelineCache::EvictOne () noexcept
 {
     TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Oldest = Entries.begin();
     for ( TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Iterator = Entries.begin();

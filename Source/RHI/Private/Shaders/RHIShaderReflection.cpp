@@ -3,8 +3,8 @@
  * @brief Implements shader reflection validation.
  */
 
-#include <Shaders/RHIShaderReflection.hpp>
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIShaderReflection::Validate () const noexcept
+#include <RHI/Shaders/RHIShaderReflection.hpp>
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIShaderReflection::Validate () const noexcept
 {
     for ( USize First = 0U; First < Bindings.size(); ++First )
     {

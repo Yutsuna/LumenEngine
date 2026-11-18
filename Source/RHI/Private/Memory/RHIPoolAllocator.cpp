@@ -5,15 +5,15 @@
 
 #include <HAL/LockGuard.hpp>
 
-#include <Memory/RHIPoolAllocator.hpp>
-#include <Utilities/RHIAlignment.hpp>
-#include <Utilities/RHICheckedMath.hpp>
+#include <RHI/Memory/RHIPoolAllocator.hpp>
+#include <RHI/Utilities/RHIAlignment.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 
 /**
  * Public
  */
 
-Lumen::FRHIPoolAllocator::FRHIPoolAllocator ( const UInt64 InSlotSize, const UInt32 InSlotCount ) noexcept
+Lumen::RHI::FRHIPoolAllocator::FRHIPoolAllocator ( const UInt64 InSlotSize, const UInt32 InSlotCount ) noexcept
     : SlotSize( 0ULL ), Slots( MakeUnique<FIndiceHeapAllocator>( 0U ) )
 {
     if ( not RHIIsPowerOfTwo( InSlotSize ) )
@@ -30,8 +30,8 @@ Lumen::FRHIPoolAllocator::FRHIPoolAllocator ( const UInt64 InSlotSize, const UIn
     Slots          = MakeUnique<FIndiceHeapAllocator>( InSlotCount );
 }
 
-Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
-Lumen::FRHIPoolAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIPoolAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
     if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
@@ -75,7 +75,7 @@ Lumen::FRHIPoolAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
     return Result;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIPoolAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIPoolAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     if ( not InAllocation.IsValid() or SlotSize == 0ULL or InAllocation.Offset % SlotSize != 0ULL or
          InAllocation.Offset / SlotSize >= Stats.Capacity / SlotSize )
@@ -96,7 +96,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIPoolAllocator::Free ( const 
     return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Pool allocation is not active" ) );
 }
 
-void Lumen::FRHIPoolAllocator::Reset () noexcept
+void Lumen::RHI::FRHIPoolAllocator::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const UInt32 Count = static_cast<UInt32>( SlotSize == 0ULL ? 0ULL : Stats.Capacity / SlotSize );
@@ -106,7 +106,7 @@ void Lumen::FRHIPoolAllocator::Reset () noexcept
     Stats.Used = 0ULL;
 }
 
-Lumen::FRHIAllocatorStats Lumen::FRHIPoolAllocator::GetStats () const noexcept
+Lumen::RHI::FRHIAllocatorStats Lumen::RHI::FRHIPoolAllocator::GetStats () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Stats;

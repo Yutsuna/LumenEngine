@@ -3,12 +3,12 @@
  * @brief Implements owned shader package entries.
  */
 
-#include <Shaders/RHIShaderPackage.hpp>
-Lumen::FRHIShaderDesc Lumen::FRHIShaderPackageEntry::GetDesc () const noexcept
+#include <RHI/Shaders/RHIShaderPackage.hpp>
+Lumen::RHI::FRHIShaderDesc Lumen::RHI::FRHIShaderPackageEntry::GetDesc () const noexcept
 {
     return FRHIShaderDesc{ TSpan<const Byte>( Bytecode.data(), Bytecode.size() ), Stage, EntryPoint, Format, Reflection };
 }
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIShaderPackage::AddEntry ( FRHIShaderPackageEntry InEntry ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIShaderPackage::AddEntry ( FRHIShaderPackageEntry InEntry ) noexcept
 {
     if ( const TExpected<void, FRHIError> Valid = InEntry.GetDesc().Validate(); not Valid )
     {
@@ -17,8 +17,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIShaderPackage::AddEntry ( FR
     Entries.push_back( std::move( InEntry ) );
     return {};
 }
-Lumen::TOptional<Lumen::FRHIShaderDesc> Lumen::FRHIShaderPackage::Find ( const ERHIShaderStage InStage,
-                                                                         const FStringView InEntryPoint ) const noexcept
+Lumen::TOptional<Lumen::RHI::FRHIShaderDesc> Lumen::RHI::FRHIShaderPackage::Find ( const ERHIShaderStage InStage,
+                                                                                   const FStringView InEntryPoint ) const noexcept
 {
     for ( const FRHIShaderPackageEntry &Entry : Entries )
     {

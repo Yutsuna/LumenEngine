@@ -3,8 +3,8 @@
  * @brief Implements multisample state validation.
  */
 
-#include <Pipelines/RHIMultisampleState.hpp>
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIMultisampleState::Validate () const noexcept
+#include <RHI/Pipelines/RHIMultisampleState.hpp>
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIMultisampleState::Validate () const noexcept
 {
     if ( ToSampleCount( Count ) == 0U or SampleMask == 0U )
     {

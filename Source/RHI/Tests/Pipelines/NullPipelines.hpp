@@ -7,57 +7,62 @@
 
 #include <Types/RHIObjectForward.hpp>
 
-#include <Pipelines/IRHIPipeline.hpp>
-#include <Pipelines/IRHIPipelineLayout.hpp>
-#include <Pipelines/RHIComputePipelineDesc.hpp>
-#include <Pipelines/RHIGraphicsPipelineDesc.hpp>
+#include <RHI/Pipelines/IRHIPipeline.hpp>
+#include <RHI/Pipelines/IRHIPipelineLayout.hpp>
+#include <RHI/Pipelines/RHIComputePipelineDesc.hpp>
+#include <RHI/Pipelines/RHIGraphicsPipelineDesc.hpp>
 
 namespace Lumen
 {
 
-namespace Tests
+namespace RHI
 {
 
-    /**
-     * @class FNullPipelineLayout
-     * @brief Immutable Null layout.
-     */
-    class FNullPipelineLayout final : public IRHIPipelineLayout
+    namespace Tests
     {
-    public:
 
-        FNullPipelineLayout ( const FRHIPipelineLayoutDesc &InDesc, FRHIObjectId InId ) noexcept;
-        LUMEN_RHI_OBJECT_DECLARATIONS;
-        const FRHIPipelineLayoutDesc &GetDesc () const noexcept override;
-        /** @return Hash of the ordered binding layouts. */
-        [[nodiscard]] UInt64 GetHash () const noexcept;
+        /**
+         * @class FNullPipelineLayout
+         * @brief Immutable Null layout.
+         */
+        class FNullPipelineLayout final : public IRHIPipelineLayout
+        {
+        public:
 
-    private:
+            FNullPipelineLayout ( const FRHIPipelineLayoutDesc &InDesc, FRHIObjectId InId ) noexcept;
+            LUMEN_RHI_OBJECT_DECLARATIONS;
+            const FRHIPipelineLayoutDesc &GetDesc () const noexcept override;
+            /** @return Hash of the ordered binding layouts. */
+            [[nodiscard]] UInt64 GetHash () const noexcept;
 
-        FRHIObjectBase Identity;
-        FRHIPipelineLayoutDesc Desc;
-    };
+        private:
 
-    /**
-     * @class FNullPipeline
-     * @brief Immutable Null graphics/compute pipeline.
-     */
-    class FNullPipeline final : public IRHIPipeline
-    {
-    public:
+            FRHIObjectBase Identity;
+            FRHIPipelineLayoutDesc Desc;
+        };
 
-        FNullPipeline ( ERHIPipelineType InType, FRHIPipelineCompatibility InCompatibility, FRHIObjectId InId ) noexcept;
-        LUMEN_RHI_OBJECT_DECLARATIONS;
-        ERHIPipelineType GetType () const noexcept override;
-        const FRHIPipelineCompatibility &GetCompatibility () const noexcept override;
+        /**
+         * @class FNullPipeline
+         * @brief Immutable Null graphics/compute pipeline.
+         */
+        class FNullPipeline final : public IRHIPipeline
+        {
+        public:
 
-    private:
+            FNullPipeline ( ERHIPipelineType InType, FRHIPipelineCompatibility InCompatibility, FRHIObjectId InId ) noexcept;
+            LUMEN_RHI_OBJECT_DECLARATIONS;
+            ERHIPipelineType GetType () const noexcept override;
+            const FRHIPipelineCompatibility &GetCompatibility () const noexcept override;
 
-        FRHIObjectBase Identity;
-        ERHIPipelineType Type;
-        FRHIPipelineCompatibility Compatibility;
-    };
+        private:
 
-} // namespace Tests
+            FRHIObjectBase Identity;
+            ERHIPipelineType Type;
+            FRHIPipelineCompatibility Compatibility;
+        };
+
+    } // namespace Tests
+
+} // namespace RHI
 
 } // namespace Lumen

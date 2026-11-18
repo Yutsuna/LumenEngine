@@ -7,7 +7,6 @@
 #include <Caches/NullCaches.hpp>
 #include <Commands/NullCommands.hpp>
 #include <Device/NullDevice.hpp>
-#include <Device/RHIBackendCast.hpp>
 #include <Memory/NullMemory.hpp>
 #include <Memory/RHIBufferPool.hpp>
 #include <Memory/RHIDefragmenter.hpp>
@@ -18,17 +17,18 @@
 #include <Presentation/NullPresentation.hpp>
 #include <Queries/NullQueries.hpp>
 #include <Queue/NullQueue.hpp>
+#include <RHI/Device/RHIBackendCast.hpp>
+#include <RHI/Types/RHICopyFootprint.hpp>
 #include <Resources/NullResources.hpp>
 #include <Shaders/NullShaders.hpp>
 #include <Synchronization/NullSynchronization.hpp>
 #include <Templates/Hash.hpp>
-#include <Types/RHICopyFootprint.hpp>
 
 /**
  * Public
  */
 
-Lumen::FRHILimits Lumen::Tests::MakeDefaultNullLimits () noexcept
+Lumen::RHI::FRHILimits Lumen::RHI::Tests::MakeDefaultNullLimits () noexcept
 {
     return FRHILimits{
         .MaxBufferSize           = 1ULL << 30U,
@@ -49,7 +49,7 @@ Lumen::FRHILimits Lumen::Tests::MakeDefaultNullLimits () noexcept
     };
 }
 
-Lumen::Tests::FNullDeviceDesc::FNullDeviceDesc () noexcept
+Lumen::RHI::Tests::FNullDeviceDesc::FNullDeviceDesc () noexcept
 {
     Adapter.AdapterId             = 1ULL;
     Adapter.Name                  = "Null Adapter";
@@ -69,7 +69,7 @@ Lumen::Tests::FNullDeviceDesc::FNullDeviceDesc () noexcept
     FaultPlan = MakeShared<FNullFaultPlan>();
 }
 
-Lumen::Tests::FNullDevice::FNullDevice ( FNullDeviceDesc InDesc ) noexcept
+Lumen::RHI::Tests::FNullDevice::FNullDevice ( FNullDeviceDesc InDesc ) noexcept
     : FRHIDeviceBase( InDesc.Adapter.Capabilities, InDesc.Adapter.Limits, FHash::TypeHash<FNullDevice>() ),
       Desc( std::move( InDesc ) ), DescriptorBackend( MakeUnique<FNullDescriptorPoolBackend>() )
 {
@@ -84,9 +84,9 @@ Lumen::Tests::FNullDevice::FNullDevice ( FNullDeviceDesc InDesc ) noexcept
     }
 }
 
-Lumen::Tests::FNullDevice::~FNullDevice () noexcept = default;
+Lumen::RHI::Tests::FNullDevice::~FNullDevice () noexcept = default;
 
-Lumen::TOptional<Lumen::FRHIError> Lumen::Tests::FNullDevice::CheckOperation ( const FStringView InOperation ) noexcept
+Lumen::TOptional<Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullDevice::CheckOperation ( const FStringView InOperation ) noexcept
 {
     if ( TOptional<FRHIError> Error = GetUnavailableError( InOperation ) )
     {
@@ -95,7 +95,7 @@ Lumen::TOptional<Lumen::FRHIError> Lumen::Tests::FNullDevice::CheckOperation ( c
     return Desc.FaultPlan ? Desc.FaultPlan->ShouldFail( InOperation ) : TOptional<FRHIError>{};
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullDevice::WaitIdle () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullDevice::WaitIdle () noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "WaitIdle" ) )
     {
@@ -112,8 +112,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullDevice::WaitIdle () 
     return {};
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIQueue>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::GetQueue ( const ERHIQueueType InType, const UInt32 InIndex ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIQueue>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::GetQueue ( const ERHIQueueType InType, const UInt32 InIndex ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "GetQueue" ) )
     {
@@ -133,8 +133,8 @@ Lumen::Tests::FNullDevice::GetQueue ( const ERHIQueueType InType, const UInt32 I
     }
     return TUnexpected<FRHIError>( MakeRHINotFound( ERHIErrorCondition::Queue, "Null queue was not requested" ) );
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBuffer>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateBuffer" ) )
     {
@@ -153,8 +153,8 @@ Lumen::Tests::FNullDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcep
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITexture>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateTexture ( const FRHITextureDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateTexture ( const FRHITextureDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateTexture" ) )
     {
@@ -183,8 +183,8 @@ Lumen::Tests::FNullDevice::CreateTexture ( const FRHITextureDesc &InDesc ) noexc
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITextureView>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateTextureView ( const FRHITextureViewDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITextureView>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateTextureView ( const FRHITextureViewDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateTextureView" ) )
     {
@@ -198,8 +198,8 @@ Lumen::Tests::FNullDevice::CreateTextureView ( const FRHITextureViewDesc &InDesc
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISampler>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateSampler ( const FRHISamplerDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISampler>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateSampler ( const FRHISamplerDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateSampler" ) )
     {
@@ -213,8 +213,8 @@ Lumen::Tests::FNullDevice::CreateSampler ( const FRHISamplerDesc &InDesc ) noexc
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIHeap>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateHeap ( const FRHIHeapDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIHeap>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateHeap ( const FRHIHeapDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateHeap" ) )
     {
@@ -228,8 +228,8 @@ Lumen::Tests::FNullDevice::CreateHeap ( const FRHIHeapDesc &InDesc ) noexcept
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBufferPool>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateBufferPool () noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBufferPool>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateBufferPool () noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateBufferPool" ) )
     {
@@ -239,8 +239,8 @@ Lumen::Tests::FNullDevice::CreateBufferPool () noexcept
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIUploadAllocator>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateUploadAllocator ( const UInt64 InCapacity ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIUploadAllocator>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateUploadAllocator ( const UInt64 InCapacity ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateUploadAllocator" ) )
     {
@@ -254,8 +254,8 @@ Lumen::Tests::FNullDevice::CreateUploadAllocator ( const UInt64 InCapacity ) noe
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIReadbackAllocator>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateReadbackAllocator ( const UInt64 InCapacity ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIReadbackAllocator>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateReadbackAllocator ( const UInt64 InCapacity ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateReadbackAllocator" ) )
     {
@@ -269,8 +269,8 @@ Lumen::Tests::FNullDevice::CreateReadbackAllocator ( const UInt64 InCapacity ) n
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITransientResourceAllocator>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateTransientResourceAllocator () noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITransientResourceAllocator>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateTransientResourceAllocator () noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateTransientResourceAllocator" ) )
     {
@@ -280,8 +280,8 @@ Lumen::Tests::FNullDevice::CreateTransientResourceAllocator () noexcept
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDefragmenter>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateDefragmenter () noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDefragmenter>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateDefragmenter () noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateDefragmenter" ) )
     {
@@ -291,8 +291,8 @@ Lumen::Tests::FNullDevice::CreateDefragmenter () noexcept
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBindingLayout>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateBindingLayout ( const FRHIBindingLayoutDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBindingLayout>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateBindingLayout ( const FRHIBindingLayoutDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateBindingLayout" ) )
     {
@@ -314,8 +314,8 @@ Lumen::Tests::FNullDevice::CreateBindingLayout ( const FRHIBindingLayoutDesc &In
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBindingSet>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateBindingSet ( const TSharedRef<IRHIBindingLayout> &InLayout ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBindingSet>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateBindingSet ( const TSharedRef<IRHIBindingLayout> &InLayout ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateBindingSet" ) )
     {
@@ -325,8 +325,8 @@ Lumen::Tests::FNullDevice::CreateBindingSet ( const TSharedRef<IRHIBindingLayout
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDescriptorAllocator>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateDescriptorAllocator ( const FRHIDescriptorAllocatorDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDescriptorAllocator>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateDescriptorAllocator ( const FRHIDescriptorAllocatorDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateDescriptorAllocator" ) )
     {
@@ -341,8 +341,8 @@ Lumen::Tests::FNullDevice::CreateDescriptorAllocator ( const FRHIDescriptorAlloc
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIShader>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateShader ( const FRHIShaderDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIShader>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateShader ( const FRHIShaderDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateShader" ) )
     {
@@ -356,8 +356,8 @@ Lumen::Tests::FNullDevice::CreateShader ( const FRHIShaderDesc &InDesc ) noexcep
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIPipelineLayout>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreatePipelineLayout ( const FRHIPipelineLayoutDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipelineLayout>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreatePipelineLayout ( const FRHIPipelineLayoutDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreatePipelineLayout" ) )
     {
@@ -371,8 +371,8 @@ Lumen::Tests::FNullDevice::CreatePipelineLayout ( const FRHIPipelineLayoutDesc &
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIPipeline>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateGraphicsPipeline ( const FRHIGraphicsPipelineDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipeline>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateGraphicsPipeline ( const FRHIGraphicsPipelineDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateGraphicsPipeline" ) )
     {
@@ -395,8 +395,8 @@ Lumen::Tests::FNullDevice::CreateGraphicsPipeline ( const FRHIGraphicsPipelineDe
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIPipeline>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateComputePipeline ( const FRHIComputePipelineDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipeline>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateComputePipeline ( const FRHIComputePipelineDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateComputePipeline" ) )
     {
@@ -415,8 +415,8 @@ Lumen::Tests::FNullDevice::CreateComputePipeline ( const FRHIComputePipelineDesc
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIPipelineCache>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreatePipelineCache ( const FRHIPipelineCacheDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipelineCache>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreatePipelineCache ( const FRHIPipelineCacheDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreatePipelineCache" ) )
     {
@@ -434,8 +434,8 @@ Lumen::Tests::FNullDevice::CreatePipelineCache ( const FRHIPipelineCacheDesc &In
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHICommandAllocator>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateCommandAllocator ( const ERHIQueueType InQueueType ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHICommandAllocator>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateCommandAllocator ( const ERHIQueueType InQueueType ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateCommandAllocator" ) )
     {
@@ -449,8 +449,8 @@ Lumen::Tests::FNullDevice::CreateCommandAllocator ( const ERHIQueueType InQueueT
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHICommandList>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateCommandList ( const TSharedRef<IRHICommandAllocator> &InAllocator ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHICommandList>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateCommandList ( const TSharedRef<IRHICommandAllocator> &InAllocator ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateCommandList" ) )
     {
@@ -467,8 +467,8 @@ Lumen::Tests::FNullDevice::CreateCommandList ( const TSharedRef<IRHICommandAlloc
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISemaphore>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateSemaphore ( const FRHISemaphoreDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISemaphore>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateSemaphore ( const FRHISemaphoreDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateSemaphore" ) )
     {
@@ -488,8 +488,8 @@ Lumen::Tests::FNullDevice::CreateSemaphore ( const FRHISemaphoreDesc &InDesc ) n
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISwapchain>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateSwapchain ( const FRHISwapchainDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISwapchain>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateSwapchain ( const FRHISwapchainDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateSwapchain" ) )
     {
@@ -514,8 +514,8 @@ Lumen::Tests::FNullDevice::CreateSwapchain ( const FRHISwapchainDesc &InDesc ) n
     TrackObject( *Result );
     return Result;
 }
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIQueryPool>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::CreateQueryPool ( const FRHIQueryPoolDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIQueryPool>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreateQueryPool ( const FRHIQueryPoolDesc &InDesc ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "CreateQueryPool" ) )
     {
@@ -547,7 +547,7 @@ Lumen::Tests::FNullDevice::CreateQueryPool ( const FRHIQueryPoolDesc &InDesc ) n
     return Result;
 }
 
-void Lumen::Tests::FNullDevice::MarkLost () noexcept
+void Lumen::RHI::Tests::FNullDevice::MarkLost () noexcept
 {
     SetStatus( ERHIDeviceStatus::Lost );
     for ( const auto &Queue : Queues )
@@ -556,7 +556,7 @@ void Lumen::Tests::FNullDevice::MarkLost () noexcept
     }
 }
 
-Lumen::TSharedPtr<Lumen::Tests::FNullFaultPlan> Lumen::Tests::FNullDevice::GetFaultPlan () const noexcept
+Lumen::TSharedPtr<Lumen::RHI::Tests::FNullFaultPlan> Lumen::RHI::Tests::FNullDevice::GetFaultPlan () const noexcept
 {
     return Desc.FaultPlan;
 }

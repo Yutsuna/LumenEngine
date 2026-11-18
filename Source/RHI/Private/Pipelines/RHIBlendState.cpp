@@ -3,8 +3,8 @@
  * @brief Implements blend state validation.
  */
 
-#include <Pipelines/RHIBlendState.hpp>
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBlendState::Validate () const noexcept
+#include <RHI/Pipelines/RHIBlendState.hpp>
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBlendState::Validate () const noexcept
 {
     for ( const auto &Attachment : Attachments )
     {

@@ -4,13 +4,13 @@
  */
 
 #include <HAL/LockGuard.hpp>
-#include <Synchronization/RHIDeferredReleaseQueue.hpp>
-Lumen::FRHIDeferredReleaseQueue::~FRHIDeferredReleaseQueue () noexcept
+#include <RHI/Synchronization/RHIDeferredReleaseQueue.hpp>
+Lumen::RHI::FRHIDeferredReleaseQueue::~FRHIDeferredReleaseQueue () noexcept
 {
     Shutdown();
 }
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDeferredReleaseQueue::Enqueue ( const FRHITimelineValue InRequired,
-                                                                                    TFunction<void()> InRelease ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIDeferredReleaseQueue::Enqueue ( const FRHITimelineValue InRequired, TFunction<void()> InRelease ) noexcept
 {
     if ( not InRelease )
     {
@@ -25,7 +25,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDeferredReleaseQueue::Enqueu
     Entries.push_back( { InRequired, std::move( InRelease ) } );
     return {};
 }
-Lumen::USize Lumen::FRHIDeferredReleaseQueue::Poll ( const FRHITimelineValue InCompleted ) noexcept
+Lumen::USize Lumen::RHI::FRHIDeferredReleaseQueue::Poll ( const FRHITimelineValue InCompleted ) noexcept
 {
     TVector<FEntry> Ready;
     {
@@ -50,7 +50,7 @@ Lumen::USize Lumen::FRHIDeferredReleaseQueue::Poll ( const FRHITimelineValue InC
     }
     return Ready.size();
 }
-Lumen::USize Lumen::FRHIDeferredReleaseQueue::Drain () noexcept
+Lumen::USize Lumen::RHI::FRHIDeferredReleaseQueue::Drain () noexcept
 {
     TVector<FEntry> Ready;
     {
@@ -64,7 +64,7 @@ Lumen::USize Lumen::FRHIDeferredReleaseQueue::Drain () noexcept
     }
     return Ready.size();
 }
-void Lumen::FRHIDeferredReleaseQueue::Shutdown () noexcept
+void Lumen::RHI::FRHIDeferredReleaseQueue::Shutdown () noexcept
 {
     {
         HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
@@ -76,12 +76,12 @@ void Lumen::FRHIDeferredReleaseQueue::Shutdown () noexcept
     }
     Drain();
 }
-Lumen::USize Lumen::FRHIDeferredReleaseQueue::GetSize () const noexcept
+Lumen::USize Lumen::RHI::FRHIDeferredReleaseQueue::GetSize () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Entries.size();
 }
-Lumen::Bool Lumen::FRHIDeferredReleaseQueue::IsShutdown () const noexcept
+Lumen::Bool Lumen::RHI::FRHIDeferredReleaseQueue::IsShutdown () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return bShutdown;

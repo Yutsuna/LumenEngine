@@ -3,24 +3,24 @@
  * @brief Implements chunked aligned command storage.
  */
 
-#include <Commands/RHICommandStream.hpp>
-#include <Utilities/RHIAlignment.hpp>
-#include <Utilities/RHICheckedMath.hpp>
+#include <RHI/Commands/RHICommandStream.hpp>
+#include <RHI/Utilities/RHIAlignment.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 #include <cstring>
 namespace
 {
 constexpr Lumen::UInt32 CommandMagic = 0x52434844U;
-Lumen::FRHIError StreamError ( Lumen::FStringView InMessage ) noexcept
+Lumen::RHI::FRHIError StreamError ( Lumen::FStringView InMessage ) noexcept
 {
-    return { Lumen::ERHIErrorCode::CorruptedData, Lumen::ERHIErrorCondition::Command, InMessage };
+    return { Lumen::RHI::ERHIErrorCode::CorruptedData, Lumen::RHI::ERHIErrorCondition::Command, InMessage };
 }
 } // namespace
-Lumen::FRHICommandStream::FRHICommandStream ( const USize InChunkCapacity ) noexcept
+Lumen::RHI::FRHICommandStream::FRHICommandStream ( const USize InChunkCapacity ) noexcept
     : ChunkCapacity( InChunkCapacity < 256U ? 256U : InChunkCapacity )
 {
 }
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandStream::WritePayload ( const UInt32 InOpcode,
-                                                                                  const TSpan<const Byte> InPayload ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHICommandStream::WritePayload ( const UInt32 InOpcode, const TSpan<const Byte> InPayload ) noexcept
 {
     const TOptional<UInt32> PayloadSize = RHICheckedCast<UInt32>( InPayload.size() );
     if ( not PayloadSize )
@@ -60,7 +60,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandStream::WritePayload 
     Records.push_back( { CurrentChunk, Offset, *PayloadSize } );
     return {};
 }
-Lumen::TExpected<Lumen::FRHICommandView, Lumen::FRHIError> Lumen::FRHICommandStream::Read ( const USize InIndex ) const noexcept
+Lumen::TExpected<Lumen::RHI::FRHICommandView, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHICommandStream::Read ( const USize InIndex ) const noexcept
 {
     if ( InIndex >= Records.size() )
     {
@@ -88,14 +89,14 @@ Lumen::TExpected<Lumen::FRHICommandView, Lumen::FRHIError> Lumen::FRHICommandStr
     return FRHICommandView{ .Opcode  = Header.Opcode,
                             .Payload = TSpan<const Byte>( Chunk.data() + *End, static_cast<USize>( Header.PayloadSize ) ) };
 }
-void Lumen::FRHICommandStream::Retain ( TSharedPtr<IRHIObject> InObject ) noexcept
+void Lumen::RHI::FRHICommandStream::Retain ( TSharedPtr<IRHIObject> InObject ) noexcept
 {
     if ( InObject )
     {
         RetainedObjects.push_back( std::move( InObject ) );
     }
 }
-void Lumen::FRHICommandStream::Clear () noexcept
+void Lumen::RHI::FRHICommandStream::Clear () noexcept
 {
     for ( auto &Chunk : Chunks )
     {
@@ -105,15 +106,15 @@ void Lumen::FRHICommandStream::Clear () noexcept
     Records.clear();
     RetainedObjects.clear();
 }
-Lumen::USize Lumen::FRHICommandStream::GetCommandCount () const noexcept
+Lumen::USize Lumen::RHI::FRHICommandStream::GetCommandCount () const noexcept
 {
     return Records.size();
 }
-Lumen::USize Lumen::FRHICommandStream::GetChunkCount () const noexcept
+Lumen::USize Lumen::RHI::FRHICommandStream::GetChunkCount () const noexcept
 {
     return Chunks.size();
 }
-Lumen::USize Lumen::FRHICommandStream::GetRetainedCount () const noexcept
+Lumen::USize Lumen::RHI::FRHICommandStream::GetRetainedCount () const noexcept
 {
     return RetainedObjects.size();
 }

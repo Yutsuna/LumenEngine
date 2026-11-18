@@ -4,10 +4,10 @@
  */
 
 #include "RHIValidationDevice.hpp"
-#include <Validation/RHIValidation.hpp>
+#include <RHI/Validation/RHIValidation.hpp>
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDevice>, Lumen::FRHIError>
-Lumen::WrapRHIDevice ( const TSharedRef<IRHIDevice> &InDevice, const FRHIValidationDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDevice>, Lumen::RHI::FRHIError>
+Lumen::RHI::WrapRHIDevice ( const TSharedRef<IRHIDevice> &InDevice, const FRHIValidationDesc &InDesc ) noexcept
 {
     return InDesc.Validate().AndThen( [&InDevice, &InDesc] () noexcept -> TExpected<TSharedRef<IRHIDevice>, FRHIError>
     {
@@ -21,7 +21,7 @@ Lumen::WrapRHIDevice ( const TSharedRef<IRHIDevice> &InDevice, const FRHIValidat
     } );
 }
 
-Lumen::IRHIObject *Lumen::UnwrapRHIObject ( IRHIObject *InObject ) noexcept
+Lumen::RHI::IRHIObject *Lumen::RHI::UnwrapRHIObject ( IRHIObject *InObject ) noexcept
 {
     IRHIObject *Current = InObject;
     while ( Current != nullptr )
@@ -36,7 +36,7 @@ Lumen::IRHIObject *Lumen::UnwrapRHIObject ( IRHIObject *InObject ) noexcept
     return Current;
 }
 
-const Lumen::IRHIObject *Lumen::UnwrapRHIObject ( const IRHIObject *InObject ) noexcept
+const Lumen::RHI::IRHIObject *Lumen::RHI::UnwrapRHIObject ( const IRHIObject *InObject ) noexcept
 {
     const IRHIObject *Current = InObject;
     while ( Current != nullptr )
@@ -51,7 +51,7 @@ const Lumen::IRHIObject *Lumen::UnwrapRHIObject ( const IRHIObject *InObject ) n
     return Current;
 }
 
-Lumen::TSharedRef<Lumen::IRHIObject> Lumen::UnwrapRHISharedObject ( const TSharedRef<IRHIObject> &InObject ) noexcept
+Lumen::TSharedRef<Lumen::RHI::IRHIObject> Lumen::RHI::UnwrapRHISharedObject ( const TSharedRef<IRHIObject> &InObject ) noexcept
 {
     TSharedRef<IRHIObject> Current = InObject;
     while ( const auto *Validation = dynamic_cast<const IRHIValidationObject *>( Current.Get() ) )
@@ -61,7 +61,7 @@ Lumen::TSharedRef<Lumen::IRHIObject> Lumen::UnwrapRHISharedObject ( const TShare
     return Current;
 }
 
-Lumen::TSharedPtr<Lumen::IRHIObject> Lumen::UnwrapRHISharedObject ( const TSharedPtr<IRHIObject> &InObject ) noexcept
+Lumen::TSharedPtr<Lumen::RHI::IRHIObject> Lumen::RHI::UnwrapRHISharedObject ( const TSharedPtr<IRHIObject> &InObject ) noexcept
 {
     TSharedPtr<IRHIObject> Current = InObject;
     while ( Current )

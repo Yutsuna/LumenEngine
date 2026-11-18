@@ -6,7 +6,7 @@
 #include "RHIReadbackAllocator.hpp"
 #include <Templates/Hash.hpp>
 
-Lumen::FRHIReadbackAllocator::FRHIReadbackAllocator ( const UInt64 InCapacity, const FRHIObjectId InId ) noexcept
+Lumen::RHI::FRHIReadbackAllocator::FRHIReadbackAllocator ( const UInt64 InCapacity, const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FRHIReadbackAllocator>() ), Ring( InCapacity ),
       Storage( MakeUnique<Byte[]>( static_cast<USize>( InCapacity ) ) ), Capacity( static_cast<USize>( InCapacity ) )
 {
@@ -14,8 +14,8 @@ Lumen::FRHIReadbackAllocator::FRHIReadbackAllocator ( const UInt64 InCapacity, c
 }
 
 LUMEN_RHI_OBJECT_FORWARDERS( FRHIReadbackAllocator )
-Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
-Lumen::FRHIReadbackAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIReadbackAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
     FRHIAllocationDesc ReadbackDesc             = InDesc;
     ReadbackDesc.MemoryClass                    = ERHIMemoryClass::Readback;
@@ -28,8 +28,8 @@ Lumen::FRHIReadbackAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noex
     return Result;
 }
 
-Lumen::TExpected<Lumen::FRHIReadbackAllocation, Lumen::FRHIError>
-Lumen::FRHIReadbackAllocator::Map ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIReadbackAllocation, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIReadbackAllocator::Map ( const FRHIAllocation &InAllocation ) noexcept
 {
     if ( not InAllocation.IsValid() )
     {
@@ -52,7 +52,8 @@ Lumen::FRHIReadbackAllocator::Map ( const FRHIAllocation &InAllocation ) noexcep
                                                                     static_cast<USize>( InAllocation.Size ) ) };
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIReadbackAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIReadbackAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     TExpected<void, FRHIError> Result = Ring.Free( InAllocation );
     if ( not Result )

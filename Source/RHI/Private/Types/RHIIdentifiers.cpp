@@ -3,12 +3,12 @@
  * @brief Implements the monotonic identifier generator.
  */
 
-#include <Types/RHIIdentifiers.hpp>
+#include <RHI/Types/RHIIdentifiers.hpp>
 
-Lumen::FRHIIdentifierGenerator::FRHIIdentifierGenerator () noexcept : NextValue( 1ULL )
+Lumen::RHI::FRHIIdentifierGenerator::FRHIIdentifierGenerator () noexcept : NextValue( 1ULL )
 {
 }
 
-Lumen::FRHIIdentifierGenerator::FRHIIdentifierGenerator ( const UInt64 InFirstValue ) noexcept : NextValue( InFirstValue )
+Lumen::RHI::FRHIIdentifierGenerator::FRHIIdentifierGenerator ( const UInt64 InFirstValue ) noexcept : NextValue( InFirstValue )
 {
 }

@@ -3,65 +3,65 @@
  * @brief Implements common device status and non-owning child tracking.
  */
 
-#include <Device/RHIDeviceBase.hpp>
 #include <HAL/LockGuard.hpp>
+#include <RHI/Device/RHIDeviceBase.hpp>
 #include <Templates/Hash.hpp>
 
-Lumen::FRHIDeviceBase::FRHIDeviceBase ( const FRHICapabilities InCapabilities,
-                                        const FRHILimits InLimits,
-                                        const UInt64 InBackendTypeTag ) noexcept
+Lumen::RHI::FRHIDeviceBase::FRHIDeviceBase ( const FRHICapabilities InCapabilities,
+                                             const FRHILimits InLimits,
+                                             const UInt64 InBackendTypeTag ) noexcept
     : Identity( FRHIObjectId{ 1ULL }, InBackendTypeTag ), Capabilities( InCapabilities ), Limits( InLimits ),
       Status( ERHIDeviceStatus::Ready ), Registry( MakeShared<FObjectRegistry>() )
 {
 }
 
-Lumen::FRHIDeviceBase::~FRHIDeviceBase () noexcept
+Lumen::RHI::FRHIDeviceBase::~FRHIDeviceBase () noexcept
 {
     SetStatus( ERHIDeviceStatus::Closed );
 }
 
-Lumen::FRHIObjectId Lumen::FRHIDeviceBase::GetId () const noexcept
+Lumen::RHI::FRHIObjectId Lumen::RHI::FRHIDeviceBase::GetId () const noexcept
 {
     return Identity.GetId();
 }
 
-Lumen::FString Lumen::FRHIDeviceBase::GetDebugName () const noexcept
+Lumen::FString Lumen::RHI::FRHIDeviceBase::GetDebugName () const noexcept
 {
     return Identity.GetDebugName();
 }
 
-void Lumen::FRHIDeviceBase::SetDebugName ( const FStringView InName ) noexcept
+void Lumen::RHI::FRHIDeviceBase::SetDebugName ( const FStringView InName ) noexcept
 {
     Identity.SetDebugName( InName );
 }
 
-Lumen::UInt64 Lumen::FRHIDeviceBase::GetBackendTypeTag () const noexcept
+Lumen::UInt64 Lumen::RHI::FRHIDeviceBase::GetBackendTypeTag () const noexcept
 {
     return Identity.GetBackendTypeTag();
 }
 
-const Lumen::FRHICapabilities &Lumen::FRHIDeviceBase::GetCapabilities () const noexcept
+const Lumen::RHI::FRHICapabilities &Lumen::RHI::FRHIDeviceBase::GetCapabilities () const noexcept
 {
     return Capabilities;
 }
 
-const Lumen::FRHILimits &Lumen::FRHIDeviceBase::GetLimits () const noexcept
+const Lumen::RHI::FRHILimits &Lumen::RHI::FRHIDeviceBase::GetLimits () const noexcept
 {
     return Limits;
 }
 
-Lumen::ERHIDeviceStatus Lumen::FRHIDeviceBase::GetStatus () const noexcept
+Lumen::RHI::ERHIDeviceStatus Lumen::RHI::FRHIDeviceBase::GetStatus () const noexcept
 {
     return Status.load( std::memory_order_acquire );
 }
 
-Lumen::USize Lumen::FRHIDeviceBase::GetTrackedObjectCount () const noexcept
+Lumen::USize Lumen::RHI::FRHIDeviceBase::GetTrackedObjectCount () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
     return Registry->Objects.size();
 }
 
-void Lumen::FRHIDeviceBase::SetStatus ( const ERHIDeviceStatus InStatus ) noexcept
+void Lumen::RHI::FRHIDeviceBase::SetStatus ( const ERHIDeviceStatus InStatus ) noexcept
 {
     ERHIDeviceStatus Current = Status.load( std::memory_order_acquire );
     while ( static_cast<UInt8>( InStatus ) > static_cast<UInt8>( Current ) and
@@ -70,12 +70,12 @@ void Lumen::FRHIDeviceBase::SetStatus ( const ERHIDeviceStatus InStatus ) noexce
     }
 }
 
-Lumen::FRHIObjectId Lumen::FRHIDeviceBase::NextObjectId () noexcept
+Lumen::RHI::FRHIObjectId Lumen::RHI::FRHIDeviceBase::NextObjectId () noexcept
 {
     return Identifiers.Next<FRHIObjectIdTag>();
 }
 
-void Lumen::FRHIDeviceBase::TrackObject ( IRHIObject &InObject, FRHIObjectBase &InBase ) noexcept
+void Lumen::RHI::FRHIDeviceBase::TrackObject ( IRHIObject &InObject, FRHIObjectBase &InBase ) noexcept
 {
     {
         HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
@@ -96,7 +96,7 @@ void Lumen::FRHIDeviceBase::TrackObject ( IRHIObject &InObject, FRHIObjectBase &
     } );
 }
 
-void Lumen::FRHIDeviceBase::UntrackObject ( IRHIObject &InObject ) noexcept
+void Lumen::RHI::FRHIDeviceBase::UntrackObject ( IRHIObject &InObject ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
     for ( USize Index = 0U; Index < Registry->Objects.size(); ++Index )
@@ -110,7 +110,8 @@ void Lumen::FRHIDeviceBase::UntrackObject ( IRHIObject &InObject ) noexcept
     }
 }
 
-Lumen::TOptional<Lumen::FRHIError> Lumen::FRHIDeviceBase::GetUnavailableError ( const FStringView InOperation ) const noexcept
+Lumen::TOptional<Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIDeviceBase::GetUnavailableError ( const FStringView InOperation ) const noexcept
 {
     const ERHIDeviceStatus Current = GetStatus();
     if ( Current == ERHIDeviceStatus::Ready )

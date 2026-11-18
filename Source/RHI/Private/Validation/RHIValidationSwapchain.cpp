@@ -4,19 +4,19 @@
  */
 
 #include "RHIValidationSwapchain.hpp"
-#include <Queue/IRHIQueue.hpp>
-#include <Synchronization/IRHISemaphore.hpp>
-#include <Validation/RHIValidation.hpp>
+#include <RHI/Queue/IRHIQueue.hpp>
+#include <RHI/Synchronization/IRHISemaphore.hpp>
+#include <RHI/Validation/RHIValidation.hpp>
 
-Lumen::FRHIValidationSwapchain::FRHIValidationSwapchain ( TSharedRef<IRHISwapchain> InUnderlying,
-                                                          TSharedPtr<FRHIValidationState> InState ) noexcept
+Lumen::RHI::FRHIValidationSwapchain::FRHIValidationSwapchain ( TSharedRef<IRHISwapchain> InUnderlying,
+                                                               TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
 {
     State->Track( *Underlying, ERHIValidationObjectKind::Swapchain );
     RebuildImages();
 }
 
-Lumen::FRHIValidationSwapchain::~FRHIValidationSwapchain () noexcept
+Lumen::RHI::FRHIValidationSwapchain::~FRHIValidationSwapchain () noexcept
 {
     Images.clear();
     State->Untrack( *Underlying );
@@ -24,22 +24,22 @@ Lumen::FRHIValidationSwapchain::~FRHIValidationSwapchain () noexcept
 
 LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationSwapchain )
 
-const Lumen::FRHISwapchainDesc &Lumen::FRHIValidationSwapchain::GetDesc () const noexcept
+const Lumen::RHI::FRHISwapchainDesc &Lumen::RHI::FRHIValidationSwapchain::GetDesc () const noexcept
 {
     return Underlying->GetDesc();
 }
 
-const Lumen::FRHISwapchainCapabilities &Lumen::FRHIValidationSwapchain::GetCapabilities () const noexcept
+const Lumen::RHI::FRHISwapchainCapabilities &Lumen::RHI::FRHIValidationSwapchain::GetCapabilities () const noexcept
 {
     return Underlying->GetCapabilities();
 }
 
-Lumen::UInt32 Lumen::FRHIValidationSwapchain::GetImageCount () const noexcept
+Lumen::UInt32 Lumen::RHI::FRHIValidationSwapchain::GetImageCount () const noexcept
 {
     return static_cast<UInt32>( Images.size() );
 }
 
-void Lumen::FRHIValidationSwapchain::RebuildImages () noexcept
+void Lumen::RHI::FRHIValidationSwapchain::RebuildImages () noexcept
 {
     TVector<TSharedRef<IRHITexture>> NewImages;
     const UInt32 Count = Underlying->GetImageCount();
@@ -55,8 +55,8 @@ void Lumen::FRHIValidationSwapchain::RebuildImages () noexcept
     Acquired.assign( Images.size(), false );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITexture>, Lumen::FRHIError>
-Lumen::FRHIValidationSwapchain::GetImage ( const UInt32 InIndex ) const noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationSwapchain::GetImage ( const UInt32 InIndex ) const noexcept
 {
     if ( InIndex >= Images.size() )
     {
@@ -73,7 +73,8 @@ Lumen::FRHIValidationSwapchain::GetImage ( const UInt32 InIndex ) const noexcept
     return Images[InIndex];
 }
 
-Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::FRHIValidationSwapchain::AcquireNextImage () noexcept
+Lumen::TExpected<Lumen::RHI::FRHIAcquiredImage, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationSwapchain::AcquireNextImage () noexcept
 {
     const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Presentation );
     Bool bAllAcquired    = not Acquired.empty();
@@ -109,9 +110,8 @@ Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::FRHIValidati
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationSwapchain::Present ( IRHIQueue &InQueue,
-                                                                                   const FRHIAcquiredImage &InImage,
-                                                                                   IRHISemaphore *InRenderComplete ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationSwapchain::Present (
+    IRHIQueue &InQueue, const FRHIAcquiredImage &InImage, IRHISemaphore *InRenderComplete ) noexcept
 {
     const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Presentation );
     if ( bValidate )
@@ -140,7 +140,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationSwapchain::Present
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
 {
     if ( State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Presentation ) )
     {

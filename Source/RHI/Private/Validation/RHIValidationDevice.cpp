@@ -4,16 +4,16 @@
  */
 #include "RHIValidationDevice.hpp"
 #include <HAL/LockGuard.hpp>
-#include <Pipelines/RHIPipelineLayoutDesc.hpp>
-#include <Validation/RHIValidation.hpp>
+#include <RHI/Pipelines/RHIPipelineLayoutDesc.hpp>
+#include <RHI/Validation/RHIValidation.hpp>
 
-Lumen::FRHIValidationDevice::FRHIValidationDevice ( TSharedRef<IRHIDevice> InUnderlying,
-                                                    TSharedPtr<FRHIValidationState> InState ) noexcept
+Lumen::RHI::FRHIValidationDevice::FRHIValidationDevice ( TSharedRef<IRHIDevice> InUnderlying,
+                                                         TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
 {
 }
 
-Lumen::FRHIValidationDevice::~FRHIValidationDevice () noexcept
+Lumen::RHI::FRHIValidationDevice::~FRHIValidationDevice () noexcept
 {
     Queues.clear();
     State->ReportLeaks();
@@ -21,28 +21,28 @@ Lumen::FRHIValidationDevice::~FRHIValidationDevice () noexcept
 
 LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationDevice )
 
-const Lumen::FRHICapabilities &Lumen::FRHIValidationDevice::GetCapabilities () const noexcept
+const Lumen::RHI::FRHICapabilities &Lumen::RHI::FRHIValidationDevice::GetCapabilities () const noexcept
 {
     return Underlying->GetCapabilities();
 }
 
-const Lumen::FRHILimits &Lumen::FRHIValidationDevice::GetLimits () const noexcept
+const Lumen::RHI::FRHILimits &Lumen::RHI::FRHIValidationDevice::GetLimits () const noexcept
 {
     return Underlying->GetLimits();
 }
 
-Lumen::ERHIDeviceStatus Lumen::FRHIValidationDevice::GetStatus () const noexcept
+Lumen::RHI::ERHIDeviceStatus Lumen::RHI::FRHIValidationDevice::GetStatus () const noexcept
 {
     return Underlying->GetStatus();
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationDevice::WaitIdle () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationDevice::WaitIdle () noexcept
 {
     return Underlying->WaitIdle();
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIQueue>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::GetQueue ( const ERHIQueueType InType, const UInt32 InIndex ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIQueue>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::GetQueue ( const ERHIQueueType InType, const UInt32 InIndex ) noexcept
 {
     return Underlying->GetQueue( InType, InIndex )
         .AndThen( [this] ( TSharedRef<IRHIQueue> &&InQueue ) noexcept -> TExpected<TSharedRef<IRHIQueue>, FRHIError>
@@ -62,8 +62,8 @@ Lumen::FRHIValidationDevice::GetQueue ( const ERHIQueueType InType, const UInt32
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBuffer>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcept
 {
     return Underlying->CreateBuffer( InDesc ).Transform(
         [this] ( TSharedRef<IRHIBuffer> &&InBuffer ) noexcept -> TSharedRef<IRHIBuffer>
@@ -72,8 +72,8 @@ Lumen::FRHIValidationDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) noexc
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITexture>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateTexture ( const FRHITextureDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateTexture ( const FRHITextureDesc &InDesc ) noexcept
 {
     return Underlying->CreateTexture( InDesc ).Transform(
         [this] ( TSharedRef<IRHITexture> &&InTexture ) noexcept -> TSharedRef<IRHITexture>
@@ -82,8 +82,8 @@ Lumen::FRHIValidationDevice::CreateTexture ( const FRHITextureDesc &InDesc ) noe
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITextureView>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateTextureView ( const FRHITextureViewDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITextureView>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateTextureView ( const FRHITextureViewDesc &InDesc ) noexcept
 {
     if ( not InDesc.Texture )
     {
@@ -105,8 +105,8 @@ Lumen::FRHIValidationDevice::CreateTextureView ( const FRHITextureViewDesc &InDe
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISampler>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateSampler ( const FRHISamplerDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISampler>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateSampler ( const FRHISamplerDesc &InDesc ) noexcept
 {
     return Underlying->CreateSampler( InDesc ).Transform(
         [this] ( TSharedRef<IRHISampler> &&InSampler ) noexcept -> TSharedRef<IRHISampler>
@@ -115,32 +115,32 @@ Lumen::FRHIValidationDevice::CreateSampler ( const FRHISamplerDesc &InDesc ) noe
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIHeap>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateHeap ( const FRHIHeapDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIHeap>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateHeap ( const FRHIHeapDesc &InDesc ) noexcept
 {
     return Underlying->CreateHeap( InDesc );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBufferPool>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateBufferPool () noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBufferPool>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateBufferPool () noexcept
 {
     return Underlying->CreateBufferPool();
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIUploadAllocator>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateUploadAllocator ( const UInt64 InCapacity ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIUploadAllocator>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateUploadAllocator ( const UInt64 InCapacity ) noexcept
 {
     return Underlying->CreateUploadAllocator( InCapacity );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIReadbackAllocator>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateReadbackAllocator ( const UInt64 InCapacity ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIReadbackAllocator>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateReadbackAllocator ( const UInt64 InCapacity ) noexcept
 {
     return Underlying->CreateReadbackAllocator( InCapacity );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITransientResourceAllocator>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateTransientResourceAllocator () noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITransientResourceAllocator>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateTransientResourceAllocator () noexcept
 {
     return Underlying->CreateTransientResourceAllocator().Transform(
         [this] ( TSharedRef<IRHITransientResourceAllocator> &&InAllocator ) noexcept -> TSharedRef<IRHITransientResourceAllocator>
@@ -149,8 +149,8 @@ Lumen::FRHIValidationDevice::CreateTransientResourceAllocator () noexcept
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDefragmenter>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateDefragmenter () noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDefragmenter>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateDefragmenter () noexcept
 {
     return Underlying->CreateDefragmenter().Transform(
         [this] ( TSharedRef<IRHIDefragmenter> &&InDefragmenter ) noexcept -> TSharedRef<IRHIDefragmenter>
@@ -159,8 +159,8 @@ Lumen::FRHIValidationDevice::CreateDefragmenter () noexcept
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBindingLayout>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateBindingLayout ( const FRHIBindingLayoutDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBindingLayout>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateBindingLayout ( const FRHIBindingLayoutDesc &InDesc ) noexcept
 {
     return Underlying->CreateBindingLayout( InDesc ).Transform(
         [this] ( TSharedRef<IRHIBindingLayout> &&InLayout ) noexcept -> TSharedRef<IRHIBindingLayout>
@@ -169,8 +169,8 @@ Lumen::FRHIValidationDevice::CreateBindingLayout ( const FRHIBindingLayoutDesc &
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBindingSet>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateBindingSet ( const TSharedRef<IRHIBindingLayout> &InLayout ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBindingSet>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateBindingSet ( const TSharedRef<IRHIBindingLayout> &InLayout ) noexcept
 {
     return State->ValidateObject( *InLayout, ERHIValidationObjectKind::BindingLayout )
         .AndThen( [this, &InLayout] () noexcept -> TExpected<TSharedRef<IRHIBindingSet>, FRHIError>
@@ -183,20 +183,20 @@ Lumen::FRHIValidationDevice::CreateBindingSet ( const TSharedRef<IRHIBindingLayo
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDescriptorAllocator>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateDescriptorAllocator ( const FRHIDescriptorAllocatorDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDescriptorAllocator>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateDescriptorAllocator ( const FRHIDescriptorAllocatorDesc &InDesc ) noexcept
 {
     return Underlying->CreateDescriptorAllocator( InDesc );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIShader>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateShader ( const FRHIShaderDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIShader>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateShader ( const FRHIShaderDesc &InDesc ) noexcept
 {
     return Underlying->CreateShader( InDesc );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIPipelineLayout>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreatePipelineLayout ( const FRHIPipelineLayoutDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipelineLayout>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreatePipelineLayout ( const FRHIPipelineLayoutDesc &InDesc ) noexcept
 {
     FRHIPipelineLayoutDesc Unwrapped;
     Unwrapped.InlineConstants = InDesc.InlineConstants;
@@ -213,26 +213,26 @@ Lumen::FRHIValidationDevice::CreatePipelineLayout ( const FRHIPipelineLayoutDesc
     return Underlying->CreatePipelineLayout( Unwrapped );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIPipeline>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateGraphicsPipeline ( const FRHIGraphicsPipelineDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipeline>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateGraphicsPipeline ( const FRHIGraphicsPipelineDesc &InDesc ) noexcept
 {
     return Underlying->CreateGraphicsPipeline( InDesc );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIPipeline>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateComputePipeline ( const FRHIComputePipelineDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipeline>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateComputePipeline ( const FRHIComputePipelineDesc &InDesc ) noexcept
 {
     return Underlying->CreateComputePipeline( InDesc );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIPipelineCache>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreatePipelineCache ( const FRHIPipelineCacheDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipelineCache>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreatePipelineCache ( const FRHIPipelineCacheDesc &InDesc ) noexcept
 {
     return Underlying->CreatePipelineCache( InDesc );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHICommandAllocator>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateCommandAllocator ( const ERHIQueueType InQueueType ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHICommandAllocator>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateCommandAllocator ( const ERHIQueueType InQueueType ) noexcept
 {
     return Underlying->CreateCommandAllocator( InQueueType )
         .Transform( [this] ( TSharedRef<IRHICommandAllocator> &&InAllocator ) noexcept -> TSharedRef<IRHICommandAllocator>
@@ -241,8 +241,8 @@ Lumen::FRHIValidationDevice::CreateCommandAllocator ( const ERHIQueueType InQueu
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHICommandList>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateCommandList ( const TSharedRef<IRHICommandAllocator> &InAllocator ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHICommandList>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateCommandList ( const TSharedRef<IRHICommandAllocator> &InAllocator ) noexcept
 {
     return State->ValidateObject( *InAllocator, ERHIValidationObjectKind::CommandAllocator )
         .AndThen( [this, &InAllocator] () noexcept -> TExpected<TSharedRef<IRHICommandList>, FRHIError>
@@ -265,14 +265,14 @@ Lumen::FRHIValidationDevice::CreateCommandList ( const TSharedRef<IRHICommandAll
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISemaphore>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateSemaphore ( const FRHISemaphoreDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISemaphore>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateSemaphore ( const FRHISemaphoreDesc &InDesc ) noexcept
 {
     return Underlying->CreateSemaphore( InDesc );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISwapchain>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateSwapchain ( const FRHISwapchainDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISwapchain>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateSwapchain ( const FRHISwapchainDesc &InDesc ) noexcept
 {
     return Underlying->CreateSwapchain( InDesc ).Transform(
         [this] ( TSharedRef<IRHISwapchain> &&InSwapchain ) noexcept -> TSharedRef<IRHISwapchain>
@@ -281,13 +281,13 @@ Lumen::FRHIValidationDevice::CreateSwapchain ( const FRHISwapchainDesc &InDesc )
     } );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIQueryPool>, Lumen::FRHIError>
-Lumen::FRHIValidationDevice::CreateQueryPool ( const FRHIQueryPoolDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIQueryPool>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationDevice::CreateQueryPool ( const FRHIQueryPoolDesc &InDesc ) noexcept
 {
     return Underlying->CreateQueryPool( InDesc );
 }
 
-const Lumen::TSharedPtr<Lumen::FRHIValidationState> &Lumen::FRHIValidationDevice::GetState () const noexcept
+const Lumen::TSharedPtr<Lumen::RHI::FRHIValidationState> &Lumen::RHI::FRHIValidationDevice::GetState () const noexcept
 {
     return State;
 }

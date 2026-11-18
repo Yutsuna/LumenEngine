@@ -3,16 +3,17 @@
  * @brief Implements draw and dispatch argument validation.
  */
 
-#include <Commands/RHIDrawArguments.hpp>
-#include <Utilities/RHICheckedMath.hpp>
+#include <RHI/Commands/RHIDrawArguments.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 namespace
 {
-Lumen::TExpected<void, Lumen::FRHIError> InvalidArguments ( Lumen::FStringView InMessage ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> InvalidArguments ( Lumen::FStringView InMessage ) noexcept
 {
-    return Lumen::TUnexpected<Lumen::FRHIError>( Lumen::MakeRHIInvalidArgument( Lumen::ERHIErrorCondition::Command, InMessage ) );
+    return Lumen::TUnexpected<Lumen::RHI::FRHIError>(
+        Lumen::RHI::MakeRHIInvalidArgument( Lumen::RHI::ERHIErrorCondition::Command, InMessage ) );
 }
 } // namespace
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDrawArguments::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDrawArguments::Validate () const noexcept
 {
     if ( VertexCount == 0U or InstanceCount == 0U )
     {
@@ -20,7 +21,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDrawArguments::Validate () c
     }
     return {};
 }
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDrawIndexedArguments::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDrawIndexedArguments::Validate () const noexcept
 {
     if ( IndexCount == 0U or InstanceCount == 0U )
     {
@@ -28,8 +29,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDrawIndexedArguments::Valida
     }
     return {};
 }
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIDispatchArguments::Validate ( const UInt32 InMaximumPerDimension ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIDispatchArguments::Validate ( const UInt32 InMaximumPerDimension ) const noexcept
 {
     if ( GroupCountX == 0U or GroupCountY == 0U or GroupCountZ == 0U or GroupCountX > InMaximumPerDimension or
          GroupCountY > InMaximumPerDimension or GroupCountZ > InMaximumPerDimension )
@@ -38,8 +39,8 @@ Lumen::FRHIDispatchArguments::Validate ( const UInt32 InMaximumPerDimension ) co
     }
     return {};
 }
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIIndirectArguments::Validate ( const UInt64 InBufferSize,
-                                                                                  const UInt32 InMinimumStride ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIIndirectArguments::Validate ( const UInt64 InBufferSize, const UInt32 InMinimumStride ) const noexcept
 {
     if ( Count == 0U or InMinimumStride == 0U or Stride < InMinimumStride or Stride % 4U != 0U or Offset % 4ULL != 0ULL )
     {

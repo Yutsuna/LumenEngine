@@ -5,36 +5,41 @@
 #pragma once
 
 #include "../Types/RHIObjectForward.hpp"
-#include <Memory/IRHITransientResourceAllocator.hpp>
-#include <Memory/RHITlsfAllocator.hpp>
+#include <RHI/Memory/IRHITransientResourceAllocator.hpp>
+#include <RHI/Memory/RHITlsfAllocator.hpp>
 
 namespace Lumen
 {
 
-/**
- * @class FRHITransientResourceAllocator
- * @brief Places batches and aliases disjoint lifetimes.
- */
-class RHI_EXPORT FRHITransientResourceAllocator final : public IRHITransientResourceAllocator
+namespace RHI
 {
-public:
 
-    LUMEN_RHI_OBJECT_DECLARATIONS;
+    /**
+     * @class FRHITransientResourceAllocator
+     * @brief Places batches and aliases disjoint lifetimes.
+     */
+    class RHI_EXPORT FRHITransientResourceAllocator final : public IRHITransientResourceAllocator
+    {
+    public:
 
-    /** @brief Creates a transient arena with InCapacity bytes. */
-    explicit FRHITransientResourceAllocator ( FRHIObjectId InId, UInt64 InCapacity = 64ULL * 1024ULL * 1024ULL ) noexcept;
+        LUMEN_RHI_OBJECT_DECLARATIONS;
 
-    void BeginBatch () noexcept override;
+        /** @brief Creates a transient arena with InCapacity bytes. */
+        explicit FRHITransientResourceAllocator ( FRHIObjectId InId, UInt64 InCapacity = 64ULL * 1024ULL * 1024ULL ) noexcept;
 
-    TExpected<TVector<FRHITransientAllocation>, FRHIError> Allocate ( const FRHITransientBatch &InBatch ) noexcept override;
+        void BeginBatch () noexcept override;
 
-    void EndBatch () noexcept override;
+        TExpected<TVector<FRHITransientAllocation>, FRHIError> Allocate ( const FRHITransientBatch &InBatch ) noexcept override;
 
-private:
+        void EndBatch () noexcept override;
 
-    FRHIObjectBase Identity;
-    FRHITlsfAllocator Allocator;
-    Bool bInBatch = false;
-};
+    private:
+
+        FRHIObjectBase Identity;
+        FRHITlsfAllocator Allocator;
+        Bool bInBatch = false;
+    };
+
+} // namespace RHI
 
 } // namespace Lumen

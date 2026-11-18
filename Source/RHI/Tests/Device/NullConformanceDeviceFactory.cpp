@@ -7,28 +7,28 @@
 #include "Module/NullModule.hpp"
 #include <Device/NullDevice.hpp>
 #include <Presentation/NullPresentation.hpp>
-#include <Presentation/RHISwapchainDesc.hpp>
-#include <Shaders/RHIShaderDesc.hpp>
+#include <RHI/Presentation/RHISwapchainDesc.hpp>
+#include <RHI/Shaders/RHIShaderDesc.hpp>
+#include <RHI/Validation/RHIValidation.hpp>
 #include <Templates/Optional.hpp>
-#include <Validation/RHIValidation.hpp>
 
 /**
  * Public
  */
 
-Lumen::Tests::FNullConformanceDeviceFactory::FNullConformanceDeviceFactory ( FNullDeviceDesc InDesc ) noexcept
+Lumen::RHI::Tests::FNullConformanceDeviceFactory::FNullConformanceDeviceFactory ( FNullDeviceDesc InDesc ) noexcept
     : Desc( std::move( InDesc ) )
 {
     /* */
 }
 
-Lumen::TSharedRef<Lumen::IRHIModule> Lumen::Tests::FNullConformanceDeviceFactory::GetModule () const noexcept
+Lumen::TSharedRef<Lumen::RHI::IRHIModule> Lumen::RHI::Tests::FNullConformanceDeviceFactory::GetModule () const noexcept
 {
     return MakeShared<FNullModule>( Desc );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDevice>, Lumen::FRHIError>
-Lumen::Tests::FNullConformanceDeviceFactory::CreateDevice ( const Bool bEnableValidation ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDevice>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullConformanceDeviceFactory::CreateDevice ( const Bool bEnableValidation ) noexcept
 {
     TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = GetModule()->CreateDevice( FRHIDeviceDesc{} );
     if ( not Device or not bEnableValidation )
@@ -38,17 +38,18 @@ Lumen::Tests::FNullConformanceDeviceFactory::CreateDevice ( const Bool bEnableVa
     return WrapRHIDevice( *Device );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIShader>, Lumen::FRHIError>
-Lumen::Tests::FNullConformanceDeviceFactory::CreateShader ( IRHIDevice &InDevice, const ERHIShaderStage InStage ) const noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIShader>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullConformanceDeviceFactory::CreateShader ( IRHIDevice &InDevice,
+                                                                 const ERHIShaderStage InStage ) const noexcept
 {
     FRHIShaderDesc ShaderDesc;
     ShaderDesc.Stage = InStage;
     return InDevice.CreateShader( ShaderDesc );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHISwapchain>, Lumen::FRHIError>
-Lumen::Tests::FNullConformanceDeviceFactory::CreateSwapchain ( IRHIDevice &InDevice,
-                                                               const TSharedPtr<IRHISwapchain> &InOldSwapchain ) const noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISwapchain>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullConformanceDeviceFactory::CreateSwapchain (
+    IRHIDevice &InDevice, const TSharedPtr<IRHISwapchain> &InOldSwapchain ) const noexcept
 {
     FRHISwapchainDesc SwapchainDesc;
     SwapchainDesc.Surface.Type          = ERHISurfaceType::Null;
@@ -59,7 +60,7 @@ Lumen::Tests::FNullConformanceDeviceFactory::CreateSwapchain ( IRHIDevice &InDev
     return InDevice.CreateSwapchain( SwapchainDesc );
 }
 
-Lumen::Bool Lumen::Tests::FNullConformanceDeviceFactory::InjectDeviceLost ( IRHIDevice &InDevice ) const noexcept
+Lumen::Bool Lumen::RHI::Tests::FNullConformanceDeviceFactory::InjectDeviceLost ( IRHIDevice &InDevice ) const noexcept
 {
     return TryUnwrapRHIBackend<FNullDevice>( &InDevice )
         .Inspect( [] ( FNullDevice *Device ) noexcept
@@ -68,7 +69,8 @@ Lumen::Bool Lumen::Tests::FNullConformanceDeviceFactory::InjectDeviceLost ( IRHI
     } ).HasValue();
 }
 
-Lumen::Bool Lumen::Tests::FNullConformanceDeviceFactory::InjectSwapchainOutOfDate ( IRHISwapchain &InSwapchain ) const noexcept
+Lumen::Bool
+Lumen::RHI::Tests::FNullConformanceDeviceFactory::InjectSwapchainOutOfDate ( IRHISwapchain &InSwapchain ) const noexcept
 {
     return TryUnwrapRHIBackend<FNullSwapchain>( &InSwapchain )
         .Inspect( [] ( FNullSwapchain *Swapchain ) noexcept
@@ -77,7 +79,7 @@ Lumen::Bool Lumen::Tests::FNullConformanceDeviceFactory::InjectSwapchainOutOfDat
     } ).HasValue();
 }
 
-Lumen::Tests::IRHIConformanceDeviceFactory &Lumen::Tests::GetRHIConformanceDeviceFactory () noexcept
+Lumen::RHI::Tests::IRHIConformanceDeviceFactory &Lumen::RHI::Tests::GetRHIConformanceDeviceFactory () noexcept
 {
     static FNullConformanceDeviceFactory Factory;
     return Factory;

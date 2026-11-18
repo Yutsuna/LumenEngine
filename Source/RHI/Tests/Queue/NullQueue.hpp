@@ -7,46 +7,54 @@
 
 #include <Device/NullFaultPlan.hpp>
 #include <HAL/PlatformMutex.hpp>
-#include <Queue/IRHIQueue.hpp>
+#include <RHI/Queue/IRHIQueue.hpp>
 #include <Templates/ConditionVariable.hpp>
 #include <Types/RHIObjectForward.hpp>
 
 namespace Lumen
 {
 
-namespace Tests
+namespace RHI
 {
 
-    /**
-     * @class FNullQueue
-     * @brief A serialized deterministic Null queue.
-     */
-    class FNullQueue final : public IRHIQueue
+    namespace Tests
     {
-    public:
 
-        FNullQueue ( ERHIQueueType InType, UInt32 InIndex, TSharedPtr<FNullFaultPlan> InFaultPlan, FRHIObjectId InId ) noexcept;
-        LUMEN_RHI_OBJECT_DECLARATIONS;
-        ERHIQueueType GetType () const noexcept override;
-        FRHITimelineValue GetCompletedValue () const noexcept override;
-        TExpected<void, FRHIError> Submit ( const FRHISubmitDesc &InDesc ) noexcept override;
-        TExpected<void, FRHIError> WaitIdle () noexcept override;
-        TExpected<void, FRHIError> Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept override;
-        void MarkLost () noexcept;
-        [[nodiscard]] UInt64 GetSubmitCount () const noexcept;
+        /**
+         * @class FNullQueue
+         * @brief A serialized deterministic Null queue.
+         */
+        class FNullQueue final : public IRHIQueue
+        {
+        public:
 
-    private:
+            FNullQueue ( ERHIQueueType InType,
+                         UInt32 InIndex,
+                         TSharedPtr<FNullFaultPlan> InFaultPlan,
+                         FRHIObjectId InId ) noexcept;
+            LUMEN_RHI_OBJECT_DECLARATIONS;
+            ERHIQueueType GetType () const noexcept override;
+            FRHITimelineValue GetCompletedValue () const noexcept override;
+            TExpected<void, FRHIError> Submit ( const FRHISubmitDesc &InDesc ) noexcept override;
+            TExpected<void, FRHIError> WaitIdle () noexcept override;
+            TExpected<void, FRHIError> Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept override;
+            void MarkLost () noexcept;
+            [[nodiscard]] UInt64 GetSubmitCount () const noexcept;
 
-        FRHIObjectBase Identity;
-        ERHIQueueType Type;
-        TSharedPtr<FNullFaultPlan> FaultPlan;
-        FRHITimelineValue Completed;
-        UInt64 SubmitCount = 0ULL;
-        Bool bLost         = false;
-        mutable HAL::FPlatformRecursiveSharedMutex Mutex;
-        FConditionVariable Condition;
-    };
+        private:
 
-} // namespace Tests
+            FRHIObjectBase Identity;
+            ERHIQueueType Type;
+            TSharedPtr<FNullFaultPlan> FaultPlan;
+            FRHITimelineValue Completed;
+            UInt64 SubmitCount = 0ULL;
+            Bool bLost         = false;
+            mutable HAL::FPlatformRecursiveSharedMutex Mutex;
+            FConditionVariable Condition;
+        };
+
+    } // namespace Tests
+
+} // namespace RHI
 
 } // namespace Lumen

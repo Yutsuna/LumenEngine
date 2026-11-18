@@ -9,43 +9,48 @@
 namespace Lumen
 {
 
-namespace Tests
+namespace RHI
 {
 
-    /**
-     * @class FRHITestRandom
-     * @brief Reproducible SplitMix64 generator with bounded ranges.
-     */
-    class FRHITestRandom final
+    namespace Tests
     {
-    public:
 
-        /** @brief Starts a reproducible sequence. */
-        constexpr explicit FRHITestRandom ( const UInt64 InSeed = 0x4C554D454EULL ) noexcept : State( InSeed )
+        /**
+         * @class FRHITestRandom
+         * @brief Reproducible SplitMix64 generator with bounded ranges.
+         */
+        class FRHITestRandom final
         {
-        }
+        public:
 
-        /** @return Next raw random value. */
-        constexpr UInt64 Next () noexcept
-        {
-            State += 0x9E3779B97F4A7C15ULL;
-            UInt64 Value = State;
-            Value        = ( Value ^ ( Value >> 30U ) ) * 0xBF58476D1CE4E5B9ULL;
-            Value        = ( Value ^ ( Value >> 27U ) ) * 0x94D049BB133111EBULL;
-            return Value ^ ( Value >> 31U );
-        }
+            /** @brief Starts a reproducible sequence. */
+            constexpr explicit FRHITestRandom ( const UInt64 InSeed = 0x4C554D454EULL ) noexcept : State( InSeed )
+            {
+            }
 
-        /** @return Random value in [0, InUpperBound); zero for an empty range. */
-        constexpr UInt64 Next ( const UInt64 InUpperBound ) noexcept
-        {
-            return InUpperBound == 0ULL ? 0ULL : Next() % InUpperBound;
-        }
+            /** @return Next raw random value. */
+            constexpr UInt64 Next () noexcept
+            {
+                State += 0x9E3779B97F4A7C15ULL;
+                UInt64 Value = State;
+                Value        = ( Value ^ ( Value >> 30U ) ) * 0xBF58476D1CE4E5B9ULL;
+                Value        = ( Value ^ ( Value >> 27U ) ) * 0x94D049BB133111EBULL;
+                return Value ^ ( Value >> 31U );
+            }
 
-    private:
+            /** @return Random value in [0, InUpperBound); zero for an empty range. */
+            constexpr UInt64 Next ( const UInt64 InUpperBound ) noexcept
+            {
+                return InUpperBound == 0ULL ? 0ULL : Next() % InUpperBound;
+            }
 
-        UInt64 State;
-    };
+        private:
 
-} // namespace Tests
+            UInt64 State;
+        };
+
+    } // namespace Tests
+
+} // namespace RHI
 
 } // namespace Lumen

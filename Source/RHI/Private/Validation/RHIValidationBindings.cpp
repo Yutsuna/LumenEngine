@@ -4,52 +4,52 @@
  */
 
 #include "RHIValidationBindings.hpp"
-#include <Resources/IRHISampler.hpp>
-#include <Resources/IRHITextureView.hpp>
-#include <Validation/RHIValidation.hpp>
+#include <RHI/Resources/IRHISampler.hpp>
+#include <RHI/Resources/IRHITextureView.hpp>
+#include <RHI/Validation/RHIValidation.hpp>
 #include <variant>
 
-Lumen::FRHIValidationBindingLayout::FRHIValidationBindingLayout ( TSharedRef<IRHIBindingLayout> InUnderlying,
-                                                                  TSharedPtr<FRHIValidationState> InState ) noexcept
+Lumen::RHI::FRHIValidationBindingLayout::FRHIValidationBindingLayout ( TSharedRef<IRHIBindingLayout> InUnderlying,
+                                                                       TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
 {
     State->Track( *Underlying, ERHIValidationObjectKind::BindingLayout );
 }
 
-Lumen::FRHIValidationBindingLayout::~FRHIValidationBindingLayout () noexcept
+Lumen::RHI::FRHIValidationBindingLayout::~FRHIValidationBindingLayout () noexcept
 {
     State->Untrack( *Underlying );
 }
 
 LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationBindingLayout )
 
-const Lumen::FRHIBindingLayoutDesc &Lumen::FRHIValidationBindingLayout::GetDesc () const noexcept
+const Lumen::RHI::FRHIBindingLayoutDesc &Lumen::RHI::FRHIValidationBindingLayout::GetDesc () const noexcept
 {
     return Underlying->GetDesc();
 }
 
-Lumen::FRHIValidationBindingSet::FRHIValidationBindingSet ( TSharedRef<IRHIBindingSet> InUnderlying,
-                                                            TSharedRef<IRHIBindingLayout> InLayout,
-                                                            TSharedPtr<FRHIValidationState> InState ) noexcept
+Lumen::RHI::FRHIValidationBindingSet::FRHIValidationBindingSet ( TSharedRef<IRHIBindingSet> InUnderlying,
+                                                                 TSharedRef<IRHIBindingLayout> InLayout,
+                                                                 TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), Layout( std::move( InLayout ) ), State( std::move( InState ) )
 {
     State->Track( *Underlying, ERHIValidationObjectKind::BindingSet );
 }
 
-Lumen::FRHIValidationBindingSet::~FRHIValidationBindingSet () noexcept
+Lumen::RHI::FRHIValidationBindingSet::~FRHIValidationBindingSet () noexcept
 {
     State->Untrack( *Underlying );
 }
 
 LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationBindingSet )
 
-Lumen::TSharedRef<Lumen::IRHIBindingLayout> Lumen::FRHIValidationBindingSet::GetLayout () const noexcept
+Lumen::TSharedRef<Lumen::RHI::IRHIBindingLayout> Lumen::RHI::FRHIValidationBindingSet::GetLayout () const noexcept
 {
     return Layout;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &InWrite ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &InWrite ) const noexcept
 {
     const TSharedPtr<FRHIValidationReporter> &Reporter = State->GetReporter();
     const FRHIBindingLayoutEntry *Entry                = nullptr;
@@ -139,8 +139,8 @@ Lumen::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &InWrite
     }, InWrite.Resource );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWrites ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWrites ) noexcept
 {
     const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Bindings );
     if ( bValidate )
@@ -178,12 +178,12 @@ Lumen::FRHIValidationBindingSet::Write ( const TSpan<const FRHIBindingWrite> InW
     return Underlying->Write( Unwrapped );
 }
 
-Lumen::Bool Lumen::FRHIValidationBindingSet::IsDirty () const noexcept
+Lumen::Bool Lumen::RHI::FRHIValidationBindingSet::IsDirty () const noexcept
 {
     return Underlying->IsDirty();
 }
 
-void Lumen::FRHIValidationBindingSet::ClearDirty () noexcept
+void Lumen::RHI::FRHIValidationBindingSet::ClearDirty () noexcept
 {
     Underlying->ClearDirty();
 }

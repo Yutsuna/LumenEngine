@@ -4,10 +4,10 @@
  */
 
 #include "RHIUploadAllocator.hpp"
+#include <RHI/Utilities/RHICheckedMath.hpp>
 #include <Templates/Hash.hpp>
-#include <Utilities/RHICheckedMath.hpp>
 
-Lumen::FRHIUploadAllocator::FRHIUploadAllocator ( const UInt64 InCapacity, const FRHIObjectId InId ) noexcept
+Lumen::RHI::FRHIUploadAllocator::FRHIUploadAllocator ( const UInt64 InCapacity, const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FRHIUploadAllocator>() ), Ring( InCapacity ),
       Storage( MakeUnique<Byte[]>( static_cast<USize>( InCapacity ) ) ), Capacity( static_cast<USize>( InCapacity ) )
 {
@@ -15,8 +15,8 @@ Lumen::FRHIUploadAllocator::FRHIUploadAllocator ( const UInt64 InCapacity, const
 }
 
 LUMEN_RHI_OBJECT_FORWARDERS( FRHIUploadAllocator )
-Lumen::TExpected<Lumen::FRHIUploadAllocation, Lumen::FRHIError>
-Lumen::FRHIUploadAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIUploadAllocation, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIUploadAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
     FRHIAllocationDesc UploadDesc = InDesc;
     UploadDesc.MemoryClass        = ERHIMemoryClass::Upload;
@@ -35,7 +35,8 @@ Lumen::FRHIUploadAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIUploadAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIUploadAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     return Ring.Free( InAllocation );
 }

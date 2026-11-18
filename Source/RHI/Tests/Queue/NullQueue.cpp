@@ -13,28 +13,28 @@
  * Public
  */
 
-Lumen::Tests::FNullQueue::FNullQueue ( const ERHIQueueType InType,
-                                       const UInt32 InIndex,
-                                       TSharedPtr<FNullFaultPlan> InFaultPlan,
-                                       const FRHIObjectId InId ) noexcept
+Lumen::RHI::Tests::FNullQueue::FNullQueue ( const ERHIQueueType InType,
+                                            const UInt32 InIndex,
+                                            TSharedPtr<FNullFaultPlan> InFaultPlan,
+                                            const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FNullQueue>() ), Type( InType ), FaultPlan( std::move( InFaultPlan ) )
 {
     Identity.SetDebugName( std::format( "Null Queue %u", InIndex ) );
 }
 
 LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullQueue )
-Lumen::ERHIQueueType Lumen::Tests::FNullQueue::GetType () const noexcept
+Lumen::RHI::ERHIQueueType Lumen::RHI::Tests::FNullQueue::GetType () const noexcept
 {
     return Type;
 }
 
-Lumen::FRHITimelineValue Lumen::Tests::FNullQueue::GetCompletedValue () const noexcept
+Lumen::RHI::FRHITimelineValue Lumen::RHI::Tests::FNullQueue::GetCompletedValue () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Completed;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( const FRHISubmitDesc &InDesc ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Submit ( const FRHISubmitDesc &InDesc ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bLost )
@@ -48,7 +48,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
             return TUnexpected<FRHIError>( *Error );
         }
     }
-    const TExpected<void, FRHIError> Valid = InDesc.Validate();
+    TExpected<void, FRHIError> Valid = InDesc.Validate();
     if ( not Valid )
     {
         return Valid;
@@ -124,7 +124,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
     return {};
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::WaitIdle () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::WaitIdle () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bLost )
@@ -134,8 +134,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::WaitIdle () n
     return {};
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Wait ( const FRHITimelineValue InValue,
-                                                                          const Float64 InTimeoutSeconds ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Wait ( const FRHITimelineValue InValue,
+                                                                                    const Float64 InTimeoutSeconds ) noexcept
 {
     if ( InTimeoutSeconds < 0.0 )
     {
@@ -157,14 +157,14 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Wait ( const 
     return {};
 }
 
-void Lumen::Tests::FNullQueue::MarkLost () noexcept
+void Lumen::RHI::Tests::FNullQueue::MarkLost () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     bLost = true;
     Condition.NotifyAll();
 }
 
-Lumen::UInt64 Lumen::Tests::FNullQueue::GetSubmitCount () const noexcept
+Lumen::UInt64 Lumen::RHI::Tests::FNullQueue::GetSubmitCount () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return SubmitCount;

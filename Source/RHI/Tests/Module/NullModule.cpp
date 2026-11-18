@@ -11,24 +11,24 @@
  * Public
  */
 
-Lumen::Tests::FNullModule::FNullModule ( FNullDeviceDesc InDesc ) noexcept : Desc( std::move( InDesc ) )
+Lumen::RHI::Tests::FNullModule::FNullModule ( FNullDeviceDesc InDesc ) noexcept : Desc( std::move( InDesc ) )
 {
     /* */
 }
 
-Lumen::FRHIApiVersion Lumen::Tests::FNullModule::GetApiVersion () const noexcept
+Lumen::RHI::FRHIApiVersion Lumen::RHI::Tests::FNullModule::GetApiVersion () const noexcept
 {
     return {};
 }
 
-Lumen::TExpected<Lumen::TVector<Lumen::FRHIAdapterInfo>, Lumen::FRHIError>
-Lumen::Tests::FNullModule::EnumerateAdapters () const noexcept
+Lumen::TExpected<Lumen::TVector<Lumen::RHI::FRHIAdapterInfo>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullModule::EnumerateAdapters () const noexcept
 {
     return TVector<FRHIAdapterInfo>{ Desc.Adapter };
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIDevice>, Lumen::FRHIError>
-Lumen::Tests::FNullModule::CreateDevice ( const FRHIDeviceDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDevice>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullModule::CreateDevice ( const FRHIDeviceDesc &InDesc ) noexcept
 {
     return CheckRHICapabilityGate( Desc.Adapter, InDesc )
         .OrElse(

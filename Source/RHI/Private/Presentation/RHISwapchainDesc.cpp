@@ -3,9 +3,9 @@
  * @brief Implements swapchain descriptor negotiation.
  */
 
-#include <Presentation/RHISwapchainDesc.hpp>
+#include <RHI/Presentation/RHISwapchainDesc.hpp>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISwapchainDesc::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHISwapchainDesc::Validate () const noexcept
 {
     return Surface.Validate().AndThen( [this] () noexcept -> TExpected<void, FRHIError>
     {
@@ -21,8 +21,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISwapchainDesc::Validate () c
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHISwapchainDesc::Validate ( const FRHISwapchainCapabilities &InCapabilities ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHISwapchainDesc::Validate ( const FRHISwapchainCapabilities &InCapabilities ) const noexcept
 {
     return Validate()
         .AndThen(

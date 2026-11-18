@@ -5,20 +5,20 @@
 
 #include "RHIValidationCommandList.hpp"
 #include "RHIValidationCommandAllocator.hpp"
-#include <Queries/IRHIQueryPool.hpp>
-#include <Validation/RHIValidation.hpp>
+#include <RHI/Queries/IRHIQueryPool.hpp>
+#include <RHI/Validation/RHIValidation.hpp>
 #include <variant>
 
-Lumen::FRHIValidationCommandList::FRHIValidationCommandList ( TSharedRef<IRHICommandList> InUnderlying,
-                                                              TSharedPtr<FRHIValidationCommandAllocator> InAllocator,
-                                                              TSharedPtr<FRHIValidationState> InState ) noexcept
+Lumen::RHI::FRHIValidationCommandList::FRHIValidationCommandList ( TSharedRef<IRHICommandList> InUnderlying,
+                                                                   TSharedPtr<FRHIValidationCommandAllocator> InAllocator,
+                                                                   TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), Allocator( std::move( InAllocator ) ), State( std::move( InState ) )
 {
     State->Track( *Underlying, ERHIValidationObjectKind::CommandList );
     Allocator->RegisterList( *this );
 }
 
-Lumen::FRHIValidationCommandList::~FRHIValidationCommandList () noexcept
+Lumen::RHI::FRHIValidationCommandList::~FRHIValidationCommandList () noexcept
 {
     Allocator->UnregisterList( *this );
     State->Untrack( *Underlying );
@@ -26,33 +26,33 @@ Lumen::FRHIValidationCommandList::~FRHIValidationCommandList () noexcept
 
 LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationCommandList )
 
-Lumen::ERHIQueueType Lumen::FRHIValidationCommandList::GetQueueType () const noexcept
+Lumen::RHI::ERHIQueueType Lumen::RHI::FRHIValidationCommandList::GetQueueType () const noexcept
 {
     return Underlying->GetQueueType();
 }
 
-Lumen::ERHICommandListState Lumen::FRHIValidationCommandList::GetState () const noexcept
+Lumen::RHI::ERHICommandListState Lumen::RHI::FRHIValidationCommandList::GetState () const noexcept
 {
     return Underlying->GetState();
 }
 
-Lumen::FRHITimelineValue Lumen::FRHIValidationCommandList::GetCompletion () const noexcept
+Lumen::RHI::FRHITimelineValue Lumen::RHI::FRHIValidationCommandList::GetCompletion () const noexcept
 {
     return Underlying->GetCompletion();
 }
 
-const Lumen::FRHICommandStream &Lumen::FRHIValidationCommandList::GetStream () const noexcept
+const Lumen::RHI::FRHICommandStream &Lumen::RHI::FRHIValidationCommandList::GetStream () const noexcept
 {
     return Underlying->GetStream();
 }
 
-Lumen::Bool Lumen::FRHIValidationCommandList::IsCommandValidationEnabled () const noexcept
+Lumen::Bool Lumen::RHI::FRHIValidationCommandList::IsCommandValidationEnabled () const noexcept
 {
     return State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Commands );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::CheckRecording ( const Bool bAllowRendering ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::CheckRecording ( const Bool bAllowRendering ) const noexcept
 {
     if ( not IsCommandValidationEnabled() )
     {
@@ -67,7 +67,7 @@ Lumen::FRHIValidationCommandList::CheckRecording ( const Bool bAllowRendering ) 
                                          "Command is outside a compatible recording scope", this );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CheckRendering () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::CheckRendering () const noexcept
 {
     if ( not IsCommandValidationEnabled() )
     {
@@ -81,20 +81,20 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Check
                                          "Command requires an active rendering scope", this );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::ValidateBuffer ( const IRHIBuffer &InBuffer ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::ValidateBuffer ( const IRHIBuffer &InBuffer ) const noexcept
 {
     return State->ValidateObject( InBuffer, ERHIValidationObjectKind::Buffer );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::ValidateTexture ( const IRHITexture &InTexture ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::ValidateTexture ( const IRHITexture &InTexture ) const noexcept
 {
     return State->ValidateObject( InTexture, ERHIValidationObjectKind::Texture );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CheckDraw ( const ERHIPipelineType InType,
-                                                                                       const Bool bRendering ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::CheckDraw ( const ERHIPipelineType InType, const Bool bRendering ) const noexcept
 {
     if ( not IsCommandValidationEnabled() )
     {
@@ -112,7 +112,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Check
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Begin () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::Begin () noexcept
 {
     if ( IsCommandValidationEnabled() and GetState() != ERHICommandListState::Initial )
     {
@@ -122,7 +122,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Begin
     return Underlying->Begin();
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::End () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::End () noexcept
 {
     if ( IsCommandValidationEnabled() and
          ( GetState() != ERHICommandListState::Recording or ActiveQueryPool != nullptr or DebugDepth != 0U ) )
@@ -133,7 +133,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::End (
     return Underlying->End();
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Reset () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::Reset () noexcept
 {
     if ( IsCommandValidationEnabled() and ( GetState() == ERHICommandListState::Pending or ActiveQueryPool != nullptr ) )
     {
@@ -149,7 +149,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Reset
     } );
 }
 
-void Lumen::FRHIValidationCommandList::OnAllocatorReset () noexcept
+void Lumen::RHI::FRHIValidationCommandList::OnAllocatorReset () noexcept
 {
     BoundPipeline.Reset();
     ActiveQueryPool  = nullptr;
@@ -157,8 +157,8 @@ void Lumen::FRHIValidationCommandList::OnAllocatorReset () noexcept
     DebugDepth       = 0U;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::MarkPending ( const FRHITimelineValue InCompletion ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::MarkPending ( const FRHITimelineValue InCompletion ) noexcept
 {
     if ( IsCommandValidationEnabled() and ( GetState() != ERHICommandListState::Executable or not InCompletion.IsValid() ) )
     {
@@ -168,8 +168,8 @@ Lumen::FRHIValidationCommandList::MarkPending ( const FRHITimelineValue InComple
     return Underlying->MarkPending( InCompletion );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::MarkCompleted ( const FRHITimelineValue InCompleted ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::MarkCompleted ( const FRHITimelineValue InCompleted ) noexcept
 {
     if ( IsCommandValidationEnabled() and GetState() == ERHICommandListState::Pending and
          not IsRHICompletionReached( InCompleted, GetCompletion() ) )
@@ -180,8 +180,8 @@ Lumen::FRHIValidationCommandList::MarkCompleted ( const FRHITimelineValue InComp
     return Underlying->MarkCompleted( InCompleted );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::Transition ( const TSpan<const FRHITransition> InTransitions ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::Transition ( const TSpan<const FRHITransition> InTransitions ) noexcept
 {
     return CheckRecording( true ).AndThen( [this, &InTransitions] () noexcept -> TExpected<void, FRHIError>
     {
@@ -247,9 +247,8 @@ Lumen::FRHIValidationCommandList::Transition ( const TSpan<const FRHITransition>
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyBuffer ( TSharedRef<IRHIBuffer> InSource,
-                                                                                        TSharedRef<IRHIBuffer> InDestination,
-                                                                                        const FRHIBufferCopy &InCopy ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::CopyBuffer (
+    TSharedRef<IRHIBuffer> InSource, TSharedRef<IRHIBuffer> InDestination, const FRHIBufferCopy &InCopy ) noexcept
 {
     const TExpected<void, FRHIError> Scope            = CheckRecording( true );
     const TExpected<void, FRHIError> SourceValid      = ValidateBuffer( *InSource );
@@ -269,9 +268,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyB
     return Underlying->CopyBuffer( UnwrapRHIShared( InSource ), UnwrapRHIShared( InDestination ), InCopy );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyTexture ( TSharedRef<IRHITexture> InSource,
-                                                                                         TSharedRef<IRHITexture> InDestination,
-                                                                                         const FRHITextureCopy &InCopy ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::CopyTexture (
+    TSharedRef<IRHITexture> InSource, TSharedRef<IRHITexture> InDestination, const FRHITextureCopy &InCopy ) noexcept
 {
     const TExpected<void, FRHIError> Scope            = CheckRecording( true );
     const TExpected<void, FRHIError> SourceValid      = ValidateTexture( *InSource );
@@ -291,7 +289,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyT
     return Underlying->CopyTexture( UnwrapRHIShared( InSource ), UnwrapRHIShared( InDestination ), InCopy );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyBufferToTexture (
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::CopyBufferToTexture (
     TSharedRef<IRHIBuffer> InSource, TSharedRef<IRHITexture> InDestination, const FRHIBufferTextureCopy &InCopy ) noexcept
 {
     const TExpected<void, FRHIError> Scope            = CheckRecording( true );
@@ -312,7 +310,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyB
     return Underlying->CopyBufferToTexture( UnwrapRHIShared( InSource ), UnwrapRHIShared( InDestination ), InCopy );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyTextureToBuffer (
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::CopyTextureToBuffer (
     TSharedRef<IRHITexture> InSource, TSharedRef<IRHIBuffer> InDestination, const FRHIBufferTextureCopy &InCopy ) noexcept
 {
     const TExpected<void, FRHIError> Scope            = CheckRecording( true );
@@ -333,8 +331,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CopyT
     return Underlying->CopyTextureToBuffer( UnwrapRHIShared( InSource ), UnwrapRHIShared( InDestination ), InCopy );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::BeginRendering ( const FRHIRenderingDesc &InDesc ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::BeginRendering ( const FRHIRenderingDesc &InDesc ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRecording( false );
     if ( not Scope )
@@ -373,7 +371,7 @@ Lumen::FRHIValidationCommandList::BeginRendering ( const FRHIRenderingDesc &InDe
     return Underlying->BeginRendering( Unwrapped );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndRendering () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::EndRendering () noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
@@ -383,8 +381,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndRe
     return Underlying->EndRendering();
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::SetPipeline ( TSharedRef<IRHIPipeline> InPipeline ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::SetPipeline ( TSharedRef<IRHIPipeline> InPipeline ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRecording( true );
     if ( not Scope )
@@ -404,8 +402,8 @@ Lumen::FRHIValidationCommandList::SetPipeline ( TSharedRef<IRHIPipeline> InPipel
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::SetBindingSet ( const UInt32 InIndex, TSharedRef<IRHIBindingSet> InSet ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::SetBindingSet ( const UInt32 InIndex, TSharedRef<IRHIBindingSet> InSet ) noexcept
 {
     return CheckRecording( true )
         .AndThen(
@@ -419,9 +417,8 @@ Lumen::FRHIValidationCommandList::SetBindingSet ( const UInt32 InIndex, TSharedR
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetVertexBuffer ( const UInt32 InSlot,
-                                                                                             TSharedRef<IRHIBuffer> InBuffer,
-                                                                                             const UInt64 InOffset ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::SetVertexBuffer (
+    const UInt32 InSlot, TSharedRef<IRHIBuffer> InBuffer, const UInt64 InOffset ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRendering();
     const TExpected<void, FRHIError> Owned = ValidateBuffer( *InBuffer );
@@ -436,7 +433,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetVe
     return Underlying->SetVertexBuffer( InSlot, UnwrapRHIShared( InBuffer ), InOffset );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetIndexBuffer (
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::SetIndexBuffer (
     TSharedRef<IRHIBuffer> InBuffer, const UInt64 InOffset, const ERHIIndexFormat InFormat ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRendering();
@@ -452,7 +449,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetIn
     return Underlying->SetIndexBuffer( UnwrapRHIShared( InBuffer ), InOffset, InFormat );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Draw ( const FRHIDrawArguments &InArguments ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::Draw ( const FRHIDrawArguments &InArguments ) noexcept
 {
     return CheckDraw( ERHIPipelineType::Graphics, true )
         .AndThen( [this, &InArguments] () noexcept -> TExpected<void, FRHIError>
@@ -461,8 +459,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Draw 
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::DrawIndexed ( const FRHIDrawIndexedArguments &InArguments ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::DrawIndexed ( const FRHIDrawIndexedArguments &InArguments ) noexcept
 {
     return CheckDraw( ERHIPipelineType::Graphics, true )
         .AndThen( [this, &InArguments] () noexcept -> TExpected<void, FRHIError>
@@ -471,9 +469,9 @@ Lumen::FRHIValidationCommandList::DrawIndexed ( const FRHIDrawIndexedArguments &
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::DrawIndirect ( TSharedRef<IRHIBuffer> InArguments,
-                                                 const FRHIIndirectArguments &InDesc ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::DrawIndirect ( TSharedRef<IRHIBuffer> InArguments,
+                                                      const FRHIIndirectArguments &InDesc ) noexcept
 {
     const TExpected<void, FRHIError> Valid = CheckDraw( ERHIPipelineType::Graphics, true );
     const TExpected<void, FRHIError> Owned = ValidateBuffer( *InArguments );
@@ -488,8 +486,8 @@ Lumen::FRHIValidationCommandList::DrawIndirect ( TSharedRef<IRHIBuffer> InArgume
     return Underlying->DrawIndirect( UnwrapRHIShared( InArguments ), InDesc );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::Dispatch ( const FRHIDispatchArguments &InArguments ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::Dispatch ( const FRHIDispatchArguments &InArguments ) noexcept
 {
     return CheckDraw( ERHIPipelineType::Compute, false )
         .AndThen( [this, &InArguments] () noexcept -> TExpected<void, FRHIError>
@@ -498,9 +496,9 @@ Lumen::FRHIValidationCommandList::Dispatch ( const FRHIDispatchArguments &InArgu
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::DispatchIndirect ( TSharedRef<IRHIBuffer> InArguments,
-                                                     const FRHIIndirectArguments &InDesc ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::DispatchIndirect ( TSharedRef<IRHIBuffer> InArguments,
+                                                          const FRHIIndirectArguments &InDesc ) noexcept
 {
     const TExpected<void, FRHIError> Valid = CheckDraw( ERHIPipelineType::Compute, false );
     const TExpected<void, FRHIError> Owned = ValidateBuffer( *InArguments );
@@ -515,7 +513,8 @@ Lumen::FRHIValidationCommandList::DispatchIndirect ( TSharedRef<IRHIBuffer> InAr
     return Underlying->DispatchIndirect( UnwrapRHIShared( InArguments ), InDesc );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetViewport ( const FRHIViewport &InViewport ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::SetViewport ( const FRHIViewport &InViewport ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
@@ -525,7 +524,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetVi
     return Underlying->SetViewport( InViewport );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetScissor ( const FRHIRect2D &InScissor ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::SetScissor ( const FRHIRect2D &InScissor ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
@@ -535,8 +535,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetSc
     return Underlying->SetScissor( InScissor );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::SetBlendConstants ( const Float32 ( &InConstants )[4] ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::SetBlendConstants ( const Float32 ( &InConstants )[4] ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
@@ -546,8 +546,8 @@ Lumen::FRHIValidationCommandList::SetBlendConstants ( const Float32 ( &InConstan
     return Underlying->SetBlendConstants( InConstants );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetDepthBias ( const Float32 InConstant,
-                                                                                          const Float32 InSlope ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::SetDepthBias ( const Float32 InConstant, const Float32 InSlope ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
@@ -557,8 +557,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::SetDe
     return Underlying->SetDepthBias( InConstant, InSlope );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandList::SetStencilReference ( const UInt32 InReference ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::SetStencilReference ( const UInt32 InReference ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRendering();
     if ( not Scope )
@@ -568,8 +568,8 @@ Lumen::FRHIValidationCommandList::SetStencilReference ( const UInt32 InReference
     return Underlying->SetStencilReference( InReference );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::BeginQuery ( TSharedRef<IRHIQueryPool> InPool,
-                                                                                        const UInt32 InIndex ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::BeginQuery ( TSharedRef<IRHIQueryPool> InPool, const UInt32 InIndex ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRecording( true );
     if ( not Scope )
@@ -589,8 +589,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Begin
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndQuery ( TSharedRef<IRHIQueryPool> InPool,
-                                                                                      const UInt32 InIndex ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::EndQuery ( TSharedRef<IRHIQueryPool> InPool,
+                                                                                                const UInt32 InIndex ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRecording( true );
     if ( not Scope )
@@ -610,7 +610,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndQu
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::BeginDebugRegion ( const FStringView InName ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandList::BeginDebugRegion ( const FStringView InName ) noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRecording( true );
     if ( not Scope )
@@ -623,7 +624,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Begin
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndDebugRegion () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationCommandList::EndDebugRegion () noexcept
 {
     const TExpected<void, FRHIError> Scope = CheckRecording( true );
     if ( not Scope )

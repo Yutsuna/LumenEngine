@@ -6,9 +6,9 @@
 #include <Algo/ForEach.hpp>
 #include <Algo/Sort.hpp>
 
-#include <Bindings/RHIBindingLayoutDesc.hpp>
+#include <RHI/Bindings/RHIBindingLayoutDesc.hpp>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBindingLayoutDesc::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBindingLayoutDesc::Validate () const noexcept
 {
     for ( USize First = 0U; First < Entries.size(); ++First )
     {
@@ -27,7 +27,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBindingLayoutDesc::Validate 
     return {};
 }
 
-Lumen::UInt64 Lumen::FRHIBindingLayoutDesc::GetHash () const noexcept
+Lumen::UInt64 Lumen::RHI::FRHIBindingLayoutDesc::GetHash () const noexcept
 {
     TVector<FRHIBindingLayoutEntry> Sorted = Entries;
     Algo::Sort( Sorted, [] ( const FRHIBindingLayoutEntry &Left, const FRHIBindingLayoutEntry &Right ) noexcept -> Bool

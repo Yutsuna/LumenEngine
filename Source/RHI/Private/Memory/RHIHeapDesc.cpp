@@ -3,9 +3,9 @@
  * @brief Implements heap descriptor validation.
  */
 
-#include <Memory/RHIHeapDesc.hpp>
+#include <RHI/Memory/RHIHeapDesc.hpp>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIHeapDesc::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIHeapDesc::Validate () const noexcept
 {
     if ( Size == 0ULL )
     {

@@ -5,12 +5,17 @@
 #pragma once
 
 #include <Memory/Span.hpp>
-#include <Types/RHIFormatInfo.hpp>
+#include <RHI/Types/RHIFormatInfo.hpp>
 
 namespace Lumen
 {
 
-/** @return Read-only table indexed by ERHIFormat, with Count entries. */
-[[nodiscard]] TSpan<const FRHIFormatInfo> GetRHIFormatTable () noexcept;
+namespace RHI
+{
+
+    /** @return Read-only table indexed by ERHIFormat, with Count entries. */
+    [[nodiscard]] TSpan<const FRHIFormatInfo> GetRHIFormatTable () noexcept;
+
+} // namespace RHI
 
 } // namespace Lumen

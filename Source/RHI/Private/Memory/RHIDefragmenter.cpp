@@ -5,21 +5,21 @@
 
 #include "RHIDefragmenter.hpp"
 #include <Algo/Sort.hpp>
-#include <Memory/IRHIAllocationObserver.hpp>
+#include <RHI/Memory/IRHIAllocationObserver.hpp>
+#include <RHI/Types/RHITimeline.hpp>
+#include <RHI/Utilities/RHIAlignment.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 #include <Templates/Hash.hpp>
-#include <Types/RHITimeline.hpp>
-#include <Utilities/RHIAlignment.hpp>
-#include <Utilities/RHICheckedMath.hpp>
 
-Lumen::FRHIDefragmenter::FRHIDefragmenter ( const FRHIObjectId InId ) noexcept
+Lumen::RHI::FRHIDefragmenter::FRHIDefragmenter ( const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FRHIDefragmenter>() )
 {
     /* */
 }
 
 LUMEN_RHI_OBJECT_FORWARDERS( FRHIDefragmenter )
-Lumen::TExpected<Lumen::FRHIDefragPlan, Lumen::FRHIError>
-Lumen::FRHIDefragmenter::BuildPlan ( const TSpan<const FRHIAllocation> InAllocations ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIDefragPlan, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIDefragmenter::BuildPlan ( const TSpan<const FRHIAllocation> InAllocations ) noexcept
 {
     TVector<FRHIAllocation> Sorted;
     Sorted.reserve( InAllocations.size() );
@@ -87,7 +87,7 @@ Lumen::FRHIDefragmenter::BuildPlan ( const TSpan<const FRHIAllocation> InAllocat
     return Plan;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDefragmenter::Execute ( const FRHIDefragPlan &InPlan ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDefragmenter::Execute ( const FRHIDefragPlan &InPlan ) noexcept
 {
     if ( const TExpected<void, FRHIError> Validation = InPlan.Validate(); not Validation )
     {

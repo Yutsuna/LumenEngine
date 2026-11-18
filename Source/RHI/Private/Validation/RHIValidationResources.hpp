@@ -6,121 +6,126 @@
 #pragma once
 
 #include "RHIValidationState.hpp"
-#include <Resources/IRHISampler.hpp>
-#include <Resources/IRHITextureView.hpp>
+#include <RHI/Resources/IRHISampler.hpp>
+#include <RHI/Resources/IRHITextureView.hpp>
 
 namespace Lumen
 {
 
-/**
- * @class FRHIValidationBuffer
- * @brief Validates buffer ownership and CPU mapping scopes.
- */
-class FRHIValidationBuffer final : public IRHIBuffer, public IRHIValidationObject
+namespace RHI
 {
-public:
 
-    FRHIValidationBuffer ( TSharedRef<IRHIBuffer> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
-    ~FRHIValidationBuffer () noexcept override;
-    [[nodiscard]] FRHIObjectId GetId () const noexcept override;
-    [[nodiscard]] FString GetDebugName () const noexcept override;
-    void SetDebugName ( FStringView InName ) noexcept override;
-    [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
-    [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
-    [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
-    [[nodiscard]] const FRHIBufferDesc &GetDesc () const noexcept override;
-    [[nodiscard]] const FRHIResourceRequirements &GetRequirements () const noexcept override;
-    [[nodiscard]] ERHIResourceUsage GetUsage () const noexcept override;
-    [[nodiscard]] ERHIResourceState GetInitialState () const noexcept override;
-    [[nodiscard]] FRHIResourceLifetime GetLifetime () const noexcept override;
-    [[nodiscard]] TExpected<TSpan<Byte>, FRHIError> Map ( UInt64 InOffset, UInt64 InSize ) noexcept override;
-    void Unmap () noexcept override;
+    /**
+     * @class FRHIValidationBuffer
+     * @brief Validates buffer ownership and CPU mapping scopes.
+     */
+    class FRHIValidationBuffer final : public IRHIBuffer, public IRHIValidationObject
+    {
+    public:
 
-private:
+        FRHIValidationBuffer ( TSharedRef<IRHIBuffer> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
+        ~FRHIValidationBuffer () noexcept override;
+        [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+        [[nodiscard]] FString GetDebugName () const noexcept override;
+        void SetDebugName ( FStringView InName ) noexcept override;
+        [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+        [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+        [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+        [[nodiscard]] const FRHIBufferDesc &GetDesc () const noexcept override;
+        [[nodiscard]] const FRHIResourceRequirements &GetRequirements () const noexcept override;
+        [[nodiscard]] ERHIResourceUsage GetUsage () const noexcept override;
+        [[nodiscard]] ERHIResourceState GetInitialState () const noexcept override;
+        [[nodiscard]] FRHIResourceLifetime GetLifetime () const noexcept override;
+        [[nodiscard]] TExpected<TSpan<Byte>, FRHIError> Map ( UInt64 InOffset, UInt64 InSize ) noexcept override;
+        void Unmap () noexcept override;
 
-    TSharedRef<IRHIBuffer> Underlying;
-    TSharedPtr<FRHIValidationState> State;
-    Bool bMapped = false;
-};
+    private:
 
-/**
- * @class FRHIValidationTexture
- * @brief Tracks a texture and all its subresource states.
- */
-class FRHIValidationTexture final : public IRHITexture, public IRHIValidationObject
-{
-public:
+        TSharedRef<IRHIBuffer> Underlying;
+        TSharedPtr<FRHIValidationState> State;
+        Bool bMapped = false;
+    };
 
-    FRHIValidationTexture ( TSharedRef<IRHITexture> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
-    ~FRHIValidationTexture () noexcept override;
-    [[nodiscard]] FRHIObjectId GetId () const noexcept override;
-    [[nodiscard]] FString GetDebugName () const noexcept override;
-    void SetDebugName ( FStringView InName ) noexcept override;
-    [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
-    [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
-    [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
-    [[nodiscard]] const FRHITextureDesc &GetDesc () const noexcept override;
-    [[nodiscard]] const FRHIResourceRequirements &GetRequirements () const noexcept override;
-    [[nodiscard]] ERHIResourceUsage GetUsage () const noexcept override;
-    [[nodiscard]] ERHIResourceState GetInitialState () const noexcept override;
-    [[nodiscard]] FRHIResourceLifetime GetLifetime () const noexcept override;
+    /**
+     * @class FRHIValidationTexture
+     * @brief Tracks a texture and all its subresource states.
+     */
+    class FRHIValidationTexture final : public IRHITexture, public IRHIValidationObject
+    {
+    public:
 
-private:
+        FRHIValidationTexture ( TSharedRef<IRHITexture> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
+        ~FRHIValidationTexture () noexcept override;
+        [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+        [[nodiscard]] FString GetDebugName () const noexcept override;
+        void SetDebugName ( FStringView InName ) noexcept override;
+        [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+        [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+        [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+        [[nodiscard]] const FRHITextureDesc &GetDesc () const noexcept override;
+        [[nodiscard]] const FRHIResourceRequirements &GetRequirements () const noexcept override;
+        [[nodiscard]] ERHIResourceUsage GetUsage () const noexcept override;
+        [[nodiscard]] ERHIResourceState GetInitialState () const noexcept override;
+        [[nodiscard]] FRHIResourceLifetime GetLifetime () const noexcept override;
 
-    TSharedRef<IRHITexture> Underlying;
-    TSharedPtr<FRHIValidationState> State;
-};
+    private:
 
-/**
- * @class FRHIValidationTextureView
- * @brief Preserves the validated parent texture ownership chain.
- */
-class FRHIValidationTextureView final : public IRHITextureView, public IRHIValidationObject
-{
-public:
+        TSharedRef<IRHITexture> Underlying;
+        TSharedPtr<FRHIValidationState> State;
+    };
 
-    FRHIValidationTextureView ( TSharedRef<IRHITextureView> InUnderlying,
-                                TSharedPtr<IRHITexture> InParent,
-                                TSharedPtr<FRHIValidationState> InState ) noexcept;
-    ~FRHIValidationTextureView () noexcept override;
-    [[nodiscard]] FRHIObjectId GetId () const noexcept override;
-    [[nodiscard]] FString GetDebugName () const noexcept override;
-    void SetDebugName ( FStringView InName ) noexcept override;
-    [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
-    [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
-    [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
-    [[nodiscard]] const FRHITextureViewDesc &GetDesc () const noexcept override;
-    [[nodiscard]] TSharedPtr<IRHITexture> GetTexture () const noexcept override;
+    /**
+     * @class FRHIValidationTextureView
+     * @brief Preserves the validated parent texture ownership chain.
+     */
+    class FRHIValidationTextureView final : public IRHITextureView, public IRHIValidationObject
+    {
+    public:
 
-private:
+        FRHIValidationTextureView ( TSharedRef<IRHITextureView> InUnderlying,
+                                    TSharedPtr<IRHITexture> InParent,
+                                    TSharedPtr<FRHIValidationState> InState ) noexcept;
+        ~FRHIValidationTextureView () noexcept override;
+        [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+        [[nodiscard]] FString GetDebugName () const noexcept override;
+        void SetDebugName ( FStringView InName ) noexcept override;
+        [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+        [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+        [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+        [[nodiscard]] const FRHITextureViewDesc &GetDesc () const noexcept override;
+        [[nodiscard]] TSharedPtr<IRHITexture> GetTexture () const noexcept override;
 
-    TSharedRef<IRHITextureView> Underlying;
-    TSharedPtr<IRHITexture> Parent;
-    TSharedPtr<FRHIValidationState> State;
-};
+    private:
 
-/**
- * @class FRHIValidationSampler
- * @brief Forwards immutable sampler behavior while tracking lifetime.
- */
-class FRHIValidationSampler final : public IRHISampler, public IRHIValidationObject
-{
-public:
+        TSharedRef<IRHITextureView> Underlying;
+        TSharedPtr<IRHITexture> Parent;
+        TSharedPtr<FRHIValidationState> State;
+    };
 
-    FRHIValidationSampler ( TSharedRef<IRHISampler> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
-    ~FRHIValidationSampler () noexcept override;
-    [[nodiscard]] FRHIObjectId GetId () const noexcept override;
-    [[nodiscard]] FString GetDebugName () const noexcept override;
-    void SetDebugName ( FStringView InName ) noexcept override;
-    [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
-    [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
-    [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
-    [[nodiscard]] const FRHISamplerDesc &GetDesc () const noexcept override;
+    /**
+     * @class FRHIValidationSampler
+     * @brief Forwards immutable sampler behavior while tracking lifetime.
+     */
+    class FRHIValidationSampler final : public IRHISampler, public IRHIValidationObject
+    {
+    public:
 
-private:
+        FRHIValidationSampler ( TSharedRef<IRHISampler> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
+        ~FRHIValidationSampler () noexcept override;
+        [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+        [[nodiscard]] FString GetDebugName () const noexcept override;
+        void SetDebugName ( FStringView InName ) noexcept override;
+        [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+        [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+        [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+        [[nodiscard]] const FRHISamplerDesc &GetDesc () const noexcept override;
 
-    TSharedRef<IRHISampler> Underlying;
-    TSharedPtr<FRHIValidationState> State;
-};
+    private:
+
+        TSharedRef<IRHISampler> Underlying;
+        TSharedPtr<FRHIValidationState> State;
+    };
+
+} // namespace RHI
 
 } // namespace Lumen

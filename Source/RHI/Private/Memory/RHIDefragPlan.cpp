@@ -3,10 +3,10 @@
  * @brief Implements defragmentation plan validation.
  */
 
-#include <Memory/RHIDefragPlan.hpp>
-#include <Utilities/RHIAlignment.hpp>
+#include <RHI/Memory/RHIDefragPlan.hpp>
+#include <RHI/Utilities/RHIAlignment.hpp>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDefragPlan::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDefragPlan::Validate () const noexcept
 {
     for ( USize First = 0U; First < Moves.size(); ++First )
     {

@@ -5,37 +5,42 @@
 #pragma once
 
 #include "../Types/RHIObjectForward.hpp"
-#include <Memory/IRHIUploadAllocator.hpp>
-#include <Memory/RHIRingAllocator.hpp>
 #include <Memory/UniquePtr.hpp>
+#include <RHI/Memory/IRHIUploadAllocator.hpp>
+#include <RHI/Memory/RHIRingAllocator.hpp>
 
 namespace Lumen
 {
 
-/**
- * @class FRHIUploadAllocator
- * @brief Ring allocator backed by writable CPU storage.
- */
-class RHI_EXPORT FRHIUploadAllocator final : public IRHIUploadAllocator
+namespace RHI
 {
-public:
 
-    LUMEN_RHI_OBJECT_DECLARATIONS;
+    /**
+     * @class FRHIUploadAllocator
+     * @brief Ring allocator backed by writable CPU storage.
+     */
+    class RHI_EXPORT FRHIUploadAllocator final : public IRHIUploadAllocator
+    {
+    public:
 
-    /** @brief Creates storage and a ring of InCapacity bytes. */
-    FRHIUploadAllocator ( UInt64 InCapacity, FRHIObjectId InId ) noexcept;
+        LUMEN_RHI_OBJECT_DECLARATIONS;
 
-    TExpected<FRHIUploadAllocation, FRHIError> Allocate ( const FRHIAllocationDesc &InDesc ) noexcept override;
+        /** @brief Creates storage and a ring of InCapacity bytes. */
+        FRHIUploadAllocator ( UInt64 InCapacity, FRHIObjectId InId ) noexcept;
 
-    TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept override;
+        TExpected<FRHIUploadAllocation, FRHIError> Allocate ( const FRHIAllocationDesc &InDesc ) noexcept override;
 
-private:
+        TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept override;
 
-    FRHIObjectBase Identity;
-    FRHIRingAllocator Ring;
-    TUniquePtr<Byte[]> Storage;
+    private:
 
-    USize Capacity = 0U;
-};
+        FRHIObjectBase Identity;
+        FRHIRingAllocator Ring;
+        TUniquePtr<Byte[]> Storage;
+
+        USize Capacity = 0U;
+    };
+
+} // namespace RHI
 
 } // namespace Lumen

@@ -3,15 +3,15 @@
  * @brief Implements deterministic Null swapchain acquisition and presentation.
  */
 
-#include <Device/IRHIDevice.hpp>
 #include <HAL/LockGuard.hpp>
 #include <Presentation/NullPresentation.hpp>
-#include <Queue/IRHIQueue.hpp>
-#include <Resources/IRHITexture.hpp>
-#include <Synchronization/IRHISemaphore.hpp>
+#include <RHI/Device/IRHIDevice.hpp>
+#include <RHI/Queue/IRHIQueue.hpp>
+#include <RHI/Resources/IRHITexture.hpp>
+#include <RHI/Synchronization/IRHISemaphore.hpp>
 #include <Templates/Hash.hpp>
 
-Lumen::FRHISwapchainCapabilities Lumen::Tests::MakeNullSwapchainCapabilities () noexcept
+Lumen::RHI::FRHISwapchainCapabilities Lumen::RHI::Tests::MakeNullSwapchainCapabilities () noexcept
 {
     FRHISwapchainCapabilities Capabilities;
     Capabilities.Formats      = { ERHIFormat::RGBA8Unorm, ERHIFormat::BGRA8Unorm, ERHIFormat::RGBA16Float };
@@ -22,11 +22,11 @@ Lumen::FRHISwapchainCapabilities Lumen::Tests::MakeNullSwapchainCapabilities () 
     return Capabilities;
 }
 
-Lumen::Tests::FNullSwapchain::FNullSwapchain ( const FRHISwapchainDesc &InDesc,
-                                               const FRHISwapchainCapabilities &InCapabilities,
-                                               IRHIDevice &InDevice,
-                                               TSharedPtr<FNullFaultPlan> InFaultPlan,
-                                               const FRHIObjectId InId ) noexcept
+Lumen::RHI::Tests::FNullSwapchain::FNullSwapchain ( const FRHISwapchainDesc &InDesc,
+                                                    const FRHISwapchainCapabilities &InCapabilities,
+                                                    IRHIDevice &InDevice,
+                                                    TSharedPtr<FNullFaultPlan> InFaultPlan,
+                                                    const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FNullSwapchain>() ), Desc( InDesc ), Capabilities( InCapabilities ), Device( &InDevice ),
       FaultPlan( std::move( InFaultPlan ) )
 {
@@ -34,29 +34,29 @@ Lumen::Tests::FNullSwapchain::FNullSwapchain ( const FRHISwapchainDesc &InDesc,
 
 LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullSwapchain )
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Initialize () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain::Initialize () noexcept
 {
     return RebuildImages();
 }
 
-const Lumen::FRHISwapchainDesc &Lumen::Tests::FNullSwapchain::GetDesc () const noexcept
+const Lumen::RHI::FRHISwapchainDesc &Lumen::RHI::Tests::FNullSwapchain::GetDesc () const noexcept
 {
     return Desc;
 }
 
-const Lumen::FRHISwapchainCapabilities &Lumen::Tests::FNullSwapchain::GetCapabilities () const noexcept
+const Lumen::RHI::FRHISwapchainCapabilities &Lumen::RHI::Tests::FNullSwapchain::GetCapabilities () const noexcept
 {
     return Capabilities;
 }
 
-Lumen::UInt32 Lumen::Tests::FNullSwapchain::GetImageCount () const noexcept
+Lumen::UInt32 Lumen::RHI::Tests::FNullSwapchain::GetImageCount () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return static_cast<UInt32>( Images.size() );
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHITexture>, Lumen::FRHIError>
-Lumen::Tests::FNullSwapchain::GetImage ( const UInt32 InIndex ) const noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullSwapchain::GetImage ( const UInt32 InIndex ) const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( InIndex >= Images.size() )
@@ -66,7 +66,8 @@ Lumen::Tests::FNullSwapchain::GetImage ( const UInt32 InIndex ) const noexcept
     return Images[InIndex];
 }
 
-Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::AcquireNextImage () noexcept
+Lumen::TExpected<Lumen::RHI::FRHIAcquiredImage, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullSwapchain::AcquireNextImage () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( Device->GetStatus() != ERHIDeviceStatus::Ready )
@@ -132,9 +133,8 @@ Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::Tests::FNull
     return Result;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Present ( IRHIQueue &InQueue,
-                                                                                 const FRHIAcquiredImage &InImage,
-                                                                                 IRHISemaphore *InRenderComplete ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain::Present (
+    IRHIQueue &InQueue, const FRHIAcquiredImage &InImage, IRHISemaphore *InRenderComplete ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( Device->GetStatus() != ERHIDeviceStatus::Ready )
@@ -196,7 +196,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Present (
     return {};
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( Device->GetStatus() != ERHIDeviceStatus::Ready )
@@ -243,25 +243,25 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::Resize ( 
     return Rebuilt;
 }
 
-void Lumen::Tests::FNullSwapchain::MarkOutOfDate () noexcept
+void Lumen::RHI::Tests::FNullSwapchain::MarkOutOfDate () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     bOutOfDate = true;
 }
 
-void Lumen::Tests::FNullSwapchain::MarkSuboptimal () noexcept
+void Lumen::RHI::Tests::FNullSwapchain::MarkSuboptimal () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     bSuboptimal = true;
 }
 
-Lumen::UInt64 Lumen::Tests::FNullSwapchain::GetPresentCount () const noexcept
+Lumen::UInt64 Lumen::RHI::Tests::FNullSwapchain::GetPresentCount () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return PresentCount;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSwapchain::RebuildImages () noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain::RebuildImages () noexcept
 {
     TVector<TSharedRef<IRHITexture>> NewImages;
     TVector<TSharedRef<IRHISemaphore>> NewAcquireSemaphores;

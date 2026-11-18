@@ -3,89 +3,94 @@
  * @brief Stresses concurrent retirement and polling.
  */
 
-#include <Synchronization/RHIDeferredReleaseQueue.hpp>
+#include <RHI/Synchronization/RHIDeferredReleaseQueue.hpp>
 #include <Tests/UnitTest.hpp>
 #include <Thread/Thread.hpp>
 
 namespace Lumen
 {
-namespace
+
+namespace RHI
 {
-
-    LUMEN_TEST( RHIDeferredReleaseQueueStress, ConcurrentProducersReleaseEveryCallbackExactlyOnce )
+    namespace
     {
-        FRHIDeferredReleaseQueue Queue;
-        TAtomic<UInt32> Released{ 0U };
-        TVector<FThread> Producers;
-        for ( UInt32 Producer = 0U; Producer < 4U; ++Producer )
-        {
-            Producers.emplace_back( [&Queue, &Released]
-            {
-                const TFunction<void()> IncrementReleased = [&Released]
-                {
-                    Released.fetch_add( 1U );
-                };
-                for ( UInt32 Index = 0U; Index < 128U; ++Index )
-                {
-                    const TExpected<void, FRHIError> Enqueued = Queue.Enqueue( { 1ULL }, IncrementReleased );
-                    if ( not Enqueued )
-                    {
-                        return;
-                    }
-                    Queue.Poll( { 1ULL } );
-                }
-            } );
-        }
-        for ( auto &Producer : Producers )
-        {
-            Producer.Join();
-        }
-        Queue.Drain();
-        LUMEN_CHECK_EQ( Released.load(), 512U );
-        LUMEN_CHECK_EQ( Queue.GetSize(), 0U );
-    }
 
-    LUMEN_TEST( RHIDeferredReleaseQueueStress, MixedTimelinesNeverReleaseEarly )
-    {
-        FRHIDeferredReleaseQueue Queue;
-        TAtomic<UInt32> Released{ 0U };
-        TVector<FThread> Producers;
-        for ( UInt32 Producer = 0U; Producer < 4U; ++Producer )
+        LUMEN_TEST( RHIDeferredReleaseQueueStress, ConcurrentProducersReleaseEveryCallbackExactlyOnce )
         {
-            Producers.emplace_back( [&Queue, &Released]
+            FRHIDeferredReleaseQueue Queue;
+            TAtomic<UInt32> Released{ 0U };
+            TVector<FThread> Producers;
+            for ( UInt32 Producer = 0U; Producer < 4U; ++Producer )
             {
-                const TFunction<void()> IncrementReleased = [&Released]
+                Producers.emplace_back( [&Queue, &Released]
                 {
-                    Released.fetch_add( 1U );
-                };
-                for ( UInt32 Index = 0U; Index < 128U; ++Index )
-                {
-                    const UInt64 Required = static_cast<UInt64>( Index % 64U ) + 1ULL;
-                    if ( not Queue.Enqueue( { Required }, IncrementReleased ) )
+                    const TFunction<void()> IncrementReleased = [&Released]
                     {
-                        return;
+                        Released.fetch_add( 1U );
+                    };
+                    for ( UInt32 Index = 0U; Index < 128U; ++Index )
+                    {
+                        const TExpected<void, FRHIError> Enqueued = Queue.Enqueue( { 1ULL }, IncrementReleased );
+                        if ( not Enqueued )
+                        {
+                            return;
+                        }
+                        Queue.Poll( { 1ULL } );
                     }
-                }
-            } );
+                } );
+            }
+            for ( auto &Producer : Producers )
+            {
+                Producer.Join();
+            }
+            Queue.Drain();
+            LUMEN_CHECK_EQ( Released.load(), 512U );
+            LUMEN_CHECK_EQ( Queue.GetSize(), 0U );
         }
-        for ( auto &Producer : Producers )
-        {
-            Producer.Join();
-        }
-        LUMEN_CHECK_EQ( Queue.Poll( {} ), 0U );
-        LUMEN_CHECK_EQ( Released.load(), 0U );
-        UInt32 PreviousReleased = 0U;
-        for ( UInt64 Completed = 1ULL; Completed <= 64ULL; ++Completed )
-        {
-            Queue.Poll( { Completed } );
-            const UInt32 CurrentReleased = Released.load();
-            LUMEN_CHECK_TRUE( CurrentReleased >= PreviousReleased );
-            LUMEN_CHECK_TRUE( CurrentReleased <= 512U );
-            PreviousReleased = CurrentReleased;
-        }
-        LUMEN_CHECK_EQ( Released.load(), 512U );
-        LUMEN_CHECK_EQ( Queue.GetSize(), 0U );
-    }
 
-} // namespace
+        LUMEN_TEST( RHIDeferredReleaseQueueStress, MixedTimelinesNeverReleaseEarly )
+        {
+            FRHIDeferredReleaseQueue Queue;
+            TAtomic<UInt32> Released{ 0U };
+            TVector<FThread> Producers;
+            for ( UInt32 Producer = 0U; Producer < 4U; ++Producer )
+            {
+                Producers.emplace_back( [&Queue, &Released]
+                {
+                    const TFunction<void()> IncrementReleased = [&Released]
+                    {
+                        Released.fetch_add( 1U );
+                    };
+                    for ( UInt32 Index = 0U; Index < 128U; ++Index )
+                    {
+                        const UInt64 Required = static_cast<UInt64>( Index % 64U ) + 1ULL;
+                        if ( not Queue.Enqueue( { Required }, IncrementReleased ) )
+                        {
+                            return;
+                        }
+                    }
+                } );
+            }
+            for ( auto &Producer : Producers )
+            {
+                Producer.Join();
+            }
+            LUMEN_CHECK_EQ( Queue.Poll( {} ), 0U );
+            LUMEN_CHECK_EQ( Released.load(), 0U );
+            UInt32 PreviousReleased = 0U;
+            for ( UInt64 Completed = 1ULL; Completed <= 64ULL; ++Completed )
+            {
+                Queue.Poll( { Completed } );
+                const UInt32 CurrentReleased = Released.load();
+                LUMEN_CHECK_TRUE( CurrentReleased >= PreviousReleased );
+                LUMEN_CHECK_TRUE( CurrentReleased <= 512U );
+                PreviousReleased = CurrentReleased;
+            }
+            LUMEN_CHECK_EQ( Released.load(), 512U );
+            LUMEN_CHECK_EQ( Queue.GetSize(), 0U );
+        }
+
+    } // namespace
+} // namespace RHI
+
 } // namespace Lumen

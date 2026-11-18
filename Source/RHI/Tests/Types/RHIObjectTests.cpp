@@ -9,13 +9,18 @@
 namespace Lumen
 {
 
-LUMEN_TEST( RHIObject, ProvidesIdentityNameAndBackendTag )
+namespace RHI
 {
-    Tests::FNullObject Object( FRHIObjectId{ 9ULL } );
-    LUMEN_CHECK_EQ( Object.GetId().GetValue(), 9ULL );
-    LUMEN_CHECK_NOT_EQ( Object.GetBackendTypeTag(), 0ULL );
-    Object.SetDebugName( "TestObject" );
-    LUMEN_CHECK_TRUE( Object.GetDebugName() == "TestObject" );
-}
+
+    LUMEN_TEST( RHIObject, ProvidesIdentityNameAndBackendTag )
+    {
+        Tests::FNullObject Object( FRHIObjectId{ 9ULL } );
+        LUMEN_CHECK_EQ( Object.GetId().GetValue(), 9ULL );
+        LUMEN_CHECK_NOT_EQ( Object.GetBackendTypeTag(), 0ULL );
+        Object.SetDebugName( "TestObject" );
+        LUMEN_CHECK_TRUE( Object.GetDebugName() == "TestObject" );
+    }
+
+} // namespace RHI
 
 } // namespace Lumen
