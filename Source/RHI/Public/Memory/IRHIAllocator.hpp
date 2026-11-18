@@ -9,6 +9,8 @@
 #include <Memory/RHIAllocatorStats.hpp>
 #include <Templates/Expected.hpp>
 
+#include <RHIExport.hpp>
+
 namespace Lumen
 {
 
@@ -16,7 +18,7 @@ namespace Lumen
  * @class IRHIAllocator
  * @brief Backend-independent address allocation contract.
  */
-class IRHIAllocator
+class RHI_EXPORT IRHIAllocator
 {
 public:
 

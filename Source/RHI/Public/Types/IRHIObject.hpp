@@ -4,6 +4,8 @@
  */
 #pragma once
 
+#include <RHIExport.hpp>
+
 #include <Core/CoreTypes.hpp>
 #include <String/String.hpp>
 #include <String/StringView.hpp>
@@ -16,7 +18,7 @@ namespace Lumen
  * @class IRHIObject
  * @brief Identity, debug naming, and backend type contract.
  */
-class IRHIObject
+class RHI_EXPORT IRHIObject
 {
 public:
 
