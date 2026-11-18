@@ -200,7 +200,8 @@ const Lumen::FRHIPipelineCacheDesc &Lumen::Tests::FNullPipelineCache::GetDesc ()
     return Desc;
 }
 
-Lumen::TSharedPtr<Lumen::IRHIPipeline> Lumen::Tests::FNullPipelineCache::Find ( const FRHIPipelineCompatibility &InKey ) noexcept
+Lumen::TOptional<Lumen::TSharedPtr<Lumen::IRHIPipeline>>
+Lumen::Tests::FNullPipelineCache::Find ( const FRHIPipelineCompatibility &InKey ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Found = Entries.find( InKey );
@@ -212,7 +213,7 @@ Lumen::TSharedPtr<Lumen::IRHIPipeline> Lumen::Tests::FNullPipelineCache::Find ( 
     ++Sequence;
     Found->second.LastUsed = Sequence;
     Stats.OnLookup( true );
-    return Found->second.Pipeline;
+    return TOptional<TSharedPtr<IRHIPipeline>>( Found->second.Pipeline );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullPipelineCache::Insert ( const FRHIPipelineCompatibility &InKey,

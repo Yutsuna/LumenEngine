@@ -15,7 +15,8 @@ Lumen::TRHIObjectCache<KeyType, ValueType, HashType>::TRHIObjectCache( const USi
 }
 
 template <typename KeyType, typename ValueType, typename HashType>
-Lumen::TSharedPtr<ValueType> Lumen::TRHIObjectCache<KeyType, ValueType, HashType>::Find ( const KeyType &InKey ) noexcept
+Lumen::TOptional<Lumen::TSharedPtr<ValueType>>
+Lumen::TRHIObjectCache<KeyType, ValueType, HashType>::Find ( const KeyType &InKey ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const typename TMap<KeyType, FEntry, HashType>::iterator Found = Entries.find( InKey );
@@ -27,7 +28,7 @@ Lumen::TSharedPtr<ValueType> Lumen::TRHIObjectCache<KeyType, ValueType, HashType
     ++Sequence;
     Found->second.LastUsed = Sequence;
     Stats.OnLookup( true );
-    return Found->second.Value;
+    return TOptional<TSharedPtr<ValueType>>( Found->second.Value );
 }
 
 template <typename KeyType, typename ValueType, typename HashType>
@@ -35,9 +36,9 @@ Lumen::TExpected<Lumen::TSharedPtr<ValueType>, Lumen::FRHIError>
 Lumen::TRHIObjectCache<KeyType, ValueType, HashType>::GetOrCreate (
     const KeyType &InKey, TFunction<TExpected<TSharedRef<ValueType>, FRHIError>()> InFactory, const UInt64 InBytes ) noexcept
 {
-    if ( TSharedPtr<ValueType> Existing = Find( InKey ) )
+    if ( TOptional<TSharedPtr<ValueType>> Existing = Find( InKey ); Existing.HasValue() )
     {
-        return Existing;
+        return *Existing;
     }
     const TExpected<TSharedRef<ValueType>, FRHIError> Created = InFactory();
     if ( not Created )

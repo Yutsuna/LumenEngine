@@ -10,6 +10,7 @@
 #include <Templates/Expected.hpp>
 #include <Templates/Function.hpp>
 #include <Templates/Map.hpp>
+#include <Templates/Optional.hpp>
 
 #include <Types/RHIError.hpp>
 #include <Types/RHIHash.hpp>
@@ -41,9 +42,9 @@ public:
     /**
      * @brief Looks up a cached object without creating it.
      * @param InKey Key to look up.
-     * @return A shared pointer to the cached value, or empty on a miss.
+     * @return A shared pointer to the cached value on a hit, or empty on a miss.
      */
-    [[nodiscard]] TSharedPtr<ValueType> Find ( const KeyType &InKey ) noexcept;
+    [[nodiscard]] TOptional<TSharedPtr<ValueType>> Find ( const KeyType &InKey ) noexcept;
 
     /**
      * @brief Returns the cached value, invoking InFactory on a miss.

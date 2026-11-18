@@ -30,9 +30,11 @@ namespace
         TExpected<TSharedRef<IRHIPipelineCache>, FRHIError> Cache = ( *Device )->CreatePipelineCache( {} );
         LUMEN_CHECK_TRUE( Cache.HasValue() );
         const FRHIPipelineCompatibility &Key = ( *Pipeline )->GetCompatibility();
-        LUMEN_CHECK_FALSE( ( *Cache )->Find( Key ).IsValid() );
+        LUMEN_CHECK_FALSE( ( *Cache )->Find( Key ).HasValue() );
         LUMEN_CHECK_TRUE( ( *Cache )->Insert( Key, *Pipeline ).HasValue() );
-        LUMEN_CHECK_TRUE( ( *Cache )->Find( Key ) == *Pipeline );
+        const TOptional<TSharedPtr<IRHIPipeline>> Found = ( *Cache )->Find( Key );
+        LUMEN_CHECK_TRUE( Found.HasValue() );
+        LUMEN_CHECK_TRUE( *Found == *Pipeline );
         LUMEN_CHECK_EQ( ( *Cache )->GetStats().Hits, 1ULL );
         TExpected<TVector<Byte>, FRHIError> Data = ( *Cache )->Serialize();
         LUMEN_CHECK_TRUE( Data.HasValue() );

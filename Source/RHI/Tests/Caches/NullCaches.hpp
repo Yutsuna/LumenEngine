@@ -8,6 +8,7 @@
 #include <Device/NullFaultPlan.hpp>
 #include <HAL/PlatformMutex.hpp>
 #include <Templates/Map.hpp>
+#include <Templates/Optional.hpp>
 #include <Types/RHIObjectForward.hpp>
 
 namespace Lumen
@@ -38,7 +39,7 @@ namespace Tests
         /** @brief Validates and restores the descriptor's initial opaque data. */
         [[nodiscard]] TExpected<void, FRHIError> Initialize () noexcept;
         const FRHIPipelineCacheDesc &GetDesc () const noexcept override;
-        TSharedPtr<IRHIPipeline> Find ( const FRHIPipelineCompatibility &InKey ) noexcept override;
+        TOptional<TSharedPtr<IRHIPipeline>> Find ( const FRHIPipelineCompatibility &InKey ) noexcept override;
         TExpected<void, FRHIError> Insert ( const FRHIPipelineCompatibility &InKey,
                                             TSharedRef<IRHIPipeline> InPipeline ) noexcept override;
         void Remove ( const FRHIPipelineCompatibility &InKey ) noexcept override;

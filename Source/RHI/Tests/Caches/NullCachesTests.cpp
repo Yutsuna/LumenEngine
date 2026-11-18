@@ -36,13 +36,24 @@ namespace
         const FRHIPipelineCompatibility Third  = MakeKey( 3ULL );
         LUMEN_CHECK_TRUE( Cache.Insert( First, MakePipeline( First ) ).HasValue() );
         LUMEN_CHECK_TRUE( Cache.Insert( Second, MakePipeline( Second ) ).HasValue() );
-        LUMEN_CHECK_TRUE( Cache.Find( First ).IsValid() );
+        LUMEN_CHECK_TRUE( Cache.Find( First ).HasValue() );
         LUMEN_CHECK_TRUE( Cache.Insert( Third, MakePipeline( Third ) ).HasValue() );
-        LUMEN_CHECK_TRUE( Cache.Find( First ).IsValid() );
-        LUMEN_CHECK_FALSE( Cache.Find( Second ).IsValid() );
-        LUMEN_CHECK_TRUE( Cache.Find( Third ).IsValid() );
+        LUMEN_CHECK_TRUE( Cache.Find( First ).HasValue() );
+        LUMEN_CHECK_FALSE( Cache.Find( Second ).HasValue() );
+        LUMEN_CHECK_TRUE( Cache.Find( Third ).HasValue() );
         LUMEN_CHECK_EQ( Cache.GetStats().Evictions, 1ULL );
         LUMEN_CHECK_HAS_ERROR( Cache.Insert( MakeKey( 9ULL ), MakePipeline( First ) ) );
+    }
+
+    LUMEN_TEST( NullCaches, FindReportsHitAsValueAndMissAsEmpty )
+    {
+        Tests::FNullPipelineCache Cache( {}, MakeShared<Tests::FNullFaultPlan>(), FRHIObjectId{ 7ULL } );
+        const FRHIPipelineCompatibility Key = MakeKey( 8ULL );
+        LUMEN_CHECK_FALSE( Cache.Find( Key ).HasValue() );
+        LUMEN_CHECK_TRUE( Cache.Insert( Key, MakePipeline( Key ) ).HasValue() );
+        const TOptional<TSharedPtr<IRHIPipeline>> Found = Cache.Find( Key );
+        LUMEN_CHECK_TRUE( Found.HasValue() );
+        LUMEN_CHECK_TRUE( ( *Found ).IsValid() );
     }
 
     LUMEN_TEST( NullCaches, SerializesDeterministicallyAndRestoresMetadata )
@@ -61,9 +72,9 @@ namespace
         Tests::FNullPipelineCache Restored( RestoredDesc, MakeShared<Tests::FNullFaultPlan>(), FRHIObjectId{ 3ULL } );
         LUMEN_CHECK_TRUE( Restored.Initialize().HasValue() );
         LUMEN_CHECK_EQ( Restored.GetStats().EntryCount, 1ULL );
-        LUMEN_CHECK_FALSE( Restored.Find( Key ).IsValid() );
+        LUMEN_CHECK_FALSE( Restored.Find( Key ).HasValue() );
         LUMEN_CHECK_TRUE( Restored.Insert( Key, MakePipeline( Key ) ).HasValue() );
-        LUMEN_CHECK_TRUE( Restored.Find( Key ).IsValid() );
+        LUMEN_CHECK_TRUE( Restored.Find( Key ).HasValue() );
         const TExpected<TVector<Byte>, FRHIError> RoundTrip = Restored.Serialize();
         LUMEN_CHECK_TRUE( RoundTrip.HasValue() );
         LUMEN_CHECK_TRUE( *RoundTrip == *Serialized );
@@ -88,7 +99,7 @@ namespace
         LUMEN_CHECK_TRUE( Bounded.Insert( Key, MakePipeline( Key ) ).HasValue() );
         const FRHIPipelineCompatibility Other = MakeKey( 5ULL );
         LUMEN_CHECK_HAS_ERROR( Bounded.Insert( Other, MakePipeline( Other ) ) );
-        LUMEN_CHECK_TRUE( Bounded.Find( Key ).IsValid() );
+        LUMEN_CHECK_TRUE( Bounded.Find( Key ).HasValue() );
     }
 
 } // namespace

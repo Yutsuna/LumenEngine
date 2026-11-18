@@ -12,6 +12,8 @@
 
 #include <Pipelines/IRHIPipeline.hpp>
 
+#include <Templates/Optional.hpp>
+
 namespace Lumen
 {
 
@@ -30,8 +32,8 @@ public:
      */
     [[nodiscard]] virtual const FRHIPipelineCacheDesc &GetDesc () const noexcept = 0;
 
-    /** @return The retained pipeline on a hit, or an empty pointer on a miss. */
-    [[nodiscard]] virtual TSharedPtr<IRHIPipeline> Find ( const FRHIPipelineCompatibility &InKey ) noexcept = 0;
+    /** @return The retained pipeline on a hit, or empty on a miss. */
+    [[nodiscard]] virtual TOptional<TSharedPtr<IRHIPipeline>> Find ( const FRHIPipelineCompatibility &InKey ) noexcept = 0;
 
     /** @brief Inserts or replaces a complete entry without retaining partial creations. */
     virtual TExpected<void, FRHIError> Insert ( const FRHIPipelineCompatibility &InKey,

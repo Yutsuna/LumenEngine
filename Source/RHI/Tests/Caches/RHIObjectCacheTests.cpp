@@ -42,6 +42,17 @@ namespace
         LUMEN_CHECK_EQ( Cache.GetEntryCount(), 0U );
     }
 
+    LUMEN_TEST( RHIObjectCache, FindReportsHitAsValueAndMissAsEmpty )
+    {
+        FCache Cache( 2U );
+        LUMEN_CHECK_FALSE( Cache.Find( 42U ).HasValue() );
+        LUMEN_CHECK_TRUE( Cache.Store( 42U, MakeShared<FCachedValue>( 42U ), 8ULL ).HasValue() );
+        const TOptional<TSharedPtr<FCachedValue>> Found = Cache.Find( 42U );
+        LUMEN_CHECK_TRUE( Found.HasValue() );
+        LUMEN_CHECK_TRUE( ( *Found ).IsValid() );
+        LUMEN_CHECK_EQ( ( *Found )->Value, 42U );
+    }
+
     LUMEN_TEST( RHIObjectCache, EvictsTheLeastRecentlyUsedEntry )
     {
         FCache Cache( 2U );
@@ -51,15 +62,15 @@ namespace
         };
         LUMEN_CHECK_TRUE( Cache.Store( 1U, MakeShared<FCachedValue>( 1U ), 8ULL ).HasValue() );
         LUMEN_CHECK_TRUE( Cache.Store( 2U, MakeShared<FCachedValue>( 2U ), 8ULL ).HasValue() );
-        LUMEN_CHECK_TRUE( Cache.Find( 1U ).IsValid() );
+        LUMEN_CHECK_TRUE( Cache.Find( 1U ).HasValue() );
         TExpected<TSharedPtr<FCachedValue>, FRHIError> Third = Cache.GetOrCreate( 3U, [&Factory]
         {
             return Factory( 3U );
         }, 8ULL );
         LUMEN_CHECK_TRUE( Third.HasValue() );
-        LUMEN_CHECK_TRUE( Cache.Find( 1U ).IsValid() );
-        LUMEN_CHECK_FALSE( Cache.Find( 2U ).IsValid() );
-        LUMEN_CHECK_TRUE( Cache.Find( 3U ).IsValid() );
+        LUMEN_CHECK_TRUE( Cache.Find( 1U ).HasValue() );
+        LUMEN_CHECK_FALSE( Cache.Find( 2U ).HasValue() );
+        LUMEN_CHECK_TRUE( Cache.Find( 3U ).HasValue() );
         LUMEN_CHECK_EQ( Cache.GetStats().Evictions, 1ULL );
         Cache.Clear();
         LUMEN_CHECK_EQ( Cache.GetEntryCount(), 0U );
@@ -83,7 +94,7 @@ namespace
         }, 8ULL );
         LUMEN_CHECK_HAS_ERROR( Rejected );
         LUMEN_CHECK_EQ( Cache.GetEntryCount(), 1U );
-        LUMEN_CHECK_TRUE( Cache.Find( 1U ).IsValid() );
+        LUMEN_CHECK_TRUE( Cache.Find( 1U ).HasValue() );
     }
 
 } // namespace
