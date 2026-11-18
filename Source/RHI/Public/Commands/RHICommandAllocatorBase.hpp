@@ -7,6 +7,7 @@
 #include <Commands/IRHICommandAllocator.hpp>
 #include <Commands/IRHICommandList.hpp>
 #include <HAL/PlatformMutex.hpp>
+#include <RHIExport.hpp>
 #include <Templates/Vector.hpp>
 namespace Lumen
 {

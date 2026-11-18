@@ -5,6 +5,7 @@
 
 #pragma once
 #include <Memory/SharedPtr.hpp>
+#include <RHIExport.hpp>
 #include <Resources/IRHIBuffer.hpp>
 #include <Resources/IRHITexture.hpp>
 #include <Resources/RHISubresourceRange.hpp>

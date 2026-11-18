@@ -13,6 +13,10 @@
 namespace Lumen
 {
 
+/**
+ * @class IRHICommandAllocator
+ * @brief Recycles completed command lists for one queue type.
+ */
 class IRHICommandAllocator : public IRHIObject
 {
 

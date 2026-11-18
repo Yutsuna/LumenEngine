@@ -4,18 +4,27 @@
  */
 
 #pragma once
+#include <RHIExport.hpp>
 #include <Resources/IRHITextureView.hpp>
 #include <Templates/Vector.hpp>
 #include <Types/RHIClearValue.hpp>
 #include <Types/RHIError.hpp>
 namespace Lumen
 {
+/**
+ * @enum ERHIRenderingLoadOp
+ * @brief Initial-content action for a rendering attachment.
+ */
 enum class ERHIRenderingLoadOp : UInt8
 {
     Load,
     Clear,
     DontCare
 };
+/**
+ * @enum ERHIRenderingStoreOp
+ * @brief Final-content action for a rendering attachment.
+ */
 enum class ERHIRenderingStoreOp : UInt8
 {
     Store,

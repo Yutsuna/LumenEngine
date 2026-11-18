@@ -8,6 +8,10 @@
 #include <Types/RHIError.hpp>
 namespace Lumen
 {
+/**
+ * @enum ERHIIndexFormat
+ * @brief Width of an index element in an indexed draw.
+ */
 enum class ERHIIndexFormat : UInt8
 {
     Index16,

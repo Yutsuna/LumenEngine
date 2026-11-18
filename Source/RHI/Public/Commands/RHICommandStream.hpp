@@ -4,6 +4,7 @@
  */
 
 #pragma once
+
 #include "Concepts/TriviallyCopyable.hpp"
 #include <Memory/SharedPtr.hpp>
 #include <Memory/Span.hpp>
@@ -11,10 +12,10 @@
 #include <Templates/Vector.hpp>
 #include <Types/IRHIObject.hpp>
 #include <Types/RHIError.hpp>
-#include <type_traits>
-namespace Lumen
 
+namespace Lumen
 {
+
 /**
  * @struct FRHICommandView
  * @brief One immutable opcode and payload view.
@@ -38,39 +39,49 @@ public:
      * @param InChunkCapacity Byte capacity of each storage chunk.
      */
     explicit FRHICommandStream ( USize InChunkCapacity = 4096U ) noexcept;
+
     /** @brief Appends a raw payload; a command never crosses a chunk boundary. */
     TExpected<void, FRHIError> WritePayload ( UInt32 InOpcode, TSpan<const Byte> InPayload ) noexcept;
+
     /** @brief Appends one trivially copyable payload. */
     template <typename PayloadType>
         requires Concepts::CTriviallyCopyable<PayloadType>
     TExpected<void, FRHIError> Write ( UInt32 InOpcode, const PayloadType &InPayload ) noexcept;
+
     /** @brief Reads and validates one command by index. */
     [[nodiscard]] TExpected<FRHICommandView, FRHIError> Read ( USize InIndex ) const noexcept;
+
     /** @brief Decodes one typed command after checking opcode and payload size. */
     template <typename PayloadType>
         requires Concepts::CTriviallyCopyable<PayloadType>
     [[nodiscard]] TExpected<PayloadType, FRHIError> ReadPayload ( USize InIndex, UInt32 InExpectedOpcode ) const noexcept;
+
     /** @brief Retains an object until Clear or stream destruction. */
     void Retain ( TSharedPtr<IRHIObject> InObject ) noexcept;
+
     /**
      * @brief Keeps an object alive until Clear or stream destruction.
      * @param InObject Object referenced by a recorded command.
      */
     template <typename ObjectType> void Retain ( const TSharedRef<ObjectType> &InObject ) noexcept;
+
     /**
      * @brief Drops all recorded commands and releases retained object references.
      */
     void Clear () noexcept;
+
     /**
      * @brief Returns the number of recorded commands.
      * @return Record count.
      */
     [[nodiscard]] USize GetCommandCount () const noexcept;
+
     /**
      * @brief Returns the number of allocated storage chunks.
      * @return Chunk count.
      */
     [[nodiscard]] USize GetChunkCount () const noexcept;
+
     /**
      * @brief Returns the number of retained object references.
      * @return Retained reference count.
@@ -86,14 +97,17 @@ private:
         UInt32 PayloadSize;
         UInt32 Reserved;
     };
+
     struct FRecord
     {
         USize ChunkIndex;
         USize Offset;
         UInt32 PayloadSize;
     };
+
     USize ChunkCapacity;
     USize CurrentChunk = 0U;
+
     TVector<TVector<Byte>> Chunks;
     TVector<FRecord> Records;
     TVector<TSharedPtr<IRHIObject>> RetainedObjects;
