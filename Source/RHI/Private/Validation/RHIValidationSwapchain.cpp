@@ -59,23 +59,28 @@ Lumen::FRHIValidationSwapchain::GetImage ( const UInt32 InIndex ) const noexcept
 {
     if ( InIndex >= Images.size() )
     {
-        return TUnexpected<FRHIError>( State->GetReporter()
-                                           ->Reject( ERHIValidationMessageCode::InvalidPresentation,
-                                                     ERHIErrorCondition::Presentation, "Swapchain image index is out of range",
-                                                     this )
-                                           .Error() );
+        if ( State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Presentation ) )
+        {
+            return TUnexpected<FRHIError>( State->GetReporter()
+                                               ->Reject( ERHIValidationMessageCode::InvalidPresentation,
+                                                         ERHIErrorCondition::Presentation,
+                                                         "Swapchain image index is out of range", this )
+                                               .Error() );
+        }
+        return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Swapchain image index is out of range" ) );
     }
     return Images[InIndex];
 }
 
 Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::FRHIValidationSwapchain::AcquireNextImage () noexcept
 {
-    Bool bAllAcquired = not Acquired.empty();
+    const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Presentation );
+    Bool bAllAcquired    = not Acquired.empty();
     for ( const Bool bAcquired : Acquired )
     {
         bAllAcquired = bAllAcquired and bAcquired;
     }
-    if ( bAllAcquired )
+    if ( bValidate and bAllAcquired )
     {
         return TUnexpected<FRHIError>( State->GetReporter()
                                            ->Reject( ERHIValidationMessageCode::InvalidPresentation,
@@ -83,15 +88,19 @@ Lumen::TExpected<Lumen::FRHIAcquiredImage, Lumen::FRHIError> Lumen::FRHIValidati
                                            .Error() );
     }
     return Underlying->AcquireNextImage().AndThen(
-        [this] ( FRHIAcquiredImage InImage ) noexcept -> TExpected<FRHIAcquiredImage, FRHIError>
+        [this, bValidate] ( FRHIAcquiredImage InImage ) noexcept -> TExpected<FRHIAcquiredImage, FRHIError>
     {
         if ( InImage.ImageIndex >= Images.size() )
         {
-            return TUnexpected<FRHIError>( State->GetReporter()
-                                               ->Reject( ERHIValidationMessageCode::InvalidPresentation,
-                                                         ERHIErrorCondition::Presentation,
-                                                         "Backend returned an invalid image index", this )
-                                               .Error() );
+            if ( bValidate )
+            {
+                return TUnexpected<FRHIError>( State->GetReporter()
+                                                   ->Reject( ERHIValidationMessageCode::InvalidPresentation,
+                                                             ERHIErrorCondition::Presentation,
+                                                             "Backend returned an invalid image index", this )
+                                                   .Error() );
+            }
+            return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Backend returned an invalid image index" ) );
         }
         Acquired[InImage.ImageIndex] = true;
         InImage.Image                = Images[InImage.ImageIndex];
@@ -103,33 +112,45 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationSwapchain::Present
                                                                                    const FRHIAcquiredImage &InImage,
                                                                                    IRHISemaphore *InRenderComplete ) noexcept
 {
-    return State->ValidateObject( InQueue, ERHIValidationObjectKind::Queue )
-        .AndThen( [this, &InQueue, &InImage, InRenderComplete] () noexcept -> TExpected<void, FRHIError>
+    const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Presentation );
+    if ( bValidate )
     {
+        const TExpected<void, FRHIError> Owned = State->ValidateObject( InQueue, ERHIValidationObjectKind::Queue );
+        if ( not Owned )
+        {
+            return Owned;
+        }
         if ( InImage.ImageIndex >= Images.size() or not InImage.Image or not Acquired[InImage.ImageIndex] or
              InImage.Image.Get() != Images[InImage.ImageIndex].Get() )
         {
             return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidPresentation, ERHIErrorCondition::Presentation,
                                                  "Acquired image token is stale or already presented", this );
         }
-        FRHIAcquiredImage Unwrapped = InImage;
-        Unwrapped.Image             = UnwrapRHIShared( InImage.Image );
-        return Underlying->Present( *UnwrapRHI( &InQueue ), Unwrapped, UnwrapRHI( InRenderComplete ) )
-            .Inspect( [this, &InImage] () noexcept
+    }
+    FRHIAcquiredImage Unwrapped = InImage;
+    Unwrapped.Image             = UnwrapRHIShared( InImage.Image );
+    return Underlying->Present( *UnwrapRHI( &InQueue ), Unwrapped, UnwrapRHI( InRenderComplete ) )
+        .Inspect( [this, &InImage] () noexcept
+    {
+        if ( InImage.ImageIndex < Acquired.size() )
         {
             Acquired[InImage.ImageIndex] = false;
-        } );
+        }
     } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
 {
-    for ( const Bool bAcquired : Acquired )
+    if ( State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Presentation ) )
     {
-        if ( bAcquired )
+        for ( const Bool bAcquired : Acquired )
         {
-            return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidPresentation, ERHIErrorCondition::Presentation,
-                                                 "Cannot resize while an image is acquired", this );
+            if ( bAcquired )
+            {
+                return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidPresentation,
+                                                     ERHIErrorCondition::Presentation, "Cannot resize while an image is acquired",
+                                                     this );
+            }
         }
     }
     return Underlying->Resize( InExtent )

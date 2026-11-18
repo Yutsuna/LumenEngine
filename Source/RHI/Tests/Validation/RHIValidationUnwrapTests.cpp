@@ -4,6 +4,7 @@
  */
 #include "Validation/RHIValidationTestUtils.hpp"
 #include <Resources/NullResources.hpp>
+#include <Templates/Optional.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
@@ -18,8 +19,10 @@ namespace
         TSharedRef<IRHIDevice> Inner        = *WrapRHIDevice( Backend );
         TSharedRef<IRHIDevice> Outer        = *WrapRHIDevice( Inner );
         LUMEN_CHECK_EQ( UnwrapRHI( Outer.Get() ), Null.Get() );
-        LUMEN_CHECK_EQ( TryUnwrapRHIBackend<Tests::FNullDevice>( Outer.Get() ), Null.Get() );
-        LUMEN_CHECK_EQ( TryUnwrapRHIBackend<Tests::FNullBuffer>( Outer.Get() ), nullptr );
+        const TOptional<Tests::FNullDevice *> UnwrappedBackend = TryUnwrapRHIBackend<Tests::FNullDevice>( Outer.Get() );
+        LUMEN_CHECK_HAS_VALUE( UnwrappedBackend );
+        LUMEN_CHECK_EQ( *UnwrappedBackend, Null.Get() );
+        LUMEN_CHECK_FALSE( TryUnwrapRHIBackend<Tests::FNullBuffer>( Outer.Get() ).HasValue() );
         const TSharedRef<IRHIObject> Base   = Outer;
         const TSharedRef<IRHIObject> Shared = UnwrapRHISharedObject( Base );
         LUMEN_CHECK_EQ( Shared.Get(), static_cast<IRHIObject *>( Null.Get() ) );

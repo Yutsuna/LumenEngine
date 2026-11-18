@@ -6,6 +6,7 @@
 #include "Validation/RHIValidationTestUtils.hpp"
 #include <Presentation/NullPresentation.hpp>
 #include <Queue/IRHIQueue.hpp>
+#include <Templates/Optional.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
@@ -23,9 +24,9 @@ namespace
         LUMEN_CHECK_EQ( Swapchain->Resize( { 800U, 600U, 1U } ).Error().Code, ERHIErrorCode::ValidationFailed );
         LUMEN_CHECK_TRUE( Swapchain->Present( *Queue, Acquired, nullptr ).HasValue() );
         LUMEN_CHECK_EQ( Swapchain->Present( *Queue, Acquired, nullptr ).Error().Code, ERHIErrorCode::ValidationFailed );
-        Tests::FNullSwapchain *NullSwapchain = TryUnwrapRHIBackend<Tests::FNullSwapchain>( Swapchain.Get() );
-        LUMEN_CHECK_TRUE( NullSwapchain != nullptr );
-        LUMEN_CHECK_EQ( NullSwapchain->GetPresentCount(), 1ULL );
+        const TOptional<Tests::FNullSwapchain *> NullSwapchain = TryUnwrapRHIBackend<Tests::FNullSwapchain>( Swapchain.Get() );
+        LUMEN_CHECK_HAS_VALUE( NullSwapchain );
+        LUMEN_CHECK_EQ( ( *NullSwapchain )->GetPresentCount(), 1ULL );
         LUMEN_CHECK_TRUE( Swapchain->Resize( { 800U, 600U, 1U } ).HasValue() );
         TSharedRef<IRHITexture> Image = *Swapchain->GetImage( 0U );
         LUMEN_CHECK_EQ( Image->GetDesc().Extent.Width, 800U );

@@ -81,6 +81,8 @@ public:
 
 private:
 
+    /** @return True when command-state validation is enabled by the device descriptor. */
+    [[nodiscard]] Bool IsCommandValidationEnabled () const noexcept;
     [[nodiscard]] TExpected<void, FRHIError> CheckRecording ( Bool bAllowRendering ) const noexcept;
     [[nodiscard]] TExpected<void, FRHIError> CheckRendering () const noexcept;
     [[nodiscard]] TExpected<void, FRHIError> ValidateBuffer ( const IRHIBuffer &InBuffer ) const noexcept;

@@ -33,6 +33,22 @@ namespace
         LUMEN_CHECK_TRUE( Sink.ContainsCode( static_cast<UInt32>( ERHIValidationMessageCode::InvalidQueueSubmission ) ) );
     }
 
+    LUMEN_TEST( RHIValidationQueue, ClearedQueuesFlagSuppressesValidationRejection )
+    {
+        Tests::FRecordingDebugSink Sink;
+        FRHIValidationDesc Desc;
+        Desc.Flags                                 = ERHIValidationFlags::All & ~ERHIValidationFlags::Queues;
+        TSharedRef<IRHIDevice> Device              = Tests::Validation::MakeDevice( Sink, Desc );
+        TSharedRef<IRHIQueue> Queue                = *Device->GetQueue( ERHIQueueType::Graphics, 0U );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
+        FRHISubmitDesc Submit;
+        Submit.CommandLists = { List };
+        Submit.Completion   = { 1ULL };
+        LUMEN_CHECK_EQ( Queue->Submit( Submit ).Error().Code, ERHIErrorCode::InvalidState );
+        LUMEN_CHECK_FALSE( Sink.ContainsCode( static_cast<UInt32>( ERHIValidationMessageCode::InvalidQueueSubmission ) ) );
+    }
+
     LUMEN_TEST( RHIValidationQueue, RejectsUnsignaledWaitsBeforeBackendSubmission )
     {
         Tests::FRecordingDebugSink Sink;

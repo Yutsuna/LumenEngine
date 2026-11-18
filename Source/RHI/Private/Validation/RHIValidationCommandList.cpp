@@ -45,9 +45,18 @@ const Lumen::FRHICommandStream &Lumen::FRHIValidationCommandList::GetStream () c
     return Underlying->GetStream();
 }
 
+Lumen::Bool Lumen::FRHIValidationCommandList::IsCommandValidationEnabled () const noexcept
+{
+    return State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Commands );
+}
+
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::CheckRecording ( const Bool bAllowRendering ) const noexcept
 {
+    if ( not IsCommandValidationEnabled() )
+    {
+        return {};
+    }
     const ERHICommandListState Current = GetState();
     if ( Current == ERHICommandListState::Recording or ( bAllowRendering and Current == ERHICommandListState::Rendering ) )
     {
@@ -59,6 +68,10 @@ Lumen::FRHIValidationCommandList::CheckRecording ( const Bool bAllowRendering ) 
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CheckRendering () const noexcept
 {
+    if ( not IsCommandValidationEnabled() )
+    {
+        return {};
+    }
     if ( GetState() == ERHICommandListState::Rendering )
     {
         return {};
@@ -82,6 +95,10 @@ Lumen::FRHIValidationCommandList::ValidateTexture ( const IRHITexture &InTexture
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::CheckDraw ( const ERHIPipelineType InType,
                                                                                        const Bool bRendering ) const noexcept
 {
+    if ( not IsCommandValidationEnabled() )
+    {
+        return {};
+    }
     return ( bRendering ? CheckRendering() : CheckRecording( false ) )
         .AndThen( [this, InType] () noexcept -> TExpected<void, FRHIError>
     {
@@ -96,7 +113,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Check
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Begin () noexcept
 {
-    if ( GetState() != ERHICommandListState::Initial )
+    if ( IsCommandValidationEnabled() and GetState() != ERHICommandListState::Initial )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Command,
                                              "Only an initial command list can begin", this );
@@ -106,7 +123,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Begin
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::End () noexcept
 {
-    if ( GetState() != ERHICommandListState::Recording or ActiveQueryPool != nullptr or DebugDepth != 0U )
+    if ( IsCommandValidationEnabled() and
+         ( GetState() != ERHICommandListState::Recording or ActiveQueryPool != nullptr or DebugDepth != 0U ) )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Command,
                                              "Command list has an open rendering, query, or debug scope", this );
@@ -116,7 +134,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::End (
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Reset () noexcept
 {
-    if ( GetState() == ERHICommandListState::Pending or ActiveQueryPool != nullptr )
+    if ( IsCommandValidationEnabled() and ( GetState() == ERHICommandListState::Pending or ActiveQueryPool != nullptr ) )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Command,
                                              "Cannot reset a pending list or one with an active query", this );
@@ -141,7 +159,7 @@ void Lumen::FRHIValidationCommandList::OnAllocatorReset () noexcept
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::MarkPending ( const FRHITimelineValue InCompletion ) noexcept
 {
-    if ( GetState() != ERHICommandListState::Executable or not InCompletion.IsValid() )
+    if ( IsCommandValidationEnabled() and ( GetState() != ERHICommandListState::Executable or not InCompletion.IsValid() ) )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Command,
                                              "Only an executable list can become pending", this );
@@ -152,7 +170,8 @@ Lumen::FRHIValidationCommandList::MarkPending ( const FRHITimelineValue InComple
 Lumen::TExpected<void, Lumen::FRHIError>
 Lumen::FRHIValidationCommandList::MarkCompleted ( const FRHITimelineValue InCompleted ) noexcept
 {
-    if ( GetState() == ERHICommandListState::Pending and not IsRHICompletionReached( InCompleted, GetCompletion() ) )
+    if ( IsCommandValidationEnabled() and GetState() == ERHICommandListState::Pending and
+         not IsRHICompletionReached( InCompleted, GetCompletion() ) )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Command,
                                              "Command list completion has not been reached", this );
@@ -183,14 +202,6 @@ Lumen::FRHIValidationCommandList::Transition ( const TSpan<const FRHITransition>
                 {
                     return Owned;
                 }
-                if ( bTrackStates )
-                {
-                    const TExpected<void, FRHIError> Valid = State->TransitionBuffer( *Buffer, GetQueueType(), false );
-                    if ( not Valid )
-                    {
-                        return Valid;
-                    }
-                }
                 FRHIBufferTransition Copy = *Buffer;
                 Copy.Buffer               = UnwrapRHIShared( Buffer->Buffer );
                 Unwrapped.push_back( FRHITransition( Copy ) );
@@ -208,14 +219,6 @@ Lumen::FRHIValidationCommandList::Transition ( const TSpan<const FRHITransition>
                 {
                     return Owned;
                 }
-                if ( bTrackStates )
-                {
-                    const TExpected<void, FRHIError> Valid = State->TransitionTexture( *Texture, GetQueueType(), false );
-                    if ( not Valid )
-                    {
-                        return Valid;
-                    }
-                }
                 FRHITextureTransition Copy = *Texture;
                 Copy.Texture               = UnwrapRHIShared( Texture->Texture );
                 Unwrapped.push_back( FRHITransition( Copy ) );
@@ -226,35 +229,20 @@ Lumen::FRHIValidationCommandList::Transition ( const TSpan<const FRHITransition>
                                                      ERHIErrorCondition::Resource, "Transition has no active payload", this );
             }
         }
-        const TExpected<void, FRHIError> Forwarded = Underlying->Transition( Unwrapped );
-        if ( not bTrackStates )
+        if ( bTrackStates )
         {
-            return Forwarded;
-        }
-        return Forwarded.AndThen( [this, &InTransitions] () noexcept -> TExpected<void, FRHIError>
-        {
-            for ( const FRHITransition &Transition : InTransitions )
+            const TExpected<void, FRHIError> Valid = State->ValidateTransitions( InTransitions, GetQueueType() );
+            if ( not Valid )
             {
-                if ( const FRHIBufferTransition *Buffer = std::get_if<FRHIBufferTransition>( &Transition ) )
-                {
-                    const TExpected<void, FRHIError> Applied = State->TransitionBuffer( *Buffer, GetQueueType() );
-                    if ( not Applied )
-                    {
-                        return Applied;
-                    }
-                }
-                else
-                {
-                    const FRHITextureTransition &Texture     = std::get<FRHITextureTransition>( Transition );
-                    const TExpected<void, FRHIError> Applied = State->TransitionTexture( Texture, GetQueueType() );
-                    if ( not Applied )
-                    {
-                        return Applied;
-                    }
-                }
+                return Valid;
             }
-            return TExpected<void, FRHIError>();
-        } );
+        }
+        TExpected<void, FRHIError> Forwarded = Underlying->Transition( Unwrapped );
+        if ( bTrackStates and Forwarded )
+        {
+            State->CommitTransitions( InTransitions );
+        }
+        return Forwarded;
     } );
 }
 
@@ -402,7 +390,8 @@ Lumen::FRHIValidationCommandList::SetPipeline ( TSharedRef<IRHIPipeline> InPipel
     {
         return Scope;
     }
-    if ( ( InPipeline->GetType() == ERHIPipelineType::Graphics ) != ( GetState() == ERHICommandListState::Rendering ) )
+    if ( IsCommandValidationEnabled() and
+         ( ( InPipeline->GetType() == ERHIPipelineType::Graphics ) != ( GetState() == ERHICommandListState::Rendering ) ) )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Pipeline,
                                              "Pipeline type does not match the current rendering scope", this );
@@ -586,7 +575,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::Begin
     {
         return Scope;
     }
-    if ( ActiveQueryPool != nullptr )
+    if ( IsCommandValidationEnabled() and ActiveQueryPool != nullptr )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Query,
                                              "Another query is already active", this );
@@ -607,7 +596,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndQu
     {
         return Scope;
     }
-    if ( ActiveQueryPool != InPool.Get() or ActiveQueryIndex != InIndex )
+    if ( IsCommandValidationEnabled() and ( ActiveQueryPool != InPool.Get() or ActiveQueryIndex != InIndex ) )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Query,
                                              "Ending query does not match the active query", this );
@@ -640,7 +629,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationCommandList::EndDe
     {
         return Scope;
     }
-    if ( DebugDepth == 0U )
+    if ( IsCommandValidationEnabled() and DebugDepth == 0U )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidCommandState, ERHIErrorCondition::Command,
                                              "No debug region is active", this );

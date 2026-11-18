@@ -31,24 +31,27 @@ Lumen::FRHITimelineValue Lumen::FRHIValidationQueue::GetCompletedValue () const 
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationQueue::Submit ( const FRHISubmitDesc &InDesc ) noexcept
 {
-    return InDesc.Validate()
-        .OrElse(
-            [this] ( const FRHIError &InError ) noexcept -> TExpected<void, FRHIError>
+    const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Queues );
+    if ( bValidate )
     {
-        return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission, ERHIErrorCondition::Queue,
-                                             InError.Message, this );
-    } )
-        .AndThen( [this, &InDesc] () noexcept -> TExpected<void, FRHIError>
-    {
+        const TExpected<void, FRHIError> DescValid = InDesc.Validate();
+        if ( not DescValid )
+        {
+            return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission, ERHIErrorCondition::Queue,
+                                                 DescValid.Error().Message, this );
+        }
         if ( InDesc.Completion <= GetCompletedValue() )
         {
             return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission, ERHIErrorCondition::Queue,
                                                  "Queue completion values must increase", this );
         }
-        FRHISubmitDesc Unwrapped;
-        Unwrapped.Completion = InDesc.Completion;
-        Unwrapped.CommandLists.reserve( InDesc.CommandLists.size() );
-        for ( const TSharedRef<IRHICommandList> &List : InDesc.CommandLists )
+    }
+    FRHISubmitDesc Unwrapped;
+    Unwrapped.Completion = InDesc.Completion;
+    Unwrapped.CommandLists.reserve( InDesc.CommandLists.size() );
+    for ( const TSharedRef<IRHICommandList> &List : InDesc.CommandLists )
+    {
+        if ( bValidate )
         {
             const TExpected<void, FRHIError> Owned = State->ValidateObject( *List, ERHIValidationObjectKind::CommandList );
             if ( not Owned )
@@ -60,26 +63,25 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationQueue::Submit ( co
                 return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission, ERHIErrorCondition::Queue,
                                                      "Command list queue type mismatch", this );
             }
-            Unwrapped.CommandLists.push_back( UnwrapRHIShared( List ) );
         }
-        Unwrapped.Waits = InDesc.Waits;
-        for ( FRHISemaphoreOperation &Wait : Unwrapped.Waits )
+        Unwrapped.CommandLists.push_back( UnwrapRHIShared( List ) );
+    }
+    Unwrapped.Waits = InDesc.Waits;
+    for ( FRHISemaphoreOperation &Wait : Unwrapped.Waits )
+    {
+        Wait.Semaphore = UnwrapRHIShared( Wait.Semaphore );
+        if ( bValidate and Wait.Semaphore->GetValue() < Wait.Value )
         {
-            Wait.Semaphore = UnwrapRHIShared( Wait.Semaphore );
-            if ( Wait.Semaphore->GetValue() < Wait.Value )
-            {
-                return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission,
-                                                     ERHIErrorCondition::Synchronization, "Submission wait is not signaled",
-                                                     this );
-            }
+            return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission,
+                                                 ERHIErrorCondition::Synchronization, "Submission wait is not signaled", this );
         }
-        Unwrapped.Signals = InDesc.Signals;
-        for ( FRHISemaphoreOperation &Signal : Unwrapped.Signals )
-        {
-            Signal.Semaphore = UnwrapRHIShared( Signal.Semaphore );
-        }
-        return Underlying->Submit( Unwrapped );
-    } );
+    }
+    Unwrapped.Signals = InDesc.Signals;
+    for ( FRHISemaphoreOperation &Signal : Unwrapped.Signals )
+    {
+        Signal.Semaphore = UnwrapRHIShared( Signal.Semaphore );
+    }
+    return Underlying->Submit( Unwrapped );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationQueue::WaitIdle () noexcept

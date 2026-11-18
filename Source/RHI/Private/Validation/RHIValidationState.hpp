@@ -7,6 +7,7 @@
 #include "RHIValidationReporter.hpp"
 #include <Commands/RHITransition.hpp>
 #include <HAL/PlatformMutex.hpp>
+#include <Memory/Span.hpp>
 #include <Resources/IRHIBuffer.hpp>
 #include <Resources/IRHITexture.hpp>
 #include <Templates/Hash.hpp>
@@ -104,6 +105,16 @@ public:
     /** @brief Validates and applies a transition independently to every selected subresource. */
     [[nodiscard]] TExpected<void, FRHIError>
     TransitionTexture ( const FRHITextureTransition &InTransition, ERHIQueueType InRecordingQueue, Bool bApply = true ) noexcept;
+    /**
+     * @brief Validates an entire batch against a speculative copy of the tracked state.
+     * @details Each entry observes the state produced by the preceding entries, so a rejection is
+     *          produced here rather than after the backend has recorded the batch. No registry is changed.
+     * @return Success, or the first structured error raised while replaying the batch.
+     */
+    [[nodiscard]] TExpected<void, FRHIError> ValidateTransitions ( TSpan<const FRHITransition> InTransitions,
+                                                                   ERHIQueueType InRecordingQueue ) const noexcept;
+    /** @brief Commits a previously validated batch; this operation cannot reject or report an error. */
+    void CommitTransitions ( TSpan<const FRHITransition> InTransitions ) noexcept;
     /** @brief Emits one snapshot of objects that remain live at validation shutdown. */
     void ReportLeaks () noexcept;
     /** @return The shared diagnostic reporter. */
@@ -126,6 +137,24 @@ private:
                                                                   ERHIQueueType InSourceQueue,
                                                                   ERHIQueueType InDestinationQueue,
                                                                   ERHIQueueType InRecordingQueue ) const noexcept;
+    /** @return Success when the object belongs to the supplied registry and has the expected category. */
+    [[nodiscard]] TExpected<void, FRHIError> CheckObject ( const TMap<UInt64, FEntry> &InObjects,
+                                                           const IRHIObject &InObject,
+                                                           ERHIValidationObjectKind InKind ) const noexcept;
+    /** @brief Replays one buffer barrier against a registry, optionally writing the resulting state. */
+    [[nodiscard]] TExpected<void, FRHIError> ValidateBufferIn ( TMap<UInt64, FEntry> &InObjects,
+                                                                const FRHIBufferTransition &InTransition,
+                                                                ERHIQueueType InRecordingQueue,
+                                                                Bool bApply ) const noexcept;
+    /** @brief Replays one texture barrier against a registry, optionally writing the resulting states. */
+    [[nodiscard]] TExpected<void, FRHIError> ValidateTextureIn ( TMap<UInt64, FEntry> &InObjects,
+                                                                 const FRHITextureTransition &InTransition,
+                                                                 ERHIQueueType InRecordingQueue,
+                                                                 Bool bApply ) const noexcept;
+    /** @brief Writes a validated buffer barrier result without any further checks. */
+    void ApplyBuffer ( TMap<UInt64, FEntry> &InObjects, const FRHIBufferTransition &InTransition ) const noexcept;
+    /** @brief Writes a validated texture barrier result without any further checks. */
+    void ApplyTexture ( TMap<UInt64, FEntry> &InObjects, const FRHITextureTransition &InTransition ) const noexcept;
 
 private:
 

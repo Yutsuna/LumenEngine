@@ -45,6 +45,58 @@ namespace
         LUMEN_CHECK_EQ( List->GetStream().GetCommandCount(), 1U );
     }
 
+    LUMEN_TEST( RHIValidationTransition, RejectsSequencedBatchBeforeBackendRecordsIt )
+    {
+        Tests::FRecordingDebugSink Sink;
+        TSharedRef<IRHIDevice> Device              = Tests::Validation::MakeDevice( Sink );
+        TSharedRef<IRHIBuffer> Buffer              = Tests::Validation::MakeBuffer( Device );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
+        LUMEN_CHECK_TRUE( List->Begin().HasValue() );
+
+        FRHIBufferTransition First;
+        First.Buffer = Buffer;
+        First.Before = ERHIResourceState::Common;
+        First.After  = ERHIResourceState::CopySource;
+        FRHIBufferTransition Second;
+        Second.Buffer                    = Buffer;
+        Second.Before                    = ERHIResourceState::Common;
+        Second.After                     = ERHIResourceState::CopyDestination;
+        TArray<FRHITransition, 2U> Batch = { FRHITransition( First ), FRHITransition( Second ) };
+
+        const USize RecordedBefore = List->GetStream().GetCommandCount();
+        LUMEN_CHECK_EQ( List->Transition( Batch ).Error().Code, ERHIErrorCode::ValidationFailed );
+        LUMEN_CHECK_EQ( List->GetStream().GetCommandCount(), RecordedBefore );
+        auto *Validation = dynamic_cast<FRHIValidationDevice *>( Device.Get() );
+        LUMEN_CHECK_EQ( *Validation->GetState()->GetResourceState( *Buffer ), ERHIResourceState::Common );
+
+        Second.Before = ERHIResourceState::CopySource;
+        Batch         = { FRHITransition( First ), FRHITransition( Second ) };
+        LUMEN_CHECK_TRUE( List->Transition( Batch ).HasValue() );
+        LUMEN_CHECK_EQ( List->GetStream().GetCommandCount(), RecordedBefore + 2U );
+        LUMEN_CHECK_EQ( *Validation->GetState()->GetResourceState( *Buffer ), ERHIResourceState::CopyDestination );
+    }
+
+    LUMEN_TEST( RHIValidationTransition, ClearedResourceStatesFlagSuppressesStateRejection )
+    {
+        Tests::FRecordingDebugSink Sink;
+        FRHIValidationDesc Desc;
+        Desc.Flags                                 = ERHIValidationFlags::All & ~ERHIValidationFlags::ResourceStates;
+        TSharedRef<IRHIDevice> Device              = Tests::Validation::MakeDevice( Sink, Desc );
+        TSharedRef<IRHIBuffer> Buffer              = Tests::Validation::MakeBuffer( Device );
+        TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
+        TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
+        LUMEN_CHECK_TRUE( List->Begin().HasValue() );
+
+        FRHIBufferTransition BufferTransition;
+        BufferTransition.Buffer   = Buffer;
+        BufferTransition.Before   = ERHIResourceState::CopySource;
+        BufferTransition.After    = ERHIResourceState::CopyDestination;
+        FRHITransition Transition = BufferTransition;
+        LUMEN_CHECK_TRUE( List->Transition( TSpan<const FRHITransition>( &Transition, 1U ) ).HasValue() );
+        LUMEN_CHECK_EQ( List->GetStream().GetCommandCount(), 1U );
+    }
+
     LUMEN_TEST( RHIValidationTransition, TracksTextureMipsAndLayersIndependently )
     {
         Tests::FRecordingDebugSink Sink;

@@ -42,8 +42,8 @@ Lumen::TSharedPtr<ObjectType> Lumen::UnwrapRHIShared ( const TSharedPtr<ObjectTy
     return StaticCastSharedPtr<ObjectType>( UnwrapRHISharedObject( Base ) );
 }
 
-template <typename BackendType> BackendType *Lumen::TryUnwrapRHIBackend ( IRHIObject *InObject ) noexcept
+template <typename BackendType> Lumen::TOptional<BackendType *> Lumen::TryUnwrapRHIBackend ( IRHIObject *InObject ) noexcept
 {
     IRHIObject *Unwrapped = UnwrapRHIObject( InObject );
-    return Unwrapped == nullptr ? nullptr : TryRHIBackendCast<BackendType>( *Unwrapped );
+    return Unwrapped == nullptr ? Lumen::TOptional<BackendType *>{} : TryRHIBackendCast<BackendType>( *Unwrapped );
 }
