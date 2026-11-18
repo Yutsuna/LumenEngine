@@ -1,5 +1,6 @@
 /**
- * @file NullPipelines.cpp @brief Implements Null pipeline objects.
+ * @file NullPipelines.cpp
+ * @brief Implements Null pipeline objects.
  */
 
 #include <Pipelines/NullPipelines.hpp>
