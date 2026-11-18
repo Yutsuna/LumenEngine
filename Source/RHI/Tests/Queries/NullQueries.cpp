@@ -44,7 +44,7 @@ Lumen::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
             return TUnexpected<FRHIError>( *Error );
         }
     }
-    const UInt32 ValueCount = GetRHIQueryValueCount( Desc.Type );
+    const UInt32 ValueCount = GetRHIQueryValueCount( Desc.Type ).ValueOr( 0U );
     if ( InFirstQuery > Desc.Count or InQueryCount > Desc.Count - InFirstQuery or
          InDestination.size() < static_cast<USize>( InQueryCount ) * ValueCount )
     {
@@ -106,7 +106,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueryPool::End ( con
         return TUnexpected<FRHIError>(
             FRHIError( ERHIErrorCode::InvalidState, ERHIErrorCondition::Query, "Query is not active" ) );
     }
-    const UInt32 ValueCount = GetRHIQueryValueCount( Desc.Type );
+    const UInt32 ValueCount = GetRHIQueryValueCount( Desc.Type ).ValueOr( 0U );
     for ( UInt32 ValueIndex = 0U; ValueIndex < ValueCount; ++ValueIndex )
     {
         Entry.Values[ValueIndex] = NextValue + ValueIndex;

@@ -9,6 +9,7 @@
 #include <Presentation/NullPresentation.hpp>
 #include <Presentation/RHISwapchainDesc.hpp>
 #include <Shaders/RHIShaderDesc.hpp>
+#include <Templates/Optional.hpp>
 #include <Validation/RHIValidation.hpp>
 
 /**
@@ -60,24 +61,20 @@ Lumen::Tests::FNullConformanceDeviceFactory::CreateSwapchain ( IRHIDevice &InDev
 
 Lumen::Bool Lumen::Tests::FNullConformanceDeviceFactory::InjectDeviceLost ( IRHIDevice &InDevice ) const noexcept
 {
-    FNullDevice *Device = TryUnwrapRHIBackend<FNullDevice>( &InDevice );
-    if ( Device == nullptr )
+    return TryUnwrapRHIBackend<FNullDevice>( &InDevice )
+        .Inspect( [] ( FNullDevice *Device ) noexcept
     {
-        return false;
-    }
-    Device->MarkLost();
-    return true;
+        Device->MarkLost();
+    } ).HasValue();
 }
 
 Lumen::Bool Lumen::Tests::FNullConformanceDeviceFactory::InjectSwapchainOutOfDate ( IRHISwapchain &InSwapchain ) const noexcept
 {
-    FNullSwapchain *Swapchain = TryUnwrapRHIBackend<FNullSwapchain>( &InSwapchain );
-    if ( Swapchain == nullptr )
+    return TryUnwrapRHIBackend<FNullSwapchain>( &InSwapchain )
+        .Inspect( [] ( FNullSwapchain *Swapchain ) noexcept
     {
-        return false;
-    }
-    Swapchain->MarkOutOfDate();
-    return true;
+        Swapchain->MarkOutOfDate();
+    } ).HasValue();
 }
 
 Lumen::Tests::IRHIConformanceDeviceFactory &Lumen::Tests::GetRHIConformanceDeviceFactory () noexcept

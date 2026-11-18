@@ -12,8 +12,8 @@
 namespace Lumen
 {
 
-/** @return Pointer to BackendType when the object's concrete tag matches, otherwise empty. */
-template <typename BackendType> [[nodiscard]] BackendType *TryRHIBackendCast ( IRHIObject &InObject ) noexcept;
+/** @return An optional pointer to BackendType when the object's concrete tag matches, otherwise empty. */
+template <typename BackendType> [[nodiscard]] TOptional<BackendType *> TryRHIBackendCast ( IRHIObject &InObject ) noexcept;
 
 /**
  * @brief Casts a shared reference to a backend type after checking its tag.

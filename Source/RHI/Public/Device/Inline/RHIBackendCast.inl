@@ -6,9 +6,13 @@
 
 #include <Device/RHIBackendCast.hpp>
 
-template <typename BackendType> BackendType *Lumen::TryRHIBackendCast ( IRHIObject &InObject ) noexcept
+template <typename BackendType> Lumen::TOptional<BackendType *> Lumen::TryRHIBackendCast ( IRHIObject &InObject ) noexcept
 {
-    return InObject.GetBackendTypeTag() == FHash::TypeHash<BackendType>() ? static_cast<BackendType *>( &InObject ) : nullptr;
+    if ( InObject.GetBackendTypeTag() != FHash::TypeHash<BackendType>() )
+    {
+        return {};
+    }
+    return TOptional<BackendType *>( static_cast<BackendType *>( &InObject ) );
 }
 
 template <typename BackendType>
