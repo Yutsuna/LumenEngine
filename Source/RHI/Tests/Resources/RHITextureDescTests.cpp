@@ -23,6 +23,10 @@ LUMEN_TEST( RHITextureDesc, ValidatesFormatExtentAndCounts )
     Invalid        = Valid;
     Invalid.Format = ERHIFormat::Unknown;
     LUMEN_CHECK_HAS_ERROR( Invalid.Validate() );
+    Invalid = Valid;
+    /** NOTE: A 32x16 extent supports at most 6 mip levels. */
+    Invalid.MipCount = 64U;
+    LUMEN_CHECK_HAS_ERROR( Invalid.Validate() );
 }
 
 } // namespace Lumen

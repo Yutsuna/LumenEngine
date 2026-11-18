@@ -7,8 +7,8 @@
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITextureDesc::Validate () const noexcept
 {
     if ( not Extent.IsValid() or Format == ERHIFormat::Unknown or Format >= ERHIFormat::Count or MipCount == 0U or
-         LayerCount == 0U or ToSampleCount( SampleCount ) == 0U or not IsValidRHIResourceUsage( Usage ) or
-         not IsValidRHIResourceState( InitialState ) )
+         MipCount > Extent.GetMaxMipLevelCount() or LayerCount == 0U or ToSampleCount( SampleCount ) == 0U or
+         not IsValidRHIResourceUsage( Usage ) or not IsValidRHIResourceState( InitialState ) )
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidResource( "Invalid texture description" ) );
     }
