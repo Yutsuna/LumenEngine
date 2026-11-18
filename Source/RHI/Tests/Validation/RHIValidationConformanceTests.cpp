@@ -2,13 +2,14 @@
  * @file RHIValidationConformanceTests.cpp
  * @brief Replays portable conformance scenarios with validation enabled.
  */
-#include "Validation/RHIValidationTestUtils.hpp"
 #include <Bindings/IRHIBindingSet.hpp>
 #include <Commands/IRHICommandAllocator.hpp>
 #include <Commands/IRHICommandList.hpp>
+#include <Device/IRHIDevice.hpp>
 #include <Device/RHIConformanceDeviceFactory.hpp>
 #include <Queries/IRHIQueryPool.hpp>
 #include <Queue/IRHIQueue.hpp>
+#include <Resources/RHIBufferDesc.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
@@ -19,9 +20,10 @@ namespace
     {
         TExpected<TSharedRef<IRHIDevice>, FRHIError> DeviceResult = Tests::GetRHIConformanceDeviceFactory().CreateDevice( true );
         LUMEN_CHECK_TRUE( DeviceResult.HasValue() );
-        TSharedRef<IRHIDevice> Device      = *DeviceResult;
-        TSharedRef<IRHIBuffer> Source      = Tests::Validation::MakeBuffer( Device, 64ULL, ERHIResourceUsage::CopySource );
-        TSharedRef<IRHIBuffer> Destination = Tests::Validation::MakeBuffer( Device, 64ULL, ERHIResourceUsage::CopyDestination );
+        TSharedRef<IRHIDevice> Device = *DeviceResult;
+        TSharedRef<IRHIBuffer> Source = *Device->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource } );
+        TSharedRef<IRHIBuffer> Destination =
+            *Device->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::CopyDestination } );
         TSharedRef<IRHICommandAllocator> Allocator = *Device->CreateCommandAllocator( ERHIQueueType::Graphics );
         TSharedRef<IRHICommandList> List           = *Device->CreateCommandList( Allocator );
         LUMEN_CHECK_TRUE( List->Begin().HasValue() );
@@ -45,7 +47,7 @@ namespace
         LayoutDesc.Entries.push_back( { .Slot = 0U, .Type = ERHIBindingType::ReadOnlyBuffer } );
         TSharedRef<IRHIBindingLayout> Layout = *Device->CreateBindingLayout( LayoutDesc );
         TSharedRef<IRHIBindingSet> Set       = *Device->CreateBindingSet( Layout );
-        TSharedRef<IRHIBuffer> Buffer        = Tests::Validation::MakeBuffer( Device );
+        TSharedRef<IRHIBuffer> Buffer = *Device->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::ShaderResource } );
         FRHIBindingWrite Write;
         Write.Resource = FRHIBufferBinding{ .Buffer = Buffer };
         LUMEN_CHECK_TRUE( Set->Write( TSpan<const FRHIBindingWrite>( &Write, 1U ) ).HasValue() );
