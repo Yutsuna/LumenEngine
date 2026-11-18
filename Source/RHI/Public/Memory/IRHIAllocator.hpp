@@ -35,7 +35,6 @@ public:
 
     /** @return Current statistics snapshot. */
     [[nodiscard]] virtual FRHIAllocatorStats GetStats () const noexcept = 0;
-
 };
 
 } // namespace Lumen

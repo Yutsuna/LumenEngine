@@ -25,9 +25,9 @@ class IRHIDevice;
  */
 struct FRHIApiVersion
 {
-    UInt32 Major                                                                        = 1U;
-    UInt32 Minor                                                                        = 0U;
-    UInt32 Patch                                                                        = 0U;
+    UInt32 Major = 1U;
+    UInt32 Minor = 0U;
+    UInt32 Patch = 0U;
 
     friend constexpr auto operator<=>( const FRHIApiVersion &, const FRHIApiVersion & ) = default;
 };
@@ -50,7 +50,6 @@ public:
 
     /** @brief Creates a device after validating the requested adapter and capabilities. */
     [[nodiscard]] virtual TExpected<TSharedRef<IRHIDevice>, FRHIError> CreateDevice ( const FRHIDeviceDesc &InDesc ) noexcept = 0;
-
 };
 
 } // namespace Lumen

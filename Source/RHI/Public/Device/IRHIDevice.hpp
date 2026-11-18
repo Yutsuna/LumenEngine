@@ -262,7 +262,6 @@ public:
      */
     [[nodiscard]] virtual TExpected<TSharedRef<IRHIQueryPool>, FRHIError>
     CreateQueryPool ( const FRHIQueryPoolDesc &InDesc ) noexcept = 0;
-
 };
 
 } // namespace Lumen
