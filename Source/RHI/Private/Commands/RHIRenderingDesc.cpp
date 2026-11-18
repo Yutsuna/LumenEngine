@@ -60,13 +60,23 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRenderingDesc::Validate () c
 
     const FRHIRenderingAttachment *First  = ColorAttachments.empty() ? &DepthStencilAttachment : ColorAttachments.data();
     const TSharedPtr<IRHITexture> Texture = First->View->GetTexture();
-    const FRHIExtent3D MipExtent          = Texture->GetDesc().Extent;
-    const UInt32 Mip                      = First->View->GetDesc().Range.BaseMip;
-    const UInt32 Width                    = MipExtent.Width > Mip ? ( MipExtent.Width >> Mip ) : 1U;
-    const UInt32 Height                   = MipExtent.Height > Mip ? ( MipExtent.Height >> Mip ) : 1U;
+    const FRHITextureDesc &TextureDesc    = Texture->GetDesc();
+    const FRHITextureViewDesc &ViewDesc   = First->View->GetDesc();
 
-    if ( Area.Position.X < 0 or Area.Position.Y < 0 or static_cast<UInt32>( Area.Position.X ) + Area.Size.Width > Width or
-         static_cast<UInt32>( Area.Position.Y ) + Area.Size.Height > Height )
+    /** NOTE: GetMaxMipLevelCount() is at most 32, so BaseMip < 32 here and both shifts below are well-defined. */
+    if ( ViewDesc.Range.BaseMip >= TextureDesc.MipCount or ViewDesc.Range.BaseMip >= TextureDesc.Extent.GetMaxMipLevelCount() or
+         not ViewDesc.Range.IsContainedIn( TextureDesc.MipCount, TextureDesc.LayerCount ) )
+    {
+        return TUnexpected<FRHIError>(
+            MakeRHIInvalidArgument( ERHIErrorCondition::Command, "Attachment mip level is outside the texture mip chain" ) );
+    }
+
+    const UInt32 Mip    = ViewDesc.Range.BaseMip;
+    const UInt32 Width  = TextureDesc.Extent.Width > Mip ? ( TextureDesc.Extent.Width >> Mip ) : 1U;
+    const UInt32 Height = TextureDesc.Extent.Height > Mip ? ( TextureDesc.Extent.Height >> Mip ) : 1U;
+
+    if ( Area.Position.X < 0 or Area.Position.Y < 0 or static_cast<UInt64>( Area.Position.X ) + Area.Size.Width > Width or
+         static_cast<UInt64>( Area.Position.Y ) + Area.Size.Height > Height )
     {
         return TUnexpected<FRHIError>(
             MakeRHIInvalidArgument( ERHIErrorCondition::Command, "Rendering area exceeds attachment extent" ) );
