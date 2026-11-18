@@ -3,9 +3,9 @@
  * @brief Implements stable content hashing.
  */
 
-#include <Types/RHIHash.hpp>
+#include <RHI/Types/RHIHash.hpp>
 
-Lumen::UInt64 Lumen::RHIHashBytes ( const TSpan<const Byte> InBytes ) noexcept
+Lumen::UInt64 Lumen::RHI::RHIHashBytes ( const TSpan<const Byte> InBytes ) noexcept
 {
     UInt64 Hash = 0xCBF29CE484222325ULL;
     for ( const Byte Value : InBytes )
@@ -16,7 +16,7 @@ Lumen::UInt64 Lumen::RHIHashBytes ( const TSpan<const Byte> InBytes ) noexcept
     return Hash;
 }
 
-Lumen::UInt64 Lumen::RHIHashCombine ( const UInt64 InSeed, const UInt64 InValue ) noexcept
+Lumen::UInt64 Lumen::RHI::RHIHashCombine ( const UInt64 InSeed, const UInt64 InValue ) noexcept
 {
     return InSeed ^ ( InValue + 0x9E3779B97F4A7C15ULL + ( InSeed << 6U ) + ( InSeed >> 2U ) );
 }

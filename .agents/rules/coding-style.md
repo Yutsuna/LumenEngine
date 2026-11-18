@@ -60,9 +60,13 @@ hack, and prefer reusing Core (`rules/core-first.md`).
 ## Namespaces
 
 - `.hpp`: open `namespace Lumen { }` (optionally a nested sub-namespace for
-  the topic, e.g. `Lumen::Tests`).
+  the topic, e.g. `Lumen::Tests`). The RHI module is the exception: every
+  header opens nested blocks `namespace Lumen { namespace RHI { ... } }`
+  (never the shortened `namespace Lumen::RHI { }` form), and public headers
+  live under `Public/RHI/` so they are included as `<RHI/...>`.
 - `.cpp` and `.inl`: **never** open `namespace Lumen { }` for the whole file.
-  Qualify symbols explicitly with `Lumen::`.
+  Qualify symbols explicitly with `Lumen::` (with `Lumen::RHI::` for RHI
+  symbols; Core/Maths symbols such as `TExpected` or `FString` stay `Lumen::`).
   Internal helpers go in an anonymous namespace (`namespace { ... }`), not
   `static` — that is the idiomatic C++ form and is friendlier to the linker.
 

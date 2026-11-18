@@ -3,13 +3,13 @@
  * @brief Implements descriptor free lists, pool growth, and range recycling.
  */
 
-#include <Bindings/RHIDescriptorAllocatorBase.hpp>
+#include <RHI/Bindings/RHIDescriptorAllocatorBase.hpp>
 
 #include <Algo/ForEach.hpp>
 #include <HAL/LockGuard.hpp>
 
-Lumen::FRHIDescriptorAllocatorBase::FRHIDescriptorAllocatorBase ( const FRHIDescriptorAllocatorDesc &InDesc,
-                                                                  IRHIDescriptorPoolBackend &InBackend ) noexcept
+Lumen::RHI::FRHIDescriptorAllocatorBase::FRHIDescriptorAllocatorBase ( const FRHIDescriptorAllocatorDesc &InDesc,
+                                                                       IRHIDescriptorPoolBackend &InBackend ) noexcept
     : Desc( InDesc ), Backend( &InBackend )
 {
     Backend->CreatePool( InDesc.InitialCapacity )
@@ -20,13 +20,13 @@ Lumen::FRHIDescriptorAllocatorBase::FRHIDescriptorAllocatorBase ( const FRHIDesc
     } );
 }
 
-Lumen::FRHIDescriptorAllocatorBase::~FRHIDescriptorAllocatorBase () noexcept
+Lumen::RHI::FRHIDescriptorAllocatorBase::~FRHIDescriptorAllocatorBase () noexcept
 {
     ReleasePools();
 }
 
-Lumen::TExpected<Lumen::FRHIDescriptorAllocation, Lumen::FRHIError>
-Lumen::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIDescriptorAllocation, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
 {
     if ( InCount == 0U )
     {
@@ -78,8 +78,8 @@ Lumen::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexcept
     return Result;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllocation ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllocation ) noexcept
 {
     if ( InAllocation.Count == 0U )
     {
@@ -117,7 +117,7 @@ Lumen::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllo
     return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Descriptor pool is not present" ) );
 }
 
-void Lumen::FRHIDescriptorAllocatorBase::Reset () noexcept
+void Lumen::RHI::FRHIDescriptorAllocatorBase::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     ReleasePools();
@@ -132,7 +132,7 @@ void Lumen::FRHIDescriptorAllocatorBase::Reset () noexcept
     }
 }
 
-void Lumen::FRHIDescriptorAllocatorBase::ReleasePools () noexcept
+void Lumen::RHI::FRHIDescriptorAllocatorBase::ReleasePools () noexcept
 {
     Algo::ForEach( Pools, [&] ( const FPool &Pool ) noexcept -> void
     {

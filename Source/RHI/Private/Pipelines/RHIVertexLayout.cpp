@@ -3,8 +3,8 @@
  * @brief Implements vertex layout validation and hashing.
  */
 
-#include <Pipelines/RHIVertexLayout.hpp>
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIVertexLayout::Validate () const noexcept
+#include <RHI/Pipelines/RHIVertexLayout.hpp>
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIVertexLayout::Validate () const noexcept
 {
     for ( USize First = 0U; First < Attributes.size(); ++First )
     {
@@ -45,7 +45,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIVertexLayout::Validate () co
     }
     return {};
 }
-Lumen::UInt64 Lumen::FRHIVertexLayout::GetHash () const noexcept
+Lumen::UInt64 Lumen::RHI::FRHIVertexLayout::GetHash () const noexcept
 {
     /** NOTE: Hash declared fields only; struct padding is indeterminate and must not affect identity. */
     UInt64 Hash = 0ULL;

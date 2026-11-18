@@ -3,8 +3,9 @@
  * @brief Implements command-list lifecycle transitions.
  */
 
-#include <Commands/RHICommandListState.hpp>
-Lumen::Bool Lumen::CanRHITransitionCommandList ( const ERHICommandListState InFrom, const ERHICommandListState InTo ) noexcept
+#include <RHI/Commands/RHICommandListState.hpp>
+Lumen::Bool Lumen::RHI::CanRHITransitionCommandList ( const ERHICommandListState InFrom,
+                                                      const ERHICommandListState InTo ) noexcept
 {
     switch ( InFrom )
     {
@@ -23,8 +24,8 @@ Lumen::Bool Lumen::CanRHITransitionCommandList ( const ERHICommandListState InFr
         return false;
     }
 }
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::RHITransitionCommandList ( ERHICommandListState &InOutState,
-                                                                           const ERHICommandListState InTo ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::RHITransitionCommandList ( ERHICommandListState &InOutState,
+                                                                                     const ERHICommandListState InTo ) noexcept
 {
     if ( not CanRHITransitionCommandList( InOutState, InTo ) )
     {

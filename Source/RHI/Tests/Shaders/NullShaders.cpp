@@ -10,7 +10,7 @@
  * Public
  */
 
-Lumen::Tests::FNullShader::FNullShader ( const FRHIShaderDesc &InDesc, const FRHIObjectId InId ) noexcept
+Lumen::RHI::Tests::FNullShader::FNullShader ( const FRHIShaderDesc &InDesc, const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FNullShader>() ), Desc( InDesc ),
       OwnedBytecode( InDesc.Bytecode.begin(), InDesc.Bytecode.end() )
 {
@@ -18,7 +18,7 @@ Lumen::Tests::FNullShader::FNullShader ( const FRHIShaderDesc &InDesc, const FRH
 }
 
 LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullShader )
-const Lumen::FRHIShaderDesc &Lumen::Tests::FNullShader::GetDesc () const noexcept
+const Lumen::RHI::FRHIShaderDesc &Lumen::RHI::Tests::FNullShader::GetDesc () const noexcept
 {
     return Desc;
 }

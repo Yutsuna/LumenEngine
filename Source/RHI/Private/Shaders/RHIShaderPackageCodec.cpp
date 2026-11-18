@@ -3,65 +3,70 @@
  * @brief Implements bounded versioned shader package serialization.
  */
 #include "Concepts/TriviallyCopyable.hpp"
-#include <Shaders/RHIShaderPackageCodec.hpp>
-#include <Types/RHIHash.hpp>
-#include <Utilities/RHICheckedMath.hpp>
+#include <RHI/Shaders/RHIShaderPackageCodec.hpp>
+#include <RHI/Types/RHIHash.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 #include <cstring>
 #include <type_traits>
 
 namespace Lumen
 {
-namespace
+
+namespace RHI
 {
-
-    template <typename ValueType>
-        requires Concepts::CTriviallyCopyable<ValueType>
-    void WriteValue ( TVector<Byte> &OutBytes, const ValueType &InValue ) noexcept
+    namespace
     {
-        const auto *Begin = reinterpret_cast<const Byte *>( std::addressof( InValue ) );
-        OutBytes.insert( OutBytes.end(), Begin, Begin + sizeof( ValueType ) );
-    }
 
-    template <typename ValueType>
-        requires Concepts::CTriviallyCopyable<ValueType>
-    Bool ReadValue ( TSpan<const Byte> InBytes, USize &InOutOffset, ValueType &OutValue ) noexcept
-    {
-        if ( InOutOffset > InBytes.size() or sizeof( ValueType ) > InBytes.size() - InOutOffset )
+        template <typename ValueType>
+            requires Concepts::CTriviallyCopyable<ValueType>
+        void WriteValue ( TVector<Byte> &OutBytes, const ValueType &InValue ) noexcept
         {
-            return false;
+            const auto *Begin = reinterpret_cast<const Byte *>( std::addressof( InValue ) );
+            OutBytes.insert( OutBytes.end(), Begin, Begin + sizeof( ValueType ) );
         }
-        std::memcpy( std::addressof( OutValue ), InBytes.data() + InOutOffset, sizeof( ValueType ) );
-        InOutOffset += sizeof( ValueType );
-        return true;
-    }
 
-    void WriteBytes ( TVector<Byte> &OutBytes, const TSpan<const Byte> InBytes ) noexcept
-    {
-        OutBytes.insert( OutBytes.end(), InBytes.begin(), InBytes.end() );
-    }
-
-    Bool ReadBytes ( TSpan<const Byte> InBytes, USize &InOutOffset, TVector<Byte> &OutBytes, const UInt32 InSize ) noexcept
-    {
-        if ( InOutOffset > InBytes.size() or InSize > InBytes.size() - InOutOffset )
+        template <typename ValueType>
+            requires Concepts::CTriviallyCopyable<ValueType>
+        Bool ReadValue ( TSpan<const Byte> InBytes, USize &InOutOffset, ValueType &OutValue ) noexcept
         {
-            return false;
+            if ( InOutOffset > InBytes.size() or sizeof( ValueType ) > InBytes.size() - InOutOffset )
+            {
+                return false;
+            }
+            std::memcpy( std::addressof( OutValue ), InBytes.data() + InOutOffset, sizeof( ValueType ) );
+            InOutOffset += sizeof( ValueType );
+            return true;
         }
-        OutBytes.assign( InBytes.begin() + static_cast<ISize>( InOutOffset ),
-                         InBytes.begin() + static_cast<ISize>( InOutOffset + InSize ) );
-        InOutOffset += InSize;
-        return true;
-    }
 
-    FRHIError CodecError () noexcept
-    {
-        return { ERHIErrorCode::CorruptedData, ERHIErrorCondition::Shader, "Invalid or truncated shader package" };
-    }
+        void WriteBytes ( TVector<Byte> &OutBytes, const TSpan<const Byte> InBytes ) noexcept
+        {
+            OutBytes.insert( OutBytes.end(), InBytes.begin(), InBytes.end() );
+        }
 
-} // namespace
+        Bool ReadBytes ( TSpan<const Byte> InBytes, USize &InOutOffset, TVector<Byte> &OutBytes, const UInt32 InSize ) noexcept
+        {
+            if ( InOutOffset > InBytes.size() or InSize > InBytes.size() - InOutOffset )
+            {
+                return false;
+            }
+            OutBytes.assign( InBytes.begin() + static_cast<ISize>( InOutOffset ),
+                             InBytes.begin() + static_cast<ISize>( InOutOffset + InSize ) );
+            InOutOffset += InSize;
+            return true;
+        }
+
+        FRHIError CodecError () noexcept
+        {
+            return { ERHIErrorCode::CorruptedData, ERHIErrorCondition::Shader, "Invalid or truncated shader package" };
+        }
+
+    } // namespace
+} // namespace RHI
+
 } // namespace Lumen
 
-Lumen::TExpected<Lumen::TVector<Lumen::Byte>, Lumen::FRHIError>
-Lumen::EncodeRHIShaderPackage ( const FRHIShaderPackage &InPackage ) noexcept
+Lumen::TExpected<Lumen::TVector<Lumen::Byte>, Lumen::RHI::FRHIError>
+Lumen::RHI::EncodeRHIShaderPackage ( const FRHIShaderPackage &InPackage ) noexcept
 {
     TVector<Byte> Result;
     WriteBytes( Result, TSpan<const Byte>( reinterpret_cast<const Byte *>( "LRHI" ), 4U ) );
@@ -102,8 +107,8 @@ Lumen::EncodeRHIShaderPackage ( const FRHIShaderPackage &InPackage ) noexcept
     return Result;
 }
 
-Lumen::TExpected<Lumen::FRHIShaderPackage, Lumen::FRHIError>
-Lumen::DecodeRHIShaderPackage ( const TSpan<const Byte> InBytes ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIShaderPackage, Lumen::RHI::FRHIError>
+Lumen::RHI::DecodeRHIShaderPackage ( const TSpan<const Byte> InBytes ) noexcept
 {
     USize Offset   = 0U;
     UInt32 Magic   = 0U;

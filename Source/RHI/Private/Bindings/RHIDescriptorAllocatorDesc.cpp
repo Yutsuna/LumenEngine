@@ -3,9 +3,9 @@
  * @brief Implements descriptor allocator policy validation.
  */
 
-#include <Bindings/RHIDescriptorAllocatorDesc.hpp>
+#include <RHI/Bindings/RHIDescriptorAllocatorDesc.hpp>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDescriptorAllocatorDesc::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDescriptorAllocatorDesc::Validate () const noexcept
 {
     if ( InitialCapacity == 0U or MaximumCapacity < InitialCapacity )
     {

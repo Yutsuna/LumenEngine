@@ -3,8 +3,8 @@
  * @brief Implements submission descriptor validation.
  */
 
-#include <Queue/RHISubmitDesc.hpp>
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISubmitDesc::Validate () const noexcept
+#include <RHI/Queue/RHISubmitDesc.hpp>
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHISubmitDesc::Validate () const noexcept
 {
     if ( not Completion.IsValid() or ( CommandLists.empty() and Signals.empty() ) )
     {

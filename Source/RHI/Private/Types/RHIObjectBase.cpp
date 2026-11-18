@@ -4,15 +4,15 @@
  */
 
 #include <HAL/LockGuard.hpp>
-#include <Types/RHIObjectBase.hpp>
+#include <RHI/Types/RHIObjectBase.hpp>
 
-Lumen::FRHIObjectBase::FRHIObjectBase ( const FRHIObjectId InId, const UInt64 InBackendTypeTag ) noexcept
+Lumen::RHI::FRHIObjectBase::FRHIObjectBase ( const FRHIObjectId InId, const UInt64 InBackendTypeTag ) noexcept
     : Id( InId ), BackendTypeTag( InBackendTypeTag )
 {
     /* */
 }
 
-Lumen::FRHIObjectBase::~FRHIObjectBase () noexcept
+Lumen::RHI::FRHIObjectBase::~FRHIObjectBase () noexcept
 {
     if ( DestructionCallback )
     {
@@ -20,18 +20,18 @@ Lumen::FRHIObjectBase::~FRHIObjectBase () noexcept
     }
 }
 
-void Lumen::FRHIObjectBase::SetDestructionCallback ( TFunction<void()> InCallback ) noexcept
+void Lumen::RHI::FRHIObjectBase::SetDestructionCallback ( TFunction<void()> InCallback ) noexcept
 {
     DestructionCallback = std::move( InCallback );
 }
 
-Lumen::FString Lumen::FRHIObjectBase::GetDebugName () const noexcept
+Lumen::FString Lumen::RHI::FRHIObjectBase::GetDebugName () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( DebugNameMutex );
     return DebugName;
 }
 
-void Lumen::FRHIObjectBase::SetDebugName ( const FStringView InName ) noexcept
+void Lumen::RHI::FRHIObjectBase::SetDebugName ( const FStringView InName ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( DebugNameMutex );
     DebugName = InName;

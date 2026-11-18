@@ -3,9 +3,9 @@
  * @brief Implements swapchain capability validation and selection.
  */
 
-#include <Presentation/RHISwapchainCapabilities.hpp>
+#include <RHI/Presentation/RHISwapchainCapabilities.hpp>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISwapchainCapabilities::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHISwapchainCapabilities::Validate () const noexcept
 {
     if ( Formats.empty() or ColorSpaces.empty() or PresentModes.empty() or not MinExtent.IsValid() or not MaxExtent.IsValid() or
          MinImageCount == 0U or MaxImageCount < MinImageCount or MaxExtent.Width < MinExtent.Width or
@@ -16,9 +16,9 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHISwapchainCapabilities::Valid
     return {};
 }
 
-Lumen::Bool Lumen::FRHISwapchainCapabilities::Supports ( const ERHIFormat InFormat,
-                                                         const ERHIColorSpace InColorSpace,
-                                                         const ERHIPresentMode InPresentMode ) const noexcept
+Lumen::Bool Lumen::RHI::FRHISwapchainCapabilities::Supports ( const ERHIFormat InFormat,
+                                                              const ERHIColorSpace InColorSpace,
+                                                              const ERHIPresentMode InPresentMode ) const noexcept
 {
     Bool bHasFormat      = false;
     Bool bHasColorSpace  = false;
@@ -38,7 +38,7 @@ Lumen::Bool Lumen::FRHISwapchainCapabilities::Supports ( const ERHIFormat InForm
     return bHasFormat and bHasColorSpace and bHasPresentMode;
 }
 
-Lumen::FRHIExtent3D Lumen::FRHISwapchainCapabilities::ClampExtent ( const FRHIExtent3D &InExtent ) const noexcept
+Lumen::RHI::FRHIExtent3D Lumen::RHI::FRHISwapchainCapabilities::ClampExtent ( const FRHIExtent3D &InExtent ) const noexcept
 {
     FRHIExtent3D Result = InExtent;
     Result.Width        = Result.Width < MinExtent.Width ? MinExtent.Width : Result.Width;

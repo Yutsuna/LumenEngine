@@ -6,39 +6,44 @@
 
 #include "../Types/RHIObjectForward.hpp"
 
-#include <Memory/IRHIReadbackAllocator.hpp>
-#include <Memory/RHIRingAllocator.hpp>
 #include <Memory/UniquePtr.hpp>
+#include <RHI/Memory/IRHIReadbackAllocator.hpp>
+#include <RHI/Memory/RHIRingAllocator.hpp>
 #include <Templates/Map.hpp>
 
 namespace Lumen
 {
 
-/**
- * @class FRHIReadbackAllocator
- * @brief Ring allocator backed by readable CPU storage.
- */
-class RHI_EXPORT FRHIReadbackAllocator final : public IRHIReadbackAllocator
+namespace RHI
 {
-public:
 
-    LUMEN_RHI_OBJECT_DECLARATIONS;
+    /**
+     * @class FRHIReadbackAllocator
+     * @brief Ring allocator backed by readable CPU storage.
+     */
+    class RHI_EXPORT FRHIReadbackAllocator final : public IRHIReadbackAllocator
+    {
+    public:
 
-    /** @brief Creates storage and a ring of InCapacity bytes. */
-    FRHIReadbackAllocator ( UInt64 InCapacity, FRHIObjectId InId ) noexcept;
-    TExpected<FRHIAllocation, FRHIError> Allocate ( const FRHIAllocationDesc &InDesc ) noexcept override;
-    TExpected<FRHIReadbackAllocation, FRHIError> Map ( const FRHIAllocation &InAllocation ) noexcept override;
-    TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept override;
+        LUMEN_RHI_OBJECT_DECLARATIONS;
 
-private:
+        /** @brief Creates storage and a ring of InCapacity bytes. */
+        FRHIReadbackAllocator ( UInt64 InCapacity, FRHIObjectId InId ) noexcept;
+        TExpected<FRHIAllocation, FRHIError> Allocate ( const FRHIAllocationDesc &InDesc ) noexcept override;
+        TExpected<FRHIReadbackAllocation, FRHIError> Map ( const FRHIAllocation &InAllocation ) noexcept override;
+        TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept override;
 
-    FRHIObjectBase Identity;
-    FRHIRingAllocator Ring;
-    TUniquePtr<Byte[]> Storage;
-    USize Capacity = 0U;
+    private:
 
-    /** @brief Ids issued by this allocator; foreign or released ids must not be mappable. */
-    TMap<UInt64, FRHIAllocationId> IssuedIds;
-};
+        FRHIObjectBase Identity;
+        FRHIRingAllocator Ring;
+        TUniquePtr<Byte[]> Storage;
+        USize Capacity = 0U;
+
+        /** @brief Ids issued by this allocator; foreign or released ids must not be mappable. */
+        TMap<UInt64, FRHIAllocationId> IssuedIds;
+    };
+
+} // namespace RHI
 
 } // namespace Lumen

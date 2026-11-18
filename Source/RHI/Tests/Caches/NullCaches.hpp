@@ -4,9 +4,9 @@
  */
 #pragma once
 
-#include <Caches/IRHIPipelineCache.hpp>
 #include <Device/NullFaultPlan.hpp>
 #include <HAL/PlatformMutex.hpp>
+#include <RHI/Caches/IRHIPipelineCache.hpp>
 #include <Templates/Map.hpp>
 #include <Templates/Optional.hpp>
 #include <Types/RHIObjectForward.hpp>
@@ -14,62 +14,67 @@
 namespace Lumen
 {
 
-namespace Tests
+namespace RHI
 {
 
-    /** @struct FNullPipelineCompatibilityHasher @brief Content hasher for complete pipeline keys. */
-    struct FNullPipelineCompatibilityHasher
+    namespace Tests
     {
-        [[nodiscard]] USize operator()( const FRHIPipelineCompatibility &InKey ) const noexcept;
-    };
 
-    /**
-     * @class FNullPipelineCache
-     * @brief Thread-safe LRU pipeline cache with opaque metadata serialization.
-     */
-    class FNullPipelineCache final : public IRHIPipelineCache
-    {
-    public:
-
-        FNullPipelineCache ( const FRHIPipelineCacheDesc &InDesc,
-                             TSharedPtr<FNullFaultPlan> InFaultPlan,
-                             FRHIObjectId InId ) noexcept;
-        LUMEN_RHI_OBJECT_DECLARATIONS;
-
-        /** @brief Validates and restores the descriptor's initial opaque data. */
-        [[nodiscard]] TExpected<void, FRHIError> Initialize () noexcept;
-        const FRHIPipelineCacheDesc &GetDesc () const noexcept override;
-        TOptional<TSharedPtr<IRHIPipeline>> Find ( const FRHIPipelineCompatibility &InKey ) noexcept override;
-        TExpected<void, FRHIError> Insert ( const FRHIPipelineCompatibility &InKey,
-                                            TSharedRef<IRHIPipeline> InPipeline ) noexcept override;
-        void Remove ( const FRHIPipelineCompatibility &InKey ) noexcept override;
-        void Clear () noexcept override;
-        FRHICacheStats GetStats () const noexcept override;
-        TExpected<TVector<Byte>, FRHIError> Serialize () const noexcept override;
-
-    private:
-
-        struct FEntry
+        /** @struct FNullPipelineCompatibilityHasher @brief Content hasher for complete pipeline keys. */
+        struct FNullPipelineCompatibilityHasher
         {
-            TSharedPtr<IRHIPipeline> Pipeline;
-            UInt64 Bytes    = 0ULL;
-            UInt64 LastUsed = 0ULL;
+            [[nodiscard]] USize operator()( const FRHIPipelineCompatibility &InKey ) const noexcept;
         };
 
-        [[nodiscard]] Bool MakeRoom ( UInt64 InBytes ) noexcept;
-        void EvictOne () noexcept;
+        /**
+         * @class FNullPipelineCache
+         * @brief Thread-safe LRU pipeline cache with opaque metadata serialization.
+         */
+        class FNullPipelineCache final : public IRHIPipelineCache
+        {
+        public:
 
-    private:
+            FNullPipelineCache ( const FRHIPipelineCacheDesc &InDesc,
+                                 TSharedPtr<FNullFaultPlan> InFaultPlan,
+                                 FRHIObjectId InId ) noexcept;
+            LUMEN_RHI_OBJECT_DECLARATIONS;
 
-        FRHIObjectBase Identity;
-        FRHIPipelineCacheDesc Desc;
-        TSharedPtr<FNullFaultPlan> FaultPlan;
-        TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher> Entries;
-        UInt64 Sequence = 0ULL;
-        FRHICacheStatsTracker Stats;
-        mutable HAL::FPlatformRecursiveSharedMutex Mutex;
-    };
+            /** @brief Validates and restores the descriptor's initial opaque data. */
+            [[nodiscard]] TExpected<void, FRHIError> Initialize () noexcept;
+            const FRHIPipelineCacheDesc &GetDesc () const noexcept override;
+            TOptional<TSharedPtr<IRHIPipeline>> Find ( const FRHIPipelineCompatibility &InKey ) noexcept override;
+            TExpected<void, FRHIError> Insert ( const FRHIPipelineCompatibility &InKey,
+                                                TSharedRef<IRHIPipeline> InPipeline ) noexcept override;
+            void Remove ( const FRHIPipelineCompatibility &InKey ) noexcept override;
+            void Clear () noexcept override;
+            FRHICacheStats GetStats () const noexcept override;
+            TExpected<TVector<Byte>, FRHIError> Serialize () const noexcept override;
 
-} // namespace Tests
+        private:
+
+            struct FEntry
+            {
+                TSharedPtr<IRHIPipeline> Pipeline;
+                UInt64 Bytes    = 0ULL;
+                UInt64 LastUsed = 0ULL;
+            };
+
+            [[nodiscard]] Bool MakeRoom ( UInt64 InBytes ) noexcept;
+            void EvictOne () noexcept;
+
+        private:
+
+            FRHIObjectBase Identity;
+            FRHIPipelineCacheDesc Desc;
+            TSharedPtr<FNullFaultPlan> FaultPlan;
+            TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher> Entries;
+            UInt64 Sequence = 0ULL;
+            FRHICacheStatsTracker Stats;
+            mutable HAL::FPlatformRecursiveSharedMutex Mutex;
+        };
+
+    } // namespace Tests
+
+} // namespace RHI
 
 } // namespace Lumen

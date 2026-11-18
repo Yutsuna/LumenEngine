@@ -3,8 +3,8 @@
  * @brief Implements compatibility key hashing.
  */
 
-#include <Pipelines/RHIPipelineCompatibility.hpp>
-Lumen::UInt64 Lumen::FRHIPipelineCompatibility::GetHash () const noexcept
+#include <RHI/Pipelines/RHIPipelineCompatibility.hpp>
+Lumen::UInt64 Lumen::RHI::FRHIPipelineCompatibility::GetHash () const noexcept
 {
     UInt64 Hash = LayoutHash;
     for ( const ERHIFormat Format : ColorFormats )

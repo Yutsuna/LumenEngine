@@ -6,67 +6,73 @@
 #pragma once
 
 #include "RHIValidationState.hpp"
-#include <Bindings/IRHIBindingSet.hpp>
+#include <RHI/Bindings/IRHIBindingSet.hpp>
 
 namespace Lumen
 {
 
-/**
- * @class FRHIValidationBindingLayout
- * @brief Tracks an immutable backend layout.
- */
-class FRHIValidationBindingLayout final : public IRHIBindingLayout, public IRHIValidationObject
+namespace RHI
 {
-public:
 
-    FRHIValidationBindingLayout ( TSharedRef<IRHIBindingLayout> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
-    ~FRHIValidationBindingLayout () noexcept override;
-    [[nodiscard]] FRHIObjectId GetId () const noexcept override;
-    [[nodiscard]] FString GetDebugName () const noexcept override;
-    void SetDebugName ( FStringView InName ) noexcept override;
-    [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
-    [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
-    [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
-    [[nodiscard]] const FRHIBindingLayoutDesc &GetDesc () const noexcept override;
+    /**
+     * @class FRHIValidationBindingLayout
+     * @brief Tracks an immutable backend layout.
+     */
+    class FRHIValidationBindingLayout final : public IRHIBindingLayout, public IRHIValidationObject
+    {
+    public:
 
-private:
+        FRHIValidationBindingLayout ( TSharedRef<IRHIBindingLayout> InUnderlying,
+                                      TSharedPtr<FRHIValidationState> InState ) noexcept;
+        ~FRHIValidationBindingLayout () noexcept override;
+        [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+        [[nodiscard]] FString GetDebugName () const noexcept override;
+        void SetDebugName ( FStringView InName ) noexcept override;
+        [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+        [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+        [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+        [[nodiscard]] const FRHIBindingLayoutDesc &GetDesc () const noexcept override;
 
-    TSharedRef<IRHIBindingLayout> Underlying;
-    TSharedPtr<FRHIValidationState> State;
-};
+    private:
 
-/**
- * @class FRHIValidationBindingSet
- * @brief Validates layout, resource category, usage, and range before forwarding writes.
- */
-class FRHIValidationBindingSet final : public IRHIBindingSet, public IRHIValidationObject
-{
-public:
+        TSharedRef<IRHIBindingLayout> Underlying;
+        TSharedPtr<FRHIValidationState> State;
+    };
 
-    FRHIValidationBindingSet ( TSharedRef<IRHIBindingSet> InUnderlying,
-                               TSharedRef<IRHIBindingLayout> InLayout,
-                               TSharedPtr<FRHIValidationState> InState ) noexcept;
-    ~FRHIValidationBindingSet () noexcept override;
-    [[nodiscard]] FRHIObjectId GetId () const noexcept override;
-    [[nodiscard]] FString GetDebugName () const noexcept override;
-    void SetDebugName ( FStringView InName ) noexcept override;
-    [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
-    [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
-    [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
-    [[nodiscard]] TSharedRef<IRHIBindingLayout> GetLayout () const noexcept override;
-    [[nodiscard]] TExpected<void, FRHIError> Write ( TSpan<const FRHIBindingWrite> InWrites ) noexcept override;
-    [[nodiscard]] Bool IsDirty () const noexcept override;
-    void ClearDirty () noexcept override;
+    /**
+     * @class FRHIValidationBindingSet
+     * @brief Validates layout, resource category, usage, and range before forwarding writes.
+     */
+    class FRHIValidationBindingSet final : public IRHIBindingSet, public IRHIValidationObject
+    {
+    public:
 
-private:
+        FRHIValidationBindingSet ( TSharedRef<IRHIBindingSet> InUnderlying,
+                                   TSharedRef<IRHIBindingLayout> InLayout,
+                                   TSharedPtr<FRHIValidationState> InState ) noexcept;
+        ~FRHIValidationBindingSet () noexcept override;
+        [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+        [[nodiscard]] FString GetDebugName () const noexcept override;
+        void SetDebugName ( FStringView InName ) noexcept override;
+        [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+        [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+        [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+        [[nodiscard]] TSharedRef<IRHIBindingLayout> GetLayout () const noexcept override;
+        [[nodiscard]] TExpected<void, FRHIError> Write ( TSpan<const FRHIBindingWrite> InWrites ) noexcept override;
+        [[nodiscard]] Bool IsDirty () const noexcept override;
+        void ClearDirty () noexcept override;
 
-    [[nodiscard]] TExpected<void, FRHIError> ValidateWrite ( const FRHIBindingWrite &InWrite ) const noexcept;
+    private:
 
-private:
+        [[nodiscard]] TExpected<void, FRHIError> ValidateWrite ( const FRHIBindingWrite &InWrite ) const noexcept;
 
-    TSharedRef<IRHIBindingSet> Underlying;
-    TSharedRef<IRHIBindingLayout> Layout;
-    TSharedPtr<FRHIValidationState> State;
-};
+    private:
+
+        TSharedRef<IRHIBindingSet> Underlying;
+        TSharedRef<IRHIBindingLayout> Layout;
+        TSharedPtr<FRHIValidationState> State;
+    };
+
+} // namespace RHI
 
 } // namespace Lumen

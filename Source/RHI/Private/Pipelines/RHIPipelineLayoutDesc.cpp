@@ -3,9 +3,9 @@
  * @brief Implements pipeline layout validation.
  */
 
-#include <Pipelines/RHIPipelineLayoutDesc.hpp>
-#include <Utilities/RHICheckedMath.hpp>
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIPipelineLayoutDesc::Validate () const noexcept
+#include <RHI/Pipelines/RHIPipelineLayoutDesc.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIPipelineLayoutDesc::Validate () const noexcept
 {
     for ( USize First = 0U; First < InlineConstants.size(); ++First )
     {

@@ -4,17 +4,17 @@
  */
 
 #include <HAL/LockGuard.hpp>
-#include <Memory/RHILinearAllocator.hpp>
-#include <Utilities/RHIAlignment.hpp>
-#include <Utilities/RHICheckedMath.hpp>
+#include <RHI/Memory/RHILinearAllocator.hpp>
+#include <RHI/Utilities/RHIAlignment.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 
-Lumen::FRHILinearAllocator::FRHILinearAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
+Lumen::RHI::FRHILinearAllocator::FRHILinearAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
 {
     Stats.Capacity = InCapacity;
 }
 
-Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
-Lumen::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
     if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
@@ -43,7 +43,8 @@ Lumen::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
                            .Heap        = nullptr };
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHILinearAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHILinearAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     if ( not InAllocation.IsValid() )
     {
@@ -52,14 +53,14 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHILinearAllocator::Free ( cons
     return {};
 }
 
-void Lumen::FRHILinearAllocator::Reset () noexcept
+void Lumen::RHI::FRHILinearAllocator::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Current    = 0ULL;
     Stats.Used = 0ULL;
 }
 
-Lumen::FRHIAllocatorStats Lumen::FRHILinearAllocator::GetStats () const noexcept
+Lumen::RHI::FRHIAllocatorStats Lumen::RHI::FRHILinearAllocator::GetStats () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Stats;

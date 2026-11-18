@@ -12,8 +12,8 @@
  */
 
 template <typename ObjectType>
-Lumen::TExpected<Lumen::TSharedRef<ObjectType>, Lumen::FRHIError>
-Lumen::Tests::FNullDevice::Unsupported ( const FStringView InOperation ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<ObjectType>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::Unsupported ( const FStringView InOperation ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( InOperation ) )
     {

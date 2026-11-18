@@ -3,16 +3,18 @@
  * @brief Implements tracked command-list recycling.
  */
 
-#include <Commands/RHICommandAllocatorBase.hpp>
 #include <HAL/LockGuard.hpp>
-Lumen::FRHICommandAllocatorBase::FRHICommandAllocatorBase ( const ERHIQueueType InQueueType ) noexcept : QueueType( InQueueType )
+#include <RHI/Commands/RHICommandAllocatorBase.hpp>
+Lumen::RHI::FRHICommandAllocatorBase::FRHICommandAllocatorBase ( const ERHIQueueType InQueueType ) noexcept
+    : QueueType( InQueueType )
 {
 }
-Lumen::ERHIQueueType Lumen::FRHICommandAllocatorBase::GetQueueType () const noexcept
+Lumen::RHI::ERHIQueueType Lumen::RHI::FRHICommandAllocatorBase::GetQueueType () const noexcept
 {
     return QueueType;
 }
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandAllocatorBase::Reset ( const FRHITimelineValue InCompleted ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHICommandAllocatorBase::Reset ( const FRHITimelineValue InCompleted ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( IRHICommandList *List : Lists )
@@ -45,12 +47,12 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHICommandAllocatorBase::Reset 
     }
     return {};
 }
-void Lumen::FRHICommandAllocatorBase::RegisterList ( IRHICommandList &InList ) noexcept
+void Lumen::RHI::FRHICommandAllocatorBase::RegisterList ( IRHICommandList &InList ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Lists.push_back( &InList );
 }
-void Lumen::FRHICommandAllocatorBase::UnregisterList ( IRHICommandList &InList ) noexcept
+void Lumen::RHI::FRHICommandAllocatorBase::UnregisterList ( IRHICommandList &InList ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( USize Index = 0U; Index < Lists.size(); ++Index )
@@ -62,7 +64,7 @@ void Lumen::FRHICommandAllocatorBase::UnregisterList ( IRHICommandList &InList )
         }
     }
 }
-Lumen::USize Lumen::FRHICommandAllocatorBase::GetTrackedListCount () const noexcept
+Lumen::USize Lumen::RHI::FRHICommandAllocatorBase::GetTrackedListCount () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Lists.size();

@@ -4,16 +4,16 @@
  */
 
 #include "RHIBufferPool.hpp"
-#include <Resources/IRHIBuffer.hpp>
+#include <RHI/Resources/IRHIBuffer.hpp>
+#include <RHI/Types/RHITimeline.hpp>
 #include <Templates/Hash.hpp>
-#include <Types/RHITimeline.hpp>
 
 namespace
 {
 
 /** @return True when two descriptors describe interchangeable buffer resources. */
-LUMEN_FORCE_INLINE Lumen::Bool AreBufferDescsCompatible ( const Lumen::FRHIBufferDesc &InLeft,
-                                                          const Lumen::FRHIBufferDesc &InRight ) noexcept
+LUMEN_FORCE_INLINE Lumen::Bool AreBufferDescsCompatible ( const Lumen::RHI::FRHIBufferDesc &InLeft,
+                                                          const Lumen::RHI::FRHIBufferDesc &InRight ) noexcept
 {
     const Lumen::Bool bIsSameSize         = InLeft.Size == InRight.Size;
     const Lumen::Bool bIsSameUsage        = InLeft.Usage == InRight.Usage;
@@ -29,15 +29,15 @@ LUMEN_FORCE_INLINE Lumen::Bool AreBufferDescsCompatible ( const Lumen::FRHIBuffe
  * Public
  */
 
-Lumen::FRHIBufferPool::FRHIBufferPool ( IRHIDevice &InDevice, const FRHIObjectId InId ) noexcept
+Lumen::RHI::FRHIBufferPool::FRHIBufferPool ( IRHIDevice &InDevice, const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FRHIBufferPool>() ), Device( &InDevice )
 {
     /* */
 }
 
 LUMEN_RHI_OBJECT_FORWARDERS( FRHIBufferPool )
-Lumen::TExpected<Lumen::TSharedRef<Lumen::IRHIBuffer>, Lumen::FRHIError>
-Lumen::FRHIBufferPool::Acquire ( const FRHIBufferDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIBufferPool::Acquire ( const FRHIBufferDesc &InDesc ) noexcept
 {
     if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
@@ -57,14 +57,14 @@ Lumen::FRHIBufferPool::Acquire ( const FRHIBufferDesc &InDesc ) noexcept
     return Device->CreateBuffer( InDesc );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBufferPool::Release ( TSharedRef<IRHIBuffer> InBuffer,
-                                                                          const FRHITimelineValue InCompletion ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIBufferPool::Release ( TSharedRef<IRHIBuffer> InBuffer, const FRHITimelineValue InCompletion ) noexcept
 {
     Released.push_back( FEntry{ .Buffer = std::move( InBuffer ), .Completion = InCompletion } );
     return {};
 }
 
-void Lumen::FRHIBufferPool::AdvanceCompleted ( const FRHITimelineValue InCompleted ) noexcept
+void Lumen::RHI::FRHIBufferPool::AdvanceCompleted ( const FRHITimelineValue InCompleted ) noexcept
 {
     if ( InCompleted > CurrentCompleted )
     {
@@ -72,7 +72,7 @@ void Lumen::FRHIBufferPool::AdvanceCompleted ( const FRHITimelineValue InComplet
     }
 }
 
-Lumen::USize Lumen::FRHIBufferPool::GetPendingCount () const noexcept
+Lumen::USize Lumen::RHI::FRHIBufferPool::GetPendingCount () const noexcept
 {
     return Released.size();
 }

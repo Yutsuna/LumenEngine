@@ -4,7 +4,7 @@
  */
 #pragma once
 
-#include <Types/RHIObjectBase.hpp>
+#include <RHI/Types/RHIObjectBase.hpp>
 
 #define LUMEN_RHI_OBJECT_DECLARATIONS                                                                                            \
     [[nodiscard]] FRHIObjectId GetId() const noexcept override;                                                                  \
@@ -14,23 +14,23 @@
     [[nodiscard]] FRHIObjectBase &GetRHIObjectBase() noexcept
 
 #define LUMEN_RHI_OBJECT_FORWARDERS( Class )                                                                                     \
-    Lumen::FRHIObjectId Lumen::Class::GetId() const noexcept                                                                     \
+    Lumen::RHI::FRHIObjectId Lumen::RHI::Class::GetId() const noexcept                                                           \
     {                                                                                                                            \
         return Identity.GetId();                                                                                                 \
     }                                                                                                                            \
-    Lumen::FString Lumen::Class::GetDebugName() const noexcept                                                                   \
+    Lumen::FString Lumen::RHI::Class::GetDebugName() const noexcept                                                              \
     {                                                                                                                            \
         return Identity.GetDebugName();                                                                                          \
     }                                                                                                                            \
-    void Lumen::Class::SetDebugName( const FStringView InName ) noexcept                                                         \
+    void Lumen::RHI::Class::SetDebugName( const FStringView InName ) noexcept                                                    \
     {                                                                                                                            \
         Identity.SetDebugName( InName );                                                                                         \
     }                                                                                                                            \
-    Lumen::UInt64 Lumen::Class::GetBackendTypeTag() const noexcept                                                               \
+    Lumen::UInt64 Lumen::RHI::Class::GetBackendTypeTag() const noexcept                                                          \
     {                                                                                                                            \
         return Identity.GetBackendTypeTag();                                                                                     \
     }                                                                                                                            \
-    Lumen::FRHIObjectBase &Lumen::Class::GetRHIObjectBase() noexcept                                                             \
+    Lumen::RHI::FRHIObjectBase &Lumen::RHI::Class::GetRHIObjectBase() noexcept                                                   \
     {                                                                                                                            \
         return Identity;                                                                                                         \
     }

@@ -3,17 +3,17 @@
  * @brief Implements structured RHI error values.
  */
 
-#include <Types/RHIError.hpp>
+#include <RHI/Types/RHIError.hpp>
 
-Lumen::FRHIError::FRHIError ( const ERHIErrorCode InCode,
-                              const ERHIErrorCondition InCondition,
-                              const FStringView InMessage,
-                              const TOptional<Int64> InNativeCode ) noexcept
+Lumen::RHI::FRHIError::FRHIError ( const ERHIErrorCode InCode,
+                                   const ERHIErrorCondition InCondition,
+                                   const FStringView InMessage,
+                                   const TOptional<Int64> InNativeCode ) noexcept
     : Code( InCode ), Condition( InCondition ), Message( InMessage ), NativeCode( InNativeCode )
 {
 }
 
-Lumen::FRHIError Lumen::FRHIError::WithContext ( const FStringView InOperation ) const noexcept
+Lumen::RHI::FRHIError Lumen::RHI::FRHIError::WithContext ( const FStringView InOperation ) const noexcept
 {
     FString Context( InOperation );
     Context += ": ";

@@ -2,17 +2,17 @@
  * @file RHISubresourceRange.cpp
  * @brief Implements subresource range containment and intersection.
  */
-#include <Resources/RHISubresourceRange.hpp>
-#include <Utilities/RHICheckedMath.hpp>
+#include <RHI/Resources/RHISubresourceRange.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 #include <algorithm>
-Lumen::Bool Lumen::FRHISubresourceRange::IsContainedIn ( const UInt32 InMipCount, const UInt32 InLayerCount ) const noexcept
+Lumen::Bool Lumen::RHI::FRHISubresourceRange::IsContainedIn ( const UInt32 InMipCount, const UInt32 InLayerCount ) const noexcept
 {
     const TOptional<UInt32> MipEnd   = RHICheckedAdd( BaseMip, MipCount );
     const TOptional<UInt32> LayerEnd = RHICheckedAdd( BaseLayer, LayerCount );
     return IsValid() and MipEnd and LayerEnd and *MipEnd <= InMipCount and *LayerEnd <= InLayerCount;
 }
-Lumen::TOptional<Lumen::FRHISubresourceRange>
-Lumen::FRHISubresourceRange::Intersect ( const FRHISubresourceRange &InOther ) const noexcept
+Lumen::TOptional<Lumen::RHI::FRHISubresourceRange>
+Lumen::RHI::FRHISubresourceRange::Intersect ( const FRHISubresourceRange &InOther ) const noexcept
 {
     const UInt32 MipBegin                 = std::max( BaseMip, InOther.BaseMip );
     const UInt32 LayerBegin               = std::max( BaseLayer, InOther.BaseLayer );

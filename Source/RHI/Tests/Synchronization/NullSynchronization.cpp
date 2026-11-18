@@ -11,31 +11,31 @@
  * Public
  */
 
-Lumen::Tests::FNullSemaphore::FNullSemaphore ( const FRHISemaphoreDesc &InDesc, const FRHIObjectId InId ) noexcept
+Lumen::RHI::Tests::FNullSemaphore::FNullSemaphore ( const FRHISemaphoreDesc &InDesc, const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FNullSemaphore>() ), Desc( InDesc ), Value( InDesc.InitialValue )
 {
     Identity.SetDebugName( InDesc.DebugName );
 }
 
 LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullSemaphore )
-const Lumen::FRHISemaphoreDesc &Lumen::Tests::FNullSemaphore::GetDesc () const noexcept
+const Lumen::RHI::FRHISemaphoreDesc &Lumen::RHI::Tests::FNullSemaphore::GetDesc () const noexcept
 {
     return Desc;
 }
 
-Lumen::UInt64 Lumen::Tests::FNullSemaphore::GetValue () const noexcept
+Lumen::UInt64 Lumen::RHI::Tests::FNullSemaphore::GetValue () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Value;
 }
 
-void Lumen::Tests::FNullSemaphore::SetFailNextSignal ( const Bool bInFailNextSignal ) noexcept
+void Lumen::RHI::Tests::FNullSemaphore::SetFailNextSignal ( const Bool bInFailNextSignal ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     SignalFaultCount = bInFailNextSignal ? 1U : 0U;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSemaphore::Signal ( const UInt64 InValue ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSemaphore::Signal ( const UInt64 InValue ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( SignalFaultCount > 0U )
@@ -55,8 +55,8 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSemaphore::Signal ( 
     return {};
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullSemaphore::Wait ( const UInt64 InValue,
-                                                                              const Float64 InTimeoutSeconds ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSemaphore::Wait ( const UInt64 InValue,
+                                                                                        const Float64 InTimeoutSeconds ) noexcept
 {
     if ( InTimeoutSeconds < 0.0 or ( Desc.Type == ERHISemaphoreType::Binary and InValue != 1ULL ) )
     {

@@ -3,14 +3,14 @@
  * @brief Implements atomic memory budget accounting.
  */
 
-#include <Memory/RHIMemoryBudget.hpp>
+#include <RHI/Memory/RHIMemoryBudget.hpp>
 
-Lumen::FRHIMemoryBudget::FRHIMemoryBudget ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity ), Used( 0ULL )
+Lumen::RHI::FRHIMemoryBudget::FRHIMemoryBudget ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity ), Used( 0ULL )
 {
     /* */
 }
 
-Lumen::Bool Lumen::FRHIMemoryBudget::TryReserve ( const UInt64 InSize ) noexcept
+Lumen::Bool Lumen::RHI::FRHIMemoryBudget::TryReserve ( const UInt64 InSize ) noexcept
 {
     UInt64 Current = Used.load( std::memory_order_relaxed );
 
@@ -27,7 +27,7 @@ Lumen::Bool Lumen::FRHIMemoryBudget::TryReserve ( const UInt64 InSize ) noexcept
     }
 }
 
-void Lumen::FRHIMemoryBudget::Release ( const UInt64 InSize ) noexcept
+void Lumen::RHI::FRHIMemoryBudget::Release ( const UInt64 InSize ) noexcept
 {
     UInt64 Current = Used.load( std::memory_order_relaxed );
 
@@ -37,7 +37,7 @@ void Lumen::FRHIMemoryBudget::Release ( const UInt64 InSize ) noexcept
     }
 }
 
-Lumen::UInt64 Lumen::FRHIMemoryBudget::GetUsed () const noexcept
+Lumen::UInt64 Lumen::RHI::FRHIMemoryBudget::GetUsed () const noexcept
 {
     return Used.load( std::memory_order_acquire );
 }

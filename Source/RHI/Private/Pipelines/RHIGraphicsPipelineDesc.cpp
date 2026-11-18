@@ -3,9 +3,9 @@
  * @brief Implements graphics pipeline validation.
  */
 
-#include <Pipelines/RHIGraphicsPipelineDesc.hpp>
-#include <Types/RHIFormatInfo.hpp>
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIGraphicsPipelineDesc::Validate () const noexcept
+#include <RHI/Pipelines/RHIGraphicsPipelineDesc.hpp>
+#include <RHI/Types/RHIFormatInfo.hpp>
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIGraphicsPipelineDesc::Validate () const noexcept
 {
     if ( not VertexShader or not PixelShader or not Layout or VertexShader->GetDesc().Stage != ERHIShaderStage::Vertex or
          PixelShader->GetDesc().Stage != ERHIShaderStage::Pixel or not VertexLayout.Validate() or not Blend.Validate() or

@@ -3,9 +3,10 @@
  * @brief Implements conversion of resource requirements.
  */
 
-#include <Memory/RHIResourceRequirements.hpp>
+#include <RHI/Memory/RHIResourceRequirements.hpp>
 
-Lumen::TExpected<Lumen::FRHIAllocationDesc, Lumen::FRHIError> Lumen::FRHIResourceRequirements::ToAllocationDesc () const noexcept
+Lumen::TExpected<Lumen::RHI::FRHIAllocationDesc, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIResourceRequirements::ToAllocationDesc () const noexcept
 {
     const FRHIAllocationDesc Desc{
         .Size = Size, .Alignment = Alignment, .MemoryClass = PreferredMemoryClass.ValueOr( ERHIMemoryClass::DeviceLocal ) };

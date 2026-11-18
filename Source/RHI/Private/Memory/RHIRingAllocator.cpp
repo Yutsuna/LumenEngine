@@ -4,18 +4,18 @@
  */
 
 #include <HAL/LockGuard.hpp>
-#include <Memory/RHIRingAllocator.hpp>
+#include <RHI/Memory/RHIRingAllocator.hpp>
 
-#include <Utilities/RHIAlignment.hpp>
-#include <Utilities/RHICheckedMath.hpp>
+#include <RHI/Utilities/RHIAlignment.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 
-Lumen::FRHIRingAllocator::FRHIRingAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
+Lumen::RHI::FRHIRingAllocator::FRHIRingAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
 {
     Stats.Capacity = InCapacity;
 }
 
-Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
-Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
     if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
@@ -65,7 +65,7 @@ Lumen::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
     return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Ring has no completed contiguous range" ) );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRingAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIRingAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
@@ -81,7 +81,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIRingAllocator::Free ( const 
     return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Ring allocation is not active" ) );
 }
 
-void Lumen::FRHIRingAllocator::Reset () noexcept
+void Lumen::RHI::FRHIRingAllocator::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Active.clear();
@@ -89,7 +89,7 @@ void Lumen::FRHIRingAllocator::Reset () noexcept
     Stats.Used = 0ULL;
 }
 
-Lumen::FRHIAllocatorStats Lumen::FRHIRingAllocator::GetStats () const noexcept
+Lumen::RHI::FRHIAllocatorStats Lumen::RHI::FRHIRingAllocator::GetStats () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Stats;

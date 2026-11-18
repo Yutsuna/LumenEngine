@@ -4,19 +4,19 @@
  */
 
 #include "RHIValidationReporter.hpp"
-#include <Debug/IRHIDebugSink.hpp>
 #include <HAL/LockGuard.hpp>
-#include <Types/IRHIObject.hpp>
+#include <RHI/Debug/IRHIDebugSink.hpp>
+#include <RHI/Types/IRHIObject.hpp>
 
-Lumen::FRHIValidationReporter::FRHIValidationReporter ( const FRHIValidationDesc &InDesc ) noexcept : Desc( InDesc )
+Lumen::RHI::FRHIValidationReporter::FRHIValidationReporter ( const FRHIValidationDesc &InDesc ) noexcept : Desc( InDesc )
 {
     /* */
 }
 
-void Lumen::FRHIValidationReporter::Report ( const ERHIValidationMessageCode InCode,
-                                             const FStringView InMessage,
-                                             const IRHIObject *InObject,
-                                             const ERHIDebugSeverity InSeverity ) const noexcept
+void Lumen::RHI::FRHIValidationReporter::Report ( const ERHIValidationMessageCode InCode,
+                                                  const FStringView InMessage,
+                                                  const IRHIObject *InObject,
+                                                  const ERHIDebugSeverity InSeverity ) const noexcept
 {
     const ERHIDebugSeverity Severity =
         Desc.bFatalOnError and InSeverity >= ERHIDebugSeverity::Error ? ERHIDebugSeverity::Fatal : InSeverity;
@@ -43,16 +43,17 @@ void Lumen::FRHIValidationReporter::Report ( const ERHIValidationMessageCode InC
     Desc.Sink->Emit( Message );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationReporter::Reject ( const ERHIValidationMessageCode InCode,
-                                                                                 const ERHIErrorCondition InCondition,
-                                                                                 const FStringView InMessage,
-                                                                                 const IRHIObject *InObject ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationReporter::Reject ( const ERHIValidationMessageCode InCode,
+                                             const ERHIErrorCondition InCondition,
+                                             const FStringView InMessage,
+                                             const IRHIObject *InObject ) const noexcept
 {
     Report( InCode, InMessage, InObject );
     return TUnexpected<FRHIError>( MakeRHIValidationFailed( InCondition, InMessage ) );
 }
 
-const Lumen::FRHIValidationDesc &Lumen::FRHIValidationReporter::GetDesc () const noexcept
+const Lumen::RHI::FRHIValidationDesc &Lumen::RHI::FRHIValidationReporter::GetDesc () const noexcept
 {
     return Desc;
 }

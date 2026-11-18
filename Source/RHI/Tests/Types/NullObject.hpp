@@ -5,31 +5,36 @@
 
 #pragma once
 
+#include <RHI/Types/RHIObjectBase.hpp>
 #include <Templates/Hash.hpp>
-#include <Types/RHIObjectBase.hpp>
 
 namespace Lumen
 {
 
-namespace Tests
+namespace RHI
 {
 
-    /**
-     * @class FNullObject
-     * @brief Deterministic object with a configurable identifier.
-     */
-    class FNullObject : public FRHIObjectBase
+    namespace Tests
     {
-    public:
 
-        /** @brief Creates a Null object with the requested identifier. */
-        explicit FNullObject ( const FRHIObjectId InId = FRHIObjectId{ 1ULL } ) noexcept
-            : FRHIObjectBase( InId, FHash::TypeHash<FNullObject>() )
+        /**
+         * @class FNullObject
+         * @brief Deterministic object with a configurable identifier.
+         */
+        class FNullObject : public FRHIObjectBase
         {
-            /* */
-        }
-    };
+        public:
 
-} // namespace Tests
+            /** @brief Creates a Null object with the requested identifier. */
+            explicit FNullObject ( const FRHIObjectId InId = FRHIObjectId{ 1ULL } ) noexcept
+                : FRHIObjectBase( InId, FHash::TypeHash<FNullObject>() )
+            {
+                /* */
+            }
+        };
+
+    } // namespace Tests
+
+} // namespace RHI
 
 } // namespace Lumen

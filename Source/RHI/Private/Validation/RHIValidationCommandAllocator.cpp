@@ -7,27 +7,27 @@
 #include "RHIValidationCommandList.hpp"
 #include <HAL/LockGuard.hpp>
 
-Lumen::FRHIValidationCommandAllocator::FRHIValidationCommandAllocator ( TSharedRef<IRHICommandAllocator> InUnderlying,
-                                                                        TSharedPtr<FRHIValidationState> InState ) noexcept
+Lumen::RHI::FRHIValidationCommandAllocator::FRHIValidationCommandAllocator ( TSharedRef<IRHICommandAllocator> InUnderlying,
+                                                                             TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
 {
     State->Track( *Underlying, ERHIValidationObjectKind::CommandAllocator );
 }
 
-Lumen::FRHIValidationCommandAllocator::~FRHIValidationCommandAllocator () noexcept
+Lumen::RHI::FRHIValidationCommandAllocator::~FRHIValidationCommandAllocator () noexcept
 {
     State->Untrack( *Underlying );
 }
 
 LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationCommandAllocator )
 
-Lumen::ERHIQueueType Lumen::FRHIValidationCommandAllocator::GetQueueType () const noexcept
+Lumen::RHI::ERHIQueueType Lumen::RHI::FRHIValidationCommandAllocator::GetQueueType () const noexcept
 {
     return Underlying->GetQueueType();
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationCommandAllocator::Reset ( const FRHITimelineValue InCompleted ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationCommandAllocator::Reset ( const FRHITimelineValue InCompleted ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( const FRHIValidationCommandList *List : Lists )
@@ -49,13 +49,13 @@ Lumen::FRHIValidationCommandAllocator::Reset ( const FRHITimelineValue InComplet
     } );
 }
 
-void Lumen::FRHIValidationCommandAllocator::RegisterList ( FRHIValidationCommandList &InList ) noexcept
+void Lumen::RHI::FRHIValidationCommandAllocator::RegisterList ( FRHIValidationCommandList &InList ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Lists.push_back( &InList );
 }
 
-void Lumen::FRHIValidationCommandAllocator::UnregisterList ( FRHIValidationCommandList &InList ) noexcept
+void Lumen::RHI::FRHIValidationCommandAllocator::UnregisterList ( FRHIValidationCommandList &InList ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( USize Index = 0U; Index < Lists.size(); ++Index )
@@ -68,7 +68,7 @@ void Lumen::FRHIValidationCommandAllocator::UnregisterList ( FRHIValidationComma
     }
 }
 
-Lumen::USize Lumen::FRHIValidationCommandAllocator::GetTrackedListCount () const noexcept
+Lumen::USize Lumen::RHI::FRHIValidationCommandAllocator::GetTrackedListCount () const noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Lists.size();

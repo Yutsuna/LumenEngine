@@ -3,10 +3,10 @@
  * @brief Implements typed binding write validation.
  */
 
-#include <Bindings/RHIBindingWrite.hpp>
+#include <RHI/Bindings/RHIBindingWrite.hpp>
 #include <variant>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBindingWrite::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBindingWrite::Validate () const noexcept
 {
     const Bool bValid = std::visit( [] ( const auto &Payload ) noexcept -> Bool
     {

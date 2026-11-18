@@ -5,58 +5,63 @@
 #pragma once
 
 #include <HAL/PlatformMutex.hpp>
+#include <RHI/Validation/RHIValidationDesc.hpp>
 #include <Templates/Map.hpp>
-#include <Validation/RHIValidationDesc.hpp>
 
 namespace Lumen
 {
 
-class IRHIObject;
-
-/** @enum ERHIValidationMessageCode @brief Stable private diagnostic codes used by validation tests and sinks. */
-enum class ERHIValidationMessageCode : UInt32
+namespace RHI
 {
-    InvalidDescriptor = 1U,
-    UnknownObject,
-    ForeignObject,
-    ObjectLeak,
-    InvalidResourceTransition,
-    InvalidBinding,
-    InvalidCommandState,
-    InvalidQueueSubmission,
-    InvalidPresentation,
-    InvalidTransientBatch,
-    InvalidDefragPlan
-};
 
-/**
- * @class FRHIValidationReporter
- * @brief Routes diagnostics without introducing a logger dependency.
- */
-class RHI_EXPORT FRHIValidationReporter final
-{
-public:
+    class IRHIObject;
 
-    explicit FRHIValidationReporter ( const FRHIValidationDesc &InDesc ) noexcept;
+    /** @enum ERHIValidationMessageCode @brief Stable private diagnostic codes used by validation tests and sinks. */
+    enum class ERHIValidationMessageCode : UInt32
+    {
+        InvalidDescriptor = 1U,
+        UnknownObject,
+        ForeignObject,
+        ObjectLeak,
+        InvalidResourceTransition,
+        InvalidBinding,
+        InvalidCommandState,
+        InvalidQueueSubmission,
+        InvalidPresentation,
+        InvalidTransientBatch,
+        InvalidDefragPlan
+    };
 
-    /** @brief Emits a validation message when it passes the configured severity and deduplication policy. */
-    void Report ( ERHIValidationMessageCode InCode,
-                  FStringView InMessage,
-                  const IRHIObject *InObject   = nullptr,
-                  ERHIDebugSeverity InSeverity = ERHIDebugSeverity::Error ) const noexcept;
-    /** @return A ValidationFailed error and emits its corresponding diagnostic. */
-    [[nodiscard]] TExpected<void, FRHIError> Reject ( ERHIValidationMessageCode InCode,
-                                                      ERHIErrorCondition InCondition,
-                                                      FStringView InMessage,
-                                                      const IRHIObject *InObject = nullptr ) const noexcept;
-    /** @return The immutable diagnostic policy. */
-    [[nodiscard]] const FRHIValidationDesc &GetDesc () const noexcept;
+    /**
+     * @class FRHIValidationReporter
+     * @brief Routes diagnostics without introducing a logger dependency.
+     */
+    class RHI_EXPORT FRHIValidationReporter final
+    {
+    public:
 
-private:
+        explicit FRHIValidationReporter ( const FRHIValidationDesc &InDesc ) noexcept;
 
-    FRHIValidationDesc Desc;
-    mutable TMap<UInt64, FString> SeenMessages;
-    mutable HAL::FPlatformMutex Mutex;
-};
+        /** @brief Emits a validation message when it passes the configured severity and deduplication policy. */
+        void Report ( ERHIValidationMessageCode InCode,
+                      FStringView InMessage,
+                      const IRHIObject *InObject   = nullptr,
+                      ERHIDebugSeverity InSeverity = ERHIDebugSeverity::Error ) const noexcept;
+        /** @return A ValidationFailed error and emits its corresponding diagnostic. */
+        [[nodiscard]] TExpected<void, FRHIError> Reject ( ERHIValidationMessageCode InCode,
+                                                          ERHIErrorCondition InCondition,
+                                                          FStringView InMessage,
+                                                          const IRHIObject *InObject = nullptr ) const noexcept;
+        /** @return The immutable diagnostic policy. */
+        [[nodiscard]] const FRHIValidationDesc &GetDesc () const noexcept;
+
+    private:
+
+        FRHIValidationDesc Desc;
+        mutable TMap<UInt64, FString> SeenMessages;
+        mutable HAL::FPlatformMutex Mutex;
+    };
+
+} // namespace RHI
 
 } // namespace Lumen

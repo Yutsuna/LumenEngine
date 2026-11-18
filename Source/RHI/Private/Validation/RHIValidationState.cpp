@@ -5,17 +5,17 @@
 
 #include "RHIValidationState.hpp"
 #include <HAL/LockGuard.hpp>
-#include <Validation/RHIValidation.hpp>
+#include <RHI/Validation/RHIValidation.hpp>
 #include <variant>
 
-Lumen::FRHIValidationState::FRHIValidationState ( TSharedPtr<FRHIValidationReporter> InReporter ) noexcept
+Lumen::RHI::FRHIValidationState::FRHIValidationState ( TSharedPtr<FRHIValidationReporter> InReporter ) noexcept
     : Reporter( std::move( InReporter ) )
 {
 }
 
-Lumen::FRHIValidationState::~FRHIValidationState () noexcept = default;
+Lumen::RHI::FRHIValidationState::~FRHIValidationState () noexcept = default;
 
-void Lumen::FRHIValidationState::Track ( IRHIObject &InObject, const ERHIValidationObjectKind InKind ) noexcept
+void Lumen::RHI::FRHIValidationState::Track ( IRHIObject &InObject, const ERHIValidationObjectKind InKind ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     const UInt64 Key = InObject.GetId().GetValue();
@@ -29,7 +29,7 @@ void Lumen::FRHIValidationState::Track ( IRHIObject &InObject, const ERHIValidat
     Objects.emplace( Key, std::move( Entry ) );
 }
 
-void Lumen::FRHIValidationState::TrackResource ( IRHIResource &InResource, const ERHIValidationObjectKind InKind ) noexcept
+void Lumen::RHI::FRHIValidationState::TrackResource ( IRHIResource &InResource, const ERHIValidationObjectKind InKind ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     const UInt64 Key = InResource.GetId().GetValue();
@@ -53,7 +53,7 @@ void Lumen::FRHIValidationState::TrackResource ( IRHIResource &InResource, const
     Objects.emplace( Key, std::move( Entry ) );
 }
 
-void Lumen::FRHIValidationState::Untrack ( IRHIObject &InObject ) noexcept
+void Lumen::RHI::FRHIValidationState::Untrack ( IRHIObject &InObject ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     const TMap<UInt64, FEntry>::iterator Found = Objects.find( UnwrapRHIObject( &InObject )->GetId().GetValue() );
@@ -63,14 +63,15 @@ void Lumen::FRHIValidationState::Untrack ( IRHIObject &InObject ) noexcept
     }
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationState::ValidateObject ( const IRHIObject &InObject, const ERHIValidationObjectKind InKind ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationState::ValidateObject ( const IRHIObject &InObject,
+                                                  const ERHIValidationObjectKind InKind ) const noexcept
 {
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
     return CheckObject( Objects, InObject, InKind );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationState::CheckObject (
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationState::CheckObject (
     const TMap<UInt64, FEntry> &InObjects, const IRHIObject &InObject, const ERHIValidationObjectKind InKind ) const noexcept
 {
     const IRHIObject *Unwrapped                      = UnwrapRHIObject( &InObject );
@@ -88,7 +89,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationState::CheckObject
     return {};
 }
 
-Lumen::Bool Lumen::FRHIValidationState::Contains ( const IRHIObject &InObject ) const noexcept
+Lumen::Bool Lumen::RHI::FRHIValidationState::Contains ( const IRHIObject &InObject ) const noexcept
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InObject );
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
@@ -96,14 +97,14 @@ Lumen::Bool Lumen::FRHIValidationState::Contains ( const IRHIObject &InObject ) 
     return Found != Objects.end() and Found->second.Object == Unwrapped;
 }
 
-Lumen::USize Lumen::FRHIValidationState::GetLiveObjectCount () const noexcept
+Lumen::USize Lumen::RHI::FRHIValidationState::GetLiveObjectCount () const noexcept
 {
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
     return Objects.size();
 }
 
-Lumen::TOptional<Lumen::ERHIResourceState>
-Lumen::FRHIValidationState::GetResourceState ( const IRHIResource &InResource ) const noexcept
+Lumen::TOptional<Lumen::RHI::ERHIResourceState>
+Lumen::RHI::FRHIValidationState::GetResourceState ( const IRHIResource &InResource ) const noexcept
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InResource );
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
@@ -123,9 +124,8 @@ Lumen::FRHIValidationState::GetResourceState ( const IRHIResource &InResource ) 
     return TOptional<ERHIResourceState>( State );
 }
 
-Lumen::TOptional<Lumen::ERHIResourceState> Lumen::FRHIValidationState::GetTextureState ( const IRHITexture &InTexture,
-                                                                                         const UInt32 InMip,
-                                                                                         const UInt32 InLayer ) const noexcept
+Lumen::TOptional<Lumen::RHI::ERHIResourceState> Lumen::RHI::FRHIValidationState::GetTextureState (
+    const IRHITexture &InTexture, const UInt32 InMip, const UInt32 InLayer ) const noexcept
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InTexture );
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
@@ -139,14 +139,14 @@ Lumen::TOptional<Lumen::ERHIResourceState> Lumen::FRHIValidationState::GetTextur
     return TOptional<ERHIResourceState>( Found->second.States[Index] );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationState::ValidateTransition ( const IRHIResource &InResource,
-                                                 const FEntry &InEntry,
-                                                 const ERHIResourceState InBefore,
-                                                 const ERHIResourceState InAfter,
-                                                 const ERHIQueueType InSourceQueue,
-                                                 const ERHIQueueType InDestinationQueue,
-                                                 const ERHIQueueType InRecordingQueue ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationState::ValidateTransition ( const IRHIResource &InResource,
+                                                      const FEntry &InEntry,
+                                                      const ERHIResourceState InBefore,
+                                                      const ERHIResourceState InAfter,
+                                                      const ERHIQueueType InSourceQueue,
+                                                      const ERHIQueueType InDestinationQueue,
+                                                      const ERHIQueueType InRecordingQueue ) const noexcept
 {
     if ( not IsValidRHIResourceTransition( InBefore, InAfter ) or InAfter == ERHIResourceState::Undefined )
     {
@@ -166,25 +166,25 @@ Lumen::FRHIValidationState::ValidateTransition ( const IRHIResource &InResource,
     return {};
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationState::TransitionBuffer ( const FRHIBufferTransition &InTransition,
-                                                                                        const ERHIQueueType InRecordingQueue,
-                                                                                        const Bool bApply ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationState::TransitionBuffer (
+    const FRHIBufferTransition &InTransition, const ERHIQueueType InRecordingQueue, const Bool bApply ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     return ValidateBufferIn( Objects, InTransition, InRecordingQueue, bApply );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationState::TransitionTexture (
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationState::TransitionTexture (
     const FRHITextureTransition &InTransition, const ERHIQueueType InRecordingQueue, const Bool bApply ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     return ValidateTextureIn( Objects, InTransition, InRecordingQueue, bApply );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationState::ValidateBufferIn ( TMap<UInt64, FEntry> &InObjects,
-                                                                                        const FRHIBufferTransition &InTransition,
-                                                                                        const ERHIQueueType InRecordingQueue,
-                                                                                        const Bool bApply ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationState::ValidateBufferIn ( TMap<UInt64, FEntry> &InObjects,
+                                                    const FRHIBufferTransition &InTransition,
+                                                    const ERHIQueueType InRecordingQueue,
+                                                    const Bool bApply ) const noexcept
 {
     if ( not InTransition.Buffer )
     {
@@ -218,11 +218,11 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationState::ValidateBuf
     return {};
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationState::ValidateTextureIn ( TMap<UInt64, FEntry> &InObjects,
-                                                const FRHITextureTransition &InTransition,
-                                                const ERHIQueueType InRecordingQueue,
-                                                const Bool bApply ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationState::ValidateTextureIn ( TMap<UInt64, FEntry> &InObjects,
+                                                     const FRHITextureTransition &InTransition,
+                                                     const ERHIQueueType InRecordingQueue,
+                                                     const Bool bApply ) const noexcept
 {
     if ( not InTransition.Texture )
     {
@@ -270,8 +270,8 @@ Lumen::FRHIValidationState::ValidateTextureIn ( TMap<UInt64, FEntry> &InObjects,
     return {};
 }
 
-void Lumen::FRHIValidationState::ApplyBuffer ( TMap<UInt64, FEntry> &InObjects,
-                                               const FRHIBufferTransition &InTransition ) const noexcept
+void Lumen::RHI::FRHIValidationState::ApplyBuffer ( TMap<UInt64, FEntry> &InObjects,
+                                                    const FRHIBufferTransition &InTransition ) const noexcept
 {
     if ( not InTransition.Buffer )
     {
@@ -286,8 +286,8 @@ void Lumen::FRHIValidationState::ApplyBuffer ( TMap<UInt64, FEntry> &InObjects,
     }
 }
 
-void Lumen::FRHIValidationState::ApplyTexture ( TMap<UInt64, FEntry> &InObjects,
-                                                const FRHITextureTransition &InTransition ) const noexcept
+void Lumen::RHI::FRHIValidationState::ApplyTexture ( TMap<UInt64, FEntry> &InObjects,
+                                                     const FRHITextureTransition &InTransition ) const noexcept
 {
     if ( not InTransition.Texture )
     {
@@ -316,9 +316,9 @@ void Lumen::FRHIValidationState::ApplyTexture ( TMap<UInt64, FEntry> &InObjects,
     Entry.OwnerQueue = InTransition.DestinationQueue;
 }
 
-Lumen::TExpected<void, Lumen::FRHIError>
-Lumen::FRHIValidationState::ValidateTransitions ( const TSpan<const FRHITransition> InTransitions,
-                                                  const ERHIQueueType InRecordingQueue ) const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationState::ValidateTransitions ( const TSpan<const FRHITransition> InTransitions,
+                                                       const ERHIQueueType InRecordingQueue ) const noexcept
 {
     TMap<UInt64, FEntry> Speculative;
     {
@@ -352,7 +352,7 @@ Lumen::FRHIValidationState::ValidateTransitions ( const TSpan<const FRHITransiti
     return {};
 }
 
-void Lumen::FRHIValidationState::CommitTransitions ( const TSpan<const FRHITransition> InTransitions ) noexcept
+void Lumen::RHI::FRHIValidationState::CommitTransitions ( const TSpan<const FRHITransition> InTransitions ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     for ( const FRHITransition &Transition : InTransitions )
@@ -368,7 +368,7 @@ void Lumen::FRHIValidationState::CommitTransitions ( const TSpan<const FRHITrans
     }
 }
 
-void Lumen::FRHIValidationState::ReportLeaks () noexcept
+void Lumen::RHI::FRHIValidationState::ReportLeaks () noexcept
 {
     if ( not Reporter->GetDesc().IsEnabled( ERHIValidationFlags::ObjectLifetime ) )
     {
@@ -397,7 +397,7 @@ void Lumen::FRHIValidationState::ReportLeaks () noexcept
     }
 }
 
-const Lumen::TSharedPtr<Lumen::FRHIValidationReporter> &Lumen::FRHIValidationState::GetReporter () const noexcept
+const Lumen::TSharedPtr<Lumen::RHI::FRHIValidationReporter> &Lumen::RHI::FRHIValidationState::GetReporter () const noexcept
 {
     return Reporter;
 }

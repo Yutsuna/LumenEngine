@@ -2,9 +2,9 @@
  * @file RHIDeviceDesc.cpp
  * @brief Implements device descriptor validation.
  */
-#include <Module/RHIDeviceDesc.hpp>
+#include <RHI/Module/RHIDeviceDesc.hpp>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDeviceDesc::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDeviceDesc::Validate () const noexcept
 {
     if ( Queues.empty() )
     {

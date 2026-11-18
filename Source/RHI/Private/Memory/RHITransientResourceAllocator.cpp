@@ -10,11 +10,11 @@ namespace
 {
 
 /** @return True when an already placed range may be reused for the next request. */
-Lumen::Bool CanAliasTransientRange ( const Lumen::FRHIResourceRequirements &InPlaced,
-                                     const Lumen::FRHIResourceRequirements &InNext ) noexcept
+Lumen::Bool CanAliasTransientRange ( const Lumen::RHI::FRHIResourceRequirements &InPlaced,
+                                     const Lumen::RHI::FRHIResourceRequirements &InNext ) noexcept
 {
-    const Lumen::TOptional<Lumen::ERHIMemoryClass> &PlacedClass = InPlaced.PreferredMemoryClass;
-    const Lumen::TOptional<Lumen::ERHIMemoryClass> &NextClass   = InNext.PreferredMemoryClass;
+    const Lumen::TOptional<Lumen::RHI::ERHIMemoryClass> &PlacedClass = InPlaced.PreferredMemoryClass;
+    const Lumen::TOptional<Lumen::RHI::ERHIMemoryClass> &NextClass   = InNext.PreferredMemoryClass;
     if ( PlacedClass.HasValue() != NextClass.HasValue() )
     {
         return false;
@@ -29,21 +29,21 @@ Lumen::Bool CanAliasTransientRange ( const Lumen::FRHIResourceRequirements &InPl
 
 } // namespace
 
-Lumen::FRHITransientResourceAllocator::FRHITransientResourceAllocator ( const FRHIObjectId InId,
-                                                                        const UInt64 InCapacity ) noexcept
+Lumen::RHI::FRHITransientResourceAllocator::FRHITransientResourceAllocator ( const FRHIObjectId InId,
+                                                                             const UInt64 InCapacity ) noexcept
     : Identity( InId, FHash::TypeHash<FRHITransientResourceAllocator>() ), Allocator( InCapacity )
 {
     /* */
 }
 
 LUMEN_RHI_OBJECT_FORWARDERS( FRHITransientResourceAllocator )
-void Lumen::FRHITransientResourceAllocator::BeginBatch () noexcept
+void Lumen::RHI::FRHITransientResourceAllocator::BeginBatch () noexcept
 {
     bInBatch = true;
 }
 
-Lumen::TExpected<Lumen::TVector<Lumen::FRHITransientAllocation>, Lumen::FRHIError>
-Lumen::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch &InBatch ) noexcept
+Lumen::TExpected<Lumen::TVector<Lumen::RHI::FRHITransientAllocation>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch &InBatch ) noexcept
 {
     if ( not bInBatch )
     {
@@ -91,7 +91,7 @@ Lumen::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch &InBa
     return Results;
 }
 
-void Lumen::FRHITransientResourceAllocator::EndBatch () noexcept
+void Lumen::RHI::FRHITransientResourceAllocator::EndBatch () noexcept
 {
     Allocator.Reset();
     bInBatch = false;

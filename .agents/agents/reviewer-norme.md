@@ -41,7 +41,10 @@ the modules touched.
    PascalCase everywhere, no single-letter variable names, doxygen
    `/** */` + `NOTE:`/`INFO:`/`TODO:` tags, file split
    (`.hpp` signatures only / `.inl` in `Inline/` / `.cpp` implementations),
-   `namespace Lumen { }` in `.hpp` but never opened in `.cpp`/`.inl`.
+   `namespace Lumen { }` in `.hpp` but never opened in `.cpp`/`.inl`. RHI
+   headers use nested `namespace Lumen { namespace RHI { ... } }` blocks
+   (never `namespace Lumen::RHI { }`), and RHI `.cpp`/`.inl` qualify with
+   `Lumen::RHI::` while keeping Core/Maths types under `Lumen::`.
 2. `.agents/rules/core-first.md` + `.agents/modules/Core.md` — flag any
    re-implementation of what Core already provides (`std::vector` instead of
    `TVector`, `std::thread`/`std::jthread` instead of `FThread`, `std::mutex`
@@ -62,7 +65,8 @@ the modules touched.
 - File-split violations: implementations inside `.hpp` (beyond definitions
   the rule allows), `.inl` outside `Inline/`, header not ending with its
   `#include "Inline/<Name>.inl"`.
-- Namespace violations: `namespace Lumen { }` opened in a `.cpp`/`.inl`.
+- Namespace violations: `namespace Lumen { }` opened in a `.cpp`/`.inl`, or
+  the forbidden shortened `namespace Lumen::RHI { }` form in RHI headers.
 - Comment violations: missing doxygen blocks on new public API, wrong tag
   style, plain `//` where `/** */` + tag is expected.
 - Core-first violations: third-party/std utils duplicating Core inventory

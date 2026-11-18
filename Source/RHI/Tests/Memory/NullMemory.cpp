@@ -10,7 +10,7 @@
  * Public
  */
 
-Lumen::Tests::FNullHeap::FNullHeap ( const FRHIHeapDesc &InDesc, const FRHIObjectId InId ) noexcept
+Lumen::RHI::Tests::FNullHeap::FNullHeap ( const FRHIHeapDesc &InDesc, const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FNullHeap>() ), Desc( InDesc ),
       Storage( MakeUnique<Byte[]>( static_cast<USize>( InDesc.Size ) ) )
 {
@@ -18,13 +18,13 @@ Lumen::Tests::FNullHeap::FNullHeap ( const FRHIHeapDesc &InDesc, const FRHIObjec
 }
 
 LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullHeap )
-const Lumen::FRHIHeapDesc &Lumen::Tests::FNullHeap::GetDesc () const noexcept
+const Lumen::RHI::FRHIHeapDesc &Lumen::RHI::Tests::FNullHeap::GetDesc () const noexcept
 {
     return Desc;
 }
 
-Lumen::TExpected<Lumen::TSpan<Lumen::Byte>, Lumen::FRHIError> Lumen::Tests::FNullHeap::Map ( const UInt64 InOffset,
-                                                                                             const UInt64 InSize ) noexcept
+Lumen::TExpected<Lumen::TSpan<Lumen::Byte>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullHeap::Map ( const UInt64 InOffset, const UInt64 InSize ) noexcept
 {
     if ( not IsRHICpuAccessible( Desc.MemoryClass ) or InOffset > Desc.Size or InSize > Desc.Size - InOffset )
     {

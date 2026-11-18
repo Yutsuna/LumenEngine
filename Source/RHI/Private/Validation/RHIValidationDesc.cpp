@@ -3,9 +3,9 @@
  * @brief Implements validation descriptor checks and coverage selection.
  */
 
-#include <Validation/RHIValidationDesc.hpp>
+#include <RHI/Validation/RHIValidationDesc.hpp>
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationDesc::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationDesc::Validate () const noexcept
 {
     if ( Level >= ERHIValidationLevel::Count )
     {
@@ -23,7 +23,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIValidationDesc::Validate () 
     return {};
 }
 
-Lumen::Bool Lumen::FRHIValidationDesc::IsEnabled ( const ERHIValidationFlags InDomain ) const noexcept
+Lumen::Bool Lumen::RHI::FRHIValidationDesc::IsEnabled ( const ERHIValidationFlags InDomain ) const noexcept
 {
     if ( Level == ERHIValidationLevel::Disabled or not HasAnyFlags( Flags, InDomain ) )
     {

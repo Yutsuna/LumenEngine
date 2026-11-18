@@ -3,8 +3,8 @@
  * @brief Implements depth-stencil state validation.
  */
 
-#include <Pipelines/RHIDepthStencilState.hpp>
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIDepthStencilState::Validate () const noexcept
+#include <RHI/Pipelines/RHIDepthStencilState.hpp>
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDepthStencilState::Validate () const noexcept
 {
     if ( DepthCompare > ERHICompareFunction::Always or Front.Compare > ERHICompareFunction::Always or
          Back.Compare > ERHICompareFunction::Always or Front.FailOp > ERHIStencilOp::DecrementWrap or

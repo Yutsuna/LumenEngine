@@ -3,9 +3,9 @@
  * @brief Implements query result layout and pool descriptor validation.
  */
 
-#include <Queries/RHIQueryPoolDesc.hpp>
+#include <RHI/Queries/RHIQueryPoolDesc.hpp>
 
-Lumen::TOptional<Lumen::UInt32> Lumen::GetRHIQueryValueCount ( const ERHIQueryType InType ) noexcept
+Lumen::TOptional<Lumen::UInt32> Lumen::RHI::GetRHIQueryValueCount ( const ERHIQueryType InType ) noexcept
 {
     switch ( InType )
     {
@@ -19,7 +19,7 @@ Lumen::TOptional<Lumen::UInt32> Lumen::GetRHIQueryValueCount ( const ERHIQueryTy
     }
 }
 
-Lumen::TOptional<Lumen::UInt32> Lumen::GetRHIQueryResultSize ( const ERHIQueryType InType ) noexcept
+Lumen::TOptional<Lumen::UInt32> Lumen::RHI::GetRHIQueryResultSize ( const ERHIQueryType InType ) noexcept
 {
     return GetRHIQueryValueCount( InType ).Transform( [] ( const UInt32 InValueCount ) noexcept
     {
@@ -27,7 +27,7 @@ Lumen::TOptional<Lumen::UInt32> Lumen::GetRHIQueryResultSize ( const ERHIQueryTy
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIQueryPoolDesc::Validate () const noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIQueryPoolDesc::Validate () const noexcept
 {
     const Bool bQueueCompatible =
         QueueType == ERHIQueueType::Graphics or ( Type == ERHIQueryType::Timestamp and QueueType == ERHIQueueType::Compute );
@@ -38,7 +38,7 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIQueryPoolDesc::Validate () c
     return {};
 }
 
-Lumen::UInt32 Lumen::FRHIQueryPoolDesc::GetResultSize () const noexcept
+Lumen::UInt32 Lumen::RHI::FRHIQueryPoolDesc::GetResultSize () const noexcept
 {
     return GetRHIQueryResultSize( Type ).ValueOr( 0U );
 }

@@ -6,42 +6,47 @@
 #pragma once
 
 #include <HAL/PlatformMutex.hpp>
+#include <RHI/Types/RHIError.hpp>
 #include <Templates/Optional.hpp>
 #include <Templates/Vector.hpp>
-#include <Types/RHIError.hpp>
 
 namespace Lumen
 {
 
-namespace Tests
+namespace RHI
 {
 
-    /**
-     * @class FNullFaultPlan
-     * @brief Thread-safe operation/occurrence fault schedule.
-     */
-    class FNullFaultPlan final
+    namespace Tests
     {
-    public:
 
-        /** @brief Fails the InOccurrence-th call of InOperation with InError; occurrence is one-based. */
-        void AddFailure ( FStringView InOperation, UInt32 InOccurrence, const FRHIError &InError ) noexcept;
-        /** @return The scheduled error when this call matches, otherwise empty. */
-        [[nodiscard]] TOptional<FRHIError> ShouldFail ( FStringView InOperation ) noexcept;
-
-    private:
-
-        struct FRule
+        /**
+         * @class FNullFaultPlan
+         * @brief Thread-safe operation/occurrence fault schedule.
+         */
+        class FNullFaultPlan final
         {
-            FString Operation;
-            UInt32 Occurrence = 1U;
-            UInt32 Calls      = 0U;
-            FRHIError Error;
-        };
-        TVector<FRule> Rules;
-        HAL::FPlatformRecursiveSharedMutex Mutex;
-    };
+        public:
 
-} // namespace Tests
+            /** @brief Fails the InOccurrence-th call of InOperation with InError; occurrence is one-based. */
+            void AddFailure ( FStringView InOperation, UInt32 InOccurrence, const FRHIError &InError ) noexcept;
+            /** @return The scheduled error when this call matches, otherwise empty. */
+            [[nodiscard]] TOptional<FRHIError> ShouldFail ( FStringView InOperation ) noexcept;
+
+        private:
+
+            struct FRule
+            {
+                FString Operation;
+                UInt32 Occurrence = 1U;
+                UInt32 Calls      = 0U;
+                FRHIError Error;
+            };
+            TVector<FRule> Rules;
+            HAL::FPlatformRecursiveSharedMutex Mutex;
+        };
+
+    } // namespace Tests
+
+} // namespace RHI
 
 } // namespace Lumen

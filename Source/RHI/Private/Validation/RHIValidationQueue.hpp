@@ -6,37 +6,42 @@
 #pragma once
 
 #include "RHIValidationState.hpp"
-#include <Queue/IRHIQueue.hpp>
+#include <RHI/Queue/IRHIQueue.hpp>
 
 namespace Lumen
 {
 
-/**
- * @class FRHIValidationQueue
- * @brief Validates command ownership, queue compatibility, and monotonic submissions.
- */
-class FRHIValidationQueue final : public IRHIQueue, public IRHIValidationObject
+namespace RHI
 {
-public:
 
-    FRHIValidationQueue ( TSharedRef<IRHIQueue> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
-    ~FRHIValidationQueue () noexcept override;
-    [[nodiscard]] FRHIObjectId GetId () const noexcept override;
-    [[nodiscard]] FString GetDebugName () const noexcept override;
-    void SetDebugName ( FStringView InName ) noexcept override;
-    [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
-    [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
-    [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
-    [[nodiscard]] ERHIQueueType GetType () const noexcept override;
-    [[nodiscard]] FRHITimelineValue GetCompletedValue () const noexcept override;
-    [[nodiscard]] TExpected<void, FRHIError> Submit ( const FRHISubmitDesc &InDesc ) noexcept override;
-    [[nodiscard]] TExpected<void, FRHIError> WaitIdle () noexcept override;
-    [[nodiscard]] TExpected<void, FRHIError> Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept override;
+    /**
+     * @class FRHIValidationQueue
+     * @brief Validates command ownership, queue compatibility, and monotonic submissions.
+     */
+    class FRHIValidationQueue final : public IRHIQueue, public IRHIValidationObject
+    {
+    public:
 
-private:
+        FRHIValidationQueue ( TSharedRef<IRHIQueue> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
+        ~FRHIValidationQueue () noexcept override;
+        [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+        [[nodiscard]] FString GetDebugName () const noexcept override;
+        void SetDebugName ( FStringView InName ) noexcept override;
+        [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+        [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+        [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+        [[nodiscard]] ERHIQueueType GetType () const noexcept override;
+        [[nodiscard]] FRHITimelineValue GetCompletedValue () const noexcept override;
+        [[nodiscard]] TExpected<void, FRHIError> Submit ( const FRHISubmitDesc &InDesc ) noexcept override;
+        [[nodiscard]] TExpected<void, FRHIError> WaitIdle () noexcept override;
+        [[nodiscard]] TExpected<void, FRHIError> Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept override;
 
-    TSharedRef<IRHIQueue> Underlying;
-    TSharedPtr<FRHIValidationState> State;
-};
+    private:
+
+        TSharedRef<IRHIQueue> Underlying;
+        TSharedPtr<FRHIValidationState> State;
+    };
+
+} // namespace RHI
 
 } // namespace Lumen

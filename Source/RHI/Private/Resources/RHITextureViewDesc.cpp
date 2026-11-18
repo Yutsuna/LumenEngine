@@ -2,9 +2,9 @@
  * @file RHITextureViewDesc.cpp
  * @brief Implements texture-view compatibility validation.
  */
-#include <Resources/IRHITexture.hpp>
-#include <Resources/RHITextureViewDesc.hpp>
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHITextureViewDesc::Validate () const noexcept
+#include <RHI/Resources/IRHITexture.hpp>
+#include <RHI/Resources/RHITextureViewDesc.hpp>
+Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHITextureViewDesc::Validate () const noexcept
 {
     if ( not Texture or not Range.IsValid() )
     {

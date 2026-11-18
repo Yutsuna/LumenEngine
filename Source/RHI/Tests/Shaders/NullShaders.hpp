@@ -5,34 +5,39 @@
 
 #pragma once
 
-#include <Shaders/IRHIShader.hpp>
+#include <RHI/Shaders/IRHIShader.hpp>
 #include <Types/RHIObjectForward.hpp>
 
 namespace Lumen
 {
 
-namespace Tests
+namespace RHI
 {
 
-    /**
-     * @class FNullShader
-     * @brief Shader owning a stable copy of its bytecode.
-     */
-    class FNullShader final : public IRHIShader
+    namespace Tests
     {
-    public:
 
-        FNullShader ( const FRHIShaderDesc &InDesc, FRHIObjectId InId ) noexcept;
-        LUMEN_RHI_OBJECT_DECLARATIONS;
-        const FRHIShaderDesc &GetDesc () const noexcept override;
+        /**
+         * @class FNullShader
+         * @brief Shader owning a stable copy of its bytecode.
+         */
+        class FNullShader final : public IRHIShader
+        {
+        public:
 
-    private:
+            FNullShader ( const FRHIShaderDesc &InDesc, FRHIObjectId InId ) noexcept;
+            LUMEN_RHI_OBJECT_DECLARATIONS;
+            const FRHIShaderDesc &GetDesc () const noexcept override;
 
-        FRHIObjectBase Identity;
-        FRHIShaderDesc Desc;
-        TVector<Byte> OwnedBytecode;
-    };
+        private:
 
-} // namespace Tests
+            FRHIObjectBase Identity;
+            FRHIShaderDesc Desc;
+            TVector<Byte> OwnedBytecode;
+        };
+
+    } // namespace Tests
+
+} // namespace RHI
 
 } // namespace Lumen

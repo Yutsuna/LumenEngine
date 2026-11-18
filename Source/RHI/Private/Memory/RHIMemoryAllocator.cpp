@@ -3,26 +3,26 @@
  * @brief Implements the budgeted allocator facade.
  */
 
-#include <Memory/RHIMemoryAllocator.hpp>
+#include <RHI/Memory/RHIMemoryAllocator.hpp>
 
-Lumen::FRHIMemoryAllocator::FRHIMemoryAllocator ( IRHIAllocator &InAllocator, FRHIMemoryBudget &InBudget ) noexcept
+Lumen::RHI::FRHIMemoryAllocator::FRHIMemoryAllocator ( IRHIAllocator &InAllocator, FRHIMemoryBudget &InBudget ) noexcept
     : Allocator( &InAllocator ), Budget( &InBudget )
 {
     /* */
 }
 
-void Lumen::FRHIMemoryAllocator::RegisterObserver ( IRHIAllocationObserver &InObserver ) noexcept
+void Lumen::RHI::FRHIMemoryAllocator::RegisterObserver ( IRHIAllocationObserver &InObserver ) noexcept
 {
     GetRHIAllocationObserverRegistry().Register( InObserver );
 }
 
-void Lumen::FRHIMemoryAllocator::UnregisterObserver ( IRHIAllocationObserver &InObserver ) noexcept
+void Lumen::RHI::FRHIMemoryAllocator::UnregisterObserver ( IRHIAllocationObserver &InObserver ) noexcept
 {
     GetRHIAllocationObserverRegistry().Unregister( InObserver );
 }
 
-Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
-Lumen::FRHIMemoryAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIMemoryAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
     if ( not Budget->TryReserve( InDesc.Size ) )
     {
@@ -41,7 +41,8 @@ Lumen::FRHIMemoryAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexce
     } );
 }
 
-Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIMemoryAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIMemoryAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     return Allocator->Free( InAllocation )
         .Inspect( [this, &InAllocation] () noexcept

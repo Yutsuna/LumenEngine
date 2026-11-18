@@ -3,17 +3,22 @@
  * @brief Tests allocation descriptor validation.
  */
 
-#include <Memory/RHIAllocationDesc.hpp>
+#include <RHI/Memory/RHIAllocationDesc.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
 {
 
-LUMEN_TEST( RHIAllocationDesc, ValidatesSizeAndAlignment )
+namespace RHI
 {
-    LUMEN_CHECK_TRUE( ( FRHIAllocationDesc{ 32ULL, 16ULL }.Validate().HasValue() ) );
-    LUMEN_CHECK_HAS_ERROR( FRHIAllocationDesc{}.Validate() );
-    LUMEN_CHECK_HAS_ERROR( ( FRHIAllocationDesc{ 32ULL, 3ULL }.Validate() ) );
-}
+
+    LUMEN_TEST( RHIAllocationDesc, ValidatesSizeAndAlignment )
+    {
+        LUMEN_CHECK_TRUE( ( FRHIAllocationDesc{ 32ULL, 16ULL }.Validate().HasValue() ) );
+        LUMEN_CHECK_HAS_ERROR( FRHIAllocationDesc{}.Validate() );
+        LUMEN_CHECK_HAS_ERROR( ( FRHIAllocationDesc{ 32ULL, 3ULL }.Validate() ) );
+    }
+
+} // namespace RHI
 
 } // namespace Lumen
