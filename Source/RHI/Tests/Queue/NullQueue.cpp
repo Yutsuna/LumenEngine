@@ -73,6 +73,16 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
                 FRHIError( ERHIErrorCode::InvalidState, ERHIErrorCondition::Queue, "Null submission wait is not signaled" ) );
         }
     }
+    for ( const auto &Signal : InDesc.Signals )
+    {
+        const auto &SemaphoreDesc = Signal.Semaphore->GetDesc();
+        if ( ( SemaphoreDesc.Type == ERHISemaphoreType::Binary and Signal.Value != 1ULL ) or
+             ( SemaphoreDesc.Type == ERHISemaphoreType::Timeline and Signal.Value < Signal.Semaphore->GetValue() ) )
+        {
+            return TUnexpected<FRHIError>(
+                MakeRHIInvalidState( ERHIErrorCondition::Synchronization, "Null submission signal would be rejected" ) );
+        }
+    }
     for ( const auto &Wait : InDesc.Waits )
     {
         if ( Wait.Semaphore->GetDesc().Type == ERHISemaphoreType::Binary )
@@ -84,17 +94,17 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::Tests::FNullQueue::Submit ( cons
             }
         }
     }
-    for ( const auto &List : InDesc.CommandLists )
+    for ( const auto &Signal : InDesc.Signals )
     {
-        const TExpected<void, FRHIError> Result = List->MarkPending( InDesc.Completion );
+        const TExpected<void, FRHIError> Result = Signal.Semaphore->Signal( Signal.Value );
         if ( not Result )
         {
             return Result;
         }
     }
-    for ( const auto &Signal : InDesc.Signals )
+    for ( const auto &List : InDesc.CommandLists )
     {
-        const TExpected<void, FRHIError> Result = Signal.Semaphore->Signal( Signal.Value );
+        const TExpected<void, FRHIError> Result = List->MarkPending( InDesc.Completion );
         if ( not Result )
         {
             return Result;
