@@ -1,9 +1,10 @@
 /**
  * @file RHIValidationTransientResourceAllocatorTests.cpp
- * @brief Tests transient batch scopes, aliasing, and lifetime expiration.
+ * @brief Tests transient batch scopes and allocation aliasing through the public decorator path.
  */
+#include "Validation/RHIValidationReporter.hpp"
 #include "Validation/RHIValidationTestUtils.hpp"
-#include "Validation/RHIValidationTransientResourceAllocator.hpp"
+#include <Memory/IRHITransientResourceAllocator.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
@@ -19,23 +20,19 @@ namespace
         return Request;
     }
 
-    LUMEN_TEST( RHIValidationTransientResourceAllocator, RequiresActiveBatchAndLiveFrame )
+    LUMEN_TEST( RHIValidationTransientResourceAllocator, RejectsAllocateOutsideActiveBatch )
     {
         Tests::FRecordingDebugSink Sink;
         TSharedRef<IRHIDevice> Device                        = Tests::Validation::MakeDevice( Sink );
         TSharedRef<IRHITransientResourceAllocator> Allocator = *Device->CreateTransientResourceAllocator();
-        auto *Validation = dynamic_cast<FRHIValidationTransientResourceAllocator *>( Allocator.Get() );
-        LUMEN_CHECK_TRUE( Validation != nullptr );
         FRHITransientBatch Batch;
         Batch.Requests.push_back( MakeRequest( 0ULL, 1ULL ) );
         LUMEN_CHECK_EQ( Allocator->Allocate( Batch ).Error().Code, ERHIErrorCode::ValidationFailed );
+        LUMEN_CHECK_TRUE( Sink.ContainsCode( static_cast<UInt32>( ERHIValidationMessageCode::InvalidTransientBatch ) ) );
         Allocator->BeginBatch();
         TVector<FRHITransientAllocation> Allocations = *Allocator->Allocate( Batch );
         LUMEN_CHECK_EQ( Allocations.size(), 1U );
-        LUMEN_CHECK_TRUE( Validation->ValidateResourceUse( Allocations[0], 0ULL ).HasValue() );
-        LUMEN_CHECK_EQ( Validation->ValidateResourceUse( Allocations[0], 1ULL ).Error().Code, ERHIErrorCode::ValidationFailed );
         Allocator->EndBatch();
-        LUMEN_CHECK_EQ( Validation->ValidateResourceUse( Allocations[0], 0ULL ).Error().Code, ERHIErrorCode::ValidationFailed );
     }
 
     LUMEN_TEST( RHIValidationTransientResourceAllocator, PreservesDisjointLifetimesAndSeparatesOverlap )

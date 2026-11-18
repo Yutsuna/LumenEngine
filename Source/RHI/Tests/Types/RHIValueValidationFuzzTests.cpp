@@ -143,7 +143,20 @@ namespace
             Layout.Entries.push_back( Entry );
             const TExpected<void, FRHIError> LayoutValid = Layout.Validate();
             LUMEN_CHECK_EQ( LayoutValid.HasValue(), Entry.Count != 0U and Entry.Stages != ERHIShaderStage::None );
-            LUMEN_CHECK_EQ( Layout.GetHash(), Layout.GetHash() );
+            if ( LayoutValid )
+            {
+                /** NOTE: Independent construction detects padding-dependent hash nondeterminism. */
+                FRHIBindingLayoutDesc IndependentLayout;
+                FRHIBindingLayoutEntry IndependentEntry;
+                IndependentEntry.Slot   = Entry.Slot;
+                IndependentEntry.Count  = Entry.Count;
+                IndependentEntry.Stages = Entry.Stages;
+                IndependentLayout.Entries.push_back( IndependentEntry );
+                LUMEN_CHECK_EQ( Layout.GetHash(), IndependentLayout.GetHash() );
+
+                const FRHIBindingLayoutDesc CopiedLayout = Layout;
+                LUMEN_CHECK_EQ( Layout.GetHash(), CopiedLayout.GetHash() );
+            }
         }
     }
 
