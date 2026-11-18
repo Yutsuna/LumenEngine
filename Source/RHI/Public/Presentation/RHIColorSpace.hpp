@@ -2,6 +2,7 @@
  * @file RHIColorSpace.hpp
  * @brief Defines portable swapchain color spaces.
  */
+
 #pragma once
 
 #include <Core/CoreTypes.hpp>

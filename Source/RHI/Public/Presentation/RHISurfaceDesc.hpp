@@ -2,6 +2,7 @@
  * @file RHISurfaceDesc.hpp
  * @brief Defines the isolated, backend-neutral surface payload used for presentation.
  */
+
 #pragma once
 
 #include <RHIExport.hpp>

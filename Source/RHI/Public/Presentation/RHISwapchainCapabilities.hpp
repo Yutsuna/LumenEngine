@@ -2,6 +2,7 @@
  * @file RHISwapchainCapabilities.hpp
  * @brief Defines the formats, modes, and extents supported by a surface.
  */
+
 #pragma once
 
 #include <Presentation/RHIColorSpace.hpp>

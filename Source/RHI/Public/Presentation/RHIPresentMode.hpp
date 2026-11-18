@@ -2,6 +2,7 @@
  * @file RHIPresentMode.hpp
  * @brief Defines portable swapchain presentation scheduling modes.
  */
+
 #pragma once
 
 #include <Core/CoreTypes.hpp>

@@ -2,6 +2,7 @@
  * @file RHISwapchainDesc.hpp
  * @brief Defines swapchain creation and recreation parameters.
  */
+
 #pragma once
 
 #include <Memory/SharedPtr.hpp>

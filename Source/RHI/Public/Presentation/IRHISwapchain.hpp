@@ -2,6 +2,7 @@
  * @file IRHISwapchain.hpp
  * @brief Declares swapchain image acquisition, presentation, and resizing.
  */
+
 #pragma once
 
 #include <Presentation/RHIAcquiredImage.hpp>

@@ -2,10 +2,12 @@
  * @file RHIAcquiredImage.hpp
  * @brief Defines one acquired swapchain image and its synchronization primitives.
  */
+
 #pragma once
 
 #include <Memory/SharedPtr.hpp>
 #include <Presentation/RHISwapchainCapabilities.hpp>
+#include <RHIExport.hpp>
 
 namespace Lumen
 {
