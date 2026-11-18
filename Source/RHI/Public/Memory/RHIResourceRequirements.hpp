@@ -4,6 +4,7 @@
  */
 #pragma once
 #include <Memory/RHIAllocationDesc.hpp>
+#include <RHIExport.hpp>
 #include <Templates/Optional.hpp>
 namespace Lumen
 

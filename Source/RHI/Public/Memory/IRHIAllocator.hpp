@@ -3,10 +3,12 @@
  * @brief Declares the address allocator SPI.
  */
 #pragma once
+
 #include <Memory/RHIAllocation.hpp>
 #include <Memory/RHIAllocationDesc.hpp>
 #include <Memory/RHIAllocatorStats.hpp>
 #include <Templates/Expected.hpp>
+
 namespace Lumen
 {
 

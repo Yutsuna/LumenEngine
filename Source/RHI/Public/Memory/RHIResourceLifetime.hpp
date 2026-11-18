@@ -3,8 +3,10 @@
  * @brief Defines GPU resource lifetime intervals.
  */
 #pragma once
+
 #include <Core/CoreTypes.hpp>
 #include <RHIExport.hpp>
+
 namespace Lumen
 
 {

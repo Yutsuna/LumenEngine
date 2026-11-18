@@ -2,13 +2,16 @@
  * @file IRHIUploadAllocator.hpp
  * @brief Declares staging upload allocation.
  */
+
 #pragma once
+
 #include <Memory/IRHIAllocator.hpp>
 #include <Memory/Span.hpp>
 #include <Types/IRHIObject.hpp>
-namespace Lumen
 
+namespace Lumen
 {
+
 /**
  * @struct FRHIUploadAllocation
  * @brief Writable staging range and its allocation metadata.

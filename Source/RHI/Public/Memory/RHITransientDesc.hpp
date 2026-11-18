@@ -3,10 +3,11 @@
  * @brief Defines one transient memory/resource request.
  */
 #pragma once
+
 #include <Memory/RHIResourceLifetime.hpp>
 #include <Memory/RHIResourceRequirements.hpp>
-namespace Lumen
 
+namespace Lumen
 {
 /**
  * @struct FRHITransientDesc

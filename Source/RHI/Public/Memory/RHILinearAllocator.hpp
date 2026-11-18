@@ -3,9 +3,11 @@
  * @brief Declares a bounded bump allocator.
  */
 #pragma once
+
 #include <HAL/PlatformMutex.hpp>
 #include <Memory/IRHIAllocator.hpp>
 #include <RHIExport.hpp>
+
 namespace Lumen
 {
 

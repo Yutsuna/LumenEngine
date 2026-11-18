@@ -3,10 +3,12 @@
  * @brief Declares a circular range allocator.
  */
 #pragma once
+
 #include <HAL/PlatformMutex.hpp>
 #include <Memory/IRHIAllocator.hpp>
 #include <RHIExport.hpp>
 #include <Templates/Vector.hpp>
+
 namespace Lumen
 {
 

@@ -3,12 +3,14 @@
  * @brief Defines a validated defragmentation plan.
  */
 #pragma once
+
 #include <Memory/RHIAllocation.hpp>
 #include <RHIExport.hpp>
 #include <Templates/Expected.hpp>
 #include <Templates/Vector.hpp>
 #include <Types/RHIError.hpp>
 #include <Types/RHITimeline.hpp>
+
 namespace Lumen
 {
 

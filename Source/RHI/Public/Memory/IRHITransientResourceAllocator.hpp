@@ -2,10 +2,13 @@
  * @file IRHITransientResourceAllocator.hpp
  * @brief Declares batched transient resource allocation.
  */
+
 #pragma once
+
 #include <Memory/RHITransientAllocation.hpp>
 #include <Memory/RHITransientBatch.hpp>
 #include <Types/IRHIObject.hpp>
+
 namespace Lumen
 {
 

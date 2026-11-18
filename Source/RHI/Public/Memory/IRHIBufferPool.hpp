@@ -3,12 +3,15 @@
  * @brief Declares buffer recycling by compatible descriptor.
  */
 #pragma once
+
 #include <Memory/SharedPtr.hpp>
 #include <Types/IRHIObject.hpp>
 #include <Types/RHIError.hpp>
 #include <Types/RHITimeline.hpp>
+
 namespace Lumen
 {
+
 class IRHIBuffer;
 struct FRHIBufferDesc;
 

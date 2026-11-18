@@ -2,10 +2,13 @@
  * @file IRHIHeap.hpp
  * @brief Declares the backend heap SPI.
  */
+
 #pragma once
+
 #include <Memory/RHIHeapDesc.hpp>
 #include <Memory/Span.hpp>
 #include <Types/IRHIObject.hpp>
+
 namespace Lumen
 {
 

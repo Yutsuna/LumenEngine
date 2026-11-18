@@ -3,13 +3,15 @@
  * @brief Defines native heap creation parameters.
  */
 #pragma once
+
 #include <Memory/RHIMemoryClass.hpp>
 #include <RHIExport.hpp>
 #include <Types/RHIError.hpp>
 #include <Types/RHIFlags.hpp>
-namespace Lumen
 
+namespace Lumen
 {
+
 /**
  * @struct FRHIHeapDesc
  * @brief Size, memory class, and object flags of a heap.

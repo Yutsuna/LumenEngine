@@ -2,10 +2,13 @@
  * @file IRHIAllocationObserver.hpp
  * @brief Declares allocation lifecycle notifications and their shared registry.
  */
+
 #pragma once
+
 #include <Core/CoreTypes.hpp>
 #include <Memory/RHIAllocation.hpp>
 #include <Templates/Vector.hpp>
+
 namespace Lumen
 {
 
@@ -116,4 +119,5 @@ private:
     static FRHIAllocationObserverRegistry Registry;
     return Registry;
 }
+
 } // namespace Lumen

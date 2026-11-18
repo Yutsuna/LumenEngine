@@ -2,12 +2,14 @@
  * @file RHIAllocationDesc.hpp
  * @brief Defines allocator input requirements.
  */
+
 #pragma once
+
 #include <Memory/RHIMemoryClass.hpp>
 #include <RHIExport.hpp>
 #include <Types/RHIError.hpp>
-namespace Lumen
 
+namespace Lumen
 {
 /**
  * @struct FRHIAllocationDesc

@@ -3,9 +3,11 @@
  * @brief Declares defragmentation planning and execution.
  */
 #pragma once
+
 #include <Memory/RHIDefragPlan.hpp>
 #include <Memory/Span.hpp>
 #include <Types/IRHIObject.hpp>
+
 namespace Lumen
 {
 

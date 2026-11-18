@@ -3,10 +3,12 @@
  * @brief Declares a fixed-capacity CPU object pool.
  */
 #pragma once
+
 #include <Core/NonCopyable.hpp>
 #include <Memory/IndiceAllocator.hpp>
 #include <Memory/UniquePtr.hpp>
 #include <Templates/Optional.hpp>
+
 namespace Lumen
 {
 

@@ -3,9 +3,11 @@
  * @brief Defines the result of transient placement.
  */
 #pragma once
+
 #include <Memory/RHIAllocation.hpp>
 #include <Memory/RHIResourceLifetime.hpp>
 #include <Templates/Optional.hpp>
+
 namespace Lumen
 
 {

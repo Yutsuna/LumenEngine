@@ -3,10 +3,12 @@
  * @brief Declares the budgeted allocator facade.
  */
 #pragma once
+
 #include <Memory/IRHIAllocationObserver.hpp>
 #include <Memory/IRHIAllocator.hpp>
 #include <Memory/RHIMemoryBudget.hpp>
 #include <RHIExport.hpp>
+
 namespace Lumen
 {
 

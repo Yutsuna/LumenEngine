@@ -3,9 +3,11 @@
  * @brief Defines a placed memory range.
  */
 #pragma once
+
 #include <Memory/RHIMemoryClass.hpp>
 #include <RHIExport.hpp>
 #include <Types/RHIIdentifiers.hpp>
+
 namespace Lumen
 {
 

@@ -2,13 +2,16 @@
  * @file RHITransientBatch.hpp
  * @brief Defines a group of transient requests.
  */
+
 #pragma once
+
 #include <Memory/RHITransientDesc.hpp>
 #include <RHIExport.hpp>
 #include <Templates/Vector.hpp>
-namespace Lumen
 
+namespace Lumen
 {
+
 /**
  * @struct FRHITransientBatch
  * @brief Requests placed together with aliasing analysis.

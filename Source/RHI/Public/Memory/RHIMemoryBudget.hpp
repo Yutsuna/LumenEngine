@@ -3,8 +3,10 @@
  * @brief Declares a thread-safe byte budget.
  */
 #pragma once
+
 #include <Core/CoreTypes.hpp>
 #include <RHIExport.hpp>
+
 namespace Lumen
 {
 

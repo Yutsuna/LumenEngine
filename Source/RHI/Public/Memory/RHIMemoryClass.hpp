@@ -3,7 +3,9 @@
  * @brief Defines portable memory classes.
  */
 #pragma once
+
 #include <Core/CoreTypes.hpp>
+
 namespace Lumen
 {
 /**

@@ -3,11 +3,13 @@
  * @brief Defines allocator usage statistics.
  */
 #pragma once
+
 #include <Core/CoreTypes.hpp>
 #include <RHIExport.hpp>
-namespace Lumen
 
+namespace Lumen
 {
+
 /**
  * @struct FRHIAllocatorStats
  * @brief Coherent value snapshot of allocator counters.

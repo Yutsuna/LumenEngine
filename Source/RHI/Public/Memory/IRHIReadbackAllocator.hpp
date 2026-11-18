@@ -20,8 +20,8 @@ struct FRHIReadbackAllocation
 };
 
 /**
- * class IRHIReadbackAllocator @bri
- * f Readback ring whose ranges are recycled after completion.
+ * @class IRHIReadbackAllocator
+ * @brief Readback ring whose ranges are recycled after completion.
  */
 class IRHIReadbackAllocator : public IRHIObject
 {
