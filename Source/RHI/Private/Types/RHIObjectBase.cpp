@@ -9,6 +9,7 @@
 Lumen::FRHIObjectBase::FRHIObjectBase ( const FRHIObjectId InId, const UInt64 InBackendTypeTag ) noexcept
     : Id( InId ), BackendTypeTag( InBackendTypeTag )
 {
+    /* */
 }
 
 Lumen::FRHIObjectBase::~FRHIObjectBase () noexcept

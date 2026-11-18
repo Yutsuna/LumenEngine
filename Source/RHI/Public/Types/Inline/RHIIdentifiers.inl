@@ -19,6 +19,20 @@ template <typename TagType> constexpr Lumen::UInt64 Lumen::TRHIId<TagType>::GetV
 
 template <typename TagType> Lumen::TRHIId<TagType> Lumen::FRHIIdentifierGenerator::Next () noexcept
 {
-    const UInt64 Current = NextValue.fetch_add( 1ULL, std::memory_order_relaxed );
-    return TRHIId<TagType>{ Current == std::numeric_limits<UInt64>::max() ? 0ULL : Current };
+    UInt64 Current = NextValue.load( std::memory_order_relaxed );
+
+    /** NOTE: Zero is the permanent exhausted latch; no further identifier may be issued. */
+    while ( Current != 0ULL )
+    {
+        const UInt64 Issued    = Current;
+        const UInt64 Following = Current == std::numeric_limits<UInt64>::max() ? 0ULL : Current + 1ULL;
+
+        /** NOTE: compare_exchange_weak refreshes Current with the observed value on failure. */
+        if ( NextValue.compare_exchange_weak( Current, Following, std::memory_order_relaxed, std::memory_order_relaxed ) )
+        {
+            return TRHIId<TagType>{ Issued };
+        }
+    }
+
+    return TRHIId<TagType>{ 0ULL };
 }
