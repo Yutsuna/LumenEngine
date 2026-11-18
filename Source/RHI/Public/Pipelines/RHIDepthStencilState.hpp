@@ -4,11 +4,14 @@
  */
 
 #pragma once
+
 #include <RHIExport.hpp>
 #include <Resources/RHISamplerDesc.hpp>
 #include <Types/RHIError.hpp>
+
 namespace Lumen
 {
+
 /**
  * @enum ERHIStencilOp
  * @brief Operations applied after stencil tests.
@@ -25,6 +28,7 @@ enum class ERHIStencilOp : UInt8
     DecrementWrap
 
 };
+
 /**
  * @struct FRHIStencilState
  * @brief Comparison and operations for one stencil face.
@@ -36,6 +40,7 @@ struct FRHIStencilState
     ERHIStencilOp PassOp        = ERHIStencilOp::Keep;
     ERHICompareFunction Compare = ERHICompareFunction::Always;
 };
+
 /**
  * @struct FRHIDepthStencilState
  * @brief Depth test/write and two-sided stencil state.
@@ -51,4 +56,5 @@ struct RHI_EXPORT FRHIDepthStencilState
     /** @return Success for defined enum values. */
     [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
 };
+
 } // namespace Lumen

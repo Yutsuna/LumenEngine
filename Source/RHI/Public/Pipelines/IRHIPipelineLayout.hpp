@@ -4,8 +4,10 @@
  */
 
 #pragma once
+
 #include <Pipelines/RHIPipelineLayoutDesc.hpp>
 #include <Types/IRHIObject.hpp>
+
 namespace Lumen
 {
 

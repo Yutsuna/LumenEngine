@@ -4,10 +4,13 @@
  */
 
 #pragma once
+
 #include <Pipelines/RHIPipelineCompatibility.hpp>
 #include <Types/IRHIObject.hpp>
+
 namespace Lumen
 {
+
 /**
  * @enum ERHIPipelineType
  * @brief Pipeline work class.

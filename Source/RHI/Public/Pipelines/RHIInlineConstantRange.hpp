@@ -4,12 +4,14 @@
  */
 
 #pragma once
+
 #include <RHIExport.hpp>
 #include <Types/RHIError.hpp>
 #include <Types/RHIShaderStage.hpp>
-namespace Lumen
 
+namespace Lumen
 {
+
 /**
  * @struct FRHIInlineConstantRange
  * @brief Byte offset, size, and visible stages.

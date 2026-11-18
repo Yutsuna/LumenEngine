@@ -4,14 +4,16 @@
  */
 
 #pragma once
+
 #include <RHIExport.hpp>
 #include <Templates/Vector.hpp>
 #include <Types/RHIFormat.hpp>
 #include <Types/RHIHash.hpp>
 #include <Types/RHISampleCount.hpp>
-namespace Lumen
 
+namespace Lumen
 {
+
 /**
  * @struct FRHIPipelineCompatibility
  * @brief Layout and rendering interfaces affecting command compatibility.
@@ -28,4 +30,5 @@ struct RHI_EXPORT FRHIPipelineCompatibility
     /** @return Equality of all canonical compatibility fields. */
     [[nodiscard]] Bool operator==( const FRHIPipelineCompatibility & ) const noexcept = default;
 };
+
 } // namespace Lumen

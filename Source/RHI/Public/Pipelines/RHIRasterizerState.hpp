@@ -4,10 +4,13 @@
  */
 
 #pragma once
+
 #include <RHIExport.hpp>
 #include <Types/RHIError.hpp>
+
 namespace Lumen
 {
+
 /**
  * @enum ERHIFillMode
  * @brief Polygon fill modes.
@@ -18,6 +21,7 @@ enum class ERHIFillMode : UInt8
     Wireframe,
     Point
 };
+
 /**
  * @enum ERHICullMode
  * @brief Face culling modes.
@@ -28,6 +32,7 @@ enum class ERHICullMode : UInt8
     Front,
     Back
 };
+
 /**
  * @enum ERHIFrontFace
  * @brief Winding defining the front face.
@@ -38,6 +43,7 @@ enum class ERHIFrontFace : UInt8
     Clockwise
 
 };
+
 /**
  * @struct FRHIRasterizerState
  * @brief Fill, cull, winding, clipping, and depth bias.
@@ -50,7 +56,9 @@ struct RHI_EXPORT FRHIRasterizerState
     Bool bDepthClip           = true;
     Float32 DepthBiasConstant = 0.0F;
     Float32 DepthBiasSlope    = 0.0F;
+
     /** @return Success for defined enum values and finite bias. */
     [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
 };
+
 } // namespace Lumen

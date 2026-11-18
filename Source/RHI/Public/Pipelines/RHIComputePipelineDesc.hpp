@@ -4,12 +4,14 @@
  */
 
 #pragma once
+
 #include <Pipelines/IRHIPipelineLayout.hpp>
 #include <RHIExport.hpp>
 #include <Shaders/IRHIShader.hpp>
-namespace Lumen
 
+namespace Lumen
 {
+
 /**
  * @struct FRHIComputePipelineDesc
  * @brief Compute shader and its layout.

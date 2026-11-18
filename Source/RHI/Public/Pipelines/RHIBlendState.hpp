@@ -4,14 +4,17 @@
  */
 
 #pragma once
+
 #include <RHIExport.hpp>
 #include <Templates/Vector.hpp>
 #include <Types/RHIError.hpp>
+
 namespace Lumen
 {
+
 /**
- * enum ERHIBlendFactor @brie
- *  Source/destination blend factors.
+ * @enum ERHIBlendFactor
+ * @brief Source/destination blend factors.
  */
 enum class ERHIBlendFactor : UInt8
 {

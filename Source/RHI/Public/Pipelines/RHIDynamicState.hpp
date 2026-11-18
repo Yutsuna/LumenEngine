@@ -4,9 +4,12 @@
  */
 
 #pragma once
+
 #include <Core/EnumFlags.hpp>
+
 namespace Lumen
 {
+
 /**
  * @enum ERHIDynamicState
  * @brief Dynamic viewport/scissor/blend/depth states.
@@ -21,4 +24,5 @@ enum class ERHIDynamicState : UInt32
     StencilReference = 1U << 4U
 };
 LUMEN_ENUM_FLAGS( ERHIDynamicState );
+
 } // namespace Lumen
