@@ -6,6 +6,7 @@
 
 #include <Core/CoreTypes.hpp>
 #include <RHIExport.hpp>
+#include <Templates/Optional.hpp>
 
 namespace Lumen
 {
@@ -22,9 +23,9 @@ enum class ERHIQueryType : UInt8
     Count
 };
 
-/** @return Number of UInt64 values produced for one query, or zero for an invalid type. */
-[[nodiscard]] RHI_EXPORT UInt32 GetRHIQueryValueCount ( ERHIQueryType InType ) noexcept;
-/** @return Byte size of one query result, or zero for an invalid type. */
-[[nodiscard]] RHI_EXPORT UInt32 GetRHIQueryResultSize ( ERHIQueryType InType ) noexcept;
+/** @return Number of UInt64 values produced for one query, or empty for an invalid type. */
+[[nodiscard]] RHI_EXPORT TOptional<UInt32> GetRHIQueryValueCount ( ERHIQueryType InType ) noexcept;
+/** @return Byte size of one query result, or empty for an invalid type. */
+[[nodiscard]] RHI_EXPORT TOptional<UInt32> GetRHIQueryResultSize ( ERHIQueryType InType ) noexcept;
 
 } // namespace Lumen

@@ -5,23 +5,26 @@
 
 #include <Queries/RHIQueryPoolDesc.hpp>
 
-Lumen::UInt32 Lumen::GetRHIQueryValueCount ( const ERHIQueryType InType ) noexcept
+Lumen::TOptional<Lumen::UInt32> Lumen::GetRHIQueryValueCount ( const ERHIQueryType InType ) noexcept
 {
     switch ( InType )
     {
     case ERHIQueryType::Occlusion:
     case ERHIQueryType::Timestamp:
-        return 1U;
+        return TOptional<UInt32>( 1U );
     case ERHIQueryType::PipelineStatistics:
-        return 11U;
+        return TOptional<UInt32>( 11U );
     default:
-        return 0U;
+        return {};
     }
 }
 
-Lumen::UInt32 Lumen::GetRHIQueryResultSize ( const ERHIQueryType InType ) noexcept
+Lumen::TOptional<Lumen::UInt32> Lumen::GetRHIQueryResultSize ( const ERHIQueryType InType ) noexcept
 {
-    return GetRHIQueryValueCount( InType ) * static_cast<UInt32>( sizeof( UInt64 ) );
+    return GetRHIQueryValueCount( InType ).Transform( [] ( const UInt32 InValueCount ) noexcept
+    {
+        return InValueCount * static_cast<UInt32>( sizeof( UInt64 ) );
+    } );
 }
 
 Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIQueryPoolDesc::Validate () const noexcept
@@ -37,5 +40,5 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIQueryPoolDesc::Validate () c
 
 Lumen::UInt32 Lumen::FRHIQueryPoolDesc::GetResultSize () const noexcept
 {
-    return GetRHIQueryResultSize( Type );
+    return GetRHIQueryResultSize( Type ).ValueOr( 0U );
 }

@@ -11,9 +11,9 @@
 namespace Lumen
 {
 
-    /**
-     * Wrap
-     */
+/**
+ * Wrap
+ */
 
 /**
  * @brief Wraps a conforming device and its validated children.
@@ -21,7 +21,6 @@ namespace Lumen
  */
 [[nodiscard]] RHI_EXPORT TExpected<TSharedRef<IRHIDevice>, FRHIError>
 WrapRHIDevice ( const TSharedRef<IRHIDevice> &InDevice, const FRHIValidationDesc &InDesc = {} ) noexcept;
-
 
 /**
  * Unwarp
@@ -62,7 +61,6 @@ template <typename ObjectType>
 
 /** @return The concrete backend after recursive unwrapping and backend-tag verification, or empty when either check fails. */
 template <typename BackendType> [[nodiscard]] TOptional<BackendType *> TryUnwrapRHIBackend ( IRHIObject *InObject ) noexcept;
-
 
 } // namespace Lumen
 
