@@ -5,6 +5,15 @@
 #include "RHIBufferPool.hpp"
 #include <Resources/IRHIBuffer.hpp>
 #include <Templates/Hash.hpp>
+#include <Types/RHITimeline.hpp>
+
+/** @return True when two descriptors describe interchangeable buffer resources. */
+static Lumen::Bool AreBufferDescsCompatible ( const Lumen::FRHIBufferDesc &InLeft, const Lumen::FRHIBufferDesc &InRight ) noexcept
+{
+    return InLeft.Size == InRight.Size and InLeft.Usage == InRight.Usage and InLeft.MemoryClass == InRight.MemoryClass and
+           InLeft.InitialState == InRight.InitialState;
+}
+
 Lumen::FRHIBufferPool::FRHIBufferPool ( IRHIDevice &InDevice, const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FRHIBufferPool>() ), Device( &InDevice )
 {
@@ -19,10 +28,11 @@ Lumen::FRHIBufferPool::Acquire ( const FRHIBufferDesc &InDesc ) noexcept
     }
     for ( USize Index = 0U; Index < Released.size(); ++Index )
     {
-        if ( not Released[Index].Completion.IsValid() and Released[Index].Buffer->GetDesc().Size == InDesc.Size and
-             Released[Index].Buffer->GetDesc().Usage == InDesc.Usage )
+        const FEntry &Entry = Released[Index];
+        if ( IsRHICompletionReached( CurrentCompleted, Entry.Completion ) and
+             AreBufferDescsCompatible( Entry.Buffer->GetDesc(), InDesc ) )
         {
-            TSharedRef<IRHIBuffer> Result = Released[Index].Buffer;
+            TSharedRef<IRHIBuffer> Result = Entry.Buffer;
             Released.erase( Released.begin() + static_cast<ISize>( Index ) );
             return Result;
         }
@@ -34,4 +44,15 @@ Lumen::TExpected<void, Lumen::FRHIError> Lumen::FRHIBufferPool::Release ( TShare
 {
     Released.push_back( FEntry{ std::move( InBuffer ), InCompletion } );
     return {};
+}
+void Lumen::FRHIBufferPool::AdvanceCompleted ( const FRHITimelineValue InCompleted ) noexcept
+{
+    if ( InCompleted > CurrentCompleted )
+    {
+        CurrentCompleted = InCompleted;
+    }
+}
+Lumen::USize Lumen::FRHIBufferPool::GetPendingCount () const noexcept
+{
+    return Released.size();
 }

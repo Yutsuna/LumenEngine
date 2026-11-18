@@ -18,14 +18,14 @@ Lumen::TRHIObjectPool<ObjectType>::TRHIObjectPool( const UInt32 InCapacity ) noe
 
 template <typename ObjectType>
 template <typename... ArgumentTypes>
-ObjectType *Lumen::TRHIObjectPool<ObjectType>::Create ( ArgumentTypes &&...InArguments ) noexcept
+Lumen::TOptional<ObjectType *> Lumen::TRHIObjectPool<ObjectType>::Create ( ArgumentTypes &&...InArguments ) noexcept
 {
-    return Slots.Allocate( 1U )
-        .Transform( [this, &InArguments...] ( const FIndiceAllocation &InAllocation ) noexcept -> ObjectType *
+    return Slots.Allocate( 1U ).Transform(
+        [this, &InArguments...] ( const FIndiceAllocation &InAllocation ) noexcept -> ObjectType *
     {
         FSlot &Slot = Objects[InAllocation.Start];
         return std::construct_at( reinterpret_cast<ObjectType *>( Slot.Storage ), std::forward<ArgumentTypes>( InArguments )... );
-    } ).ValueOr( nullptr );
+    } );
 }
 
 template <typename ObjectType> void Lumen::TRHIObjectPool<ObjectType>::Destroy ( ObjectType *InObject ) noexcept

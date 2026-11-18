@@ -8,6 +8,7 @@
 #include <Memory/IRHIBufferPool.hpp>
 #include <Resources/RHIBufferDesc.hpp>
 #include <Templates/Vector.hpp>
+#include <Types/RHITimeline.hpp>
 namespace Lumen
 {
 
@@ -24,6 +25,10 @@ public:
     FRHIBufferPool ( IRHIDevice &InDevice, FRHIObjectId InId ) noexcept;
     TExpected<TSharedRef<IRHIBuffer>, FRHIError> Acquire ( const FRHIBufferDesc &InDesc ) noexcept override;
     TExpected<void, FRHIError> Release ( TSharedRef<IRHIBuffer> InBuffer, FRHITimelineValue InCompletion ) noexcept override;
+    /** @brief Publishes the current GPU completion value so finished entries become reusable. */
+    void AdvanceCompleted ( FRHITimelineValue InCompleted ) noexcept override;
+    /** @return Number of released entries still waiting for their completion value. */
+    [[nodiscard]] USize GetPendingCount () const noexcept override;
 
 private:
 
@@ -35,5 +40,6 @@ private:
     };
     IRHIDevice *Device;
     TVector<FEntry> Released;
+    FRHITimelineValue CurrentCompleted;
 };
 } // namespace Lumen

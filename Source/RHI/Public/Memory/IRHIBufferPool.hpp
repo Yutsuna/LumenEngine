@@ -25,5 +25,9 @@ public:
     /** @brief Returns a buffer for reuse after its completion value. */
     [[nodiscard]] virtual TExpected<void, FRHIError> Release ( TSharedRef<IRHIBuffer> InBuffer,
                                                                FRHITimelineValue InCompletion ) noexcept = 0;
+    /** @brief Publishes the current GPU completion value so finished entries become reusable. */
+    virtual void AdvanceCompleted ( FRHITimelineValue InCompleted ) noexcept = 0;
+    /** @return Number of released entries still waiting for their completion value. */
+    [[nodiscard]] virtual USize GetPendingCount () const noexcept = 0;
 };
 } // namespace Lumen

@@ -6,6 +6,7 @@
 #include <Core/NonCopyable.hpp>
 #include <Memory/IndiceAllocator.hpp>
 #include <Memory/UniquePtr.hpp>
+#include <Templates/Optional.hpp>
 namespace Lumen
 {
 
@@ -19,8 +20,8 @@ public:
 
     /** @brief Creates InCapacity aligned object slots. */
     explicit TRHIObjectPool ( UInt32 InCapacity ) noexcept;
-    /** @brief Constructs an object in a free slot, or returns nullptr when full. */
-    template <typename... ArgumentTypes> ObjectType *Create ( ArgumentTypes &&...InArguments ) noexcept;
+    /** @brief Constructs an object in a free slot, or returns an empty optional when the pool is full. */
+    template <typename... ArgumentTypes> TOptional<ObjectType *> Create ( ArgumentTypes &&...InArguments ) noexcept;
     /** @brief Destroys an object created by this pool and releases its slot. */
     void Destroy ( ObjectType *InObject ) noexcept;
 
