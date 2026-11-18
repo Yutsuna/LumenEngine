@@ -6,6 +6,7 @@
 #include <HAL/LockGuard.hpp>
 
 #include <Memory/RHIPoolAllocator.hpp>
+#include <Utilities/RHIAlignment.hpp>
 #include <Utilities/RHICheckedMath.hpp>
 
 /**
@@ -13,9 +14,20 @@
  */
 
 Lumen::FRHIPoolAllocator::FRHIPoolAllocator ( const UInt64 InSlotSize, const UInt32 InSlotCount ) noexcept
-    : SlotSize( InSlotSize ), Slots( MakeUnique<FIndiceHeapAllocator>( InSlotCount ) )
+    : SlotSize( 0ULL ), Slots( MakeUnique<FIndiceHeapAllocator>( 0U ) )
 {
-    Stats.Capacity = InSlotSize * static_cast<UInt64>( InSlotCount );
+    if ( not RHIIsPowerOfTwo( InSlotSize ) )
+    {
+        return;
+    }
+    const TOptional<UInt64> Capacity = RHICheckedMultiply( InSlotSize, static_cast<UInt64>( InSlotCount ) );
+    if ( not Capacity )
+    {
+        return;
+    }
+    SlotSize       = InSlotSize;
+    Stats.Capacity = *Capacity;
+    Slots          = MakeUnique<FIndiceHeapAllocator>( InSlotCount );
 }
 
 Lumen::TExpected<Lumen::FRHIAllocation, Lumen::FRHIError>
@@ -24,6 +36,10 @@ Lumen::FRHIPoolAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
     if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
+    }
+    if ( SlotSize == 0ULL )
+    {
+        return TUnexpected<FRHIError>( MakeRHIInvalidState( ERHIErrorCondition::Memory, "Pool allocator is disabled" ) );
     }
     if ( InDesc.Size > SlotSize or InDesc.Alignment > SlotSize )
     {
@@ -39,9 +55,18 @@ Lumen::FRHIPoolAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Pool exhausted" ) );
     }
 
+    /** INFO: A power-of-two SlotSize with Alignment <= SlotSize keeps every slot offset aligned. */
+    const UInt64 Offset = static_cast<UInt64>( Slot->Start ) * SlotSize;
+    if ( Offset % InDesc.Alignment != 0ULL )
+    {
+        Slots->Free( *Slot );
+        return TUnexpected<FRHIError>(
+            MakeRHIInvalidState( ERHIErrorCondition::Memory, "Pool offset violates requested alignment" ) );
+    }
+
     Stats.OnAllocate( SlotSize );
     const FRHIAllocation Result{ .Id          = FRHIAllocationId{ NextId++ },
-                                 .Offset      = static_cast<UInt64>( Slot->Start ) * SlotSize,
+                                 .Offset      = Offset,
                                  .Size        = SlotSize,
                                  .Alignment   = SlotSize,
                                  .MemoryClass = InDesc.MemoryClass,
