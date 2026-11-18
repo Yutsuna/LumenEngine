@@ -2,11 +2,14 @@
  * @file RHISamplerDesc.hpp
  * @brief Defines immutable sampler state.
  */
+
 #pragma once
+
 #include <Core/CoreTypes.hpp>
 #include <RHIExport.hpp>
 #include <Templates/Optional.hpp>
 #include <Types/RHIError.hpp>
+
 namespace Lumen
 {
 /**
@@ -18,9 +21,10 @@ enum class ERHISamplerFilter : UInt8
     Nearest,
     Linear
 };
+
 /**
- * enum ERHISamplerAddressMode @brie
- *  Coordinate wrapping modes.
+ * @enum ERHISamplerAddressMode
+ * @brief Coordinate wrapping modes.
  */
 enum class ERHISamplerAddressMode : UInt8
 {
@@ -29,6 +33,7 @@ enum class ERHISamplerAddressMode : UInt8
     ClampToEdge,
     ClampToBorder
 };
+
 /**
  * @enum ERHICompareFunction
  * @brief Depth and stencil comparison functions.
@@ -45,6 +50,7 @@ enum class ERHICompareFunction : UInt8
     Always
 
 };
+
 /**
  * @struct FRHISamplerDesc
  * @brief Filtering, addressing, LOD, anisotropy, and comparison state.
@@ -64,4 +70,5 @@ struct RHI_EXPORT FRHISamplerDesc
     /** @return Success for ordered LOD and valid anisotropy. */
     [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
 };
+
 } // namespace Lumen

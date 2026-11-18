@@ -2,9 +2,12 @@
  * @file IRHISampler.hpp
  * @brief Declares an immutable sampler object.
  */
+
 #pragma once
+
 #include <Resources/RHISamplerDesc.hpp>
 #include <Types/IRHIObject.hpp>
+
 namespace Lumen
 {
 

@@ -3,10 +3,13 @@
  * @brief Defines legal buffer and texture usage flags.
  */
 #pragma once
+
 #include <Core/EnumFlags.hpp>
 #include <RHIExport.hpp>
+
 namespace Lumen
 {
+
 /**
  * @enum ERHIResourceUsage
  * @brief Operations a resource may be used for.
@@ -27,6 +30,8 @@ enum class ERHIResourceUsage : UInt32
     QueryResolve     = 1U << 10U,
 };
 LUMEN_ENUM_FLAGS( ERHIResourceUsage );
+
 /** @return True when no unknown usage bit is present. */
 [[nodiscard]] RHI_EXPORT Bool IsValidRHIResourceUsage ( ERHIResourceUsage InUsage ) noexcept;
+
 } // namespace Lumen

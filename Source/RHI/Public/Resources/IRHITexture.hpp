@@ -2,9 +2,12 @@
  * @file IRHITexture.hpp
  * @brief Declares a portable texture resource.
  */
+
 #pragma once
+
 #include <Resources/IRHIResource.hpp>
 #include <Resources/RHITextureDesc.hpp>
+
 namespace Lumen
 {
 

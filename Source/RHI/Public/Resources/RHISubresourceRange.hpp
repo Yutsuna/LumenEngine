@@ -22,13 +22,13 @@ struct RHI_EXPORT FRHISubresourceRange
     UInt32 MipCount   = 1U;
     UInt32 BaseLayer  = 0U;
     UInt32 LayerCount = 1U;
+
     /** @return True when both counts are nonzero. */
-    [[nodiscard]] constexpr Bool IsValid () const noexcept
-    {
-        return MipCount > 0U and LayerCount > 0U;
-    }
+    [[nodiscard]] constexpr Bool IsValid () const noexcept;
+
     /** @return True when this range lies inside the supplied mip/layer counts. */
     [[nodiscard]] Bool IsContainedIn ( UInt32 InMipCount, UInt32 InLayerCount ) const noexcept;
+
     /** @return The intersection, or empty when disjoint. */
     [[nodiscard]] TOptional<FRHISubresourceRange> Intersect ( const FRHISubresourceRange &InOther ) const noexcept;
 };
