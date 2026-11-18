@@ -26,6 +26,10 @@ namespace
 
 } // namespace
 
+/**
+ * Public
+ */
+
 LUMEN_TEST( RHIObjectPool, ConstructsDestroysAndReusesSlots )
 {
     TRHIObjectPool<FTestPayload> Pool( 2U );
