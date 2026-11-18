@@ -8,6 +8,11 @@
   backends. RHI defines portable values, interfaces, allocation algorithms,
   validation and test backends. It is backend-neutral: no vendor-, API- or
   window-system-specific implementation belongs in this module.
+- **Namespaces and includes:** all RHI API lives in `namespace Lumen {
+  namespace RHI { ... } }` (nested blocks, never `namespace Lumen::RHI { }`);
+  `.cpp`/`.inl` qualify with `Lumen::RHI::` and leave Core/Maths symbols under
+  `Lumen::`. Public headers are under `Public/RHI/` and use `<RHI/...>`
+  includes; test helpers are in `Lumen::RHI::Tests`.
 
 ## Purpose and scope
 
@@ -230,7 +235,7 @@ retirement tests never depend on GPU timing.
 
 `IRHIConformanceDeviceFactory` abstracts device creation for conformance
 scenarios. Conformance translation units use only that factory and public RHI
-interfaces; `Tests::GetRHIConformanceDeviceFactory()` supplies the Null factory,
+interfaces; `Lumen::RHI::Tests::GetRHIConformanceDeviceFactory()` supplies the Null factory,
 and a future backend test target can compile the same translation units with
 its own factory. Core scenarios are mandatory; optional scenarios run only when
 the corresponding capability is advertised. Conformance checks functional
