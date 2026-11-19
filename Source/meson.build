@@ -12,6 +12,9 @@ ModuleNames = [
     'Scene',
     'AppCore',
     'Launch',
+    # TODO: add validators before including Vulkan:
+    # if the OS has Vulkan support, include it
+    'RHIVulkan',
 ]
 
 ModuleDefinitions = []
