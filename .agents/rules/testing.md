@@ -30,7 +30,10 @@ will be wrong.
 - A failed run exits **84**, not 1 (Epitech-style). `meson test` still
   reports it as failure.
 - Test targets also get the module's `Private/` headers on the include path —
-  use that for white-box tests instead of exporting more symbols.
+  use that for white-box tests instead of exporting more symbols. For a shared
+  module, tests link the same implementation objects statically through
+  `GlobalTestModules`; production consumers still use the shared library through
+  `GlobalModules`, and no additional symbols are exported.
 - Core is auto-linked into every test/benchmark target even when not in
   `Depends`.
 

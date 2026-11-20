@@ -38,6 +38,9 @@ has a `meson.build` in its `Source/` directory.
 
 ## Fast facts (always apply)
 
+- `.agents/` is the canonical agent-documentation directory. `.kimi-code` and
+  `.opencode` are symbolic links to it: never edit files through those paths;
+  all agent-documentation changes must be made directly under `.agents/`.
 - All commands run inside the Nix devshell (`.envrc`/`direnv`), e.g.
   `meson compile -C Build`. `Build/` is gitignored.
 - Prefer the Lumen Core library over `std` (threads, locks, stop tokens,
