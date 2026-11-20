@@ -3,6 +3,13 @@
 # Source/RHIVulkan meson entry-point
 #}
 
+VulkanDependencies = []
+VulkanDependency = dependency('vulkan', required : false)
+
+if VulkanDependency.found()
+    VulkanDependencies += VulkanDependency
+endif
+
 ModuleDefinition = {
     'Name' : 'RHIVulkan',
     'Type' : 'SharedLibrary',
@@ -10,5 +17,6 @@ ModuleDefinition = {
     'Private' : 'Private',
     'Public' : 'Public',
     'Tests' : 'Tests',
-    'Depends' : [ 'Core', 'Maths', 'RHI' ]
+    'Depends' : [ 'Core', 'Maths', 'RHI' ],
+    'ExternalDeps' : VulkanDependencies,
 }

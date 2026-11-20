@@ -15,7 +15,15 @@ foreach ModuleDefinition : ModuleDefinitions
     ModulePath = SourceRoot / ModuleSourceDirRel
     PrivatePath = ModulePath / ModuleDefinition.get('Private', 'Private')
 
-    IncludeDirectories = PublicIncludes.get(ModuleName, [])
+    PublicIncludeDirectories = PublicIncludes.get(ModuleName, [])
+    IncludeDirectories = PublicIncludeDirectories
+
+    PrivateDirectory = ModuleDefinition.get('Private', 'Private')
+    RelPrivatePath = '../../@0@/@1@'.format(ModuleSourceDirRel, PrivateDirectory)
+
+    if FileSystem.is_dir(RelPrivatePath)
+        IncludeDirectories += include_directories(RelPrivatePath)
+    endif
 
     PrivateSources = []
 
@@ -91,7 +99,7 @@ foreach ModuleDefinition : ModuleDefinitions
                 install : true,
             )
             ModuleDependency = declare_dependency(
-                include_directories : IncludeDirectories,
+                include_directories : PublicIncludeDirectories,
                 link_with : ModuleLibrary,
                 dependencies : ResolvedDependencies,
             )
@@ -105,7 +113,7 @@ foreach ModuleDefinition : ModuleDefinitions
                 install : true,
             )
             ModuleDependency = declare_dependency(
-                include_directories : IncludeDirectories,
+                include_directories : PublicIncludeDirectories,
                 dependencies : ResolvedDependencies,
             )
         endif
@@ -120,7 +128,9 @@ foreach ModuleDefinition : ModuleDefinitions
             configuration : ExportConfiguration,
         )
 
-        IncludeDirectories += include_directories('.')
+        ExportIncludeDirectories = include_directories('.')
+        IncludeDirectories += ExportIncludeDirectories
+        PublicIncludeDirectories += ExportIncludeDirectories
         BuildDefines = ['-D' + ModuleName.to_upper() + '_BUILD_SHARED']
 
         ModuleTarget = shared_library(
@@ -132,7 +142,7 @@ foreach ModuleDefinition : ModuleDefinitions
             install : true,
         )
         ModuleDependency = declare_dependency(
-            include_directories : IncludeDirectories,
+            include_directories : PublicIncludeDirectories,
             link_with : ModuleTarget,
             dependencies : ResolvedDependencies,
         )
@@ -147,7 +157,7 @@ foreach ModuleDefinition : ModuleDefinitions
             install : true,
         )
         ModuleDependency = declare_dependency(
-            include_directories : IncludeDirectories,
+            include_directories : PublicIncludeDirectories,
             link_with : ModuleTarget,
             dependencies : ResolvedDependencies,
         )

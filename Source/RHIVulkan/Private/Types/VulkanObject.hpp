@@ -22,7 +22,7 @@ namespace RHIVulkan
      */
     template <class TObjectType>
     [[nodiscard]]
-    constexpr UInt64 GetVulkanBackendTypeTag  () noexcept;
+    constexpr UInt64 GetVulkanBackendTypeTag () noexcept;
 
     /**
      * @brief Make a FRHIObjectBase bound to a concrete RHIVulkan object type tag.

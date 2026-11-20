@@ -9,7 +9,7 @@
 
 #include <Templates/Hash.hpp>
 
-template <class TObjectType> constexpr Lumen::UInt64 Lumen::RHIVulkan::GetVulkanBackendTypeTag  () noexcept
+template <class TObjectType> constexpr Lumen::UInt64 Lumen::RHIVulkan::GetVulkanBackendTypeTag () noexcept
 {
     return FHash::TypeHash<TObjectType>();
 }
