@@ -17,7 +17,7 @@ treat it as mandatory. Do not preload everything.
 | `rules/testing.md` | adding or running tests or benchmarks |
 | `workflows/git-workflow.md` | creating commits or PRs |
 | `modules/<Module>.md` | working in `Source/<Module>/` (status, links, inventory) |
-| `agents/` | agent definitions — `reviewer` orchestrator + `reviewer-safety`/`reviewer-norme` subagents, and `documentation` auditor of the `.agents/` corpus (definitions in `agents/*.md`) |
+| `agents/` | agent definitions — `reviewer` orchestrator + `reviewer-safety`/`reviewer-norme` subagents, `documentation` auditor of the `.agents/` corpus, and `test-writer` for unit-test authoring (definitions in `agents/*.md`) |
 | `commands/` | ready-made recipes: `build-debug`, `build-release`, `test`, `review`, `new-module` |
 | `skills/` | procedural guides: `debug-sanitizer`, `write-benchmarks`, `nix-workflow` |
 

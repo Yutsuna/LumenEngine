@@ -11,6 +11,9 @@ The agent ID is the filename without extension:
 - `documentation` — auditor of the `.agents/` corpus itself: verifies that
   the index, rules, module docs, agent definitions, commands and skills
   are coherent with each other and with the repository (read-only).
+- `test-writer` — writes comprehensive unit tests with the in-house Core test
+  framework; covers every exposed API surface so refactors can be validated by
+  running tests alone.
 
 Scope notes:
 
