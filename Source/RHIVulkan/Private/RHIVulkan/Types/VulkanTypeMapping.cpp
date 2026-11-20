@@ -3,8 +3,7 @@
  * @brief Implements portable RHI-to-Vulkan enum, format, usage, and state mappings.
  */
 
-#include "VulkanTypeMapping.hpp"
-#include "RHI/Types/RHIFormatInfo.hpp"
+#include <RHIVulkan/Types/VulkanTypeMapping.hpp>
 
 /**
  * Private

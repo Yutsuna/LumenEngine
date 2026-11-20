@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../VulkanResult.hpp"
+#include <RHIVulkan/Utilities/VulkanResult.hpp>
 
 #include <vulkan/vulkan_core.h>
 

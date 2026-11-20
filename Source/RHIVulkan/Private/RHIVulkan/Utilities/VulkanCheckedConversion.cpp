@@ -3,7 +3,7 @@
  * @brief Implements non-template checked Vulkan conversions.
  */
 
-#include "VulkanCheckedConversion.hpp"
+#include <RHIVulkan/Utilities/VulkanCheckedConversion.hpp>
 
 /**
  * Add

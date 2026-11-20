@@ -4,7 +4,7 @@
  */
 
 #include <Tests/UnitTest.hpp>
-#include <Utilities/VulkanCheckedConversion.hpp>
+#include <RHIVulkan/Utilities/VulkanCheckedConversion.hpp>
 
 #include <limits>
 

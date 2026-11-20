@@ -4,7 +4,7 @@
  */
 
 #include <Tests/UnitTest.hpp>
-#include <Types/VulkanTypeMapping.hpp>
+#include <RHIVulkan/Types/VulkanTypeMapping.hpp>
 
 namespace Lumen
 {

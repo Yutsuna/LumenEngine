@@ -3,7 +3,7 @@
  * @brief Vulkan handle management implementation.
  */
 
-#include "VulkanHandle.hpp"
+#include <RHIVulkan/Types/VulkanHandle.hpp>
 
 void Lumen::RHIVulkan::FVulkanInstanceDeleter::operator()( VkInstance InHandle ) const noexcept
 {

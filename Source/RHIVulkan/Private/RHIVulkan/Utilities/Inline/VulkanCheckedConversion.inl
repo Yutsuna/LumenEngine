@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../VulkanCheckedConversion.hpp"
+#include <RHIVulkan/Utilities/VulkanCheckedConversion.hpp>
 
 /**
  * UInt32

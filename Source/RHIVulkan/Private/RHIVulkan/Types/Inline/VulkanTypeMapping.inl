@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <Types/VulkanTypeMapping.hpp>
+#include <RHIVulkan/Types/VulkanTypeMapping.hpp>
 
 constexpr Lumen::Bool Lumen::RHIVulkan::IsVulkanDepthStencilFormat ( VkFormat InFormat ) noexcept
 {

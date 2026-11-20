@@ -5,8 +5,9 @@
 
 #pragma once
 
-#include "Concepts/IsIntegral.hpp"
 #include <Core/CoreTypes.hpp>
+
+#include <Concepts/IsIntegral.hpp>
 
 #include <RHI/Types/RHIError.hpp>
 #include <RHI/Types/RHIViewport.hpp>

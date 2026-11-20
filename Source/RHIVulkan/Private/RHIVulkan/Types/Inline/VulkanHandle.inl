@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../VulkanHandle.hpp"
+#include <RHIVulkan/Types/VulkanHandle.hpp>
 
 /**
  * Public

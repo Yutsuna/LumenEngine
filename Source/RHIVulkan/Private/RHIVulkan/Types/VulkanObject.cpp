@@ -3,4 +3,4 @@
  * @brief Verifies compilation of VulkanObject declarations.
  */
 
-#include "VulkanObject.hpp"
+#include <RHIVulkan/Types/VulkanObject.hpp>

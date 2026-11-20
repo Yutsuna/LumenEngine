@@ -30,7 +30,7 @@
 #include <Templates/Expected.hpp>
 #include <Templates/Optional.hpp>
 
-#include <vulkan/vulkan.h>
+#include <vulkan/vulkan_core.h>
 
 namespace Lumen
 {

@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include "../VulkanObject.hpp"
+#include <RHIVulkan/Types/VulkanObject.hpp>
 
 #include <Templates/Hash.hpp>
 
