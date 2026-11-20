@@ -5,9 +5,11 @@
 
 #pragma once
 
-#include <Concepts/IsStringLike.hpp>
 #include <Meta/SerializeToJSON.hpp>
 #include <Templates/Variant.hpp>
+
+#include <Concepts/IsStringLike.hpp>
+#include <Concepts/IsIntegral.hpp>
 
 #include <cmath>
 #include <format>
@@ -87,7 +89,7 @@ void Lumen::Meta::Detail::WriteJSONValue ( FString &Out, const TValue &Value, co
             Out.append( "null" );
         }
     }
-    else if constexpr ( std::is_integral_v<Bare> )
+    else if constexpr ( Concepts::CIsIntegral<Bare> )
     {
         std::format_to( std::back_inserter( Out ), "{}", Value );
     }
