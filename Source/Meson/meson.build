@@ -38,6 +38,7 @@ FileSystem = import('fs')
 OSName = host_machine.system()
 
 GlobalModules = {}
+GlobalTestModules = {}
 PublicIncludes = {}
 
 SourceRoot = meson.project_source_root() / 'Source'

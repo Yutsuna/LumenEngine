@@ -2,7 +2,7 @@
 # Source/Meson/Tests/meson.build
 # Discovers and registers each module's test suite.
 #
-# Reads  : ModuleDefinitions, GlobalModules, PublicIncludes, ALL_WARNINGS
+# Reads  : ModuleDefinitions, GlobalModules, GlobalTestModules, PublicIncludes, ALL_WARNINGS
 # Writes : (nothing; only registers `test()` targets)
 #}
 
@@ -55,7 +55,7 @@ or FileSystem.is_file(TestsPath / 'TestMain.cpp')
             TestIncludeDirectories += include_directories(RelPrivatePath)
         endif
 
-        TestDependencies = [GlobalModules.get(ModuleName)]
+        TestDependencies = [GlobalTestModules.get(ModuleName)]
 
         if ModuleName != 'Core' and GlobalModules.has_key('Core')\
 and not ModuleDependencies.contains('Core')

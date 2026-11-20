@@ -3,7 +3,7 @@
 # Builds each module's target from its Private/ sources.
 #
 # Reads  : ModuleDefinitions, PublicIncludes, GlobalModules, ALL_WARNINGS
-# Writes : GlobalModules
+# Writes : GlobalModules, GlobalTestModules
 #}
 
 foreach ModuleDefinition : ModuleDefinitions
@@ -133,17 +133,29 @@ foreach ModuleDefinition : ModuleDefinitions
         PublicIncludeDirectories += ExportIncludeDirectories
         BuildDefines = ['-D' + ModuleName.to_upper() + '_BUILD_SHARED']
 
-        ModuleTarget = shared_library(
-            ModuleName, PrivateSources,
+        ModuleImplementation = static_library(
+            ModuleName + 'Implementation', PrivateSources,
             include_directories : IncludeDirectories,
             dependencies : ResolvedDependencies,
             cpp_args : CompileArguments + BuildDefines,
             c_args : CompileArguments + BuildDefines,
+            pic : true,
+            install : false,
+        )
+        ModuleTarget = shared_library(
+            ModuleName,
+            link_whole : ModuleImplementation,
+            dependencies : ResolvedDependencies,
             install : true,
         )
         ModuleDependency = declare_dependency(
             include_directories : PublicIncludeDirectories,
             link_with : ModuleTarget,
+            dependencies : ResolvedDependencies,
+        )
+        ModuleTestDependency = declare_dependency(
+            include_directories : PublicIncludeDirectories,
+            link_whole : ModuleImplementation,
             dependencies : ResolvedDependencies,
         )
 
@@ -166,5 +178,10 @@ foreach ModuleDefinition : ModuleDefinitions
         error('Unknown module type: @0@'.format(ModuleType))
     endif
 
+    if ModuleType != 'SharedLibrary'
+        ModuleTestDependency = ModuleDependency
+    endif
+
     GlobalModules += { ModuleName : ModuleDependency }
+    GlobalTestModules += { ModuleName : ModuleTestDependency }
 endforeach
