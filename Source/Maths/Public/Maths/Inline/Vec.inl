@@ -3,6 +3,8 @@
 #include <Maths/Macros.hpp>
 #include <Maths/Vec.hpp>
 
+#include <Concepts/IsIntegral.hpp>
+
 #include <cmath>
 
 namespace Lumen
@@ -203,7 +205,7 @@ namespace Maths
 
         TVec Result;
 
-        if constexpr ( std::is_integral_v<Type> )
+        if constexpr ( Lumen::Concepts::CIsIntegral<Type> )
         {
             for ( USize Index = 0; Index < Dimension; ++Index )
             {

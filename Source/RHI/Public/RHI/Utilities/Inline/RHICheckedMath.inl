@@ -45,7 +45,7 @@ constexpr Lumen::TOptional<ValueType> Lumen::RHI::RHICheckedDivideCeil ( const V
 }
 
 template <typename DestinationType, typename SourceType>
-    requires std::is_integral_v<DestinationType> and std::is_integral_v<SourceType>
+    requires Lumen::Concepts::CIsIntegral<DestinationType> and Lumen::Concepts::CIsIntegral<SourceType>
 constexpr Lumen::TOptional<DestinationType> Lumen::RHI::RHICheckedCast ( const SourceType InValue ) noexcept
 {
     if constexpr ( std::is_signed_v<SourceType> == std::is_signed_v<DestinationType> )
