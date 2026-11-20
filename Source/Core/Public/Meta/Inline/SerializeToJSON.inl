@@ -8,8 +8,8 @@
 #include <Meta/SerializeToJSON.hpp>
 #include <Templates/Variant.hpp>
 
-#include <Concepts/IsStringLike.hpp>
 #include <Concepts/IsIntegral.hpp>
+#include <Concepts/IsStringLike.hpp>
 
 #include <cmath>
 #include <format>

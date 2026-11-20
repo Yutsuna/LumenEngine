@@ -14,6 +14,7 @@
 #include <Tests/UnitTestTypes.hpp>
 
 #include <Concepts/IsIntegral.hpp>
+#include <Concepts/SameAs.hpp>
 
 #include <format>
 #include <source_location>
@@ -50,10 +51,12 @@ namespace Tests
      * @details std::cmp_equal avoids the signed/unsigned promotion pitfalls of operator== and is -Wsign-compare clean,
      *          which matters when comparing C flag typedefs (uint32_t) with enum bit constants (int), e.g. Vulkan's.
      */
-    template <typename TLeft, typename TRight>
-    [[nodiscard]] constexpr Bool AreEqual ( const TLeft &Left, const TRight &Right )
+    template <typename TLeft, typename TRight> [[nodiscard]] constexpr Bool AreEqual ( const TLeft &Left, const TRight &Right )
     {
-        if constexpr ( Concepts::CIsIntegral<std::remove_cvref_t<TLeft>> and Concepts::CIsIntegral<std::remove_cvref_t<TRight>> )
+        if constexpr ( Concepts::CIsIntegral<std::remove_cvref_t<TLeft>> and
+                       Concepts::CIsIntegral<std::remove_cvref_t<TRight>> and
+                       not Concepts::CIsSame<std::remove_cvref_t<TLeft>, Bool> and
+                       not Concepts::CIsSame<std::remove_cvref_t<TRight>, Bool> )
         {
             return std::cmp_equal( Left, Right );
         }
