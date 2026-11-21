@@ -3,1105 +3,864 @@
  * @brief Implements portable RHI-to-Vulkan enum, format, usage, and state mappings.
  */
 
+#include <RHI/Resources/RHIResourceUsage.hpp>
+#include <RHI/Types/RHIError.hpp>
+#include <RHI/Types/RHIResourceState.hpp>
+
 #include <RHIVulkan/Types/VulkanTypeMapping.hpp>
 
-/**
- * Private
- */
+#include <RHI/Types/RHIFormatInfo.hpp>
 
-namespace
+#include <Core/CoreTypes.hpp>
+
+#include <vulkan/vulkan_core.h>
+
+namespace Lumen
 {
 
-[[nodiscard]] Lumen::TExpected<VkFormat, Lumen::RHI::FRHIError> MapFormatInternal ( Lumen::RHI::ERHIFormat InFormat,
-                                                                                    Lumen::Bool bAllowUnknown ) noexcept
+namespace RHIVulkan
 {
-    using Lumen::RHI::ERHIFormat;
 
-    switch ( InFormat )
+    /**
+     * Private generators
+     */
+
+#define LUMEN_VK_ENUM_MAP_CASE( RhiName, VkName )                                                                                \
+    case RhiName:                                                                                                                \
+        return VkName;
+
+#define LUMEN_VK_DEFINE_ENUM_MAP( FnName, RhiEnum, VkType, List, MakeError )                                                     \
+    TExpected<VkType, RHI::FRHIError> FnName( RhiEnum InValue ) noexcept                                                              \
+    {                                                                                                                            \
+        switch ( InValue )                                                                                                       \
+        {                                                                                                                        \
+            List( LUMEN_VK_ENUM_MAP_CASE ) default : [[unlikely]] return TUnexpected( MakeError );                               \
+        }                                                                                                                        \
+    }
+
+#define LUMEN_VK_ENUM_UNMAP_CASE( RhiName, VkName )                                                                              \
+    case VkName:                                                                                                                 \
+        return TOptional{ RhiName };
+
+#define LUMEN_VK_DEFINE_ENUM_UNMAP( FnName, RhiEnum, VkType, List )                                                              \
+    TOptional<RhiEnum> FnName( VkType InValue ) noexcept                                                                         \
+    {                                                                                                                            \
+        switch ( InValue )                                                                                                       \
+        {                                                                                                                        \
+            List( LUMEN_VK_ENUM_UNMAP_CASE ) default : [[unlikely]] return {};                                                   \
+        }                                                                                                                        \
+    }
+
+/** @brief OR-chain row; expects local `InValue` and `Flags` in the enclosing function. */
+#define LUMEN_VK_FLAG_OR( RhiName, VkName )                                                                                      \
+    if ( HasAnyFlags( InValue, RhiName ) )                                                                                       \
+    {                                                                                                                            \
+        Flags |= VkName;                                                                                                         \
+    }
+
+    /**
+     * Formats (bidirectional)
+     */
+
+#define LUMEN_VK_FORMAT_LIST( X )                                                                                                \
+    X( RHI::ERHIFormat::R8Unorm, VK_FORMAT_R8_UNORM )                                                                            \
+    X( RHI::ERHIFormat::R8Snorm, VK_FORMAT_R8_SNORM )                                                                            \
+    X( RHI::ERHIFormat::R8Uint, VK_FORMAT_R8_UINT )                                                                              \
+    X( RHI::ERHIFormat::R8Sint, VK_FORMAT_R8_SINT )                                                                              \
+    X( RHI::ERHIFormat::RG8Unorm, VK_FORMAT_R8G8_UNORM )                                                                         \
+    X( RHI::ERHIFormat::RG8Snorm, VK_FORMAT_R8G8_SNORM )                                                                         \
+    X( RHI::ERHIFormat::RG8Uint, VK_FORMAT_R8G8_UINT )                                                                           \
+    X( RHI::ERHIFormat::RG8Sint, VK_FORMAT_R8G8_SINT )                                                                           \
+    X( RHI::ERHIFormat::RGBA8Unorm, VK_FORMAT_R8G8B8A8_UNORM )                                                                   \
+    X( RHI::ERHIFormat::RGBA8Snorm, VK_FORMAT_R8G8B8A8_SNORM )                                                                   \
+    X( RHI::ERHIFormat::RGBA8Uint, VK_FORMAT_R8G8B8A8_UINT )                                                                     \
+    X( RHI::ERHIFormat::RGBA8Sint, VK_FORMAT_R8G8B8A8_SINT )                                                                     \
+    X( RHI::ERHIFormat::RGBA8Srgb, VK_FORMAT_R8G8B8A8_SRGB )                                                                     \
+    X( RHI::ERHIFormat::BGRA8Unorm, VK_FORMAT_B8G8R8A8_UNORM )                                                                   \
+    X( RHI::ERHIFormat::BGRA8Srgb, VK_FORMAT_B8G8R8A8_SRGB )                                                                     \
+    X( RHI::ERHIFormat::R16Unorm, VK_FORMAT_R16_UNORM )                                                                          \
+    X( RHI::ERHIFormat::R16Snorm, VK_FORMAT_R16_SNORM )                                                                          \
+    X( RHI::ERHIFormat::R16Uint, VK_FORMAT_R16_UINT )                                                                            \
+    X( RHI::ERHIFormat::R16Sint, VK_FORMAT_R16_SINT )                                                                            \
+    X( RHI::ERHIFormat::R16Float, VK_FORMAT_R16_SFLOAT )                                                                         \
+    X( RHI::ERHIFormat::RG16Unorm, VK_FORMAT_R16G16_UNORM )                                                                      \
+    X( RHI::ERHIFormat::RG16Snorm, VK_FORMAT_R16G16_SNORM )                                                                      \
+    X( RHI::ERHIFormat::RG16Uint, VK_FORMAT_R16G16_UINT )                                                                        \
+    X( RHI::ERHIFormat::RG16Sint, VK_FORMAT_R16G16_SINT )                                                                        \
+    X( RHI::ERHIFormat::RG16Float, VK_FORMAT_R16G16_SFLOAT )                                                                     \
+    X( RHI::ERHIFormat::RGBA16Unorm, VK_FORMAT_R16G16B16A16_UNORM )                                                              \
+    X( RHI::ERHIFormat::RGBA16Snorm, VK_FORMAT_R16G16B16A16_SNORM )                                                              \
+    X( RHI::ERHIFormat::RGBA16Uint, VK_FORMAT_R16G16B16A16_UINT )                                                                \
+    X( RHI::ERHIFormat::RGBA16Sint, VK_FORMAT_R16G16B16A16_SINT )                                                                \
+    X( RHI::ERHIFormat::RGBA16Float, VK_FORMAT_R16G16B16A16_SFLOAT )                                                             \
+    X( RHI::ERHIFormat::R32Uint, VK_FORMAT_R32_UINT )                                                                            \
+    X( RHI::ERHIFormat::R32Sint, VK_FORMAT_R32_SINT )                                                                            \
+    X( RHI::ERHIFormat::R32Float, VK_FORMAT_R32_SFLOAT )                                                                         \
+    X( RHI::ERHIFormat::RG32Uint, VK_FORMAT_R32G32_UINT )                                                                        \
+    X( RHI::ERHIFormat::RG32Sint, VK_FORMAT_R32G32_SINT )                                                                        \
+    X( RHI::ERHIFormat::RG32Float, VK_FORMAT_R32G32_SFLOAT )                                                                     \
+    X( RHI::ERHIFormat::RGB32Uint, VK_FORMAT_R32G32B32_UINT )                                                                    \
+    X( RHI::ERHIFormat::RGB32Sint, VK_FORMAT_R32G32B32_SINT )                                                                    \
+    X( RHI::ERHIFormat::RGB32Float, VK_FORMAT_R32G32B32_SFLOAT )                                                                 \
+    X( RHI::ERHIFormat::RGBA32Uint, VK_FORMAT_R32G32B32A32_UINT )                                                                \
+    X( RHI::ERHIFormat::RGBA32Sint, VK_FORMAT_R32G32B32A32_SINT )                                                                \
+    X( RHI::ERHIFormat::RGBA32Float, VK_FORMAT_R32G32B32A32_SFLOAT )                                                             \
+    X( RHI::ERHIFormat::D16Unorm, VK_FORMAT_D16_UNORM )                                                                          \
+    X( RHI::ERHIFormat::D24UnormS8Uint, VK_FORMAT_D24_UNORM_S8_UINT )                                                            \
+    X( RHI::ERHIFormat::D32Float, VK_FORMAT_D32_SFLOAT )                                                                         \
+    X( RHI::ERHIFormat::D32FloatS8Uint, VK_FORMAT_D32_SFLOAT_S8_UINT )                                                           \
+    X( RHI::ERHIFormat::BC1RGBAUnorm, VK_FORMAT_BC1_RGBA_UNORM_BLOCK )                                                           \
+    X( RHI::ERHIFormat::BC1RGBASrgb, VK_FORMAT_BC1_RGBA_SRGB_BLOCK )                                                             \
+    X( RHI::ERHIFormat::BC3RGBAUnorm, VK_FORMAT_BC3_UNORM_BLOCK )                                                                \
+    X( RHI::ERHIFormat::BC3RGBASrgb, VK_FORMAT_BC3_SRGB_BLOCK )                                                                  \
+    X( RHI::ERHIFormat::BC7RGBAUnorm, VK_FORMAT_BC7_UNORM_BLOCK )                                                                \
+    X( RHI::ERHIFormat::BC7RGBASrgb, VK_FORMAT_BC7_SRGB_BLOCK )
+
+    namespace
     {
-    case ERHIFormat::Unknown:
-        if ( bAllowUnknown )
+
+        [[nodiscard]] TExpected<VkFormat, RHI::FRHIError> MapFormatInternal ( RHI::ERHIFormat InFormat, Bool bAllowUnknown ) noexcept
         {
-            return VK_FORMAT_UNDEFINED;
+            if ( InFormat == RHI::ERHIFormat::Unknown )
+            {
+                if ( bAllowUnknown )
+                {
+                    return VK_FORMAT_UNDEFINED;
+                }
+                return TUnexpected( RHI::MakeRHIInvalidResource( "RHI::ERHIFormat::Unknown is not a valid concrete format." ) );
+            }
+
+            switch ( InFormat )
+            {
+                LUMEN_VK_FORMAT_LIST( LUMEN_VK_ENUM_MAP_CASE )
+            default:
+                return TUnexpected( RHI::MakeRHIInvalidResource( "Unrecognized RHI::ERHIFormat value." ) );
+            }
         }
-        return Lumen::TUnexpected( Lumen::RHI::MakeRHIInvalidResource( "ERHIFormat::Unknown is not a valid concrete format." ) );
-    case ERHIFormat::R8Unorm:
-        return VK_FORMAT_R8_UNORM;
-    case ERHIFormat::R8Snorm:
-        return VK_FORMAT_R8_SNORM;
-    case ERHIFormat::R8Uint:
-        return VK_FORMAT_R8_UINT;
-    case ERHIFormat::R8Sint:
-        return VK_FORMAT_R8_SINT;
-    case ERHIFormat::RG8Unorm:
-        return VK_FORMAT_R8G8_UNORM;
-    case ERHIFormat::RG8Snorm:
-        return VK_FORMAT_R8G8_SNORM;
-    case ERHIFormat::RG8Uint:
-        return VK_FORMAT_R8G8_UINT;
-    case ERHIFormat::RG8Sint:
-        return VK_FORMAT_R8G8_SINT;
-    case ERHIFormat::RGBA8Unorm:
-        return VK_FORMAT_R8G8B8A8_UNORM;
-    case ERHIFormat::RGBA8Snorm:
-        return VK_FORMAT_R8G8B8A8_SNORM;
-    case ERHIFormat::RGBA8Uint:
-        return VK_FORMAT_R8G8B8A8_UINT;
-    case ERHIFormat::RGBA8Sint:
-        return VK_FORMAT_R8G8B8A8_SINT;
-    case ERHIFormat::RGBA8Srgb:
-        return VK_FORMAT_R8G8B8A8_SRGB;
-    case ERHIFormat::BGRA8Unorm:
-        return VK_FORMAT_B8G8R8A8_UNORM;
-    case ERHIFormat::BGRA8Srgb:
-        return VK_FORMAT_B8G8R8A8_SRGB;
-    case ERHIFormat::R16Unorm:
-        return VK_FORMAT_R16_UNORM;
-    case ERHIFormat::R16Snorm:
-        return VK_FORMAT_R16_SNORM;
-    case ERHIFormat::R16Uint:
-        return VK_FORMAT_R16_UINT;
-    case ERHIFormat::R16Sint:
-        return VK_FORMAT_R16_SINT;
-    case ERHIFormat::R16Float:
-        return VK_FORMAT_R16_SFLOAT;
-    case ERHIFormat::RG16Unorm:
-        return VK_FORMAT_R16G16_UNORM;
-    case ERHIFormat::RG16Snorm:
-        return VK_FORMAT_R16G16_SNORM;
-    case ERHIFormat::RG16Uint:
-        return VK_FORMAT_R16G16_UINT;
-    case ERHIFormat::RG16Sint:
-        return VK_FORMAT_R16G16_SINT;
-    case ERHIFormat::RG16Float:
-        return VK_FORMAT_R16G16_SFLOAT;
-    case ERHIFormat::RGBA16Unorm:
-        return VK_FORMAT_R16G16B16A16_UNORM;
-    case ERHIFormat::RGBA16Snorm:
-        return VK_FORMAT_R16G16B16A16_SNORM;
-    case ERHIFormat::RGBA16Uint:
-        return VK_FORMAT_R16G16B16A16_UINT;
-    case ERHIFormat::RGBA16Sint:
-        return VK_FORMAT_R16G16B16A16_SINT;
-    case ERHIFormat::RGBA16Float:
-        return VK_FORMAT_R16G16B16A16_SFLOAT;
-    case ERHIFormat::R32Uint:
-        return VK_FORMAT_R32_UINT;
-    case ERHIFormat::R32Sint:
-        return VK_FORMAT_R32_SINT;
-    case ERHIFormat::R32Float:
-        return VK_FORMAT_R32_SFLOAT;
-    case ERHIFormat::RG32Uint:
-        return VK_FORMAT_R32G32_UINT;
-    case ERHIFormat::RG32Sint:
-        return VK_FORMAT_R32G32_SINT;
-    case ERHIFormat::RG32Float:
-        return VK_FORMAT_R32G32_SFLOAT;
-    case ERHIFormat::RGB32Uint:
-        return VK_FORMAT_R32G32B32_UINT;
-    case ERHIFormat::RGB32Sint:
-        return VK_FORMAT_R32G32B32_SINT;
-    case ERHIFormat::RGB32Float:
-        return VK_FORMAT_R32G32B32_SFLOAT;
-    case ERHIFormat::RGBA32Uint:
-        return VK_FORMAT_R32G32B32A32_UINT;
-    case ERHIFormat::RGBA32Sint:
-        return VK_FORMAT_R32G32B32A32_SINT;
-    case ERHIFormat::RGBA32Float:
-        return VK_FORMAT_R32G32B32A32_SFLOAT;
-    case ERHIFormat::D16Unorm:
-        return VK_FORMAT_D16_UNORM;
-    case ERHIFormat::D24UnormS8Uint:
-        return VK_FORMAT_D24_UNORM_S8_UINT;
-    case ERHIFormat::D32Float:
-        return VK_FORMAT_D32_SFLOAT;
-    case ERHIFormat::D32FloatS8Uint:
-        return VK_FORMAT_D32_SFLOAT_S8_UINT;
-    case ERHIFormat::BC1RGBAUnorm:
-        return VK_FORMAT_BC1_RGBA_UNORM_BLOCK;
-    case ERHIFormat::BC1RGBASrgb:
-        return VK_FORMAT_BC1_RGBA_SRGB_BLOCK;
-    case ERHIFormat::BC3RGBAUnorm:
-        return VK_FORMAT_BC3_UNORM_BLOCK;
-    case ERHIFormat::BC3RGBASrgb:
-        return VK_FORMAT_BC3_SRGB_BLOCK;
-    case ERHIFormat::BC7RGBAUnorm:
-        return VK_FORMAT_BC7_UNORM_BLOCK;
-    case ERHIFormat::BC7RGBASrgb:
-        return VK_FORMAT_BC7_SRGB_BLOCK;
-    default:
-        return Lumen::TUnexpected( Lumen::RHI::MakeRHIInvalidResource( "Unrecognized ERHIFormat value." ) );
-    }
-}
 
-} // namespace
+    } // namespace
 
-/**
- * Public
- */
-
-Lumen::TExpected<VkFormat, Lumen::RHI::FRHIError> Lumen::RHIVulkan::ToVulkanFormat ( RHI::ERHIFormat InFormat ) noexcept
-{
-    return MapFormatInternal( InFormat, false );
-}
-
-Lumen::TExpected<VkFormat, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanFormatOrUndefined ( RHI::ERHIFormat InFormat ) noexcept
-{
-    return MapFormatInternal( InFormat, true );
-}
-
-Lumen::RHI::ERHIFormat Lumen::RHIVulkan::ToRHIFormat ( VkFormat InFormat ) noexcept
-{
-    using RHI::ERHIFormat;
-
-    switch ( InFormat )
+    TExpected<VkFormat, RHI::FRHIError> ToVulkanFormat ( RHI::ERHIFormat InFormat ) noexcept
     {
-    case VK_FORMAT_R8_UNORM:
-        return ERHIFormat::R8Unorm;
-    case VK_FORMAT_R8_SNORM:
-        return ERHIFormat::R8Snorm;
-    case VK_FORMAT_R8_UINT:
-        return ERHIFormat::R8Uint;
-    case VK_FORMAT_R8_SINT:
-        return ERHIFormat::R8Sint;
-    case VK_FORMAT_R8G8_UNORM:
-        return ERHIFormat::RG8Unorm;
-    case VK_FORMAT_R8G8_SNORM:
-        return ERHIFormat::RG8Snorm;
-    case VK_FORMAT_R8G8_UINT:
-        return ERHIFormat::RG8Uint;
-    case VK_FORMAT_R8G8_SINT:
-        return ERHIFormat::RG8Sint;
-    case VK_FORMAT_R8G8B8A8_UNORM:
-        return ERHIFormat::RGBA8Unorm;
-    case VK_FORMAT_R8G8B8A8_SNORM:
-        return ERHIFormat::RGBA8Snorm;
-    case VK_FORMAT_R8G8B8A8_UINT:
-        return ERHIFormat::RGBA8Uint;
-    case VK_FORMAT_R8G8B8A8_SINT:
-        return ERHIFormat::RGBA8Sint;
-    case VK_FORMAT_R8G8B8A8_SRGB:
-        return ERHIFormat::RGBA8Srgb;
-    case VK_FORMAT_B8G8R8A8_UNORM:
-        return ERHIFormat::BGRA8Unorm;
-    case VK_FORMAT_B8G8R8A8_SRGB:
-        return ERHIFormat::BGRA8Srgb;
-    case VK_FORMAT_R16_UNORM:
-        return ERHIFormat::R16Unorm;
-    case VK_FORMAT_R16_SNORM:
-        return ERHIFormat::R16Snorm;
-    case VK_FORMAT_R16_UINT:
-        return ERHIFormat::R16Uint;
-    case VK_FORMAT_R16_SINT:
-        return ERHIFormat::R16Sint;
-    case VK_FORMAT_R16_SFLOAT:
-        return ERHIFormat::R16Float;
-    case VK_FORMAT_R16G16_UNORM:
-        return ERHIFormat::RG16Unorm;
-    case VK_FORMAT_R16G16_SNORM:
-        return ERHIFormat::RG16Snorm;
-    case VK_FORMAT_R16G16_UINT:
-        return ERHIFormat::RG16Uint;
-    case VK_FORMAT_R16G16_SINT:
-        return ERHIFormat::RG16Sint;
-    case VK_FORMAT_R16G16_SFLOAT:
-        return ERHIFormat::RG16Float;
-    case VK_FORMAT_R16G16B16A16_UNORM:
-        return ERHIFormat::RGBA16Unorm;
-    case VK_FORMAT_R16G16B16A16_SNORM:
-        return ERHIFormat::RGBA16Snorm;
-    case VK_FORMAT_R16G16B16A16_UINT:
-        return ERHIFormat::RGBA16Uint;
-    case VK_FORMAT_R16G16B16A16_SINT:
-        return ERHIFormat::RGBA16Sint;
-    case VK_FORMAT_R16G16B16A16_SFLOAT:
-        return ERHIFormat::RGBA16Float;
-    case VK_FORMAT_R32_UINT:
-        return ERHIFormat::R32Uint;
-    case VK_FORMAT_R32_SINT:
-        return ERHIFormat::R32Sint;
-    case VK_FORMAT_R32_SFLOAT:
-        return ERHIFormat::R32Float;
-    case VK_FORMAT_R32G32_UINT:
-        return ERHIFormat::RG32Uint;
-    case VK_FORMAT_R32G32_SINT:
-        return ERHIFormat::RG32Sint;
-    case VK_FORMAT_R32G32_SFLOAT:
-        return ERHIFormat::RG32Float;
-    case VK_FORMAT_R32G32B32_UINT:
-        return ERHIFormat::RGB32Uint;
-    case VK_FORMAT_R32G32B32_SINT:
-        return ERHIFormat::RGB32Sint;
-    case VK_FORMAT_R32G32B32_SFLOAT:
-        return ERHIFormat::RGB32Float;
-    case VK_FORMAT_R32G32B32A32_UINT:
-        return ERHIFormat::RGBA32Uint;
-    case VK_FORMAT_R32G32B32A32_SINT:
-        return ERHIFormat::RGBA32Sint;
-    case VK_FORMAT_R32G32B32A32_SFLOAT:
-        return ERHIFormat::RGBA32Float;
-    case VK_FORMAT_D16_UNORM:
-        return ERHIFormat::D16Unorm;
-    case VK_FORMAT_D24_UNORM_S8_UINT:
-        return ERHIFormat::D24UnormS8Uint;
-    case VK_FORMAT_D32_SFLOAT:
-        return ERHIFormat::D32Float;
-    case VK_FORMAT_D32_SFLOAT_S8_UINT:
-        return ERHIFormat::D32FloatS8Uint;
-    case VK_FORMAT_BC1_RGBA_UNORM_BLOCK:
-        return ERHIFormat::BC1RGBAUnorm;
-    case VK_FORMAT_BC1_RGBA_SRGB_BLOCK:
-        return ERHIFormat::BC1RGBASrgb;
-    case VK_FORMAT_BC3_UNORM_BLOCK:
-        return ERHIFormat::BC3RGBAUnorm;
-    case VK_FORMAT_BC3_SRGB_BLOCK:
-        return ERHIFormat::BC3RGBASrgb;
-    case VK_FORMAT_BC7_UNORM_BLOCK:
-        return ERHIFormat::BC7RGBAUnorm;
-    case VK_FORMAT_BC7_SRGB_BLOCK:
-        return ERHIFormat::BC7RGBASrgb;
-    default:
-        return ERHIFormat::Unknown;
-    }
-}
-
-Lumen::TExpected<VkImageAspectFlags, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanImageAspect ( RHI::ERHIFormatAspect InAspect ) noexcept
-{
-    constexpr UInt8 ValidMask =
-        static_cast<UInt8>( RHI::ERHIFormatAspect::Color | RHI::ERHIFormatAspect::Depth | RHI::ERHIFormatAspect::Stencil );
-    const UInt8 Raw = static_cast<UInt8>( InAspect );
-    if ( Raw == 0U or ( Raw & ~ValidMask ) != 0U )
-    {
-        return TUnexpected( RHI::MakeRHIInvalidResource( "Invalid ERHIFormatAspect bitmask." ) );
+        return MapFormatInternal( InFormat, false );
     }
 
-    VkImageAspectFlags Flags = 0U;
-    if ( HasAnyFlags( InAspect, RHI::ERHIFormatAspect::Color ) )
+    TExpected<VkFormat, RHI::FRHIError> ToVulkanFormatOrUndefined ( RHI::ERHIFormat InFormat ) noexcept
     {
-        Flags |= VK_IMAGE_ASPECT_COLOR_BIT;
-    }
-    if ( HasAnyFlags( InAspect, RHI::ERHIFormatAspect::Depth ) )
-    {
-        Flags |= VK_IMAGE_ASPECT_DEPTH_BIT;
-    }
-    if ( HasAnyFlags( InAspect, RHI::ERHIFormatAspect::Stencil ) )
-    {
-        Flags |= VK_IMAGE_ASPECT_STENCIL_BIT;
-    }
-    return Flags;
-}
-
-Lumen::TExpected<VkImageAspectFlags, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::GetVulkanFullImageAspect ( RHI::ERHIFormat InFormat ) noexcept
-{
-    const TOptional<RHI::FRHIFormatInfo> Info = RHI::TryGetRHIFormatInfo( InFormat );
-
-    if ( not Info or Info->Aspects == RHI::ERHIFormatAspect::None ) [[unlikely]]
-    {
-        return TUnexpected( RHI::MakeRHIInvalidResource( "Cannot derive Vulkan image aspects for Unknown or invalid format." ) );
-    }
-    return ToVulkanImageAspect( Info->Aspects );
-}
-
-Lumen::TExpected<VkBufferUsageFlags, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanBufferUsage ( RHI::ERHIResourceUsage InUsage ) noexcept
-{
-    if ( not RHI::IsValidRHIResourceUsage( InUsage ) or InUsage == RHI::ERHIResourceUsage::None ) [[unlikely]]
-    {
-        return TUnexpected( RHI::MakeRHIInvalidResource( "Buffer usage flags must be valid and nonzero." ) );
+        return MapFormatInternal( InFormat, true );
     }
 
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::RenderTarget | RHI::ERHIResourceUsage::DepthStencil ) ) [[unlikely]]
+    RHI::ERHIFormat ToRHIFormat ( VkFormat InFormat ) noexcept
     {
-        return TUnexpected( RHI::MakeRHIInvalidResource( "RenderTarget and DepthStencil usages are invalid for buffers." ) );
-    }
-
-    VkBufferUsageFlags Flags = 0U;
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::CopySource ) )
-    {
-        Flags |= VK_BUFFER_USAGE_TRANSFER_SRC_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::CopyDestination | RHI::ERHIResourceUsage::QueryResolve ) )
-    {
-        Flags |= VK_BUFFER_USAGE_TRANSFER_DST_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::VertexBuffer ) )
-    {
-        Flags |= VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::IndexBuffer ) )
-    {
-        Flags |= VK_BUFFER_USAGE_INDEX_BUFFER_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::ConstantBuffer ) )
-    {
-        Flags |= VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::ShaderResource | RHI::ERHIResourceUsage::UnorderedAccess ) )
-    {
-        Flags |= VK_BUFFER_USAGE_STORAGE_BUFFER_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::IndirectArgument ) )
-    {
-        Flags |= VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT;
-    }
-
-    return Flags;
-}
-
-Lumen::TExpected<VkImageUsageFlags, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanImageUsage ( RHI::ERHIResourceUsage InUsage ) noexcept
-{
-    if ( not RHI::IsValidRHIResourceUsage( InUsage ) or InUsage == RHI::ERHIResourceUsage::None ) [[unlikely]]
-    {
-        return TUnexpected( RHI::MakeRHIInvalidResource( "Texture usage flags must be valid and nonzero." ) );
-    }
-
-    constexpr RHI::ERHIResourceUsage BufferOnlyUsages =
-        RHI::ERHIResourceUsage::VertexBuffer | RHI::ERHIResourceUsage::IndexBuffer | RHI::ERHIResourceUsage::ConstantBuffer |
-        RHI::ERHIResourceUsage::IndirectArgument | RHI::ERHIResourceUsage::QueryResolve;
-
-    if ( HasAnyFlags( InUsage, BufferOnlyUsages ) ) [[unlikely]]
-    {
-        return TUnexpected( RHI::MakeRHIInvalidResource( "Buffer-only usage flags are invalid for textures." ) );
-    }
-
-    VkImageUsageFlags Flags = 0U;
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::CopySource ) )
-    {
-        Flags |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::CopyDestination ) )
-    {
-        Flags |= VK_IMAGE_USAGE_TRANSFER_DST_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::ShaderResource ) )
-    {
-        Flags |= VK_IMAGE_USAGE_SAMPLED_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::UnorderedAccess ) )
-    {
-        Flags |= VK_IMAGE_USAGE_STORAGE_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::RenderTarget ) )
-    {
-        Flags |= VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-    }
-    if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::DepthStencil ) )
-    {
-        Flags |= VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT;
-    }
-
-    return Flags;
-}
-
-Lumen::TExpected<Lumen::RHIVulkan::FVulkanResourceBarrierState, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanBufferState ( RHI::ERHIResourceState InState ) noexcept
-{
-    if ( not RHI::IsValidRHIResourceState( InState ) ) [[unlikely]]
-    {
-        return TUnexpected( RHI::MakeRHIInvalidResource( "Unknown ERHIResourceState bits." ) );
-    }
-
-    constexpr RHI::ERHIResourceState ImageOnlyStates = RHI::ERHIResourceState::RenderTarget | RHI::ERHIResourceState::DepthWrite |
-                                                       RHI::ERHIResourceState::DepthRead | RHI::ERHIResourceState::Present;
-
-    if ( HasAnyFlags( InState, ImageOnlyStates ) ) [[unlikely]]
-    {
-        return TUnexpected( RHI::MakeRHIInvalidResource( "Image-only resource state requested for a buffer." ) );
-    }
-
-    FVulkanResourceBarrierState Result{};
-    if ( InState == RHI::ERHIResourceState::Undefined )
-    {
-        return Result;
-    }
-
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::Common ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-        Result.AccessMask |= VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
-    }
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::VertexBuffer ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT;
-        Result.AccessMask |= VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT;
-    }
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::IndexBuffer ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT;
-        Result.AccessMask |= VK_ACCESS_2_INDEX_READ_BIT;
-    }
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::ConstantBuffer ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-        Result.AccessMask |= VK_ACCESS_2_UNIFORM_READ_BIT;
-    }
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::ShaderResource ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-        Result.AccessMask |= VK_ACCESS_2_SHADER_READ_BIT;
-    }
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::UnorderedAccess ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-        Result.AccessMask |= VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
-    }
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::CopySource ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_COPY_BIT;
-        Result.AccessMask |= VK_ACCESS_2_TRANSFER_READ_BIT;
-    }
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::CopyDestination ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_COPY_BIT;
-        Result.AccessMask |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    }
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::ResolveSource ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_RESOLVE_BIT;
-        Result.AccessMask |= VK_ACCESS_2_TRANSFER_READ_BIT;
-    }
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::ResolveDestination ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_RESOLVE_BIT;
-        Result.AccessMask |= VK_ACCESS_2_TRANSFER_WRITE_BIT;
-    }
-    if ( HasAnyFlags( InState, RHI::ERHIResourceState::IndirectArgument ) )
-    {
-        Result.StageMask |= VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT;
-        Result.AccessMask |= VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT;
-    }
-
-    return Result;
-}
-
-Lumen::TExpected<Lumen::RHIVulkan::FVulkanResourceBarrierState, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanImageState ( RHI::ERHIResourceState InState, Bool bIsDepthStencil ) noexcept
-{
-    if ( not RHI::IsValidRHIResourceState( InState ) ) [[unlikely]]
-    {
-        return TUnexpected( RHI::MakeRHIInvalidResource( "Unknown ERHIResourceState bits." ) );
-    }
-
-    constexpr RHI::ERHIResourceState BufferOnlyStates =
-        RHI::ERHIResourceState::VertexBuffer | RHI::ERHIResourceState::IndexBuffer | RHI::ERHIResourceState::ConstantBuffer |
-        RHI::ERHIResourceState::IndirectArgument;
-
-    if ( HasAnyFlags( InState, BufferOnlyStates ) ) [[unlikely]]
-    {
-        return TUnexpected( RHI::MakeRHIInvalidResource( "Buffer-only resource state requested for a texture." ) );
-    }
-
-    FVulkanResourceBarrierState Result{};
-    if ( InState == RHI::ERHIResourceState::Undefined )
-    {
-        Result.ImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-        return Result;
-    }
-
-    if ( InState == RHI::ERHIResourceState::Common )
-    {
-        Result.StageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
-        Result.AccessMask  = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
-        Result.ImageLayout = VK_IMAGE_LAYOUT_GENERAL;
-        return Result;
-    }
-
-    if ( InState == RHI::ERHIResourceState::Present )
-    {
-        Result.StageMask   = VK_PIPELINE_STAGE_2_NONE;
-        Result.AccessMask  = VK_ACCESS_2_NONE;
-        Result.ImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
-        return Result;
-    }
-
-    if ( InState == RHI::ERHIResourceState::RenderTarget )
-    {
-        if ( bIsDepthStencil ) [[unlikely]]
+        switch ( InFormat )
         {
-            return TUnexpected(
-                RHI::MakeRHIInvalidResource( "RenderTarget state is incompatible with depth/stencil textures." ) );
+#define LUMEN_VK_FORMAT_UNMAP_CASE( RhiName, VkName )                                                                            \
+    case VkName:                                                                                                                 \
+        return RhiName;
+            LUMEN_VK_FORMAT_LIST( LUMEN_VK_FORMAT_UNMAP_CASE )
+#undef LUMEN_VK_FORMAT_UNMAP_CASE
+        default:
+            return RHI::ERHIFormat::Unknown;
         }
-        Result.StageMask   = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
-        Result.AccessMask  = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
-        Result.ImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-        return Result;
     }
 
-    if ( InState == RHI::ERHIResourceState::DepthWrite )
+    /**
+     * Image aspects
+     */
+
+#define LUMEN_VK_IMAGE_ASPECT_LIST( X )                                                                                          \
+    X( RHI::ERHIFormatAspect::Color, VK_IMAGE_ASPECT_COLOR_BIT )                                                                 \
+    X( RHI::ERHIFormatAspect::Depth, VK_IMAGE_ASPECT_DEPTH_BIT )                                                                 \
+    X( RHI::ERHIFormatAspect::Stencil, VK_IMAGE_ASPECT_STENCIL_BIT )
+
+    TExpected<VkImageAspectFlags, RHI::FRHIError> ToVulkanImageAspect ( RHI::ERHIFormatAspect InAspect ) noexcept
     {
-        if ( not bIsDepthStencil ) [[unlikely]]
+        constexpr UInt8 ValidMask =
+            static_cast<UInt8>( RHI::ERHIFormatAspect::Color | RHI::ERHIFormatAspect::Depth | RHI::ERHIFormatAspect::Stencil );
+        const UInt8 Raw = static_cast<UInt8>( InAspect );
+        if ( Raw == 0U or ( Raw & ~ValidMask ) != 0U )
         {
-            return TUnexpected( RHI::MakeRHIInvalidResource( "DepthWrite state requires a depth/stencil texture." ) );
+            return TUnexpected( RHI::MakeRHIInvalidResource( "Invalid RHI::ERHIFormatAspect bitmask." ) );
         }
-        Result.StageMask   = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
-        Result.AccessMask  = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
-        Result.ImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+        const RHI::ERHIFormatAspect InValue = InAspect;
+        VkImageAspectFlags Flags            = 0U;
+        LUMEN_VK_IMAGE_ASPECT_LIST( LUMEN_VK_FLAG_OR )
+        return Flags;
+    }
+
+    TExpected<VkImageAspectFlags, RHI::FRHIError> GetVulkanFullImageAspect ( RHI::ERHIFormat InFormat ) noexcept
+    {
+        const TOptional<RHI::FRHIFormatInfo> Info = TryGetRHIFormatInfo( InFormat );
+
+        if ( not Info or Info->Aspects == RHI::ERHIFormatAspect::None ) [[unlikely]]
+        {
+            return TUnexpected( RHI::MakeRHIInvalidResource( "Cannot derive Vulkan image aspects for Unknown or invalid format." ) );
+        }
+        return ToVulkanImageAspect( Info->Aspects );
+    }
+
+    /**
+     * Resource usage
+     */
+
+#define LUMEN_VK_BUFFER_USAGE_LIST( X )                                                                                          \
+    X( RHI::ERHIResourceUsage::CopySource, VK_BUFFER_USAGE_TRANSFER_SRC_BIT )                                                    \
+    X( ( RHI::ERHIResourceUsage::CopyDestination | RHI::ERHIResourceUsage::QueryResolve ), VK_BUFFER_USAGE_TRANSFER_DST_BIT )    \
+    X( RHI::ERHIResourceUsage::VertexBuffer, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT )                                                 \
+    X( RHI::ERHIResourceUsage::IndexBuffer, VK_BUFFER_USAGE_INDEX_BUFFER_BIT )                                                   \
+    X( RHI::ERHIResourceUsage::ConstantBuffer, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT )                                              \
+    X( ( RHI::ERHIResourceUsage::ShaderResource | RHI::ERHIResourceUsage::UnorderedAccess ),                                     \
+       VK_BUFFER_USAGE_STORAGE_BUFFER_BIT )                                                                                      \
+    X( RHI::ERHIResourceUsage::IndirectArgument, VK_BUFFER_USAGE_INDIRECT_BUFFER_BIT )
+
+#define LUMEN_VK_IMAGE_USAGE_LIST( X )                                                                                           \
+    X( RHI::ERHIResourceUsage::CopySource, VK_IMAGE_USAGE_TRANSFER_SRC_BIT )                                                     \
+    X( RHI::ERHIResourceUsage::CopyDestination, VK_IMAGE_USAGE_TRANSFER_DST_BIT )                                                \
+    X( RHI::ERHIResourceUsage::ShaderResource, VK_IMAGE_USAGE_SAMPLED_BIT )                                                      \
+    X( RHI::ERHIResourceUsage::UnorderedAccess, VK_IMAGE_USAGE_STORAGE_BIT )                                                     \
+    X( RHI::ERHIResourceUsage::RenderTarget, VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT )                                               \
+    X( RHI::ERHIResourceUsage::DepthStencil, VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT )
+
+    TExpected<VkBufferUsageFlags, RHI::FRHIError> ToVulkanBufferUsage ( RHI::ERHIResourceUsage InUsage ) noexcept
+    {
+        if ( not IsValidRHIResourceUsage( InUsage ) or InUsage == RHI::ERHIResourceUsage::None ) [[unlikely]]
+        {
+            return TUnexpected( RHI::MakeRHIInvalidResource( "Buffer usage flags must be valid and nonzero." ) );
+        }
+
+        if ( HasAnyFlags( InUsage, RHI::ERHIResourceUsage::RenderTarget | RHI::ERHIResourceUsage::DepthStencil ) ) [[unlikely]]
+        {
+            return TUnexpected( RHI::MakeRHIInvalidResource( "RenderTarget and DepthStencil usages are invalid for buffers." ) );
+        }
+
+        const RHI::ERHIResourceUsage InValue = InUsage;
+        VkBufferUsageFlags Flags             = 0U;
+        LUMEN_VK_BUFFER_USAGE_LIST( LUMEN_VK_FLAG_OR )
+        return Flags;
+    }
+
+    TExpected<VkImageUsageFlags, RHI::FRHIError> ToVulkanImageUsage ( RHI::ERHIResourceUsage InUsage ) noexcept
+    {
+        if ( not IsValidRHIResourceUsage( InUsage ) or InUsage == RHI::ERHIResourceUsage::None ) [[unlikely]]
+        {
+            return TUnexpected( RHI::MakeRHIInvalidResource( "Texture usage flags must be valid and nonzero." ) );
+        }
+
+        constexpr RHI::ERHIResourceUsage BufferOnlyUsages =
+            RHI::ERHIResourceUsage::VertexBuffer | RHI::ERHIResourceUsage::IndexBuffer | RHI::ERHIResourceUsage::ConstantBuffer |
+            RHI::ERHIResourceUsage::IndirectArgument | RHI::ERHIResourceUsage::QueryResolve;
+
+        if ( HasAnyFlags( InUsage, BufferOnlyUsages ) ) [[unlikely]]
+        {
+            return TUnexpected( RHI::MakeRHIInvalidResource( "Buffer-only usage flags are invalid for textures." ) );
+        }
+
+        const RHI::ERHIResourceUsage InValue = InUsage;
+        VkImageUsageFlags Flags              = 0U;
+        LUMEN_VK_IMAGE_USAGE_LIST( LUMEN_VK_FLAG_OR )
+        return Flags;
+    }
+
+    /**
+     * Buffer barrier states
+     */
+
+#define LUMEN_VK_BUFFER_STATE_LIST( X )                                                                                          \
+    X( RHI::ERHIResourceState::Common, VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT,                                                     \
+       ( VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT ) )                                                          \
+    X( RHI::ERHIResourceState::VertexBuffer, VK_PIPELINE_STAGE_2_VERTEX_ATTRIBUTE_INPUT_BIT,                                     \
+       VK_ACCESS_2_VERTEX_ATTRIBUTE_READ_BIT )                                                                                   \
+    X( RHI::ERHIResourceState::IndexBuffer, VK_PIPELINE_STAGE_2_INDEX_INPUT_BIT, VK_ACCESS_2_INDEX_READ_BIT )                    \
+    X( RHI::ERHIResourceState::ConstantBuffer,                                                                                   \
+       ( VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT ), VK_ACCESS_2_UNIFORM_READ_BIT )         \
+    X( RHI::ERHIResourceState::ShaderResource,                                                                                   \
+       ( VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT ), VK_ACCESS_2_SHADER_READ_BIT )          \
+    X( RHI::ERHIResourceState::UnorderedAccess,                                                                                  \
+       ( VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT ),                                        \
+       ( VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT ) )                                          \
+    X( RHI::ERHIResourceState::CopySource, VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_READ_BIT )                         \
+    X( RHI::ERHIResourceState::CopyDestination, VK_PIPELINE_STAGE_2_COPY_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT )                   \
+    X( RHI::ERHIResourceState::ResolveSource, VK_PIPELINE_STAGE_2_RESOLVE_BIT, VK_ACCESS_2_TRANSFER_READ_BIT )                   \
+    X( RHI::ERHIResourceState::ResolveDestination, VK_PIPELINE_STAGE_2_RESOLVE_BIT, VK_ACCESS_2_TRANSFER_WRITE_BIT )             \
+    X( RHI::ERHIResourceState::IndirectArgument, VK_PIPELINE_STAGE_2_DRAW_INDIRECT_BIT, VK_ACCESS_2_INDIRECT_COMMAND_READ_BIT )
+
+#define LUMEN_VK_BUFFER_STATE_ROW( RhiState, Stages, Access )                                                                    \
+    if ( HasAnyFlags( InState, RhiState ) )                                                                                      \
+    {                                                                                                                            \
+        Result.StageMask |= Stages;                                                                                              \
+        Result.AccessMask |= Access;                                                                                             \
+    }
+
+    TExpected<FVulkanResourceBarrierState, RHI::FRHIError> ToVulkanBufferState ( RHI::ERHIResourceState InState ) noexcept
+    {
+        if ( not RHI::IsValidRHIResourceState( InState ) ) [[unlikely]]
+        {
+            return TUnexpected( RHI::MakeRHIInvalidResource( "Unknown RHI::ERHIResourceState bits." ) );
+        }
+
+        constexpr RHI::ERHIResourceState ImageOnlyStates = RHI::ERHIResourceState::RenderTarget |
+                                                           RHI::ERHIResourceState::DepthWrite |
+                                                           RHI::ERHIResourceState::DepthRead | RHI::ERHIResourceState::Present;
+
+        if ( HasAnyFlags( InState, ImageOnlyStates ) ) [[unlikely]]
+        {
+            return TUnexpected( RHI::MakeRHIInvalidResource( "Image-only resource state requested for a buffer." ) );
+        }
+
+        FVulkanResourceBarrierState Result{};
+        if ( InState == RHI::ERHIResourceState::Undefined )
+        {
+            return Result;
+        }
+
+        LUMEN_VK_BUFFER_STATE_LIST( LUMEN_VK_BUFFER_STATE_ROW )
         return Result;
     }
 
-    if ( InState == RHI::ERHIResourceState::UnorderedAccess )
-    {
-        Result.StageMask   = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-        Result.AccessMask  = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
-        Result.ImageLayout = VK_IMAGE_LAYOUT_GENERAL;
-        return Result;
-    }
+    /**
+     * Image barrier states (non-tabular: layouts depend on depth/stencil and exclusive combinations)
+     */
 
-    constexpr RHI::ERHIResourceState ReadOnlyImageMask =
-        RHI::ERHIResourceState::ShaderResource | RHI::ERHIResourceState::DepthRead;
-    if ( ( static_cast<UInt32>( InState ) & ~static_cast<UInt32>( ReadOnlyImageMask ) ) == 0U )
+    TExpected<FVulkanResourceBarrierState, RHI::FRHIError> ToVulkanImageState ( RHI::ERHIResourceState InState,
+                                                                           Bool bIsDepthStencil ) noexcept
     {
-        if ( HasAnyFlags( InState, RHI::ERHIResourceState::DepthRead ) )
+        if ( not IsValidRHIResourceState( InState ) ) [[unlikely]]
+        {
+            return TUnexpected( RHI::MakeRHIInvalidResource( "Unknown RHI::ERHIResourceState bits." ) );
+        }
+
+        constexpr RHI::ERHIResourceState BufferOnlyStates =
+            RHI::ERHIResourceState::VertexBuffer | RHI::ERHIResourceState::IndexBuffer | RHI::ERHIResourceState::ConstantBuffer |
+            RHI::ERHIResourceState::IndirectArgument;
+
+        if ( HasAnyFlags( InState, BufferOnlyStates ) ) [[unlikely]]
+        {
+            return TUnexpected( RHI::MakeRHIInvalidResource( "Buffer-only resource state requested for a texture." ) );
+        }
+
+        FVulkanResourceBarrierState Result{};
+        if ( InState == RHI::ERHIResourceState::Undefined )
+        {
+            Result.ImageLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+            return Result;
+        }
+
+        if ( InState == RHI::ERHIResourceState::Common )
+        {
+            Result.StageMask   = VK_PIPELINE_STAGE_2_ALL_COMMANDS_BIT;
+            Result.AccessMask  = VK_ACCESS_2_MEMORY_READ_BIT | VK_ACCESS_2_MEMORY_WRITE_BIT;
+            Result.ImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+            return Result;
+        }
+
+        if ( InState == RHI::ERHIResourceState::Present )
+        {
+            Result.StageMask   = VK_PIPELINE_STAGE_2_NONE;
+            Result.AccessMask  = VK_ACCESS_2_NONE;
+            Result.ImageLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
+            return Result;
+        }
+
+        if ( InState == RHI::ERHIResourceState::RenderTarget )
+        {
+            if ( bIsDepthStencil ) [[unlikely]]
+            {
+                return TUnexpected( RHI::MakeRHIInvalidResource( "RenderTarget state is incompatible with depth/stencil textures." ) );
+            }
+            Result.StageMask   = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
+            Result.AccessMask  = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;
+            Result.ImageLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+            return Result;
+        }
+
+        if ( InState == RHI::ERHIResourceState::DepthWrite )
         {
             if ( not bIsDepthStencil ) [[unlikely]]
             {
-                return TUnexpected( RHI::MakeRHIInvalidResource( "DepthRead state requires a depth/stencil texture." ) );
+                return TUnexpected( RHI::MakeRHIInvalidResource( "DepthWrite state requires a depth/stencil texture." ) );
             }
-            Result.StageMask |= VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
-            Result.AccessMask |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            Result.StageMask   = VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+            Result.AccessMask  = VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT | VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+            Result.ImageLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+            return Result;
         }
-        if ( HasAnyFlags( InState, RHI::ERHIResourceState::ShaderResource ) )
+
+        if ( InState == RHI::ERHIResourceState::UnorderedAccess )
         {
-            Result.StageMask |= VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
-            Result.AccessMask |= VK_ACCESS_2_SHADER_READ_BIT;
+            Result.StageMask   = VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+            Result.AccessMask  = VK_ACCESS_2_SHADER_STORAGE_READ_BIT | VK_ACCESS_2_SHADER_STORAGE_WRITE_BIT;
+            Result.ImageLayout = VK_IMAGE_LAYOUT_GENERAL;
+            return Result;
         }
-        Result.ImageLayout =
-            bIsDepthStencil ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-        return Result;
-    }
 
-    constexpr RHI::ERHIResourceState TransferSrcMask = RHI::ERHIResourceState::CopySource | RHI::ERHIResourceState::ResolveSource;
-    if ( ( static_cast<UInt32>( InState ) & ~static_cast<UInt32>( TransferSrcMask ) ) == 0U )
-    {
-        if ( HasAnyFlags( InState, RHI::ERHIResourceState::CopySource ) )
+        constexpr RHI::ERHIResourceState ReadOnlyImageMask =
+            RHI::ERHIResourceState::ShaderResource | RHI::ERHIResourceState::DepthRead;
+        if ( ( static_cast<UInt32>( InState ) & ~static_cast<UInt32>( ReadOnlyImageMask ) ) == 0U )
         {
-            Result.StageMask |= VK_PIPELINE_STAGE_2_COPY_BIT;
+            if ( HasAnyFlags( InState, RHI::ERHIResourceState::DepthRead ) )
+            {
+                if ( not bIsDepthStencil ) [[unlikely]]
+                {
+                    return TUnexpected( RHI::MakeRHIInvalidResource( "DepthRead state requires a depth/stencil texture." ) );
+                }
+                Result.StageMask |= VK_PIPELINE_STAGE_2_EARLY_FRAGMENT_TESTS_BIT | VK_PIPELINE_STAGE_2_LATE_FRAGMENT_TESTS_BIT;
+                Result.AccessMask |= VK_ACCESS_2_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+            }
+            if ( HasAnyFlags( InState, RHI::ERHIResourceState::ShaderResource ) )
+            {
+                Result.StageMask |= VK_PIPELINE_STAGE_2_ALL_GRAPHICS_BIT | VK_PIPELINE_STAGE_2_COMPUTE_SHADER_BIT;
+                Result.AccessMask |= VK_ACCESS_2_SHADER_READ_BIT;
+            }
+            Result.ImageLayout =
+                bIsDepthStencil ? VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL : VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+            return Result;
         }
-        if ( HasAnyFlags( InState, RHI::ERHIResourceState::ResolveSource ) )
+
+        constexpr RHI::ERHIResourceState TransferSrcMask =
+            RHI::ERHIResourceState::CopySource | RHI::ERHIResourceState::ResolveSource;
+        if ( ( static_cast<UInt32>( InState ) & ~static_cast<UInt32>( TransferSrcMask ) ) == 0U )
         {
-            Result.StageMask |= VK_PIPELINE_STAGE_2_RESOLVE_BIT;
+            if ( HasAnyFlags( InState, RHI::ERHIResourceState::CopySource ) )
+            {
+                Result.StageMask |= VK_PIPELINE_STAGE_2_COPY_BIT;
+            }
+            if ( HasAnyFlags( InState, RHI::ERHIResourceState::ResolveSource ) )
+            {
+                Result.StageMask |= VK_PIPELINE_STAGE_2_RESOLVE_BIT;
+            }
+            Result.AccessMask  = VK_ACCESS_2_TRANSFER_READ_BIT;
+            Result.ImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
+            return Result;
         }
-        Result.AccessMask  = VK_ACCESS_2_TRANSFER_READ_BIT;
-        Result.ImageLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
-        return Result;
-    }
 
-    constexpr RHI::ERHIResourceState TransferDstMask =
-        RHI::ERHIResourceState::CopyDestination | RHI::ERHIResourceState::ResolveDestination;
-    if ( ( static_cast<UInt32>( InState ) & ~static_cast<UInt32>( TransferDstMask ) ) == 0U )
-    {
-        if ( HasAnyFlags( InState, RHI::ERHIResourceState::CopyDestination ) )
+        constexpr RHI::ERHIResourceState TransferDstMask =
+            RHI::ERHIResourceState::CopyDestination | RHI::ERHIResourceState::ResolveDestination;
+        if ( ( static_cast<UInt32>( InState ) & ~static_cast<UInt32>( TransferDstMask ) ) == 0U )
         {
-            Result.StageMask |= VK_PIPELINE_STAGE_2_COPY_BIT;
+            if ( HasAnyFlags( InState, RHI::ERHIResourceState::CopyDestination ) )
+            {
+                Result.StageMask |= VK_PIPELINE_STAGE_2_COPY_BIT;
+            }
+            if ( HasAnyFlags( InState, RHI::ERHIResourceState::ResolveDestination ) )
+            {
+                Result.StageMask |= VK_PIPELINE_STAGE_2_RESOLVE_BIT;
+            }
+            Result.AccessMask  = VK_ACCESS_2_TRANSFER_WRITE_BIT;
+            Result.ImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+            return Result;
         }
-        if ( HasAnyFlags( InState, RHI::ERHIResourceState::ResolveDestination ) )
+
+        return TUnexpected(
+            RHI::MakeRHIInvalidResource( "Combined RHI::ERHIResourceState flags require incompatible Vulkan image layouts." ) );
+    }
+
+    /**
+     * Sample count
+     */
+
+#define LUMEN_VK_SAMPLE_COUNT_LIST( X )                                                                                          \
+    X( RHI::ERHISampleCount::Count1, VK_SAMPLE_COUNT_1_BIT )                                                                     \
+    X( RHI::ERHISampleCount::Count2, VK_SAMPLE_COUNT_2_BIT )                                                                     \
+    X( RHI::ERHISampleCount::Count4, VK_SAMPLE_COUNT_4_BIT )                                                                     \
+    X( RHI::ERHISampleCount::Count8, VK_SAMPLE_COUNT_8_BIT )                                                                     \
+    X( RHI::ERHISampleCount::Count16, VK_SAMPLE_COUNT_16_BIT )                                                                   \
+    X( RHI::ERHISampleCount::Count32, VK_SAMPLE_COUNT_32_BIT )                                                                   \
+    X( RHI::ERHISampleCount::Count64, VK_SAMPLE_COUNT_64_BIT )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanSampleCount,
+                              RHI::ERHISampleCount,
+                              VkSampleCountFlagBits,
+                              LUMEN_VK_SAMPLE_COUNT_LIST,
+                              RHI::MakeRHIInvalidPipeline( "Invalid RHI::ERHISampleCount value." ) )
+
+    /**
+     * Shader stages (shared list: single-stage switch + OR-chain)
+     */
+
+#define LUMEN_VK_SHADER_STAGE_LIST( X )                                                                                          \
+    X( RHI::ERHIShaderStage::Vertex, VK_SHADER_STAGE_VERTEX_BIT )                                                                \
+    X( RHI::ERHIShaderStage::Pixel, VK_SHADER_STAGE_FRAGMENT_BIT )                                                               \
+    X( RHI::ERHIShaderStage::Compute, VK_SHADER_STAGE_COMPUTE_BIT )                                                              \
+    X( RHI::ERHIShaderStage::Geometry, VK_SHADER_STAGE_GEOMETRY_BIT )                                                            \
+    X( RHI::ERHIShaderStage::Hull, VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT )                                                    \
+    X( RHI::ERHIShaderStage::Domain, VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT )                                               \
+    X( RHI::ERHIShaderStage::Amplification, VK_SHADER_STAGE_TASK_BIT_EXT )                                                       \
+    X( RHI::ERHIShaderStage::Mesh, VK_SHADER_STAGE_MESH_BIT_EXT )
+
+    TExpected<VkShaderStageFlags, RHI::FRHIError> ToVulkanShaderStageFlags ( RHI::ERHIShaderStage InStages ) noexcept
+    {
+        const UInt32 Raw     = static_cast<UInt32>( InStages );
+        const UInt32 AllMask = static_cast<UInt32>( RHI::ERHIShaderStage::All );
+        if ( Raw == 0U or ( Raw & ~AllMask ) != 0U )
         {
-            Result.StageMask |= VK_PIPELINE_STAGE_2_RESOLVE_BIT;
+            return TUnexpected( RHI::MakeRHIInvalidShader( "Invalid or empty RHI::ERHIShaderStage mask." ) );
         }
-        Result.AccessMask  = VK_ACCESS_2_TRANSFER_WRITE_BIT;
-        Result.ImageLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
-        return Result;
+
+        if ( InStages == RHI::ERHIShaderStage::All )
+        {
+            return VK_SHADER_STAGE_ALL;
+        }
+        if ( InStages == RHI::ERHIShaderStage::AllGraphics )
+        {
+            return VK_SHADER_STAGE_ALL_GRAPHICS;
+        }
+
+        const RHI::ERHIShaderStage InValue = InStages;
+        VkShaderStageFlags Flags           = 0U;
+        LUMEN_VK_SHADER_STAGE_LIST( LUMEN_VK_FLAG_OR )
+        return Flags;
     }
 
-    return TUnexpected(
-        RHI::MakeRHIInvalidResource( "Combined ERHIResourceState flags require incompatible Vulkan image layouts." ) );
-}
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanSingleShaderStage,
+                              RHI::ERHIShaderStage,
+                              VkShaderStageFlagBits,
+                              LUMEN_VK_SHADER_STAGE_LIST,
+                              RHI::MakeRHIInvalidShader( "RHI::ERHIShaderStage must specify a single valid stage." ) )
 
-Lumen::TExpected<VkSampleCountFlagBits, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanSampleCount ( RHI::ERHISampleCount InCount ) noexcept
-{
-    switch ( InCount )
-    {
-    case RHI::ERHISampleCount::Count1:
-        return VK_SAMPLE_COUNT_1_BIT;
-    case RHI::ERHISampleCount::Count2:
-        return VK_SAMPLE_COUNT_2_BIT;
-    case RHI::ERHISampleCount::Count4:
-        return VK_SAMPLE_COUNT_4_BIT;
-    case RHI::ERHISampleCount::Count8:
-        return VK_SAMPLE_COUNT_8_BIT;
-    case RHI::ERHISampleCount::Count16:
-        return VK_SAMPLE_COUNT_16_BIT;
-    case RHI::ERHISampleCount::Count32:
-        return VK_SAMPLE_COUNT_32_BIT;
-    case RHI::ERHISampleCount::Count64:
-        return VK_SAMPLE_COUNT_64_BIT;
-    default:
-        return TUnexpected( RHI::MakeRHIInvalidPipeline( "Invalid ERHISampleCount value." ) );
-    }
-}
+    /**
+     * Descriptor types
+     */
 
-Lumen::TExpected<VkShaderStageFlags, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanShaderStageFlags ( RHI::ERHIShaderStage InStages ) noexcept
-{
-    const UInt32 Raw     = static_cast<UInt32>( InStages );
-    const UInt32 AllMask = static_cast<UInt32>( RHI::ERHIShaderStage::All );
-    if ( Raw == 0U or ( Raw & ~AllMask ) != 0U )
+#define LUMEN_VK_DESCRIPTOR_TYPE_LIST( X )                                                                                       \
+    X( RHI::ERHIBindingType::ConstantBuffer, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER )                                                 \
+    X( RHI::ERHIBindingType::ReadOnlyBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER )                                                 \
+    X( RHI::ERHIBindingType::ReadWriteBuffer, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER )                                                \
+    X( RHI::ERHIBindingType::Texture, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE )                                                         \
+    X( RHI::ERHIBindingType::StorageTexture, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE )                                                  \
+    X( RHI::ERHIBindingType::Sampler, VK_DESCRIPTOR_TYPE_SAMPLER )                                                               \
+    X( RHI::ERHIBindingType::CombinedTextureSampler, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanDescriptorType,
+                              RHI::ERHIBindingType,
+                              VkDescriptorType,
+                              LUMEN_VK_DESCRIPTOR_TYPE_LIST,
+                              RHI::MakeRHIInvalidBinding( "Invalid RHI::ERHIBindingType value." ) )
+
+    /**
+     * Index format
+     */
+
+#define LUMEN_VK_INDEX_TYPE_LIST( X )                                                                                            \
+    X( RHI::ERHIIndexFormat::Index16, VK_INDEX_TYPE_UINT16 )                                                                     \
+    X( RHI::ERHIIndexFormat::Index32, VK_INDEX_TYPE_UINT32 )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanIndexType,
+                              RHI::ERHIIndexFormat,
+                              VkIndexType,
+                              LUMEN_VK_INDEX_TYPE_LIST,
+                              RHI::MakeRHIInvalidCommand( "Invalid RHI::ERHIIndexFormat value." ) )
+
+    /**
+     * Texture view type
+     */
+
+#define LUMEN_VK_IMAGE_VIEW_TYPE_LIST( X )                                                                                       \
+    X( RHI::ERHITextureViewType::Texture1D, VK_IMAGE_VIEW_TYPE_1D )                                                              \
+    X( RHI::ERHITextureViewType::Texture2D, VK_IMAGE_VIEW_TYPE_2D )                                                              \
+    X( RHI::ERHITextureViewType::Texture3D, VK_IMAGE_VIEW_TYPE_3D )                                                              \
+    X( RHI::ERHITextureViewType::TextureCube, VK_IMAGE_VIEW_TYPE_CUBE )                                                          \
+    X( RHI::ERHITextureViewType::Texture2DArray, VK_IMAGE_VIEW_TYPE_2D_ARRAY )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanImageViewType,
+                              RHI::ERHITextureViewType,
+                              VkImageViewType,
+                              LUMEN_VK_IMAGE_VIEW_TYPE_LIST,
+                              RHI::MakeRHIInvalidResource( "Invalid RHI::ERHITextureViewType value." ) )
+
+    /**
+     * Primitive topology
+     */
+
+#define LUMEN_VK_PRIMITIVE_TOPOLOGY_LIST( X )                                                                                    \
+    X( RHI::ERHIPrimitiveTopology::PointList, VK_PRIMITIVE_TOPOLOGY_POINT_LIST )                                                 \
+    X( RHI::ERHIPrimitiveTopology::LineList, VK_PRIMITIVE_TOPOLOGY_LINE_LIST )                                                   \
+    X( RHI::ERHIPrimitiveTopology::LineStrip, VK_PRIMITIVE_TOPOLOGY_LINE_STRIP )                                                 \
+    X( RHI::ERHIPrimitiveTopology::TriangleList, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST )                                           \
+    X( RHI::ERHIPrimitiveTopology::TriangleStrip, VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP )                                         \
+    X( RHI::ERHIPrimitiveTopology::PatchList, VK_PRIMITIVE_TOPOLOGY_PATCH_LIST )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanPrimitiveTopology,
+                              RHI::ERHIPrimitiveTopology,
+                              VkPrimitiveTopology,
+                              LUMEN_VK_PRIMITIVE_TOPOLOGY_LIST,
+                              RHI::MakeRHIInvalidPipeline( "Invalid RHI::ERHIPrimitiveTopology value." ) )
+
+    /**
+     * Rasterizer state
+     */
+
+#define LUMEN_VK_POLYGON_MODE_LIST( X )                                                                                          \
+    X( RHI::ERHIFillMode::Solid, VK_POLYGON_MODE_FILL )                                                                          \
+    X( RHI::ERHIFillMode::Wireframe, VK_POLYGON_MODE_LINE )                                                                      \
+    X( RHI::ERHIFillMode::Point, VK_POLYGON_MODE_POINT )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanPolygonMode,
+                              RHI::ERHIFillMode,
+                              VkPolygonMode,
+                              LUMEN_VK_POLYGON_MODE_LIST,
+                              RHI::MakeRHIInvalidPipeline( "Invalid RHI::ERHIFillMode value." ) )
+
+#define LUMEN_VK_CULL_MODE_LIST( X )                                                                                             \
+    X( RHI::ERHICullMode::None, VK_CULL_MODE_NONE )                                                                              \
+    X( RHI::ERHICullMode::Front, VK_CULL_MODE_FRONT_BIT )                                                                        \
+    X( RHI::ERHICullMode::Back, VK_CULL_MODE_BACK_BIT )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanCullMode,
+                              RHI::ERHICullMode,
+                              VkCullModeFlags,
+                              LUMEN_VK_CULL_MODE_LIST,
+                              RHI::MakeRHIInvalidPipeline( "Invalid RHI::ERHICullMode value." ) )
+
+#define LUMEN_VK_FRONT_FACE_LIST( X )                                                                                            \
+    X( RHI::ERHIFrontFace::CounterClockwise, VK_FRONT_FACE_COUNTER_CLOCKWISE )                                                   \
+    X( RHI::ERHIFrontFace::Clockwise, VK_FRONT_FACE_CLOCKWISE )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanFrontFace,
+                              RHI::ERHIFrontFace,
+                              VkFrontFace,
+                              LUMEN_VK_FRONT_FACE_LIST,
+                              RHI::MakeRHIInvalidPipeline( "Invalid RHI::ERHIFrontFace value." ) )
+
+    /**
+     * Blend state
+     */
+
+#define LUMEN_VK_BLEND_FACTOR_LIST( X )                                                                                          \
+    X( RHI::ERHIBlendFactor::Zero, VK_BLEND_FACTOR_ZERO )                                                                        \
+    X( RHI::ERHIBlendFactor::One, VK_BLEND_FACTOR_ONE )                                                                          \
+    X( RHI::ERHIBlendFactor::SourceAlpha, VK_BLEND_FACTOR_SRC_ALPHA )                                                            \
+    X( RHI::ERHIBlendFactor::InverseSourceAlpha, VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA )                                           \
+    X( RHI::ERHIBlendFactor::DestinationColor, VK_BLEND_FACTOR_DST_COLOR )                                                       \
+    X( RHI::ERHIBlendFactor::InverseDestinationColor, VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanBlendFactor,
+                              RHI::ERHIBlendFactor,
+                              VkBlendFactor,
+                              LUMEN_VK_BLEND_FACTOR_LIST,
+                              RHI::MakeRHIInvalidPipeline( "Invalid RHI::ERHIBlendFactor value." ) )
+
+#define LUMEN_VK_BLEND_OP_LIST( X )                                                                                              \
+    X( RHI::ERHIBlendOp::Add, VK_BLEND_OP_ADD )                                                                                  \
+    X( RHI::ERHIBlendOp::Subtract, VK_BLEND_OP_SUBTRACT )                                                                        \
+    X( RHI::ERHIBlendOp::ReverseSubtract, VK_BLEND_OP_REVERSE_SUBTRACT )                                                         \
+    X( RHI::ERHIBlendOp::Min, VK_BLEND_OP_MIN )                                                                                  \
+    X( RHI::ERHIBlendOp::Max, VK_BLEND_OP_MAX )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanBlendOp,
+                              RHI::ERHIBlendOp,
+                              VkBlendOp,
+                              LUMEN_VK_BLEND_OP_LIST,
+                              RHI::MakeRHIInvalidPipeline( "Invalid RHI::ERHIBlendOp value." ) )
+
+    /**
+     * Depth-stencil state
+     */
+
+#define LUMEN_VK_STENCIL_OP_LIST( X )                                                                                            \
+    X( RHI::ERHIStencilOp::Keep, VK_STENCIL_OP_KEEP )                                                                            \
+    X( RHI::ERHIStencilOp::Zero, VK_STENCIL_OP_ZERO )                                                                            \
+    X( RHI::ERHIStencilOp::Replace, VK_STENCIL_OP_REPLACE )                                                                      \
+    X( RHI::ERHIStencilOp::IncrementClamp, VK_STENCIL_OP_INCREMENT_AND_CLAMP )                                                   \
+    X( RHI::ERHIStencilOp::DecrementClamp, VK_STENCIL_OP_DECREMENT_AND_CLAMP )                                                   \
+    X( RHI::ERHIStencilOp::Invert, VK_STENCIL_OP_INVERT )                                                                        \
+    X( RHI::ERHIStencilOp::IncrementWrap, VK_STENCIL_OP_INCREMENT_AND_WRAP )                                                     \
+    X( RHI::ERHIStencilOp::DecrementWrap, VK_STENCIL_OP_DECREMENT_AND_WRAP )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanStencilOp,
+                              RHI::ERHIStencilOp,
+                              VkStencilOp,
+                              LUMEN_VK_STENCIL_OP_LIST,
+                              RHI::MakeRHIInvalidPipeline( "Invalid RHI::ERHIStencilOp value." ) )
+
+#define LUMEN_VK_COMPARE_OP_LIST( X )                                                                                            \
+    X( RHI::ERHICompareFunction::Never, VK_COMPARE_OP_NEVER )                                                                    \
+    X( RHI::ERHICompareFunction::Less, VK_COMPARE_OP_LESS )                                                                      \
+    X( RHI::ERHICompareFunction::Equal, VK_COMPARE_OP_EQUAL )                                                                    \
+    X( RHI::ERHICompareFunction::LessEqual, VK_COMPARE_OP_LESS_OR_EQUAL )                                                        \
+    X( RHI::ERHICompareFunction::Greater, VK_COMPARE_OP_GREATER )                                                                \
+    X( RHI::ERHICompareFunction::NotEqual, VK_COMPARE_OP_NOT_EQUAL )                                                             \
+    X( RHI::ERHICompareFunction::GreaterEqual, VK_COMPARE_OP_GREATER_OR_EQUAL )                                                  \
+    X( RHI::ERHICompareFunction::Always, VK_COMPARE_OP_ALWAYS )
+
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanCompareOp,
+                              RHI::ERHICompareFunction,
+                              VkCompareOp,
+                              LUMEN_VK_COMPARE_OP_LIST,
+                              RHI::MakeRHIInvalidPipeline( "Invalid RHI::ERHICompareFunction value." ) )
+
+    /**
+     * Sampler state (shared 3-column list: filter + mipmap mode)
+     */
+
+#define LUMEN_VK_SAMPLER_FILTER_LIST( X )                                                                                        \
+    X( RHI::ERHISamplerFilter::Nearest, VK_FILTER_NEAREST, VK_SAMPLER_MIPMAP_MODE_NEAREST )                                      \
+    X( RHI::ERHISamplerFilter::Linear, VK_FILTER_LINEAR, VK_SAMPLER_MIPMAP_MODE_LINEAR )
+
+    TExpected<VkFilter, RHI::FRHIError> ToVulkanFilter ( RHI::ERHISamplerFilter InFilter ) noexcept
     {
-        return TUnexpected( RHI::MakeRHIInvalidShader( "Invalid or empty ERHIShaderStage mask." ) );
+        switch ( InFilter )
+        {
+#define LUMEN_VK_FILTER_CASE( RhiName, VkFilter, VkMipMode )                                                                     \
+    case RhiName:                                                                                                                \
+        return VkFilter;
+            LUMEN_VK_SAMPLER_FILTER_LIST( LUMEN_VK_FILTER_CASE )
+#undef LUMEN_VK_FILTER_CASE
+        default:
+            [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidResource( "Invalid RHI::ERHISamplerFilter value." ) );
+        }
     }
 
-    if ( InStages == RHI::ERHIShaderStage::All )
+    TExpected<VkSamplerMipmapMode, RHI::FRHIError> ToVulkanMipmapMode ( RHI::ERHISamplerFilter InFilter ) noexcept
     {
-        return VK_SHADER_STAGE_ALL;
-    }
-    if ( InStages == RHI::ERHIShaderStage::AllGraphics )
-    {
-        return VK_SHADER_STAGE_ALL_GRAPHICS;
-    }
-
-    VkShaderStageFlags Flags = 0U;
-    if ( HasAnyFlags( InStages, RHI::ERHIShaderStage::Vertex ) )
-    {
-        Flags |= VK_SHADER_STAGE_VERTEX_BIT;
-    }
-    if ( HasAnyFlags( InStages, RHI::ERHIShaderStage::Pixel ) )
-    {
-        Flags |= VK_SHADER_STAGE_FRAGMENT_BIT;
-    }
-    if ( HasAnyFlags( InStages, RHI::ERHIShaderStage::Compute ) )
-    {
-        Flags |= VK_SHADER_STAGE_COMPUTE_BIT;
-    }
-    if ( HasAnyFlags( InStages, RHI::ERHIShaderStage::Geometry ) )
-    {
-        Flags |= VK_SHADER_STAGE_GEOMETRY_BIT;
-    }
-    if ( HasAnyFlags( InStages, RHI::ERHIShaderStage::Hull ) )
-    {
-        Flags |= VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    }
-    if ( HasAnyFlags( InStages, RHI::ERHIShaderStage::Domain ) )
-    {
-        Flags |= VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    }
-    if ( HasAnyFlags( InStages, RHI::ERHIShaderStage::Amplification ) )
-    {
-        Flags |= VK_SHADER_STAGE_TASK_BIT_EXT;
-    }
-    if ( HasAnyFlags( InStages, RHI::ERHIShaderStage::Mesh ) )
-    {
-        Flags |= VK_SHADER_STAGE_MESH_BIT_EXT;
+        switch ( InFilter )
+        {
+#define LUMEN_VK_MIPMAP_CASE( RhiName, VkFilter, VkMipMode )                                                                     \
+    case RhiName:                                                                                                                \
+        return VkMipMode;
+            LUMEN_VK_SAMPLER_FILTER_LIST( LUMEN_VK_MIPMAP_CASE )
+#undef LUMEN_VK_MIPMAP_CASE
+        default:
+            [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidResource( "Invalid RHI::ERHISamplerFilter value." ) );
+        }
     }
 
-    return Flags;
-}
+#define LUMEN_VK_ADDRESS_MODE_LIST( X )                                                                                          \
+    X( RHI::ERHISamplerAddressMode::Repeat, VK_SAMPLER_ADDRESS_MODE_REPEAT )                                                     \
+    X( RHI::ERHISamplerAddressMode::MirroredRepeat, VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT )                                    \
+    X( RHI::ERHISamplerAddressMode::ClampToEdge, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE )                                         \
+    X( RHI::ERHISamplerAddressMode::ClampToBorder, VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER )
 
-Lumen::TExpected<VkShaderStageFlagBits, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanSingleShaderStage ( RHI::ERHIShaderStage InStage ) noexcept
-{
-    switch ( InStage )
-    {
-    case RHI::ERHIShaderStage::Vertex:
-        return VK_SHADER_STAGE_VERTEX_BIT;
-    case RHI::ERHIShaderStage::Pixel:
-        return VK_SHADER_STAGE_FRAGMENT_BIT;
-    case RHI::ERHIShaderStage::Compute:
-        return VK_SHADER_STAGE_COMPUTE_BIT;
-    case RHI::ERHIShaderStage::Geometry:
-        return VK_SHADER_STAGE_GEOMETRY_BIT;
-    case RHI::ERHIShaderStage::Hull:
-        return VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT;
-    case RHI::ERHIShaderStage::Domain:
-        return VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT;
-    case RHI::ERHIShaderStage::Amplification:
-        return VK_SHADER_STAGE_TASK_BIT_EXT;
-    case RHI::ERHIShaderStage::Mesh:
-        return VK_SHADER_STAGE_MESH_BIT_EXT;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidShader( "ERHIShaderStage must specify a single valid stage." ) );
-    }
-}
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanAddressMode,
+                              RHI::ERHISamplerAddressMode,
+                              VkSamplerAddressMode,
+                              LUMEN_VK_ADDRESS_MODE_LIST,
+                              RHI::MakeRHIInvalidResource( "Invalid RHI::ERHISamplerAddressMode value." ) )
 
-Lumen::TExpected<VkDescriptorType, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanDescriptorType ( RHI::ERHIBindingType InType ) noexcept
-{
-    switch ( InType )
-    {
-    case RHI::ERHIBindingType::ConstantBuffer:
-        return VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-    case RHI::ERHIBindingType::ReadOnlyBuffer:
-    case RHI::ERHIBindingType::ReadWriteBuffer:
-        return VK_DESCRIPTOR_TYPE_STORAGE_BUFFER;
-    case RHI::ERHIBindingType::Texture:
-        return VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE;
-    case RHI::ERHIBindingType::StorageTexture:
-        return VK_DESCRIPTOR_TYPE_STORAGE_IMAGE;
-    case RHI::ERHIBindingType::Sampler:
-        return VK_DESCRIPTOR_TYPE_SAMPLER;
-    case RHI::ERHIBindingType::CombinedTextureSampler:
-        return VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidBinding( "Invalid ERHIBindingType value." ) );
-    }
-}
+    /**
+     * Rendering attachment ops
+     */
 
-Lumen::TExpected<VkIndexType, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanIndexType ( RHI::ERHIIndexFormat InFormat ) noexcept
-{
-    switch ( InFormat )
-    {
-    case RHI::ERHIIndexFormat::Index16:
-        return VK_INDEX_TYPE_UINT16;
-    case RHI::ERHIIndexFormat::Index32:
-        return VK_INDEX_TYPE_UINT32;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidCommand( "Invalid ERHIIndexFormat value." ) );
-    }
-}
+#define LUMEN_VK_ATTACHMENT_LOAD_OP_LIST( X )                                                                                    \
+    X( RHI::ERHIRenderingLoadOp::Load, VK_ATTACHMENT_LOAD_OP_LOAD )                                                              \
+    X( RHI::ERHIRenderingLoadOp::Clear, VK_ATTACHMENT_LOAD_OP_CLEAR )                                                            \
+    X( RHI::ERHIRenderingLoadOp::DontCare, VK_ATTACHMENT_LOAD_OP_DONT_CARE )
 
-Lumen::TExpected<VkImageViewType, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanImageViewType ( RHI::ERHITextureViewType InType ) noexcept
-{
-    switch ( InType )
-    {
-    case RHI::ERHITextureViewType::Texture1D:
-        return VK_IMAGE_VIEW_TYPE_1D;
-    case RHI::ERHITextureViewType::Texture2D:
-        return VK_IMAGE_VIEW_TYPE_2D;
-    case RHI::ERHITextureViewType::Texture3D:
-        return VK_IMAGE_VIEW_TYPE_3D;
-    case RHI::ERHITextureViewType::TextureCube:
-        return VK_IMAGE_VIEW_TYPE_CUBE;
-    case RHI::ERHITextureViewType::Texture2DArray:
-        return VK_IMAGE_VIEW_TYPE_2D_ARRAY;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidResource( "Invalid ERHITextureViewType value." ) );
-    }
-}
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanAttachmentLoadOp,
+                              RHI::ERHIRenderingLoadOp,
+                              VkAttachmentLoadOp,
+                              LUMEN_VK_ATTACHMENT_LOAD_OP_LIST,
+                              RHI::MakeRHIInvalidCommand( "Invalid RHI::ERHIRenderingLoadOp value." ) )
 
-Lumen::TExpected<VkPrimitiveTopology, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanPrimitiveTopology ( RHI::ERHIPrimitiveTopology InTopology ) noexcept
-{
-    switch ( InTopology )
-    {
-    case RHI::ERHIPrimitiveTopology::PointList:
-        return VK_PRIMITIVE_TOPOLOGY_POINT_LIST;
-    case RHI::ERHIPrimitiveTopology::LineList:
-        return VK_PRIMITIVE_TOPOLOGY_LINE_LIST;
-    case RHI::ERHIPrimitiveTopology::LineStrip:
-        return VK_PRIMITIVE_TOPOLOGY_LINE_STRIP;
-    case RHI::ERHIPrimitiveTopology::TriangleList:
-        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-    case RHI::ERHIPrimitiveTopology::TriangleStrip:
-        return VK_PRIMITIVE_TOPOLOGY_TRIANGLE_STRIP;
-    case RHI::ERHIPrimitiveTopology::PatchList:
-        return VK_PRIMITIVE_TOPOLOGY_PATCH_LIST;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidPipeline( "Invalid ERHIPrimitiveTopology value." ) );
-    }
-}
+#define LUMEN_VK_ATTACHMENT_STORE_OP_LIST( X )                                                                                   \
+    X( RHI::ERHIRenderingStoreOp::Store, VK_ATTACHMENT_STORE_OP_STORE )                                                          \
+    X( RHI::ERHIRenderingStoreOp::DontCare, VK_ATTACHMENT_STORE_OP_DONT_CARE )
 
-Lumen::TExpected<VkPolygonMode, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanPolygonMode ( RHI::ERHIFillMode InFillMode ) noexcept
-{
-    switch ( InFillMode )
-    {
-    case RHI::ERHIFillMode::Solid:
-        return VK_POLYGON_MODE_FILL;
-    case RHI::ERHIFillMode::Wireframe:
-        return VK_POLYGON_MODE_LINE;
-    case RHI::ERHIFillMode::Point:
-        return VK_POLYGON_MODE_POINT;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidPipeline( "Invalid ERHIFillMode value." ) );
-    }
-}
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanAttachmentStoreOp,
+                              RHI::ERHIRenderingStoreOp,
+                              VkAttachmentStoreOp,
+                              LUMEN_VK_ATTACHMENT_STORE_OP_LIST,
+                              RHI::MakeRHIInvalidCommand( "Invalid RHI::ERHIRenderingStoreOp value." ) )
 
-Lumen::TExpected<VkCullModeFlags, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanCullMode ( RHI::ERHICullMode InCullMode ) noexcept
-{
-    switch ( InCullMode )
-    {
-    case RHI::ERHICullMode::None:
-        return VK_CULL_MODE_NONE;
-    case RHI::ERHICullMode::Front:
-        return VK_CULL_MODE_FRONT_BIT;
-    case RHI::ERHICullMode::Back:
-        return VK_CULL_MODE_BACK_BIT;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidPipeline( "Invalid ERHICullMode value." ) );
-    }
-}
+    /**
+     * Queries
+     */
 
-Lumen::TExpected<VkFrontFace, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanFrontFace ( RHI::ERHIFrontFace InFrontFace ) noexcept
-{
-    switch ( InFrontFace )
-    {
-    case RHI::ERHIFrontFace::CounterClockwise:
-        return VK_FRONT_FACE_COUNTER_CLOCKWISE;
-    case RHI::ERHIFrontFace::Clockwise:
-        return VK_FRONT_FACE_CLOCKWISE;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidPipeline( "Invalid ERHIFrontFace value." ) );
-    }
-}
+#define LUMEN_VK_QUERY_TYPE_LIST( X )                                                                                            \
+    X( RHI::ERHIQueryType::Occlusion, VK_QUERY_TYPE_OCCLUSION )                                                                  \
+    X( RHI::ERHIQueryType::Timestamp, VK_QUERY_TYPE_TIMESTAMP )                                                                  \
+    X( RHI::ERHIQueryType::PipelineStatistics, VK_QUERY_TYPE_PIPELINE_STATISTICS )
 
-Lumen::TExpected<VkBlendFactor, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanBlendFactor ( RHI::ERHIBlendFactor InFactor ) noexcept
-{
-    switch ( InFactor )
-    {
-    case RHI::ERHIBlendFactor::Zero:
-        return VK_BLEND_FACTOR_ZERO;
-    case RHI::ERHIBlendFactor::One:
-        return VK_BLEND_FACTOR_ONE;
-    case RHI::ERHIBlendFactor::SourceAlpha:
-        return VK_BLEND_FACTOR_SRC_ALPHA;
-    case RHI::ERHIBlendFactor::InverseSourceAlpha:
-        return VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-    case RHI::ERHIBlendFactor::DestinationColor:
-        return VK_BLEND_FACTOR_DST_COLOR;
-    case RHI::ERHIBlendFactor::InverseDestinationColor:
-        return VK_BLEND_FACTOR_ONE_MINUS_DST_COLOR;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidPipeline( "Invalid ERHIBlendFactor value." ) );
-    }
-}
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanQueryType,
+                              RHI::ERHIQueryType,
+                              VkQueryType,
+                              LUMEN_VK_QUERY_TYPE_LIST,
+                              RHI::MakeRHIInvalidQuery( "Invalid RHI::ERHIQueryType value." ) )
 
-Lumen::TExpected<VkBlendOp, Lumen::RHI::FRHIError> Lumen::RHIVulkan::ToVulkanBlendOp ( RHI::ERHIBlendOp InOp ) noexcept
-{
-    switch ( InOp )
-    {
-    case RHI::ERHIBlendOp::Add:
-        return VK_BLEND_OP_ADD;
-    case RHI::ERHIBlendOp::Subtract:
-        return VK_BLEND_OP_SUBTRACT;
-    case RHI::ERHIBlendOp::ReverseSubtract:
-        return VK_BLEND_OP_REVERSE_SUBTRACT;
-    case RHI::ERHIBlendOp::Min:
-        return VK_BLEND_OP_MIN;
-    case RHI::ERHIBlendOp::Max:
-        return VK_BLEND_OP_MAX;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidPipeline( "Invalid ERHIBlendOp value." ) );
-    }
-}
+    /**
+     * Presentation (bidirectional)
+     */
 
-Lumen::TExpected<VkStencilOp, Lumen::RHI::FRHIError> Lumen::RHIVulkan::ToVulkanStencilOp ( RHI::ERHIStencilOp InOp ) noexcept
-{
-    switch ( InOp )
-    {
-    case RHI::ERHIStencilOp::Keep:
-        return VK_STENCIL_OP_KEEP;
-    case RHI::ERHIStencilOp::Zero:
-        return VK_STENCIL_OP_ZERO;
-    case RHI::ERHIStencilOp::Replace:
-        return VK_STENCIL_OP_REPLACE;
-    case RHI::ERHIStencilOp::IncrementClamp:
-        return VK_STENCIL_OP_INCREMENT_AND_CLAMP;
-    case RHI::ERHIStencilOp::DecrementClamp:
-        return VK_STENCIL_OP_DECREMENT_AND_CLAMP;
-    case RHI::ERHIStencilOp::Invert:
-        return VK_STENCIL_OP_INVERT;
-    case RHI::ERHIStencilOp::IncrementWrap:
-        return VK_STENCIL_OP_INCREMENT_AND_WRAP;
-    case RHI::ERHIStencilOp::DecrementWrap:
-        return VK_STENCIL_OP_DECREMENT_AND_WRAP;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidPipeline( "Invalid ERHIStencilOp value." ) );
-    }
-}
+#define LUMEN_VK_PRESENT_MODE_LIST( X )                                                                                          \
+    X( RHI::ERHIPresentMode::Fifo, VK_PRESENT_MODE_FIFO_KHR )                                                                    \
+    X( RHI::ERHIPresentMode::Immediate, VK_PRESENT_MODE_IMMEDIATE_KHR )                                                          \
+    X( RHI::ERHIPresentMode::Mailbox, VK_PRESENT_MODE_MAILBOX_KHR )
 
-Lumen::TExpected<VkCompareOp, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanCompareOp ( RHI::ERHICompareFunction InCompare ) noexcept
-{
-    switch ( InCompare )
-    {
-    case RHI::ERHICompareFunction::Never:
-        return VK_COMPARE_OP_NEVER;
-    case RHI::ERHICompareFunction::Less:
-        return VK_COMPARE_OP_LESS;
-    case RHI::ERHICompareFunction::Equal:
-        return VK_COMPARE_OP_EQUAL;
-    case RHI::ERHICompareFunction::LessEqual:
-        return VK_COMPARE_OP_LESS_OR_EQUAL;
-    case RHI::ERHICompareFunction::Greater:
-        return VK_COMPARE_OP_GREATER;
-    case RHI::ERHICompareFunction::NotEqual:
-        return VK_COMPARE_OP_NOT_EQUAL;
-    case RHI::ERHICompareFunction::GreaterEqual:
-        return VK_COMPARE_OP_GREATER_OR_EQUAL;
-    case RHI::ERHICompareFunction::Always:
-        return VK_COMPARE_OP_ALWAYS;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidPipeline( "Invalid ERHICompareFunction value." ) );
-    }
-}
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanPresentMode,
+                              RHI::ERHIPresentMode,
+                              VkPresentModeKHR,
+                              LUMEN_VK_PRESENT_MODE_LIST,
+                              RHI::MakeRHIInvalidPresentation( "Invalid RHI::ERHIPresentMode value." ) )
+    LUMEN_VK_DEFINE_ENUM_UNMAP( ToRHIPresentMode, RHI::ERHIPresentMode, VkPresentModeKHR, LUMEN_VK_PRESENT_MODE_LIST )
 
-Lumen::TExpected<VkFilter, Lumen::RHI::FRHIError> Lumen::RHIVulkan::ToVulkanFilter ( RHI::ERHISamplerFilter InFilter ) noexcept
-{
-    switch ( InFilter )
-    {
-    case RHI::ERHISamplerFilter::Nearest:
-        return VK_FILTER_NEAREST;
-    case RHI::ERHISamplerFilter::Linear:
-        return VK_FILTER_LINEAR;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidResource( "Invalid ERHISamplerFilter value." ) );
-    }
-}
+#define LUMEN_VK_COLOR_SPACE_LIST( X )                                                                                           \
+    X( RHI::ERHIColorSpace::SrgbNonLinear, VK_COLOR_SPACE_SRGB_NONLINEAR_KHR )                                                   \
+    X( RHI::ERHIColorSpace::DisplayP3NonLinear, VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT )                                        \
+    X( RHI::ERHIColorSpace::Hdr10St2084, VK_COLOR_SPACE_HDR10_ST2084_EXT )                                                       \
+    X( RHI::ERHIColorSpace::ExtendedSrgbLinear, VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT )
 
-Lumen::TExpected<VkSamplerMipmapMode, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanMipmapMode ( RHI::ERHISamplerFilter InFilter ) noexcept
-{
-    switch ( InFilter )
-    {
-    case RHI::ERHISamplerFilter::Nearest:
-        return VK_SAMPLER_MIPMAP_MODE_NEAREST;
-    case RHI::ERHISamplerFilter::Linear:
-        return VK_SAMPLER_MIPMAP_MODE_LINEAR;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidResource( "Invalid ERHISamplerFilter value." ) );
-    }
-}
+    LUMEN_VK_DEFINE_ENUM_MAP( ToVulkanColorSpace,
+                              RHI::ERHIColorSpace,
+                              VkColorSpaceKHR,
+                              LUMEN_VK_COLOR_SPACE_LIST,
+                              RHI::MakeRHIInvalidPresentation( "Invalid RHI::ERHIColorSpace value." ) )
+    LUMEN_VK_DEFINE_ENUM_UNMAP( ToRHIColorSpace, RHI::ERHIColorSpace, VkColorSpaceKHR, LUMEN_VK_COLOR_SPACE_LIST )
 
-Lumen::TExpected<VkSamplerAddressMode, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanAddressMode ( RHI::ERHISamplerAddressMode InMode ) noexcept
-{
-    switch ( InMode )
-    {
-    case RHI::ERHISamplerAddressMode::Repeat:
-        return VK_SAMPLER_ADDRESS_MODE_REPEAT;
-    case RHI::ERHISamplerAddressMode::MirroredRepeat:
-        return VK_SAMPLER_ADDRESS_MODE_MIRRORED_REPEAT;
-    case RHI::ERHISamplerAddressMode::ClampToEdge:
-        return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_EDGE;
-    case RHI::ERHISamplerAddressMode::ClampToBorder:
-        return VK_SAMPLER_ADDRESS_MODE_CLAMP_TO_BORDER;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidResource( "Invalid ERHISamplerAddressMode value." ) );
-    }
-}
+    /**
+     * Queue compatibility (non-tabular: graphics & compute queues implicitly support transfers)
+     */
 
-Lumen::TExpected<VkAttachmentLoadOp, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanAttachmentLoadOp ( RHI::ERHIRenderingLoadOp InOp ) noexcept
-{
-    switch ( InOp )
+    Bool IsVulkanQueueFamilyCompatible ( VkQueueFlags InQueueFlags, RHI::ERHIQueueType InQueueType ) noexcept
     {
-    case RHI::ERHIRenderingLoadOp::Load:
-        return VK_ATTACHMENT_LOAD_OP_LOAD;
-    case RHI::ERHIRenderingLoadOp::Clear:
-        return VK_ATTACHMENT_LOAD_OP_CLEAR;
-    case RHI::ERHIRenderingLoadOp::DontCare:
-        return VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidCommand( "Invalid ERHIRenderingLoadOp value." ) );
+        switch ( InQueueType )
+        {
+        case RHI::ERHIQueueType::Graphics:
+            return ( InQueueFlags & VK_QUEUE_GRAPHICS_BIT ) != 0U;
+        case RHI::ERHIQueueType::Compute:
+            return ( InQueueFlags & VK_QUEUE_COMPUTE_BIT ) != 0U;
+        case RHI::ERHIQueueType::Copy:
+            return ( InQueueFlags & ( VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT ) ) != 0U;
+        default:
+            [[unlikely]] return false;
+        }
     }
-}
 
-Lumen::TExpected<VkAttachmentStoreOp, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanAttachmentStoreOp ( RHI::ERHIRenderingStoreOp InOp ) noexcept
-{
-    switch ( InOp )
-    {
-    case RHI::ERHIRenderingStoreOp::Store:
-        return VK_ATTACHMENT_STORE_OP_STORE;
-    case RHI::ERHIRenderingStoreOp::DontCare:
-        return VK_ATTACHMENT_STORE_OP_DONT_CARE;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidCommand( "Invalid ERHIRenderingStoreOp value." ) );
-    }
-}
+    /**
+     * Cleanup
+     */
 
-Lumen::TExpected<VkQueryType, Lumen::RHI::FRHIError> Lumen::RHIVulkan::ToVulkanQueryType ( RHI::ERHIQueryType InType ) noexcept
-{
-    switch ( InType )
-    {
-    case RHI::ERHIQueryType::Occlusion:
-        return VK_QUERY_TYPE_OCCLUSION;
-    case RHI::ERHIQueryType::Timestamp:
-        return VK_QUERY_TYPE_TIMESTAMP;
-    case RHI::ERHIQueryType::PipelineStatistics:
-        return VK_QUERY_TYPE_PIPELINE_STATISTICS;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidQuery( "Invalid ERHIQueryType value." ) );
-    }
-}
+#undef LUMEN_VK_ENUM_MAP_CASE
+#undef LUMEN_VK_DEFINE_ENUM_MAP
+#undef LUMEN_VK_ENUM_UNMAP_CASE
+#undef LUMEN_VK_DEFINE_ENUM_UNMAP
+#undef LUMEN_VK_FLAG_OR
+#undef LUMEN_VK_FORMAT_LIST
+#undef LUMEN_VK_IMAGE_ASPECT_LIST
+#undef LUMEN_VK_BUFFER_USAGE_LIST
+#undef LUMEN_VK_IMAGE_USAGE_LIST
+#undef LUMEN_VK_BUFFER_STATE_LIST
+#undef LUMEN_VK_BUFFER_STATE_ROW
+#undef LUMEN_VK_SAMPLE_COUNT_LIST
+#undef LUMEN_VK_SHADER_STAGE_LIST
+#undef LUMEN_VK_DESCRIPTOR_TYPE_LIST
+#undef LUMEN_VK_INDEX_TYPE_LIST
+#undef LUMEN_VK_IMAGE_VIEW_TYPE_LIST
+#undef LUMEN_VK_PRIMITIVE_TOPOLOGY_LIST
+#undef LUMEN_VK_POLYGON_MODE_LIST
+#undef LUMEN_VK_CULL_MODE_LIST
+#undef LUMEN_VK_FRONT_FACE_LIST
+#undef LUMEN_VK_BLEND_FACTOR_LIST
+#undef LUMEN_VK_BLEND_OP_LIST
+#undef LUMEN_VK_STENCIL_OP_LIST
+#undef LUMEN_VK_COMPARE_OP_LIST
+#undef LUMEN_VK_SAMPLER_FILTER_LIST
+#undef LUMEN_VK_ADDRESS_MODE_LIST
+#undef LUMEN_VK_ATTACHMENT_LOAD_OP_LIST
+#undef LUMEN_VK_ATTACHMENT_STORE_OP_LIST
+#undef LUMEN_VK_QUERY_TYPE_LIST
+#undef LUMEN_VK_PRESENT_MODE_LIST
+#undef LUMEN_VK_COLOR_SPACE_LIST
 
-Lumen::TExpected<VkPresentModeKHR, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanPresentMode ( RHI::ERHIPresentMode InMode ) noexcept
-{
-    switch ( InMode )
-    {
-    case RHI::ERHIPresentMode::Fifo:
-        return VK_PRESENT_MODE_FIFO_KHR;
-    case RHI::ERHIPresentMode::Immediate:
-        return VK_PRESENT_MODE_IMMEDIATE_KHR;
-    case RHI::ERHIPresentMode::Mailbox:
-        return VK_PRESENT_MODE_MAILBOX_KHR;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidPresentation( "Invalid ERHIPresentMode value." ) );
-    }
-}
+} // namespace RHIVulkan
 
-Lumen::TOptional<Lumen::RHI::ERHIPresentMode> Lumen::RHIVulkan::ToRHIPresentMode ( VkPresentModeKHR InMode ) noexcept
-{
-    switch ( InMode )
-    {
-    case VK_PRESENT_MODE_FIFO_KHR:
-        return TOptional{ RHI::ERHIPresentMode::Fifo };
-    case VK_PRESENT_MODE_IMMEDIATE_KHR:
-        return TOptional{ RHI::ERHIPresentMode::Immediate };
-    case VK_PRESENT_MODE_MAILBOX_KHR:
-        return TOptional{ RHI::ERHIPresentMode::Mailbox };
-    default:
-        [[unlikely]] return {};
-    }
-}
-
-Lumen::TExpected<VkColorSpaceKHR, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::ToVulkanColorSpace ( RHI::ERHIColorSpace InColorSpace ) noexcept
-{
-    switch ( InColorSpace )
-    {
-    case RHI::ERHIColorSpace::SrgbNonLinear:
-        return VK_COLOR_SPACE_SRGB_NONLINEAR_KHR;
-    case RHI::ERHIColorSpace::DisplayP3NonLinear:
-        return VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT;
-    case RHI::ERHIColorSpace::Hdr10St2084:
-        return VK_COLOR_SPACE_HDR10_ST2084_EXT;
-    case RHI::ERHIColorSpace::ExtendedSrgbLinear:
-        return VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT;
-    default:
-        [[unlikely]] return TUnexpected( RHI::MakeRHIInvalidPresentation( "Invalid ERHIColorSpace value." ) );
-    }
-}
-
-Lumen::TOptional<Lumen::RHI::ERHIColorSpace> Lumen::RHIVulkan::ToRHIColorSpace ( VkColorSpaceKHR InColorSpace ) noexcept
-{
-    switch ( InColorSpace )
-    {
-    case VK_COLOR_SPACE_SRGB_NONLINEAR_KHR:
-        return TOptional{ RHI::ERHIColorSpace::SrgbNonLinear };
-    case VK_COLOR_SPACE_DISPLAY_P3_NONLINEAR_EXT:
-        return TOptional{ RHI::ERHIColorSpace::DisplayP3NonLinear };
-    case VK_COLOR_SPACE_HDR10_ST2084_EXT:
-        return TOptional{ RHI::ERHIColorSpace::Hdr10St2084 };
-    case VK_COLOR_SPACE_EXTENDED_SRGB_LINEAR_EXT:
-        return TOptional{ RHI::ERHIColorSpace::ExtendedSrgbLinear };
-    default:
-        [[unlikely]] return {};
-    }
-}
-
-Lumen::Bool Lumen::RHIVulkan::IsVulkanQueueFamilyCompatible ( VkQueueFlags InQueueFlags, RHI::ERHIQueueType InQueueType ) noexcept
-{
-    switch ( InQueueType )
-    {
-    case RHI::ERHIQueueType::Graphics:
-        return ( InQueueFlags & VK_QUEUE_GRAPHICS_BIT ) != 0U;
-    case RHI::ERHIQueueType::Compute:
-        return ( InQueueFlags & VK_QUEUE_COMPUTE_BIT ) != 0U;
-    case RHI::ERHIQueueType::Copy:
-        /** NOTE: In Vulkan, graphics & compute queues implicitly support transfer operations. */
-        return ( InQueueFlags & ( VK_QUEUE_TRANSFER_BIT | VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT ) ) != 0U;
-    default:
-        [[unlikely]] return false;
-    }
-}
+} // namespace Lumen
