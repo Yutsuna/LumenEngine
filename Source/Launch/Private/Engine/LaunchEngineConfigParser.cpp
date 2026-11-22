@@ -15,7 +15,6 @@
 #include <Templates/Array.hpp>
 
 #include <cmath>
-#include <string_view>
 #include <type_traits>
 
 static_assert( LUMEN_HAS_REFLECTION == 1, "LaunchEngineConfigParser requires C++26 static reflection." );
@@ -152,10 +151,7 @@ namespace
             Bind( InField );
         } );
 
-        if ( not Result ) [[unlikely]]
-        {
-            return MakeUnexpected( Result.Error() );
-        }
+        LUMEN_EXPECT( _, Result );
         return Config;
     }
 
@@ -208,10 +204,7 @@ Launch::TLaunchResult<Launch::FLaunchEngineConfig> Launch::ValidateEngineConfig 
 
 Launch::TLaunchResult<Launch::FLaunchEngineConfig> Launch::ParseEngineConfig ( const FCommandLine &InCommandLine ) noexcept
 {
-    if ( TLaunchResult<void> Validated = ValidateOptions( InCommandLine ); not Validated )
-    {
-        return MakeUnexpected( Validated.Error() );
-    }
+    LUMEN_EXPECT( Validated, ValidateOptions( InCommandLine ) );
 
     if ( InCommandLine.HasSwitch( "help" ) )
     {
