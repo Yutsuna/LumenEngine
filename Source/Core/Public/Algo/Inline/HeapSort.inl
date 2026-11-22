@@ -29,7 +29,7 @@ void Lumen::Algo::HeapSort ( TIterator InFirst, TIterator InLast, TPredicate &In
     FDifference Parent = ( Count - 2 ) / 2;
     for ( ;; )
     {
-        FValue Value = std::move( *( InFirst + Parent ) );
+        const FValue Value = std::move( *( InFirst + Parent ) );
         Internal::SiftDown( InFirst, Parent, Count, std::move( Value ), InPredicate );
 
         if ( Parent == 0 )
@@ -42,7 +42,7 @@ void Lumen::Algo::HeapSort ( TIterator InFirst, TIterator InLast, TPredicate &In
     /** INFO: Pop the maximum to the end, sink the displaced value from the root. */
     for ( FDifference End = Count - 1; End > 0; --End )
     {
-        FValue Value       = std::move( *( InFirst + End ) );
+        const FValue Value = std::move( *( InFirst + End ) );
         *( InFirst + End ) = std::move( *InFirst );
         Internal::SiftDown( InFirst, 0, End, std::move( Value ), InPredicate );
     }

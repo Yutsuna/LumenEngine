@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <iterator>
 #include <type_traits>
 #include <utility>
 
@@ -21,13 +22,7 @@ namespace Algo
          * @brief Yields the pointer type produced by range-for over TRangeType.
          */
         template <class TRangeType>
-        using TRangeElementPtr = decltype( [] ( auto &&Range )
-        {
-            for ( auto &&Element : Range )
-            {
-                return &Element;
-            }
-        }( std::declval<TRangeType>() ) );
+        using TRangeElementPtr = std::remove_reference_t<decltype( *std::begin( std::declval<TRangeType>() ) )> *;
 
         /**
          * @brief Value type of the elements of TRangeType (cv/ref/pointer stripped).

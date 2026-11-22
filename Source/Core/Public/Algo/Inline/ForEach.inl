@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Algo/Any.hpp>
 #include <Algo/ForEach.hpp>
 
 #include <utility>
@@ -71,12 +72,8 @@ constexpr Lumen::Bool Lumen::Algo::ForEachUntil ( TObject &&Object, TPredicate &
     auto &&Pred     = std::forward<TPredicate>( Predicate );
     auto &&Callable = std::forward<TFunc>( Func );
 
-    for ( auto &&Item : Object )
+    return Algo::AnyOf( Object, [&Pred, &Callable] ( auto &&Item ) -> Bool
     {
-        if ( Invoke( Pred, Item ) and Invoke( Callable, Item ) )
-        {
-            return true;
-        }
-    }
-    return false;
+        return Invoke( Pred, Item ) and Invoke( Callable, Item );
+    } );
 }

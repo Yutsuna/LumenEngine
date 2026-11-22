@@ -17,9 +17,11 @@
 template <class TIterator, class TPredicate>
 constexpr TIterator Lumen::Algo::FindIf ( TIterator InFirst, TIterator InLast, TPredicate &&InPredicate )
 {
+    auto &&Pred = std::forward<TPredicate>( InPredicate );
+
     for ( ; InFirst != InLast; ++InFirst )
     {
-        if ( Invoke( std::forward<TPredicate>( InPredicate ), *InFirst ) )
+        if ( Invoke( Pred, *InFirst ) )
         {
             return InFirst;
         }
@@ -127,9 +129,11 @@ template <class TRangeType, class TPredicate>
 constexpr Lumen::Algo::Internal::TRangeElementPtr<TRangeType> Lumen::Algo::FindIfNot ( TRangeType &&InRange,
                                                                                        TPredicate &&InPredicate )
 {
+    auto &&Pred = std::forward<TPredicate>( InPredicate );
+
     for ( auto &&Elem : InRange )
     {
-        if ( not Invoke( std::forward<TPredicate>( InPredicate ), Elem ) )
+        if ( not Invoke( Pred, Elem ) )
         {
             return &Elem;
         }

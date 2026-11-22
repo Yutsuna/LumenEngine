@@ -27,5 +27,6 @@ constexpr Lumen::Bool Lumen::Algo::AnyOf ( TObject &&Object, TPredicate &&Predic
             return true;
         }
     }
+
     return false;
 }
