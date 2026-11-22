@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 #include <Templates/Monadic.hpp>
 
@@ -63,7 +64,7 @@ public:
 
     /** @brief Emplace construction from a function */
     template <class Function, class Arguments>
-    constexpr TOptional( FEmplaceTag,
+    constexpr TOptional( FEmplaceTag LUMEN_UNUSED InTag,
                          Function &&Func,
                          Arguments &&Args ) noexcept( std::is_nothrow_invocable_v<Function, Arguments> )
         : Value( Invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ), bHasValue( true )

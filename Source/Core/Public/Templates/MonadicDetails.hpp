@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 
 #include <Concepts/ConvertibleTo.hpp>
@@ -94,7 +95,7 @@ namespace MonadicInternal
     {
         if constexpr ( Concepts::CHasValueMember<MonadicType> )
         {
-            return noexcept( static_cast<Bool>( std::declval<const MonadicType &>().HasValue() ) );
+            return noexcept( std::declval<const MonadicType &>().HasValue() );
         }
         else
         {
@@ -207,7 +208,8 @@ namespace MonadicInternal
 
     template <class Self, class Func>
         requires( not Concepts::CHasError<Self> )
-    constexpr decltype( auto ) InvokeRecover ( Self &&, Func &&InFunc ) noexcept( std::is_nothrow_invocable_v<Func> )
+    constexpr decltype( auto ) InvokeRecover ( Self LUMEN_UNUSED &&InContainer,
+                                               Func &&InFunc ) noexcept( std::is_nothrow_invocable_v<Func> )
     {
         return Invoke( std::forward<Func>( InFunc ) );
     }

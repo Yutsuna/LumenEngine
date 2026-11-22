@@ -10,6 +10,8 @@
 
 namespace Lumen
 {
+
 // TODO: Implement custom array class
 template <typename Type, USize Size> using TArray = std::array<Type, Size>;
+
 } // namespace Lumen

@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 
 #include <Concepts/ConstructibleFrom.hpp>
@@ -49,7 +50,7 @@ public:
 
     template <class... Args>
         requires Concepts::CConstructibleFrom<ErrorType, Args...>
-    constexpr explicit TUnexpected( std::in_place_t,
+    constexpr explicit TUnexpected( std::in_place_t LUMEN_UNUSED InPlace,
                                     Args &&...InArgs ) noexcept( std::is_nothrow_constructible_v<ErrorType, Args...> )
         : Err( std::forward<Args>( InArgs )... )
     {

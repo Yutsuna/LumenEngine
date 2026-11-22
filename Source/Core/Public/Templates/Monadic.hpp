@@ -91,8 +91,9 @@ public:
             }
             else
             {
-                Out Result = MonadicInternal::MakeValue<Out>( std::forward<Func>( InFunc ), *std::forward<Self>( InSelf ) );
-                [[maybe_unused]] MonadicInternal::TSelfType<Self> Consumed = std::forward<Self>( InSelf );
+                Out Result = MonadicInternal::MakeValue<Out>( std::forward<Func>( InFunc ),
+                                                              static_cast<MonadicInternal::TValueRef<Self>>( *InSelf ) );
+                [[maybe_unused]] const MonadicInternal::TSelfType<Self> Consumed = std::forward<Self>( InSelf );
                 return Result;
             }
         }
@@ -168,8 +169,7 @@ public:
             }
             else
             {
-                Invoke( std::forward<Func>( InFunc ),
-                        static_cast<MonadicInternal::TConstElementRef<Self>>( *std::forward<Self>( InSelf ) ) );
+                Invoke( std::forward<Func>( InFunc ), static_cast<MonadicInternal::TConstElementRef<Self>>( *InSelf ) );
             }
         }
         return std::forward<Self>( InSelf );

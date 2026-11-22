@@ -169,6 +169,7 @@ void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( Callable &&InEditor
 {
     const HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
 
+    /** NOLINTNEXTLINE(cppcoreguidelines-init-variables) */
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
 
@@ -230,5 +231,6 @@ template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::Pu
     while ( not BufferFlags.compare_exchange_weak( CurrentFlags, SwapWriteWithTempFlags( CurrentFlags ),
                                                    std::memory_order_acq_rel, std::memory_order_relaxed ) )
     {
+        /* */
     }
 }

@@ -10,6 +10,7 @@
 
 #include <Concepts/ConstructibleFrom.hpp>
 #include <Concepts/SameAs.hpp>
+#include <Core/CoreDefinitions.hpp>
 
 #include <cassert>
 
@@ -46,7 +47,7 @@ public:
     }
 
     /** @brief Constructs TExpected with an Error */
-    constexpr explicit TExpected ( FUnexpect,
+    constexpr explicit TExpected ( FUnexpect LUMEN_UNUSED InPolicy,
                                    const ErrorType &InError ) noexcept( std::is_nothrow_copy_constructible_v<ErrorType> )
         : Err( InError ), bHasValue( false )
     {
@@ -54,7 +55,8 @@ public:
     }
 
     /** @brief Constructs TExpected with an Error passed by rvalue reference */
-    constexpr explicit TExpected ( FUnexpect, ErrorType &&InError ) noexcept( std::is_nothrow_move_constructible_v<ErrorType> )
+    constexpr explicit TExpected ( FUnexpect LUMEN_UNUSED InPolicy,
+                                   ErrorType &&InError ) noexcept( std::is_nothrow_move_constructible_v<ErrorType> )
         : Err( std::move( InError ) ), bHasValue( false )
     {
         /** Empty */
@@ -282,19 +284,20 @@ public:
 public:
 
     /** @brief Default constructor representing success */
-    constexpr TExpected () noexcept : bHasValue( true )
+    constexpr TExpected () noexcept : Dummy{}, bHasValue( true )
     {
         /** Empty */
     }
 
-    constexpr explicit TExpected ( FUnexpect,
+    constexpr explicit TExpected ( FUnexpect LUMEN_UNUSED InPolicy,
                                    const ErrorType &InError ) noexcept( std::is_nothrow_copy_constructible_v<ErrorType> )
         : Err( InError ), bHasValue( false )
     {
         /** Empty */
     }
 
-    constexpr explicit TExpected ( FUnexpect, ErrorType &&InError ) noexcept( std::is_nothrow_move_constructible_v<ErrorType> )
+    constexpr explicit TExpected ( FUnexpect LUMEN_UNUSED InPolicy,
+                                   ErrorType &&InError ) noexcept( std::is_nothrow_move_constructible_v<ErrorType> )
         : Err( std::move( InError ) ), bHasValue( false )
     {
         /** Empty */
@@ -327,7 +330,7 @@ public:
     }
 
     constexpr TExpected ( const TExpected &Other ) noexcept( std::is_nothrow_copy_constructible_v<ErrorType> )
-        : bHasValue( Other.bHasValue )
+        : Dummy{}, bHasValue( Other.bHasValue )
     {
         if ( not bHasValue )
         {
@@ -336,7 +339,7 @@ public:
     }
 
     constexpr TExpected ( TExpected &&Other ) noexcept( std::is_nothrow_move_constructible_v<ErrorType> )
-        : bHasValue( Other.bHasValue )
+        : Dummy{}, bHasValue( Other.bHasValue )
     {
         if ( not bHasValue )
         {
