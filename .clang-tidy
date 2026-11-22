@@ -63,6 +63,9 @@ Checks: >
   -readability-redundant-access-specifiers,
   -cert-err33-c
 
+ExtraArgsBefore:
+  - '-DLUMEN_CLANG_TIDY=1'
+
 WarningsAsErrors: "*"
 HeaderFilterRegex: "Source/.*"
 SystemHeaders: false
