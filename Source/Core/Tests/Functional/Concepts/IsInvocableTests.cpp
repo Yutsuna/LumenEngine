@@ -31,7 +31,7 @@ namespace
     /** @brief Helper exposing both a member function and member data for pointer-to-member invocation. */
     struct FWidget
     {
-        static Int32 GetValue () noexcept
+        [[nodiscard]] Int32 GetValue () const noexcept
         {
             return 42;
         }

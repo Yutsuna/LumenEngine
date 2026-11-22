@@ -28,23 +28,37 @@ namespace
         Float64 Weight;
     };
 
-    /** @brief Helper with a user-defined copy constructor, therefore not trivially copyable. */
+    /** @brief Helper with a user-provided copy constructor, therefore not trivially copyable. */
     struct FNonTrivialCopy
     {
-        FNonTrivialCopy () noexcept                               = default;
-        FNonTrivialCopy ( const FNonTrivialCopy &Other ) noexcept = default;
+        FNonTrivialCopy () noexcept = default;
+        /** NOLINTNEXTLINE */
+        FNonTrivialCopy ( const FNonTrivialCopy &Other ) noexcept : Value( Other.Value )
+        {
+            /* */
+        }
 
         Int32 Value = 0;
     };
 
     struct FNonTrivialDestructor
     {
-        ~FNonTrivialDestructor () noexcept = default;
+        /** NOLINTNEXTLINE */
+        ~FNonTrivialDestructor () noexcept
+        {
+            /* */
+        }
     };
 
     struct FNonTrivialMove
     {
-        FNonTrivialMove ( FNonTrivialMove && ) noexcept = default;
+        FNonTrivialMove () noexcept = default;
+        FNonTrivialMove ( FNonTrivialMove &&Other ) noexcept : Value( Other.Value )
+        {
+            /* */
+        }
+
+        Int32 Value = 0;
     };
 
     /**
