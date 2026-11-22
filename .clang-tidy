@@ -1,3 +1,6 @@
+# clang-tidy does not support a CompileFlags key here: GCC-only flags such as
+# -freflection are stripped from a copy of compile_commands.json by
+# Scripts/CheckClangTidy.py (see .clangd CompileFlags.Remove).
 Checks: >
   -*,
   bugprone-*,
