@@ -27,6 +27,7 @@ extern "C"
 void Lumen::HAL::FLinuxFutex::Wait ( TAtomic<UInt32> &InAddress, UInt32 InExpected ) noexcept
 {
     /** INFO: EAGAIN (value differs) and EINTR are both fine: callers re-check their condition */
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) — variadic syscall ABI is required
     static_cast<void>( ::syscall( SYS_futex, Raw( InAddress ), FUTEX_WAIT_PRIVATE, InExpected, nullptr, nullptr, 0 ) );
 }
 
@@ -40,18 +41,21 @@ Lumen::Bool Lumen::HAL::FLinuxFutex::WaitFor ( TAtomic<UInt32> &InAddress, UInt3
     Timeout.tv_sec  = static_cast<time_t>( Whole );
     Timeout.tv_nsec = static_cast<Int64>( ( Clamped - Whole ) * 1.0e9 );
 
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) — variadic syscall ABI is required
     const Int64 Result = ::syscall( SYS_futex, Raw( InAddress ), FUTEX_WAIT_PRIVATE, InExpected, &Timeout, nullptr, 0 );
 
-    return not( Result == -1 and errno == ETIMEDOUT );
+    return Result != -1 or errno != ETIMEDOUT;
 }
 
 void Lumen::HAL::FLinuxFutex::WakeOne ( TAtomic<UInt32> &InAddress ) noexcept
 {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) — variadic syscall ABI is required
     static_cast<void>( ::syscall( SYS_futex, Raw( InAddress ), FUTEX_WAKE_PRIVATE, 1, nullptr, nullptr, 0 ) );
 }
 
 void Lumen::HAL::FLinuxFutex::WakeAll ( TAtomic<UInt32> &InAddress ) noexcept
 {
+    // NOLINTNEXTLINE(cppcoreguidelines-pro-type-vararg,hicpp-vararg) — variadic syscall ABI is required
     static_cast<void>( ::syscall( SYS_futex, Raw( InAddress ), FUTEX_WAKE_PRIVATE, INT_MAX, nullptr, nullptr, 0 ) );
 }
 
