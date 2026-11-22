@@ -30,7 +30,7 @@ namespace RHIVulkan
         return VkName;
 
 #define LUMEN_VK_DEFINE_ENUM_MAP( FnName, RhiEnum, VkType, List, MakeError )                                                     \
-    TExpected<VkType, RHI::FRHIError> FnName( RhiEnum InValue ) noexcept                                                              \
+    TExpected<VkType, RHI::FRHIError> FnName( RhiEnum InValue ) noexcept                                                         \
     {                                                                                                                            \
         switch ( InValue )                                                                                                       \
         {                                                                                                                        \
@@ -119,7 +119,8 @@ namespace RHIVulkan
     namespace
     {
 
-        [[nodiscard]] TExpected<VkFormat, RHI::FRHIError> MapFormatInternal ( RHI::ERHIFormat InFormat, Bool bAllowUnknown ) noexcept
+        [[nodiscard]] TExpected<VkFormat, RHI::FRHIError> MapFormatInternal ( RHI::ERHIFormat InFormat,
+                                                                              Bool bAllowUnknown ) noexcept
         {
             if ( InFormat == RHI::ERHIFormat::Unknown )
             {
@@ -195,7 +196,8 @@ namespace RHIVulkan
 
         if ( not Info or Info->Aspects == RHI::ERHIFormatAspect::None ) [[unlikely]]
         {
-            return TUnexpected( RHI::MakeRHIInvalidResource( "Cannot derive Vulkan image aspects for Unknown or invalid format." ) );
+            return TUnexpected(
+                RHI::MakeRHIInvalidResource( "Cannot derive Vulkan image aspects for Unknown or invalid format." ) );
         }
         return ToVulkanImageAspect( Info->Aspects );
     }
@@ -323,7 +325,7 @@ namespace RHIVulkan
      */
 
     TExpected<FVulkanResourceBarrierState, RHI::FRHIError> ToVulkanImageState ( RHI::ERHIResourceState InState,
-                                                                           Bool bIsDepthStencil ) noexcept
+                                                                                Bool bIsDepthStencil ) noexcept
     {
         if ( not IsValidRHIResourceState( InState ) ) [[unlikely]]
         {
@@ -366,7 +368,8 @@ namespace RHIVulkan
         {
             if ( bIsDepthStencil ) [[unlikely]]
             {
-                return TUnexpected( RHI::MakeRHIInvalidResource( "RenderTarget state is incompatible with depth/stencil textures." ) );
+                return TUnexpected(
+                    RHI::MakeRHIInvalidResource( "RenderTarget state is incompatible with depth/stencil textures." ) );
             }
             Result.StageMask   = VK_PIPELINE_STAGE_2_COLOR_ATTACHMENT_OUTPUT_BIT;
             Result.AccessMask  = VK_ACCESS_2_COLOR_ATTACHMENT_READ_BIT | VK_ACCESS_2_COLOR_ATTACHMENT_WRITE_BIT;

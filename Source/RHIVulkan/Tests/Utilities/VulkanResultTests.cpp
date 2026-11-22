@@ -3,8 +3,8 @@
  * @brief Functional tests for Vulkan result code translation.
  */
 
-#include <Tests/UnitTest.hpp>
 #include <RHIVulkan/Utilities/VulkanResult.hpp>
+#include <Tests/UnitTest.hpp>
 
 namespace Lumen
 {

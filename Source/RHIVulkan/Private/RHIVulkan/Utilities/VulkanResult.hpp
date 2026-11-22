@@ -52,6 +52,25 @@ namespace RHIVulkan
      */
     [[nodiscard]] constexpr RHI::ERHIErrorCode TranslateVulkanResultCode ( VkResult InResult, Bool bNotReadyAsTimeout ) noexcept;
 
+    /**
+     * @brief Returns whether the Vulkan result code indicates a success.
+     * @param InResult The Vulkan result code to check.
+     * @return Whether the result code indicates a success.
+     */
+    [[nodiscard]] constexpr Bool IsVulkanResultSuccess ( VkResult InResult ) noexcept;
+
+    /**
+     * @brief Translates a non-success VkResult into an FRHIError with NativeCode preserved.
+     * @param InResult Native Vulkan result code.
+     * @param InCondition RHI subsystem condition supplied by the failing operation.
+     * @param InOperation Context message describing the failed operation.
+     * @param bNotReadyAsTimeout When true, maps VK_NOT_READY to Timeout rather than InvalidState.
+     */
+    [[nodiscard]] RHI::FRHIError MapVulkanResult ( VkResult InResult,
+                                                   RHI::ERHIErrorCondition InCondition,
+                                                   FStringView InOperation,
+                                                   Bool bNotReadyAsTimeout = false ) noexcept;
+
 /**
  * @macro LUMEN_VK_RESULT_STR
  * @brief Converts a Vulkan result code to a string.

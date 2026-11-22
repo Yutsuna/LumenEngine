@@ -3,8 +3,8 @@
  * @brief Functional tests for RHI-to-Vulkan type mappings.
  */
 
-#include <Tests/UnitTest.hpp>
 #include <RHIVulkan/Types/VulkanTypeMapping.hpp>
+#include <Tests/UnitTest.hpp>
 
 namespace Lumen
 {

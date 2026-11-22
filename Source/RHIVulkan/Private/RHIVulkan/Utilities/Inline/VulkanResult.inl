@@ -28,3 +28,8 @@ constexpr Lumen::RHI::ERHIErrorCode Lumen::RHIVulkan::TranslateVulkanResultCode 
         return RHI::ERHIErrorCode::BackendFailure;
     }
 }
+
+constexpr Lumen::Bool Lumen::RHIVulkan::IsVulkanResultSuccess ( VkResult InResult ) noexcept
+{
+    return InResult == VK_SUCCESS;
+}

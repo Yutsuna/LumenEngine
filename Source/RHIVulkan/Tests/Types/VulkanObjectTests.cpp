@@ -3,8 +3,8 @@
  * @brief Functional tests for Vulkan backend object identity helpers.
  */
 
-#include <Tests/UnitTest.hpp>
 #include <RHIVulkan/Types/VulkanObject.hpp>
+#include <Tests/UnitTest.hpp>
 
 namespace Lumen
 {

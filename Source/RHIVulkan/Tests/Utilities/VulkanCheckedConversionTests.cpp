@@ -3,8 +3,8 @@
  * @brief Functional tests for overflow-checked RHI-to-Vulkan conversions.
  */
 
-#include <Tests/UnitTest.hpp>
 #include <RHIVulkan/Utilities/VulkanCheckedConversion.hpp>
+#include <Tests/UnitTest.hpp>
 
 #include <limits>
 

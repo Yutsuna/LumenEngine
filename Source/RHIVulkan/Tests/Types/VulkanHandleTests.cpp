@@ -3,8 +3,8 @@
  * @brief Functional tests for the Vulkan scoped handle wrapper.
  */
 
-#include <Tests/UnitTest.hpp>
 #include <RHIVulkan/Types/VulkanHandle.hpp>
+#include <Tests/UnitTest.hpp>
 
 namespace Lumen
 {

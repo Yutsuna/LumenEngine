@@ -3,8 +3,8 @@
  * @brief Implements the Vulkan RHI module.
  */
 
-#include <RHIVulkan/Module/VulkanModule.hpp>
 #include <RHI/Types/RHIError.hpp>
+#include <RHIVulkan/Module/VulkanModule.hpp>
 
 #include <Templates/Unexpected.hpp>
 
