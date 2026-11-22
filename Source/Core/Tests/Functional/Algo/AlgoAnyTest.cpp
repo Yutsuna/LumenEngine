@@ -98,7 +98,7 @@ namespace
             return V == 4;
         } );
 
-        constexpr auto ResultC = Algo::AnyOf( ConstexprValues, &AlwaysFalse ) ;
+        constexpr auto ResultC = Algo::AnyOf( ConstexprValues, &AlwaysFalse );
 
         LUMEN_CHECK_TRUE( ResultA );
         LUMEN_CHECK_TRUE( not ResultB );
