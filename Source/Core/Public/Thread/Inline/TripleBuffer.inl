@@ -88,7 +88,7 @@ Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer( BufferType ( &InBuffers
       /**
        *
        */
-      BufferFlags( ( Internal::FBufferFlag::Type::Initial | Internal::FBufferFlag::Type::Dirty ) )
+      BufferFlags( Internal::FBufferFlag::Type::InitialDirty )
 {
     /** Empty */
 }

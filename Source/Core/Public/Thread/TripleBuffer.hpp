@@ -52,7 +52,13 @@ namespace Thread
                 Dirty = 1U << 6U,
 
                 /** Initial state: Reader=2, Writer=1, Temp=0, Dirty=false */
-                Initial = ( 2U << ReaderShift ) | ( 1U << WriterShift ) | ( 0U << TempShift )
+                Initial = ( 2U << ReaderShift ) | ( 1U << WriterShift ) | ( 0U << TempShift ),
+
+                /** Initial state with a published buffer ready for reading. */
+                InitialDirty = Initial | Dirty,
+
+                /** All bits used by the packed state. */
+                ValidMask = ReaderMask | WriterMask | TempMask | Dirty
             };
 
             static constexpr Type GetReaderIndex ( Type Flags ) noexcept;
