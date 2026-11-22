@@ -13,7 +13,6 @@
 #include <Templates/Vector.hpp>
 
 #include <initializer_list>
-#include <type_traits>
 #include <utility>
 
 namespace Lumen

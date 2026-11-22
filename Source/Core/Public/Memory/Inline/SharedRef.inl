@@ -9,6 +9,7 @@
 
 namespace Lumen
 {
+
 template <typename Type>
 TSharedRef<Type>::TSharedRef( const TSharedRef &Other ) noexcept : Object( Other.Object ), Controller( Other.Controller )
 {
@@ -25,7 +26,7 @@ template <typename Type>
 template <typename OtherType>
     requires Concepts::CConvertibleTo<OtherType *, Type *>
 TSharedRef<Type>::TSharedRef( const Internal::TRawPtrProxy<OtherType> &Proxy ) noexcept
-    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new)
+    /** NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) */
     : Object( Proxy.Object ), Controller( new Internal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
 {
     assert( Object != nullptr );
@@ -137,8 +138,8 @@ template <typename Type> void TSharedRef<Type>::Release () noexcept
  * SharedRef Builder
  */
 
-// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename ObjectType>
+/** NOLINTNEXTLINE(misc-use-anonymous-namespace) */
 TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, Internal::FReferenceController *InController ) noexcept
 {
     return TSharedRef<ObjectType>( InObject, InController );
@@ -148,11 +149,12 @@ TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, Internal::FReferenc
  * StaticCast
  */
 
-// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename CastToType, typename CastFromType>
+/** NOLINTNEXTLINE(misc-use-anonymous-namespace,misc-use-internal-linkage) */
 TSharedRef<CastToType> StaticCastSharedRef ( TSharedRef<CastFromType> const &InSharedRef ) noexcept
 {
     InSharedRef.Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
     return MakeSharedRef<CastToType>( static_cast<CastToType *>( InSharedRef.Object ), InSharedRef.Controller );
 }
+
 } // namespace Lumen

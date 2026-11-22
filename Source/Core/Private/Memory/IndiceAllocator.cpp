@@ -8,8 +8,6 @@
 #include <HAL/LockGuard.hpp>
 #include <HAL/PlatformMutex.hpp>
 
-#include <algorithm>
-#include <bit>
 #include <cassert>
 
 /**

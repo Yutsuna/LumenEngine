@@ -42,6 +42,7 @@ void Lumen::Algo::QuickSort ( TRangeType &&InRange, TPredicate InPredicate ) noe
  */
 
 template <typename TIterator, typename TPredicate>
+/** NOLINTNEXTLINE(misc-no-recursion) */
 void Lumen::Algo::Internal::QuickSortLoop ( TIterator InFirst, TIterator InLast, TPredicate &InPredicate ) noexcept
 {
     using FDifference               = std::iter_difference_t<TIterator>;

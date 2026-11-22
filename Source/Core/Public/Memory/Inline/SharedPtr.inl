@@ -11,6 +11,7 @@
 
 namespace Lumen
 {
+
 template <typename Type> TSharedPtr<Type>::TSharedPtr() noexcept : Object( nullptr ), Controller( nullptr )
 {
     /** Empty */
@@ -154,8 +155,8 @@ template <typename ObjectType> Internal::TRawPtrProxy<ObjectType> MakeShareable 
  * Static Casts
  */
 
-// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename CastToType, typename CastFromType>
+/** NOLINTNEXTLINE(misc-use-anonymous-namespace,misc-use-internal-linkage) */
 TSharedPtr<CastToType> StaticCastSharedPtr ( const TSharedPtr<CastFromType> &InSharedPtr ) noexcept
 {
     if ( InSharedPtr.IsValid() )
@@ -166,4 +167,5 @@ TSharedPtr<CastToType> StaticCastSharedPtr ( const TSharedPtr<CastFromType> &InS
 
     return TSharedPtr<CastToType>();
 }
+
 } // namespace Lumen

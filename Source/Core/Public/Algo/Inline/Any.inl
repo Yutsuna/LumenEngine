@@ -20,6 +20,7 @@ constexpr Lumen::Bool Lumen::Algo::AnyOf ( TObject &&Object, TPredicate &&Predic
 {
     auto &&Pred = std::forward<TPredicate>( Predicate );
 
+    /** NOLINTNEXTLINE(readability-use-anyofallof) */
     for ( auto &&Item : Object )
     {
         if ( Invoke( Pred, Item ) )
