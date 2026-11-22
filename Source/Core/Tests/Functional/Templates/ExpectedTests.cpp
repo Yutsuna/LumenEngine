@@ -41,6 +41,7 @@ namespace
 
         LUMEN_CHECK_TRUE( Exp.HasValue() );
         LUMEN_CHECK_EQ( *Exp, "HelloLumen" );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_TRUE( SourceText.empty() );
     }
 
@@ -60,6 +61,7 @@ namespace
 
         LUMEN_CHECK_FALSE( Exp.HasValue() );
         LUMEN_CHECK_EQ( Exp.Error(), "CustomError" );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_TRUE( ErrorText.empty() );
     }
 
@@ -75,6 +77,7 @@ namespace
     LUMEN_TEST( Expected_Copy, Value )
     {
         constexpr TExpected<Int32, EExpectedTestError> Original( 42 );
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization) — copy under test
         constexpr TExpected<Int32, EExpectedTestError> Copy( Original );
 
         LUMEN_CHECK_TRUE( Copy.HasValue() );
@@ -84,6 +87,7 @@ namespace
     LUMEN_TEST( Expected_Copy, Error )
     {
         constexpr TExpected<Int32, EExpectedTestError> Original( FUnexpect{}, EExpectedTestError::ErrorA );
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization) — copy under test
         constexpr TExpected<Int32, EExpectedTestError> Copy( Original );
 
         LUMEN_CHECK_FALSE( Copy.HasValue() );
@@ -114,7 +118,7 @@ namespace
 
     LUMEN_TEST( Expected_CopyAssignment, ValueToValue )
     {
-        TExpected<Int32, EExpectedTestError> A( 10 );
+        const TExpected<Int32, EExpectedTestError> A( 10 );
         TExpected<Int32, EExpectedTestError> B( 20 );
 
         B = A;
@@ -125,7 +129,7 @@ namespace
 
     LUMEN_TEST( Expected_CopyAssignment, ErrorToError )
     {
-        TExpected<Int32, EExpectedTestError> A( FUnexpect{}, EExpectedTestError::ErrorA );
+        const TExpected<Int32, EExpectedTestError> A( FUnexpect{}, EExpectedTestError::ErrorA );
         TExpected<Int32, EExpectedTestError> B( FUnexpect{}, EExpectedTestError::ErrorB );
 
         B = A;
@@ -136,7 +140,7 @@ namespace
 
     LUMEN_TEST( Expected_CopyAssignment, ValueToError )
     {
-        TExpected<Int32, EExpectedTestError> A( 10 );
+        const TExpected<Int32, EExpectedTestError> A( 10 );
         TExpected<Int32, EExpectedTestError> B( FUnexpect{}, EExpectedTestError::ErrorA );
 
         B = A;
@@ -147,7 +151,7 @@ namespace
 
     LUMEN_TEST( Expected_CopyAssignment, ErrorToValue )
     {
-        TExpected<Int32, EExpectedTestError> A( FUnexpect{}, EExpectedTestError::ErrorA );
+        const TExpected<Int32, EExpectedTestError> A( FUnexpect{}, EExpectedTestError::ErrorA );
         TExpected<Int32, EExpectedTestError> B( 10 );
 
         B = A;
@@ -433,7 +437,7 @@ namespace
 
     LUMEN_TEST( ExpectedVoid_Constructor, Default )
     {
-        TExpected<void, EExpectedTestError> Exp;
+        const TExpected<void, EExpectedTestError> Exp;
 
         LUMEN_CHECK_TRUE( Exp.HasValue() );
     }
@@ -453,6 +457,7 @@ namespace
 
         LUMEN_CHECK_FALSE( Exp.HasValue() );
         LUMEN_CHECK_EQ( Exp.Error(), "VoidError" );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_TRUE( ErrorText.empty() );
     }
 
@@ -467,8 +472,9 @@ namespace
 
     LUMEN_TEST( ExpectedVoid_Copy, Value )
     {
-        TExpected<void, EExpectedTestError> Original;
-        TExpected<void, EExpectedTestError> Copy( Original );
+        const TExpected<void, EExpectedTestError> Original;
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization) — copy under test
+        const TExpected<void, EExpectedTestError> Copy( Original );
 
         LUMEN_CHECK_TRUE( Copy.HasValue() );
     }
@@ -476,6 +482,7 @@ namespace
     LUMEN_TEST( ExpectedVoid_Copy, Error )
     {
         constexpr TExpected<void, EExpectedTestError> Original( FUnexpect{}, EExpectedTestError::ErrorA );
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization) — copy under test
         constexpr TExpected<void, EExpectedTestError> Copy( Original );
 
         LUMEN_CHECK_FALSE( Copy.HasValue() );
@@ -485,7 +492,7 @@ namespace
     LUMEN_TEST( ExpectedVoid_Move, Value )
     {
         TExpected<void, EExpectedTestError> Original;
-        TExpected<void, EExpectedTestError> Moved( std::move( Original ) );
+        const TExpected<void, EExpectedTestError> Moved( std::move( Original ) );
 
         LUMEN_CHECK_TRUE( Moved.HasValue() );
     }
@@ -501,7 +508,7 @@ namespace
 
     LUMEN_TEST( ExpectedVoid_CopyAssignment, ValueToValue )
     {
-        TExpected<void, EExpectedTestError> A;
+        const TExpected<void, EExpectedTestError> A;
         TExpected<void, EExpectedTestError> B;
 
         B = A;
@@ -511,7 +518,7 @@ namespace
 
     LUMEN_TEST( ExpectedVoid_CopyAssignment, ErrorToError )
     {
-        TExpected<void, EExpectedTestError> A( FUnexpect{}, EExpectedTestError::ErrorA );
+        const TExpected<void, EExpectedTestError> A( FUnexpect{}, EExpectedTestError::ErrorA );
         TExpected<void, EExpectedTestError> B( FUnexpect{}, EExpectedTestError::ErrorB );
 
         B = A;
@@ -522,7 +529,7 @@ namespace
 
     LUMEN_TEST( ExpectedVoid_CopyAssignment, ValueToError )
     {
-        TExpected<void, EExpectedTestError> A;
+        const TExpected<void, EExpectedTestError> A;
         TExpected<void, EExpectedTestError> B( FUnexpect{}, EExpectedTestError::ErrorA );
 
         B = A;
@@ -532,7 +539,7 @@ namespace
 
     LUMEN_TEST( ExpectedVoid_CopyAssignment, ErrorToValue )
     {
-        TExpected<void, EExpectedTestError> A( FUnexpect{}, EExpectedTestError::ErrorA );
+        const TExpected<void, EExpectedTestError> A( FUnexpect{}, EExpectedTestError::ErrorA );
         TExpected<void, EExpectedTestError> B;
 
         B = A;
@@ -583,7 +590,7 @@ namespace
 
     LUMEN_TEST( ExpectedVoid_Operators, Dereference )
     {
-        TExpected<void, EExpectedTestError> Exp;
+        const TExpected<void, EExpectedTestError> Exp;
 
         *Exp;
     }
@@ -597,7 +604,7 @@ namespace
 
     LUMEN_TEST( ExpectedVoid_Operators, ExplicitBool )
     {
-        TExpected<void, EExpectedTestError> ExpValue;
+        const TExpected<void, EExpectedTestError> ExpValue;
         constexpr TExpected<void, EExpectedTestError> ExpError( FUnexpect{}, EExpectedTestError::ErrorA );
 
         LUMEN_CHECK_TRUE( static_cast<Bool>( ExpValue ) );

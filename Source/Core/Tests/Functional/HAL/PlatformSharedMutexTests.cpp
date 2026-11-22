@@ -108,7 +108,7 @@ namespace
         HAL::FPlatformSharedMutex Mutex;
 
         {
-            HAL::TSharedLock<HAL::FPlatformSharedMutex> Guard( Mutex );
+            const HAL::TSharedLock<HAL::FPlatformSharedMutex> Guard( Mutex );
             LUMEN_CHECK_FALSE( Mutex.TryLock() );
         }
 
@@ -122,9 +122,9 @@ namespace
         HAL::FPlatformSharedMutex MutexB;
 
         {
-            HAL::TSharedLock<HAL::FPlatformSharedMutex> GuardA( MutexA );
+            const HAL::TSharedLock<HAL::FPlatformSharedMutex> GuardA( MutexA );
             {
-                HAL::TSharedLock<HAL::FPlatformSharedMutex> GuardB( MutexB );
+                const HAL::TSharedLock<HAL::FPlatformSharedMutex> GuardB( MutexB );
                 LUMEN_CHECK_FALSE( MutexA.TryLock() );
                 LUMEN_CHECK_FALSE( MutexB.TryLock() );
             }
@@ -143,7 +143,7 @@ namespace
     LUMEN_TEST( PlatformSharedMutex_SharedUniqueLock, ConstructAcquiresExclusive )
     {
         HAL::FPlatformSharedMutex Mutex;
-        HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+        const HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( Mutex );
         LUMEN_CHECK_TRUE( Lock.IsLocked() );
         LUMEN_CHECK_FALSE( Mutex.TryLock() );
     }
@@ -153,7 +153,7 @@ namespace
         HAL::FPlatformSharedMutex Mutex;
 
         {
-            HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+            const HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( Mutex );
         }
 
         LUMEN_CHECK_TRUE( Mutex.TryLock() );
@@ -164,8 +164,9 @@ namespace
     {
         HAL::FPlatformSharedMutex Mutex;
         HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Original( Mutex );
-        HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Moved( std::move( Original ) );
+        const HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Moved( std::move( Original ) );
         LUMEN_CHECK_TRUE( Moved.IsLocked() );
+        /** NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from state */
         LUMEN_CHECK_FALSE( Original.IsLocked() );
     }
 
@@ -316,7 +317,7 @@ namespace
         {
             for ( Int32 Index = 0; Index < 250; ++Index )
             {
-                HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+                const HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( Mutex );
                 ++Counter;
             }
         };
@@ -325,7 +326,7 @@ namespace
         {
             for ( Int32 Index = 0; Index < 250; ++Index )
             {
-                HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+                const HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
                 const Int32 Observed = Counter;
                 if ( Observed < 0 or Observed > 500 )
                 {

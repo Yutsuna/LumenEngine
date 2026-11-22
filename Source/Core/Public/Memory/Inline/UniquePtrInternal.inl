@@ -270,7 +270,7 @@ template <typename ObjectType, typename... Arguments>
     requires( not std::is_array_v<ObjectType> )
 TUniquePtr<ObjectType> MakeUnique ( Arguments &&...InArgs ) noexcept
 {
-    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) — Lumen is noexcept; OOM terminates.
+    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new)
     return TUniquePtr<ObjectType>( new ObjectType( std::forward<Arguments>( InArgs )... ) );
 }
 
@@ -279,7 +279,7 @@ template <typename ObjectType>
 TUniquePtr<ObjectType> MakeUnique ( const USize Size ) noexcept
 {
     using ElementType = std::remove_extent_t<ObjectType>;
-    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) — Lumen is noexcept; OOM terminates.
+    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new)
     return TUniquePtr<ObjectType>( new ElementType[Size]() );
 }
 

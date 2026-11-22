@@ -93,8 +93,9 @@ namespace
     LUMEN_TEST( Thread_State, MoveConstructedFromEmptyRemainsEmpty )
     {
         FThread Source;
-        FThread Moved( std::move( Source ) );
+        const FThread Moved( std::move( Source ) );
 
+        /** NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from state */
         LUMEN_CHECK_FALSE( Source.IsJoinable() );
         LUMEN_CHECK_FALSE( Source.GetStopSource().StopPossible() );
         LUMEN_CHECK_FALSE( Moved.IsJoinable() );
@@ -118,6 +119,7 @@ namespace
         LUMEN_CHECK_FALSE( First.IsJoinable() );
         LUMEN_CHECK_FALSE( First.GetStopSource().StopPossible() );
         LUMEN_CHECK_FALSE( First.GetId().IsValid() );
+        /** NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from state */
         LUMEN_CHECK_FALSE( Empty.IsJoinable() );
     }
 
@@ -253,7 +255,7 @@ namespace
         TAtomic<Bool> bStarted{ false };
         TAtomic<Bool> bFinished{ false };
         {
-            FThread Thread( [&bStarted, &bFinished] ( const FStopToken &InStopToken ) noexcept -> void
+            const FThread Thread( [&bStarted, &bFinished] ( const FStopToken &InStopToken ) noexcept -> void
             {
                 bStarted.store( true, std::memory_order::release );
                 while ( not InStopToken.StopRequested() )
@@ -388,6 +390,7 @@ namespace
         const FStopSource Source = Original.GetStopSource();
         FThread Moved            = std::move( Original );
 
+        /** NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from state */
         LUMEN_CHECK_FALSE( Original.IsJoinable() );
         LUMEN_CHECK_FALSE( Original.GetStopSource().StopPossible() );
         LUMEN_CHECK_TRUE( Moved.IsJoinable() );
@@ -416,6 +419,7 @@ namespace
 
         First = std::move( Second );
 
+        /** NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from state */
         LUMEN_CHECK_FALSE( Second.IsJoinable() );
         LUMEN_CHECK_FALSE( Second.GetStopSource().StopPossible() );
         LUMEN_CHECK_TRUE( First.IsJoinable() );
@@ -458,6 +462,7 @@ namespace
         } );
         FThread Moved( std::move( Original ) );
 
+        /** NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from state */
         LUMEN_CHECK_FALSE( Original.RequestStop() );
         LUMEN_CHECK_FALSE( Original.GetStopSource().StopPossible() );
         LUMEN_CHECK_TRUE( Moved.RequestStop() );
@@ -573,7 +578,7 @@ namespace
     {
         TAtomic<Bool> bFinished{ false };
         {
-            FThread Thread( [&bFinished]
+            const FThread Thread( [&bFinished]
             {
                 bFinished.store( true, std::memory_order::release );
             } );
@@ -595,7 +600,7 @@ namespace
 
     LUMEN_TEST( Thread_Lifetime, DestructorOfEmptyThreadIsNoOp )
     {
-        FThread Thread;
+        const FThread Thread;
     }
 
     /**
@@ -695,7 +700,7 @@ namespace
 
     LUMEN_TEST( Thread_Platform, GetNativeHandleOfEmptyThreadIsCallable )
     {
-        FThread Thread;
+        const FThread Thread;
         static_cast<void>( Thread.GetNativeHandle() );
         LUMEN_CHECK_FALSE( Thread.IsJoinable() );
     }

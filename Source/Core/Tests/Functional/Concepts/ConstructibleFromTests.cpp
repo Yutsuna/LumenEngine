@@ -30,7 +30,7 @@ namespace
     /** @brief Helper whose constructor is explicit: construction is allowed, implicit conversion is not. */
     struct FExplicitFromInt
     {
-        explicit constexpr FExplicitFromInt ( Int32 ) noexcept
+        explicit constexpr FExplicitFromInt ( const Int32 LUMEN_UNUSED InValue ) noexcept
         {
             /* */
         }

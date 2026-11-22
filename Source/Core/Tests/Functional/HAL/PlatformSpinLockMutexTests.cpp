@@ -37,7 +37,7 @@ namespace
 
     LUMEN_TEST( PlatformSpinLock_State, DefaultUnlocked )
     {
-        HAL::FPlatformSpinLockMutex Lock;
+        const HAL::FPlatformSpinLockMutex Lock;
         LUMEN_CHECK_FALSE( Lock.IsLocked() );
     }
 
@@ -106,7 +106,7 @@ namespace
         HAL::FPlatformSpinLockMutex Lock;
 
         {
-            HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( Lock );
+            const HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( Lock );
             LUMEN_CHECK_TRUE( Lock.IsLocked() );
         }
 
@@ -119,9 +119,9 @@ namespace
         HAL::FPlatformSpinLockMutex LockB;
 
         {
-            HAL::TLockGuard<HAL::FPlatformSpinLockMutex> GuardA( LockA );
+            const HAL::TLockGuard<HAL::FPlatformSpinLockMutex> GuardA( LockA );
             {
-                HAL::TLockGuard<HAL::FPlatformSpinLockMutex> GuardB( LockB );
+                const HAL::TLockGuard<HAL::FPlatformSpinLockMutex> GuardB( LockB );
                 LUMEN_CHECK_TRUE( LockA.IsLocked() );
                 LUMEN_CHECK_TRUE( LockB.IsLocked() );
             }
@@ -195,7 +195,7 @@ namespace
         {
             for ( Int32 Index = 0; Index < 1000; ++Index )
             {
-                HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( Lock );
+                const HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( Lock );
                 ++Counter;
             }
         };

@@ -31,6 +31,7 @@ namespace
     /** @brief Helper exposing both a member function and member data for pointer-to-member invocation. */
     struct FWidget
     {
+        // NOLINTNEXTLINE(readability-convert-member-functions-to-static) — pointer-to-member invocation is under test
         [[nodiscard]] Int32 GetValue () const noexcept
         {
             return 42;

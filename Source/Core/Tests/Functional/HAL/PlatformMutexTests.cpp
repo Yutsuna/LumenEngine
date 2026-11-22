@@ -91,7 +91,7 @@ namespace
         HAL::FPlatformMutex Mutex;
 
         {
-            HAL::TLockGuard<HAL::FPlatformMutex> Guard( Mutex );
+            const HAL::TLockGuard<HAL::FPlatformMutex> Guard( Mutex );
             LUMEN_CHECK_FALSE( Mutex.TryLock() );
         }
 
@@ -105,9 +105,9 @@ namespace
         HAL::FPlatformMutex MutexB;
 
         {
-            HAL::TLockGuard<HAL::FPlatformMutex> GuardA( MutexA );
+            const HAL::TLockGuard<HAL::FPlatformMutex> GuardA( MutexA );
             {
-                HAL::TLockGuard<HAL::FPlatformMutex> GuardB( MutexB );
+                const HAL::TLockGuard<HAL::FPlatformMutex> GuardB( MutexB );
                 LUMEN_CHECK_FALSE( MutexA.TryLock() );
                 LUMEN_CHECK_FALSE( MutexB.TryLock() );
             }
@@ -126,7 +126,7 @@ namespace
 
     LUMEN_TEST( PlatformMutex_UniqueLock, DefaultConstructionIsEmpty )
     {
-        HAL::TUniqueLock<HAL::FPlatformMutex> Lock;
+        const HAL::TUniqueLock<HAL::FPlatformMutex> Lock;
         LUMEN_CHECK_FALSE( Lock.IsLocked() );
         LUMEN_CHECK_FALSE( static_cast<Bool>( Lock ) );
     }
@@ -134,7 +134,7 @@ namespace
     LUMEN_TEST( PlatformMutex_UniqueLock, ConstructAcquires )
     {
         HAL::FPlatformMutex Mutex;
-        HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex );
+        const HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex );
         LUMEN_CHECK_TRUE( Lock.IsLocked() );
         LUMEN_CHECK_FALSE( Mutex.TryLock() );
     }
@@ -144,7 +144,7 @@ namespace
         HAL::FPlatformMutex Mutex;
 
         {
-            HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex );
+            const HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex );
         }
 
         LUMEN_CHECK_TRUE( Mutex.TryLock() );
@@ -154,7 +154,7 @@ namespace
     LUMEN_TEST( PlatformMutex_UniqueLock, DeferLockDoesNotAcquire )
     {
         HAL::FPlatformMutex Mutex;
-        HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex, HAL::FDeferLockT );
+        const HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex, HAL::FDeferLockT );
         LUMEN_CHECK_FALSE( Lock.IsLocked() );
         LUMEN_CHECK_TRUE( Mutex.TryLock() );
         Mutex.Unlock();
@@ -163,7 +163,7 @@ namespace
     LUMEN_TEST( PlatformMutex_UniqueLock, TryToLockAcquiresWhenFree )
     {
         HAL::FPlatformMutex Mutex;
-        HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex, HAL::FTryToLockT );
+        const HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex, HAL::FTryToLockT );
         LUMEN_CHECK_TRUE( Lock.IsLocked() );
         LUMEN_CHECK_FALSE( Mutex.TryLock() );
     }
@@ -172,7 +172,7 @@ namespace
     {
         HAL::FPlatformMutex Mutex;
         Mutex.Lock();
-        HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex, HAL::FTryToLockT );
+        const HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex, HAL::FTryToLockT );
         LUMEN_CHECK_FALSE( Lock.IsLocked() );
         Mutex.Unlock();
     }
@@ -272,9 +272,10 @@ namespace
     {
         HAL::FPlatformMutex Mutex;
         HAL::TUniqueLock<HAL::FPlatformMutex> Original( Mutex );
-        HAL::TUniqueLock<HAL::FPlatformMutex> Moved( std::move( Original ) );
+        const HAL::TUniqueLock<HAL::FPlatformMutex> Moved( std::move( Original ) );
 
         LUMEN_CHECK_TRUE( Moved.IsLocked() );
+        /** NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from state */
         LUMEN_CHECK_FALSE( Original.IsLocked() );
         LUMEN_CHECK_TRUE( Original.Release() == nullptr );
     }
@@ -289,6 +290,7 @@ namespace
         Target = std::move( Source );
 
         LUMEN_CHECK_TRUE( Target.IsLocked() );
+        /** NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from state */
         LUMEN_CHECK_FALSE( Source.IsLocked() );
         LUMEN_CHECK_TRUE( MutexA.TryLock() );
         MutexA.Unlock();
@@ -311,7 +313,7 @@ namespace
     {
         HAL::FPlatformMutex Mutex;
         HAL::TUniqueLock<HAL::FPlatformMutex> Lock( Mutex );
-        HAL::FPlatformMutex *Released = Lock.Release();
+        const HAL::FPlatformMutex *Released = Lock.Release();
 
         LUMEN_CHECK_TRUE( Released == &Mutex );
         LUMEN_CHECK_FALSE( Lock.IsLocked() );
@@ -387,7 +389,7 @@ namespace
         {
             for ( Int32 Index = 0; Index < 1000; ++Index )
             {
-                HAL::TLockGuard<HAL::FPlatformMutex> Guard( Mutex );
+                const HAL::TLockGuard<HAL::FPlatformMutex> Guard( Mutex );
                 ++Counter;
             }
         };
@@ -409,7 +411,7 @@ namespace
         {
             for ( Int32 Index = 0; Index < 1000; ++Index )
             {
-                HAL::TUniqueLock<HAL::FPlatformMutex> Owner( Mutex );
+                const HAL::TUniqueLock<HAL::FPlatformMutex> Owner( Mutex );
                 ++Counter;
             }
         };

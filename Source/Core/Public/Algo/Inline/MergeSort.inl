@@ -64,7 +64,7 @@ void Lumen::Algo::Internal::MergeSortRecurse ( TIterator InFirst,
     const FDifference Count = InLast - InFirst;
     if ( Count <= Threshold )
     {
-        /** INFO: Small chunks finish with insertion sort — stable and cache-friendly. */
+        /** INFO: Small chunks finish with insertion sort */
         InsertionSort( InFirst, InLast, InPredicate );
         return;
     }
@@ -74,46 +74,43 @@ void Lumen::Algo::Internal::MergeSortRecurse ( TIterator InFirst,
     MergeSortRecurse( Middle, InLast, InBuffer, InPredicate );
 
     /** INFO: Skip the merge when the two halves are already in order. */
-    if ( not Invoke( InPredicate, *Middle, *( Middle - 1 ) ) )
-    {
-        return;
+        if ( not Invoke( InPredicate, *Middle, *( Middle - 1 ) ) )
+        {
+            return;
+        }
+
+        MergeRuns( InFirst, Middle, InLast, InBuffer, InPredicate );
     }
 
-    MergeRuns( InFirst, Middle, InLast, InBuffer, InPredicate );
-}
-
-template <typename TIterator, typename TPredicate>
-void Lumen::Algo::Internal::MergeRuns ( TIterator InFirst,
-                                        TIterator InMiddle,
-                                        TIterator InLast,
-                                        std::iter_value_t<TIterator> *InBuffer,
-                                        TPredicate &InPredicate ) noexcept
-{
-    using FValue = std::iter_value_t<TIterator>;
-
-    TIterator Left  = InFirst;
-    TIterator Right = InMiddle;
-    FValue *Out     = InBuffer;
-
-    /** INFO: Stable merge: on equal keys, the left run wins. */
-    while ( Left != InMiddle and Right != InLast )
+    template <typename TIterator, typename TPredicate>
+    void Lumen::Algo::Internal::MergeRuns( TIterator InFirst, TIterator InMiddle, TIterator InLast,
+                                           std::iter_value_t<TIterator> * InBuffer, TPredicate & InPredicate ) noexcept
     {
-        if ( Invoke( InPredicate, *Right, *Left ) )
+        using FValue = std::iter_value_t<TIterator>;
+
+        TIterator Left  = InFirst;
+        TIterator Right = InMiddle;
+        FValue *Out     = InBuffer;
+
+        /** INFO: Stable merge: on equal keys, the left run wins. */
+        while ( Left != InMiddle and Right != InLast )
         {
-            *Out = std::move( *Right );
-            ++Right;
+            if ( Invoke( InPredicate, *Right, *Left ) )
+            {
+                *Out = std::move( *Right );
+                ++Right;
+            }
+            else
+            {
+                *Out = std::move( *Left );
+                ++Left;
+            }
+            ++Out;
         }
-        else
-        {
-            *Out = std::move( *Left );
-            ++Left;
-        }
-        ++Out;
+
+        Out = std::move( Left, InMiddle, Out );
+        Out = std::move( Right, InLast, Out );
+
+        /** INFO: Copy the merged run back into the source range. */
+        std::move( InBuffer, Out, InFirst );
     }
-
-    Out = std::move( Left, InMiddle, Out );
-    Out = std::move( Right, InLast, Out );
-
-    /** INFO: Copy the merged run back into the source range. */
-    std::move( InBuffer, Out, InFirst );
-}

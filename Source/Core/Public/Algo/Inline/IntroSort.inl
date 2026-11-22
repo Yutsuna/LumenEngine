@@ -45,7 +45,8 @@ void Lumen::Algo::IntroSort ( TRangeType &&InRange, TPredicate InPredicate ) noe
  */
 
 template <typename TIterator, typename TPredicate>
-void Lumen::Algo::Internal::IntroSortLoop ( TIterator InFirst, // NOLINT(misc-no-recursion) — divide-and-conquer recursion
+/** NOLINTNEXTLINE(misc-no-recursion) */
+void Lumen::Algo::Internal::IntroSortLoop ( TIterator InFirst,
                                             TIterator InLast,
                                             Int32 InDepthLimit,
                                             TPredicate &InPredicate ) noexcept

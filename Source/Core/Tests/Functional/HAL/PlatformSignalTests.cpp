@@ -63,7 +63,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Bind, InvokesHandlerOnRaise )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, &HandlerA );
         HAL::FPlatformSignal::Raise( HAL::ESystemSignal::Interrupt );
@@ -74,7 +74,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Bind, InvokesAllHandlersBoundToSameSignal )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, &HandlerA );
         HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, &HandlerB );
@@ -86,7 +86,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Raise, DoesNotTouchOtherSignals )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, &HandlerA );
         HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Terminate, &HandlerB );
@@ -99,7 +99,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Raise, SequentialRaisesDispatchEachTime )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         /** INFO: Raise == raise + Dispatch, so each call must consume the pending bit
          *        and fire the handler again on the next raise. */
@@ -117,7 +117,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Unbind, RemovesPreviouslyBoundHandler )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, &HandlerA );
         HAL::FPlatformSignal::Unbind( HAL::ESystemSignal::Interrupt );
@@ -131,7 +131,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Reset, ClearsAllBoundHandlers )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, &HandlerA );
         HAL::FPlatformSignal::Reset();
@@ -145,7 +145,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Dispatch, NoPendingSignalsDoesNothing )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, &HandlerA );
         HAL::FPlatformSignal::Dispatch();
@@ -155,7 +155,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Dispatch, ClearsPendingFlagAfterDispatch )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, &HandlerA );
 
@@ -170,7 +170,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Dispatch, MultipleReceivesCoalesceToOneCall )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, &HandlerA );
 
@@ -193,7 +193,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Dispatch, CoalescesAcrossDifferentSignals )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         /** INFO: each signal owns its own bit, so multiple different signals received
          *        without dispatch must each fire their own handler once. */
@@ -214,7 +214,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Dispatch, HandlersRunOnCallerThread )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         /** INFO: HandleOSSignal is async-signal-safe (pending bit only); handlers run
          *        synchronously inside Dispatch() on the calling thread. */
@@ -226,7 +226,7 @@ namespace
 
     LUMEN_TEST( FPlatformSignal_Raise, UnregisteredSignalOnBoundSlotIsNoop )
     {
-        FSignalTestCleanup Cleanup;
+        const FSignalTestCleanup Cleanup;
 
         /**
          * INFO: Bind installs the async-signal-safe OS handler even when the handler

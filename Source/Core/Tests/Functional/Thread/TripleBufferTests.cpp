@@ -71,8 +71,11 @@ namespace
 
         FCountedPayload &operator=( const FCountedPayload &InOther ) noexcept
         {
-            Value = InOther.Value;
-            ++Copies;
+            if ( this != &InOther )
+            {
+                Value = InOther.Value;
+                ++Copies;
+            }
             return *this;
         }
 
@@ -102,7 +105,7 @@ namespace
 
     LUMEN_TEST( TTripleBuffer_Construction, DefaultInitializesAllSlotsAndStartsClean )
     {
-        Thread::TTripleBuffer<Int32> Buffer;
+        const Thread::TTripleBuffer<Int32> Buffer;
 
         const Int32 *Slots = Buffer.GetBuffers();
 
@@ -122,7 +125,7 @@ namespace
 
     LUMEN_TEST( TTripleBuffer_Construction, ValueInitializesAllSlots )
     {
-        Thread::TTripleBuffer<Int32> Buffer( 42 );
+        const Thread::TTripleBuffer<Int32> Buffer( 42 );
 
         const Int32 *Slots = Buffer.GetBuffers();
 
@@ -176,7 +179,7 @@ namespace
 
     LUMEN_TEST( TTripleBuffer_IsDirty, StartsCleanAfterValueConstruction )
     {
-        Thread::TTripleBuffer<Int32> Buffer( 1 );
+        const Thread::TTripleBuffer<Int32> Buffer( 1 );
 
         LUMEN_CHECK_FALSE( Buffer.IsDirty() );
     }

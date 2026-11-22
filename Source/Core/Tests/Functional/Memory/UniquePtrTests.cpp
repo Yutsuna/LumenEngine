@@ -268,8 +268,8 @@ namespace
         Int32 Deletions = 0;
 
         {
-            TUniquePtr<FUniqueLifetimeObject, FDeletionCounter> Ptr( new FUniqueLifetimeObject( State ),
-                                                                     FDeletionCounter{ &Deletions } );
+            const TUniquePtr<FUniqueLifetimeObject, FDeletionCounter> Ptr( new FUniqueLifetimeObject( State ),
+                                                                           FDeletionCounter{ &Deletions } );
 
             LUMEN_CHECK_TRUE( Ptr.IsValid() );
             LUMEN_CHECK_EQ( Deletions, 0 );
@@ -292,7 +292,9 @@ namespace
 
         LUMEN_CHECK_TRUE( Target.IsValid() );
         LUMEN_CHECK_EQ( Target->GetValue(), 3 );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_FALSE( Origin.IsValid() );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_TRUE( Origin.Get() == nullptr );
 
         LUMEN_CHECK_EQ( State.Alive, 1 );
@@ -310,7 +312,9 @@ namespace
 
         LUMEN_CHECK_TRUE( First.IsValid() );
         LUMEN_CHECK_EQ( First->GetValue(), 2 );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_FALSE( Second.IsValid() );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_TRUE( Second.Get() == nullptr );
 
         LUMEN_CHECK_EQ( FirstState.Destroyed, 1 );
@@ -351,6 +355,7 @@ namespace
 
         LUMEN_CHECK_TRUE( Base.IsValid() );
         LUMEN_CHECK_EQ( Base->Id(), 2 );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_FALSE( Derived.IsValid() );
         LUMEN_CHECK_EQ( State.Alive, 1 );
     }
@@ -378,7 +383,7 @@ namespace
 
         {
             TUniquePtr<FUniqueDerived> Derived( new FUniqueDerived( State ) );
-            TUniquePtr<FUniqueBase> Base( std::move( Derived ) );
+            const TUniquePtr<FUniqueBase> Base( std::move( Derived ) );
 
             LUMEN_CHECK_EQ( State.Alive, 1 );
         }
@@ -415,7 +420,7 @@ namespace
         TUniquePtr<FUniqueLifetimeObject, FDeletionCounter> Ptr( new FUniqueLifetimeObject( State, 11 ),
                                                                  FDeletionCounter{ &Deletions } );
 
-        FUniqueLifetimeObject *Raw = Ptr.Release();
+        const FUniqueLifetimeObject *Raw = Ptr.Release();
 
         LUMEN_CHECK_FALSE( Ptr.IsValid() );
         LUMEN_CHECK_TRUE( Raw != nullptr );
@@ -534,6 +539,7 @@ namespace
 
         LUMEN_CHECK_TRUE( Result.IsValid() );
         LUMEN_CHECK_EQ( Result->Extra, 42 );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_TRUE( Ptr.Get() == nullptr );
         LUMEN_CHECK_EQ( State.Alive, 1 );
         LUMEN_CHECK_EQ( State.Destroyed, 1 );
@@ -563,7 +569,7 @@ namespace
         FUniqueState DummyState;
         TUniquePtr<FUniqueDerived> Empty;
 
-        TUniquePtr<FUniqueDerived> Result = std::move( Empty ).Transform( [&Calls, &DummyState] ( const FUniqueDerived & )
+        const TUniquePtr<FUniqueDerived> Result = std::move( Empty ).Transform( [&Calls, &DummyState] ( const FUniqueDerived & )
         {
             ++Calls;
 
@@ -572,6 +578,7 @@ namespace
 
         LUMEN_CHECK_FALSE( Result.IsValid() );
         LUMEN_CHECK_EQ( Calls, 0 );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_FALSE( Empty.IsValid() );
         LUMEN_CHECK_EQ( DummyState.Destroyed, 0 );
     }
@@ -579,7 +586,7 @@ namespace
     LUMEN_TEST( UniquePtr_Monadic_AndThen, ChainsToTheReturnedPointer )
     {
         FUniqueState State;
-        TUniquePtr<FUniqueLifetimeObject> Ptr( new FUniqueLifetimeObject( State, 8 ) );
+        const TUniquePtr<FUniqueLifetimeObject> Ptr( new FUniqueLifetimeObject( State, 8 ) );
 
         TUniquePtr<FUniqueBase> Result = Ptr.AndThen( [&State] ( const FUniqueLifetimeObject &InObject )
         {
@@ -594,9 +601,9 @@ namespace
     LUMEN_TEST( UniquePtr_Monadic_AndThen, OnNullSkipsFunction )
     {
         Int32 Calls = 0;
-        TUniquePtr<FUniqueLifetimeObject> Empty;
+        TUniquePtr<FUniqueLifetimeObject> Empty; // NOLINT(misc-const-correctness) — must stay non-const: std::move source
 
-        TUniquePtr<Int32> Result = std::move( Empty ).AndThen( [&Calls] ( const FUniqueLifetimeObject & )
+        const TUniquePtr<Int32> Result = std::move( Empty ).AndThen( [&Calls] ( const FUniqueLifetimeObject & )
         {
             ++Calls;
 
@@ -605,6 +612,7 @@ namespace
 
         LUMEN_CHECK_FALSE( Result.IsValid() );
         LUMEN_CHECK_EQ( Calls, 0 );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_FALSE( Empty.IsValid() );
     }
 
@@ -624,6 +632,7 @@ namespace
         LUMEN_CHECK_TRUE( Result.IsValid() );
         LUMEN_CHECK_EQ( Result->GetValue(), 14 );
         LUMEN_CHECK_EQ( Calls, 0 );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_FALSE( Ptr.IsValid() );
         LUMEN_CHECK_EQ( State.Destroyed, 0 );
     }
@@ -644,6 +653,7 @@ namespace
         LUMEN_CHECK_TRUE( Result.IsValid() );
         LUMEN_CHECK_EQ( Result->GetValue(), 99 );
         LUMEN_CHECK_EQ( Calls, 1 );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_FALSE( Empty.IsValid() );
     }
 
@@ -671,21 +681,21 @@ namespace
     LUMEN_TEST( UniquePtr_Monadic_ValueOr, ReturnsOwnedValueOrFallback )
     {
         FUniqueState State;
-        TUniquePtr<FUniqueLifetimeObject> Valid( new FUniqueLifetimeObject( State, 42 ) );
-        TUniquePtr<FUniqueLifetimeObject> Empty;
+        const TUniquePtr<FUniqueLifetimeObject> Valid( new FUniqueLifetimeObject( State, 42 ) );
+        const TUniquePtr<FUniqueLifetimeObject> Empty;
 
-        FUniqueLifetimeObject OwnedResult = Valid.ValueOr( FUniqueLifetimeObject( State, 7 ) );
+        const FUniqueLifetimeObject OwnedResult = Valid.ValueOr( FUniqueLifetimeObject( State, 7 ) );
 
         LUMEN_CHECK_EQ( OwnedResult.GetValue(), 42 );
 
-        FUniqueLifetimeObject FallbackResult = Empty.ValueOr( FUniqueLifetimeObject( State, 7 ) );
+        const FUniqueLifetimeObject FallbackResult = Empty.ValueOr( FUniqueLifetimeObject( State, 7 ) );
 
         LUMEN_CHECK_EQ( FallbackResult.GetValue(), 7 );
     }
 
     LUMEN_TEST( UniquePtr_Monadic_Emplace, BuildsThePointerThroughTheStaticHook )
     {
-        TUniquePtr<Int32> Emplaced = TUniquePtr<Int32>::MonadicEmplace( [] ( const Int32 InValue ) noexcept
+        const TUniquePtr<Int32> Emplaced = TUniquePtr<Int32>::MonadicEmplace( [] ( const Int32 InValue ) noexcept
         {
             return InValue * 21;
         }, 2 );
@@ -743,7 +753,7 @@ namespace
         FUniqueState State;
 
         {
-            TUniquePtr<FArrayElement[]> Array( new FArrayElement[2] );
+            const TUniquePtr<FArrayElement[]> Array( new FArrayElement[2] );
 
             for ( USize ElementIndex = 0; ElementIndex < 2; ++ElementIndex )
             {
@@ -780,7 +790,7 @@ namespace
         FUniqueState State;
         TUniquePtr<FArrayElement[]> Origin( new FArrayElement[2] );
 
-        TUniquePtr<FArrayElement[]> Target( std::move( Origin ) );
+        const TUniquePtr<FArrayElement[]> Target( std::move( Origin ) );
 
         for ( USize ElementIndex = 0; ElementIndex < 2; ++ElementIndex )
         {
@@ -788,6 +798,7 @@ namespace
         }
 
         LUMEN_CHECK_TRUE( Target.IsValid() );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_FALSE( Origin.IsValid() );
         LUMEN_CHECK_EQ( State.Alive, 2 );
         LUMEN_CHECK_EQ( State.Destroyed, 0 );
@@ -843,7 +854,7 @@ namespace
             Array[ElementIndex].Bind( State );
         }
 
-        FArrayElement *Raw = Array.Release();
+        const FArrayElement *Raw = Array.Release();
 
         LUMEN_CHECK_FALSE( Array.IsValid() );
         LUMEN_CHECK_TRUE( Raw != nullptr );

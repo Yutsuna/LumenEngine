@@ -533,9 +533,9 @@ namespace
     LUMEN_TEST( Monadic_Inspect, ExpectedVoidValueInvokesCallback )
     {
         TExpected<void, EMonadicTestError> Expected;
-        Int32 Calls                               = 0;
-        TExpected<void, EMonadicTestError> Result = std::move( Expected )
-                                                        .Inspect( [&Calls] () noexcept
+        Int32 Calls                                     = 0;
+        const TExpected<void, EMonadicTestError> Result = std::move( Expected )
+                                                              .Inspect( [&Calls] () noexcept
         {
             ++Calls;
         } );
@@ -547,9 +547,9 @@ namespace
     LUMEN_TEST( Monadic_Inspect, ExpectedVoidErrorSkipsCallback )
     {
         TExpected<void, EMonadicTestError> Expected( FUnexpect{}, EMonadicTestError::ErrorA );
-        Int32 Calls                               = 0;
-        TExpected<void, EMonadicTestError> Result = std::move( Expected )
-                                                        .Inspect( [&Calls] () noexcept
+        Int32 Calls                                     = 0;
+        const TExpected<void, EMonadicTestError> Result = std::move( Expected )
+                                                              .Inspect( [&Calls] () noexcept
         {
             ++Calls;
         } );
@@ -601,7 +601,7 @@ namespace
     LUMEN_TEST( Monadic_ValueOr, RvalueCarriesValue )
     {
         TExpected<FString, EMonadicTestError> Expected( FString( "payload" ) );
-        FString Result = std::move( Expected ).ValueOr( FString( "fallback" ) );
+        const FString Result = std::move( Expected ).ValueOr( FString( "fallback" ) );
 
         LUMEN_CHECK_EQ( Result, "payload" );
     }

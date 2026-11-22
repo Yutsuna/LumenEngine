@@ -28,11 +28,11 @@ namespace
     {
         return ( V % 2 ) == 0;
     }
-    [[nodiscard]] Bool AlwaysFalse ( const Int32 ) noexcept
+    [[nodiscard]] Bool AlwaysFalse ( const Int32 LUMEN_UNUSED InValue ) noexcept
     {
         return false;
     }
-    [[nodiscard]] Bool AlwaysTrue ( const Int32 ) noexcept
+    [[nodiscard]] Bool AlwaysTrue ( const Int32 LUMEN_UNUSED InValue ) noexcept
     {
         return true;
     }
@@ -47,7 +47,7 @@ namespace
 
     [[nodiscard]] TVector<Int32> MakeRange ( const std::initializer_list<Int32> Values )
     {
-        return TVector<Int32>( Values );
+        return { Values };
     }
 
     /** @brief Canonical six-element sequence used by most tests. */
@@ -62,52 +62,54 @@ namespace
      */
 
     // Range overloads (return raw pointer).
-    static_assert( std::is_same_v<decltype( Algo::FindIf( std::declval<TVector<Int32> &>(), &IsPositive ) ), Int32 *> );
-    static_assert( std::is_same_v<decltype( Algo::Find( std::declval<TVector<Int32> &>(), Int32{} ) ), Int32 *> );
-    static_assert( std::is_same_v<decltype( Algo::FindIfNot( std::declval<TVector<Int32> &>(), &IsEven ) ), Int32 *> );
+    static_assert( Concepts::CIsSame<decltype( Algo::FindIf( std::declval<TVector<Int32> &>(), &IsPositive ) ), Int32 *> );
+    static_assert( Concepts::CIsSame<decltype( Algo::Find( std::declval<TVector<Int32> &>(), Int32{} ) ), Int32 *> );
+    static_assert( Concepts::CIsSame<decltype( Algo::FindIfNot( std::declval<TVector<Int32> &>(), &IsEven ) ), Int32 *> );
 
     // Range overloads on a const container (return pointer-to-const).
     static_assert(
-        std::is_same_v<decltype( Algo::FindIf( std::declval<const TVector<Int32> &>(), &IsPositive ) ), const Int32 *> );
-    static_assert( std::is_same_v<decltype( Algo::Find( std::declval<const TVector<Int32> &>(), Int32{} ) ), const Int32 *> );
+        Concepts::CIsSame<decltype( Algo::FindIf( std::declval<const TVector<Int32> &>(), &IsPositive ) ), const Int32 *> );
+    static_assert( Concepts::CIsSame<decltype( Algo::Find( std::declval<const TVector<Int32> &>(), Int32{} ) ), const Int32 *> );
     static_assert(
-        std::is_same_v<decltype( Algo::FindIfNot( std::declval<const TVector<Int32> &>(), &IsEven ) ), const Int32 *> );
+        Concepts::CIsSame<decltype( Algo::FindIfNot( std::declval<const TVector<Int32> &>(), &IsEven ) ), const Int32 *> );
 
     // Range *OrNone overloads (return a COPY, not a pointer).
     static_assert(
-        std::is_same_v<decltype( Algo::FindIfOrNone( std::declval<TVector<Int32> &>(), &IsPositive ) ), TOptional<Int32>> );
-    static_assert( std::is_same_v<decltype( Algo::FindOrNone( std::declval<TVector<Int32> &>(), Int32{} ) ), TOptional<Int32>> );
+        Concepts::CIsSame<decltype( Algo::FindIfOrNone( std::declval<TVector<Int32> &>(), &IsPositive ) ), TOptional<Int32>> );
     static_assert(
-        std::is_same_v<decltype( Algo::FindIfNotOrNone( std::declval<TVector<Int32> &>(), &IsEven ) ), TOptional<Int32>> );
+        Concepts::CIsSame<decltype( Algo::FindOrNone( std::declval<TVector<Int32> &>(), Int32{} ) ), TOptional<Int32>> );
+    static_assert(
+        Concepts::CIsSame<decltype( Algo::FindIfNotOrNone( std::declval<TVector<Int32> &>(), &IsEven ) ), TOptional<Int32>> );
 
     // Iterator overloads (return the iterator type).
     using FIntIterator      = TVector<Int32>::iterator;
     using FIntConstIterator = TVector<Int32>::const_iterator;
 
     static_assert(
-        std::is_same_v<decltype( Algo::FindIf( std::declval<FIntIterator>(), std::declval<FIntIterator>(), &IsPositive ) ),
-                       FIntIterator> );
-    static_assert( std::is_same_v<decltype( Algo::Find( std::declval<FIntIterator>(), std::declval<FIntIterator>(), Int32{} ) ),
-                                  FIntIterator> );
+        Concepts::CIsSame<decltype( Algo::FindIf( std::declval<FIntIterator>(), std::declval<FIntIterator>(), &IsPositive ) ),
+                          FIntIterator> );
     static_assert(
-        std::is_same_v<decltype( Algo::FindIfNot( std::declval<FIntIterator>(), std::declval<FIntIterator>(), &IsEven ) ),
-                       FIntIterator> );
-    static_assert( std::is_same_v<decltype( Algo::FindIfEqual(
-                                      std::declval<FIntIterator>(), std::declval<FIntIterator>(), Int32{}, &SameMod3 ) ),
-                                  FIntIterator> );
+        Concepts::CIsSame<decltype( Algo::Find( std::declval<FIntIterator>(), std::declval<FIntIterator>(), Int32{} ) ),
+                          FIntIterator> );
+    static_assert(
+        Concepts::CIsSame<decltype( Algo::FindIfNot( std::declval<FIntIterator>(), std::declval<FIntIterator>(), &IsEven ) ),
+                          FIntIterator> );
+    static_assert( Concepts::CIsSame<decltype( Algo::FindIfEqual(
+                                         std::declval<FIntIterator>(), std::declval<FIntIterator>(), Int32{}, &SameMod3 ) ),
+                                     FIntIterator> );
 
+    static_assert( Concepts::CIsSame<
+                   decltype( Algo::FindIfOrNone( std::declval<FIntIterator>(), std::declval<FIntIterator>(), &IsPositive ) ),
+                   TOptional<FIntIterator>> );
     static_assert(
-        std::is_same_v<decltype( Algo::FindIfOrNone( std::declval<FIntIterator>(), std::declval<FIntIterator>(), &IsPositive ) ),
-                       TOptional<FIntIterator>> );
-    static_assert(
-        std::is_same_v<decltype( Algo::FindOrNone( std::declval<FIntIterator>(), std::declval<FIntIterator>(), Int32{} ) ),
-                       TOptional<FIntIterator>> );
-    static_assert(
-        std::is_same_v<decltype( Algo::FindIfNotOrNone( std::declval<FIntIterator>(), std::declval<FIntIterator>(), &IsEven ) ),
-                       TOptional<FIntIterator>> );
-    static_assert( std::is_same_v<decltype( Algo::FindIfEqualOrNone(
-                                      std::declval<FIntIterator>(), std::declval<FIntIterator>(), Int32{}, &SameMod3 ) ),
-                                  TOptional<FIntIterator>> );
+        Concepts::CIsSame<decltype( Algo::FindOrNone( std::declval<FIntIterator>(), std::declval<FIntIterator>(), Int32{} ) ),
+                          TOptional<FIntIterator>> );
+    static_assert( Concepts::CIsSame<
+                   decltype( Algo::FindIfNotOrNone( std::declval<FIntIterator>(), std::declval<FIntIterator>(), &IsEven ) ),
+                   TOptional<FIntIterator>> );
+    static_assert( Concepts::CIsSame<decltype( Algo::FindIfEqualOrNone(
+                                         std::declval<FIntIterator>(), std::declval<FIntIterator>(), Int32{}, &SameMod3 ) ),
+                                     TOptional<FIntIterator>> );
 
     /**
      * Iterator-based FindIf
@@ -189,10 +191,10 @@ namespace
 
     LUMEN_TEST( Algo_FindIf_Iter, WorksOnRawPointers )
     {
-        Int32 Raw[] = { 1, 2, 3, 4, 5 };
-        Int32 *End  = Raw + 5;
-        Int32 *It   = Algo::FindIf( Raw, End, [] ( const Int32 V ) noexcept
-          {
+        Int32 Raw[]     = { 1, 2, 3, 4, 5 };
+        Int32 *End      = Raw + 5;
+        const Int32 *It = Algo::FindIf( Raw, End, [] ( const Int32 V ) noexcept
+        {
             return V == 4;
         } );
         LUMEN_CHECK_TRUE( It == Raw + 3 );
@@ -384,7 +386,7 @@ namespace
     }
 
     /**
-     * Range-based FindIf  —  the overload most vulnerable to the ForEachUntil refactor.
+     * Range-based FindIf the overload most vulnerable to the ForEachUntil refactor.
      *  - must return the EXACT address of the matching element,
      *  - must allow mutation through that pointer.
      */
@@ -393,7 +395,7 @@ namespace
     {
         TVector<Int32> Values = Canonical();
 
-        Int32 *Found = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
+        const Int32 *Found = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
         {
             return V == 15;
         } );
@@ -407,18 +409,18 @@ namespace
     LUMEN_TEST( Algo_FindIf_Range, ReturnsPointerToFirstElement )
     {
         TVector<Int32> Values = Canonical();
-        Int32 *Found          = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
-                 {
+        const Int32 *Found    = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
+           {
             return V == 4;
         } );
-        LUMEN_CHECK_TRUE( Found == &Values[0] );
+        LUMEN_CHECK_TRUE( Found == Values.data() );
     }
 
     LUMEN_TEST( Algo_FindIf_Range, ReturnsPointerToLastElement )
     {
         TVector<Int32> Values = Canonical();
-        Int32 *Found          = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
-                 {
+        const Int32 *Found    = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
+           {
             return V == 42;
         } );
         LUMEN_CHECK_TRUE( Found == &Values.back() );
@@ -427,14 +429,14 @@ namespace
     LUMEN_TEST( Algo_FindIf_Range, NotFound_ReturnsNull )
     {
         TVector<Int32> Values = Canonical();
-        Int32 *Found          = Algo::FindIf( Values, &AlwaysFalse );
+        const Int32 *Found    = Algo::FindIf( Values, &AlwaysFalse );
         LUMEN_CHECK_TRUE( Found == nullptr );
     }
 
     LUMEN_TEST( Algo_FindIf_Range, EmptyRange_ReturnsNull )
     {
         TVector<Int32> Values;
-        Int32 *Found = Algo::FindIf( Values, &AlwaysTrue );
+        const Int32 *Found = Algo::FindIf( Values, &AlwaysTrue );
         LUMEN_CHECK_TRUE( Found == nullptr );
     }
 
@@ -442,7 +444,7 @@ namespace
     {
         TVector<Int32> Values = Canonical();
 
-        Int32 *Found = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
+        const Int32 *Found = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
         {
             return V == 16;
         } );
@@ -461,7 +463,7 @@ namespace
             return V == 23;
         } );
         LUMEN_CHECK_TRUE( Found != nullptr );
-        if ( Found )
+        if ( Found != nullptr )
         {
             *Found = 999;
         }
@@ -483,7 +485,7 @@ namespace
     LUMEN_TEST( Algo_FindIf_Range, WorksOnFixedArray )
     {
         TArray<Int32, 5> Values{ { 9, 8, 7, 6, 5 } };
-        Int32 *Found = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
+        const Int32 *Found = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
         {
             return V == 7;
         } );
@@ -494,7 +496,7 @@ namespace
     {
         TVector<Int32> Storage = Canonical();
         TSpan<Int32> View( Storage.data() + 1, 3 );
-        Int32 *Found = Algo::FindIf( View, [] ( const Int32 V ) noexcept
+        const Int32 *Found = Algo::FindIf( View, [] ( const Int32 V ) noexcept
         {
             return V == 15;
         } );
@@ -505,8 +507,8 @@ namespace
     {
         TVector<Int32> Values = Canonical();
         Int32 Evaluations     = 0;
-        Int32 *Found          = Algo::FindIf( Values, [&Evaluations] ( const Int32 V ) noexcept
-                 {
+        const Int32 *Found    = Algo::FindIf( Values, [&Evaluations] ( const Int32 V ) noexcept
+           {
             ++Evaluations;
             return V == 15;
         } );
@@ -517,7 +519,7 @@ namespace
     LUMEN_TEST( Algo_FindIf_Range, NonTrivialValueType )
     {
         TVector<FString> Values{ FString( "alpha" ), FString( "beta" ), FString( "gamma" ) };
-        FString *Found = Algo::FindIf( Values, [] ( const FString &V )
+        const FString *Found = Algo::FindIf( Values, [] ( const FString &V )
         {
             return V == "beta";
         } );
@@ -531,28 +533,28 @@ namespace
     LUMEN_TEST( Algo_Find_Range, Found_ReturnsExactPointer )
     {
         TVector<Int32> Values = Canonical();
-        Int32 *Found          = Algo::Find( Values, 16 );
+        const Int32 *Found    = Algo::Find( Values, 16 );
         LUMEN_CHECK_TRUE( Found == &Values[3] );
     }
 
     LUMEN_TEST( Algo_Find_Range, ReturnsFirstOfDuplicates )
     {
         TVector<Int32> Values = MakeRange( { 3, 5, 3, 5 } );
-        Int32 *Found          = Algo::Find( Values, 5 );
+        const Int32 *Found    = Algo::Find( Values, 5 );
         LUMEN_CHECK_TRUE( Found == &Values[1] );
     }
 
     LUMEN_TEST( Algo_Find_Range, NotFound_ReturnsNull )
     {
         TVector<Int32> Values = Canonical();
-        Int32 *Found          = Algo::Find( Values, 999 );
+        const Int32 *Found    = Algo::Find( Values, 999 );
         LUMEN_CHECK_TRUE( Found == nullptr );
     }
 
     LUMEN_TEST( Algo_Find_Range, EmptyRange_ReturnsNull )
     {
         TVector<Int32> Values;
-        Int32 *Found = Algo::Find( Values, 1 );
+        const Int32 *Found = Algo::Find( Values, 1 );
         LUMEN_CHECK_TRUE( Found == nullptr );
     }
 
@@ -561,7 +563,7 @@ namespace
         TVector<Int32> Values = Canonical();
         Int32 *Found          = Algo::Find( Values, 42 );
         LUMEN_CHECK_TRUE( Found != nullptr );
-        if ( Found )
+        if ( Found != nullptr )
         {
             *Found = 100;
         }
@@ -578,7 +580,7 @@ namespace
     LUMEN_TEST( Algo_Find_Range, WorksOnFixedArray )
     {
         TArray<Int32, 4> Values{ { 1, 2, 3, 4 } };
-        Int32 *Found = Algo::Find( Values, 3 );
+        const Int32 *Found = Algo::Find( Values, 3 );
         LUMEN_CHECK_TRUE( Found == &Values[2] );
     }
 
@@ -586,14 +588,14 @@ namespace
     {
         TVector<Int32> Storage = MakeRange( { 10, 20, 30, 40, 50 } );
         TSpan<Int32> View( Storage.data() + 1, 3 );
-        Int32 *Found = Algo::Find( View, 40 );
+        const Int32 *Found = Algo::Find( View, 40 );
         LUMEN_CHECK_TRUE( Found == Storage.data() + 3 );
     }
 
     LUMEN_TEST( Algo_Find_Range, NonTrivialValueType )
     {
         TVector<FString> Values{ FString( "one" ), FString( "two" ), FString( "three" ) };
-        FString *Found = Algo::Find( Values, FString( "two" ) );
+        const FString *Found = Algo::Find( Values, FString( "two" ) );
         LUMEN_CHECK_TRUE( Found == &Values[1] );
     }
 
@@ -604,7 +606,7 @@ namespace
     LUMEN_TEST( Algo_FindIfNot_Range, Found_ReturnsExactPointer )
     {
         TVector<Int32> Values = MakeRange( { 2, 4, 7, 8 } );
-        Int32 *Found          = Algo::FindIfNot( Values, &IsEven );
+        const Int32 *Found    = Algo::FindIfNot( Values, &IsEven );
         LUMEN_CHECK_TRUE( Found == &Values[2] );
         LUMEN_CHECK_EQ( *Found, 7 );
     }
@@ -612,14 +614,14 @@ namespace
     LUMEN_TEST( Algo_FindIfNot_Range, AllMatch_ReturnsNull )
     {
         TVector<Int32> Values = MakeRange( { 2, 4, 6 } );
-        Int32 *Found          = Algo::FindIfNot( Values, &IsEven );
+        const Int32 *Found    = Algo::FindIfNot( Values, &IsEven );
         LUMEN_CHECK_TRUE( Found == nullptr );
     }
 
     LUMEN_TEST( Algo_FindIfNot_Range, EmptyRange_ReturnsNull )
     {
         TVector<Int32> Values;
-        Int32 *Found = Algo::FindIfNot( Values, &IsEven );
+        const Int32 *Found = Algo::FindIfNot( Values, &IsEven );
         LUMEN_CHECK_TRUE( Found == nullptr );
     }
 
@@ -628,7 +630,7 @@ namespace
         TVector<Int32> Values = MakeRange( { 2, 4, 7 } );
         Int32 *Found          = Algo::FindIfNot( Values, &IsEven );
         LUMEN_CHECK_TRUE( Found != nullptr );
-        if ( Found )
+        if ( Found != nullptr )
         {
             *Found = 0;
         }
@@ -714,12 +716,12 @@ namespace
     {
         TVector<Int32> Values = Canonical();
 
-        Int32 *RangeResult    = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
-           {
+        const Int32 *RangeResult = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
+        {
             return V == 16;
         } );
-        const auto IterResult = Algo::FindIf( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
-        {
+        const auto IterResult    = Algo::FindIf( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
+           {
             return V == 16;
         } );
 
@@ -736,7 +738,7 @@ namespace
         Int32 *Found = Algo::Find( Values, 23 );
         LUMEN_CHECK_TRUE( Found != nullptr );
 
-        Int32 *Next = Algo::FindIf( Found, Values.data() + Values.size(), [] ( const Int32 V ) noexcept
+        const Int32 *Next = Algo::FindIf( Found, Values.data() + Values.size(), [] ( const Int32 V ) noexcept
         {
             return V == 42;
         } );

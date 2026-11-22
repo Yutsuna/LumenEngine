@@ -66,7 +66,9 @@ namespace
 
     LUMEN_TEST( Reflection_EnumName, UnknownFallback )
     {
+        // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange) — deliberate out-of-range value for the unknown-enum path
         LUMEN_CHECK_TRUE( Meta::EnumName( static_cast<ETestColor>( 123U ) ) == "<unknown>" );
+        // NOLINTNEXTLINE(clang-analyzer-optin.core.EnumCastOutOfRange) — deliberate out-of-range value for the unknown-enum path
         LUMEN_CHECK_TRUE( Meta::EnumQualifiedName( static_cast<ETestColor>( 123U ) ) == "<unknown>" );
     }
 

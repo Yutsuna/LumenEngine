@@ -54,7 +54,7 @@ LUMEN_TEST( FDirectory_Exists, ReturnsFalseForMissingPath )
 
 LUMEN_TEST( FDirectory_Exists, ReturnsTrueForExistingPath )
 {
-    FScopedTestDir Guard( "FDirectory_Exists_Existing" );
+    const FScopedTestDir Guard( "FDirectory_Exists_Existing" );
     LUMEN_CHECK_TRUE( Lumen::Filesystem::FDirectory::Exists( Guard.Path ) );
 }
 
@@ -62,7 +62,7 @@ LUMEN_TEST( FDirectory_Exists, ReturnsTrueForExistingPath )
 
 LUMEN_TEST( FDirectory_Create, CreatesNewDirectory )
 {
-    FScopedTestDir Guard( "FDirectory_Create_New", false );
+    const FScopedTestDir Guard( "FDirectory_Create_New", false );
     const auto Result = Lumen::Filesystem::FDirectory::Create( Guard.Path );
     LUMEN_CHECK_HAS_VALUE( Result );
     LUMEN_CHECK_TRUE( Lumen::Filesystem::FDirectory::Exists( Guard.Path ) );
@@ -70,7 +70,7 @@ LUMEN_TEST( FDirectory_Create, CreatesNewDirectory )
 
 LUMEN_TEST( FDirectory_Create, FailsWhenDirectoryAlreadyExists )
 {
-    FScopedTestDir Guard( "FDirectory_Create_Existing", true );
+    const FScopedTestDir Guard( "FDirectory_Create_Existing", true );
     const auto Result = Lumen::Filesystem::FDirectory::Create( Guard.Path );
     LUMEN_CHECK_HAS_ERROR( Result );
 }
@@ -79,7 +79,7 @@ LUMEN_TEST( FDirectory_Create, FailsWhenDirectoryAlreadyExists )
 
 LUMEN_TEST( FDirectory_CreateDirectories, CreatesNestedDirectories )
 {
-    FScopedTestDir Guard( "FDirectory_CreateDirectories_Nested", false );
+    const FScopedTestDir Guard( "FDirectory_CreateDirectories_Nested", false );
     const auto NestedPath = Guard.Path / "a" / "b" / "c";
     const auto Result     = Lumen::Filesystem::FDirectory::CreateDirectories( NestedPath );
     LUMEN_CHECK_HAS_VALUE( Result );
@@ -88,7 +88,7 @@ LUMEN_TEST( FDirectory_CreateDirectories, CreatesNestedDirectories )
 
 LUMEN_TEST( FDirectory_CreateDirectories, SucceedsWhenDirectoryAlreadyExists )
 {
-    FScopedTestDir Guard( "FDirectory_CreateDirectories_Existing", true );
+    const FScopedTestDir Guard( "FDirectory_CreateDirectories_Existing", true );
     const auto Result = Lumen::Filesystem::FDirectory::CreateDirectories( Guard.Path );
     LUMEN_CHECK_HAS_VALUE( Result );
 }
@@ -97,7 +97,7 @@ LUMEN_TEST( FDirectory_CreateDirectories, SucceedsWhenDirectoryAlreadyExists )
 
 LUMEN_TEST( FDirectory_Delete, DeletesEmptyDirectory )
 {
-    FScopedTestDir Guard( "FDirectory_Delete_Empty", true );
+    const FScopedTestDir Guard( "FDirectory_Delete_Empty", true );
     const auto Result = Lumen::Filesystem::FDirectory::Delete( Guard.Path, false );
     LUMEN_CHECK_HAS_VALUE( Result );
     LUMEN_CHECK_FALSE( Lumen::Filesystem::FDirectory::Exists( Guard.Path ) );
@@ -113,7 +113,7 @@ LUMEN_TEST( FDirectory_Delete, FailsForMissingDirectory )
 
 LUMEN_TEST( FDirectory_Delete, FailsForNonEmptyDirectoryWithoutRecursive )
 {
-    FScopedTestDir Guard( "FDirectory_Delete_NonEmpty", true );
+    const FScopedTestDir Guard( "FDirectory_Delete_NonEmpty", true );
     const auto FilePath = Guard.Path / "file.txt";
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "data" );
     const auto Result = Lumen::Filesystem::FDirectory::Delete( Guard.Path, false );
@@ -123,7 +123,7 @@ LUMEN_TEST( FDirectory_Delete, FailsForNonEmptyDirectoryWithoutRecursive )
 
 LUMEN_TEST( FDirectory_Delete, DeletesNonEmptyDirectoryWithRecursive )
 {
-    FScopedTestDir Guard( "FDirectory_Delete_Recursive", true );
+    const FScopedTestDir Guard( "FDirectory_Delete_Recursive", true );
     const auto FilePath = Guard.Path / "file.txt";
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "data" );
     const auto Result = Lumen::Filesystem::FDirectory::Delete( Guard.Path, true );
@@ -135,7 +135,7 @@ LUMEN_TEST( FDirectory_Delete, DeletesNonEmptyDirectoryWithRecursive )
 
 LUMEN_TEST( FDirectory_ForEachEntry, IteratesImmediateEntriesNonRecursive )
 {
-    FScopedTestDir Guard( "FDirectory_ForEachEntry_NonRecursive", true );
+    const FScopedTestDir Guard( "FDirectory_ForEachEntry_NonRecursive", true );
     const auto File1  = Guard.Path / "file1.txt";
     const auto File2  = Guard.Path / "file2.txt";
     const auto SubDir = Guard.Path / "subdir";
@@ -180,7 +180,7 @@ LUMEN_TEST( FDirectory_ForEachEntry, IteratesImmediateEntriesNonRecursive )
 
 LUMEN_TEST( FDirectory_ForEachEntry, IteratesAllEntriesRecursive )
 {
-    FScopedTestDir Guard( "FDirectory_ForEachEntry_Recursive", true );
+    const FScopedTestDir Guard( "FDirectory_ForEachEntry_Recursive", true );
     const auto File1  = Guard.Path / "file1.txt";
     const auto File2  = Guard.Path / "file2.txt";
     const auto SubDir = Guard.Path / "subdir";
@@ -212,7 +212,7 @@ LUMEN_TEST( FDirectory_ForEachEntry, IteratesAllEntriesRecursive )
 
 LUMEN_TEST( FDirectory_ForEachEntry, StopsEarlyWhenCallbackReturnsFalse )
 {
-    FScopedTestDir Guard( "FDirectory_ForEachEntry_EarlyStop", true );
+    const FScopedTestDir Guard( "FDirectory_ForEachEntry_EarlyStop", true );
     Lumen::Filesystem::FFile::WriteAllText( Guard.Path / "file1.txt", "a" );
     Lumen::Filesystem::FFile::WriteAllText( Guard.Path / "file2.txt", "b" );
 
@@ -230,7 +230,7 @@ LUMEN_TEST( FDirectory_ForEachEntry, StopsEarlyWhenCallbackReturnsFalse )
 
 LUMEN_TEST( FDirectory_ForEachEntry, WorksWithVoidCallback )
 {
-    FScopedTestDir Guard( "FDirectory_ForEachEntry_Void", true );
+    const FScopedTestDir Guard( "FDirectory_ForEachEntry_Void", true );
     Lumen::Filesystem::FFile::WriteAllText( Guard.Path / "file1.txt", "a" );
     Lumen::Filesystem::FFile::WriteAllText( Guard.Path / "file2.txt", "b" );
 

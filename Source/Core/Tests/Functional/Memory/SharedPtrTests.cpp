@@ -130,7 +130,7 @@ namespace
         FSharedState State;
 
         {
-            TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State );
+            const TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State );
 
             LUMEN_CHECK_EQ( State.Alive, 1 );
             LUMEN_CHECK_EQ( State.Constructed, 1 );
@@ -145,7 +145,7 @@ namespace
     LUMEN_TEST( SharedRef_Constructor, MakeSharedForwardsConstructorArguments )
     {
         FSharedState State;
-        TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State, 21 );
+        const TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State, 21 );
 
         LUMEN_CHECK_EQ( Ref->GetValue(), 21 );
         LUMEN_CHECK_EQ( State.Constructed, 1 );
@@ -156,7 +156,7 @@ namespace
         FSharedState State;
 
         {
-            TSharedRef<FSharedLifetimeObject> Ref = MakeShareable( new FSharedLifetimeObject( State ) );
+            const TSharedRef<FSharedLifetimeObject> Ref = MakeShareable( new FSharedLifetimeObject( State ) );
 
             LUMEN_CHECK_EQ( State.Alive, 1 );
             LUMEN_CHECK_EQ( Ref.GetSharedReferenceCount(), 1U );
@@ -171,12 +171,12 @@ namespace
         FSharedState State;
 
         {
-            TSharedRef<FSharedBase> Base = MakeShared<FSharedDerived>( State, 7 );
+            const TSharedRef<FSharedBase> Base = MakeShared<FSharedDerived>( State, 7 );
 
             LUMEN_CHECK_EQ( Base->Id(), 2 );
             LUMEN_CHECK_EQ( Base.GetSharedReferenceCount(), 1U );
 
-            TSharedPtr<FSharedBase> Shared = Base;
+            const TSharedPtr<FSharedBase> Shared = Base;
 
             LUMEN_CHECK_TRUE( Shared.Get() == Base.Get() );
             LUMEN_CHECK_EQ( Base.GetSharedReferenceCount(), 2U );
@@ -189,7 +189,7 @@ namespace
     LUMEN_TEST( SharedRef_Access, DereferenceAndMemberAccess )
     {
         FSharedState State;
-        TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State, 5 );
+        const TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State, 5 );
 
         FSharedLifetimeObject &Object = *Ref;
         Object.SetValue( 12 );
@@ -209,10 +209,11 @@ namespace
     LUMEN_TEST( SharedRef_ReferenceCount, CopiesShareTheSameObject )
     {
         FSharedState State;
-        TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State );
+        const TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State );
 
         {
-            TSharedRef<FSharedLifetimeObject> Copy( Ref );
+            // NOLINTNEXTLINE(performance-unnecessary-copy-initialization) — copy under test
+            const TSharedRef<FSharedLifetimeObject> Copy( Ref );
 
             LUMEN_CHECK_EQ( Copy.GetSharedReferenceCount(), 2U );
             LUMEN_CHECK_EQ( Ref.GetSharedReferenceCount(), 2U );
@@ -232,7 +233,7 @@ namespace
         {
             TSharedRef<FSharedLifetimeObject> Origin = MakeShared<FSharedLifetimeObject>( State );
 
-            TSharedRef<FSharedLifetimeObject> Target( std::move( Origin ) );
+            const TSharedRef<FSharedLifetimeObject> Target( std::move( Origin ) );
 
             LUMEN_CHECK_EQ( Target.GetSharedReferenceCount(), 1U );
             LUMEN_CHECK_EQ( State.Alive, 1 );
@@ -245,9 +246,10 @@ namespace
     LUMEN_TEST( SharedRef_ReferenceCount, CopyOfDerivedSharesCountWithBase )
     {
         FSharedState State;
-        TSharedRef<FSharedBase> Base = MakeShared<FSharedDerived>( State, 3 );
+        const TSharedRef<FSharedBase> Base = MakeShared<FSharedDerived>( State, 3 );
 
-        TSharedRef<FSharedBase> Copy( Base );
+        // NOLINTNEXTLINE(performance-unnecessary-copy-initialization) — copy under test
+        const TSharedRef<FSharedBase> Copy( Base );
 
         LUMEN_CHECK_EQ( Copy.GetSharedReferenceCount(), 2U );
         LUMEN_CHECK_EQ( Base.GetSharedReferenceCount(), 2U );
@@ -261,8 +263,8 @@ namespace
     {
         FSharedState FirstState;
         FSharedState SecondState;
-        TSharedRef<FSharedLifetimeObject> First  = MakeShared<FSharedLifetimeObject>( FirstState, 1 );
-        TSharedRef<FSharedLifetimeObject> Second = MakeShared<FSharedLifetimeObject>( SecondState, 2 );
+        TSharedRef<FSharedLifetimeObject> First        = MakeShared<FSharedLifetimeObject>( FirstState, 1 );
+        const TSharedRef<FSharedLifetimeObject> Second = MakeShared<FSharedLifetimeObject>( SecondState, 2 );
 
         First = Second;
 
@@ -316,9 +318,9 @@ namespace
     LUMEN_TEST( StaticCast_SharedRef, DowncastToConcreteType )
     {
         FSharedState State;
-        TSharedRef<FSharedBase> Base = MakeShared<FSharedDerived>( State, 77 );
+        const TSharedRef<FSharedBase> Base = MakeShared<FSharedDerived>( State, 77 );
 
-        TSharedRef<FSharedDerived> Down = StaticCastSharedRef<FSharedDerived>( Base );
+        const TSharedRef<FSharedDerived> Down = StaticCastSharedRef<FSharedDerived>( Base );
 
         LUMEN_CHECK_EQ( Down->GetExtra(), 77 );
         LUMEN_CHECK_TRUE( Down.Get() == Base.Get() );
@@ -331,9 +333,9 @@ namespace
     LUMEN_TEST( StaticCast_SharedPtr, DowncastToConcreteType )
     {
         FSharedState State;
-        TSharedPtr<FSharedBase> Base = MakeShared<FSharedDerived>( State, 44 );
+        const TSharedPtr<FSharedBase> Base = MakeShared<FSharedDerived>( State, 44 );
 
-        TSharedPtr<FSharedDerived> Down = StaticCastSharedPtr<FSharedDerived>( Base );
+        const TSharedPtr<FSharedDerived> Down = StaticCastSharedPtr<FSharedDerived>( Base );
 
         LUMEN_CHECK_TRUE( Down.IsValid() );
         LUMEN_CHECK_EQ( Down->GetExtra(), 44 );
@@ -342,8 +344,8 @@ namespace
 
     LUMEN_TEST( StaticCast_SharedPtr, InvalidPointerStaysInvalid )
     {
-        TSharedPtr<FSharedBase> Empty;
-        TSharedPtr<FSharedDerived> Down = StaticCastSharedPtr<FSharedDerived>( Empty );
+        const TSharedPtr<FSharedBase> Empty;
+        const TSharedPtr<FSharedDerived> Down = StaticCastSharedPtr<FSharedDerived>( Empty );
 
         LUMEN_CHECK_FALSE( Down.IsValid() );
         LUMEN_CHECK_TRUE( Down.Get() == nullptr );
@@ -356,7 +358,7 @@ namespace
     LUMEN_TEST( SharedPtr_Constructor, DefaultAndNullPointersStayInvalid )
     {
         TSharedPtr<FSharedLifetimeObject> Empty;
-        TSharedPtr<FSharedLifetimeObject> Null( nullptr );
+        const TSharedPtr<FSharedLifetimeObject> Null( nullptr );
 
         LUMEN_CHECK_FALSE( Empty.IsValid() );
         LUMEN_CHECK_FALSE( Null.IsValid() );
@@ -370,10 +372,10 @@ namespace
     LUMEN_TEST( SharedPtr_Constructor, FromSharedRefSharesTheSameObject )
     {
         FSharedState State;
-        TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State, 8 );
+        const TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State, 8 );
 
         {
-            TSharedPtr<FSharedLifetimeObject> Ptr = Ref;
+            const TSharedPtr<FSharedLifetimeObject> Ptr = Ref;
 
             LUMEN_CHECK_TRUE( Ptr.IsValid() );
             LUMEN_CHECK_TRUE( Ptr.Get() == Ref.Get() );
@@ -389,7 +391,7 @@ namespace
         FSharedState State;
 
         {
-            TSharedPtr<FSharedBase> Ptr = MakeShared<FSharedDerived>( State, 31 );
+            const TSharedPtr<FSharedBase> Ptr = MakeShared<FSharedDerived>( State, 31 );
 
             LUMEN_CHECK_TRUE( Ptr.IsValid() );
             LUMEN_CHECK_EQ( Ptr->Id(), 2 );
@@ -404,7 +406,7 @@ namespace
         FSharedState State;
 
         {
-            TSharedPtr<FSharedLifetimeObject> Ptr = MakeShareable( new FSharedLifetimeObject( State, 13 ) );
+            const TSharedPtr<FSharedLifetimeObject> Ptr = MakeShareable( new FSharedLifetimeObject( State, 13 ) );
 
             LUMEN_CHECK_TRUE( Ptr.IsValid() );
             LUMEN_CHECK_EQ( Ptr->GetValue(), 13 );
@@ -416,8 +418,8 @@ namespace
 
     LUMEN_TEST( SharedPtr_Constructor, NullProxiedPointerStaysInvalid )
     {
-        FSharedState State;
-        TSharedPtr<FSharedLifetimeObject> Ptr = MakeShareable( static_cast<FSharedLifetimeObject *>( nullptr ) );
+        const FSharedState State;
+        const TSharedPtr<FSharedLifetimeObject> Ptr = MakeShareable( static_cast<FSharedLifetimeObject *>( nullptr ) );
 
         LUMEN_CHECK_FALSE( Ptr.IsValid() );
         LUMEN_CHECK_TRUE( Ptr.Get() == nullptr );
@@ -433,10 +435,11 @@ namespace
         FSharedState State;
 
         {
-            TSharedPtr<FSharedLifetimeObject> First = MakeShared<FSharedLifetimeObject>( State );
+            const TSharedPtr<FSharedLifetimeObject> First = MakeShared<FSharedLifetimeObject>( State );
 
             {
-                TSharedPtr<FSharedLifetimeObject> Second( First );
+                // NOLINTNEXTLINE(performance-unnecessary-copy-initialization) — copy under test
+                const TSharedPtr<FSharedLifetimeObject> Second( First );
 
                 LUMEN_CHECK_TRUE( First.Get() == Second.Get() );
                 LUMEN_CHECK_EQ( State.Alive, 1 );
@@ -458,14 +461,16 @@ namespace
         {
             TSharedPtr<FSharedLifetimeObject> Origin = MakeShareable( new FSharedLifetimeObject( State, 6 ) );
 
-            TSharedPtr<FSharedLifetimeObject> Target( std::move( Origin ) );
+            const TSharedPtr<FSharedLifetimeObject> Target( std::move( Origin ) );
 
             LUMEN_CHECK_TRUE( Target.IsValid() );
             LUMEN_CHECK_EQ( Target->GetValue(), 6 );
+            // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
             LUMEN_CHECK_TRUE( Origin.Get() == nullptr );
+            // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
             LUMEN_CHECK_FALSE( Origin.IsValid() );
 
-            TSharedPtr<FSharedLifetimeObject> Ghost( std::move( Origin ) );
+            const TSharedPtr<FSharedLifetimeObject> Ghost( std::move( Origin ) );
 
             LUMEN_CHECK_FALSE( Ghost.IsValid() );
         }
@@ -479,10 +484,13 @@ namespace
         FSharedState State;
         TSharedPtr<FSharedLifetimeObject> Origin = MakeShareable( new FSharedLifetimeObject( State ) );
 
-        TSharedPtr<FSharedLifetimeObject> Target( std::move( Origin ) );
-        TSharedPtr<FSharedLifetimeObject> Copy( Origin );
+        const TSharedPtr<FSharedLifetimeObject> Target( std::move( Origin ) );
+        // Copying the moved-from source is the test subject: verify the copy stays empty.
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
+        const TSharedPtr<FSharedLifetimeObject> Copy( Origin ); // NOLINT(performance-unnecessary-copy-initialization)
 
         LUMEN_CHECK_FALSE( Copy.IsValid() );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_TRUE( Origin.Get() == nullptr );
         LUMEN_CHECK_TRUE( Target.IsValid() );
     }
@@ -491,8 +499,8 @@ namespace
     {
         FSharedState FirstState;
         FSharedState SecondState;
-        TSharedPtr<FSharedLifetimeObject> First  = MakeShareable( new FSharedLifetimeObject( FirstState, 1 ) );
-        TSharedPtr<FSharedLifetimeObject> Second = MakeShareable( new FSharedLifetimeObject( SecondState, 2 ) );
+        TSharedPtr<FSharedLifetimeObject> First        = MakeShareable( new FSharedLifetimeObject( FirstState, 1 ) );
+        const TSharedPtr<FSharedLifetimeObject> Second = MakeShareable( new FSharedLifetimeObject( SecondState, 2 ) );
 
         First = Second;
 
@@ -521,8 +529,8 @@ namespace
 
         Ptr = Ptr;
 
-        TSharedPtr<FSharedLifetimeObject> &SelfSource = Ptr;
-        Ptr                                           = std::move( SelfSource );
+        const TSharedPtr<FSharedLifetimeObject> &SelfSource = Ptr;
+        Ptr                                                 = SelfSource; // no move assignment; self-copy is the only path
 
         LUMEN_CHECK_TRUE( Ptr.IsValid() );
 
@@ -542,8 +550,8 @@ namespace
     LUMEN_TEST( SharedPtr_Access, DereferenceAndBoolConversion )
     {
         FSharedState State;
-        TSharedPtr<FSharedLifetimeObject> Valid = MakeShareable( new FSharedLifetimeObject( State, 4 ) );
-        TSharedPtr<FSharedLifetimeObject> Invalid;
+        const TSharedPtr<FSharedLifetimeObject> Valid = MakeShareable( new FSharedLifetimeObject( State, 4 ) );
+        const TSharedPtr<FSharedLifetimeObject> Invalid;
 
         Valid->SetValue( 14 );
 
@@ -578,9 +586,9 @@ namespace
     LUMEN_TEST( SharedPtr_Comparison, SameObjectComparesEqual )
     {
         FSharedState State;
-        TSharedPtr<FSharedLifetimeObject> First = MakeShared<FSharedLifetimeObject>( State );
-        TSharedPtr<FSharedLifetimeObject> Second( First );
-        TSharedPtr<FSharedLifetimeObject> Empty;
+        const TSharedPtr<FSharedLifetimeObject> First   = MakeShared<FSharedLifetimeObject>( State );
+        const TSharedPtr<FSharedLifetimeObject> &Second = First;
+        const TSharedPtr<FSharedLifetimeObject> Empty;
 
         LUMEN_CHECK_TRUE( First == Second );
         LUMEN_CHECK_FALSE( First != Second );
@@ -591,8 +599,8 @@ namespace
     LUMEN_TEST( SharedPtr_Comparison, SharedRefComparesByObject )
     {
         FSharedState State;
-        TSharedPtr<FSharedLifetimeObject> Ptr = MakeShared<FSharedLifetimeObject>( State );
-        TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State );
+        TSharedPtr<FSharedLifetimeObject> Ptr       = MakeShared<FSharedLifetimeObject>( State );
+        const TSharedRef<FSharedLifetimeObject> Ref = MakeShared<FSharedLifetimeObject>( State );
 
         LUMEN_CHECK_TRUE( Ptr != Ref );
         LUMEN_CHECK_FALSE( Ptr == Ref );
@@ -606,9 +614,9 @@ namespace
     LUMEN_TEST( SharedPtr_Comparison, UpcastComparisonStillWorks )
     {
         FSharedState State;
-        TSharedPtr<FSharedBase> Base = MakeShared<FSharedDerived>( State, 1 );
+        const TSharedPtr<FSharedBase> Base = MakeShared<FSharedDerived>( State, 1 );
 
-        TSharedPtr<FSharedDerived> Derived = StaticCastSharedPtr<FSharedDerived>( Base );
+        const TSharedPtr<FSharedDerived> Derived = StaticCastSharedPtr<FSharedDerived>( Base );
 
         LUMEN_CHECK_TRUE( Base == Derived );
         LUMEN_CHECK_FALSE( Base != Derived );

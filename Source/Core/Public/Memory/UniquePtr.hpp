@@ -139,7 +139,7 @@ public:
     static TUniquePtr MonadicEmplace ( Function &&Func,
                                        Arguments &&Args ) noexcept( std::is_nothrow_invocable_v<Function, Arguments> )
     {
-        // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) — Lumen is noexcept; OOM terminates.
+        // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new)
         return TUniquePtr( new Type( Invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ) );
     }
 

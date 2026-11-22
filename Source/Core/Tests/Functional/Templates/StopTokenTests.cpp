@@ -62,13 +62,14 @@ namespace
         FStopSource Source;
         const FStopSource CopiedSource   = Source;
         const FStopToken Token           = Source.GetToken();
-        const FStopToken CopiedToken     = Token;
+        const FStopToken CopiedToken     = Token; // NOLINT(performance-unnecessary-copy-initialization) — copy under test
         const FStopToken &CopiedRefToken = CopiedToken;
         FStopSource MovedSource          = std::move( Source );
 
         LUMEN_CHECK_TRUE( CopiedSource == MovedSource );
         LUMEN_CHECK_TRUE( CopiedToken == Token );
         LUMEN_CHECK_TRUE( CopiedRefToken == Token );
+        // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
         LUMEN_CHECK_FALSE( Source.StopPossible() );
 
         LUMEN_CHECK_TRUE( MovedSource.RequestStop() );
@@ -82,7 +83,7 @@ namespace
         FStopSource Source;
         Int32 InvocationCount = 0;
         {
-            FStopCallback Callback( Source.GetToken(), [&InvocationCount]
+            const FStopCallback Callback( Source.GetToken(), [&InvocationCount]
             {
                 ++InvocationCount;
             } );
@@ -100,7 +101,7 @@ namespace
         LUMEN_CHECK_TRUE( Source.RequestStop() );
 
         Int32 InvocationCount = 0;
-        FStopCallback Callback( Source.GetToken(), [&InvocationCount]
+        const FStopCallback Callback( Source.GetToken(), [&InvocationCount]
         {
             ++InvocationCount;
         } );
@@ -112,7 +113,7 @@ namespace
         FStopSource Source;
         Int32 InvocationCount = 0;
         {
-            FStopCallback Callback( Source.GetToken(), [&InvocationCount]
+            const FStopCallback Callback( Source.GetToken(), [&InvocationCount]
             {
                 ++InvocationCount;
             } );

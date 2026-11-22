@@ -71,10 +71,10 @@ namespace
 
     LUMEN_TEST( Optional_Constructor, EmptyDoesNotConstructValue )
     {
-        FLifetimeState State;
+        const FLifetimeState State;
 
         {
-            TOptional<FLifetimeValue> Optional;
+            const TOptional<FLifetimeValue> Optional;
             LUMEN_CHECK_FALSE( Optional.HasValue() );
             LUMEN_CHECK_EQ( State.Alive, 0 );
             LUMEN_CHECK_EQ( State.Constructed, 0 );
@@ -130,8 +130,9 @@ namespace
         Source.Emplace( State );
 
         {
-            TOptional<FLifetimeValue> Moved( std::move( Source ) );
+            const TOptional<FLifetimeValue> Moved( std::move( Source ) );
             LUMEN_CHECK_TRUE( Moved.HasValue() );
+            // NOLINTNEXTLINE(bugprone-use-after-move,hicpp-invalid-access-moved,clang-analyzer-cplusplus.Move) — moved-from check
             LUMEN_CHECK_TRUE( Source.HasValue() );
             LUMEN_CHECK_EQ( State.Alive, 2 );
             LUMEN_CHECK_EQ( State.Moves, 1 );
@@ -143,10 +144,10 @@ namespace
 
     LUMEN_TEST( Optional_Lifetime, EmptyCopyAndMoveDoNotConstructValue )
     {
-        FLifetimeState State;
+        const FLifetimeState State;
         TOptional<FLifetimeValue> Source;
-        TOptional<FLifetimeValue> Copy( Source );
-        TOptional<FLifetimeValue> Moved( std::move( Source ) );
+        const TOptional<FLifetimeValue> Copy( Source );
+        const TOptional<FLifetimeValue> Moved( std::move( Source ) );
 
         LUMEN_CHECK_FALSE( Copy.HasValue() );
         LUMEN_CHECK_FALSE( Moved.HasValue() );

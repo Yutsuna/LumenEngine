@@ -14,6 +14,8 @@
 
 #include <Templates/Array.hpp>
 
+#include <utility>
+
 namespace Lumen
 {
 
@@ -458,7 +460,7 @@ namespace
 
         for ( Int32 Index = 0; Index < ItemCount; ++Index )
         {
-            if ( ReceivedItems[static_cast<USize>( Index )] != static_cast<UInt64>( Index ) ) [[unlikely]]
+            if ( std::cmp_not_equal( ReceivedItems[static_cast<USize>( Index )], static_cast<UInt64>( Index ) ) ) [[unlikely]]
             {
                 LUMEN_CHECK_MSG( false, "a single consumer must observe strictly increasing FIFO values" );
                 break;

@@ -329,10 +329,10 @@ namespace
         HAL::FPlatformRecursiveSharedMutex Mutex;
 
         {
-            HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Outer( Mutex );
+            const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Outer( Mutex );
 
             {
-                HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Inner( Mutex );
+                const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Inner( Mutex );
             }
         }
 

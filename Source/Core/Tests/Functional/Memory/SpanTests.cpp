@@ -19,8 +19,8 @@ namespace Lumen
 namespace
 {
 
-    static_assert( std::is_same_v<TSpan<Int32>, std::span<Int32>> );
-    static_assert( std::is_same_v<TSpan<Int32, 4>, std::span<Int32, 4>> );
+    static_assert( Concepts::CIsSame<TSpan<Int32>, std::span<Int32>> );
+    static_assert( Concepts::CIsSame<TSpan<Int32, 4>, std::span<Int32, 4>> );
     static_assert( TSpan<Int32>::extent == std::dynamic_extent );
 
     /**
@@ -31,7 +31,7 @@ namespace
     {
         Int32 Values[4] = { 1, 2, 3, 4 };
 
-        TSpan<Int32> View{ Values };
+        const TSpan<Int32> View{ Values };
 
         LUMEN_CHECK_EQ( View.size(), 4U );
         LUMEN_CHECK_TRUE( View.data() == Values );
@@ -43,7 +43,7 @@ namespace
     {
         Int32 Values[4] = { 1, 2, 3, 4 };
 
-        TSpan<Int32> View{ Values, 3 };
+        const TSpan<Int32> View{ Values, 3 };
 
         LUMEN_CHECK_EQ( View.size(), 3U );
         LUMEN_CHECK_EQ( View[2], 3 );
@@ -53,7 +53,7 @@ namespace
     {
         TVector<Int32> Values{ 10, 20, 30 };
 
-        TSpan<Int32> View{ Values };
+        const TSpan<Int32> View{ Values };
 
         LUMEN_CHECK_EQ( View.size(), 3U );
         LUMEN_CHECK_TRUE( View.data() == Values.data() );
@@ -62,7 +62,7 @@ namespace
 
     LUMEN_TEST( Span_Constructor, DefaultIsEmpty )
     {
-        TSpan<Int32> View;
+        const TSpan<Int32> View;
 
         LUMEN_CHECK_EQ( View.size(), 0U );
         LUMEN_CHECK_TRUE( View.empty() );
@@ -74,7 +74,7 @@ namespace
         static constexpr Int32 FixedValues[4] = { 7, 8, 9, 10 };
         constexpr TSpan<const Int32, 4> FixedView{ FixedValues };
 
-        static_assert( FixedView.extent == 4 );
+        static_assert( TSpan<const Int32, 4>::extent == 4 );
         static_assert( FixedView.size() == 4 );
         static_assert( FixedView[0] == 7 );
         static_assert( FixedView[3] == 10 );
@@ -89,7 +89,7 @@ namespace
     {
         Int32 Values[3] = { 1, 2, 3 };
 
-        TSpan<Int32> View{ Values };
+        const TSpan<Int32> View{ Values };
 
         View[1] = 22;
 
@@ -107,8 +107,8 @@ namespace
         LUMEN_CHECK_EQ( View[1], 6 );
         LUMEN_CHECK_EQ( View.back(), 7 );
 
-        static_assert( std::is_same_v<decltype( View[0] ), const Int32 &> );
-        static_assert( View.extent == std::dynamic_extent );
+        static_assert( Concepts::CIsSame<decltype( View[0] ), const Int32 &> );
+        static_assert( TSpan<const Int32>::extent == std::dynamic_extent );
     }
 
     LUMEN_TEST( Span_Access, EmptyFixedSizeSpan )
@@ -116,7 +116,7 @@ namespace
         static constexpr TSpan<Int32, 0> EmptyView{};
 
         static_assert( EmptyView.empty() );
-        static_assert( EmptyView.extent == 0 );
+        static_assert( TSpan<Int32, 0>::extent == 0 );
     }
 
     /**
@@ -127,14 +127,14 @@ namespace
     {
         Int32 Values[5] = { 1, 2, 3, 4, 5 };
 
-        TSpan<Int32> View{ Values };
+        const TSpan<Int32> View{ Values };
 
-        TSpan<Int32, 2> FirstTwo = View.first<2>();
-        TSpan<Int32> LastTwo     = View.last( 2 );
-        TSpan<Int32> Middle      = View.subspan( 1, 3 );
-        TSpan<Int32> Tail        = View.subspan( 4 );
+        const TSpan<Int32, 2> FirstTwo = View.first<2>();
+        const TSpan<Int32> LastTwo     = View.last( 2 );
+        const TSpan<Int32> Middle      = View.subspan( 1, 3 );
+        const TSpan<Int32> Tail        = View.subspan( 4 );
 
-        static_assert( FirstTwo.extent == 2 );
+        static_assert( TSpan<Int32, 2>::extent == 2 );
 
         LUMEN_CHECK_EQ( FirstTwo.front(), 1 );
         LUMEN_CHECK_EQ( LastTwo.back(), 5 );
@@ -148,7 +148,7 @@ namespace
     {
         Int32 Values[3] = { 0, 0, 0 };
 
-        TSpan<Int32> View{ Values };
+        const TSpan<Int32> View{ Values };
 
         View.first<2>()[1] = 9;
         View.last( 1 )[0]  = 8;

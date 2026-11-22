@@ -25,7 +25,7 @@ template <typename Type>
 template <typename OtherType>
     requires Concepts::CConvertibleTo<OtherType *, Type *>
 TSharedRef<Type>::TSharedRef( const Internal::TRawPtrProxy<OtherType> &Proxy ) noexcept
-    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) — Lumen is noexcept; OOM terminates.
+    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new)
     : Object( Proxy.Object ), Controller( new Internal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
 {
     assert( Object != nullptr );

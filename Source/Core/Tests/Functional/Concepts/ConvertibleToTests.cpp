@@ -35,7 +35,7 @@ namespace
     /** @brief Helper whose Int32 constructor is explicit, so Int32 is not implicitly convertible to it. */
     struct FExplicitFromInt
     {
-        explicit constexpr FExplicitFromInt ( Int32 ) noexcept
+        explicit constexpr FExplicitFromInt ( const Int32 LUMEN_UNUSED InValue ) noexcept
         {
         }
     };

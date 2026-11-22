@@ -83,7 +83,7 @@ namespace
 
             do
             {
-                const auto Median =
+                auto *const Median =
                     Algo::Internal::MedianOfThree( Candidate.begin(), Candidate.begin() + 1, Candidate.begin() + 2, Predicate );
                 LUMEN_CHECK_EQ( *Median, ExpectedMedian );
             } while ( std::ranges::next_permutation( Candidate ).found );
