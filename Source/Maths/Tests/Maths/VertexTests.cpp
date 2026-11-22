@@ -3,9 +3,10 @@
  * @brief Exhaustive functional tests for Maths::FVertex.
  */
 
-#include "Concepts/TriviallyCopyable.hpp"
-#include "Maths/Macros.hpp"
-#include "Maths/Matrix.hpp"
+#include <Concepts/TriviallyCopyable.hpp>
+
+#include <Maths/Macros.hpp>
+#include <Maths/Matrix.hpp>
 #include <Maths/Vec.hpp>
 #include <Maths/Vertex.hpp>
 #include <Tests/UnitTest.hpp>
@@ -24,10 +25,10 @@ static_assert( sizeof( Maths::FVertex ) == sizeof( Float32 ) * 11 );
 static_assert( alignof( Maths::FVertex ) == alignof( Float32 ) );
 
 /** Public members. */
-static_assert( std::is_same_v<decltype( Maths::FVertex{}.Position ), Maths::FVec3f> );
-static_assert( std::is_same_v<decltype( Maths::FVertex{}.Normal ), Maths::FVec3f> );
-static_assert( std::is_same_v<decltype( Maths::FVertex{}.UV ), Maths::FVec2f> );
-static_assert( std::is_same_v<decltype( Maths::FVertex{}.Tangent ), Maths::FVec3f> );
+static_assert( Concepts::CIsSame<decltype( Maths::FVertex{}.Position ), Maths::FVec3f> );
+static_assert( Concepts::CIsSame<decltype( Maths::FVertex{}.Normal ), Maths::FVec3f> );
+static_assert( Concepts::CIsSame<decltype( Maths::FVertex{}.UV ), Maths::FVec2f> );
+static_assert( Concepts::CIsSame<decltype( Maths::FVertex{}.Tangent ), Maths::FVec3f> );
 
 /** Trivially copyable (a vertex buffer needs that). */
 static_assert( Concepts::CTriviallyCopyable<Maths::FVertex> );

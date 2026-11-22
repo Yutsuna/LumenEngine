@@ -57,12 +57,12 @@ static_assert( requires { Maths::FMat4x4f::Perspective( 1.0F, 1.0F, 0.1F, 1000.0
 static_assert( requires { Maths::FMat4x4f::LookAt( Maths::FVec3f{}, Maths::FVec3f{}, Maths::FVec3f{} ); } );
 
 /** Aliases */
-static_assert( std::is_same_v<Maths::FMat2x2f, Maths::TMatrix<Float32, 2, 2>> );
-static_assert( std::is_same_v<Maths::FMat3x3f, Maths::TMatrix<Float32, 3, 3>> );
-static_assert( std::is_same_v<Maths::FMat4x4f, Maths::TMatrix<Float32, 4, 4>> );
-static_assert( std::is_same_v<Maths::FMat2x2d, Maths::TMatrix<Float64, 2, 2>> );
-static_assert( std::is_same_v<Maths::FMat3x3d, Maths::TMatrix<Float64, 3, 3>> );
-static_assert( std::is_same_v<Maths::FMat4x4d, Maths::TMatrix<Float64, 4, 4>> );
+static_assert( Concepts::CIsSame<Maths::FMat2x2f, Maths::TMatrix<Float32, 2, 2>> );
+static_assert( Concepts::CIsSame<Maths::FMat3x3f, Maths::TMatrix<Float32, 3, 3>> );
+static_assert( Concepts::CIsSame<Maths::FMat4x4f, Maths::TMatrix<Float32, 4, 4>> );
+static_assert( Concepts::CIsSame<Maths::FMat2x2d, Maths::TMatrix<Float64, 2, 2>> );
+static_assert( Concepts::CIsSame<Maths::FMat3x3d, Maths::TMatrix<Float64, 3, 3>> );
+static_assert( Concepts::CIsSame<Maths::FMat4x4d, Maths::TMatrix<Float64, 4, 4>> );
 
 /**
  *  Construction

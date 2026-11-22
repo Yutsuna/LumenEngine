@@ -3,7 +3,8 @@
  * @brief Exhaustive functional tests for Maths::TVec and NormalizePlane.
  */
 
-#include "Concepts/TriviallyCopyable.hpp"
+#include <Concepts/TriviallyCopyable.hpp>
+
 #include <Maths/Vec.hpp>
 #include <Tests/UnitTest.hpp>
 
@@ -29,18 +30,18 @@ static_assert( !Maths::CVecDimension<Float32, 0> );
 static_assert( !Maths::CVecDimension<Float32, 5> );
 
 /** The standard aliases exist with the right underlying type. */
-static_assert( std::is_same_v<Maths::FVec2f, Maths::TVec<Float32, 2>> );
-static_assert( std::is_same_v<Maths::FVec3f, Maths::TVec<Float32, 3>> );
-static_assert( std::is_same_v<Maths::FVec4f, Maths::TVec<Float32, 4>> );
-static_assert( std::is_same_v<Maths::FVec2d, Maths::TVec<Float64, 2>> );
-static_assert( std::is_same_v<Maths::FVec3d, Maths::TVec<Float64, 3>> );
-static_assert( std::is_same_v<Maths::FVec4d, Maths::TVec<Float64, 4>> );
-static_assert( std::is_same_v<Maths::FVec2i, Maths::TVec<Int32, 2>> );
-static_assert( std::is_same_v<Maths::FVec3i, Maths::TVec<Int32, 3>> );
-static_assert( std::is_same_v<Maths::FVec4i, Maths::TVec<Int32, 4>> );
-static_assert( std::is_same_v<Maths::FVec2u, Maths::TVec<UInt32, 2>> );
-static_assert( std::is_same_v<Maths::FVec3u, Maths::TVec<UInt32, 3>> );
-static_assert( std::is_same_v<Maths::FVec4u, Maths::TVec<UInt32, 4>> );
+static_assert( Concepts::CIsSame<Maths::FVec2f, Maths::TVec<Float32, 2>> );
+static_assert( Concepts::CIsSame<Maths::FVec3f, Maths::TVec<Float32, 3>> );
+static_assert( Concepts::CIsSame<Maths::FVec4f, Maths::TVec<Float32, 4>> );
+static_assert( Concepts::CIsSame<Maths::FVec2d, Maths::TVec<Float64, 2>> );
+static_assert( Concepts::CIsSame<Maths::FVec3d, Maths::TVec<Float64, 3>> );
+static_assert( Concepts::CIsSame<Maths::FVec4d, Maths::TVec<Float64, 4>> );
+static_assert( Concepts::CIsSame<Maths::FVec2i, Maths::TVec<Int32, 2>> );
+static_assert( Concepts::CIsSame<Maths::FVec3i, Maths::TVec<Int32, 3>> );
+static_assert( Concepts::CIsSame<Maths::FVec4i, Maths::TVec<Int32, 4>> );
+static_assert( Concepts::CIsSame<Maths::FVec2u, Maths::TVec<UInt32, 2>> );
+static_assert( Concepts::CIsSame<Maths::FVec3u, Maths::TVec<UInt32, 3>> );
+static_assert( Concepts::CIsSame<Maths::FVec4u, Maths::TVec<UInt32, 4>> );
 
 /** Cross-type constructor is explicit. */
 static_assert( !std::is_convertible_v<Maths::TVec<Float64, 3>, Maths::TVec<Float32, 3>> );
@@ -52,13 +53,13 @@ static_assert( Concepts::CTriviallyCopyable<Maths::FVec3f> );
 
 /** operator<=> yields the component's comparison category (strong for ints, partial for floats). */
 static_assert(
-    std::is_same_v<decltype( std::declval<Maths::FVec3i>() <=> std::declval<Maths::FVec3i>() ), std::strong_ordering> );
+    Concepts::CIsSame<decltype( std::declval<Maths::FVec3i>() <=> std::declval<Maths::FVec3i>() ), std::strong_ordering> );
 static_assert(
-    std::is_same_v<decltype( std::declval<Maths::FVec3u>() <=> std::declval<Maths::FVec3u>() ), std::strong_ordering> );
+    Concepts::CIsSame<decltype( std::declval<Maths::FVec3u>() <=> std::declval<Maths::FVec3u>() ), std::strong_ordering> );
 static_assert(
-    std::is_same_v<decltype( std::declval<Maths::FVec3f>() <=> std::declval<Maths::FVec3f>() ), std::partial_ordering> );
+    Concepts::CIsSame<decltype( std::declval<Maths::FVec3f>() <=> std::declval<Maths::FVec3f>() ), std::partial_ordering> );
 static_assert(
-    std::is_same_v<decltype( std::declval<Maths::FVec4f>() <=> std::declval<Maths::FVec4f>() ), std::partial_ordering> );
+    Concepts::CIsSame<decltype( std::declval<Maths::FVec4f>() <=> std::declval<Maths::FVec4f>() ), std::partial_ordering> );
 
 /**
  *  Construction
