@@ -123,7 +123,7 @@ void FLogger::Initialize () noexcept
     {
         return;
     }
-    WorkerThread = FThread( [this] ( FStopToken Token )
+    WorkerThread = FThread( [this] ( const FStopToken &Token )
     {
         FlushLogMessages( Token );
     } );
@@ -206,7 +206,7 @@ void FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbos
 void FLogger::FlushLogMessages ( const FStopToken &InStopToken )
 {
     decltype( LogMessageQueue ) Batch;
-    FStopCallback StopCallback( InStopToken, [this]
+    const FStopCallback StopCallback( InStopToken, [this]
     {
         Condition.NotifyAll();
     } );

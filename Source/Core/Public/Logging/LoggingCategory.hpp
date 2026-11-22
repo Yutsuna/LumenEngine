@@ -23,7 +23,6 @@ struct CORE_EXPORT FLogCategory
 
     FLogCategory ( const AnsiChar *InCategoryName, ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info ) noexcept;
     FLogCategory ( FStringView InCategoryName, ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info ) noexcept;
-    FLogCategory ( const FString &InCategoryName, ELogVerbosity::Type InDefaultVerbosity = ELogVerbosity::Info ) noexcept;
 };
 
 } // namespace Lumen
