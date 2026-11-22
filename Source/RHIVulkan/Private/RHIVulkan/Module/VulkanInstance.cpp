@@ -117,17 +117,8 @@ Lumen::RHIVulkan::FVulkanInstance::Create ( const Bool bEnableDebug ) noexcept
                                               "Vulkan loader API version is below the required 1.4 baseline." ) );
     }
 
-    const TExpected<TVector<VkExtensionProperties>, RHI::FRHIError> AvailableExtensions = EnumerateInstanceExtensions();
-    if ( not AvailableExtensions )
-    {
-        return MakeUnexpected( AvailableExtensions.Error() );
-    }
-
-    const TExpected<TVector<VkLayerProperties>, RHI::FRHIError> AvailableLayers = EnumerateInstanceLayers();
-    if ( not AvailableLayers )
-    {
-        return MakeUnexpected( AvailableLayers.Error() );
-    }
+    LUMEN_EXPECT( AvailableExtensions, EnumerateInstanceExtensions() );
+    LUMEN_EXPECT( AvailableLayers, EnumerateInstanceLayers() );
 
     TSharedRef<FVulkanInstance> Instance = MakeShared<FVulkanInstance>();
 
@@ -135,14 +126,14 @@ Lumen::RHIVulkan::FVulkanInstance::Create ( const Bool bEnableDebug ) noexcept
     TVector<const AnsiChar *> EnabledLayers;
     VkInstanceCreateFlags Flags = 0U;
 
-    if ( HasExtension( *AvailableExtensions, "VK_KHR_portability_enumeration" ) )
+    if ( HasExtension( AvailableExtensions, "VK_KHR_portability_enumeration" ) )
     {
         EnabledExtensions.push_back( "VK_KHR_portability_enumeration" );
         Flags |= VK_INSTANCE_CREATE_ENUMERATE_PORTABILITY_BIT_KHR;
         Instance->bPortabilityEnumerationEnabled = true;
     }
 
-    if ( HasExtension( *AvailableExtensions, VK_KHR_SURFACE_EXTENSION_NAME ) )
+    if ( HasExtension( AvailableExtensions, VK_KHR_SURFACE_EXTENSION_NAME ) )
     {
         EnabledExtensions.push_back( VK_KHR_SURFACE_EXTENSION_NAME );
 
@@ -152,7 +143,7 @@ Lumen::RHIVulkan::FVulkanInstance::Create ( const Bool bEnableDebug ) noexcept
 
         for ( const AnsiChar *SurfaceExt : PlatformSurfaceExtensions )
         {
-            if ( HasExtension( *AvailableExtensions, SurfaceExt ) )
+            if ( HasExtension( AvailableExtensions, SurfaceExt ) )
             {
                 EnabledExtensions.push_back( SurfaceExt );
                 Instance->bSurfaceEnabled = true;
@@ -160,7 +151,7 @@ Lumen::RHIVulkan::FVulkanInstance::Create ( const Bool bEnableDebug ) noexcept
         }
     }
 
-    if ( HasExtension( *AvailableExtensions, "VK_EXT_swapchain_colorspace" ) )
+    if ( HasExtension( AvailableExtensions, "VK_EXT_swapchain_colorspace" ) )
     {
         EnabledExtensions.push_back( "VK_EXT_swapchain_colorspace" );
         Instance->bSwapchainColorspaceEnabled = true;
@@ -168,11 +159,11 @@ Lumen::RHIVulkan::FVulkanInstance::Create ( const Bool bEnableDebug ) noexcept
 
     if ( bEnableDebug )
     {
-        if ( HasLayer( *AvailableLayers, "VK_LAYER_KHRONOS_validation" ) )
+        if ( HasLayer( AvailableLayers, "VK_LAYER_KHRONOS_validation" ) )
         {
             EnabledLayers.push_back( "VK_LAYER_KHRONOS_validation" );
         }
-        if ( HasExtension( *AvailableExtensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME ) )
+        if ( HasExtension( AvailableExtensions, VK_EXT_DEBUG_UTILS_EXTENSION_NAME ) )
         {
             EnabledExtensions.push_back( VK_EXT_DEBUG_UTILS_EXTENSION_NAME );
             Instance->bDebugUtilsEnabled = true;

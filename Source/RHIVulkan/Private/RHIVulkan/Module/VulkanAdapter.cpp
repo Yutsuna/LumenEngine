@@ -403,14 +403,10 @@ TryBuildBaselineAdapter ( const Lumen::RHIVulkan::FVulkanInstance &InInstance, V
 Lumen::TExpected<Lumen::TVector<Lumen::RHIVulkan::FVulkanAdapter>, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::EnumerateVulkanAdapters ( const FVulkanInstance &InInstance ) noexcept
 {
-    const TExpected<TVector<VkPhysicalDevice>, RHI::FRHIError> Devices = EnumeratePhysicalDevices( InInstance.GetHandle() );
-    if ( not Devices )
-    {
-        return TUnexpected( Devices.Error() );
-    }
+    LUMEN_EXPECT( Devices, EnumeratePhysicalDevices( InInstance.GetHandle() ) );
 
     TVector<FVulkanAdapter> Result;
-    for ( VkPhysicalDevice PhysicalDevice : *Devices )
+    for ( VkPhysicalDevice PhysicalDevice : Devices )
     {
         if ( TOptional<FVulkanAdapter> Built = TryBuildBaselineAdapter( InInstance, PhysicalDevice ) )
         {
@@ -424,13 +420,9 @@ Lumen::RHIVulkan::EnumerateVulkanAdapters ( const FVulkanInstance &InInstance ) 
 Lumen::TExpected<Lumen::RHIVulkan::FVulkanAdapter, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::SelectVulkanAdapter ( const FVulkanInstance &InInstance, TOptional<UInt64> InAdapterId ) noexcept
 {
-    const TExpected<TVector<FVulkanAdapter>, RHI::FRHIError> Adapters = EnumerateVulkanAdapters( InInstance );
-    if ( not Adapters )
-    {
-        return TUnexpected( Adapters.Error() );
-    }
+    LUMEN_EXPECT( Adapters, EnumerateVulkanAdapters( InInstance ) );
 
-    if ( Adapters->empty() )
+    if ( Adapters.empty() )
     {
         return TUnexpected( RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Device,
                                                      "No Vulkan physical device satisfies the Vulkan 1.3 baseline." ) );
@@ -438,7 +430,7 @@ Lumen::RHIVulkan::SelectVulkanAdapter ( const FVulkanInstance &InInstance, TOpti
 
     if ( InAdapterId )
     {
-        if ( const FVulkanAdapter *Result = Lumen::Algo::FindIf( *Adapters, [&] ( const FVulkanAdapter &Adapter ) noexcept -> Bool
+        if ( const FVulkanAdapter *Result = Lumen::Algo::FindIf( Adapters, [&] ( const FVulkanAdapter &Adapter ) noexcept -> Bool
         {
             return Adapter.Info.AdapterId == *InAdapterId;
         } ) )
@@ -449,10 +441,10 @@ Lumen::RHIVulkan::SelectVulkanAdapter ( const FVulkanInstance &InInstance, TOpti
             RHI::MakeRHINotFound( RHI::ERHIErrorCondition::Device, "Requested Vulkan AdapterId was not found." ) );
     }
 
-    const FVulkanAdapter *Best = &Adapters->front();
-    for ( USize Index = 1U; Index < Adapters->size(); ++Index )
+    const FVulkanAdapter *Best = &Adapters.front();
+    for ( USize Index = 1U; Index < Adapters.size(); ++Index )
     {
-        const FVulkanAdapter &Candidate = Adapters->at( Index );
+        const FVulkanAdapter &Candidate = Adapters.at( Index );
         if ( GetAdapterPreferenceRank( Candidate.Info.Type ) < GetAdapterPreferenceRank( Best->Info.Type ) )
         {
             Best = &Candidate;
