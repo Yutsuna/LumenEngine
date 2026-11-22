@@ -41,7 +41,7 @@ namespace HAL
         /** @brief Number of CpuRelax() iterations before the waiter starts yielding its time slice. */
         static constexpr UInt32 GMaxRelaxSpins = 64U;
 
-        FAtomicFlag Flag{};
+        FAtomicFlag Flag;
     };
 
 } // namespace HAL
