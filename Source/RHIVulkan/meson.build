@@ -19,4 +19,7 @@ ModuleDefinition = {
     'Tests' : 'Tests',
     'Depends' : [ 'Core', 'Maths', 'RHI' ],
     'ExternalDeps' : VulkanDependencies,
+    'TestEnvironment' : [
+        'LSAN_OPTIONS=suppressions=' + meson.current_source_dir() / 'lsan.supp',
+    ],
 }

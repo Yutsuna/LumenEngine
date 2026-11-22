@@ -13,7 +13,6 @@ endif
 foreach ModuleDefinition : ModuleDefinitions
     ModuleName = ModuleDefinition.get('Name')
     ModuleSourceDirRel = ModuleDefinition.get('SourceDirRel')
-    ModuleDependencies = ModuleDefinition.get('Depends', [])
 
     ModulePath = SourceRoot / ModuleSourceDirRel
     PrivatePath = ModulePath / ModuleDefinition.get('Private', 'Private')
@@ -56,11 +55,7 @@ or FileSystem.is_file(TestsPath / 'TestMain.cpp')
         endif
 
         TestDependencies = [GlobalTestModules.get(ModuleName)]
-
-        if ModuleName != 'Core' and GlobalModules.has_key('Core')\
-and not ModuleDependencies.contains('Core')
-            TestDependencies += GlobalModules.get('Core')
-        endif
+        TestEnvironment = ModuleDefinition.get('TestEnvironment', [])
 
         CompileArguments = ALL_WARNINGS
 
@@ -79,6 +74,7 @@ and not ModuleDependencies.contains('Core')
             TestTarget,
             workdir : meson.project_source_root(),
             suite : ModuleName,
+            env : TestEnvironment,
         )
     endif
 endforeach

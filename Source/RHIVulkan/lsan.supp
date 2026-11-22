@@ -1,0 +1,12 @@
+# Mesa 26.3's lavapipe ICD allocates a 128-byte L3 CPU affinity mask in
+# util_get_cpu_caps() through a one-time (call_once) CPU-topology probe and
+# never releases it. The Vulkan loader dlclose()s the ICD when the last
+# VkInstance is destroyed, so LSan loses the owning global and reports the
+# still-live block as a direct leak.
+#
+# This is entirely inside Mesa/libvulkan: no Lumen frame owns the allocation
+# (Lumen only appears as the caller of vkEnumeratePhysicalDevices). The proper
+# fix is in Mesa's u_cpu_detect.c (free util_cpu_caps.L3_affinity_mask at
+# teardown), but rebuilding Mesa is expensive, so this suppression is scoped
+# to the Vulkan test suite only. All Lumen allocations remain fully checked.
+leak:setup_loader_term_phys_devs
