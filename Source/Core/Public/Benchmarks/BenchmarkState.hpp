@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 #include <Core/NonCopyable.hpp>
 #include <Core/NonMovable.hpp>
@@ -53,7 +54,7 @@ namespace Benchmarks
 
             [[nodiscard]] FIterationToken operator*() const noexcept;
             FIterator &operator++() noexcept;
-            [[nodiscard]] Bool operator!=( std::default_sentinel_t ) const noexcept;
+            [[nodiscard]] Bool operator!=( std::default_sentinel_t LUMEN_UNUSED InTag ) const noexcept;
 
         private:
 
