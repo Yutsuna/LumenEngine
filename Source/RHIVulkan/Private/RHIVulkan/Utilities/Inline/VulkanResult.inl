@@ -33,3 +33,35 @@ constexpr Lumen::Bool Lumen::RHIVulkan::IsVulkanResultSuccess ( VkResult InResul
 {
     return InResult == VK_SUCCESS;
 }
+
+template <class TProperty, auto Function, class... TArguments>
+Lumen::TExpected<Lumen::TVector<TProperty>, Lumen::RHI::FRHIError>
+Lumen::RHIVulkan::Internal::EnumerateVulkanItems ( FStringView InIncompleteMessage, TArguments... InArguments ) noexcept
+{
+    constexpr UInt32 MaxEnumerationRetries = 4U;
+
+    for ( UInt32 Attempt = 0U; Attempt < MaxEnumerationRetries; ++Attempt )
+    {
+        UInt32 Count = 0U;
+        LUMEN_VK_TRY( Function( InArguments..., &Count, nullptr ), RHI::ERHIErrorCondition::Device );
+
+        TVector<TProperty> Properties( Count );
+        if ( Count == 0U )
+        {
+            return Properties;
+        }
+
+        const VkResult ListResult = Function( InArguments..., &Count, Properties.data() );
+        if ( ListResult == VK_SUCCESS )
+        {
+            Properties.resize( Count );
+            return Properties;
+        }
+        if ( ListResult != VK_INCOMPLETE )
+        {
+            LUMEN_VK_TRY( ListResult, RHI::ERHIErrorCondition::Device );
+        }
+    }
+
+    return MakeUnexpected( RHI::MakeRHICorrupted( RHI::ERHIErrorCondition::Device, InIncompleteMessage ) );
+}

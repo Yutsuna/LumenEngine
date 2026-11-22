@@ -1,6 +1,6 @@
 /**
  * @file VulkanInstance.hpp
- * @brief Declares Vulkan instance, layer/extension discovery, and debug messenger ownership.
+ * @brief Declares Vulkan instance and debug messenger ownership.
  */
 
 #pragma once
@@ -20,6 +20,8 @@ namespace Lumen
 
 namespace RHIVulkan
 {
+
+    struct FVulkanApplication;
 
     /**
      * @class FVulkanInstance
@@ -53,6 +55,12 @@ namespace RHIVulkan
 
         /** @return True when VK_KHR_portability_enumeration was enabled. */
         [[nodiscard]] Bool SupportsPortabilityEnumeration () const noexcept;
+
+    private:
+
+        /** @brief Allocates an instance object and copies its enabled feature flags. */
+        [[nodiscard]] static TSharedRef<FVulkanInstance>
+        MakeInstanceFromApplication ( const FVulkanApplication &InApplication ) noexcept;
 
     private:
 

@@ -12,51 +12,6 @@
 #include <utility>
 
 /**
- * Private
- */
-
-namespace
-{
-
-constexpr Lumen::UInt32 MaxEnumerationRetries = 4U;
-
-template <class TProperty, auto Function, class... TArguments>
-[[nodiscard]] Lumen::TExpected<Lumen::TVector<TProperty>, Lumen::RHI::FRHIError>
-EnumerateProperties ( Lumen::FStringView InIncompleteMessage, TArguments... InArguments ) noexcept
-{
-    for ( Lumen::UInt32 Attempt = 0U; Attempt < MaxEnumerationRetries; ++Attempt )
-    {
-        Lumen::UInt32 Count = 0U;
-        LUMEN_VK_TRY( Function( InArguments..., &Count, nullptr ), Lumen::RHI::ERHIErrorCondition::Device );
-
-        Lumen::TVector<TProperty> Properties( Count );
-        if ( Count == 0U )
-        {
-            return Properties;
-        }
-
-        const VkResult ListResult = Function( InArguments..., &Count, Properties.data() );
-        if ( ListResult == VK_SUCCESS )
-        {
-            Properties.resize( Count );
-            return Properties;
-        }
-        if ( ListResult != VK_INCOMPLETE )
-        {
-            LUMEN_VK_TRY( ListResult, Lumen::RHI::ERHIErrorCondition::Device );
-        }
-    }
-
-    return Lumen::MakeUnexpected( Lumen::RHI::MakeRHICorrupted( Lumen::RHI::ERHIErrorCondition::Device, InIncompleteMessage ) );
-}
-
-} // namespace
-
-#define LUMEN_VK_ENUMERATE_PROPERTIES( PropertyType, Function, ... )                                                             \
-    EnumerateProperties<PropertyType, Function>( LUMEN_VK_RESULT_STR( Function ) " remained VK_INCOMPLETE." __VA_OPT__(, )       \
-                                                     __VA_ARGS__ )
-
-/**
  * Static
  */
 
@@ -66,11 +21,11 @@ Lumen::RHIVulkan::FVulkanExtensions::Enumerate () noexcept
     FVulkanExtensions Available;
 
     LUMEN_EXPECT( InstanceExtensions,
-                  LUMEN_VK_ENUMERATE_PROPERTIES( VkExtensionProperties, vkEnumerateInstanceExtensionProperties, nullptr ) );
+                  LUMEN_VK_ENUMERATE( VkExtensionProperties, vkEnumerateInstanceExtensionProperties, nullptr ) );
 
     Available.Extensions = std::move( InstanceExtensions );
 
-    LUMEN_EXPECT( InstanceLayers, LUMEN_VK_ENUMERATE_PROPERTIES( VkLayerProperties, vkEnumerateInstanceLayerProperties ) );
+    LUMEN_EXPECT( InstanceLayers, LUMEN_VK_ENUMERATE( VkLayerProperties, vkEnumerateInstanceLayerProperties ) );
 
     Available.Layers = std::move( InstanceLayers );
 
@@ -82,14 +37,12 @@ Lumen::RHIVulkan::FVulkanExtensions::Enumerate ( VkPhysicalDevice InPhysicalDevi
 {
     FVulkanExtensions Available;
 
-    LUMEN_EXPECT( DeviceExtensions, LUMEN_VK_ENUMERATE_PROPERTIES( VkExtensionProperties, vkEnumerateDeviceExtensionProperties,
-                                                                   InPhysicalDevice, nullptr ) );
+    LUMEN_EXPECT( DeviceExtensions,
+                  LUMEN_VK_ENUMERATE( VkExtensionProperties, vkEnumerateDeviceExtensionProperties, InPhysicalDevice, nullptr ) );
     Available.Extensions = std::move( DeviceExtensions );
 
     return Available;
 }
-
-#undef LUMEN_VK_ENUMERATE_PROPERTIES
 
 /**
  * Public

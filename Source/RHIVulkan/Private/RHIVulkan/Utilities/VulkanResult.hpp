@@ -7,6 +7,9 @@
 
 #include <RHI/Types/RHIError.hpp>
 
+#include <Templates/Expected.hpp>
+#include <Templates/Vector.hpp>
+
 #include <vulkan/vulkan_core.h>
 
 namespace Lumen
@@ -14,6 +17,16 @@ namespace Lumen
 
 namespace RHIVulkan
 {
+
+    namespace Internal
+    {
+
+        /** @brief Enumerates a Vulkan list with the two-call protocol and VK_INCOMPLETE retries. */
+        template <class TProperty, auto Function, class... TArguments>
+        [[nodiscard]] TExpected<TVector<TProperty>, RHI::FRHIError> EnumerateVulkanItems ( FStringView InIncompleteMessage,
+                                                                                           TArguments... InArguments ) noexcept;
+
+    } // namespace Internal
 
 /**
  * @macro LUMEN_VK_ERROR_RESULT_LIST
@@ -76,6 +89,14 @@ namespace RHIVulkan
  * @brief Converts a Vulkan result code to a string.
  */
 #define LUMEN_VK_RESULT_STR( Result ) #Result
+
+/**
+ * @macro LUMEN_VK_ENUMERATE
+ * @brief Enumerates a Vulkan list and derives its VK_INCOMPLETE error from the function name.
+ */
+#define LUMEN_VK_ENUMERATE( PropertyType, Function, ... )                                                                        \
+    ::Lumen::RHIVulkan::Internal::EnumerateVulkanItems<PropertyType, Function>(                                                  \
+        LUMEN_VK_RESULT_STR( Function ) " remained VK_INCOMPLETE." __VA_OPT__(, ) __VA_ARGS__ )
 
 /**
  * @macro LUMEN_VK_TRY_IMPL
