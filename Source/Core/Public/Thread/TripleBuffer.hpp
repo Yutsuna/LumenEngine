@@ -5,13 +5,14 @@
 
 #pragma once
 
-#include "Concepts/IsInvocable.hpp"
 #include <Core/CoreTypes.hpp>
 #include <Core/EnumFlags.hpp>
 #include <Core/NonCopyable.hpp>
 #include <Core/NonMovable.hpp>
 
 #include <HAL/PlatformMutex.hpp>
+
+#include <Concepts/IsInvocable.hpp>
 
 #include <Memory/UniquePtr.hpp>
 

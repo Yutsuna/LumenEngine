@@ -138,7 +138,7 @@ template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::Sw
 
 template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( const BufferType &InData )
 {
-    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
+    const HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -152,7 +152,7 @@ template <typename BufferType>
 void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( BufferType &&InData ) noexcept(
     std::is_nothrow_move_assignable_v<BufferType> )
 {
-    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
+    const HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -167,7 +167,7 @@ template <typename Callable>
     requires Lumen::Concepts::CIsInvocable<Callable, BufferType &>
 void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( Callable &&InEditor )
 {
-    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
+    const HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -180,7 +180,7 @@ void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( Callable &&InEditor
 
 template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::SwapWriteBuffers () noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
+    const HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
     PublishWrite();
 }
 

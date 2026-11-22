@@ -68,7 +68,7 @@ namespace Thread
         struct alignas( 16 ) FCell
         {
             TAtomic<USize> Sequence;
-            Type Data;
+            Type Data{};
         };
 
         TUniquePtr<FCell[]> OwnedBuffer;
