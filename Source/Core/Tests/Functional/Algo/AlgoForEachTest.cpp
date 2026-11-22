@@ -20,248 +20,248 @@ namespace
         return TVector<Int32>( Values );
     }
 
-} // namespace
+    /**
+     * ForEach (unconditional)
+     */
 
-/**
- * ForEach (unconditional)
- */
-
-LUMEN_TEST( Algo_ForEach, VisitsEveryElementInOrder )
-{
-    TVector<Int32> Values = MakeRange( { 1, 2, 3, 4, 5 } );
-    TVector<Int32> Visited;
-
-    Algo::ForEach( Values, [&Visited] ( const Int32 Value )
+    LUMEN_TEST( Algo_ForEach, VisitsEveryElementInOrder )
     {
-        Visited.push_back( Value );
-    } );
+        TVector<Int32> Values = MakeRange( { 1, 2, 3, 4, 5 } );
+        TVector<Int32> Visited;
 
-    LUMEN_CHECK_TRUE( Visited == Values );
-}
+        Algo::ForEach( Values, [&Visited] ( const Int32 Value )
+        {
+            Visited.push_back( Value );
+        } );
 
-LUMEN_TEST( Algo_ForEach, EmptyRangeNeverCallsFunc )
-{
-    TVector<Int32> Values;
-    Int32 Calls = 0;
+        LUMEN_CHECK_TRUE( Visited == Values );
+    }
 
-    Algo::ForEach( Values, [&Calls] ( const Int32 )
+    LUMEN_TEST( Algo_ForEach, EmptyRangeNeverCallsFunc )
     {
-        ++Calls;
-    } );
+        TVector<Int32> Values;
+        Int32 Calls = 0;
 
-    LUMEN_CHECK_EQ( Calls, 0 );
-}
+        Algo::ForEach( Values, [&Calls] ( const Int32 )
+        {
+            ++Calls;
+        } );
 
-LUMEN_TEST( Algo_ForEach, MutatesElements )
-{
-    TVector<Int32> Values = MakeRange( { 1, 2, 3 } );
+        LUMEN_CHECK_EQ( Calls, 0 );
+    }
 
-    Algo::ForEach( Values, [] ( Int32 &Value )
+    LUMEN_TEST( Algo_ForEach, MutatesElements )
     {
-        Value *= 10;
-    } );
+        TVector<Int32> Values = MakeRange( { 1, 2, 3 } );
 
-    LUMEN_CHECK_TRUE( Values == MakeRange( { 10, 20, 30 } ) );
-}
+        Algo::ForEach( Values, [] ( Int32 &Value )
+        {
+            Value *= 10;
+        } );
 
-LUMEN_TEST( Algo_ForEach, WorksOnFixedArray )
-{
-    TArray<Int32, 4> Values{ { 1, 2, 3, 4 } };
-    Int32 Sum = 0;
+        LUMEN_CHECK_TRUE( Values == MakeRange( { 10, 20, 30 } ) );
+    }
 
-    Algo::ForEach( Values, [&Sum] ( const Int32 Value )
+    LUMEN_TEST( Algo_ForEach, WorksOnFixedArray )
     {
-        Sum += Value;
-    } );
+        TArray<Int32, 4> Values{ { 1, 2, 3, 4 } };
+        Int32 Sum = 0;
 
-    LUMEN_CHECK_EQ( Sum, 10 );
-}
+        Algo::ForEach( Values, [&Sum] ( const Int32 Value )
+        {
+            Sum += Value;
+        } );
 
-/**
- * ForEach (predicate)
- * @note This overload is intended to apply Func only to elements satisfying Predicate.
- */
-
-LUMEN_TEST( Algo_ForEach, PredicateFiltersElements )
-{
-    TVector<Int32> Values = MakeRange( { 1, 2, 3, 4, 5, 6 } );
-    TVector<Int32> Visited;
-
-    Algo::ForEach( Values,
-                   [] ( const Int32 Value ) noexcept
-    {
-        return ( Value % 2 ) == 0;
-    }, [&Visited] ( const Int32 Value )
-    {
-        Visited.push_back( Value );
-    } );
-
-    LUMEN_CHECK_TRUE( Visited == MakeRange( { 2, 4, 6 } ) );
-}
-
-LUMEN_TEST( Algo_ForEach, PredicateNeverMatches )
-{
-    TVector<Int32> Values = MakeRange( { 1, 3, 5 } );
-    Int32 Calls           = 0;
-
-    Algo::ForEach( Values,
-                   [] ( const Int32 ) noexcept
-    {
-        return false;
-    }, [&Calls] ( const Int32 )
-    {
-        ++Calls;
-    } );
-
-    LUMEN_CHECK_EQ( Calls, 0 );
-}
-
-LUMEN_TEST( Algo_ForEach, PredicateAlwaysMatches )
-{
-    TVector<Int32> Values = MakeRange( { 1, 2, 3 } );
-    Int32 Calls           = 0;
-
-    Algo::ForEach( Values,
-                   [] ( const Int32 ) noexcept
-    {
-        return true;
-    }, [&Calls] ( const Int32 )
-    {
-        ++Calls;
-    } );
-
-    LUMEN_CHECK_EQ( Calls, 3 );
-}
-
-/**
- * ForEachUntil (unconditional)
- */
-
-LUMEN_TEST( Algo_ForEachUntil, StopsWhenFuncReturnsTrue )
-{
-    TVector<Int32> Values = MakeRange( { 1, 2, 3, 4, 5 } );
-    TVector<Int32> Visited;
-
-    const Bool bStopped = Algo::ForEachUntil( Values, [&Visited] ( const Int32 Value )
-    {
-        Visited.push_back( Value );
-        return Value == 3;
-    } );
-
-    LUMEN_CHECK_TRUE( bStopped );
-    LUMEN_CHECK_TRUE( Visited == MakeRange( { 1, 2, 3 } ) );
-}
-
-LUMEN_TEST( Algo_ForEachUntil, ReturnsFalseWhenExhausted )
-{
-    TVector<Int32> Values = MakeRange( { 1, 2, 3 } );
-    Int32 Calls           = 0;
-
-    const Bool bStopped = Algo::ForEachUntil( Values, [&Calls] ( const Int32 )
-    {
-        ++Calls;
-        return false;
-    } );
-
-    LUMEN_CHECK_FALSE( bStopped );
-    LUMEN_CHECK_EQ( Calls, 3 );
-}
-
-LUMEN_TEST( Algo_ForEachUntil, StopsOnFirstElement )
-{
-    TVector<Int32> Values = MakeRange( { 5, 6, 7 } );
-    Int32 Calls           = 0;
-
-    const Bool bStopped = Algo::ForEachUntil( Values, [&Calls] ( const Int32 )
-    {
-        ++Calls;
-        return true;
-    } );
-
-    LUMEN_CHECK_TRUE( bStopped );
-    LUMEN_CHECK_EQ( Calls, 1 );
-}
-
-/**
- * ForEachUntil (predicate + func)
- */
-
-LUMEN_TEST( Algo_ForEachUntil, PredicateGatesTermination )
-{
-    TVector<Int32> Values = MakeRange( { 1, 2, 3, 4, 5 } );
-    TVector<Int32> Visited;
+        LUMEN_CHECK_EQ( Sum, 10 );
+    }
 
     /**
-     * INFO: Only elements that satisfy the predicate invoke Func, and only such
-     *       elements are allowed to trigger the early stop.
+     * ForEach (predicate)
+     * @note This overload is intended to apply Func only to elements satisfying Predicate.
      */
-    const Bool bStopped = Algo::ForEachUntil( Values,
-                                              [] ( const Int32 Value ) noexcept
+
+    LUMEN_TEST( Algo_ForEach, PredicateFiltersElements )
     {
-        return ( Value % 2 ) == 0;
-    }, [&Visited] ( const Int32 Value )
+        TVector<Int32> Values = MakeRange( { 1, 2, 3, 4, 5, 6 } );
+        TVector<Int32> Visited;
+
+        Algo::ForEach( Values,
+                       [] ( const Int32 Value ) noexcept
+        {
+            return ( Value % 2 ) == 0;
+        }, [&Visited] ( const Int32 Value )
+        {
+            Visited.push_back( Value );
+        } );
+
+        LUMEN_CHECK_TRUE( Visited == MakeRange( { 2, 4, 6 } ) );
+    }
+
+    LUMEN_TEST( Algo_ForEach, PredicateNeverMatches )
     {
-        Visited.push_back( Value );
-        return Value == 4;
-    } );
+        TVector<Int32> Values = MakeRange( { 1, 3, 5 } );
+        Int32 Calls           = 0;
 
-    LUMEN_CHECK_TRUE( bStopped );
-    LUMEN_CHECK_TRUE( Visited == MakeRange( { 2, 4 } ) );
-}
+        Algo::ForEach( Values,
+                       [] ( const Int32 ) noexcept
+        {
+            return false;
+        }, [&Calls] ( const Int32 )
+        {
+            ++Calls;
+        } );
 
-LUMEN_TEST( Algo_ForEachUntil, PredicateRejectsAllReturnsFalse )
-{
-    TVector<Int32> Values = MakeRange( { 1, 3, 5 } );
-    Int32 Calls           = 0;
+        LUMEN_CHECK_EQ( Calls, 0 );
+    }
 
-    const Bool bStopped = Algo::ForEachUntil( Values,
-                                              [] ( const Int32 ) noexcept
+    LUMEN_TEST( Algo_ForEach, PredicateAlwaysMatches )
     {
-        return false;
-    }, [&Calls] ( const Int32 )
+        TVector<Int32> Values = MakeRange( { 1, 2, 3 } );
+        Int32 Calls           = 0;
+
+        Algo::ForEach( Values,
+                       [] ( const Int32 ) noexcept
+        {
+            return true;
+        }, [&Calls] ( const Int32 )
+        {
+            ++Calls;
+        } );
+
+        LUMEN_CHECK_EQ( Calls, 3 );
+    }
+
+    /**
+     * ForEachUntil (unconditional)
+     */
+
+    LUMEN_TEST( Algo_ForEachUntil, StopsWhenFuncReturnsTrue )
     {
-        ++Calls;
-        return true;
-    } );
+        TVector<Int32> Values = MakeRange( { 1, 2, 3, 4, 5 } );
+        TVector<Int32> Visited;
 
-    LUMEN_CHECK_FALSE( bStopped );
-    LUMEN_CHECK_EQ( Calls, 0 );
-}
+        const Bool bStopped = Algo::ForEachUntil( Values, [&Visited] ( const Int32 Value )
+        {
+            Visited.push_back( Value );
+            return Value == 3;
+        } );
 
-LUMEN_TEST( Algo_ForEachUntil, CallsFuncOnlyForMatchingElements )
-{
-    TVector<Int32> Values = MakeRange( { 1, 2, 3, 4, 5, 6 } );
-    TVector<Int32> Visited;
+        LUMEN_CHECK_TRUE( bStopped );
+        LUMEN_CHECK_TRUE( Visited == MakeRange( { 1, 2, 3 } ) );
+    }
 
-    Algo::ForEachUntil( Values,
-                        [] ( const Int32 Value ) noexcept
+    LUMEN_TEST( Algo_ForEachUntil, ReturnsFalseWhenExhausted )
     {
-        return ( Value % 2 ) == 0;
-    }, [&Visited] ( const Int32 Value )
+        TVector<Int32> Values = MakeRange( { 1, 2, 3 } );
+        Int32 Calls           = 0;
+
+        const Bool bStopped = Algo::ForEachUntil( Values, [&Calls] ( const Int32 )
+        {
+            ++Calls;
+            return false;
+        } );
+
+        LUMEN_CHECK_FALSE( bStopped );
+        LUMEN_CHECK_EQ( Calls, 3 );
+    }
+
+    LUMEN_TEST( Algo_ForEachUntil, StopsOnFirstElement )
     {
-        Visited.push_back( Value );
-        return false;
-    } );
+        TVector<Int32> Values = MakeRange( { 5, 6, 7 } );
+        Int32 Calls           = 0;
 
-    LUMEN_CHECK_TRUE( Visited == MakeRange( { 2, 4, 6 } ) );
-}
+        const Bool bStopped = Algo::ForEachUntil( Values, [&Calls] ( const Int32 )
+        {
+            ++Calls;
+            return true;
+        } );
 
-/**
- * Realistic use: short-circuit search-like usage
- */
+        LUMEN_CHECK_TRUE( bStopped );
+        LUMEN_CHECK_EQ( Calls, 1 );
+    }
 
-LUMEN_TEST( Algo_ForEachUntil, EarlyStopStopsIteration )
-{
-    TVector<Int32> Values = MakeRange( { 10, 20, 30, 40, 50 } );
-    Int32 Sum             = 0;
+    /**
+     * ForEachUntil (predicate + func)
+     */
 
-    Algo::ForEachUntil( Values, [&Sum] ( const Int32 Value )
+    LUMEN_TEST( Algo_ForEachUntil, PredicateGatesTermination )
     {
-        Sum += Value;
-        return Sum >= 30;
-    } );
+        TVector<Int32> Values = MakeRange( { 1, 2, 3, 4, 5 } );
+        TVector<Int32> Visited;
 
-    LUMEN_CHECK_EQ( Sum, 30 );
-}
+        /**
+         * INFO: Only elements that satisfy the predicate invoke Func, and only such
+         *       elements are allowed to trigger the early stop.
+         */
+        const Bool bStopped = Algo::ForEachUntil( Values,
+                                                  [] ( const Int32 Value ) noexcept
+        {
+            return ( Value % 2 ) == 0;
+        }, [&Visited] ( const Int32 Value )
+        {
+            Visited.push_back( Value );
+            return Value == 4;
+        } );
+
+        LUMEN_CHECK_TRUE( bStopped );
+        LUMEN_CHECK_TRUE( Visited == MakeRange( { 2, 4 } ) );
+    }
+
+    LUMEN_TEST( Algo_ForEachUntil, PredicateRejectsAllReturnsFalse )
+    {
+        TVector<Int32> Values = MakeRange( { 1, 3, 5 } );
+        Int32 Calls           = 0;
+
+        const Bool bStopped = Algo::ForEachUntil( Values,
+                                                  [] ( const Int32 ) noexcept
+        {
+            return false;
+        }, [&Calls] ( const Int32 )
+        {
+            ++Calls;
+            return true;
+        } );
+
+        LUMEN_CHECK_FALSE( bStopped );
+        LUMEN_CHECK_EQ( Calls, 0 );
+    }
+
+    LUMEN_TEST( Algo_ForEachUntil, CallsFuncOnlyForMatchingElements )
+    {
+        TVector<Int32> Values = MakeRange( { 1, 2, 3, 4, 5, 6 } );
+        TVector<Int32> Visited;
+
+        Algo::ForEachUntil( Values,
+                            [] ( const Int32 Value ) noexcept
+        {
+            return ( Value % 2 ) == 0;
+        }, [&Visited] ( const Int32 Value )
+        {
+            Visited.push_back( Value );
+            return false;
+        } );
+
+        LUMEN_CHECK_TRUE( Visited == MakeRange( { 2, 4, 6 } ) );
+    }
+
+    /**
+     * Realistic use: short-circuit search-like usage
+     */
+
+    LUMEN_TEST( Algo_ForEachUntil, EarlyStopStopsIteration )
+    {
+        TVector<Int32> Values = MakeRange( { 10, 20, 30, 40, 50 } );
+        Int32 Sum             = 0;
+
+        Algo::ForEachUntil( Values, [&Sum] ( const Int32 Value )
+        {
+            Sum += Value;
+            return Sum >= 30;
+        } );
+
+        LUMEN_CHECK_EQ( Sum, 30 );
+    }
+
+} // namespace
 
 } // namespace Lumen

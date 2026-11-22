@@ -8,6 +8,10 @@
 #include <Filesystem/Path.hpp>
 #include <Tests/UnitTest.hpp>
 
+/**
+ * Private
+ */
+
 namespace
 {
 
@@ -35,7 +39,9 @@ struct FScopedTestDir
     }
 };
 
-} // namespace
+/**
+ * Tests
+ */
 
 /** FDirectory::Exists */
 
@@ -250,3 +256,5 @@ LUMEN_TEST( FDirectory_ForEachEntry, FailsForMissingDirectory )
     } );
     LUMEN_CHECK_HAS_ERROR( Result );
 }
+
+} // namespace

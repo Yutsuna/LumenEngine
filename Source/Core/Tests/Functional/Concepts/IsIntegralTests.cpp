@@ -8,11 +8,20 @@ namespace Lumen
 namespace
 {
 
+    /**
+     * Data Tests
+     */
+
+    /** NOLINTNEXTLINE(performance-enum-size) */
     enum ETestEnum
     {
         AValue,
         BValue,
     };
+
+    /**
+     * Tests
+     */
 
     LUMEN_TEST( Concepts_IsIntegral, TIsIntegral )
     {

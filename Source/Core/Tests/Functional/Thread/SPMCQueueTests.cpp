@@ -17,20 +17,24 @@
 namespace Lumen
 {
 
-/**
- * API contracts (compile-time)
- */
-
-static_assert( not std::is_copy_constructible_v<Thread::TSPMCQueue<Int32>> and
-                   not std::is_copy_assignable_v<Thread::TSPMCQueue<Int32>>,
-               "TSPMCQueue must not be copyable" );
-static_assert( not std::is_move_constructible_v<Thread::TSPMCQueue<Int32>> and
-                   not std::is_move_assignable_v<Thread::TSPMCQueue<Int32>>,
-               "TSPMCQueue must not be movable" );
-static_assert( std::is_nothrow_destructible_v<Thread::TSPMCQueue<Int32>>, "TSPMCQueue must be noexcept destructible" );
-
 namespace
 {
+
+    /**
+     * API contracts (compile-time)
+     */
+
+    static_assert( not std::is_copy_constructible_v<Thread::TSPMCQueue<Int32>> and
+                       not std::is_copy_assignable_v<Thread::TSPMCQueue<Int32>>,
+                   "TSPMCQueue must not be copyable" );
+    static_assert( not std::is_move_constructible_v<Thread::TSPMCQueue<Int32>> and
+                       not std::is_move_assignable_v<Thread::TSPMCQueue<Int32>>,
+                   "TSPMCQueue must not be movable" );
+    static_assert( std::is_nothrow_destructible_v<Thread::TSPMCQueue<Int32>>, "TSPMCQueue must be noexcept destructible" );
+
+    /**
+     * Data Types
+     */
 
     /**
      * @struct FCountedPayload
@@ -63,8 +67,11 @@ namespace
 
         FCountedPayload &operator=( const FCountedPayload &InOther ) noexcept
         {
-            Value = InOther.Value;
-            ++Copies;
+            if ( this != &InOther )
+            {
+                Value = InOther.Value;
+                ++Copies;
+            }
             return *this;
         }
 
@@ -93,277 +100,347 @@ namespace
         }
     };
 
-} // namespace
+    /**
+     * Push - copy path
+     */
 
-/**
- * Push - copy path
- */
-
-LUMEN_TEST( SPMCQueue_Push, CopyPushStoresValue )
-{
-    Thread::TSPMCQueue<Int32> Queue( 4 );
-
-    LUMEN_CHECK_TRUE( Queue.Push( 42 ) );
-
-    const TOptional<Int32> Item = Queue.Pop();
-
-    LUMEN_CHECK_HAS_VALUE( Item );
-    LUMEN_CHECK_EQ( *Item, 42 );
-}
-
-LUMEN_TEST( SPMCQueue_Push, CopyPushPerformsExactlyOneCopy )
-{
-    Thread::TSPMCQueue<FCountedPayload> Queue( 4 );
-    FCountedPayload::Copies = 0;
-    FCountedPayload::Moves  = 0;
-
-    const FCountedPayload Source( 7 );
-
-    LUMEN_CHECK_TRUE( Queue.Push( Source ) );
-
-    LUMEN_CHECK_EQ( FCountedPayload::Copies, 1 );
-    LUMEN_CHECK_EQ( FCountedPayload::Moves, 0 );
-}
-
-LUMEN_TEST( SPMCQueue_Push, PushFailsWhenFullAndKeepsContent )
-{
-    Thread::TSPMCQueue<Int32> Queue( 4 );
-
-    LUMEN_CHECK_TRUE( Queue.Push( 10 ) );
-    LUMEN_CHECK_TRUE( Queue.Push( 20 ) );
-    LUMEN_CHECK_TRUE( Queue.Push( 30 ) );
-    LUMEN_CHECK_TRUE( Queue.Push( 40 ) );
-
-    LUMEN_CHECK_FALSE( Queue.Push( 50 ) );
-
-    /** INFO: The refused push must not have disturbed the enqueued content */
-    LUMEN_CHECK_EQ( *Queue.Pop(), 10 );
-    LUMEN_CHECK_EQ( *Queue.Pop(), 20 );
-    LUMEN_CHECK_EQ( *Queue.Pop(), 30 );
-    LUMEN_CHECK_EQ( *Queue.Pop(), 40 );
-
-    /** INFO: After draining, the refused value fits again */
-    LUMEN_CHECK_TRUE( Queue.Push( 50 ) );
-    LUMEN_CHECK_EQ( *Queue.Pop(), 50 );
-}
-
-LUMEN_TEST( SPMCQueue_Push, MoveOnlyPayloadNeverCopied )
-{
-    Thread::TSPMCQueue<FOwnedPayload> Queue( 4 );
-
-    LUMEN_CHECK_TRUE( Queue.Push( FOwnedPayload( 42U ) ) );
-
-    const TOptional<FOwnedPayload> Item = Queue.Pop();
-
-    LUMEN_CHECK_HAS_VALUE( Item );
-    LUMEN_CHECK_TRUE( ( *Item ).Handle.Get() != nullptr );
-    LUMEN_CHECK_EQ( *( *Item ).Handle, 42U );
-}
-
-/**
- * Push - move path
- */
-
-LUMEN_TEST( SPMCQueue_Push, MovePushMovesOnceWithoutCopy )
-{
-    Thread::TSPMCQueue<FCountedPayload> Queue( 4 );
-    FCountedPayload::Copies = 0;
-    FCountedPayload::Moves  = 0;
-
-    LUMEN_CHECK_TRUE( Queue.Push( FCountedPayload( 9 ) ) );
-
-    LUMEN_CHECK_EQ( FCountedPayload::Moves, 1 );
-    LUMEN_CHECK_EQ( FCountedPayload::Copies, 0 );
-}
-
-/**
- * Pop
- */
-
-LUMEN_TEST( SPMCQueue_Pop, PopFromEmptyReturnsEmpty )
-{
-    Thread::TSPMCQueue<Int32> Queue( 4 );
-
-    LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );
-}
-
-LUMEN_TEST( SPMCQueue_Pop, PopFromRefilledEmptyQueueReturnsEmpty )
-{
-    Thread::TSPMCQueue<Int32> Queue( 4 );
-
-    LUMEN_CHECK_TRUE( Queue.Push( 1 ) );
-    LUMEN_CHECK_TRUE( Queue.Push( 2 ) );
-
-    LUMEN_CHECK_HAS_VALUE( Queue.Pop() );
-    LUMEN_CHECK_HAS_VALUE( Queue.Pop() );
-    LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );
-}
-
-LUMEN_TEST( SPMCQueue_Pop, PopMovesValueOutWithoutCopy )
-{
-    Thread::TSPMCQueue<FCountedPayload> Queue( 4 );
-    FCountedPayload::Copies = 0;
-    FCountedPayload::Moves  = 0;
-
-    LUMEN_CHECK_TRUE( Queue.Push( FCountedPayload( 11 ) ) );
-
-    const TOptional<FCountedPayload> Item = Queue.Pop();
-
-    LUMEN_CHECK_HAS_VALUE( Item );
-    LUMEN_CHECK_EQ( ( *Item ).Value, 11 );
-
-    /** INFO: hand-off must move the payload out, never copy it */
-    LUMEN_CHECK_EQ( FCountedPayload::Copies, 0 );
-    LUMEN_CHECK_TRUE( FCountedPayload::Moves >= 2 );
-}
-
-LUMEN_TEST( SPMCQueue_Pop, PopDeliversFifoOrder )
-{
-    Thread::TSPMCQueue<Int32> Queue( 8 );
-
-    for ( Int32 Value = 0; Value < 8; ++Value )
+    LUMEN_TEST( SPMCQueue_Push, CopyPushStoresValue )
     {
-        LUMEN_CHECK_TRUE( Queue.Push( Value ) );
-    }
+        Thread::TSPMCQueue<Int32> Queue( 4 );
 
-    for ( Int32 Value = 0; Value < 8; ++Value )
-    {
+        LUMEN_CHECK_TRUE( Queue.Push( 42 ) );
+
         const TOptional<Int32> Item = Queue.Pop();
 
         LUMEN_CHECK_HAS_VALUE( Item );
-        LUMEN_CHECK_EQ( *Item, Value );
+        LUMEN_CHECK_EQ( *Item, 42 );
     }
-}
 
-/**
- * Construction
- */
-
-LUMEN_TEST( SPMCQueue_Construction, MinimumCapacityRoundTrip )
-{
-    Thread::TSPMCQueue<Int32> Queue( 2 );
-
-    LUMEN_CHECK_TRUE( Queue.Push( 1 ) );
-    LUMEN_CHECK_TRUE( Queue.Push( 2 ) );
-    LUMEN_CHECK_FALSE( Queue.Push( 3 ) );
-
-    LUMEN_CHECK_EQ( *Queue.Pop(), 1 );
-    LUMEN_CHECK_EQ( *Queue.Pop(), 2 );
-    LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );
-}
-
-/**
- * Flow - interleaving, wraparound, refill
- */
-
-LUMEN_TEST( SPMCQueue_Flow, InterleavedPushPopKeepsOrder )
-{
-    Thread::TSPMCQueue<Int32> Queue( 4 );
-    Int32 Expected = 0;
-
-    for ( Int32 Value = 0; Value < 6; ++Value )
+    LUMEN_TEST( SPMCQueue_Push, CopyPushPerformsExactlyOneCopy )
     {
-        LUMEN_CHECK_TRUE( Queue.Push( Value ) );
+        Thread::TSPMCQueue<FCountedPayload> Queue( 4 );
+        FCountedPayload::Copies = 0;
+        FCountedPayload::Moves  = 0;
 
-        if ( Value % 2 == 1 )
+        const FCountedPayload Source( 7 );
+
+        LUMEN_CHECK_TRUE( Queue.Push( Source ) );
+
+        LUMEN_CHECK_EQ( FCountedPayload::Copies, 1 );
+        LUMEN_CHECK_EQ( FCountedPayload::Moves, 0 );
+    }
+
+    LUMEN_TEST( SPMCQueue_Push, PushFailsWhenFullAndKeepsContent )
+    {
+        Thread::TSPMCQueue<Int32> Queue( 4 );
+
+        LUMEN_CHECK_TRUE( Queue.Push( 10 ) );
+        LUMEN_CHECK_TRUE( Queue.Push( 20 ) );
+        LUMEN_CHECK_TRUE( Queue.Push( 30 ) );
+        LUMEN_CHECK_TRUE( Queue.Push( 40 ) );
+
+        LUMEN_CHECK_FALSE( Queue.Push( 50 ) );
+
+        /** INFO: The refused push must not have disturbed the enqueued content */
+        LUMEN_CHECK_EQ( *Queue.Pop(), 10 );
+        LUMEN_CHECK_EQ( *Queue.Pop(), 20 );
+        LUMEN_CHECK_EQ( *Queue.Pop(), 30 );
+        LUMEN_CHECK_EQ( *Queue.Pop(), 40 );
+
+        /** INFO: After draining, the refused value fits again */
+        LUMEN_CHECK_TRUE( Queue.Push( 50 ) );
+        LUMEN_CHECK_EQ( *Queue.Pop(), 50 );
+    }
+
+    LUMEN_TEST( SPMCQueue_Push, MoveOnlyPayloadNeverCopied )
+    {
+        Thread::TSPMCQueue<FOwnedPayload> Queue( 4 );
+
+        LUMEN_CHECK_TRUE( Queue.Push( FOwnedPayload( 42U ) ) );
+
+        const TOptional<FOwnedPayload> Item = Queue.Pop();
+
+        LUMEN_CHECK_HAS_VALUE( Item );
+        LUMEN_CHECK_TRUE( ( *Item ).Handle.Get() != nullptr );
+        LUMEN_CHECK_EQ( *( *Item ).Handle, 42U );
+    }
+
+    /**
+     * Push - move path
+     */
+
+    LUMEN_TEST( SPMCQueue_Push, MovePushMovesOnceWithoutCopy )
+    {
+        Thread::TSPMCQueue<FCountedPayload> Queue( 4 );
+        FCountedPayload::Copies = 0;
+        FCountedPayload::Moves  = 0;
+
+        LUMEN_CHECK_TRUE( Queue.Push( FCountedPayload( 9 ) ) );
+
+        LUMEN_CHECK_EQ( FCountedPayload::Moves, 1 );
+        LUMEN_CHECK_EQ( FCountedPayload::Copies, 0 );
+    }
+
+    /**
+     * Pop
+     */
+
+    LUMEN_TEST( SPMCQueue_Pop, PopFromEmptyReturnsEmpty )
+    {
+        Thread::TSPMCQueue<Int32> Queue( 4 );
+
+        LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );
+    }
+
+    LUMEN_TEST( SPMCQueue_Pop, PopFromRefilledEmptyQueueReturnsEmpty )
+    {
+        Thread::TSPMCQueue<Int32> Queue( 4 );
+
+        LUMEN_CHECK_TRUE( Queue.Push( 1 ) );
+        LUMEN_CHECK_TRUE( Queue.Push( 2 ) );
+
+        LUMEN_CHECK_HAS_VALUE( Queue.Pop() );
+        LUMEN_CHECK_HAS_VALUE( Queue.Pop() );
+        LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );
+    }
+
+    LUMEN_TEST( SPMCQueue_Pop, PopMovesValueOutWithoutCopy )
+    {
+        Thread::TSPMCQueue<FCountedPayload> Queue( 4 );
+        FCountedPayload::Copies = 0;
+        FCountedPayload::Moves  = 0;
+
+        LUMEN_CHECK_TRUE( Queue.Push( FCountedPayload( 11 ) ) );
+
+        const TOptional<FCountedPayload> Item = Queue.Pop();
+
+        LUMEN_CHECK_HAS_VALUE( Item );
+        LUMEN_CHECK_EQ( ( *Item ).Value, 11 );
+
+        /** INFO: hand-off must move the payload out, never copy it */
+        LUMEN_CHECK_EQ( FCountedPayload::Copies, 0 );
+        LUMEN_CHECK_TRUE( FCountedPayload::Moves >= 2 );
+    }
+
+    LUMEN_TEST( SPMCQueue_Pop, PopDeliversFifoOrder )
+    {
+        Thread::TSPMCQueue<Int32> Queue( 8 );
+
+        for ( Int32 Value = 0; Value < 8; ++Value )
         {
-            LUMEN_CHECK_EQ( *Queue.Pop(), Expected );
-            ++Expected;
-        }
-    }
-
-    for ( ;; )
-    {
-        const TOptional<Int32> Item = Queue.Pop();
-
-        if ( not Item.HasValue() )
-        {
-            break;
+            LUMEN_CHECK_TRUE( Queue.Push( Value ) );
         }
 
-        LUMEN_CHECK_EQ( *Item, Expected );
-        ++Expected;
-    }
-
-    LUMEN_CHECK_EQ( Expected, 6 );
-}
-
-LUMEN_TEST( SPMCQueue_Flow, WraparoundReusesSlots )
-{
-    Thread::TSPMCQueue<UInt64> Queue( 2 );
-
-    for ( UInt64 Round = 0; Round < 16; ++Round )
-    {
-        const UInt64 Base = Round * 2ULL;
-
-        LUMEN_CHECK_TRUE( Queue.Push( Base ) );
-        LUMEN_CHECK_TRUE( Queue.Push( Base + 1ULL ) );
-
-        LUMEN_CHECK_EQ( *Queue.Pop(), Base );
-        LUMEN_CHECK_EQ( *Queue.Pop(), Base + 1ULL );
-    }
-}
-
-LUMEN_TEST( SPMCQueue_Flow, RefillAfterFullDrain )
-{
-    Thread::TSPMCQueue<Int32> Queue( 4 );
-
-    for ( Int32 Cycle = 0; Cycle < 8; ++Cycle )
-    {
-        for ( Int32 Index = 0; Index < 4; ++Index )
-        {
-            LUMEN_CHECK_TRUE( Queue.Push( ( Cycle * 4 ) + Index ) );
-        }
-
-        LUMEN_CHECK_FALSE( Queue.Push( -1 ) );
-
-        for ( Int32 Index = 0; Index < 4; ++Index )
+        for ( Int32 Value = 0; Value < 8; ++Value )
         {
             const TOptional<Int32> Item = Queue.Pop();
 
             LUMEN_CHECK_HAS_VALUE( Item );
-            LUMEN_CHECK_EQ( *Item, ( Cycle * 4 ) + Index );
+            LUMEN_CHECK_EQ( *Item, Value );
         }
+    }
 
+    /**
+     * Construction
+     */
+
+    LUMEN_TEST( SPMCQueue_Construction, MinimumCapacityRoundTrip )
+    {
+        Thread::TSPMCQueue<Int32> Queue( 2 );
+
+        LUMEN_CHECK_TRUE( Queue.Push( 1 ) );
+        LUMEN_CHECK_TRUE( Queue.Push( 2 ) );
+        LUMEN_CHECK_FALSE( Queue.Push( 3 ) );
+
+        LUMEN_CHECK_EQ( *Queue.Pop(), 1 );
+        LUMEN_CHECK_EQ( *Queue.Pop(), 2 );
         LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );
     }
-}
 
-/**
- * Threading - single producer, multiple consumers
- */
+    /**
+     * Flow - interleaving, wraparound, refill
+     */
 
-LUMEN_TEST( SPMCQueue_Threading, MultiConsumersDeliverExactlyOnce )
-{
-    constexpr Int32 ItemCount     = 4000;
-    constexpr Int32 ConsumerCount = 4;
-
-    Thread::TSPMCQueue<Int32> Queue( 128 );
-    TArray<TVector<Int32>, ConsumerCount> ConsumedItems;
-    TAtomic<Bool> bAllPushed{ false };
-
-    auto Producer = [&] ()
+    LUMEN_TEST( SPMCQueue_Flow, InterleavedPushPopKeepsOrder )
     {
-        for ( Int32 Value = 0; Value < ItemCount; ++Value )
+        Thread::TSPMCQueue<Int32> Queue( 4 );
+        Int32 Expected = 0;
+
+        for ( Int32 Value = 0; Value < 6; ++Value )
         {
-            while ( not Queue.Push( Value ) )
+            LUMEN_CHECK_TRUE( Queue.Push( Value ) );
+
+            if ( Value % 2 == 1 )
             {
-                FThread::Yield();
+                LUMEN_CHECK_EQ( *Queue.Pop(), Expected );
+                ++Expected;
             }
         }
 
-        bAllPushed.store( true, std::memory_order_release );
-    };
+        for ( ;; )
+        {
+            const TOptional<Int32> Item = Queue.Pop();
 
-    auto Consumer = [&] ( const UInt32 ConsumerIndex )
+            if ( not Item.HasValue() )
+            {
+                break;
+            }
+
+            LUMEN_CHECK_EQ( *Item, Expected );
+            ++Expected;
+        }
+
+        LUMEN_CHECK_EQ( Expected, 6 );
+    }
+
+    LUMEN_TEST( SPMCQueue_Flow, WraparoundReusesSlots )
     {
-        TVector<Int32> &Received = ConsumedItems[ConsumerIndex];
+        Thread::TSPMCQueue<UInt64> Queue( 2 );
+
+        for ( UInt64 Round = 0; Round < 16; ++Round )
+        {
+            const UInt64 Base = Round * 2ULL;
+
+            LUMEN_CHECK_TRUE( Queue.Push( Base ) );
+            LUMEN_CHECK_TRUE( Queue.Push( Base + 1ULL ) );
+
+            LUMEN_CHECK_EQ( *Queue.Pop(), Base );
+            LUMEN_CHECK_EQ( *Queue.Pop(), Base + 1ULL );
+        }
+    }
+
+    LUMEN_TEST( SPMCQueue_Flow, RefillAfterFullDrain )
+    {
+        Thread::TSPMCQueue<Int32> Queue( 4 );
+
+        for ( Int32 Cycle = 0; Cycle < 8; ++Cycle )
+        {
+            for ( Int32 Index = 0; Index < 4; ++Index )
+            {
+                LUMEN_CHECK_TRUE( Queue.Push( ( Cycle * 4 ) + Index ) );
+            }
+
+            LUMEN_CHECK_FALSE( Queue.Push( -1 ) );
+
+            for ( Int32 Index = 0; Index < 4; ++Index )
+            {
+                const TOptional<Int32> Item = Queue.Pop();
+
+                LUMEN_CHECK_HAS_VALUE( Item );
+                LUMEN_CHECK_EQ( *Item, ( Cycle * 4 ) + Index );
+            }
+
+            LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );
+        }
+    }
+
+    /**
+     * Threading - single producer, multiple consumers
+     */
+
+    LUMEN_TEST( SPMCQueue_Threading, MultiConsumersDeliverExactlyOnce )
+    {
+        constexpr Int32 ItemCount     = 4000;
+        constexpr Int32 ConsumerCount = 4;
+
+        Thread::TSPMCQueue<Int32> Queue( 128 );
+        TArray<TVector<Int32>, ConsumerCount> ConsumedItems;
+        TAtomic<Bool> bAllPushed{ false };
+
+        auto Producer = [&] ()
+        {
+            for ( Int32 Value = 0; Value < ItemCount; ++Value )
+            {
+                while ( not Queue.Push( Value ) )
+                {
+                    FThread::Yield();
+                }
+            }
+
+            bAllPushed.store( true, std::memory_order_release );
+        };
+
+        auto Consumer = [&] ( const UInt32 ConsumerIndex )
+        {
+            TVector<Int32> &Received = ConsumedItems[ConsumerIndex];
+
+            for ( ;; )
+            {
+                if ( const TOptional<Int32> Item = Queue.Pop(); Item.HasValue() )
+                {
+                    Received.push_back( *Item );
+                    continue;
+                }
+
+                if ( bAllPushed.load( std::memory_order_acquire ) )
+                {
+                    break;
+                }
+
+                FThread::Yield();
+            }
+        };
+
+        FThread ProducerThread( Producer );
+        TArray<FThread, ConsumerCount> ConsumerThreads = { FThread( Consumer, 0U ), FThread( Consumer, 1U ),
+                                                           FThread( Consumer, 2U ), FThread( Consumer, 3U ) };
+
+        ProducerThread.Join();
+
+        for ( FThread &ConsumerThread : ConsumerThreads )
+        {
+            ConsumerThread.Join();
+        }
+
+        TVector<Int32> MergedItems;
+
+        for ( const TVector<Int32> &Received : ConsumedItems )
+        {
+            MergedItems.insert( MergedItems.end(), Received.begin(), Received.end() );
+        }
+
+        LUMEN_CHECK_EQ( static_cast<Int32>( MergedItems.size() ), ItemCount );
+
+        Lumen::Algo::Sort( MergedItems );
+
+        for ( Int32 Index = 0; Index < ItemCount; ++Index )
+        {
+            if ( MergedItems[static_cast<USize>( Index )] != Index ) [[unlikely]]
+            {
+                LUMEN_CHECK_MSG( false, "every pushed value must be consumed exactly once, in the multiset sense" );
+                break;
+            }
+        }
+    }
+
+    LUMEN_TEST( SPMCQueue_Threading, SingleConsumerPreservesFifoUnderLoad )
+    {
+        constexpr Int32 ItemCount = 1000;
+
+        Thread::TSPMCQueue<UInt64> Queue( 64 );
+        TVector<UInt64> ReceivedItems;
+        TAtomic<Bool> bAllPushed{ false };
+
+        auto Producer = [&] ()
+        {
+            for ( UInt64 Value = 0; Value < static_cast<UInt64>( ItemCount ); ++Value )
+            {
+                while ( not Queue.Push( Value ) )
+                {
+                    FThread::Yield();
+                }
+            }
+
+            bAllPushed.store( true, std::memory_order_release );
+        };
+
+        FThread ProducerThread( Producer );
 
         for ( ;; )
         {
-            if ( const TOptional<Int32> Item = Queue.Pop(); Item.HasValue() )
+            if ( const TOptional<UInt64> Item = Queue.Pop(); Item.HasValue() )
             {
-                Received.push_back( *Item );
+                ReceivedItems.push_back( *Item );
                 continue;
             }
 
@@ -374,141 +451,71 @@ LUMEN_TEST( SPMCQueue_Threading, MultiConsumersDeliverExactlyOnce )
 
             FThread::Yield();
         }
-    };
 
-    FThread ProducerThread( Producer );
-    TArray<FThread, ConsumerCount> ConsumerThreads = { FThread( Consumer, 0U ), FThread( Consumer, 1U ), FThread( Consumer, 2U ),
-                                                       FThread( Consumer, 3U ) };
+        ProducerThread.Join();
 
-    ProducerThread.Join();
+        LUMEN_CHECK_EQ( static_cast<Int32>( ReceivedItems.size() ), ItemCount );
 
-    for ( FThread &ConsumerThread : ConsumerThreads )
+        for ( Int32 Index = 0; Index < ItemCount; ++Index )
+        {
+            if ( ReceivedItems[static_cast<USize>( Index )] != static_cast<UInt64>( Index ) ) [[unlikely]]
+            {
+                LUMEN_CHECK_MSG( false, "a single consumer must observe strictly increasing FIFO values" );
+                break;
+            }
+        }
+    }
+
+    LUMEN_TEST( SPMCQueue_Threading, ProducerAndConsumerCoexistWithoutDeadlock )
     {
+        constexpr Int32 ItemCount = 500;
+
+        Thread::TSPMCQueue<Int32> Queue( 2 );
+        TAtomic<Int32> PoppedCount{ 0 };
+        TAtomic<Bool> bAllPushed{ false };
+
+        auto Producer = [&] ()
+        {
+            for ( Int32 Value = 0; Value < ItemCount; ++Value )
+            {
+                while ( not Queue.Push( Value ) )
+                {
+                    FThread::Yield();
+                }
+            }
+
+            bAllPushed.store( true, std::memory_order_release );
+        };
+
+        auto Consumer = [&] ()
+        {
+            for ( ;; )
+            {
+                if ( const TOptional<Int32> Item = Queue.Pop(); Item.HasValue() )
+                {
+                    PoppedCount.fetch_add( 1, std::memory_order_relaxed );
+                    continue;
+                }
+
+                if ( bAllPushed.load( std::memory_order_acquire ) )
+                {
+                    break;
+                }
+
+                FThread::Yield();
+            }
+        };
+
+        FThread ProducerThread( Producer );
+        FThread ConsumerThread( Consumer );
+
+        ProducerThread.Join();
         ConsumerThread.Join();
+
+        LUMEN_CHECK_EQ( PoppedCount.load( std::memory_order_relaxed ), ItemCount );
+        LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );
     }
 
-    TVector<Int32> MergedItems;
-
-    for ( const TVector<Int32> &Received : ConsumedItems )
-    {
-        MergedItems.insert( MergedItems.end(), Received.begin(), Received.end() );
-    }
-
-    LUMEN_CHECK_EQ( static_cast<Int32>( MergedItems.size() ), ItemCount );
-
-    Lumen::Algo::Sort( MergedItems );
-
-    for ( Int32 Index = 0; Index < ItemCount; ++Index )
-    {
-        if ( MergedItems[static_cast<USize>( Index )] != Index ) [[unlikely]]
-        {
-            LUMEN_CHECK_MSG( false, "every pushed value must be consumed exactly once, in the multiset sense" );
-            break;
-        }
-    }
-}
-
-LUMEN_TEST( SPMCQueue_Threading, SingleConsumerPreservesFifoUnderLoad )
-{
-    constexpr Int32 ItemCount = 1000;
-
-    Thread::TSPMCQueue<UInt64> Queue( 64 );
-    TVector<UInt64> ReceivedItems;
-    TAtomic<Bool> bAllPushed{ false };
-
-    auto Producer = [&] ()
-    {
-        for ( UInt64 Value = 0; Value < static_cast<UInt64>( ItemCount ); ++Value )
-        {
-            while ( not Queue.Push( Value ) )
-            {
-                FThread::Yield();
-            }
-        }
-
-        bAllPushed.store( true, std::memory_order_release );
-    };
-
-    FThread ProducerThread( Producer );
-
-    for ( ;; )
-    {
-        if ( const TOptional<UInt64> Item = Queue.Pop(); Item.HasValue() )
-        {
-            ReceivedItems.push_back( *Item );
-            continue;
-        }
-
-        if ( bAllPushed.load( std::memory_order_acquire ) )
-        {
-            break;
-        }
-
-        FThread::Yield();
-    }
-
-    ProducerThread.Join();
-
-    LUMEN_CHECK_EQ( static_cast<Int32>( ReceivedItems.size() ), ItemCount );
-
-    for ( Int32 Index = 0; Index < ItemCount; ++Index )
-    {
-        if ( ReceivedItems[static_cast<USize>( Index )] != static_cast<UInt64>( Index ) ) [[unlikely]]
-        {
-            LUMEN_CHECK_MSG( false, "a single consumer must observe strictly increasing FIFO values" );
-            break;
-        }
-    }
-}
-
-LUMEN_TEST( SPMCQueue_Threading, ProducerAndConsumerCoexistWithoutDeadlock )
-{
-    constexpr Int32 ItemCount = 500;
-
-    Thread::TSPMCQueue<Int32> Queue( 2 );
-    TAtomic<Int32> PoppedCount{ 0 };
-    TAtomic<Bool> bAllPushed{ false };
-
-    auto Producer = [&] ()
-    {
-        for ( Int32 Value = 0; Value < ItemCount; ++Value )
-        {
-            while ( not Queue.Push( Value ) )
-            {
-                FThread::Yield();
-            }
-        }
-
-        bAllPushed.store( true, std::memory_order_release );
-    };
-
-    auto Consumer = [&] ()
-    {
-        for ( ;; )
-        {
-            if ( const TOptional<Int32> Item = Queue.Pop(); Item.HasValue() )
-            {
-                PoppedCount.fetch_add( 1, std::memory_order_relaxed );
-                continue;
-            }
-
-            if ( bAllPushed.load( std::memory_order_acquire ) )
-            {
-                break;
-            }
-
-            FThread::Yield();
-        }
-    };
-
-    FThread ProducerThread( Producer );
-    FThread ConsumerThread( Consumer );
-
-    ProducerThread.Join();
-    ConsumerThread.Join();
-
-    LUMEN_CHECK_EQ( PoppedCount.load( std::memory_order_relaxed ), ItemCount );
-    LUMEN_CHECK_FALSE( Queue.Pop().HasValue() );
-}
+} // namespace
 
 } // namespace Lumen

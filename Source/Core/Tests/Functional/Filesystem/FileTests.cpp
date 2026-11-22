@@ -8,8 +8,13 @@
 #include <Filesystem/Path.hpp>
 #include <Tests/UnitTest.hpp>
 
+/**
+ * Private
+ */
+
 namespace
 {
+
 Lumen::Filesystem::FPath GetTestPath ( const Lumen::AnsiChar *InName )
 {
     return Lumen::Filesystem::FPath( "LumenFilesystemTests" ) / Lumen::FStringView( InName );
@@ -33,7 +38,6 @@ struct FScopedTestDir
         Lumen::Filesystem::FDirectory::Delete( Path, true );
     }
 };
-} // namespace
 
 /**
  * FFile::Exists
@@ -353,3 +357,5 @@ LUMEN_TEST( FFile_GetSize, FailsForMissingFile )
     const auto Result   = Lumen::Filesystem::FFile::GetSize( FilePath );
     LUMEN_CHECK_HAS_ERROR( Result );
 }
+
+} // namespace
