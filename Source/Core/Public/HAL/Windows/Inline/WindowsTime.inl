@@ -7,6 +7,12 @@
 
 #include <HAL/Windows/WindowsTime.hpp>
 
+#if not defined( LUMEN_PLATFORM_WINDOWS )
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "WindowsTime.inl is only supported on Windows"
+    #endif
+#else
+
 /**
  * Private
  */
@@ -56,7 +62,7 @@ Lumen::Float64 Lumen::HAL::FWindowsTime::TicksToSeconds ( const UInt64 DeltaTick
 /** @returns The current wall-clock time in nanoseconds since Unix epoch. */
 Lumen::UInt64 Lumen::HAL::FWindowsTime::NowNanoseconds () noexcept
 {
-    // FILETIME counts 100 ns intervals since 1601-01-01. Offset to the Unix epoch (1970-01-01).
+    /** FILETIME counts 100 ns intervals since 1601-01-01. Offset to the Unix epoch (1970-01-01). */
     constexpr UInt64 UnixEpochOffset = 116444736000000000ULL;
 
     FILETIME FileTime{};
@@ -66,3 +72,5 @@ Lumen::UInt64 Lumen::HAL::FWindowsTime::NowNanoseconds () noexcept
         ( static_cast<UInt64>( FileTime.dwHighDateTime ) << 32 ) | static_cast<UInt64>( FileTime.dwLowDateTime );
     return ( Intervals - UnixEpochOffset ) * 100ULL;
 }
+
+#endif

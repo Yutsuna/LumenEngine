@@ -8,7 +8,9 @@
 #include <Core/CoreDefinitions.hpp>
 
 #if not defined( LUMEN_PLATFORM_WINDOWS )
-    #error "WindowsFutex.hpp is only available on Windows."
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "WindowsFutex.hpp is only supported on Windows"
+    #endif
 #else
 
     #include <Core/CoreTypes.hpp>

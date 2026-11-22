@@ -67,9 +67,9 @@ namespace Lumen
     Result.resize( InString.length() );
 
     USize Index = 0;
-    Algo::ForEach( InString, [&Result, &Index] ( const AnsiChar c ) noexcept
+    Algo::ForEach( InString, [&Result, &Index] ( const AnsiChar Char ) noexcept
     {
-        Result[Index++] = ToLower( c );
+        Result[Index++] = ToLower( Char );
     } );
 
     return Result;

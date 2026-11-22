@@ -7,6 +7,12 @@
 
 #include <HAL/Windows/WindowsMutex.hpp>
 
+#if not defined( LUMEN_PLATFORM_WINDOWS )
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "WindowsMutex.inl is only supported on Windows"
+    #endif
+#else
+
 /**
  * Public
  */
@@ -25,3 +31,5 @@ Lumen::Bool Lumen::HAL::FWindowsMutex::TryLock () noexcept
 {
     return TryAcquireSRWLockExclusive( &RWLock ) != 0;
 }
+
+#endif

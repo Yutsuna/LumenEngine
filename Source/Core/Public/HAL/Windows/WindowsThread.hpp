@@ -8,7 +8,9 @@
 #include <Core/CoreDefinitions.hpp>
 
 #if not defined( LUMEN_PLATFORM_WINDOWS )
-    #error "WindowsThread.hpp is only available on Windows platforms."
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "WindowsThread.hpp is only supported on Windows"
+    #endif
 #else
 
     #include <Core/CoreTypes.hpp>
