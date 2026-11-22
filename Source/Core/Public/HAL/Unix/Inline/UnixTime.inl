@@ -9,6 +9,7 @@
     #if not defined( LUMEN_CLANG_TIDY )
         #error "UnixTime.hpp is only supported on Unix-like platforms"
     #endif
+#else
 
     #include <HAL/Unix/UnixTime.hpp>
 
