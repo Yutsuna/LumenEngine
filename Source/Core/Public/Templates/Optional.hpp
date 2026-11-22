@@ -9,7 +9,6 @@
 #include <Templates/Monadic.hpp>
 
 #include <concepts>
-#include <functional>
 #include <memory>
 #include <type_traits>
 #include <utility>
