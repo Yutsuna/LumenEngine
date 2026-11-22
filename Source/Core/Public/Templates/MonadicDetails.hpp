@@ -14,8 +14,6 @@
 
 #include <Templates/Invoke.hpp>
 
-#include <functional>
-
 namespace Lumen
 {
 
