@@ -2,86 +2,101 @@
  * @file RHIShaderPackageCodec.cpp
  * @brief Implements bounded versioned shader package serialization.
  */
-#include "Concepts/TriviallyCopyable.hpp"
+
 #include <RHI/Shaders/RHIShaderPackageCodec.hpp>
 #include <RHI/Types/RHIHash.hpp>
 #include <RHI/Utilities/RHICheckedMath.hpp>
+
+#include <Concepts/TriviallyCopyable.hpp>
+
 #include <cstring>
-#include <type_traits>
 
-namespace Lumen
+/**
+ * Private
+ */
+
+namespace
 {
 
-namespace RHI
+/**
+ * TODO: check if there is not already a Filesystem or any function similar in Core/
+ */
+
+template <class TObject>
+    requires Lumen::Concepts::CTriviallyCopyable<TObject>
+void WriteValue ( Lumen::TVector<Lumen::Byte> &OutBytes, const TObject &InValue ) noexcept
 {
-    namespace
+    const auto *Begin = reinterpret_cast<const Lumen::Byte *>( std::addressof( InValue ) );
+
+    OutBytes.insert( OutBytes.end(), Begin, Begin + sizeof( TObject ) );
+}
+
+/**
+ * TODO: check if there is not already a Filesystem or any function similar in Core/
+ */
+
+template <class TObject>
+    requires Lumen::Concepts::CTriviallyCopyable<TObject>
+Lumen::Bool ReadValue ( Lumen::TSpan<const Lumen::Byte> InBytes, Lumen::USize &InOutOffset, TObject &OutValue ) noexcept
+{
+    if ( InOutOffset > InBytes.size() or sizeof( TObject ) > InBytes.size() - InOutOffset )
     {
+        return false;
+    }
+    std::memcpy( std::addressof( OutValue ), InBytes.data() + InOutOffset, sizeof( TObject ) );
+    InOutOffset += sizeof( TObject );
+    return true;
+}
 
-        template <typename ValueType>
-            requires Concepts::CTriviallyCopyable<ValueType>
-        void WriteValue ( TVector<Byte> &OutBytes, const ValueType &InValue ) noexcept
-        {
-            const auto *Begin = reinterpret_cast<const Byte *>( std::addressof( InValue ) );
-            OutBytes.insert( OutBytes.end(), Begin, Begin + sizeof( ValueType ) );
-        }
+void WriteBytes ( Lumen::TVector<Lumen::Byte> &OutBytes, const Lumen::TSpan<const Lumen::Byte> InBytes ) noexcept
+{
+    OutBytes.insert( OutBytes.end(), InBytes.begin(), InBytes.end() );
+}
 
-        template <typename ValueType>
-            requires Concepts::CTriviallyCopyable<ValueType>
-        Bool ReadValue ( TSpan<const Byte> InBytes, USize &InOutOffset, ValueType &OutValue ) noexcept
-        {
-            if ( InOutOffset > InBytes.size() or sizeof( ValueType ) > InBytes.size() - InOutOffset )
-            {
-                return false;
-            }
-            std::memcpy( std::addressof( OutValue ), InBytes.data() + InOutOffset, sizeof( ValueType ) );
-            InOutOffset += sizeof( ValueType );
-            return true;
-        }
+Lumen::Bool ReadBytes ( Lumen::TSpan<const Lumen::Byte> InBytes,
+                        Lumen::USize &InOutOffset,
+                        Lumen::TVector<Lumen::Byte> &OutBytes,
+                        const Lumen::UInt32 InSize ) noexcept
+{
+    if ( InOutOffset > InBytes.size() or InSize > InBytes.size() - InOutOffset )
+    {
+        return false;
+    }
+    OutBytes.assign( InBytes.begin() + static_cast<Lumen::ISize>( InOutOffset ),
+                     InBytes.begin() + static_cast<Lumen::ISize>( InOutOffset + InSize ) );
+    InOutOffset += InSize;
+    return true;
+}
 
-        void WriteBytes ( TVector<Byte> &OutBytes, const TSpan<const Byte> InBytes ) noexcept
-        {
-            OutBytes.insert( OutBytes.end(), InBytes.begin(), InBytes.end() );
-        }
+Lumen::RHI::FRHIError CodecError () noexcept
+{
+    return { Lumen::RHI::ERHIErrorCode::CorruptedData, Lumen::RHI::ERHIErrorCondition::Shader,
+             "Invalid or truncated shader package" };
+}
 
-        Bool ReadBytes ( TSpan<const Byte> InBytes, USize &InOutOffset, TVector<Byte> &OutBytes, const UInt32 InSize ) noexcept
-        {
-            if ( InOutOffset > InBytes.size() or InSize > InBytes.size() - InOutOffset )
-            {
-                return false;
-            }
-            OutBytes.assign( InBytes.begin() + static_cast<ISize>( InOutOffset ),
-                             InBytes.begin() + static_cast<ISize>( InOutOffset + InSize ) );
-            InOutOffset += InSize;
-            return true;
-        }
-
-        FRHIError CodecError () noexcept
-        {
-            return { ERHIErrorCode::CorruptedData, ERHIErrorCondition::Shader, "Invalid or truncated shader package" };
-        }
-
-    } // namespace
-} // namespace RHI
-
-} // namespace Lumen
+} // namespace
 
 Lumen::TExpected<Lumen::TVector<Lumen::Byte>, Lumen::RHI::FRHIError>
 Lumen::RHI::EncodeRHIShaderPackage ( const FRHIShaderPackage &InPackage ) noexcept
 {
-    TVector<Byte> Result;
-    WriteBytes( Result, TSpan<const Byte>( reinterpret_cast<const Byte *>( "LRHI" ), 4U ) );
+    Lumen::TVector<Lumen::Byte> Result;
+
+    WriteBytes( Result, Lumen::TSpan<const Lumen::Byte>( reinterpret_cast<const Lumen::Byte *>( "LRHI" ), 4U ) );
     WriteValue( Result, 1U );
+
     const TOptional<UInt32> Count = RHICheckedCast<UInt32>( InPackage.GetEntries().size() );
     if ( not Count )
     {
         return TUnexpected<FRHIError>( CodecError() );
     }
     WriteValue( Result, *Count );
+
     for ( const FRHIShaderPackageEntry &Entry : InPackage.GetEntries() )
     {
         const TOptional<UInt32> ByteCount    = RHICheckedCast<UInt32>( Entry.Bytecode.size() );
         const TOptional<UInt32> EntryCount   = RHICheckedCast<UInt32>( Entry.EntryPoint.size() );
         const TOptional<UInt32> BindingCount = RHICheckedCast<UInt32>( Entry.Reflection.Bindings.size() );
+
         if ( not ByteCount or not EntryCount or not BindingCount )
         {
             return TUnexpected<FRHIError>( CodecError() );
@@ -96,11 +111,13 @@ Lumen::RHI::EncodeRHIShaderPackage ( const FRHIShaderPackage &InPackage ) noexce
         WriteValue( Result, Entry.Reflection.WorkgroupSize );
         WriteValue( Result, Entry.Reflection.InlineConstantBytes );
         WriteValue( Result, *BindingCount );
+
         for ( const auto &Binding : Entry.Reflection.Bindings )
         {
             WriteValue( Result, Binding );
         }
     }
+
     /** NOTE: The checksum is appended last so all existing payload offsets remain unchanged. */
     const UInt64 Checksum = RHIHashBytes( TSpan<const Byte>( Result.data(), Result.size() ) );
     WriteValue( Result, Checksum );
@@ -152,10 +169,7 @@ Lumen::RHI::DecodeRHIShaderPackage ( const TSpan<const Byte> InBytes ) noexcept
             }
             Entry.Reflection.Bindings.push_back( Binding );
         }
-        if ( const TExpected<void, FRHIError> Added = Package.AddEntry( std::move( Entry ) ); not Added )
-        {
-            return TUnexpected<FRHIError>( Added.Error() );
-        }
+        LUMEN_EXPECT( _, Package.AddEntry( std::move( Entry ) ) );
     }
     if ( InBytes.size() - Offset != sizeof( UInt64 ) )
     {

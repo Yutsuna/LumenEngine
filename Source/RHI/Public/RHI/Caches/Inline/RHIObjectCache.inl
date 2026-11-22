@@ -7,11 +7,16 @@
 #include <HAL/LockGuard.hpp>
 #include <RHI/Caches/RHIObjectCache.hpp>
 
+/**
+ * Public
+ */
+
 template <typename KeyType, typename ValueType, typename HashType>
 Lumen::RHI::TRHIObjectCache<KeyType, ValueType, HashType>::TRHIObjectCache( const USize InMaxEntries,
                                                                             const ERHICacheEvictionPolicy InPolicy ) noexcept
     : MaxEntries( InMaxEntries == 0U ? 1U : InMaxEntries ), Policy( InPolicy )
 {
+    /* */
 }
 
 template <typename KeyType, typename ValueType, typename HashType>
@@ -20,14 +25,17 @@ Lumen::RHI::TRHIObjectCache<KeyType, ValueType, HashType>::Find ( const KeyType 
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const typename TMap<KeyType, FEntry, HashType>::iterator Found = Entries.find( InKey );
+
     if ( Found == Entries.end() )
     {
         Stats.OnLookup( false );
         return {};
     }
+
     ++Sequence;
     Found->second.LastUsed = Sequence;
     Stats.OnLookup( true );
+
     return TOptional<TSharedPtr<ValueType>>( Found->second.Value );
 }
 
@@ -40,26 +48,27 @@ Lumen::RHI::TRHIObjectCache<KeyType, ValueType, HashType>::GetOrCreate (
     {
         return *Existing;
     }
-    const TExpected<TSharedRef<ValueType>, FRHIError> Created = InFactory();
-    if ( not Created )
-    {
-        return TUnexpected<FRHIError>( Created.Error() );
-    }
+
+    LUMEN_EXPECT( Created, InFactory() );
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const typename TMap<KeyType, FEntry, HashType>::iterator Existing = Entries.find( InKey );
+
     if ( Existing != Entries.end() )
     {
         return Existing->second.Value;
     }
+
     if ( not MakeRoom() )
     {
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Cache, "Object cache capacity is exhausted" ) );
     }
     ++Sequence;
-    FEntry Entry{ .Value = *Created, .Bytes = InBytes, .LastUsed = Sequence };
+
+    FEntry Entry = { .Value = Created, .Bytes = InBytes, .LastUsed = Sequence };
+
     Entries.emplace( InKey, std::move( Entry ) );
     Stats.OnInsert( InBytes );
-    return TSharedPtr<ValueType>( *Created );
+    return TSharedPtr<ValueType>( Created );
 }
 
 template <typename KeyType, typename ValueType, typename HashType>
@@ -68,15 +77,18 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::TRHIObjectCache<KeyTyp
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const typename TMap<KeyType, FEntry, HashType>::iterator Existing = Entries.find( InKey );
+
     if ( Existing != Entries.end() )
     {
         Stats.OnRemove( Existing->second.Bytes );
         Entries.erase( Existing );
     }
+
     if ( not MakeRoom() )
     {
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Cache, "Object cache capacity is exhausted" ) );
     }
+
     ++Sequence;
     FEntry Entry{ .Value = InValue, .Bytes = InBytes, .LastUsed = Sequence };
     Entries.emplace( InKey, std::move( Entry ) );

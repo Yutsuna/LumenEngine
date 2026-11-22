@@ -57,17 +57,14 @@ Lumen::RHI::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexc
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Binding, "Descriptor allocator exhausted" ) );
     }
 
-    const UInt32 Remaining                         = Desc.MaximumCapacity - BaseOffset;
-    const UInt32 Requested                         = Desc.InitialCapacity < InCount ? InCount : Desc.InitialCapacity;
-    const UInt32 Capacity                          = Remaining < Requested ? Remaining : Requested;
-    const TExpected<UInt64, FRHIError> BackendPool = Backend->CreatePool( Capacity );
+    const UInt32 Remaining = Desc.MaximumCapacity - BaseOffset;
+    const UInt32 Requested = Desc.InitialCapacity < InCount ? InCount : Desc.InitialCapacity;
+    const UInt32 Capacity  = Remaining < Requested ? Remaining : Requested;
 
-    if ( not BackendPool )
-    {
-        return TUnexpected<FRHIError>( BackendPool.Error() );
-    }
+    LUMEN_EXPECT( BackendPool, Backend->CreatePool( Capacity ) );
+
     Pools.push_back(
-        FPool{ .BaseOffset = BaseOffset, .BackendPool = *BackendPool, .Indices = MakeUnique<FIndiceAllocator>( Capacity ) } );
+        { .BaseOffset = BaseOffset, .BackendPool = BackendPool, .Indices = MakeUnique<FIndiceAllocator>( Capacity ) } );
     const TOptional<FIndiceAllocation> Allocation = Pools.back().Indices->Allocate( InCount );
     if ( not Allocation )
     {

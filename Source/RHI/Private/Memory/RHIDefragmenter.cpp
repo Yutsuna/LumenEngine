@@ -89,10 +89,7 @@ Lumen::RHI::FRHIDefragmenter::BuildPlan ( const TSpan<const FRHIAllocation> InAl
 
 Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDefragmenter::Execute ( const FRHIDefragPlan &InPlan ) noexcept
 {
-    if ( const TExpected<void, FRHIError> Validation = InPlan.Validate(); not Validation )
-    {
-        return TUnexpected<FRHIError>( Validation.Error() );
-    }
+    LUMEN_EXPECT( _, InPlan.Validate() );
     for ( const FRHIDefragMove &Move : InPlan.Moves )
     {
         if ( not IsRHICompletionReached( InPlan.ObservedCompletion, Move.Completion ) )

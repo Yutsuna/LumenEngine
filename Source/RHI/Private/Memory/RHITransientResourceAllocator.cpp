@@ -6,6 +6,10 @@
 #include "RHITransientResourceAllocator.hpp"
 #include <Templates/Hash.hpp>
 
+/**
+ * Private
+ */
+
 namespace
 {
 
@@ -29,6 +33,10 @@ Lumen::Bool CanAliasTransientRange ( const Lumen::RHI::FRHIResourceRequirements 
 
 } // namespace
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHITransientResourceAllocator::FRHITransientResourceAllocator ( const FRHIObjectId InId,
                                                                              const UInt64 InCapacity ) noexcept
     : Identity( InId, FHash::TypeHash<FRHITransientResourceAllocator>() ), Allocator( InCapacity )
@@ -49,42 +57,39 @@ Lumen::RHI::FRHITransientResourceAllocator::Allocate ( const FRHITransientBatch 
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidState( ERHIErrorCondition::Memory, "Transient batch is not active" ) );
     }
-    if ( const TExpected<void, FRHIError> Valid = InBatch.Validate(); not Valid )
-    {
-        return TUnexpected<FRHIError>( Valid.Error() );
-    }
+
+    LUMEN_EXPECT( _, InBatch.Validate() );
+
     TVector<FRHITransientAllocation> Results;
     TVector<FRHIResourceRequirements> PlacedRequirements;
     TVector<Bool> Released;
+
     for ( USize RequestIndex = 0U; RequestIndex < InBatch.Requests.size(); ++RequestIndex )
     {
+
         const FRHITransientDesc &Request = InBatch.Requests[RequestIndex];
         for ( USize Index = 0U; Index < Results.size(); ++Index )
         {
             Bool bOverlapsRemainingRequest = Released[Index];
+
             for ( USize FutureIndex = RequestIndex; FutureIndex < InBatch.Requests.size(); ++FutureIndex )
             {
                 bOverlapsRemainingRequest =
                     bOverlapsRemainingRequest or Results[Index].Lifetime.Overlaps( InBatch.Requests[FutureIndex].Lifetime );
             }
+
             const Bool bCanAlias =
                 not bOverlapsRemainingRequest and CanAliasTransientRange( PlacedRequirements[Index], Request.Requirements );
             if ( bCanAlias )
             {
-                const TExpected<void, FRHIError> Freed = Allocator.Free( Results[Index].Allocation );
-                if ( not Freed )
-                {
-                    return TUnexpected<FRHIError>( Freed.Error() );
-                }
+                LUMEN_EXPECT( Freed, Allocator.Free( Results[Index].Allocation ) );
                 Released[Index] = true;
             }
         }
-        const TExpected<FRHIAllocation, FRHIError> Allocation = Allocator.Allocate( *Request.Requirements.ToAllocationDesc() );
-        if ( not Allocation )
-        {
-            return TUnexpected<FRHIError>( Allocation.Error() );
-        }
-        Results.push_back( FRHITransientAllocation{ .Allocation = *Allocation, .ResourceId = {}, .Lifetime = Request.Lifetime } );
+
+        LUMEN_EXPECT( Allocation, Allocator.Allocate( *Request.Requirements.ToAllocationDesc() ) );
+
+        Results.push_back( FRHITransientAllocation{ .Allocation = Allocation, .ResourceId = {}, .Lifetime = Request.Lifetime } );
         PlacedRequirements.push_back( Request.Requirements );
         Released.push_back( false );
     }

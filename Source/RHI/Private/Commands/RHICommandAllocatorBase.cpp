@@ -30,19 +30,11 @@ Lumen::RHI::FRHICommandAllocatorBase::Reset ( const FRHITimelineValue InComplete
     {
         if ( List->GetState() == ERHICommandListState::Pending )
         {
-            const TExpected<void, FRHIError> Completed = List->MarkCompleted( InCompleted );
-            if ( not Completed )
-            {
-                return TUnexpected<FRHIError>( Completed.Error() );
-            }
+            LUMEN_EXPECT( _, List->MarkCompleted( InCompleted ) );
         }
         if ( List->GetState() != ERHICommandListState::Initial )
         {
-            const TExpected<void, FRHIError> ResetResult = List->Reset();
-            if ( not ResetResult )
-            {
-                return TUnexpected<FRHIError>( ResetResult.Error() );
-            }
+            LUMEN_EXPECT( _, List->Reset() );
         }
     }
     return {};

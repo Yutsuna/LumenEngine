@@ -33,10 +33,8 @@ Lumen::RHI::FRHIPoolAllocator::FRHIPoolAllocator ( const UInt64 InSlotSize, cons
 Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
 Lumen::RHI::FRHIPoolAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
-    {
-        return TUnexpected<FRHIError>( Valid.Error() );
-    }
+    LUMEN_EXPECT( _, InDesc.Validate() );
+
     if ( SlotSize == 0ULL )
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidState( ERHIErrorCondition::Memory, "Pool allocator is disabled" ) );

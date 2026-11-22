@@ -3,14 +3,19 @@
  * @brief Implements two-level segregated free-list allocation.
  */
 
-#include "Algo/ForEach.hpp"
-#include <Algo/Sort.hpp>
-#include <HAL/LockGuard.hpp>
-
 #include <RHI/Memory/RHITlsfAllocator.hpp>
 #include <RHI/Utilities/RHIAlignment.hpp>
 #include <RHI/Utilities/RHICheckedMath.hpp>
+
+#include <Algo/ForEach.hpp>
+#include <Algo/Sort.hpp>
+#include <HAL/LockGuard.hpp>
+
 #include <bit>
+
+/**
+ * Public
+ */
 
 Lumen::RHI::FRHITlsfAllocator::FRHITlsfAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
 {
@@ -45,10 +50,7 @@ void Lumen::RHI::FRHITlsfAllocator::InsertFreeRange ( const FFreeRange InRange )
 Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
 Lumen::RHI::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
-    {
-        return TUnexpected<FRHIError>( Valid.Error() );
-    }
+    LUMEN_EXPECT( _, InDesc.Validate() );
 
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     USize First  = 0U;

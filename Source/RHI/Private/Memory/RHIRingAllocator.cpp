@@ -9,6 +9,10 @@
 #include <RHI/Utilities/RHIAlignment.hpp>
 #include <RHI/Utilities/RHICheckedMath.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIRingAllocator::FRHIRingAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
 {
     Stats.Capacity = InCapacity;
@@ -17,10 +21,7 @@ Lumen::RHI::FRHIRingAllocator::FRHIRingAllocator ( const UInt64 InCapacity ) noe
 Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
 Lumen::RHI::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
-    {
-        return TUnexpected<FRHIError>( Valid.Error() );
-    }
+    LUMEN_EXPECT( _, InDesc.Validate() );
 
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     UInt64 Start = Cursor;

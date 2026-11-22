@@ -11,10 +11,8 @@
 inline Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::CheckRHICapabilityGate ( const FRHIAdapterInfo &InAdapter,
                                                                                           const FRHIDeviceDesc &InDesc ) noexcept
 {
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
-    {
-        return TUnexpected<FRHIError>( Valid.Error() );
-    }
+    LUMEN_EXPECT( _, InDesc.Validate() );
+
     if ( InDesc.AdapterId and *InDesc.AdapterId != InAdapter.AdapterId )
     {
         return TUnexpected<FRHIError>( MakeRHINotFound( ERHIErrorCondition::Device, "Requested adapter is not present" ) );
