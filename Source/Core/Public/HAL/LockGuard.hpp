@@ -90,9 +90,9 @@ namespace HAL
 
         explicit TUniqueLock ( TMutexType &InMutex ) noexcept;
 
-        TUniqueLock ( TMutexType &InMutex, FDeferLock ) noexcept;
-        TUniqueLock ( TMutexType &InMutex, FTryToLock ) noexcept;
-        TUniqueLock ( TMutexType &InMutex, FAdoptLock ) noexcept;
+        TUniqueLock ( TMutexType &InMutex, FDeferLock LUMEN_UNUSED InTag ) noexcept;
+        TUniqueLock ( TMutexType &InMutex, FTryToLock LUMEN_UNUSED InTag ) noexcept;
+        TUniqueLock ( TMutexType &InMutex, FAdoptLock LUMEN_UNUSED InTag ) noexcept;
 
         ~TUniqueLock () noexcept;
 
