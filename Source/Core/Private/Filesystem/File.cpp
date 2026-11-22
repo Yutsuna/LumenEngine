@@ -5,6 +5,9 @@
 
 #include <Filesystem/File.hpp>
 #include <Filesystem/IFileSystem.hpp>
+
+#include <Templates/Expected.hpp>
+
 #include <cstring>
 #include <limits>
 
@@ -25,7 +28,7 @@ namespace Filesystem
             .OpenFile( InPath, EFileAccess::Read, EFileMode::OpenExisting )
             .AndThen( [] ( TUniquePtr<IFileHandle> Handle ) -> TExpected<TVector<Byte>, EFileError>
         {
-            // Fast path : Zero-copy Memory Map si disponible
+            /** FAST PATH: Zero-copy memory map if available */
             const TSpan<const Byte> MappedSpan = Handle->Map();
             if ( not MappedSpan.empty() )
             {
@@ -48,13 +51,7 @@ namespace Filesystem
             USize TotalRead = 0;
             while ( TotalRead < Buffer.size() )
             {
-                auto ReadResult = Handle->Read( TSpan<Byte>( Buffer.data() + TotalRead, Buffer.size() - TotalRead ) );
-                if ( not ReadResult )
-                {
-                    return MakeUnexpected( ReadResult.Error() );
-                }
-
-                const USize BytesRead = *ReadResult;
+                LUMEN_EXPECT( BytesRead, Handle->Read( TSpan<Byte>( Buffer.data() + TotalRead, Buffer.size() - TotalRead ) ) );
                 if ( BytesRead == 0 )
                 {
                     break;
@@ -72,7 +69,7 @@ namespace Filesystem
     {
         return ReadAllBytes( InPath ).Transform( [] ( const TVector<Byte> &Bytes ) -> FString
         {
-            return FString( reinterpret_cast<const AnsiChar *>( Bytes.data() ), Bytes.size() );
+            return FString{ reinterpret_cast<const AnsiChar *>( Bytes.data() ), Bytes.size() };
         } );
     }
 
@@ -86,13 +83,7 @@ namespace Filesystem
 
             while ( TotalWritten < InData.size() )
             {
-                auto WriteResult = Handle->Write( InData.subspan( TotalWritten ) );
-                if ( not WriteResult )
-                {
-                    return MakeUnexpected( WriteResult.Error() );
-                }
-
-                const USize Written = *WriteResult;
+                LUMEN_EXPECT( Written, Handle->Write( InData.subspan( TotalWritten ) ) );
                 if ( Written == 0 ) [[unlikely]]
                 {
                     return MakeUnexpected( EFileError::DiskFull );

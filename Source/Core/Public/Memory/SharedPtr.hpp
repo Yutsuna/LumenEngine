@@ -6,6 +6,7 @@
 #pragma once
 
 #include <Concepts/ConvertibleTo.hpp>
+#include <Concepts/IsVoid.hpp>
 #include <Core/CoreTypes.hpp>
 
 namespace Lumen
@@ -121,7 +122,7 @@ namespace SharedPtrInternal
  */
 template <typename Type> class TSharedRef final
 {
-    static_assert( not std::is_void_v<Type>, "TSharedRef<void> is not supported. Use a base class pointer." );
+    static_assert( not Concepts::CIsVoid<Type>, "TSharedRef<void> is not supported. Use a base class pointer." );
 
 public:
 

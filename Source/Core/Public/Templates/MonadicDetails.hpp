@@ -8,7 +8,9 @@
 #include <Core/CoreTypes.hpp>
 
 #include <Concepts/ConvertibleTo.hpp>
+#include <Concepts/IsVoid.hpp>
 #include <Concepts/SameAs.hpp>
+
 #include <Templates/Invoke.hpp>
 
 #include <functional>
@@ -69,7 +71,7 @@ namespace MonadicInternal
     template <class Self> using TConstElementRef = const std::remove_reference_t<TValueRef<Self>> &;
 
     /** @brief True if `*Self` has type `void` (i.e. `TExpected<void, E>`). */
-    template <class Self> inline constexpr Bool CIsVoidValue = std::is_void_v<std::remove_cvref_t<TValueRef<Self>>>;
+    template <class Self> inline constexpr Bool CIsVoidValue = Concepts::CIsVoid<std::remove_cvref_t<TValueRef<Self>>>;
 
     namespace Internal
     {

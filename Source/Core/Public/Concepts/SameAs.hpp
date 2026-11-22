@@ -1,34 +1,50 @@
 /**
  * @file SameAs.hpp
- * @brief Concept to check if a type is the same as another type.
+ * @brief Concept to check if two types are exactly the same.
  */
 
 #pragma once
 
-#include <type_traits>
+#include <Core/CoreTypes.hpp>
+
+#include <Concepts/IsBool.hpp>
 
 namespace Lumen
 {
 
+namespace Internal
+{
+
+    template <typename TObject, typename TCompare> struct TIsSame : TFalseType
+    {
+        /* */
+    };
+
+    template <typename TObject> struct TIsSame<TObject, TObject> : TTrueType
+    {
+        /* */
+    };
+
+    template <typename TObject, typename TCompare> inline constexpr Bool TIsSameV = TIsSame<TObject, TCompare>::Value;
+
+} // namespace Internal
+
 namespace Concepts
 {
-    /**
-     * @concept CIsSame
-     * @brief Checks if one type is the same as another type.
-     * @tparam T1 The first type.
-     * @tparam T2 The second type.
-     */
-    template <typename T1, typename T2>
-    concept CIsSame = std::is_same_v<T1, T2>;
 
     /**
      * @concept CSameAs
-     * @brief Checks if a type is exactly the same as a reference type.
-     * @tparam T1 The type to check.
-     * @tparam T2 The reference type to compare against.
+     * @brief Checks if two types are exactly the same.
      */
-    template <typename T1, typename T2>
-    concept CSameAs = std::is_same_v<T1, T2>;
+    template <typename TObject, typename TCompare>
+    concept CSameAs = Internal::TIsSameV<TObject, TCompare>;
+
+    /**
+     * @concept CIsSame
+     * @brief Checks if two types are exactly the same.
+     */
+    template <typename TObject, typename TCompare>
+    concept CIsSame = CSameAs<TObject, TCompare>;
 
 } // namespace Concepts
 

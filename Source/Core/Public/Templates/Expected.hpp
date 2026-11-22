@@ -432,4 +432,34 @@ private:
     Bool bHasValue;
 };
 
+namespace Internal
+{
+
+    struct FExpectVoid final
+    {
+    };
+
+    template <class TExpected> constexpr auto UnpackExpected ( TExpected &&Expected )
+    {
+        if constexpr ( Lumen::Concepts::CIsVoid<decltype( *Expected )> )
+        {
+            return FExpectVoid{};
+        }
+        else
+        {
+            return *std::forward<TExpected>( Expected );
+        }
+    }
+
+} // namespace Internal
+
+#define LUMEN_EXPECT( Var, Expr )                                                                                                \
+    auto &&Var##_lumenExpected_ = ( Expr );                                                                                      \
+    if ( not Var##_lumenExpected_ ) [[unlikely]]                                                                                 \
+    {                                                                                                                            \
+        return Lumen::MakeUnexpected( std::forward<decltype( Var##_lumenExpected_ )>( Var##_lumenExpected_ ).Error() );          \
+    }                                                                                                                            \
+    [[maybe_unused]] auto &&Var =                                                                                                \
+        Lumen::Internal::UnpackExpected( std::forward<decltype( Var##_lumenExpected_ )>( Var##_lumenExpected_ ) )
+
 } // namespace Lumen

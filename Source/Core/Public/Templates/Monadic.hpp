@@ -8,9 +8,10 @@
 #include <CoreExport.hpp>
 
 #include <Concepts/IsInvocable.hpp>
+#include <Concepts/IsVoid.hpp>
+
 #include <Templates/MonadicDetails.hpp>
 
-#include <concepts>
 #include <utility>
 
 namespace Lumen
@@ -33,7 +34,7 @@ namespace Concepts
      */
     template <class Self, class Func>
     concept CTransformable = CMonadic<Self> and Concepts::CIsInvocable<Func, MonadicInternal::TValueRef<Self>> and
-                             ( not std::is_void_v<MonadicInternal::TTransformResult<Self, Func>> ) and
+                             ( not Concepts::CIsVoid<MonadicInternal::TTransformResult<Self, Func>> ) and
                              requires { typename MonadicInternal::TTransformOut<Self, Func>; };
 
     /**
