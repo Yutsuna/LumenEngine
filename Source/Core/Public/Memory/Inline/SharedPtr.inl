@@ -142,8 +142,7 @@ template <typename ObjectType, typename... Arguments> TSharedRef<ObjectType> Mak
 {
     Internal::TIntrusiveReferenceController<ObjectType> *Controller =
         Internal::NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
-    return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(),
-                                      static_cast<Internal::FReferenceController *>( Controller ) );
+    return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(), static_cast<Internal::FReferenceController *>( Controller ) );
 }
 
 template <typename ObjectType> Internal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject ) noexcept

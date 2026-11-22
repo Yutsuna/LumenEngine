@@ -190,8 +190,7 @@ private:
 
     /** @brief Friend helpers */
     template <typename ObjectType>
-    friend TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject,
-                                                  Internal::FReferenceController *InController ) noexcept;
+    friend TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, Internal::FReferenceController *InController ) noexcept;
     template <typename CastToType, typename CastFromType>
     friend TSharedRef<CastToType> StaticCastSharedRef ( const TSharedRef<CastFromType> &InSharedRef ) noexcept;
 };

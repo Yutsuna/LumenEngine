@@ -13,8 +13,7 @@ namespace Lumen
 namespace Internal
 {
     template <typename ObjectType, typename... Arguments>
-    Internal::TIntrusiveReferenceController<ObjectType> *
-    NewIntrusiveReferenceController ( Arguments &&...InArgs ) noexcept
+    Internal::TIntrusiveReferenceController<ObjectType> *NewIntrusiveReferenceController ( Arguments &&...InArgs ) noexcept
     {
         /** NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) */
         return new Internal::TIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
