@@ -24,8 +24,9 @@ TSharedRef<Type>::TSharedRef( TSharedRef &&Other ) noexcept : Object( Other.Obje
 template <typename Type>
 template <typename OtherType>
     requires Concepts::CConvertibleTo<OtherType *, Type *>
-TSharedRef<Type>::TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy ) noexcept
-    : Object( Proxy.Object ), Controller( new SharedPtrInternal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
+TSharedRef<Type>::TSharedRef( const Internal::TRawPtrProxy<OtherType> &Proxy ) noexcept
+    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) — Lumen is noexcept; OOM terminates.
+    : Object( Proxy.Object ), Controller( new Internal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
 {
     assert( Object != nullptr );
 }
@@ -117,7 +118,7 @@ template <typename Type> UInt64 TSharedRef<Type>::GetSharedReferenceCount () con
 }
 
 template <typename Type>
-TSharedRef<Type>::TSharedRef( Type *InObject, SharedPtrInternal::FReferenceController *InController ) noexcept
+TSharedRef<Type>::TSharedRef( Type *InObject, Internal::FReferenceController *InController ) noexcept
     : Object( InObject ), Controller( InController )
 {
     assert( InObject != nullptr );
@@ -138,7 +139,7 @@ template <typename Type> void TSharedRef<Type>::Release () noexcept
 
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename ObjectType>
-TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController ) noexcept
+TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, Internal::FReferenceController *InController ) noexcept
 {
     return TSharedRef<ObjectType>( InObject, InController );
 }

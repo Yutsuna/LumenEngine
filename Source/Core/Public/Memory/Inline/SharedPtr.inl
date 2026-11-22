@@ -24,11 +24,11 @@ template <typename Type> TSharedPtr<Type>::TSharedPtr( NullPtrType ) noexcept : 
 template <typename Type>
 template <typename OtherType>
     requires Concepts::CConvertibleTo<OtherType *, Type *>
-TSharedPtr<Type>::TSharedPtr( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy ) noexcept : Object( Proxy.Object )
+TSharedPtr<Type>::TSharedPtr( const Internal::TRawPtrProxy<OtherType> &Proxy ) noexcept : Object( Proxy.Object )
 {
     if ( Proxy.Object )
     {
-        Controller = SharedPtrInternal::NewDefaultReferenceController<OtherType>( Proxy.Object );
+        Controller = Internal::NewDefaultReferenceController<OtherType>( Proxy.Object );
     }
     else
     {
@@ -140,15 +140,15 @@ template <typename Type> void TSharedPtr<Type>::Release () noexcept
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename ObjectType, typename... Arguments> TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs ) noexcept
 {
-    SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *Controller =
-        SharedPtrInternal::NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
+    Internal::TIntrusiveReferenceController<ObjectType> *Controller =
+        Internal::NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
     return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(),
-                                      static_cast<SharedPtrInternal::FReferenceController *>( Controller ) );
+                                      static_cast<Internal::FReferenceController *>( Controller ) );
 }
 
-template <typename ObjectType> SharedPtrInternal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject ) noexcept
+template <typename ObjectType> Internal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject ) noexcept
 {
-    return SharedPtrInternal::TRawPtrProxy<ObjectType>( InObject );
+    return Internal::TRawPtrProxy<ObjectType>( InObject );
 }
 
 /**

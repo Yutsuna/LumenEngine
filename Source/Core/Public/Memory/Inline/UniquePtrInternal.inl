@@ -1,6 +1,6 @@
 /**
  * @file UniquePtrInternal.inl
- * @brief Inline implementation of UniquePtrInternal namespace
+ * @brief Inline implementation of Internal namespace
  */
 
 #pragma once
@@ -12,12 +12,14 @@
 
 namespace Lumen
 {
-namespace UniquePtrInternal
+
+namespace Internal
 {
+
     template <typename Type>
     template <typename OtherType>
         requires Concepts::CConvertibleTo<OtherType *, Type *>
-    TDefaultDelete<Type>::TDefaultDelete( const TDefaultDelete<OtherType> & ) noexcept
+    TDefaultDelete<Type>::TDefaultDelete( const TDefaultDelete<OtherType> LUMEN_UNUSED &InOther ) noexcept
     {
         /** Empty */
     }
@@ -33,7 +35,8 @@ namespace UniquePtrInternal
         static_assert( sizeof( Type ), "Cannot delete an incomplete type." );
         delete[] Ptr;
     }
-} // namespace UniquePtrInternal
+
+} // namespace Internal
 
 template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::TUniquePtr() noexcept : Object( nullptr ), DeleterInstance()
 {
@@ -70,7 +73,7 @@ template <typename Type, typename Deleter>
 template <typename OtherType, typename OtherDeleter>
     requires Concepts::CConvertibleTo<OtherType *, Type *>
 TUniquePtr<Type, Deleter>::TUniquePtr( TUniquePtr<OtherType, OtherDeleter> &&Other ) noexcept
-    : Object( Other.Release() ), DeleterInstance( std::move( Other.DeleterInstance ) )
+    : Object( Other.Release() ), DeleterInstance( std::move( std::move( Other ).GetDeleter() ) )
 {
     /** Empty */
 }
@@ -151,8 +154,8 @@ template <typename Type, typename Deleter> Type *TUniquePtr<Type, Deleter>::Rele
 
 template <typename Type, typename Deleter> void TUniquePtr<Type, Deleter>::Reset ( Type *InObject ) noexcept
 {
-    Type *OldObject = Object;
-    Object          = InObject;
+    const Type *OldObject = Object;
+    Object                = InObject;
 
     if ( OldObject )
     {
@@ -250,8 +253,8 @@ template <typename Type, typename Deleter> Type *TUniquePtr<Type[], Deleter>::Re
 
 template <typename Type, typename Deleter> void TUniquePtr<Type[], Deleter>::Reset ( Type *InObject ) noexcept
 {
-    Type *OldObject = Object;
-    Object          = InObject;
+    const Type *OldObject = Object;
+    Object                = InObject;
 
     if ( OldObject )
     {
@@ -267,6 +270,7 @@ template <typename ObjectType, typename... Arguments>
     requires( not std::is_array_v<ObjectType> )
 TUniquePtr<ObjectType> MakeUnique ( Arguments &&...InArgs ) noexcept
 {
+    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) — Lumen is noexcept; OOM terminates.
     return TUniquePtr<ObjectType>( new ObjectType( std::forward<Arguments>( InArgs )... ) );
 }
 
@@ -275,6 +279,8 @@ template <typename ObjectType>
 TUniquePtr<ObjectType> MakeUnique ( const USize Size ) noexcept
 {
     using ElementType = std::remove_extent_t<ObjectType>;
+    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) — Lumen is noexcept; OOM terminates.
     return TUniquePtr<ObjectType>( new ElementType[Size]() );
 }
+
 } // namespace Lumen

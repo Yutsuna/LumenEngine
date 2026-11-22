@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 #include <Core/NonCopyable.hpp>
 
@@ -14,8 +15,10 @@
 
 namespace Lumen
 {
-namespace UniquePtrInternal
+
+namespace Internal
 {
+
     /**
      * @struct TDefaultDelete
      * @brief Default deleter functor used by TUniquePtr to destroy the managed object.
@@ -29,7 +32,7 @@ namespace UniquePtrInternal
         /** @brief Converting constructor: Allows upcasting deleters from derived to base. */
         template <typename OtherType>
             requires Concepts::CConvertibleTo<OtherType *, Type *>
-        TDefaultDelete( const TDefaultDelete<OtherType> & ) noexcept;
+        TDefaultDelete( const TDefaultDelete<OtherType> LUMEN_UNUSED &InOther ) noexcept;
 
         /** @brief Deletes the provided pointer. */
         void operator()( const Type *Ptr ) const noexcept;
@@ -49,7 +52,8 @@ namespace UniquePtrInternal
         /** @brief Deletes the provided pointer. */
         void operator()( const Type *Ptr ) const noexcept;
     };
-} // namespace UniquePtrInternal
+
+} // namespace Internal
 
 /**
  * @class TUniquePtr
@@ -57,7 +61,7 @@ namespace UniquePtrInternal
  * @tparam Type The object type
  * @tparam Deleter The functor type used to destroy the managed object.
  */
-template <typename Type, typename Deleter = UniquePtrInternal::TDefaultDelete<Type>>
+template <typename Type, typename Deleter = Internal::TDefaultDelete<Type>>
 class TUniquePtr final : public FNonCopyable, public FMonadic
 {
 public:
@@ -71,10 +75,10 @@ public:
     TUniquePtr ( NullPtrType ) noexcept;
 
     /** @brief Explicit constructor from a raw pointer */
-    explicit TUniquePtr ( Type *Ptr ) noexcept;
+    explicit TUniquePtr ( Type *InObject ) noexcept;
 
     /** @brief Explicit constructor from a raw pointer and a custom deleter */
-    explicit TUniquePtr ( Type *Ptr, Deleter InDeleter ) noexcept;
+    explicit TUniquePtr ( Type *InObject, Deleter InDeleter ) noexcept;
 
 public:
 
@@ -135,6 +139,7 @@ public:
     static TUniquePtr MonadicEmplace ( Function &&Func,
                                        Arguments &&Args ) noexcept( std::is_nothrow_invocable_v<Function, Arguments> )
     {
+        // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) — Lumen is noexcept; OOM terminates.
         return TUniquePtr( new Type( Invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ) );
     }
 
@@ -165,10 +170,10 @@ public:
     TUniquePtr ( NullPtrType ) noexcept;
 
     /** @brief Explicit constructor from a raw pointer */
-    explicit TUniquePtr ( Type *Ptr ) noexcept;
+    explicit TUniquePtr ( Type *InObject ) noexcept;
 
     /** @brief Explicit constructor from a raw pointer and a custom deleter */
-    explicit TUniquePtr ( Type *Ptr, Deleter InDeleter ) noexcept;
+    explicit TUniquePtr ( Type *InObject, Deleter InDeleter ) noexcept;
 
 public:
 
@@ -241,6 +246,7 @@ TUniquePtr<ObjectType> MakeUnique ( Arguments &&...InArgs ) noexcept;
 template <typename ObjectType>
     requires std::is_array_v<ObjectType>
 TUniquePtr<ObjectType> MakeUnique ( const USize Size ) noexcept;
+
 } // namespace Lumen
 
 #include "Inline/UniquePtrInternal.inl"
