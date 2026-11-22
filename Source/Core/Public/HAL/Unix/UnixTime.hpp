@@ -8,7 +8,9 @@
 #include <Core/CoreDefinitions.hpp>
 
 #if not defined( LUMEN_PLATFORM_UNIX )
-    #error "UnixTime.hpp is only supported on Unix-like platforms"
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "UnixTime.hpp is only supported on Unix-like platforms"
+    #endif
 #else
 
     #include <Core/CoreTypes.hpp>

@@ -221,7 +221,7 @@ void PopulateQueueFamilies ( Lumen::RHIVulkan::FVulkanAdapter &InAdapter,
     GraphicsInfo.Count                 = 1U;
     GraphicsInfo.bSupportsPresentation = bSupportsPresentation;
     GraphicsInfo.bSupportsTimestamps =
-        bExactTimestampPeriod and InQueueFamilies.Properties[InAdapter.GraphicsQueueFamilyIndex].timestampValidBits > 0U;
+        bExactTimestampPeriod and InQueueFamilies.Properties[*InAdapter.GraphicsQueueFamilyIndex].timestampValidBits > 0U;
     InAdapter.Info.QueueFamilies.push_back( GraphicsInfo );
 
     if ( InAdapter.ComputeQueueFamilyIndex )
@@ -302,8 +302,8 @@ Lumen::RHIVulkan::BuildVulkanAdapter ( const FVulkanInstance &InInstance, VkPhys
     }
 
     FVulkanAdapter Adapter{};
-    Adapter.PhysicalDevice           = InPhysicalDevice;
-    Adapter.GraphicsQueueFamilyIndex = *QueueFamilies->GraphicsIndex;
+    Adapter.PhysicalDevice = InPhysicalDevice;
+    Adapter.GraphicsQueueFamilyIndex.Emplace( *QueueFamilies->GraphicsIndex );
     if ( QueueFamilies->DedicatedComputeIndex )
     {
         Adapter.ComputeQueueFamilyIndex.Emplace( *QueueFamilies->DedicatedComputeIndex );
@@ -329,7 +329,7 @@ Lumen::RHIVulkan::BuildVulkanAdapter ( const FVulkanInstance &InInstance, VkPhys
         ( static_cast<float>( static_cast<UInt64>( Limits.timestampPeriod ) ) == Limits.timestampPeriod );
     const UInt64 TimestampPeriod = bExactTimestampPeriod ? static_cast<UInt64>( Limits.timestampPeriod ) : 1ULL;
     const Lumen::Bool bGraphicsSupportsTimestamps =
-        QueueFamilies->Properties[Adapter.GraphicsQueueFamilyIndex].timestampValidBits > 0U;
+        QueueFamilies->Properties[*Adapter.GraphicsQueueFamilyIndex].timestampValidBits > 0U;
     const Lumen::Bool bSupportsPresentation = Adapter.bHasSwapchain and InInstance.SupportsSurface();
 
     PopulateCapabilities( Adapter, Features2, Limits, bExactTimestampPeriod, bGraphicsSupportsTimestamps, bSupportsPresentation );

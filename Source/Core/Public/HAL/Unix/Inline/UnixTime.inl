@@ -5,11 +5,16 @@
 
 #pragma once
 
-#include <HAL/Unix/UnixTime.hpp>
+#if not defined( LUMEN_PLATFORM_UNIX )
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "UnixTime.hpp is only supported on Unix-like platforms"
+    #endif
+
+    #include <HAL/Unix/UnixTime.hpp>
 
 extern "C"
 {
-#include <time.h>
+    #include <time.h>
 }
 
 /**
@@ -18,13 +23,13 @@ extern "C"
 
 Lumen::UInt64 Lumen::HAL::FUnixTime::Ticks () noexcept
 {
-#if defined( LUMEN_PLATFORM_APPLE )
+    #if defined( LUMEN_PLATFORM_APPLE )
     return static_cast<UInt64>( ::clock_gettime_nsec_np( CLOCK_UPTIME_RAW ) );
-#elif defined( LUMEN_PLATFORM_LINUX )
+    #elif defined( LUMEN_PLATFORM_LINUX )
     timespec Time{};
     ::clock_gettime( CLOCK_MONOTONIC, &Time );
     return ( static_cast<UInt64>( Time.tv_sec ) * NanosecondsPerSecond ) + static_cast<UInt64>( Time.tv_nsec );
-#endif
+    #endif
 }
 
 constexpr Lumen::Float64 Lumen::HAL::FUnixTime::TicksToSeconds ( const UInt64 DeltaTicks ) noexcept
@@ -39,3 +44,5 @@ Lumen::UInt64 Lumen::HAL::FUnixTime::NowNanoseconds () noexcept
     ::clock_gettime( CLOCK_REALTIME, &Time );
     return ( static_cast<UInt64>( Time.tv_sec ) * NanosecondsPerSecond ) + static_cast<UInt64>( Time.tv_nsec );
 }
+
+#endif

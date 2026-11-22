@@ -31,7 +31,7 @@ namespace RHIVulkan
         VkPhysicalDevice PhysicalDevice = VK_NULL_HANDLE;
         RHI::FRHIAdapterInfo Info;
 
-        UInt32 GraphicsQueueFamilyIndex = 0U;
+        TOptional<UInt32> GraphicsQueueFamilyIndex;
         TOptional<UInt32> ComputeQueueFamilyIndex;
         TOptional<UInt32> CopyQueueFamilyIndex;
 

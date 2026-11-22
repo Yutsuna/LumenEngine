@@ -5,9 +5,15 @@
 
 #pragma once
 
-#include <HAL/Unix/UnixSharedMutex.hpp>
+#if not defined( LUMEN_PLATFORM_UNIX )
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "UnixSharedMutex.hpp is only available on Unix platforms."
+    #endif
+#else
 
-#include <pthread.h>
+    #include <HAL/Unix/UnixSharedMutex.hpp>
+
+    #include <pthread.h>
 
 /**
  * Public
@@ -62,3 +68,5 @@ Lumen::Bool Lumen::HAL::FUnixSharedMutex::TryLockShared () noexcept
 {
     return pthread_rwlock_tryrdlock( &RwLock ) == 0;
 }
+
+#endif

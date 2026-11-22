@@ -3,6 +3,7 @@
  * @brief Functional tests for the Vulkan RHI module entry point.
  */
 
+#include <RHI/Device/IRHIDevice.hpp>
 #include <RHIVulkan/RHIVulkanModule.hpp>
 #include <Tests/UnitTest.hpp>
 
@@ -28,22 +29,35 @@ namespace RHIVulkan
         LUMEN_CHECK_EQ( Version.Patch, 0U );
     }
 
-    LUMEN_TEST( VulkanModule, EnumerateAdaptersIsUnsupported )
+    LUMEN_TEST( VulkanModule, EnumerateAdaptersReturnsValidInformation )
     {
         const TExpected<TSharedRef<RHI::IRHIModule>, RHI::FRHIError> Module = CreateRHIVulkanModule();
         LUMEN_CHECK_TRUE( Module.HasValue() );
         const TExpected<TVector<RHI::FRHIAdapterInfo>, RHI::FRHIError> Adapters = ( *Module )->EnumerateAdapters();
-        LUMEN_CHECK_HAS_ERROR( Adapters );
-        LUMEN_CHECK_EQ( Adapters.Error().Code, RHI::ERHIErrorCode::Unsupported );
+        if ( not Adapters )
+        {
+            LUMEN_CHECK_EQ( Adapters.Error().Code, RHI::ERHIErrorCode::Unsupported );
+            return;
+        }
+
+        for ( const RHI::FRHIAdapterInfo &Adapter : *Adapters )
+        {
+            LUMEN_CHECK_TRUE( Adapter.Validate().HasValue() );
+        }
     }
 
-    LUMEN_TEST( VulkanModule, CreateDeviceIsUnsupportedAfterValidation )
+    LUMEN_TEST( VulkanModule, CreateDeviceReturnsReadyDevice )
     {
         const TExpected<TSharedRef<RHI::IRHIModule>, RHI::FRHIError> Module = CreateRHIVulkanModule();
         LUMEN_CHECK_TRUE( Module.HasValue() );
         const TExpected<TSharedRef<RHI::IRHIDevice>, RHI::FRHIError> Device = ( *Module )->CreateDevice( RHI::FRHIDeviceDesc{} );
-        LUMEN_CHECK_HAS_ERROR( Device );
-        LUMEN_CHECK_EQ( Device.Error().Code, RHI::ERHIErrorCode::Unsupported );
+        if ( not Device )
+        {
+            LUMEN_CHECK_EQ( Device.Error().Code, RHI::ERHIErrorCode::Unsupported );
+            return;
+        }
+
+        LUMEN_CHECK_EQ( ( *Device )->GetStatus(), RHI::ERHIDeviceStatus::Ready );
     }
 
     LUMEN_TEST( VulkanModule, CreateDeviceRejectsInvalidDescriptor )

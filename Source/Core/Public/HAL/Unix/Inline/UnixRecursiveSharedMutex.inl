@@ -5,10 +5,16 @@
 
 #pragma once
 
-#include <HAL/PlatformAtomic.hpp>
-#include <HAL/Unix/UnixRecursiveSharedMutex.hpp>
+#if not defined( LUMEN_PLATFORM_UNIX )
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "UnixRecursiveSharedMutex.hpp is only available on Unix platforms."
+    #endif
+#else
 
-#include <pthread.h>
+    #include <HAL/PlatformAtomic.hpp>
+    #include <HAL/Unix/UnixRecursiveSharedMutex.hpp>
+
+    #include <pthread.h>
 
 /**
  * Public
@@ -79,3 +85,5 @@ void Lumen::HAL::FUnixRecursiveSharedMutex::Unlock () noexcept
         return;
     }
 }
+
+#endif

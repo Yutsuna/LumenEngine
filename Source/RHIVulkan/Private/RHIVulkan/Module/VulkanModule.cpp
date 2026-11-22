@@ -3,9 +3,15 @@
  * @brief Implements the Vulkan RHI module.
  */
 
+#include <RHI/Module/RHIAdapterInfo.hpp>
+#include <RHIVulkan/Device/VulkanDevice.hpp>
+#include <RHIVulkan/Module/VulkanAdapter.hpp>
+#include <RHIVulkan/Module/VulkanInstance.hpp>
+
 #include <RHI/Types/RHIError.hpp>
 #include <RHIVulkan/Module/VulkanModule.hpp>
 
+#include <Algo/ForEach.hpp>
 #include <Templates/Unexpected.hpp>
 
 /**
@@ -31,18 +37,25 @@ Lumen::RHI::FRHIApiVersion Lumen::RHIVulkan::FVulkanModule::GetApiVersion () con
 Lumen::TExpected<Lumen::TVector<Lumen::RHI::FRHIAdapterInfo>, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::FVulkanModule::EnumerateAdapters () const noexcept
 {
-    return TUnexpected(
-        RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Device, "Vulkan adapter enumeration is not implemented yet." ) );
+    LUMEN_EXPECT( Instance, FVulkanInstance::Create( false ) );
+    LUMEN_EXPECT( Adapters, EnumerateVulkanAdapters( *Instance ) );
+
+    TVector<RHI::FRHIAdapterInfo> OutInfos;
+    OutInfos.reserve( Adapters.size() );
+    Algo::ForEach( Adapters, [&OutInfos] ( const FVulkanAdapter &Adapter ) noexcept -> void
+    {
+        OutInfos.push_back( Adapter.Info );
+    } );
+
+    return OutInfos;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDevice>, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::FVulkanModule::CreateDevice ( const RHI::FRHIDeviceDesc &InDesc ) noexcept
 {
-    using FReturnType = TExpected<TSharedRef<RHI::IRHIDevice>, RHI::FRHIError>;
+    LUMEN_EXPECT( Validation, InDesc.Validate() );
+    LUMEN_EXPECT( Instance, FVulkanInstance::Create( InDesc.bEnableDebug ) );
+    LUMEN_EXPECT( Adapters, SelectVulkanAdapter( *Instance, InDesc.AdapterId ) );
 
-    return InDesc.Validate().AndThen( [] () noexcept -> FReturnType
-    {
-        return MakeUnexpected(
-            RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Device, "Vulkan device creation is not implemented yet." ) );
-    } );
+    return FVulkanDevice::Create( Instance, Adapters, InDesc );
 }

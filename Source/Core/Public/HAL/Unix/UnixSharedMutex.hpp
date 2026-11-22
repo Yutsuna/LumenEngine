@@ -8,7 +8,9 @@
 #include <Core/CoreDefinitions.hpp>
 
 #if not defined( LUMEN_PLATFORM_UNIX )
-    #error "UnixSharedMutex.hpp is only available on Unix platforms."
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "UnixSharedMutex.hpp is only available on Unix platforms."
+    #endif
 #else
 
     #include <Core/CoreTypes.hpp>
