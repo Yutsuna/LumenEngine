@@ -129,11 +129,7 @@ const Lumen::TSharedRef<Lumen::RHIVulkan::FVulkanDeviceContext> &Lumen::RHIVulka
 
 Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIVulkan::FVulkanDevice::WaitIdle () noexcept
 {
-    const TOptional<RHI::FRHIError> Unavailable = GetUnavailableError( "WaitIdle" );
-    if ( Unavailable.HasValue() )
-    {
-        return TUnexpected( *Unavailable );
-    }
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "WaitIdle" ) );
 
     const VkResult Result = vkDeviceWaitIdle( Context->GetDevice() );
     if ( Result == VK_ERROR_DEVICE_LOST )
@@ -148,11 +144,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIVulkan::FVulkanDevice::W
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIQueue>, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::FVulkanDevice::GetQueue ( RHI::ERHIQueueType InType, UInt32 InIndex ) noexcept
 {
-    const TOptional<RHI::FRHIError> Unavailable = GetUnavailableError( "GetQueue" );
-    if ( Unavailable.HasValue() )
-    {
-        return TUnexpected( *Unavailable );
-    }
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "GetQueue" ) );
 
     if ( static_cast<USize>( InType ) >= static_cast<USize>( RHI::ERHIQueueType::Count ) )
     {
@@ -174,11 +166,7 @@ Lumen::RHIVulkan::FVulkanDevice::GetQueue ( RHI::ERHIQueueType InType, UInt32 In
 #define LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( OperationName, Condition )                                                           \
     do                                                                                                                           \
     {                                                                                                                            \
-        const TOptional<RHI::FRHIError> Unavailable = GetUnavailableError( OperationName );                                      \
-        if ( Unavailable.HasValue() )                                                                                            \
-        {                                                                                                                        \
-            return TUnexpected( *Unavailable );                                                                                  \
-        }                                                                                                                        \
+        LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( OperationName ) );                                                        \
         return TUnexpected( RHI::MakeRHIUnsupported( Condition, OperationName " is not implemented in RHIVulkan V2 yet." ) );    \
     } while ( false )
 

@@ -37,12 +37,7 @@ Lumen::RHI::FRHITimelineValue Lumen::RHIVulkan::FVulkanQueue::GetCompletedValue 
 Lumen::TExpected<void, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::FVulkanQueue::Submit ( const RHI::FRHISubmitDesc &InDesc ) noexcept
 {
-    const TOptional<RHI::FRHIError> Unavailable = Context->GetUnavailableError( "Queue::Submit" );
-    if ( Unavailable.HasValue() )
-    {
-        return TUnexpected( *Unavailable );
-    }
-
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::Submit" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
 
     return TUnexpected(
@@ -51,11 +46,7 @@ Lumen::RHIVulkan::FVulkanQueue::Submit ( const RHI::FRHISubmitDesc &InDesc ) noe
 
 Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIVulkan::FVulkanQueue::WaitIdle () noexcept
 {
-    const TOptional<RHI::FRHIError> Unavailable = Context->GetUnavailableError( "Queue::WaitIdle" );
-    if ( Unavailable.HasValue() )
-    {
-        return TUnexpected( *Unavailable );
-    }
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::WaitIdle" ) );
 
     HAL::TUniqueLock Lock( Context->GetQueueMutex( QueueType ) );
 
@@ -78,11 +69,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIVulkan::FVulkanQueue::Wa
                                                          "Queue wait timeout must be finite and nonnegative." ) );
     }
 
-    const TOptional<RHI::FRHIError> Unavailable = Context->GetUnavailableError( "Queue::Wait" );
-    if ( Unavailable.HasValue() )
-    {
-        return TUnexpected( *Unavailable );
-    }
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::Wait" ) );
 
     if ( not InValue.IsValid() or RHI::IsRHICompletionReached( GetCompletedValue(), InValue ) )
     {
