@@ -203,4 +203,22 @@ private:
 template <typename Type> inline constexpr Bool IsOptionalV                  = false;
 template <typename Type> inline constexpr Bool IsOptionalV<TOptional<Type>> = true;
 
+#define LUMEN_OPTIONAL( Var, Expr )                                                                                              \
+    auto &&Var##_lumenOptional_ = ( Expr );                                                                                      \
+    if ( not Var##_lumenOptional_.HasValue() ) [[unlikely]]                                                                      \
+    {                                                                                                                            \
+        return {};                                                                                                               \
+    }                                                                                                                            \
+    [[maybe_unused]] auto &&Var = *std::forward<decltype( Var##_lumenOptional_ )>( Var##_lumenOptional_ )
+
+#define LUMEN_TRY_OPTIONAL_ERROR( Expr )                                                                                         \
+    do                                                                                                                           \
+    {                                                                                                                            \
+        auto &&_lumenOptError_ = ( Expr );                                                                                       \
+        if ( _lumenOptError_.HasValue() ) [[unlikely]]                                                                           \
+        {                                                                                                                        \
+            return Lumen::MakeUnexpected( *std::forward<decltype( _lumenOptError_ )>( _lumenOptError_ ) );                       \
+        }                                                                                                                        \
+    } while ( 0 )
+
 } // namespace Lumen
