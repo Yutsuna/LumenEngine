@@ -17,6 +17,13 @@
 namespace Lumen
 {
 
+/** @struct FEmplaceTag
+ * @brief Selects direct construction from a monadic callback result.
+ */
+struct FEmplaceTag
+{
+};
+
 namespace Concepts
 {
     template <class MonadicType>
@@ -59,6 +66,9 @@ namespace Concepts
     {
         { Out::MonadicEmplace( std::declval<Func>(), std::declval<Array>() ) } -> CSameAs<Out>;
     };
+
+    template <class Self>
+    concept CHasConsumeHook = requires( Self &&Container ) { std::forward<Self>( Container ).MonadicConsume(); };
 
 } // namespace Concepts
 
@@ -139,6 +149,24 @@ namespace MonadicInternal
             static_assert( not Concepts::CHasError<Source>,
                            "This container holds an error : define `static Out MonadicFail( Source && )` to propagate it." );
             return Out();
+        }
+    }
+
+    template <class Self>
+    inline constexpr Bool bNothrowConsume = []
+    {
+        if constexpr ( Concepts::CHasConsumeHook<Self> )
+        {
+            return noexcept( std::declval<Self>().MonadicConsume() );
+        }
+        return true;
+    }();
+
+    template <class Self> constexpr void Consume ( Self &&Container ) noexcept( bNothrowConsume<Self> )
+    {
+        if constexpr ( Concepts::CHasConsumeHook<Self> )
+        {
+            std::forward<Self>( Container ).MonadicConsume();
         }
     }
 

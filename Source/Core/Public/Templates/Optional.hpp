@@ -8,19 +8,18 @@
 #include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 
+#include <Concepts/ConstructibleFrom.hpp>
+#include <Concepts/ConvertibleTo.hpp>
 #include <Concepts/SameAs.hpp>
+#include <Templates/Invoke.hpp>
 #include <Templates/Monadic.hpp>
+
+#include <memory>
+#include <type_traits>
+#include <utility>
 
 namespace Lumen
 {
-
-/**
- * @tag FEmplaceTag
- * @brief Emplace Tag
- */
-struct FEmplaceTag
-{
-};
 
 /**
  * @class TOptional
@@ -45,25 +44,21 @@ public:
     constexpr explicit TOptional ( const ValueType &InValue ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> )
         : Value( InValue ), bHasValue( true )
     {
-        /**
-         *
-         */
+        /** Empty */
     }
 
     /** @brief Move constructor from value */
     constexpr explicit TOptional ( ValueType &&InValue ) noexcept( std::is_nothrow_move_constructible_v<ValueType> )
         : Value( std::move( InValue ) ), bHasValue( true )
     {
-        /**
-         *
-         */
+        /** Empty */
     }
 
     /** @brief Emplace construction from a function */
     template <class Function, class Arguments>
-    constexpr TOptional( FEmplaceTag LUMEN_UNUSED InTag,
-                         Function &&Func,
-                         Arguments &&Args ) noexcept( std::is_nothrow_invocable_v<Function, Arguments> )
+    constexpr TOptional( FEmplaceTag LUMEN_UNUSED InTag, Function &&Func, Arguments &&Args ) noexcept(
+        std::is_nothrow_invocable_v<Function, Arguments> &&
+        std::is_nothrow_constructible_v<ValueType, std::invoke_result_t<Function, Arguments>> )
         : Value( Invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ), bHasValue( true )
     {
         /** Empty */
@@ -71,9 +66,11 @@ public:
 
 public:
 
+    constexpr TOptional ( const TOptional & ) = default;
+
     /** @brief Copy constructor */
     constexpr TOptional ( const TOptional &InOptional ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> )
-        requires std::copy_constructible<ValueType>
+        requires( not std::is_trivially_copy_constructible_v<ValueType> && std::is_copy_constructible_v<ValueType> )
         : Dummy( 0 )
     {
         if ( InOptional.bHasValue )
@@ -83,9 +80,11 @@ public:
         }
     }
 
+    constexpr TOptional ( TOptional && ) = default;
+
     /** @brief Move constructor */
     constexpr TOptional ( TOptional &&InOptional ) noexcept( std::is_nothrow_move_constructible_v<ValueType> )
-        requires std::move_constructible<ValueType>
+        requires( not std::is_trivially_move_constructible_v<ValueType> && std::is_move_constructible_v<ValueType> )
         : Dummy( 0 )
     {
         if ( InOptional.bHasValue )
@@ -97,8 +96,8 @@ public:
 
     /** @brief Converting copy constructor (implicit if ValueType is implicitly constructible from Other) */
     template <class Other>
-        requires( not Concepts::CSameAs<Other, ValueType> ) && std::constructible_from<ValueType, const Other &>
-    constexpr explicit( not std::convertible_to<const Other &, ValueType> )
+        requires( not Concepts::CSameAs<Other, ValueType> ) && Concepts::CConstructibleFrom<ValueType, const Other &>
+    constexpr explicit( not Concepts::CConvertibleTo<const Other &, ValueType> )
         TOptional( const TOptional<Other> &InOptional ) noexcept( std::is_nothrow_constructible_v<ValueType, const Other &> )
         : Dummy( 0 )
     {
@@ -111,8 +110,8 @@ public:
 
     /** @brief Converting move constructor (implicit if ValueType is implicitly constructible from Other) */
     template <class Other>
-        requires( not Concepts::CSameAs<Other, ValueType> ) && std::constructible_from<ValueType, Other &&>
-    constexpr explicit( not std::convertible_to<Other &&, ValueType> )
+        requires( not Concepts::CSameAs<Other, ValueType> ) && Concepts::CConstructibleFrom<ValueType, Other &&>
+    constexpr explicit( not Concepts::CConvertibleTo<Other &&, ValueType> )
         TOptional( TOptional<Other> &&InOptional ) noexcept( std::is_nothrow_constructible_v<ValueType, Other &&> )
         : Dummy( 0 )
     {
@@ -123,13 +122,71 @@ public:
         }
     }
 
-    /** @brief Assignment operator deleted */
-    TOptional &operator=( const TOptional & ) = delete;
+    constexpr TOptional &operator=( const TOptional & ) = default;
 
-public:
+    /** @brief Copy assignment operator */
+    constexpr TOptional &operator=( const TOptional &InOptional ) noexcept( std::is_nothrow_copy_constructible_v<ValueType> &&
+                                                                            std::is_nothrow_copy_assignable_v<ValueType> )
+        requires( not( std::is_trivially_copy_constructible_v<ValueType> && std::is_trivially_copy_assignable_v<ValueType> &&
+                       std::is_trivially_destructible_v<ValueType> ) &&
+                  std::is_copy_constructible_v<ValueType> && std::is_copy_assignable_v<ValueType> )
+    {
+        if ( this == std::addressof( InOptional ) )
+        {
+            return *this;
+        }
+
+        if ( bHasValue and InOptional.bHasValue )
+        {
+            Value = InOptional.Value;
+        }
+        else if ( bHasValue )
+        {
+            Reset();
+        }
+        else if ( InOptional.bHasValue )
+        {
+            std::construct_at( std::addressof( Value ), InOptional.Value );
+            bHasValue = true;
+        }
+        return *this;
+    }
+
+    constexpr TOptional &operator=( TOptional && ) = default;
+
+    /** @brief Move assignment operator */
+    constexpr TOptional &operator=( TOptional &&InOptional ) noexcept( std::is_nothrow_move_constructible_v<ValueType> &&
+                                                                       std::is_nothrow_move_assignable_v<ValueType> )
+        requires( not( std::is_trivially_move_constructible_v<ValueType> && std::is_trivially_move_assignable_v<ValueType> &&
+                       std::is_trivially_destructible_v<ValueType> ) &&
+                  std::is_move_constructible_v<ValueType> && std::is_move_assignable_v<ValueType> )
+    {
+        if ( this == std::addressof( InOptional ) )
+        {
+            return *this;
+        }
+
+        if ( bHasValue and InOptional.bHasValue )
+        {
+            Value = std::move( InOptional.Value );
+        }
+        else if ( bHasValue )
+        {
+            Reset();
+        }
+        else if ( InOptional.bHasValue )
+        {
+            std::construct_at( std::addressof( Value ), std::move( InOptional.Value ) );
+            bHasValue = true;
+        }
+        return *this;
+    }
+
+    constexpr ~TOptional () = default;
 
     /** @brief Destructor */
     constexpr ~TOptional () noexcept( std::is_nothrow_destructible_v<ValueType> )
+        requires( not std::is_trivially_destructible_v<ValueType> )
     {
         Reset();
     }
@@ -170,20 +227,28 @@ public:
     /** @return Reference to value */
     constexpr decltype( auto ) operator*( this auto &&Self ) noexcept
     {
+        LUMEN_ASSERT( Self.bHasValue );
         return ( std::forward<decltype( Self )>( Self ).Value );
     }
 
-    constexpr decltype( auto ) operator->( this auto &&Self ) noexcept
+    constexpr auto *operator->( this auto &&Self ) noexcept
     {
-        return std::addressof( std::forward<decltype( Self )>( Self ).Value );
+        LUMEN_ASSERT( Self.bHasValue );
+        return std::addressof( Self.Value );
     }
 
     /** @brief Monadic Hook */
     template <class Function, class Arguments>
-    constexpr static TOptional MonadicEmplace ( Function &&Func,
-                                                Arguments &&Args ) noexcept( std::is_nothrow_invocable_v<Function, Arguments> )
+    constexpr static TOptional MonadicEmplace ( Function &&Func, Arguments &&Args ) noexcept(
+        noexcept( TOptional( FEmplaceTag{}, std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ) )
     {
         return TOptional( FEmplaceTag{}, std::forward<Function>( Func ), std::forward<Arguments>( Args ) );
+    }
+
+    /** @brief Releases the value after an rvalue monadic result has been constructed. */
+    constexpr void MonadicConsume () noexcept( std::is_nothrow_destructible_v<ValueType> )
+    {
+        Reset();
     }
 
 private:
