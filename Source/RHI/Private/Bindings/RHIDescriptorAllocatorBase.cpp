@@ -8,6 +8,10 @@
 #include <Algo/ForEach.hpp>
 #include <HAL/LockGuard.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIDescriptorAllocatorBase::FRHIDescriptorAllocatorBase ( const FRHIDescriptorAllocatorDesc &InDesc,
                                                                        IRHIDescriptorPoolBackend &InBackend ) noexcept
     : Desc( InDesc ), Backend( &InBackend )
@@ -63,15 +67,18 @@ Lumen::RHI::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexc
 
     LUMEN_EXPECT( BackendPool, Backend->CreatePool( Capacity ) );
 
-    Pools.push_back(
-        { .BaseOffset = BaseOffset, .BackendPool = BackendPool, .Indices = MakeUnique<FIndiceAllocator>( Capacity ) } );
+    FPool Pool = { .BaseOffset = BaseOffset, .BackendPool = BackendPool, .Indices = MakeUnique<FIndiceAllocator>( Capacity ) };
+    Pools.push_back( std::move( Pool ) );
+
     const TOptional<FIndiceAllocation> Allocation = Pools.back().Indices->Allocate( InCount );
     if ( not Allocation )
     {
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Binding, "Descriptor pool growth failed" ) );
     }
+
     const FRHIDescriptorAllocation Result{ .Offset = BaseOffset + Allocation->Start, .Count = Allocation->Count };
     Active.push_back( Result );
+
     return Result;
 }
 
@@ -84,6 +91,7 @@ Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation I
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Bool bActive = false;
+
     for ( USize Index = 0U; Index < Active.size(); ++Index )
     {
         if ( Active[Index].Offset == InAllocation.Offset and Active[Index].Count == InAllocation.Count )
@@ -117,6 +125,7 @@ Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation I
 void Lumen::RHI::FRHIDescriptorAllocatorBase::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+
     ReleasePools();
     Pools.clear();
     Active.clear();

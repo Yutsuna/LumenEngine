@@ -4,8 +4,10 @@
  */
 
 #pragma once
+
 #include <RHI/Bindings/RHIBindingLayoutDesc.hpp>
 #include <RHI/Types/IRHIObject.hpp>
+
 namespace Lumen
 {
 
@@ -23,6 +25,7 @@ namespace RHI
         /** @return Creation description. */
         [[nodiscard]] virtual const FRHIBindingLayoutDesc &GetDesc () const noexcept = 0;
     };
+
 } // namespace RHI
 
 } // namespace Lumen

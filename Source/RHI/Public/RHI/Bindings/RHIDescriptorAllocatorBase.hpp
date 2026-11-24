@@ -2,6 +2,7 @@
  * @file RHIDescriptorAllocatorBase.hpp
  * @brief Declares the backend-neutral descriptor allocator implementation.
  */
+
 #pragma once
 
 #include <RHIExport.hpp>
@@ -77,6 +78,7 @@ namespace RHI
         TVector<FRHIDescriptorAllocation> Active;
         mutable HAL::FPlatformRecursiveSharedMutex Mutex;
     };
+
 } // namespace RHI
 
 } // namespace Lumen

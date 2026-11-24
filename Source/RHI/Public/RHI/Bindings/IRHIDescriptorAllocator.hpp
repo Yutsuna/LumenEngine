@@ -4,13 +4,16 @@
  */
 
 #pragma once
+
 #include <RHI/Types/IRHIObject.hpp>
 #include <RHI/Types/RHIError.hpp>
+
 namespace Lumen
 {
 
 namespace RHI
 {
+
     /**
      * @struct FRHIDescriptorAllocation
      * @brief Contiguous descriptor indices.
@@ -31,11 +34,14 @@ namespace RHI
 
         /** @brief Allocates InCount contiguous descriptors. */
         [[nodiscard]] virtual TExpected<FRHIDescriptorAllocation, FRHIError> Allocate ( UInt32 InCount ) noexcept = 0;
+
         /** @brief Releases a previously allocated range. */
         [[nodiscard]] virtual TExpected<void, FRHIError> Free ( FRHIDescriptorAllocation InAllocation ) noexcept = 0;
+
         /** @brief Recycles ranges whose GPU use has completed. */
         virtual void Reset () noexcept = 0;
     };
+
 } // namespace RHI
 
 } // namespace Lumen
