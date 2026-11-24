@@ -24,7 +24,7 @@ VKAPI_ATTR VkBool32 VKAPI_CALL BootstrapDebugCallback ( VkDebugUtilsMessageSever
     return VK_FALSE;
 }
 
-[[nodiscard]] Lumen::TExpected<void, Lumen::RHI::FRHIError> ValidateLoaderVersion () noexcept
+[[nodiscard]] Lumen::RHI::FRHIExpected ValidateLoaderVersion () noexcept
 {
     const auto EnumerateVersion =
         reinterpret_cast<PFN_vkEnumerateInstanceVersion>( vkGetInstanceProcAddr( nullptr, "vkEnumerateInstanceVersion" ) );
