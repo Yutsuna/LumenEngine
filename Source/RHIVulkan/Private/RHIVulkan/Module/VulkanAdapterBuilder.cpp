@@ -179,6 +179,7 @@ void PopulateCapabilities ( Lumen::RHIVulkan::FVulkanAdapter &InAdapter,
     InAdapter.Info.Capabilities.Features         = FeatureFlags;
     InAdapter.Info.Capabilities.ShaderModelMajor = 0U;
     InAdapter.Info.Capabilities.ShaderModelMinor = 0U;
+    InAdapter.Info.Capabilities.ShaderFormats    = { Lumen::RHI::ERHIShaderFormat::PortableBytecode };
 }
 
 void PopulateLimits ( Lumen::RHIVulkan::FVulkanAdapter &InAdapter,

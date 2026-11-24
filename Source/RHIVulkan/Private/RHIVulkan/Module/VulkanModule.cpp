@@ -30,8 +30,7 @@ Lumen::RHIVulkan::FVulkanModule::Create () noexcept
 
 Lumen::RHI::FRHIApiVersion Lumen::RHIVulkan::FVulkanModule::GetApiVersion () const noexcept
 {
-    /** TODO: Remains 1.0.0 until RHI updates its contract to 1.1.0. */
-    return { .Major = 1U, .Minor = 0U, .Patch = 0U };
+    return { .Major = 1U, .Minor = 1U, .Patch = 0U };
 }
 
 Lumen::TExpected<Lumen::TVector<Lumen::RHI::FRHIAdapterInfo>, Lumen::RHI::FRHIError>
