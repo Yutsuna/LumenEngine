@@ -8,8 +8,6 @@
 #include <HAL/LockGuard.hpp>
 #include <HAL/PlatformMutex.hpp>
 
-#include <cassert>
-
 /**
  * Bitmap helpers.
  */
@@ -402,7 +400,7 @@ void Lumen::FIndiceHeapAllocator::Free ( FIndiceAllocation InAllocation ) noexce
      * INFO: Free requires a valid, currently allocated range.
      *       This assertion catches incorrect allocation ownership in debug builds.
      */
-    assert( Allocated >= InAllocation.Count );
+    LUMEN_ASSERT( Allocated >= InAllocation.Count );
 
     const UInt32 FreedWord = InAllocation.Start / BitsPerWord;
 
@@ -414,7 +412,7 @@ void Lumen::FIndiceHeapAllocator::Free ( FIndiceAllocation InAllocation ) noexce
         const UInt32 BitIndex = InAllocation.Start % BitsPerWord;
         const UInt64 Mask     = 1ULL << BitIndex;
 
-        assert( ( Bitmap[FreedWord] & Mask ) != 0ULL );
+        LUMEN_ASSERT( ( Bitmap[FreedWord] & Mask ) != 0ULL );
 
         Bitmap[FreedWord] &= ~Mask;
 
@@ -440,7 +438,7 @@ void Lumen::FIndiceHeapAllocator::Free ( FIndiceAllocation InAllocation ) noexce
 
         const UInt64 Mask = NOnes( Take ) << BitIndex;
 
-        assert( ( Bitmap[WordIndex] & Mask ) == Mask );
+        LUMEN_ASSERT( ( Bitmap[WordIndex] & Mask ) == Mask );
 
         Bitmap[WordIndex] &= ~Mask;
 
