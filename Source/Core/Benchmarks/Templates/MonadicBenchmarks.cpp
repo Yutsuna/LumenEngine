@@ -81,8 +81,8 @@ LUMEN_BENCHMARK( FMonadic, TransformOptionalInPlace )
 }
 
 /**
- * Micro: F3 — TExpected has no MonadicEmplace hook, so MakeValue builds an
- * Out from the returned temporary, adding one move of the 512-byte payload.
+ * Micro: F3 regression guard — TExpected::MonadicEmplace constructs the
+ * callback result directly in storage, matching the TOptional baseline.
  */
 LUMEN_BENCHMARK( FMonadic, TransformExpectedExtraMove )
 {
@@ -114,8 +114,8 @@ LUMEN_BENCHMARK( FMonadic, TransformLValueKeepsSource )
 }
 
 /**
- * Micro: F4 — Transform on an rvalue move-constructs the `Consumed` guard
- * after building the result, adding one move of the whole source container.
+ * Micro: F4 regression guard — Transform on an rvalue resets the optional
+ * after building the result, without move-constructing a consumption guard.
  * The source is rebuilt identically every iteration in both variants.
  */
 LUMEN_BENCHMARK( FMonadic, TransformRValueConsumesSource )
@@ -144,6 +144,23 @@ LUMEN_BENCHMARK( FMonadic, ValueOrEagerFallback )
     for ( auto _ : State )
     {
         Lumen::Benchmarks::DoNotOptimize( Source.ValueOr( MakeFallback( Seed ) ) );
+    }
+}
+
+/**
+ * Micro: F9 regression guard — ValueOrElse skips MakeFallback on success.
+ */
+LUMEN_BENCHMARK( FMonadic, ValueOrElseLazyFallback )
+{
+    const Lumen::Int32 Seed = GMonadicSeed;
+    const Lumen::TOptional<Lumen::Int32> Source( Seed );
+
+    for ( auto _ : State )
+    {
+        Lumen::Benchmarks::DoNotOptimize( Source.ValueOrElse( [Seed] () noexcept
+        {
+            return MakeFallback( Seed );
+        } ) );
     }
 }
 

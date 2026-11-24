@@ -51,7 +51,7 @@ LUMEN_BENCHMARK_ARGS( AlgoFind, IteratorNoMatch, 4096, 262144, 4194304 )
     const Lumen::TVector<Lumen::Int32> Values = MakeInt32Range( Length );
 
     State.SetItemsPerIteration( static_cast<Lumen::UInt64>( Length ) );
-    State.SetBytesPerIteration(  Length * sizeof( Lumen::Int32 ) ) ;
+    State.SetBytesPerIteration( Length * sizeof( Lumen::Int32 ) );
 
     for ( auto _ : State )
     {
@@ -69,7 +69,7 @@ LUMEN_BENCHMARK_ARGS( AlgoFind, RangeNoMatch, 4096, 262144, 4194304 )
     const Lumen::TVector<Lumen::Int32> Values = MakeInt32Range( Length );
 
     State.SetItemsPerIteration( static_cast<Lumen::UInt64>( Length ) );
-    State.SetBytesPerIteration(  Length * sizeof( Lumen::Int32 ) );
+    State.SetBytesPerIteration( Length * sizeof( Lumen::Int32 ) );
 
     for ( auto _ : State )
     {
@@ -121,4 +121,4 @@ LUMEN_BENCHMARK_ARGS( AlgoFind, PointerNoCopy, 64, 1024, 8192 )
     }
 }
 
-}
+} // namespace

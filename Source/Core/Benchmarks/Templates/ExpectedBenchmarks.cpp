@@ -42,7 +42,7 @@ PassExpected ( const Lumen::TExpected<Lumen::Int32, Lumen::Int32> &InValue ) noe
     return InValue;
 }
 
-/** @brief No-inlinable dereference: the assert() of F6 stays in this function. */
+/** @brief No-inlinable dereference: LUMEN_ASSERT is checked in Debug and removed under NDEBUG. */
 LUMEN_NO_INLINE Lumen::Int32 DereferenceExpected ( const Lumen::TExpected<Lumen::Int32, Lumen::Int32> &InExpected ) noexcept
 {
     return *InExpected;

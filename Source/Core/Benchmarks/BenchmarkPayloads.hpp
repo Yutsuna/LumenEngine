@@ -49,7 +49,7 @@ namespace Benchmarks
         FHeavyPayload ( const FHeavyPayload &Other ) noexcept = default;
 
         /** INFO: std::array move is an element-wise copy for Int32, i.e. a real 512-byte move. */
-        FHeavyPayload ( FHeavyPayload &&Other ) noexcept : Value( Other.Value ), Buffer( Other.Buffer  )
+        FHeavyPayload ( FHeavyPayload &&Other ) noexcept : Value( Other.Value ), Buffer( Other.Buffer )
         {
             /** Empty */
         }

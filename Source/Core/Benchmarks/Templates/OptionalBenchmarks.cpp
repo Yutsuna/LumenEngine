@@ -37,7 +37,7 @@ LUMEN_NO_INLINE Lumen::Int32 PassRaw ( const Lumen::Int32 InValue ) noexcept
 
 /**
  * Micro: F2 — copy-construct TOptional<Int32> across a non-inlined boundary.
- * Compared with RawReturnByValue to isolate the non-trivial copy and ABI cost.
+ * The comparison includes harness and call costs; it is not a pure ABI ratio.
  */
 LUMEN_BENCHMARK( TOptional, ReturnByValue )
 {

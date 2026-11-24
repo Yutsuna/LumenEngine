@@ -31,7 +31,6 @@ namespace
     return Values;
 }
 
-
 /**
  * Micro
  */
@@ -46,7 +45,7 @@ LUMEN_BENCHMARK_ARGS( AlgoAny, AnyOfNoMatch, 4096, 262144, 4194304 )
     const Lumen::TVector<Lumen::Int32> Values( Length, 7 );
 
     State.SetItemsPerIteration( static_cast<Lumen::UInt64>( Length ) );
-    State.SetBytesPerIteration(  Length * sizeof( Lumen::Int32 ) );
+    State.SetBytesPerIteration( Length * sizeof( Lumen::Int32 ) );
 
     for ( auto _ : State )
     {
