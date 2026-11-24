@@ -47,7 +47,8 @@ namespace Algo
      *         or nullptr if the range was exhausted.
      */
     template <typename TObject, typename TFunc>
-        requires( Concepts::CConvertibleTo<TInvokeResultT<TFunc, Internal::TRangeReferenceT<TObject>>, Bool> )
+        requires Internal::CPointerReturnRange<TObject> &&
+                 Concepts::CConvertibleTo<TInvokeResultT<TFunc, Internal::TRangeReferenceT<TObject>>, Bool>
     LUMEN_FORCE_INLINE constexpr Internal::TRangeElementPtr<TObject> ForEachUntil ( TObject &&Object, TFunc &&Func );
 
     /**

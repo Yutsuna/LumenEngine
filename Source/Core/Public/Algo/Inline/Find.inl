@@ -10,6 +10,10 @@
 
 #include <Templates/Invoke.hpp>
 
+#include <memory>
+#include <ranges>
+#include <utility>
+
 /**
  * Iterator
  */
@@ -67,7 +71,7 @@ constexpr Lumen::TOptional<TIterator> Lumen::Algo::FindIfOrNone ( TIterator InFi
     TIterator Result = FindIf( InFirst, InLast, std::forward<TPredicate>( InPredicate ) );
     if ( Result != InLast )
     {
-        return TOptional<TIterator>( Result );
+        return TOptional<TIterator>( std::move( Result ) );
     }
     return TOptional<TIterator>();
 }
@@ -106,26 +110,29 @@ Lumen::Algo::FindIfEqualOrNone ( TIterator InFirst, TIterator InLast, const TVal
  */
 
 template <class TRangeType, class TPredicate>
+    requires Lumen::Algo::Internal::CPointerReturnRange<TRangeType>
 constexpr Lumen::Algo::Internal::TRangeElementPtr<TRangeType> Lumen::Algo::FindIf ( TRangeType &&InRange,
                                                                                     TPredicate &&InPredicate )
 {
-    return ForEachUntil( InRange, std::forward<TPredicate>( InPredicate ) );
+    return ForEachUntil( std::forward<TRangeType>( InRange ), std::forward<TPredicate>( InPredicate ) );
 }
 
 template <class TRangeType, class TValue>
+    requires Lumen::Algo::Internal::CPointerReturnRange<TRangeType>
 constexpr Lumen::Algo::Internal::TRangeElementPtr<TRangeType> Lumen::Algo::Find ( TRangeType &&InRange, const TValue &InValue )
 {
     for ( auto &&Elem : InRange )
     {
         if ( Elem == InValue )
         {
-            return &Elem;
+            return std::addressof( Elem );
         }
     }
     return {};
 }
 
 template <class TRangeType, class TPredicate>
+    requires Lumen::Algo::Internal::CPointerReturnRange<TRangeType>
 constexpr Lumen::Algo::Internal::TRangeElementPtr<TRangeType> Lumen::Algo::FindIfNot ( TRangeType &&InRange,
                                                                                        TPredicate &&InPredicate )
 {
@@ -135,7 +142,7 @@ constexpr Lumen::Algo::Internal::TRangeElementPtr<TRangeType> Lumen::Algo::FindI
     {
         if ( not Invoke( Pred, Elem ) )
         {
-            return &Elem;
+            return std::addressof( Elem );
         }
     }
     return {};
@@ -151,9 +158,28 @@ Lumen::Algo::FindIfOrNone ( TRangeType &&InRange, TPredicate &&InPredicate )
 {
     using TElement = Internal::TRangeElementValue<TRangeType>;
 
-    if ( auto *Result = FindIf( std::forward<TRangeType>( InRange ), std::forward<TPredicate>( InPredicate ) ) )
+    if constexpr ( Internal::CPointerReturnRange<TRangeType> )
     {
-        return TOptional<TElement>( *Result );
+        if ( auto *Result = FindIf( std::forward<TRangeType>( InRange ), std::forward<TPredicate>( InPredicate ) ) )
+        {
+            return TOptional<TElement>( *Result );
+        }
+    }
+    else
+    {
+        auto End    = std::ranges::end( InRange );
+        auto Result = FindIf( std::ranges::begin( InRange ), End, std::forward<TPredicate>( InPredicate ) );
+        if ( Result != End )
+        {
+            if constexpr ( Internal::bConsumeRangeElements<TRangeType> )
+            {
+                return TOptional<TElement>( std::ranges::iter_move( Result ) );
+            }
+            else
+            {
+                return TOptional<TElement>( *Result );
+            }
+        }
     }
     return TOptional<TElement>();
 }
@@ -164,9 +190,28 @@ Lumen::Algo::FindOrNone ( TRangeType &&InRange, const TValue &InValue )
 {
     using TElement = Internal::TRangeElementValue<TRangeType>;
 
-    if ( auto *Result = Find( std::forward<TRangeType>( InRange ), InValue ) )
+    if constexpr ( Internal::CPointerReturnRange<TRangeType> )
     {
-        return TOptional<TElement>( *Result );
+        if ( auto *Result = Find( std::forward<TRangeType>( InRange ), InValue ) )
+        {
+            return TOptional<TElement>( *Result );
+        }
+    }
+    else
+    {
+        auto End    = std::ranges::end( InRange );
+        auto Result = Find( std::ranges::begin( InRange ), End, InValue );
+        if ( Result != End )
+        {
+            if constexpr ( Internal::bConsumeRangeElements<TRangeType> )
+            {
+                return TOptional<TElement>( std::ranges::iter_move( Result ) );
+            }
+            else
+            {
+                return TOptional<TElement>( *Result );
+            }
+        }
     }
     return TOptional<TElement>();
 }
@@ -177,9 +222,28 @@ Lumen::Algo::FindIfNotOrNone ( TRangeType &&InRange, TPredicate &&InPredicate )
 {
     using TElement = Internal::TRangeElementValue<TRangeType>;
 
-    if ( auto *Result = FindIfNot( std::forward<TRangeType>( InRange ), std::forward<TPredicate>( InPredicate ) ) )
+    if constexpr ( Internal::CPointerReturnRange<TRangeType> )
     {
-        return TOptional<TElement>( *Result );
+        if ( auto *Result = FindIfNot( std::forward<TRangeType>( InRange ), std::forward<TPredicate>( InPredicate ) ) )
+        {
+            return TOptional<TElement>( *Result );
+        }
+    }
+    else
+    {
+        auto End    = std::ranges::end( InRange );
+        auto Result = FindIfNot( std::ranges::begin( InRange ), End, std::forward<TPredicate>( InPredicate ) );
+        if ( Result != End )
+        {
+            if constexpr ( Internal::bConsumeRangeElements<TRangeType> )
+            {
+                return TOptional<TElement>( std::ranges::iter_move( Result ) );
+            }
+            else
+            {
+                return TOptional<TElement>( *Result );
+            }
+        }
     }
     return TOptional<TElement>();
 }

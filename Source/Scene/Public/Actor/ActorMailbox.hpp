@@ -17,8 +17,6 @@
 
 #include <Thread/SPMCQueue.hpp>
 
-#include <cassert>
-
 namespace Lumen
 {
 

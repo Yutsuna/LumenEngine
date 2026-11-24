@@ -8,6 +8,7 @@
 #include <Algo/Any.hpp>
 #include <Algo/ForEach.hpp>
 
+#include <memory>
 #include <utility>
 
 /**
@@ -46,8 +47,9 @@ template <typename TObject, typename TFunc> constexpr void Lumen::Algo::ForEach 
 }
 
 template <typename TObject, typename TFunc>
-    requires( Lumen::Concepts::CConvertibleTo<Lumen::TInvokeResultT<TFunc, Lumen::Algo::Internal::TRangeReferenceT<TObject>>,
-                                              Lumen::Bool> )
+    requires Lumen::Algo::Internal::CPointerReturnRange<TObject> &&
+             Lumen::Concepts::CConvertibleTo<Lumen::TInvokeResultT<TFunc, Lumen::Algo::Internal::TRangeReferenceT<TObject>>,
+                                             Lumen::Bool>
 constexpr Lumen::Algo::Internal::TRangeElementPtr<TObject> Lumen::Algo::ForEachUntil ( TObject &&Object, TFunc &&Func )
 {
     auto &&Callable = std::forward<TFunc>( Func );
@@ -56,7 +58,7 @@ constexpr Lumen::Algo::Internal::TRangeElementPtr<TObject> Lumen::Algo::ForEachU
     {
         if ( Invoke( Callable, Item ) )
         {
-            return &Item;
+            return std::addressof( Item );
         }
     }
     return nullptr;
