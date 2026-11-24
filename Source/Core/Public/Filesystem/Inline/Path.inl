@@ -7,7 +7,6 @@
 
 #include <Filesystem/Path.hpp>
 
-#include <algorithm>
 #include <utility>
 
 namespace Lumen
@@ -34,13 +33,22 @@ inline void Filesystem::FPath::Normalize () noexcept
         return;
     }
 
-    std::ranges::replace( PathString, '\\', '/' );
+    USize WriteIndex = 0U;
+    Bool bSlash      = false;
 
-    const auto NewEnd = std::ranges::unique( PathString, [] ( const AnsiChar A, const AnsiChar B )
+    for ( const AnsiChar Character : PathString )
     {
-        return A == '/' and B == '/';
-    } );
-    PathString.erase( NewEnd.begin(), PathString.end() );
+        const Bool bNextSlash = Character == '\\' or Character == '/';
+        if ( bNextSlash and bSlash )
+        {
+            continue;
+        }
+
+        PathString[WriteIndex] = bNextSlash ? '/' : Character;
+        ++WriteIndex;
+        bSlash = bNextSlash;
+    }
+    PathString.resize( WriteIndex );
 
     if ( PathString.size() > 1 and PathString.back() == '/' )
     {
