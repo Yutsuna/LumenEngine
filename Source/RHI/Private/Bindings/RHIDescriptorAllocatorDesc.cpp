@@ -9,7 +9,7 @@
  * Public
  */
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDescriptorAllocatorDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDescriptorAllocatorDesc::Validate () const noexcept
 {
     if ( InitialCapacity == 0U or MaximumCapacity < InitialCapacity )
     {

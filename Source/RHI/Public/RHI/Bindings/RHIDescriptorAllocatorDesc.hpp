@@ -24,7 +24,7 @@ namespace RHI
         UInt32 MaximumCapacity = 4096U;
 
         /** @return Success for nonzero ordered capacities. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

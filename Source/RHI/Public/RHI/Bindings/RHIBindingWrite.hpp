@@ -74,7 +74,7 @@ namespace RHI
         FRHIBindingResource Resource;
 
         /** @return Success when the active payload contains every required nonnull object. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
 

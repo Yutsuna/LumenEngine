@@ -12,7 +12,7 @@
  * Public
  */
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBindingLayoutDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBindingLayoutDesc::Validate () const noexcept
 {
     for ( USize First = 0U; First < Entries.size(); ++First )
     {

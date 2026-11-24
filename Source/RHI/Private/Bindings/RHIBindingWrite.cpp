@@ -10,7 +10,7 @@
  * Public
  */
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBindingWrite::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBindingWrite::Validate () const noexcept
 {
     const Bool bValid = std::visit( [] ( const auto &Payload ) noexcept -> Bool
     {

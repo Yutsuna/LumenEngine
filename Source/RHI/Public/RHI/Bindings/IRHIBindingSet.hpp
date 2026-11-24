@@ -26,7 +26,7 @@ namespace RHI
         [[nodiscard]] virtual TSharedRef<IRHIBindingLayout> GetLayout () const noexcept = 0;
 
         /** @brief Validates all writes, then atomically replaces the complete binding snapshot. */
-        [[nodiscard]] virtual TExpected<void, FRHIError> Write ( TSpan<const FRHIBindingWrite> InWrites ) noexcept = 0;
+        [[nodiscard]] virtual FRHIExpected Write ( TSpan<const FRHIBindingWrite> InWrites ) noexcept = 0;
 
         /** @return True when writes occurred since ClearDirty. */
         [[nodiscard]] virtual Bool IsDirty () const noexcept = 0;

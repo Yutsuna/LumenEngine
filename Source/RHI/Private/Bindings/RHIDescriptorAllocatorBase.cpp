@@ -82,8 +82,7 @@ Lumen::RHI::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexc
     return Result;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllocation ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllocation ) noexcept
 {
     if ( InAllocation.Count == 0U )
     {

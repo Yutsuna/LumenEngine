@@ -39,7 +39,7 @@ namespace RHI
         TVector<FRHIBindingLayoutEntry> Entries;
 
         /** @return Success for unique slots and nonzero counts. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
 
         /** @return Stable content hash independent of entry ordering. */
         [[nodiscard]] UInt64 GetHash () const noexcept;

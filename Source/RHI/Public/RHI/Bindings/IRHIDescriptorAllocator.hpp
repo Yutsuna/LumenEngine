@@ -36,7 +36,7 @@ namespace RHI
         [[nodiscard]] virtual TExpected<FRHIDescriptorAllocation, FRHIError> Allocate ( UInt32 InCount ) noexcept = 0;
 
         /** @brief Releases a previously allocated range. */
-        [[nodiscard]] virtual TExpected<void, FRHIError> Free ( FRHIDescriptorAllocation InAllocation ) noexcept = 0;
+        [[nodiscard]] virtual FRHIExpected Free ( FRHIDescriptorAllocation InAllocation ) noexcept = 0;
 
         /** @brief Recycles ranges whose GPU use has completed. */
         virtual void Reset () noexcept = 0;
