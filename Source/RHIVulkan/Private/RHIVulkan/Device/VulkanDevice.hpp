@@ -56,9 +56,17 @@ namespace RHIVulkan
 
         [[nodiscard]] TExpected<TSharedRef<RHI::IRHIBuffer>, RHI::FRHIError>
         CreateBuffer ( const RHI::FRHIBufferDesc &InDesc ) noexcept override;
+        [[nodiscard]] TExpected<TSharedRef<RHI::IRHIBuffer>, RHI::FRHIError>
+        CreatePlacedBuffer ( const RHI::FRHIBufferDesc &InDesc,
+                             TSharedRef<RHI::IRHIHeap> InHeap,
+                             const RHI::FRHIAllocation &InAllocation ) noexcept override;
 
         [[nodiscard]] TExpected<TSharedRef<RHI::IRHITexture>, RHI::FRHIError>
         CreateTexture ( const RHI::FRHITextureDesc &InDesc ) noexcept override;
+        [[nodiscard]] TExpected<TSharedRef<RHI::IRHITexture>, RHI::FRHIError>
+        CreatePlacedTexture ( const RHI::FRHITextureDesc &InDesc,
+                              TSharedRef<RHI::IRHIHeap> InHeap,
+                              const RHI::FRHIAllocation &InAllocation ) noexcept override;
 
         [[nodiscard]] TExpected<TSharedRef<RHI::IRHITextureView>, RHI::FRHIError>
         CreateTextureView ( const RHI::FRHITextureViewDesc &InDesc ) noexcept override;

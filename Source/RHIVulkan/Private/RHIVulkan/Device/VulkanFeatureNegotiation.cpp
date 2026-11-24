@@ -3,7 +3,7 @@
  * @brief Implements Vulkan device capability/limit gate and feature-chain assembly.
  */
 
-#include <RHI/Module/RHIDeviceDesc.hpp>
+#include <RHI/Device/RHIBackendSupport.hpp>
 #include <RHI/Types/RHIQueueType.hpp>
 
 #include <RHIVulkan/Device/VulkanFeatureNegotiation.hpp>
@@ -53,25 +53,9 @@ void AppendUniqueFamilyIndex ( Lumen::TVector<Lumen::UInt32> &InOutFamilies, Lum
 Lumen::TExpected<Lumen::RHIVulkan::FVulkanNegotiatedDeviceConfig, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::NegotiateVulkanDeviceFeatures ( const FVulkanAdapter &InAdapter, const RHI::FRHIDeviceDesc &InDesc ) noexcept
 {
-    LUMEN_EXPECT( DescValidation, InDesc.Validate() );
-    LUMEN_EXPECT( CapValidation, InDesc.RequiredCapabilities.Validate() );
+    LUMEN_EXPECT( CapabilityGate, RHI::CheckRHICapabilityGate( InAdapter.Info, InDesc ) );
 
     const RHI::FRHICapabilities &Supported = InAdapter.Info.Capabilities;
-    const RHI::FRHICapabilities &Required  = InDesc.RequiredCapabilities;
-
-    /** TODO(M0-R1): delegate feature gating to public RHI::CheckRHICapabilityGate once RHIBackendSupport.hpp lands. */
-    if ( not Supported.Supports( Required.Features ) )
-    {
-        return TUnexpected( RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Capability,
-                                                     "Selected Vulkan adapter lacks requested capability flags." ) );
-    }
-
-    if ( Required.ShaderModelMajor > Supported.ShaderModelMajor or
-         ( Required.ShaderModelMajor == Supported.ShaderModelMajor and Required.ShaderModelMinor > Supported.ShaderModelMinor ) )
-    {
-        return TUnexpected( RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Capability,
-                                                     "Selected Vulkan adapter lacks requested shader model version." ) );
-    }
 
     FVulkanNegotiatedDeviceConfig Config{};
     Config.NegotiatedCapabilities = Supported;

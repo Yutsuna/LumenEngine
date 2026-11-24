@@ -3,6 +3,7 @@
  * @brief Implements Vulkan logical device creation, queue lookup, idle, and V2 factory stubs.
  */
 
+#include "RHI/Types/RHIError.hpp"
 #include <RHIVulkan/Device/VulkanDevice.hpp>
 
 #include <RHI/Bindings/IRHIBindingLayout.hpp>
@@ -78,9 +79,9 @@ Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDevice>, Lumen::RHI::FRHIErro
     VkDeviceCreateInfo DeviceCreateInfo{};
     DeviceCreateInfo.sType                   = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
     DeviceCreateInfo.pNext                   = &Config.Features2;
-    DeviceCreateInfo.queueCreateInfoCount    = static_cast<uint32_t>( QueueCreateInfos.size() );
+    DeviceCreateInfo.queueCreateInfoCount    = static_cast<UInt32>( QueueCreateInfos.size() );
     DeviceCreateInfo.pQueueCreateInfos       = QueueCreateInfos.data();
-    DeviceCreateInfo.enabledExtensionCount   = static_cast<uint32_t>( Config.EnabledExtensions.size() );
+    DeviceCreateInfo.enabledExtensionCount   = static_cast<UInt32>( Config.EnabledExtensions.size() );
     DeviceCreateInfo.ppEnabledExtensionNames = Config.EnabledExtensions.empty() ? nullptr : Config.EnabledExtensions.data();
 
     FVulkanDeviceHandle NativeDevice;
@@ -176,10 +177,26 @@ Lumen::RHIVulkan::FVulkanDevice::CreateBuffer ( const RHI::FRHIBufferDesc & ) no
     LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateBuffer", RHI::ERHIErrorCondition::Resource );
 }
 
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
+Lumen::RHIVulkan::FVulkanDevice::CreatePlacedBuffer ( const RHI::FRHIBufferDesc &,
+                                                      TSharedRef<RHI::IRHIHeap>,
+                                                      const RHI::FRHIAllocation & ) noexcept
+{
+    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreatePlacedBuffer", RHI::ERHIErrorCondition::Resource );
+}
+
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::FVulkanDevice::CreateTexture ( const RHI::FRHITextureDesc & ) noexcept
 {
     LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateTexture", RHI::ERHIErrorCondition::Resource );
+}
+
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
+Lumen::RHIVulkan::FVulkanDevice::CreatePlacedTexture ( const RHI::FRHITextureDesc &,
+                                                       TSharedRef<RHI::IRHIHeap>,
+                                                       const RHI::FRHIAllocation & ) noexcept
+{
+    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreatePlacedTexture", RHI::ERHIErrorCondition::Resource );
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITextureView>, Lumen::RHI::FRHIError>
