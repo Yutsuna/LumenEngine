@@ -3,6 +3,8 @@
  * @brief Unit tests for the FFile filesystem facade.
  */
 
+#include "FilesystemTestHelper.hpp"
+
 #include <Filesystem/Directory.hpp>
 #include <Filesystem/File.hpp>
 #include <Filesystem/Path.hpp>
@@ -15,29 +17,7 @@
 namespace
 {
 
-Lumen::Filesystem::FPath GetTestPath ( const Lumen::AnsiChar *InName )
-{
-    return Lumen::Filesystem::FPath( "LumenFilesystemTests" ) / Lumen::FStringView( InName );
-}
-
-struct FScopedTestDir
-{
-    Lumen::Filesystem::FPath Path;
-
-    explicit FScopedTestDir ( const Lumen::AnsiChar *InName, Lumen::Bool bCreate = true ) : Path( GetTestPath( InName ) )
-    {
-        Lumen::Filesystem::FDirectory::Delete( Path, true );
-        if ( bCreate )
-        {
-            Lumen::Filesystem::FDirectory::CreateDirectories( Path );
-        }
-    }
-
-    ~FScopedTestDir ()
-    {
-        Lumen::Filesystem::FDirectory::Delete( Path, true );
-    }
-};
+using Lumen::Tests::FScopedTestDir;
 
 /**
  * FFile::Exists
