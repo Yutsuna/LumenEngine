@@ -29,7 +29,7 @@ TSharedRef<Type>::TSharedRef( const Internal::TRawPtrProxy<OtherType> &Proxy ) n
     /** NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) */
     : Object( Proxy.Object ), Controller( new Internal::TDefaultReferenceController<OtherType>( Proxy.Object ) )
 {
-    assert( Object != nullptr );
+    LUMEN_ASSERT( Object != nullptr );
 }
 
 template <typename Type>
@@ -122,7 +122,7 @@ template <typename Type>
 TSharedRef<Type>::TSharedRef( Type *InObject, Internal::FReferenceController *InController ) noexcept
     : Object( InObject ), Controller( InController )
 {
-    assert( InObject != nullptr );
+    LUMEN_ASSERT( InObject != nullptr );
 }
 
 template <typename Type> void TSharedRef<Type>::Release () noexcept

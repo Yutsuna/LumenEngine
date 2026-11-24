@@ -7,7 +7,6 @@
 
 #include <Memory/UniquePtr.hpp>
 
-#include <cassert>
 #include <utility>
 
 namespace Lumen
@@ -112,13 +111,13 @@ template <typename Type, typename Deleter> TUniquePtr<Type, Deleter> &TUniquePtr
 
 template <typename Type, typename Deleter> Type &TUniquePtr<Type, Deleter>::operator*() const noexcept
 {
-    assert( IsValid() );
+    LUMEN_ASSERT( IsValid() );
     return *Object;
 }
 
 template <typename Type, typename Deleter> Type *TUniquePtr<Type, Deleter>::operator->() const noexcept
 {
-    assert( IsValid() );
+    LUMEN_ASSERT( IsValid() );
     return Object;
 }
 
@@ -217,7 +216,7 @@ TUniquePtr<Type[], Deleter> &TUniquePtr<Type[], Deleter>::operator=( NullPtrType
 
 template <typename Type, typename Deleter> Type &TUniquePtr<Type[], Deleter>::operator[]( const USize Index ) const noexcept
 {
-    assert( IsValid() );
+    LUMEN_ASSERT( IsValid() );
     return Object[Index];
 }
 

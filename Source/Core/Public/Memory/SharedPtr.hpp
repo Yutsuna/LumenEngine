@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
+
 #include <Concepts/ConvertibleTo.hpp>
 #include <Concepts/IsVoid.hpp>
 #include <Core/CoreTypes.hpp>

@@ -7,8 +7,6 @@
 
 #include <Memory/SharedPtr.hpp>
 
-#include <cassert>
-
 namespace Lumen
 {
 
@@ -93,13 +91,13 @@ template <typename Type> TSharedPtr<Type> &TSharedPtr<Type>::operator=( const TS
 
 template <typename Type> Type &TSharedPtr<Type>::operator*() const noexcept
 {
-    assert( IsValid() );
+    LUMEN_ASSERT( IsValid() );
     return *Object;
 }
 
 template <typename Type> Type *TSharedPtr<Type>::operator->() const noexcept
 {
-    assert( IsValid() );
+    LUMEN_ASSERT( IsValid() );
     return Object;
 }
 

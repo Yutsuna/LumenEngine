@@ -143,6 +143,11 @@ public:
         return TUniquePtr( new Type( Invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ) );
     }
 
+    void MonadicConsume () noexcept
+    {
+        Reset();
+    }
+
 private:
 
     Type *Object;
