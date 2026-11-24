@@ -4,7 +4,15 @@
   (`vulkan-loader`, `vulkan-headers`, validation layers and `vulkan-tools`
   provided by the Nix devshell). White-box tests reuse the implementation objects
   statically without exporting private symbols from the shared library.
-- **Status:** built. `Source/RHIVulkan/{Private,Public,Tests}` contain the
-  backend scaffolding, handle wrappers, RHI-to-Vulkan type mappings, checked
+- **Status:** built; V2 remains in progress. Vulkan 1.4 is required for the
+  loader, instance and adapters. `Source/RHIVulkan/{Private,Public,Tests}` contain
+  the backend scaffolding, handle wrappers, RHI-to-Vulkan type mappings, checked
   conversions and result translation. Listed in `ModuleNames`. Do not depend on
   it from production renderer code yet.
+- **Tests:** the standard test runner builds 82 backend-local tests covering
+  native-free utilities, synthetic negotiation and real module/device/queue
+  integration. No shared-conformance factory or custom driver-policy runner is
+  currently wired into the module. V3+ resources, submission and presentation
+  remain absent.
+- **Shaders:** shader build tools are available in the devshell, but there is no
+  shader-generation target or generated shader artifact in the module.

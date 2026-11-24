@@ -39,6 +39,9 @@ meson setup Build --reconfigure
   tooling. Don't "fix" that config by adding it back.
 - `meson.options`: `enable_testing`, `enable_benchmarking` (default true),
   `enable_lto` (release buildtype only, default false).
+- The project default is `b_ndebug=if-release`: `LUMEN_ASSERT` traps in Debug
+  and compiles out in Release. Keep Debug assertion-enabled when testing
+  preconditions.
 - Nix devshell (`Nix/shell.nix`, `Nix/deps.nix`): GCC, Meson, Ninja, SDL3,
   Vulkan loader/headers, clang-tools, shaderc, spirv-tools and spirv-cross;
   exports `LD_LIBRARY_PATH`, sets `VK_LAYER_PATH` to validation layers, links

@@ -28,13 +28,13 @@ variables, atomic bitsets, locks, the HAL and the algorithms.
 | `Templates/Queue.hpp` | `TQueue<T>` | FIFO (`std::queue` equivalent) |
 | `Templates/Variant.hpp` | `TVariant<…>` | type-safe union |
 | `Templates/Optional.hpp` | `TOptional<T>` | maybe-value (hand-written) |
-| `Templates/Expected.hpp` (+ `Unexpected.hpp`, `Monadic.hpp`, `MonadicDetails.hpp`) | `TExpected<T, E>`, `TUnexpected<E>`, `MakeUnexpected`, `Unexpect`, `FMonadic`, `Transform`/`AndThen`/`OrElse`/`Inspect`/`ValueOr`; concepts `CMonadic`, `CTransformable`, `CBindable`, `CRecoverable` (`TOptional` and non-array `TUniquePtr` also inherit `FMonadic`) | error propagation without exceptions |
+| `Templates/Expected.hpp` (+ `Unexpected.hpp`, `Monadic.hpp`, `MonadicDetails.hpp`) | `TExpected<T, E>`, `TUnexpected<E>`, `MakeUnexpected`, `Unexpect`, `FMonadic`, `Transform`/`AndThen`/`OrElse`/`Inspect`/`ValueOr`/`ValueOrElse`; concepts `CMonadic`, `CTransformable`, `CBindable`, `CRecoverable` (`TOptional` and non-array `TUniquePtr` also inherit `FMonadic`) | error propagation without exceptions |
 | `Templates/Function.hpp` | `TFunction<Signature>` | type-erased callable (`std::function` equivalent) |
 | `String/String.hpp`, `String/StringView.hpp`, `String/StringUtils.hpp` | `FString`, `FStringView`; `IsSpace`, `ToLower`/`ToLowerInline`, `EqualsIgnoreCase`, `StripParam`/`StripDashes`/`AsOption` | all text handling (currently aliases; TODO real types) |
 | `Memory/UniquePtr.hpp`, `Memory/SharedPtr.hpp`, `Memory/Span.hpp` | `TUniquePtr`/`MakeUnique`, `TSharedPtr`/`TSharedRef`, `MakeShared` (returns `TSharedRef`)/`MakeSharedRef`/`MakeShareable`, `StaticCastSharedPtr`/`StaticCastSharedRef`, `TSpan` | memory ownership (no raw `new`) |
 | `Memory/IndiceAllocator.hpp` | `FIndiceAllocator` (free-list, first-fit), `FIndiceHeapAllocator` (bitmap), `FIndiceAllocation`, `FIndiceAllocatorRange` | thread-safe index/descriptor allocation, variable-size or fixed-size |
 | `Core/CoreTypes.hpp` | `Int8`…`UInt64`, `Float32/64`, `AnsiChar`, `WideChar`, `Byte`, `Bool`, `USize`, `ISize`, `UPtr/IPtr`, `NullPtrType`, `AlwaysFalseV`, `TVoid`/`TVoidT`, `TAtomic<T>`, `FAtomicFlag` | Lumen typedefs, compile-time helpers and atomics |
-| `Core/CoreDefinitions.hpp` | `LUMEN_PLATFORM_{UNIX,WINDOWS,LINUX,MACOS}`, `LUMEN_ARCH_*`, `LUMEN_COMPILER_*`, `LUMEN_PATH_SEPARATOR`, `LUMEN_NEWLINE`, `LUMEN_SHARED_LIB_EXTENSION`, `LUMEN_EXIT_SUCCESS`/`LUMEN_EXIT_FAILURE`, `LUMEN_FORCE_INLINE`/`LUMEN_NO_INLINE`, `LUMEN_UNUSED`, `LUMEN_DISABLE_UBSAN` | platform/compiler gating, path/exit constants and inline attributes |
+| `Core/CoreDefinitions.hpp` | `LUMEN_PLATFORM_{UNIX,WINDOWS,LINUX,MACOS}`, `LUMEN_ARCH_*`, `LUMEN_COMPILER_*`, `LUMEN_PATH_SEPARATOR`, `LUMEN_NEWLINE`, `LUMEN_SHARED_LIB_EXTENSION`, `LUMEN_EXIT_SUCCESS`/`LUMEN_EXIT_FAILURE`, `LUMEN_FORCE_INLINE`/`LUMEN_NO_INLINE`, `LUMEN_ASSERT`, `LUMEN_UNUSED`, `LUMEN_DISABLE_UBSAN` | platform/compiler gating, path/exit constants and inline attributes |
 
 ### Algorithms and utilities
 
@@ -45,12 +45,12 @@ variables, atomic bitsets, locks, the HAL and the algorithms.
 | `Algo/ForEach.hpp` | `Algo::ForEach`, predicate-filtered `ForEach`, `Algo::ForEachUntil` (early-exit variants) | iterating ranges |
 | `Algo/Any.hpp` | `Algo::AnyOf` | any element matches a predicate, without `std::any_of` |
 | `Algo/Equal.hpp` | `Algo::Equal` (with optional binary predicate) | comparing two ranges, without `std::equal` |
-| `Algo/RangeTraits.hpp` | `TRangeElementPtr`, `TRangeElementValue`, `TRangeReferenceT` (`Algo::Internal`) | range introspection shared by the Algo implementations |
+| `Algo/Range.hpp` (`RangeTraits.hpp` compatibility header) | `Algo::Begin`/`End`/`IterMove`; `Concepts::CRange`, `CInputRange`, `CRandomAccessRange`, `CCommonRange`, `CBorrowedRange`; range type traits (`Algo::Internal`) | range access and introspection without `std::ranges`; `EnableBorrowedRangeV` marks non-owning views |
 | `Templates/Hash.hpp` | `FHash::TypeHash<T>()` | compile-time stable type hashing |
 | `Templates/Invoke.hpp` | `Invoke`, `TInvokeResult`/`TInvokeResultT`, `TIsInvocable`/`TIsInvocableV`, `CIsInvocable` (in `Lumen`) | invoking callables/member pointers without `std::invoke` |
 | `Templates/AtomicBitset.hpp` | `FAtomicBitset` (`Resize`/`ClearAll`/`GetNumBits`, `Set`/`Clear`/`Test`/`ForEachSetBitAndClear`) | concurrent dirty tracking / flag sets |
 | `Core/EnumFlags.hpp`, `Core/NonCopyable.hpp`, `Core/NonMovable.hpp` | `LUMEN_ENUM_FLAGS`, `FNonCopyable`, `FNonMovable` | bitmask enums, reuse control |
-| `Concepts/*.hpp` | `CConstructibleFrom`, `CConvertibleTo`, `CIsBool`, `CIsIntegral`, `CIsInvocable`, `CIsLockable`, `CIsStringLike`, `CIsVoid`, `CSameAs`/`CIsSame`, `CSortableRange`, `CTriviallyCopyable` | constraining templates; use these instead of `std::` concepts (full list in `rules/core-first.md`) |
+| `Concepts/*.hpp` | `CConstructibleFrom`, `CConvertibleTo`, `CIsBool`, `CIsIntegral`, `CIsInvocable`, `CIsLockable`, `CIsStringLike`, `CIsVoid`, `CSameAs`/`CIsSame`, `CRange`/`CInputRange`/`CRandomAccessRange`/`CCommonRange`/`CBorrowedRange`, `CSortableRange`, `CTriviallyCopyable` | constraining templates; use these instead of `std::` concepts (full list in `rules/core-first.md`) |
 
 ### Threading and synchronization
 

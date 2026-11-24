@@ -60,7 +60,7 @@ condition variables, locks, the HAL and the algorithms).
 | Variant visitation | hand-written overload set for `std::visit` | `Meta::Overloaded` (`Meta/Overloaded.hpp`) |
 | Maybe-value | `std::optional` | `TOptional<T>` (`Templates/Optional.hpp`) |
 | Error value | `std::expected` | `TExpected<T, E>` + `TUnexpected<E>`, `Unexpect`, `MakeUnexpected` (`Templates/Expected.hpp`, `Templates/Unexpected.hpp`) |
-| Monadic pipeline | ad-hoc `if` chains | `FMonadic`: `Transform` / `AndThen` / `OrElse` / `Inspect` / `ValueOr` (`Templates/Monadic.hpp`; inherited by `TOptional`, `TExpected` and non-array `TUniquePtr`) |
+| Monadic pipeline | ad-hoc `if` chains | `FMonadic`: `Transform` / `AndThen` / `OrElse` / `Inspect` / `ValueOr` / `ValueOrElse` (`Templates/Monadic.hpp`; inherited by `TOptional`, `TExpected` and non-array `TUniquePtr`) |
 | Callable | `std::function` | `TFunction<Signature>` (`Templates/Function.hpp`) |
 | String / view | `std::string` / `std::string_view` | `FString` / `FStringView` |
 | Span | `std::span` | `TSpan<T>` (`Memory/Span.hpp`) |
@@ -90,6 +90,7 @@ condition variables, locks, the HAL and the algorithms).
 | Enum → name / reflection / JSON | ad-hoc `switch` / macros | `CReflected`, `Meta::EnumName`, `Meta::EnumQualifiedName` (`Meta/Reflection.hpp`), `Meta::SerializeToJSON` (`Meta/SerializeToJSON.hpp`) |
 | Invoke | `std::invoke` | `Invoke`, `TInvokeResult` / `TInvokeResultT`, `TIsInvocable` / `TIsInvocableV` (`Templates/Invoke.hpp`) |
 | Sort | `std::sort` / `std::stable_sort` | `Algo::Sort` / `Algo::StableSort` (`Algo/Sort.hpp`; introsort variants in `Algo/{IntroSort,QuickSort,HeapSort,InsertionSort}.hpp`) |
+| Range access / traits | `std::ranges` | `Algo::Begin` / `End` / `IterMove`, `Concepts::CRange` / `CInputRange` / `CBorrowedRange` (`Algo/Range.hpp`) |
 | Find | `std::find*` | `Algo::Find*` + `…OrNone` (`Algo/Find.hpp`) |
 | For-each | `std::for_each` | `Algo::ForEach` / `Algo::ForEachUntil` (`Algo/ForEach.hpp`) |
 | Any match | `std::any_of` | `Algo::AnyOf` (`Algo/Any.hpp`) |
@@ -101,11 +102,13 @@ Platform, compiler and build-level definitions come from
 `LUMEN_ARCH_*` and `LUMEN_COMPILER_*` instead of raw `_WIN32`, `__linux__`,
 `__clang__`, etc.; use `LUMEN_FORCE_INLINE`/`LUMEN_NO_INLINE`,
 `LUMEN_UNUSED` and `LUMEN_EXIT_SUCCESS`/`LUMEN_EXIT_FAILURE` instead of
-compiler-specific attributes or literal exit codes.
+compiler-specific attributes or literal exit codes. Use `LUMEN_ASSERT` for
+runtime preconditions: it traps on an `[[unlikely]]` branch in Debug and is
+removed under `NDEBUG`; use `static_assert` for compile-time invariants.
 
 Facilities with no Core equivalent (`std::tuple`, `std::index_sequence`,
-`std::bit_cast`, non-atomic `std::bitset`, raw `std::ranges` plumbing) remain
-allowed until Core grows one.
+`std::bit_cast`, non-atomic `std::bitset`) remain allowed until Core grows one.
+Range access and range concepts use `Algo/Range.hpp`, not `std::ranges`.
 
 ## Concepts: use Core's, not std's
 
@@ -124,6 +127,7 @@ constraints instead of spelling out `std::constructible_from`,
 | `Concepts/IsStringLike.hpp` | `CIsStringLike` |
 | `Concepts/IsVoid.hpp` | `CIsVoid` |
 | `Concepts/SameAs.hpp` | `CSameAs`, `CIsSame` |
+| `Algo/Range.hpp` | `CRange`, `CInputRange`, `CRandomAccessRange`, `CCommonRange`, `CBorrowedRange` |
 | `Concepts/Sortable.hpp` | `CSortableRange` |
 | `Concepts/TriviallyCopyable.hpp` | `CTriviallyCopyable` |
 | `Templates/Invoke.hpp` | `CIsInvocable` (in `Lumen`, companion to `Invoke`) |
@@ -146,7 +150,8 @@ throwing; they are part of the type system:
 - **Pipeline** → combine results with the **Monadic** operations of
   `Templates/Monadic.hpp`: `Transform` (T->U), `AndThen` (bind into another
   valid value), `OrElse` (recover from an error), `Inspect` (peek without
-  changing the container) and `ValueOr` (unwrap with a fallback). Do not
+  changing the container), `ValueOr` (unwrap with a fallback) and
+  `ValueOrElse` (lazy fallback). Do not
   unwrap with ad-hoc `if (opt) {...}` chains across a public API; express the
   whole flow monadically.
 
@@ -156,8 +161,8 @@ For signatures, the propagation macros, worked recipes and pitfalls, follow
 Why this is enforced:
 
 - **Paradigm** — error handling and absence are explicit in signatures;
-  `Transform`/`AndThen`/`OrElse`/`Inspect`/`ValueOr` compose failure handling
-  once, instead of repeating checks at every call site.
+  `Transform`/`AndThen`/`OrElse`/`Inspect`/`ValueOr`/`ValueOrElse` compose
+  failure handling once, instead of repeating checks at every call site.
 - **Safety** — nothing can escape a `noexcept` frame or an actor boundary;
   the compiler forces callers to consume the `TOptional`/expected value, so
   ignored error states become review findings rather than runtime surprises.

@@ -115,9 +115,11 @@ if ( FRecord *Found = Algo::ForEachUntil( Records, [] ( const FRecord &InRecord 
 }
 ```
 
-Returns a pointer into the range (or `nullptr`). Do not call this on a
-temporary range — the pointer would dangle. For a *copy* instead, use
-`FindIfOrNone( Range, Predicate )` → `TOptional<ElementValue>`.
+Returns a pointer into the range (or `nullptr`). The range must satisfy
+`Concepts::CBorrowedRange` (an lvalue or a view marked `EnableBorrowedRangeV`),
+and its reference type must be a real reference; temporary owning ranges and
+proxy ranges are rejected at compile time. For an extracted value instead, use `FindIfOrNone( Range, Predicate )`
+→ `TOptional<ElementValue>`.
 
 ## 1.5 `for` + `if` + action + early `return true` → `ForEachUntil( Range, Pred, Func )`
 
@@ -212,8 +214,15 @@ TOptional<TSharedPtr<FLinuxWindow>> FindWindowByID ( const SDL_WindowID InWindow
 
 `FindIf`, `Find`, `FindIfNot`, `FindIfEqual` exist for iterator pairs **and**
 ranges; the `…OrNone` variants return `TOptional<Iterator>` (iterator form) or
-`TOptional<ElementValue>` (range form — the element is **copied**). Use
+`TOptional<ElementValue>` (range form). The element is copied from an lvalue
+or borrowed range and moved only from a non-borrowed rvalue range. Use
 iterator/pointer overloads when you need identity or mutation.
+
+`Find( First, Last, Value )` has a specialized runtime path for contiguous
+integral elements when the probe has the exact same type: byte searches use
+`memchr`; x86-64 searches on 16/32/64-bit elements use SSE2 with a scalar tail.
+Constant evaluation and other types keep the portable scalar loop. `FindIf`
+never speculatively invokes predicates beyond the first match.
 
 ## 1.8 Sort / equality
 
@@ -267,10 +276,14 @@ FString &Slot = Name.Emplace( "New" );           // constructs in place, returns
 TOptional<FString> Copy( "Value" );              // value ctor is explicit
 ```
 
-`operator*`, `operator->` return by forward (`decltype(auto)`); no copy.
+`operator*` forwards the value category without copying; `operator->` returns
+the real payload address. Both check engagement with `LUMEN_ASSERT` (Debug trap,
+removed under `NDEBUG`). Copy/move assignment is
+available for assignable payloads. Trivial payloads make the corresponding
+special members trivial, so `TOptional<Int32>` is trivially copyable.
 `IsOptionalV<T>` is the trait.
 
-## 2.2 "Missing → fallback" → `ValueOr`
+## 2.2 "Missing → fallback" → `ValueOr` / `ValueOrElse`
 
 Before:
 
@@ -283,6 +296,16 @@ After (`RHIVulkan/Tests/Types/VulkanTypeMappingTests.cpp`):
 
 ```cpp
 const UInt32 Native = ToVulkanSampleCount( Format ).ValueOr( VK_SAMPLE_COUNT_1_BIT );
+```
+
+For an expensive fallback, `ValueOrElse` invokes its zero-argument producer
+only when empty:
+
+```cpp
+const UInt32 Native = ToVulkanSampleCount( Format ).ValueOrElse( [] () noexcept
+{
+    return ComputeNativeSampleCount();
+} );
 ```
 
 ## 2.3 "Missing → produce a fallback container" → `OrElse` (yes, it works on `TOptional`)
@@ -439,6 +462,12 @@ return MakeUnexpected( std::forward<decltype( Result )>( Result ).Error() ); // 
 `->` exists on the value-carrying one. `Error()` asserts the object holds an
 error. Forwarding the result before calling `Error()` is what lets the macros
 move instead of copy.
+
+For non-trivial payloads, assignment uses a temporary and a non-throwing
+`Swap`, giving the destination a strong exception guarantee without
+allocation. This requires nothrow move construction, swap and destruction for
+both payload types. Trivial payloads keep trivial special members;
+`TExpected<Int32, Int32>` and `TExpected<void, Int32>` are trivially copyable.
 
 ## 3.4 Propagate another expected's failure → `LUMEN_EXPECT( Var, Expr )`
 
@@ -598,7 +627,7 @@ value. For value types it receives `const T &`. It returns the same container
 (lvalue in → lvalue reference out); it is not `[[nodiscard]]`, so discarding
 it is fine.
 
-## 3.10 Unwrap with a fallback → `.ValueOr()`
+## 3.10 Unwrap with a fallback → `.ValueOr()` / `.ValueOrElse()`
 
 Before:
 
@@ -613,7 +642,8 @@ After:
 const UInt32 Value = Parsed.ValueOr( Fallback );
 ```
 
-Not available for `void`-valued containers (there is no value to return).
+`ValueOrElse( Func )` takes a zero-argument producer and calls it only on
+absence/error. Neither operation is available for `void`-valued containers.
 
 ## 3.11 Cross-family bridge (no combinator exists)
 
@@ -634,7 +664,7 @@ the failure) — add the explicit branch.
 
 ---
 
-# 4. `FMonadic` reference (all five methods)
+# 4. `FMonadic` reference (all six methods)
 
 | Method | Callback input | Return | Skipped when |
 | --- | --- | --- | --- |
@@ -643,14 +673,19 @@ the failure) — add the explicit branch.
 | `OrElse` | `Error()` for `TExpected`, none for `TOptional` | exact same container type | value present |
 | `Inspect` | `const T &`, or none for `void` values | same container (`Self&` for lvalue) | empty / error |
 | `ValueOr` | — | unwrapped `T` or fallback | (always evaluates fallback) |
+| `ValueOrElse` | — | unwrapped `T` or callback result | value present |
 
-All are `constexpr`; `Transform`, `AndThen`, `OrElse`, `ValueOr` are
+All are `constexpr`; `Transform`, `AndThen`, `OrElse`, `ValueOr`, `ValueOrElse` are
 `[[nodiscard]]`; every success path is `[[likely]]`. `noexcept` is computed
 from the callbacks — mark them `noexcept`. `Transform` decays reference-return
 callbacks to values (no container of references). `Rebind<NewValueType>` is
 required on custom containers; hooks in `Templates/MonadicDetails.hpp` are
-`static MonadicFail( Src&& )`, `static MonadicEmplace( Func&&, Args&& )` and
-`Error()`. Tests/contract: `Source/Core/Tests/Functional/Templates/MonadicTests.cpp`.
+`static MonadicFail( Src&& )`, `static MonadicEmplace( Func&&, Args&& )`,
+`MonadicConsume()` and `Error()`. `TOptional` and `TExpected` construct the
+`Transform` result directly in storage. On rvalues, `MonadicConsume` resets
+`TOptional`/`TUniquePtr` after the result is built instead of move-constructing
+a guard; containers without the hook need no additional operation.
+Tests/contract: `Source/Core/Tests/Functional/Templates/MonadicTests.cpp`.
 
 ---
 
@@ -666,7 +701,7 @@ conditional, or a second pass where one pass sufficed.
 | `ForEach` / filtered `ForEach` | One range-for, callable bound once, same branch as manual `if`. |
 | `ForEachUntil( Range, Pred, Func )` | Delegates to `AnyOf`; `Pred and Func` short-circuits; one pass. |
 | `AnyOf` / `Find*` / `Algo::Equal` | One pass, early return where applicable. |
-| `LUMEN_EXPECT` / `LUMEN_TRY_*` | One `[[unlikely]]` branch (the one manual code needs); `do/while(false)` is optimized away. No copy on rvalues (`Error()` is forwarded). |
+| `LUMEN_EXPECT` / `LUMEN_TRY_*` | One `[[unlikely]]` branch (the one manual code needs); `do/while(false)` is optimized away. Success binds a reference without copying on lvalues and rvalues; failures forward `Error()`. |
 | `Transform` / `AndThen` / `Inspect` / `OrElse` on lvalues | One `Has()` check, then direct construction/return; no second pass. |
 | `not AnyOf( Range, not Pred )` for "all" | One pass, same predicate calls — no `AllOf` needed. |
 
@@ -679,20 +714,19 @@ conditional, or a second pass where one pass sufficed.
 | Lockstep iteration over two ranges | No `zip`. | Manual two-iterator loop. `ForEach` over one range + lookup in the other adds a search per element (O(n·m)). |
 | Early exit that returns an **accumulated value** | `ForEachUntil` returns only a pointer or `Bool`. | Manual loop, or capture an accumulator by reference in the callback (works, but less clear). |
 | Nested early exits across two loops | No cross-loop combinator. | Manual loops. A `bFound` flag plus a second pass would be two iterations. |
-| Proxy ranges whose `operator*` returns by value | `ForEachUntil`/`Find` return `&Item` — would dangle. | Iterator-based algorithms or a manual loop. |
+| Pointer result from a proxy range | Pointer-returning `ForEachUntil`/`Find` reject ranges whose `operator*` does not return a real reference. | Iterator-based algorithms or a manual loop. |
 | Change the **error type** while recovering | `OrElse` must return the same container; there is no `MapError`. | Manual branch constructing the new error type. |
 | Cross-family chain (`TOptional` → `TExpected`) | No combinator can synthesize an error. | Explicit `if` bridge (§3.11). |
-| Void-value `Transform` / `ValueOr` | Constraints exclude them. | `AndThen` with a zero-arg callback; `Inspect` for side effects. |
+| Void-value `Transform` / `ValueOr` / `ValueOrElse` | Constraints exclude them. | `AndThen` with a zero-arg callback; `Inspect` for side effects. |
 | Container of references from `Transform` | Result references are deliberately decayed. | Store a pointer, or restructure the data flow. |
 
 ## 5.3 Expressible, but has a measurable cost — measure before using in hot paths
 
 | Case | Cost | Recommendation |
 | --- | --- | --- |
-| `Find*OrNone` on a **range** | Returns `TOptional<ElementValue>` — copies the element (refcount bump for `TSharedRef`, string copy for `FString`). | Use the pointer overload (`FindIf`/`Find`) if identity suffices; see the real `LinuxApplication` example. |
-| `Transform` on an **rvalue** container | Implementation builds `Out Result`, then a `Consumed` local from the moved source (`Templates/Monadic.hpp`): one extra move of the payload vs hand-written code. | Fine for small values; for large payloads in the hottest path, measure or use an lvalue. |
+| `Find*OrNone` on an **lvalue or borrowed range** | Returns `TOptional<ElementValue>` and copies the element (refcount bump for `TSharedRef`, string copy for `FString`). A non-borrowed rvalue range moves it instead. | Use the pointer overload (`FindIf`/`Find`) if identity suffices; see the real `LinuxApplication` example. |
 | `OrElse` on an **lvalue** | Success path copies the container (`CRecoverable` requires constructible-from-Self). | `std::move( Result ).OrElse( … )` when the source can be consumed. |
-| `ValueOr( ComputeFallback() )` | Fallback expression is evaluated **eagerly**, even on success. | Use `OrElse` if the fallback is expensive. |
+| `ValueOr( ComputeFallback() )` | Fallback expression is evaluated **eagerly**, even on success. | Use `ValueOrElse( [] { return ComputeFallback(); } )` to produce it only on absence/error. |
 | `TOptional::Emplace()` on a known-empty optional | Calls `Reset()`, which checks `bHasValue` — one predictable extra branch. | Acceptable; only bypass if profiling says so. |
 | `StableSort` | O(n) auxiliary memory and merge overhead vs `Sort`. | Use `Sort` unless stability is required. |
 | `Inspect`/`AndThen` with a throwing callback | `noexcept` is computed from the callback — the chain loses `noexcept`. | Mark callbacks `noexcept`. |

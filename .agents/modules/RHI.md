@@ -312,9 +312,10 @@ RHI depends only on Core and Maths; no allocator, shader-translation or other
 third-party dependency belongs here. No vendor name, native header, shader
 language or window-system name appears under `Source/RHI`.
 
-Only the Null and validation backends exist; no real graphics backend is
-implemented or claimed to be validated. Optional shader formats, query types
-and presentation results are supplied or gated by the conformance factory, so a
-real backend must validate them independently. Fuzz determinism holds for the
+RHI itself contains only the Null and validation backends. RHIVulkan is a
+separate backend whose V2 module/device implementation is still in progress;
+no shared native conformance is currently wired. Optional shader formats, query
+types and presentation results are supplied or gated by the conformance factory,
+so every backend must validate them independently. Fuzz determinism holds for the
 recorded seed values and is not a collision-freedom proof. Inline and template
 implementations live in neighboring `Inline/` directories.
