@@ -92,7 +92,7 @@ namespace
                 Helpers::FillShape( Values, 5000, Shape, 1234ULL );
 
                 TVector<Int32> Expected = Values;
-                std::ranges::sort( Expected );
+                std::sort( Expected.begin(), Expected.end() );
 
                 std::less<> Predicate;
                 Algo::Internal::IntroSortLoop( Values.begin(), Values.end(), DepthLimit, Predicate );

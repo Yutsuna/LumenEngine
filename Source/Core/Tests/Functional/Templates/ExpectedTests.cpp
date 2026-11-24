@@ -8,6 +8,10 @@
 #include <Templates/Expected.hpp>
 #include <Tests/UnitTest.hpp>
 
+#include <concepts>
+#include <type_traits>
+#include <utility>
+
 namespace Lumen
 {
 
@@ -24,6 +28,67 @@ namespace
         ErrorA = 100,
         ErrorB = 200,
     };
+
+    struct FCopyFailure
+    {
+    };
+
+    struct FThrowingCopyState
+    {
+        Bool bThrow = false;
+    };
+
+    class FThrowingCopy
+    {
+    public:
+
+        FThrowingCopy ( FThrowingCopyState &InState, const Int32 InValue ) noexcept : State( &InState ), Value( InValue )
+        {
+            /** Empty */
+        }
+
+        FThrowingCopy ( const FThrowingCopy &Other ) : State( Other.State ), Value( Other.Value )
+        {
+            if ( State->bThrow )
+            {
+                throw FCopyFailure{};
+            }
+        }
+
+        FThrowingCopy ( FThrowingCopy && ) noexcept                = default;
+        FThrowingCopy &operator=( const FThrowingCopy & ) noexcept = default;
+        FThrowingCopy &operator=( FThrowingCopy && ) noexcept      = default;
+
+        [[nodiscard]] Int32 GetValue () const noexcept
+        {
+            return Value;
+        }
+
+    private:
+
+        FThrowingCopyState *State;
+        Int32 Value;
+    };
+
+    static_assert( std::is_trivially_copy_constructible_v<TExpected<Int32, Int32>> );
+    static_assert( std::is_trivially_move_constructible_v<TExpected<Int32, Int32>> );
+    static_assert( std::is_trivially_copy_assignable_v<TExpected<Int32, Int32>> );
+    static_assert( std::is_trivially_move_assignable_v<TExpected<Int32, Int32>> );
+    static_assert( std::is_trivially_destructible_v<TExpected<Int32, Int32>> );
+    static_assert( std::is_trivially_copyable_v<TExpected<Int32, Int32>> );
+    static_assert( std::is_trivially_copyable_v<TExpected<void, Int32>> );
+    static_assert( not std::is_trivially_copyable_v<TExpected<FString, FString>> );
+    static_assert( sizeof( TExpected<Int32, Int32> ) == 2U * sizeof( Int32 ) );
+    static_assert( sizeof( TExpected<void, Int32> ) == 2U * sizeof( Int32 ) );
+    static_assert( std::same_as<decltype( Internal::UnpackExpected( std::declval<TExpected<Int32, Int32> &>() ) ), Int32 &> );
+    static_assert( std::same_as<decltype( Internal::UnpackExpected( std::declval<TExpected<Int32, Int32> &&>() ) ), Int32 &&> );
+
+    TExpected<void, EExpectedTestError> MutateThroughExpect ( TExpected<FString, EExpectedTestError> &Expected )
+    {
+        LUMEN_EXPECT( Value, Expected );
+        Value.append( "-updated" );
+        return {};
+    }
 
     LUMEN_TEST( Expected_Constructor, ValueLValue )
     {
@@ -211,6 +276,66 @@ namespace
 
         LUMEN_CHECK_FALSE( B.HasValue() );
         LUMEN_CHECK_EQ( B.Error(), "ErrA" );
+    }
+
+    LUMEN_TEST( Expected_CopyAssignment, ThrowPreservesDestination )
+    {
+        FThrowingCopyState State;
+        using FThrowingExpected = TExpected<FThrowingCopy, FThrowingCopy>;
+
+        const FThrowingExpected ValueSource( FThrowingCopy( State, 42 ) );
+        FThrowingExpected ErrorDestination( FUnexpect{}, FThrowingCopy( State, 7 ) );
+        State.bThrow = true;
+
+        Bool bCaught = false;
+        try
+        {
+            ErrorDestination = ValueSource;
+        }
+        catch ( const FCopyFailure & )
+        {
+            bCaught = true;
+        }
+
+        LUMEN_CHECK_TRUE( bCaught );
+        LUMEN_CHECK_FALSE( ErrorDestination.HasValue() );
+        LUMEN_CHECK_EQ( ErrorDestination.Error().GetValue(), 7 );
+
+        const FThrowingExpected ErrorSource( FUnexpect{}, FThrowingCopy( State, 9 ) );
+        FThrowingExpected ValueDestination( FThrowingCopy( State, 11 ) );
+        bCaught = false;
+        try
+        {
+            ValueDestination = ErrorSource;
+        }
+        catch ( const FCopyFailure & )
+        {
+            bCaught = true;
+        }
+
+        LUMEN_CHECK_TRUE( bCaught );
+        LUMEN_CHECK_TRUE( ValueDestination.HasValue() );
+        LUMEN_CHECK_EQ( ValueDestination->GetValue(), 11 );
+
+        State.bThrow     = false;
+        ErrorDestination = ValueSource;
+        LUMEN_CHECK_TRUE( ErrorDestination.HasValue() );
+        LUMEN_CHECK_EQ( ErrorDestination->GetValue(), 42 );
+    }
+
+    LUMEN_TEST( Expected_ExpectMacro, LValueBindsWithoutCopy )
+    {
+        TExpected<FString, EExpectedTestError> Expected( FString( "value" ) );
+        const auto Result = MutateThroughExpect( Expected );
+
+        LUMEN_CHECK_TRUE( Result.HasValue() );
+        LUMEN_CHECK_EQ( *Expected, "value-updated" );
+    }
+
+    LUMEN_TEST( Expected_Operators, ArrowSupportsRvalue )
+    {
+        TExpected<FString, EExpectedTestError> Expected( FString( "value" ) );
+        LUMEN_CHECK_EQ( static_cast<Int32>( std::move( Expected )->size() ), 5 );
     }
 
     LUMEN_TEST( Expected_Operators, Dereference )

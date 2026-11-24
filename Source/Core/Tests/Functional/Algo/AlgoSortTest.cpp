@@ -67,7 +67,7 @@ namespace
 
         Algo::Sort( Values );
 
-        LUMEN_CHECK_TRUE( std::ranges::is_sorted( Values ) );
+        LUMEN_CHECK_TRUE( std::is_sorted( Values.begin(), Values.end() ) );
     }
 
 } // namespace

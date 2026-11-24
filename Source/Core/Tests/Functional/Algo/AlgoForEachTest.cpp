@@ -6,8 +6,11 @@
 #include <Algo/ForEach.hpp>
 #include <Tests/UnitTest.hpp>
 
+#include <Memory/Span.hpp>
 #include <Templates/Array.hpp>
 #include <Templates/Vector.hpp>
+
+#include <utility>
 
 namespace Lumen
 {
@@ -19,6 +22,20 @@ namespace
     {
         return { Values };
     }
+
+    [[nodiscard]] Bool StopImmediately ( const Int32 LUMEN_UNUSED InValue ) noexcept
+    {
+        return true;
+    }
+
+    template <class TRangeType>
+    concept CPointerForEachRange =
+        requires( TRangeType &&Range ) { Algo::ForEachUntil( std::forward<TRangeType>( Range ), &StopImmediately ); };
+
+    static_assert( CPointerForEachRange<TVector<Int32> &> );
+    static_assert( CPointerForEachRange<TSpan<Int32>> );
+    static_assert( not CPointerForEachRange<TVector<Int32>> );
+    static_assert( not CPointerForEachRange<TVector<Bool> &> );
 
     /**
      * ForEach (unconditional)

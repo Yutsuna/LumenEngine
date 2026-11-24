@@ -100,11 +100,11 @@ void Lumen::Tests::SortHelpers::CheckSorterOnShape ( const FIntSorter &InSorter,
     TVector<Int32> Expected = Values;
     if ( bDescending )
     {
-        std::ranges::sort( Expected, std::greater<>{} );
+        std::sort( Expected.begin(), Expected.end(), std::greater<>{} );
     }
     else
     {
-        std::ranges::sort( Expected );
+        std::sort( Expected.begin(), Expected.end() );
     }
 
     InSorter( Values );
@@ -153,7 +153,7 @@ void Lumen::Tests::SortHelpers::CheckStringSorter ( const FStringSorter &InSorte
     }
 
     TVector<FString> Expected = Values;
-    std::ranges::sort( Expected );
+    std::sort( Expected.begin(), Expected.end() );
 
     InSorter( Values );
 

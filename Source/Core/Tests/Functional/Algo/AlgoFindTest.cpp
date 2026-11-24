@@ -7,6 +7,7 @@
 #include <Tests/UnitTest.hpp>
 
 #include <Memory/Span.hpp>
+#include <Memory/UniquePtr.hpp>
 #include <Templates/Array.hpp>
 #include <Templates/Vector.hpp>
 
@@ -45,9 +46,39 @@ namespace
         return ( L % 3 ) == ( R % 3 );
     }
 
+    struct FOverloadedAddress
+    {
+        Int32 Value;
+
+        FOverloadedAddress *operator&() noexcept
+        {
+            return nullptr;
+        }
+    };
+
     [[nodiscard]] TVector<Int32> MakeRange ( const std::initializer_list<Int32> Values )
     {
         return { Values };
+    }
+
+    template <class TElement> void CheckEveryContiguousFindPosition ( const TElement InFill, const TElement InNeedle )
+    {
+        TVector<TElement> Values( 33U, InFill );
+
+        for ( USize Index = 0U; Index < Values.size(); ++Index )
+        {
+            Values[Index] = InNeedle;
+
+            const auto IteratorResult = Algo::Find( Values.begin(), Values.end(), InNeedle );
+            LUMEN_CHECK_TRUE( IteratorResult == Values.begin() + static_cast<ISize>( Index ) );
+
+            const auto *PointerResult = Algo::Find( Values, InNeedle );
+            LUMEN_CHECK_TRUE( PointerResult == Values.data() + Index );
+            Values[Index] = InFill;
+        }
+
+        LUMEN_CHECK_TRUE( Algo::Find( Values.begin(), Values.end(), InNeedle ) == Values.end() );
+        LUMEN_CHECK_TRUE( Algo::Find( Values, InNeedle ) == nullptr );
     }
 
     /** @brief Canonical six-element sequence used by most tests. */
@@ -60,6 +91,15 @@ namespace
      * Compile-time: every overload yields the exact expected type.
      * A refactor that changes an overload's return type fails here before runtime.
      */
+
+    template <class TRangeType>
+    concept CPointerFindRange =
+        requires( TRangeType &&Range ) { Algo::FindIf( std::forward<TRangeType>( Range ), &IsPositive ); };
+
+    static_assert( CPointerFindRange<TVector<Int32> &> );
+    static_assert( CPointerFindRange<TSpan<Int32>> );
+    static_assert( not CPointerFindRange<TVector<Int32>> );
+    static_assert( not CPointerFindRange<TVector<Bool> &> );
 
     // Range overloads (return raw pointer).
     static_assert( Concepts::CIsSame<decltype( Algo::FindIf( std::declval<TVector<Int32> &>(), &IsPositive ) ), Int32 *> );
@@ -110,6 +150,13 @@ namespace
     static_assert( Concepts::CIsSame<decltype( Algo::FindIfEqualOrNone(
                                          std::declval<FIntIterator>(), std::declval<FIntIterator>(), Int32{}, &SameMod3 ) ),
                                      TOptional<FIntIterator>> );
+
+    constexpr Int32 ConstexprFindValues[] = { 7, 7, 42, 7, 7 };
+    static_assert( Algo::Find( ConstexprFindValues, ConstexprFindValues + 5, 42 ) == ConstexprFindValues + 2 );
+    static_assert( Algo::Find( ConstexprFindValues, 42 ) == ConstexprFindValues + 2 );
+    static_assert( Concepts::CBorrowedRange<TSpan<Int32>> );
+    static_assert( Concepts::CBorrowedRange<TVector<Int32> &> );
+    static_assert( not Concepts::CBorrowedRange<TVector<Int32>> );
 
     /**
      * Iterator-based FindIf
@@ -255,6 +302,39 @@ namespace
         TVector<Int32> Values = MakeRange( { 3, 5, 3, 5 } );
         const auto It         = Algo::Find( Values.begin(), Values.end(), 5 );
         LUMEN_CHECK_TRUE( It == Values.begin() + 1 );
+    }
+
+    LUMEN_TEST( Algo_Find_Iter, ContiguousInt16EveryVectorLaneAndTail )
+    {
+        CheckEveryContiguousFindPosition<Int16>( 7, 42 );
+    }
+
+    LUMEN_TEST( Algo_Find_Iter, ContiguousInt32EveryVectorLaneAndTail )
+    {
+        CheckEveryContiguousFindPosition<Int32>( 7, 42 );
+    }
+
+    LUMEN_TEST( Algo_Find_Iter, ContiguousInt64EveryVectorLaneAndTail )
+    {
+        CheckEveryContiguousFindPosition<Int64>( 7, 42 );
+    }
+
+    LUMEN_TEST( Algo_Find_Iter, ContiguousUInt64EveryVectorLaneAndTail )
+    {
+        CheckEveryContiguousFindPosition<UInt64>( 7U, 42U );
+    }
+
+    LUMEN_TEST( Algo_Find_Iter, ContiguousBytesUseExactFirstMatch )
+    {
+        CheckEveryContiguousFindPosition<UInt8>( 7U, 42U );
+        CheckEveryContiguousFindPosition<Int8>( -7, -42 );
+        CheckEveryContiguousFindPosition<AnsiChar>( 'a', 'z' );
+    }
+
+    LUMEN_TEST( Algo_Find_Iter, DifferentValueTypeKeepsScalarPromotionSemantics )
+    {
+        const TVector<UInt8> Values{ 0U, 1U, 2U };
+        LUMEN_CHECK_TRUE( Algo::Find( Values.begin(), Values.end(), 256 ) == Values.end() );
     }
 
     /**
@@ -705,6 +785,47 @@ namespace
         } );
         LUMEN_CHECK_TRUE( Result.HasValue() );
         LUMEN_CHECK_EQ( *Result, "bb" );
+    }
+
+    LUMEN_TEST( Algo_FindIfOrNone_Range, OwningRValueMovesElement )
+    {
+        TVector<TUniquePtr<Int32>> Values;
+        Values.push_back( MakeUnique<Int32>( 1 ) );
+        Values.push_back( MakeUnique<Int32>( 42 ) );
+
+        const auto Result = Algo::FindIfOrNone( std::move( Values ), [] ( const TUniquePtr<Int32> &Value ) noexcept
+        {
+            return Value.IsValid() and *Value == 42;
+        } );
+
+        LUMEN_CHECK_HAS_VALUE( Result );
+        LUMEN_CHECK_EQ( **Result, 42 );
+        LUMEN_CHECK_TRUE( Values[0].IsValid() );
+        LUMEN_CHECK_FALSE( Values[1].IsValid() );
+    }
+
+    LUMEN_TEST( Algo_FindIfOrNone_Range, BorrowedRValueDoesNotMoveElement )
+    {
+        TVector<FString> Values{ FString( "first" ), FString( "borrowed" ) };
+        const auto Result = Algo::FindIfOrNone( TSpan<FString>( Values ), [] ( const FString &Value ) noexcept
+        {
+            return Value == "borrowed";
+        } );
+
+        LUMEN_CHECK_HAS_VALUE( Result );
+        LUMEN_CHECK_EQ( *Result, "borrowed" );
+        LUMEN_CHECK_EQ( Values[1], "borrowed" );
+    }
+
+    LUMEN_TEST( Algo_Find_Range, AddressOfIgnoresOverloadedAddressOperator )
+    {
+        TVector<FOverloadedAddress> Values{ { 1 }, { 42 } };
+        FOverloadedAddress *Result = Algo::FindIf( Values, [] ( const FOverloadedAddress &Value ) noexcept
+        {
+            return Value.Value == 42;
+        } );
+
+        LUMEN_CHECK_TRUE( Result == Values.data() + 1 );
     }
 
     /**

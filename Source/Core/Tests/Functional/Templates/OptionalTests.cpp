@@ -3,10 +3,12 @@
  * @brief Unit tests for TOptional lifetime and monadic operations.
  */
 
+#include <String/String.hpp>
 #include <Templates/Optional.hpp>
 #include <Tests/UnitTest.hpp>
 
 #include <concepts>
+#include <type_traits>
 #include <utility>
 
 namespace Lumen
@@ -64,6 +66,16 @@ namespace
     static_assert( std::same_as<decltype( *std::declval<TOptional<Int32> &>() ), Int32 &> );
     static_assert( std::same_as<decltype( *std::declval<const TOptional<Int32> &>() ), const Int32 &> );
     static_assert( std::same_as<decltype( *std::declval<TOptional<Int32> &&>() ), Int32 &&> );
+    static_assert( std::is_trivially_copy_constructible_v<TOptional<Int32>> );
+    static_assert( std::is_trivially_move_constructible_v<TOptional<Int32>> );
+    static_assert( std::is_trivially_copy_assignable_v<TOptional<Int32>> );
+    static_assert( std::is_trivially_move_assignable_v<TOptional<Int32>> );
+    static_assert( std::is_trivially_destructible_v<TOptional<Int32>> );
+    static_assert( std::is_trivially_copyable_v<TOptional<Int32>> );
+    static_assert( not std::is_trivially_copyable_v<TOptional<FLifetimeValue>> );
+    static_assert( std::is_copy_assignable_v<TOptional<FString>> );
+    static_assert( std::is_move_assignable_v<TOptional<FString>> );
+    static_assert( sizeof( TOptional<Int32> ) == 2U * sizeof( Int32 ) );
 
     /**
      * Tests
@@ -155,6 +167,38 @@ namespace
         LUMEN_CHECK_EQ( State.Constructed, 0 );
         LUMEN_CHECK_EQ( State.Copies, 0 );
         LUMEN_CHECK_EQ( State.Moves, 0 );
+    }
+
+    LUMEN_TEST( Optional_Assignment, CopyAndMoveAcrossStates )
+    {
+        const TOptional<FString> CopySource( FString( "copied" ) );
+        TOptional<FString> Destination;
+        Destination = CopySource;
+        LUMEN_CHECK_HAS_VALUE( Destination );
+        LUMEN_CHECK_EQ( *Destination, "copied" );
+
+        Destination = TOptional<FString>();
+        LUMEN_CHECK_FALSE( Destination.HasValue() );
+
+        Destination = CopySource;
+        const TOptional<FString> Empty;
+        Destination = Empty;
+        LUMEN_CHECK_FALSE( Destination.HasValue() );
+
+        TOptional<FString> MoveSource( FString( "moved" ) );
+        Destination = std::move( MoveSource );
+        LUMEN_CHECK_HAS_VALUE( Destination );
+        LUMEN_CHECK_EQ( *Destination, "moved" );
+
+        Destination = Destination;
+        LUMEN_CHECK_HAS_VALUE( Destination );
+        LUMEN_CHECK_EQ( *Destination, "moved" );
+    }
+
+    LUMEN_TEST( Optional_Operators, ArrowSupportsRvalue )
+    {
+        TOptional<FString> Optional( FString( "value" ) );
+        LUMEN_CHECK_EQ( static_cast<Int32>( std::move( Optional )->size() ), 5 );
     }
 
     LUMEN_TEST( Optional_Monadic, Transform )

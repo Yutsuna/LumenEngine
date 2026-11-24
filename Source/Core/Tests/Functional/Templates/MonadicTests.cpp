@@ -43,6 +43,42 @@ namespace
         }
     };
 
+    struct FTransformState
+    {
+        Int32 Copies    = 0;
+        Int32 Moves     = 0;
+        Int32 Destroyed = 0;
+    };
+
+    class FTransformProbe
+    {
+    public:
+
+        explicit FTransformProbe ( FTransformState &InState ) noexcept : State( &InState )
+        {
+            /** Empty */
+        }
+
+        FTransformProbe ( const FTransformProbe &Other ) noexcept : State( Other.State )
+        {
+            ++State->Copies;
+        }
+
+        FTransformProbe ( FTransformProbe &&Other ) noexcept : State( Other.State )
+        {
+            ++State->Moves;
+        }
+
+        ~FTransformProbe () noexcept
+        {
+            ++State->Destroyed;
+        }
+
+    private:
+
+        FTransformState *State;
+    };
+
 #if defined( LUMEN_COMPILER_CLANG )
     #pragma clang diagnostic push
     #pragma clang diagnostic ignored "-Wunneeded-internal-declaration"
@@ -56,6 +92,16 @@ namespace
     [[nodiscard]] TExpected<Int32, EMonadicTestError> Return42 () noexcept
     {
         return { 42 };
+    }
+
+    [[nodiscard]] TExpected<Int32, EMonadicTestError> Return42FromInt ( const Int32 LUMEN_UNUSED InValue ) noexcept
+    {
+        return { 42 };
+    }
+
+    [[nodiscard]] const FString &IdentityFString ( const FString &InValue ) noexcept
+    {
+        return InValue;
     }
 
     void NoOpInspect ( Int32 LUMEN_UNUSED NoOp ) noexcept
@@ -78,6 +124,9 @@ namespace
                                      TExpected<Int32, EMonadicTestError>> );
     static_assert( std::is_lvalue_reference_v<decltype( std::declval<TOptional<Int32> &>().Inspect( &NoOpInspect ) )> );
     static_assert( not std::is_reference_v<decltype( std::declval<TOptional<Int32> &&>().Inspect( &NoOpInspect ) )> );
+    static_assert( noexcept( std::declval<TExpected<Int32, EMonadicTestError> &>().Transform( &IntToFString ) ) );
+    static_assert( noexcept( std::declval<TExpected<Int32, EMonadicTestError> &>().AndThen( &Return42FromInt ) ) );
+    static_assert( not noexcept( std::declval<TOptional<FString> &>().Transform( &IdentityFString ) ) );
 
     /**
      * Transform
@@ -202,6 +251,43 @@ namespace
 
         LUMEN_CHECK_TRUE( Result.HasValue() );
         LUMEN_CHECK_EQ( *Result, 6 );
+    }
+
+    LUMEN_TEST( Monadic_Transform, ExpectedConstructsCallbackResultInPlace )
+    {
+        FTransformState State;
+        const TExpected<Int32, EMonadicTestError> Expected( 42 );
+
+        {
+            const auto Result = Expected.Transform( [&State] ( const Int32 ) noexcept
+            {
+                return FTransformProbe( State );
+            } );
+            LUMEN_CHECK_TRUE( Result.HasValue() );
+        }
+
+        LUMEN_CHECK_EQ( State.Copies, 0 );
+        LUMEN_CHECK_EQ( State.Moves, 0 );
+        LUMEN_CHECK_EQ( State.Destroyed, 1 );
+    }
+
+    LUMEN_TEST( Monadic_Transform, RvalueOptionalResetsWithoutExtraMove )
+    {
+        FTransformState State;
+        TOptional<FTransformProbe> Optional{ FTransformProbe( State ) };
+        State.Moves = 0;
+
+        const auto Result = std::move( Optional )
+                                .Transform( [] ( const FTransformProbe & ) noexcept
+        {
+            return 42;
+        } );
+
+        LUMEN_CHECK_EQ( Result.ValueOr( 0 ), 42 );
+        LUMEN_CHECK_FALSE( Optional.HasValue() );
+        LUMEN_CHECK_EQ( State.Copies, 0 );
+        LUMEN_CHECK_EQ( State.Moves, 0 );
+        LUMEN_CHECK_EQ( State.Destroyed, 2 );
     }
 
     /**
@@ -605,6 +691,68 @@ namespace
 
         LUMEN_CHECK_EQ( Result, "payload" );
     }
+
+    LUMEN_TEST( Monadic_ValueOrElse, SuccessSkipsFallback )
+    {
+        constexpr TExpected<Int32, EMonadicTestError> Expected( 42 );
+        Int32 Calls = 0;
+
+        const Int32 Result = Expected.ValueOrElse( [&Calls] () noexcept
+        {
+            ++Calls;
+            return 99;
+        } );
+
+        LUMEN_CHECK_EQ( Result, 42 );
+        LUMEN_CHECK_EQ( Calls, 0 );
+    }
+
+    LUMEN_TEST( Monadic_ValueOrElse, ErrorInvokesFallbackOnce )
+    {
+        constexpr TExpected<Int32, EMonadicTestError> Expected( FUnexpect{}, EMonadicTestError::ErrorA );
+        Int32 Calls = 0;
+
+        const Int32 Result = Expected.ValueOrElse( [&Calls] () noexcept
+        {
+            ++Calls;
+            return 99;
+        } );
+
+        LUMEN_CHECK_EQ( Result, 99 );
+        LUMEN_CHECK_EQ( Calls, 1 );
+    }
+
+    LUMEN_TEST( Monadic_ValueOrElse, OptionalEmptyInvokesFallback )
+    {
+        const TOptional<Int32> Optional;
+        Int32 Calls = 0;
+
+        const Int32 Result = Optional.ValueOrElse( [&Calls] () noexcept
+        {
+            ++Calls;
+            return 99;
+        } );
+
+        LUMEN_CHECK_EQ( Result, 99 );
+        LUMEN_CHECK_EQ( Calls, 1 );
+    }
+
+    LUMEN_TEST( Monadic_ValueOrElse, RvalueMovesContainedValue )
+    {
+        TExpected<FString, EMonadicTestError> Expected( FString( "payload" ) );
+        const FString Result = std::move( Expected )
+                                   .ValueOrElse( [] () noexcept
+        {
+            return FString( "fallback" );
+        } );
+
+        LUMEN_CHECK_EQ( Result, "payload" );
+    }
+
+    static_assert( noexcept( std::declval<const TExpected<Int32, EMonadicTestError> &>().ValueOrElse( [] () noexcept -> Int32
+    {
+        return 99;
+    } ) ) );
 
 } // namespace
 
