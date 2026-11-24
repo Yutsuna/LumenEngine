@@ -53,6 +53,7 @@ void Lumen::Algo::MergeSort ( TRangeType &&InRange, TPredicate InPredicate ) noe
  */
 
 template <typename TIterator, typename TPredicate>
+/** NOLINTNEXTLINE(misc-no-recursion) */
 void Lumen::Algo::Internal::MergeSortRecurse ( TIterator InFirst,
                                                TIterator InLast,
                                                std::iter_value_t<TIterator> *InBuffer,
