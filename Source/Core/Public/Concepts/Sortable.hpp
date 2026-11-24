@@ -5,7 +5,9 @@
 
 #pragma once
 
-#include <ranges>
+#include <Algo/Range.hpp>
+
+#include <iterator>
 
 namespace Lumen
 {
@@ -20,8 +22,8 @@ namespace Concepts
      * @tparam TPredicate The type of the predicate.
      */
     template <typename TRangeType, typename TPredicate>
-    concept CSortableRange = std::ranges::random_access_range<TRangeType> and std::ranges::common_range<TRangeType> and
-                             std::sortable<std::ranges::iterator_t<TRangeType>, TPredicate>;
+    concept CSortableRange =
+        CRandomAccessRange<TRangeType> and std::sortable<Algo::Internal::TRangeIteratorT<TRangeType>, TPredicate>;
 
 } // namespace Concepts
 
