@@ -66,10 +66,11 @@ Shared pointers stay out of individual draw/dispatch argument values.
 overload returns `TOptional<TSharedPtr<T>>`; the `IRHIObject&` overload returns
 a raw pointer or null. It is an explicit extension point, not a replacement for
 portable APIs. Validation unwrap checks the decorator chain and the expected
-tag. Concrete objects compose `FRHIObjectBase` and use the forwarding macros in
-`Private/Types/RHIObjectForward.hpp` (`LUMEN_RHI_OBJECT_DECLARATIONS`,
-`LUMEN_RHI_OBJECT_FORWARDERS`); virtual inheritance is forbidden here because
-it breaks static downcasts with Core smart pointers.
+tag. Concrete objects compose `FRHIObjectBase` and use the public forwarding macros in
+`Public/RHI/Types/RHIObjectForward.hpp` (`LUMEN_RHI_OBJECT_DECLARATIONS`,
+namespace-aware `LUMEN_RHI_OBJECT_FORWARDERS`); virtual inheritance is forbidden here because
+it breaks static downcasts with Core smart pointers. Backends also use the public
+`CheckRHICapabilityGate` helper in `Public/RHI/Device/RHIBackendSupport.hpp`.
 
 ## Module, device and errors
 
@@ -80,7 +81,10 @@ Unsupported requests are rejected before native allocation. `IRHIDevice` is the
 factory for all queues, resources, memory objects, binding objects, shaders,
 pipelines, command objects, semaphores, swapchains, query pools and caches.
 `FRHIDeviceBase` supplies common status, registry and retirement behavior;
-native creation stays pure virtual in derived devices.
+native creation stays pure virtual in derived devices. Public modules report
+contract version **1.1.0**. `FRHIDeviceDesc::DebugSink` is non-owning and must
+outlive device/native callback teardown; native debug enablement remains an
+independent flag.
 
 `FRHIError` carries an `ERHIErrorCode`, a more specific condition, an owned
 message and an optional native result. It is a value suitable for monadic
@@ -118,7 +122,11 @@ submission; triple buffers are not used for ownership.
 `FRHIResourceRequirements` describes size, alignment and acceptable memory
 classes; `FRHIAllocationDesc` is the allocator-facing form and `FRHIAllocation`
 identifies a placed range and its heap. `IRHIHeap` owns native memory and
-placement operations; `IRHIAllocator` owns address-range policy.
+placement operations; `IRHIAllocator` owns address-range policy. `IRHIDevice`
+creates placed buffers/textures from a heap plus an `FRHIAllocation`, validates
+ownership, alignment, memory class and bounds, and retains the heap. Upload
+allocations expose their `IRHIBuffer`; readback allocators expose the buffer
+containing a validated allocation, so both can be used directly by copy commands.
 `FRHIMemoryAllocator` is a facade that selects heaps and allocators, enforces
 `FRHIMemoryBudget`, updates `FRHIAllocatorStats` and notifies observers.
 
@@ -153,13 +161,20 @@ Samplers are immutable and cacheable.
 
 Binding layouts describe immutable slots, descriptor types, counts, stages and
 bindless flags. Sets retain written resources and expose a single dirty flag
-(`IsDirty()` / `ClearDirty()`). `FRHIBindingWrite` is a typed variant covering buffers, texture views and
-samplers; no untyped native descriptor enters the portable API.
+(`IsDirty()` / `ClearDirty()`). `FRHIBindingWrite` contains an array-element
+index and a typed variant covering buffers, texture views, samplers and combined
+texture/sampler pairs; no untyped native descriptor enters the portable API.
+`Write` validates the complete batch before atomically replacing the binding
+snapshot. Command lists record copied inline-constant bytes with stage, offset
+and size metadata.
 
 Shader packages own their bytecode and reflection. The versioned codec
 validates lengths and checksums without exceptions. Reflection describes
-inputs, outputs, bindings, inline constants and compute workgroup size.
-Backends advertise accepted shader formats through capabilities.
+inputs, outputs, bindings, combined texture/samplers, inline constants and
+compute workgroup size. Backends advertise accepted shader formats through the
+`ShaderFormats` collection in capabilities; required formats are negotiated at
+device creation. Build-time shader packages are generated outside the source
+tree by the Meson shader pipeline.
 
 Pipeline layouts combine binding layouts and inline constant ranges. Graphics
 pipelines use dynamic rendering attachment formats, not legacy render-pass or
@@ -192,6 +207,11 @@ timeline value, uses fixed-capacity chunks with Core index allocation,
 poll-destroys only completed entries, drains safely at shutdown and owns
 deferred callback state until invocation.
 
+`IRHISurfaceBridge` isolates native surface/context creation, presentation and
+procedure resolution. `Window` descriptors require a shared bridge; swapchains
+retain it through their immutable surface descriptor. SDL/AppCore integration is
+backend-neutral and no backend depends on AppCore.
+
 Swapchains expose capabilities and a bounded image ring. Acquire returns an
 image index, texture, synchronization primitive and status; present validates
 the acquired frame and queue synchronization. Out-of-date and suboptimal are
@@ -203,9 +223,10 @@ occlusion and statistics operations are gated by queue capabilities.
 ## Caches and diagnostics
 
 Object caches are synchronized templates with explicit ownership and eviction
-policies. Pipeline caches use canonical descriptor/compatibility keys, expose
-statistics and support versioned opaque serialization; creation faults are
-propagated without partial entries.
+policies. Pipeline caches use `FRHIPipelineCacheKey`: command compatibility,
+canonical immutable state, ordered shader-content/reflection hashes and backend
+schema version. They expose statistics and support versioned opaque
+serialization; creation faults are propagated without partial entries.
 
 `FRHIDebugMessage` owns its text and carries severity, category, stable code,
 object identifiers and submission context. `IRHIDebugSink` receives messages
@@ -234,21 +255,26 @@ and occurrence. It exposes manual timeline advancement so completion and
 retirement tests never depend on GPU timing.
 
 `IRHIConformanceDeviceFactory` abstracts device creation for conformance
-scenarios. Conformance translation units use only that factory and public RHI
-interfaces; `Lumen::RHI::Tests::GetRHIConformanceDeviceFactory()` supplies the Null factory,
-and a future backend test target can compile the same translation units with
-its own factory. Core scenarios are mandatory; optional scenarios run only when
-the corresponding capability is advertised. Conformance checks functional
+scenarios. Its no-argument `CreateDevice()` follows a configurable default
+validation policy, while `CreateDevice(bool)` remains explicit. Conformance
+translation units use only that factory and public RHI interfaces;
+`Lumen::RHI::Tests::GetRHIConformanceDeviceFactory()` supplies the Null factory.
+`RHIConformanceSources` in `Source/RHI/meson.build` is the explicit portable
+manifest; backend targets consume it through the generic Meson
+`ExtraTestSources`/`ExtraTestIncludeDirectories`/`ExtraTestDependencies` keys.
+Core scenarios are mandatory; optional scenarios run only when the corresponding
+capability and adapter queue family are advertised. Conformance checks functional
 results, errors, ordering, lifetime and documented concurrency, never native
-handles or performance timings, and runs with validation enabled to prove
-decorator transparency. `RHI*TierBTests.cpp` cover behavior that a real backend
-must implement; the Null backend exercises the portable error paths.
+handles or performance timings. Portable Tier B behavior lives in the same
+conformance TUs; deterministic native values remain Null-only tests.
 
 ## Testing
 
 `RHITests` is the single RHI test binary. Meson discovers test `.cpp` files at
 configure time, so reconfigure after adding or removing one and build
 `RHITests` explicitly. Run the suite with `meson test -C Build --suite RHI`.
+Its custom runner executes the full suite with default validation off, then all
+`*Conformance*` suites with default validation on.
 
 Deterministic fuzz tests use literal seeds recorded in the test source (not
 emitted at runtime) and a simple reference model; stress

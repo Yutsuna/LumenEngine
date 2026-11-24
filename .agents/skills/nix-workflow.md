@@ -20,8 +20,9 @@ Nix/shell.nix        — mkShell wrapping deps with dev env hooks
   `package.nix` and `shell.nix` both `import` it. Never add a dependency
   directly to the flake or to shell/package files.
 - Choose the right list in `deps.nix`:
-  - `nativeBuildInputs` — build-time tools (gcc16, meson, ninja, pkg-config;
-    `mold`, `mesa` behind `lib.optionals … isLinux`).
+  - `nativeBuildInputs` — build-time tools (gcc16, meson, ninja, pkg-config,
+    shaderc, spirv-tools, spirv-cross; `mold`, `mesa` behind
+    `lib.optionals … isLinux`).
   - `buildInputs` — runtime libs (sdl3, vulkan-loader, vulkan-headers).
   - `devInputs` — dev-only tools, present in the devshell but NOT in the
     package (valgrind, gdb, clang-tools, jq, nil, nixd, vulkan-tools,

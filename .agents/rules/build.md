@@ -39,8 +39,9 @@ meson setup Build --reconfigure
 - `meson.options`: `enable_testing`, `enable_benchmarking` (default true),
   `enable_lto` (release buildtype only, default false).
 - Nix devshell (`Nix/shell.nix`, `Nix/deps.nix`): GCC, Meson, Ninja, SDL3,
-  Vulkan loader/headers, clang-tools; exports `LD_LIBRARY_PATH`, sets
-  `VK_LAYER_PATH` to validation layers, links with `mold`.
+  Vulkan loader/headers, clang-tools, shaderc, spirv-tools and spirv-cross;
+  exports `LD_LIBRARY_PATH`, sets `VK_LAYER_PATH` to validation layers, links
+  with `mold`. Shader artifacts are generated only under the build directory.
 
 ## Warnings behave like errors
 
