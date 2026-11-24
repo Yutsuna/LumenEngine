@@ -19,7 +19,7 @@ treat it as mandatory. Do not preload everything.
 | `modules/<Module>.md` | working in `Source/<Module>/` (status, links, inventory) |
 | `agents/` | agent definitions — `reviewer` orchestrator + `reviewer-safety`/`reviewer-norme` subagents, `documentation` auditor of the `.agents/` corpus, and `test-writer` for unit-test authoring (definitions in `agents/*.md`) |
 | `commands/` | ready-made recipes: `build-debug`, `build-release`, `test`, `review`, `new-module` |
-| `skills/` | procedural guides: `debug-sanitizer`, `write-benchmarks`, `nix-workflow` |
+| `skills/` | procedural guides: `core-abstractions`, `debug-sanitizer`, `write-benchmarks`, `nix-workflow` |
 
 ## Modules
 
@@ -31,7 +31,8 @@ treat it as mandatory. Do not preload everything.
 | `Scene` | built (shared library) | `modules/Scene.md` |
 | `AppCore` | built (shared library) | `modules/AppCore.md` |
 | `Launch` | built (executable entry point) | `modules/Launch.md` |
-| `Renderer`, `RHIOpenGL`, `RHIVulkan` | **not built yet** (empty stubs, absent from `ModuleNames`) | `modules/Renderer.md`, `modules/RHIOpenGL.md`, `modules/RHIVulkan.md` |
+| `Renderer`, `RHIOpenGL` | **not built** (empty stubs, absent from `ModuleNames`) | `modules/Renderer.md`, `modules/RHIOpenGL.md` |
+| `RHIVulkan` | built (shared library, listed in `ModuleNames`; do not depend on it from production renderer code yet) | `modules/RHIVulkan.md` |
 
 A module is compiled only if listed in `ModuleNames` (`Source/meson.build`) and
 has a `meson.build` in its `Source/` directory.

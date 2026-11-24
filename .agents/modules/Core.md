@@ -28,10 +28,11 @@ variables, atomic bitsets, locks, the HAL and the algorithms.
 | `Templates/Queue.hpp` | `TQueue<T>` | FIFO (`std::queue` equivalent) |
 | `Templates/Variant.hpp` | `TVariant<…>` | type-safe union |
 | `Templates/Optional.hpp` | `TOptional<T>` | maybe-value (hand-written) |
-| `Templates/Expected.hpp` (+ `Unexpected.hpp`, `Monadic.hpp`, `MonadicDetails.hpp`) | `TExpected<T, E>`, `TUnexpected<E>`, `MakeUnexpected`, `Unexpect`, `FMonadic`, `Transform`/`AndThen`/`OrElse`/`Inspect`/`ValueOr` (`TOptional` and non-array `TUniquePtr` also inherit `FMonadic`) | error propagation without exceptions |
+| `Templates/Expected.hpp` (+ `Unexpected.hpp`, `Monadic.hpp`, `MonadicDetails.hpp`) | `TExpected<T, E>`, `TUnexpected<E>`, `MakeUnexpected`, `Unexpect`, `FMonadic`, `Transform`/`AndThen`/`OrElse`/`Inspect`/`ValueOr`; concepts `CMonadic`, `CTransformable`, `CBindable`, `CRecoverable` (`TOptional` and non-array `TUniquePtr` also inherit `FMonadic`) | error propagation without exceptions |
 | `Templates/Function.hpp` | `TFunction<Signature>` | type-erased callable (`std::function` equivalent) |
 | `String/String.hpp`, `StringView.hpp`, `StringUtils.hpp` | `FString`, `FStringView`; `IsSpace`, `ToLower`/`ToLowerInline`, `EqualsIgnoreCase`, `StripParam`/`StripDashes`/`AsOption` | all text handling (currently aliases; TODO real types) |
 | `Memory/UniquePtr.hpp`, `SharedPtr.hpp`, `Span.hpp` | `TUniquePtr`/`MakeUnique`, `TSharedPtr`/`TSharedRef`, `MakeShared` (returns `TSharedRef`)/`MakeSharedRef`/`MakeShareable`, `StaticCastSharedPtr`/`StaticCastSharedRef`, `TSpan` | memory ownership (no raw `new`) |
+| `Memory/IndiceAllocator.hpp` | `FIndiceAllocator` (free-list, first-fit), `FIndiceHeapAllocator` (bitmap), `FIndiceAllocation`, `FIndiceAllocatorRange` | thread-safe index/descriptor allocation, variable-size or fixed-size |
 | `Core/CoreTypes.hpp` | `Int8`…`UInt64`, `Float32/64`, `AnsiChar`, `WideChar`, `Byte`, `Bool`, `USize`, `ISize`, `UPtr/IPtr`, `NullPtrType`, `AlwaysFalseV`, `TVoid`/`TVoidT`, `TAtomic<T>`, `FAtomicFlag` | Lumen typedefs, compile-time helpers and atomics |
 | `Core/CoreDefinitions.hpp` | `LUMEN_PLATFORM_{UNIX,WINDOWS,LINUX,MACOS}`, `LUMEN_ARCH_*`, `LUMEN_COMPILER_*`, `LUMEN_PATH_SEPARATOR`, `LUMEN_NEWLINE`, `LUMEN_SHARED_LIB_EXTENSION`, `LUMEN_EXIT_SUCCESS`/`LUMEN_EXIT_FAILURE`, `LUMEN_FORCE_INLINE`/`LUMEN_NO_INLINE`, `LUMEN_UNUSED`, `LUMEN_DISABLE_UBSAN` | platform/compiler gating, path/exit constants and inline attributes |
 
@@ -42,11 +43,14 @@ variables, atomic bitsets, locks, the HAL and the algorithms.
 | `Algo/Sort.hpp` (+ `IntroSort.hpp`, `MergeSort.hpp`, `QuickSort.hpp`, `HeapSort.hpp`, `InsertionSort.hpp`) | `Algo::Sort`, `Algo::StableSort` (declared in `Sort.hpp`, merge-sort implementation in `MergeSort.hpp`), `Algo::IntroSort`, `Algo::QuickSort`, `Algo::HeapSort`, `Algo::InsertionSort` | sorting without `std::sort`; prefer `Sort` (introsort, in-place, O(n log n) worst case), `StableSort` only when stability is required |
 | `Algo/Find.hpp` | `Algo::Find`, `FindIf`, `FindIfNot`, `FindIfEqual` (+ `…OrNone` returning `TOptional`) | searching ranges without `std::find` |
 | `Algo/ForEach.hpp` | `Algo::ForEach`, predicate-filtered `ForEach`, `Algo::ForEachUntil` (early-exit variants) | iterating ranges |
+| `Algo/Any.hpp` | `Algo::AnyOf` | any element matches a predicate, without `std::any_of` |
+| `Algo/Equal.hpp` | `Algo::Equal` (with optional binary predicate) | comparing two ranges, without `std::equal` |
+| `Algo/RangeTraits.hpp` | `TRangeElementPtr`, `TRangeElementValue`, `TRangeReferenceT` (`Algo::Internal`) | range introspection shared by the Algo implementations |
 | `Templates/Hash.hpp` | `FHash::TypeHash<T>()` | compile-time stable type hashing |
-| `Templates/Invoke.hpp` | `Invoke`, `TInvokeResult`/`TInvokeResultT`, `TIsInvocable`/`TIsInvocableV` | invoking callables/member pointers without `std::invoke` |
+| `Templates/Invoke.hpp` | `Invoke`, `TInvokeResult`/`TInvokeResultT`, `TIsInvocable`/`TIsInvocableV`, `CIsInvocable` (in `Lumen`) | invoking callables/member pointers without `std::invoke` |
 | `Templates/AtomicBitset.hpp` | `FAtomicBitset` (`Resize`/`ClearAll`/`GetNumBits`, `Set`/`Clear`/`Test`/`ForEachSetBitAndClear`) | concurrent dirty tracking / flag sets |
 | `Core/EnumFlags.hpp`, `NonCopyable.hpp`, `NonMovable.hpp` | `LUMEN_ENUM_FLAGS`, `FNonCopyable`, `FNonMovable` | bitmask enums, reuse control |
-| `Concepts/*.hpp` | `CConstructibleFrom`, `CConvertibleTo`, `CIsSame`/`CSameAs`, `CIsStringLike`, `CTriviallyCopyable`, `CIsInvocable`, `CIsLockable`, `CSortableRange` | constraining templates |
+| `Concepts/*.hpp` | `CConstructibleFrom`, `CConvertibleTo`, `CIsBool`, `CIsIntegral`, `CIsInvocable`, `CIsLockable`, `CIsStringLike`, `CIsVoid`, `CSameAs`/`CIsSame`, `CSortableRange`, `CTriviallyCopyable` | constraining templates; use these instead of `std::` concepts (full list in `rules/core-first.md`) |
 
 ### Threading and synchronization
 
@@ -71,7 +75,7 @@ variables, atomic bitsets, locks, the HAL and the algorithms.
 | `HAL/PlatformSignal.hpp` | `HAL::FPlatformSignal` (alias `HAL::FSignal`), `ESystemSignal`, `Bind`/`Raise`/`Dispatch`/`Unbind`/`Reset` | OS signal trapping (never `std::signal` handling directly) |
 | `Filesystem/Path.hpp`, `File.hpp`, `Directory.hpp`, `IFileSystem.hpp`, `IFileHandle.hpp` | `FPath`, file/dir abstractions behind interfaces | any file/dir work |
 | `Logging/Logger.hpp`, `LoggingCategory.hpp`, `LoggingVerbosity.hpp` | `FLogger`, `FLogCategory`, verbosity levels | all diagnostics (tests init/shutdown it) |
-| `Meta/Reflection.hpp`, `Overloaded.hpp`, `SerializeToJSON.hpp` | C++26 reflection-based introspection (`CReflected` concept), visitors, `Meta::EnumName` (unqualified) and `Meta::EnumQualifiedName` (qualified) enum-name helpers | field iteration, serialization, enum → name conversion |
+| `Meta/Reflection.hpp`, `Overloaded.hpp`, `SerializeToJSON.hpp` | C++26 reflection-based introspection (`CReflected` concept), `Meta::Overloaded` visitor helper, `Meta::EnumName` (unqualified) and `Meta::EnumQualifiedName` (qualified) enum-name helpers, `Meta::SerializeToJSON` with `FJSONOptions` | field iteration, serialization, enum → name conversion |
 | `Tests/UnitTest.hpp` (framework) | `LUMEN_TEST`, `LUMEN_INTEGRATION_TEST`, `LUMEN_CHECK*` | unit tests (see `rules/testing.md`) |
 | `Benchmarks/Benchmark.hpp` (framework) | `LUMEN_BENCHMARK*` | benchmarks (see `rules/testing.md`) |
 
@@ -84,6 +88,10 @@ Source lives in `Source/Core/Private/**`, mirroring the `Public/` topics
 
 - Core is the reference implementation of the coding standard — when unsure
   how to write Lumen code, mimic Core's headers.
+- For how and when to use `Algo` plus `TOptional`/`TExpected`/`FMonadic` at
+  call sites, see `.agents/skills/core-abstractions.md`; the full std → Core
+  map and concept list are in `rules/core-first.md`, naming and `noexcept`
+  conventions in `rules/coding-style.md`.
 - The HAL layer is `Lumen::HAL`: mutex/thread/futex/signal/time types are
   selected by `HAL/Platform*.hpp`; include the `Platform*` header, not a
   platform-specific one.
