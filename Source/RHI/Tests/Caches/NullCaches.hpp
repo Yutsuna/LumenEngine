@@ -7,9 +7,9 @@
 #include <Device/NullFaultPlan.hpp>
 #include <HAL/PlatformMutex.hpp>
 #include <RHI/Caches/IRHIPipelineCache.hpp>
+#include <RHI/Types/RHIObjectForward.hpp>
 #include <Templates/Map.hpp>
 #include <Templates/Optional.hpp>
-#include <Types/RHIObjectForward.hpp>
 
 namespace Lumen
 {
@@ -20,10 +20,10 @@ namespace RHI
     namespace Tests
     {
 
-        /** @struct FNullPipelineCompatibilityHasher @brief Content hasher for complete pipeline keys. */
-        struct FNullPipelineCompatibilityHasher
+        /** @struct FNullPipelineCacheKeyHasher @brief Content hasher for complete pipeline keys. */
+        struct FNullPipelineCacheKeyHasher
         {
-            [[nodiscard]] USize operator()( const FRHIPipelineCompatibility &InKey ) const noexcept;
+            [[nodiscard]] USize operator()( const FRHIPipelineCacheKey &InKey ) const noexcept;
         };
 
         /**
@@ -40,12 +40,11 @@ namespace RHI
             LUMEN_RHI_OBJECT_DECLARATIONS;
 
             /** @brief Validates and restores the descriptor's initial opaque data. */
-            [[nodiscard]] TExpected<void, FRHIError> Initialize () noexcept;
+            [[nodiscard]] FRHIExpected Initialize () noexcept;
             const FRHIPipelineCacheDesc &GetDesc () const noexcept override;
-            TOptional<TSharedPtr<IRHIPipeline>> Find ( const FRHIPipelineCompatibility &InKey ) noexcept override;
-            TExpected<void, FRHIError> Insert ( const FRHIPipelineCompatibility &InKey,
-                                                TSharedRef<IRHIPipeline> InPipeline ) noexcept override;
-            void Remove ( const FRHIPipelineCompatibility &InKey ) noexcept override;
+            TOptional<TSharedPtr<IRHIPipeline>> Find ( const FRHIPipelineCacheKey &InKey ) noexcept override;
+            FRHIExpected Insert ( const FRHIPipelineCacheKey &InKey, TSharedRef<IRHIPipeline> InPipeline ) noexcept override;
+            void Remove ( const FRHIPipelineCacheKey &InKey ) noexcept override;
             void Clear () noexcept override;
             FRHICacheStats GetStats () const noexcept override;
             TExpected<TVector<Byte>, FRHIError> Serialize () const noexcept override;
@@ -67,7 +66,7 @@ namespace RHI
             FRHIObjectBase Identity;
             FRHIPipelineCacheDesc Desc;
             TSharedPtr<FNullFaultPlan> FaultPlan;
-            TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher> Entries;
+            TMap<FRHIPipelineCacheKey, FEntry, FNullPipelineCacheKeyHasher> Entries;
             UInt64 Sequence = 0ULL;
             FRHICacheStatsTracker Stats;
             mutable HAL::FPlatformRecursiveSharedMutex Mutex;

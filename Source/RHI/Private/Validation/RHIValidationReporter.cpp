@@ -43,11 +43,10 @@ void Lumen::RHI::FRHIValidationReporter::Report ( const ERHIValidationMessageCod
     Desc.Sink->Emit( Message );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIValidationReporter::Reject ( const ERHIValidationMessageCode InCode,
-                                             const ERHIErrorCondition InCondition,
-                                             const FStringView InMessage,
-                                             const IRHIObject *InObject ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationReporter::Reject ( const ERHIValidationMessageCode InCode,
+                                                                      const ERHIErrorCondition InCondition,
+                                                                      const FStringView InMessage,
+                                                                      const IRHIObject *InObject ) const noexcept
 {
     Report( InCode, InMessage, InObject );
     return TUnexpected<FRHIError>( MakeRHIValidationFailed( InCondition, InMessage ) );

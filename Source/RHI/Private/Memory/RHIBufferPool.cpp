@@ -9,6 +9,10 @@
 #include <RHI/Types/RHITimeline.hpp>
 #include <Templates/Hash.hpp>
 
+/**
+ * Private
+ */
+
 namespace
 {
 
@@ -36,7 +40,7 @@ Lumen::RHI::FRHIBufferPool::FRHIBufferPool ( IRHIDevice &InDevice, const FRHIObj
     /* */
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( FRHIBufferPool )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI, FRHIBufferPool )
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
 Lumen::RHI::FRHIBufferPool::Acquire ( const FRHIBufferDesc &InDesc ) noexcept
 {
@@ -56,8 +60,8 @@ Lumen::RHI::FRHIBufferPool::Acquire ( const FRHIBufferDesc &InDesc ) noexcept
     return Device->CreateBuffer( InDesc );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIBufferPool::Release ( TSharedRef<IRHIBuffer> InBuffer, const FRHITimelineValue InCompletion ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBufferPool::Release ( TSharedRef<IRHIBuffer> InBuffer,
+                                                               const FRHITimelineValue InCompletion ) noexcept
 {
     Released.push_back( FEntry{ .Buffer = std::move( InBuffer ), .Completion = InCompletion } );
     return {};

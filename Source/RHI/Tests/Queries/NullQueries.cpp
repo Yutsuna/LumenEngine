@@ -15,7 +15,7 @@ Lumen::RHI::Tests::FNullQueryPool::FNullQueryPool ( const FRHIQueryPoolDesc &InD
 {
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullQueryPool )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullQueryPool )
 
 const Lumen::RHI::FRHIQueryPoolDesc &Lumen::RHI::Tests::FNullQueryPool::GetDesc () const noexcept
 {
@@ -31,11 +31,10 @@ void Lumen::RHI::Tests::FNullQueryPool::Reset () noexcept
     }
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
-                                                 const UInt32 InQueryCount,
-                                                 const TSpan<UInt64> InDestination,
-                                                 const FRHITimelineValue InCompleted ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
+                                                                          const UInt32 InQueryCount,
+                                                                          const TSpan<UInt64> InDestination,
+                                                                          const FRHITimelineValue InCompleted ) const noexcept
 {
     if ( FaultPlan )
     {
@@ -67,7 +66,7 @@ Lumen::RHI::Tests::FNullQueryPool::ReadResults ( const UInt32 InFirstQuery,
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueryPool::Begin ( const UInt32 InIndex ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullQueryPool::Begin ( const UInt32 InIndex ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckFault( "BeginQuery" ) )
     {
@@ -89,7 +88,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueryPool:
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueryPool::End ( const UInt32 InIndex ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullQueryPool::End ( const UInt32 InIndex ) noexcept
 {
     if ( TOptional<FRHIError> Error = CheckFault( "EndQuery" ) )
     {
@@ -130,8 +129,9 @@ void Lumen::RHI::Tests::FNullQueryPool::SetNextAvailability ( const FRHITimeline
     NextAvailability = InValue;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueryPool::SetQueryValue (
-    const UInt32 InIndex, const UInt64 InValue, const FRHITimelineValue InAvailability ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullQueryPool::SetQueryValue ( const UInt32 InIndex,
+                                                                            const UInt64 InValue,
+                                                                            const FRHITimelineValue InAvailability ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( InIndex >= Entries.size() or Entries[InIndex].bActive )

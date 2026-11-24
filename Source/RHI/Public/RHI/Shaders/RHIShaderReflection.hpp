@@ -24,7 +24,8 @@ namespace RHI
         ReadWriteBuffer,
         Texture,
         StorageTexture,
-        Sampler
+        Sampler,
+        CombinedTextureSampler
 
     };
     /**
@@ -48,7 +49,7 @@ namespace RHI
         TArray<UInt32, 3U> WorkgroupSize = { 1U, 1U, 1U };
         UInt32 InlineConstantBytes       = 0U;
         /** @return Success when slots are unique and counts nonzero. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
 

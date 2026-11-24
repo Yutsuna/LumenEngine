@@ -19,6 +19,8 @@ namespace RHI
             FRHIShaderReflection Reflection;
             Reflection.Bindings.push_back( { .Slot = 0U, .Stages = ERHIShaderStage::Vertex } );
             Reflection.Bindings.push_back( { .Slot = 3U, .Stages = ERHIShaderStage::Pixel } );
+            Reflection.Bindings.push_back(
+                { .Slot = 4U, .Kind = ERHIShaderBindingKind::CombinedTextureSampler, .Stages = ERHIShaderStage::Pixel } );
             LUMEN_CHECK_TRUE( Reflection.Validate().HasValue() );
             Reflection.Bindings[1].Count = 0U;
             LUMEN_CHECK_HAS_ERROR( Reflection.Validate() );

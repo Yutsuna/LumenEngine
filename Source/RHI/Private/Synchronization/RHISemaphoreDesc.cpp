@@ -4,7 +4,7 @@
  */
 
 #include <RHI/Synchronization/RHISemaphoreDesc.hpp>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHISemaphoreDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHISemaphoreDesc::Validate () const noexcept
 {
     if ( Type > ERHISemaphoreType::Timeline or ( Type == ERHISemaphoreType::Binary and InitialValue > 1ULL ) )
     {

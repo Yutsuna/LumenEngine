@@ -29,8 +29,8 @@ namespace RHI
         /** @brief Acquires a buffer matching InDesc. */
         [[nodiscard]] virtual TExpected<TSharedRef<IRHIBuffer>, FRHIError> Acquire ( const FRHIBufferDesc &InDesc ) noexcept = 0;
         /** @brief Returns a buffer for reuse after its completion value. */
-        [[nodiscard]] virtual TExpected<void, FRHIError> Release ( TSharedRef<IRHIBuffer> InBuffer,
-                                                                   FRHITimelineValue InCompletion ) noexcept = 0;
+        [[nodiscard]] virtual FRHIExpected Release ( TSharedRef<IRHIBuffer> InBuffer,
+                                                     FRHITimelineValue InCompletion ) noexcept = 0;
         /** @brief Publishes the current GPU completion value so finished entries become reusable. */
         virtual void AdvanceCompleted ( FRHITimelineValue InCompleted ) noexcept = 0;
         /** @return Number of released entries still waiting for their completion value. */

@@ -96,7 +96,7 @@ Lumen::RHI::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noe
     return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "TLSF allocator exhausted" ) );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHITlsfAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHITlsfAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Bool bFound = false;

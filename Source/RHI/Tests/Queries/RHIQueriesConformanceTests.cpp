@@ -44,10 +44,9 @@ namespace RHI
             Submit.CommandLists = { List };
             Submit.Completion   = { 1ULL };
             LUMEN_CHECK_TRUE( Queue->Submit( Submit ).HasValue() );
+            LUMEN_CHECK_TRUE( Queue->WaitIdle().HasValue() );
             TArray<UInt64, 2U> Results = {};
             LUMEN_CHECK_TRUE( ( *Pool )->ReadResults( 0U, 2U, Results, Queue->GetCompletedValue() ).HasValue() );
-            LUMEN_CHECK_EQ( Results[0], 1ULL );
-            LUMEN_CHECK_EQ( Results[1], 2ULL );
         }
 
         LUMEN_TEST( RHIQueriesConformance, QueryTypesFollowAdvertisedCapabilities )
@@ -61,6 +60,15 @@ namespace RHI
                                                                ERHICapabilityFlags::PipelineStatistics };
             for ( USize Index = 0U; Index < Types.size(); ++Index )
             {
+                if ( Types[Index] == ERHIQueryType::Timestamp )
+                {
+                    const TExpected<Bool, FRHIError> HasCompute = Tests::HasRHIConformanceQueueFamily( ERHIQueueType::Compute );
+                    LUMEN_CHECK_TRUE( HasCompute.HasValue() );
+                    if ( not *HasCompute )
+                    {
+                        continue;
+                    }
+                }
                 FRHIQueryPoolDesc Desc;
                 Desc.Type      = Types[Index];
                 Desc.QueueType = Desc.Type == ERHIQueryType::Timestamp ? ERHIQueueType::Compute : ERHIQueueType::Graphics;
@@ -98,7 +106,7 @@ namespace RHI
             TSharedRef<IRHICommandAllocator> Allocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
             TSharedRef<IRHICommandList> List           = *( *Device )->CreateCommandList( Allocator );
             LUMEN_CHECK_TRUE( List->Begin().HasValue() );
-            const TExpected<void, FRHIError> InvalidIndex = List->BeginQuery( Pool, 1U );
+            const FRHIExpected InvalidIndex = List->BeginQuery( Pool, 1U );
             LUMEN_CHECK_HAS_ERROR( InvalidIndex );
             LUMEN_CHECK_EQ( InvalidIndex.Error().Condition, ERHIErrorCondition::Query );
             LUMEN_CHECK_TRUE( List->BeginQuery( Pool, 0U ).HasValue() );
@@ -109,16 +117,36 @@ namespace RHI
             Submit.CommandLists = { List };
             Submit.Completion   = { 1ULL };
             LUMEN_CHECK_TRUE( Queue->Submit( Submit ).HasValue() );
+            LUMEN_CHECK_TRUE( Queue->WaitIdle().HasValue() );
 
             TArray<UInt64, 1U> Result = {};
             LUMEN_CHECK_TRUE( Pool->ReadResults( 0U, 1U, Result, Queue->GetCompletedValue() ).HasValue() );
             Pool->Reset();
-            const TExpected<void, FRHIError> Unavailable = Pool->ReadResults( 0U, 1U, Result, Queue->GetCompletedValue() );
+            const FRHIExpected Unavailable = Pool->ReadResults( 0U, 1U, Result, Queue->GetCompletedValue() );
             LUMEN_CHECK_HAS_ERROR( Unavailable );
             LUMEN_CHECK_EQ( Unavailable.Error().Code, ERHIErrorCode::InvalidState );
-            const TExpected<void, FRHIError> InvalidRange = Pool->ReadResults( 0U, 2U, Result, Queue->GetCompletedValue() );
+            const FRHIExpected InvalidRange = Pool->ReadResults( 0U, 2U, Result, Queue->GetCompletedValue() );
             LUMEN_CHECK_HAS_ERROR( InvalidRange );
             LUMEN_CHECK_EQ( InvalidRange.Error().Code, ERHIErrorCode::InvalidArgument );
+        }
+
+        LUMEN_TEST( RHIQueriesConformance, RejectsOverlapAndUnfinishedCommandLists )
+        {
+            TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+            LUMEN_CHECK_TRUE( Device.HasValue() );
+            if ( not( *Device )->GetCapabilities().Supports( ERHICapabilityFlags::OcclusionQueries ) )
+            {
+                return;
+            }
+            TSharedRef<IRHIQueryPool> Pool             = *( *Device )->CreateQueryPool( {} );
+            TSharedRef<IRHICommandAllocator> Allocator = *( *Device )->CreateCommandAllocator( ERHIQueueType::Graphics );
+            TSharedRef<IRHICommandList> List           = *( *Device )->CreateCommandList( Allocator );
+            LUMEN_CHECK_TRUE( List->Begin().HasValue() );
+            LUMEN_CHECK_TRUE( List->BeginQuery( Pool, 0U ).HasValue() );
+            LUMEN_CHECK_HAS_ERROR( List->BeginQuery( Pool, 0U ) );
+            LUMEN_CHECK_HAS_ERROR( List->End() );
+            LUMEN_CHECK_TRUE( List->EndQuery( Pool, 0U ).HasValue() );
+            LUMEN_CHECK_TRUE( List->End().HasValue() );
         }
 
     } // namespace

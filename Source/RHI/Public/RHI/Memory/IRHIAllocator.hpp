@@ -31,7 +31,7 @@ namespace RHI
         [[nodiscard]] virtual TExpected<FRHIAllocation, FRHIError> Allocate ( const FRHIAllocationDesc &InDesc ) noexcept = 0;
 
         /** @brief Releases a range returned by this allocator. */
-        [[nodiscard]] virtual TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept = 0;
+        [[nodiscard]] virtual FRHIExpected Free ( const FRHIAllocation &InAllocation ) noexcept = 0;
 
         /** @brief Releases all ranges where the allocator supports global reset. */
         virtual void Reset () noexcept = 0;

@@ -26,19 +26,32 @@ namespace RHI
 
         FRHIValidationCommandAllocator ( TSharedRef<IRHICommandAllocator> InUnderlying,
                                          TSharedPtr<FRHIValidationState> InState ) noexcept;
+
         ~FRHIValidationCommandAllocator () noexcept override;
+
+    public:
+
         [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+
         [[nodiscard]] FString GetDebugName () const noexcept override;
+
         void SetDebugName ( FStringView InName ) noexcept override;
+
         [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+
         [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+
         [[nodiscard]] ERHIQueueType GetQueueType () const noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> Reset ( FRHITimelineValue InCompleted ) noexcept override;
+
+        [[nodiscard]] FRHIExpected Reset ( FRHITimelineValue InCompleted ) noexcept override;
 
         /** @brief Adds/removes a decorator whose underlying list belongs to this allocator. */
         void RegisterList ( FRHIValidationCommandList &InList ) noexcept;
+
         void UnregisterList ( FRHIValidationCommandList &InList ) noexcept;
+
         [[nodiscard]] USize GetTrackedListCount () const noexcept;
 
     private:

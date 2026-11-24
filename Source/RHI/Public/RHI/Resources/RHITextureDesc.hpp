@@ -41,7 +41,7 @@ namespace RHI
         FRHIClearValue OptimizedClear;
 
         /** @return Success when dimensions, format, counts, usage, and state are valid. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

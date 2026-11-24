@@ -8,8 +8,8 @@
 #include <HAL/PlatformMutex.hpp>
 #include <Memory/SharedPtr.hpp>
 #include <RHI/Queries/IRHIQueryPool.hpp>
+#include <RHI/Types/RHIObjectForward.hpp>
 #include <Templates/Array.hpp>
-#include <Types/RHIObjectForward.hpp>
 
 namespace Lumen
 {
@@ -35,16 +35,16 @@ namespace RHI
 
             const FRHIQueryPoolDesc &GetDesc () const noexcept override;
             void Reset () noexcept override;
-            TExpected<void, FRHIError> ReadResults ( UInt32 InFirstQuery,
-                                                     UInt32 InQueryCount,
-                                                     TSpan<UInt64> InDestination,
-                                                     FRHITimelineValue InCompleted ) const noexcept override;
+            FRHIExpected ReadResults ( UInt32 InFirstQuery,
+                                       UInt32 InQueryCount,
+                                       TSpan<UInt64> InDestination,
+                                       FRHITimelineValue InCompleted ) const noexcept override;
 
-            [[nodiscard]] TExpected<void, FRHIError> Begin ( UInt32 InIndex ) noexcept;
-            [[nodiscard]] TExpected<void, FRHIError> End ( UInt32 InIndex ) noexcept;
+            [[nodiscard]] FRHIExpected Begin ( UInt32 InIndex ) noexcept;
+            [[nodiscard]] FRHIExpected End ( UInt32 InIndex ) noexcept;
             void SetNextValue ( UInt64 InValue ) noexcept;
             void SetNextAvailability ( FRHITimelineValue InValue ) noexcept;
-            [[nodiscard]] TExpected<void, FRHIError>
+            [[nodiscard]] FRHIExpected
             SetQueryValue ( UInt32 InIndex, UInt64 InValue, FRHITimelineValue InAvailability = {} ) noexcept;
             [[nodiscard]] Bool IsActive ( UInt32 InIndex ) const noexcept;
 

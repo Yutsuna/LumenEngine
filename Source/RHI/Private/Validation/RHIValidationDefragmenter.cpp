@@ -25,10 +25,9 @@ Lumen::RHI::FRHIValidationDefragmenter::BuildPlan ( const TSpan<const FRHIAlloca
     return Underlying->BuildPlan( InAllocations );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIValidationDefragmenter::Execute ( const FRHIDefragPlan &InPlan ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationDefragmenter::Execute ( const FRHIDefragPlan &InPlan ) noexcept
 {
-    if ( const TExpected<void, FRHIError> PlanValid = InPlan.Validate(); not PlanValid )
+    if ( const FRHIExpected PlanValid = InPlan.Validate(); not PlanValid )
     {
         return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidDefragPlan, ERHIErrorCondition::Memory,
                                              "Defragmentation plan is invalid", this );

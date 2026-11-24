@@ -18,7 +18,7 @@ Lumen::RHI::FRHIShaderDesc Lumen::RHI::FRHIShaderPackageEntry::GetDesc () const 
                            .Reflection = Reflection };
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIShaderPackage::AddEntry ( FRHIShaderPackageEntry InEntry ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIShaderPackage::AddEntry ( FRHIShaderPackageEntry InEntry ) noexcept
 {
     LUMEN_EXPECT( _, InEntry.GetDesc().Validate() );
     Entries.push_back( std::move( InEntry ) );

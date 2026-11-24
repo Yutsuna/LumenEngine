@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Memory/SharedPtr.hpp>
 #include <Memory/Span.hpp>
 #include <RHI/Memory/IRHIAllocator.hpp>
 #include <RHI/Types/IRHIObject.hpp>
@@ -15,6 +16,8 @@ namespace Lumen
 namespace RHI
 {
 
+    class IRHIBuffer;
+
     /**
      * @struct FRHIUploadAllocation
      * @brief Writable staging range and its allocation metadata.
@@ -22,6 +25,7 @@ namespace RHI
     struct FRHIUploadAllocation
     {
         FRHIAllocation Allocation;
+        TSharedRef<IRHIBuffer> Buffer;
         TSpan<Byte> MappedData;
     };
 
@@ -37,7 +41,7 @@ namespace RHI
         [[nodiscard]] virtual TExpected<FRHIUploadAllocation, FRHIError>
         Allocate ( const FRHIAllocationDesc &InDesc ) noexcept = 0;
         /** @brief Releases a completed staging range. */
-        [[nodiscard]] virtual TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept = 0;
+        [[nodiscard]] virtual FRHIExpected Free ( const FRHIAllocation &InAllocation ) noexcept = 0;
     };
 } // namespace RHI
 

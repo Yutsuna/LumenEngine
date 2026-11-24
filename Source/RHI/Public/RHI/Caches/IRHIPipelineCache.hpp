@@ -11,6 +11,7 @@
 #include <Memory/SharedPtr.hpp>
 
 #include <RHI/Pipelines/IRHIPipeline.hpp>
+#include <RHI/Pipelines/RHIPipelineCacheKey.hpp>
 
 #include <Templates/Optional.hpp>
 
@@ -36,16 +37,15 @@ namespace RHI
         [[nodiscard]] virtual const FRHIPipelineCacheDesc &GetDesc () const noexcept = 0;
 
         /** @return The retained pipeline on a hit, or empty on a miss. */
-        [[nodiscard]] virtual TOptional<TSharedPtr<IRHIPipeline>> Find ( const FRHIPipelineCompatibility &InKey ) noexcept = 0;
+        [[nodiscard]] virtual TOptional<TSharedPtr<IRHIPipeline>> Find ( const FRHIPipelineCacheKey &InKey ) noexcept = 0;
 
         /** @brief Inserts or replaces a complete entry without retaining partial creations. */
-        virtual TExpected<void, FRHIError> Insert ( const FRHIPipelineCompatibility &InKey,
-                                                    TSharedRef<IRHIPipeline> InPipeline ) noexcept = 0;
+        virtual FRHIExpected Insert ( const FRHIPipelineCacheKey &InKey, TSharedRef<IRHIPipeline> InPipeline ) noexcept = 0;
         /**
-         * @brief Removes the pipeline stored for a compatibility key.
-         * @param InKey Canonical compatibility key to remove.
+         * @brief Removes the pipeline stored for a complete cache key.
+         * @param InKey Canonical cache key to remove.
          */
-        virtual void Remove ( const FRHIPipelineCompatibility &InKey ) noexcept = 0;
+        virtual void Remove ( const FRHIPipelineCacheKey &InKey ) noexcept = 0;
 
         /**
          * @brief Removes every cached pipeline and resets statistics.

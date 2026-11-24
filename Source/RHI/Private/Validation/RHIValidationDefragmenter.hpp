@@ -33,7 +33,7 @@ namespace RHI
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
         [[nodiscard]] TExpected<FRHIDefragPlan, FRHIError>
         BuildPlan ( TSpan<const FRHIAllocation> InAllocations ) noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> Execute ( const FRHIDefragPlan &InPlan ) noexcept override;
+        [[nodiscard]] FRHIExpected Execute ( const FRHIDefragPlan &InPlan ) noexcept override;
 
     private:
 

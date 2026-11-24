@@ -37,7 +37,7 @@ namespace RHI
         UInt64 TimestampPeriod         = 1ULL;
 
         /** @return Success when all limits are internally coherent. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

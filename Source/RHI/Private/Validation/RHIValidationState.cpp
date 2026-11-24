@@ -4,13 +4,21 @@
  */
 
 #include "RHIValidationState.hpp"
+#include "Templates/Expected.hpp"
+
 #include <HAL/LockGuard.hpp>
 #include <RHI/Validation/RHIValidation.hpp>
+
 #include <variant>
+
+/**
+ * Public
+ */
 
 Lumen::RHI::FRHIValidationState::FRHIValidationState ( TSharedPtr<FRHIValidationReporter> InReporter ) noexcept
     : Reporter( std::move( InReporter ) )
 {
+    /* */
 }
 
 Lumen::RHI::FRHIValidationState::~FRHIValidationState () noexcept = default;
@@ -19,7 +27,7 @@ void Lumen::RHI::FRHIValidationState::Track ( IRHIObject &InObject, const ERHIVa
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     const UInt64 Key = InObject.GetId().GetValue();
-    if ( Objects.find( Key ) != Objects.end() )
+    if ( Objects.contains( Key ) )
     {
         return;
     }
@@ -33,7 +41,7 @@ void Lumen::RHI::FRHIValidationState::TrackResource ( IRHIResource &InResource, 
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     const UInt64 Key = InResource.GetId().GetValue();
-    if ( Objects.find( Key ) != Objects.end() )
+    if ( Objects.contains( Key ) )
     {
         return;
     }
@@ -42,8 +50,8 @@ void Lumen::RHI::FRHIValidationState::TrackResource ( IRHIResource &InResource, 
     Entry.Kind   = InKind;
     if ( InKind == ERHIValidationObjectKind::Texture )
     {
-        const auto &Texture = static_cast<const IRHITexture &>( InResource );
-        const USize Count   = static_cast<USize>( Texture.GetDesc().MipCount ) * Texture.GetDesc().LayerCount;
+        const IRHITexture &Texture = dynamic_cast<const IRHITexture &>( InResource );
+        const USize Count          = static_cast<USize>( Texture.GetDesc().MipCount ) * Texture.GetDesc().LayerCount;
         Entry.States.assign( Count, InResource.GetInitialState() );
     }
     else
@@ -63,16 +71,16 @@ void Lumen::RHI::FRHIValidationState::Untrack ( IRHIObject &InObject ) noexcept
     }
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIValidationState::ValidateObject ( const IRHIObject &InObject,
-                                                  const ERHIValidationObjectKind InKind ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationState::ValidateObject ( const IRHIObject &InObject,
+                                                                           const ERHIValidationObjectKind InKind ) const noexcept
 {
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
     return CheckObject( Objects, InObject, InKind );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationState::CheckObject (
-    const TMap<UInt64, FEntry> &InObjects, const IRHIObject &InObject, const ERHIValidationObjectKind InKind ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationState::CheckObject ( const TMap<UInt64, FEntry> &InObjects,
+                                                                        const IRHIObject &InObject,
+                                                                        const ERHIValidationObjectKind InKind ) const noexcept
 {
     const IRHIObject *Unwrapped                      = UnwrapRHIObject( &InObject );
     const TMap<UInt64, FEntry>::const_iterator Found = InObjects.find( Unwrapped->GetId().GetValue() );
@@ -92,8 +100,11 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationState::C
 Lumen::Bool Lumen::RHI::FRHIValidationState::Contains ( const IRHIObject &InObject ) const noexcept
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InObject );
+
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+
     const TMap<UInt64, FEntry>::const_iterator Found = Objects.find( Unwrapped->GetId().GetValue() );
+
     return Found != Objects.end() and Found->second.Object == Unwrapped;
 }
 
@@ -109,6 +120,7 @@ Lumen::RHI::FRHIValidationState::GetResourceState ( const IRHIResource &InResour
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InResource );
     HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
     const TMap<UInt64, FEntry>::const_iterator Found = Objects.find( Unwrapped->GetId().GetValue() );
+
     if ( Found == Objects.end() or Found->second.States.empty() )
     {
         return {};
@@ -135,11 +147,11 @@ Lumen::TOptional<Lumen::RHI::ERHIResourceState> Lumen::RHI::FRHIValidationState:
     {
         return {};
     }
-    const USize Index = static_cast<USize>( InMip ) * InTexture.GetDesc().LayerCount + InLayer;
+    const USize Index = ( static_cast<USize>( InMip ) * InTexture.GetDesc().LayerCount ) + InLayer;
     return TOptional<ERHIResourceState>( Found->second.States[Index] );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIExpected
 Lumen::RHI::FRHIValidationState::ValidateTransition ( const IRHIResource &InResource,
                                                       const FEntry &InEntry,
                                                       const ERHIResourceState InBefore,
@@ -166,46 +178,44 @@ Lumen::RHI::FRHIValidationState::ValidateTransition ( const IRHIResource &InReso
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationState::TransitionBuffer (
-    const FRHIBufferTransition &InTransition, const ERHIQueueType InRecordingQueue, const Bool bApply ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationState::TransitionBuffer ( const FRHIBufferTransition &InTransition,
+                                                                             const ERHIQueueType InRecordingQueue,
+                                                                             const Bool bApply ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     return ValidateBufferIn( Objects, InTransition, InRecordingQueue, bApply );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationState::TransitionTexture (
-    const FRHITextureTransition &InTransition, const ERHIQueueType InRecordingQueue, const Bool bApply ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationState::TransitionTexture ( const FRHITextureTransition &InTransition,
+                                                                              const ERHIQueueType InRecordingQueue,
+                                                                              const Bool bApply ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     return ValidateTextureIn( Objects, InTransition, InRecordingQueue, bApply );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIValidationState::ValidateBufferIn ( TMap<UInt64, FEntry> &InObjects,
-                                                    const FRHIBufferTransition &InTransition,
-                                                    const ERHIQueueType InRecordingQueue,
-                                                    const Bool bApply ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationState::ValidateBufferIn ( TMap<UInt64, FEntry> &InObjects,
+                                                                             const FRHIBufferTransition &InTransition,
+                                                                             const ERHIQueueType InRecordingQueue,
+                                                                             const Bool bApply ) const noexcept
 {
     if ( not InTransition.Buffer )
     {
         return Reporter->Reject( ERHIValidationMessageCode::InvalidResourceTransition, ERHIErrorCondition::Resource,
                                  "Buffer transition has no resource" );
     }
-    IRHIBuffer &Buffer                     = *UnwrapRHI( InTransition.Buffer.Get() );
-    const TExpected<void, FRHIError> Owned = CheckObject( InObjects, Buffer, ERHIValidationObjectKind::Buffer );
+    IRHIBuffer &Buffer = *UnwrapRHI( InTransition.Buffer.Get() );
+    FRHIExpected Owned = CheckObject( InObjects, Buffer, ERHIValidationObjectKind::Buffer );
     if ( not Owned )
     {
         return Owned;
     }
     const TMap<UInt64, FEntry>::iterator Found = InObjects.find( Buffer.GetId().GetValue() );
     FEntry &Entry                              = Found->second;
-    const TExpected<void, FRHIError> TransitionValid =
-        ValidateTransition( Buffer, Entry, InTransition.Before, InTransition.After, InTransition.SourceQueue,
-                            InTransition.DestinationQueue, InRecordingQueue );
-    if ( not TransitionValid )
-    {
-        return TransitionValid;
-    }
+
+    LUMEN_TRY_EXPECT_ERROR( ValidateTransition( Buffer, Entry, InTransition.Before, InTransition.After, InTransition.SourceQueue,
+                                                InTransition.DestinationQueue, InRecordingQueue ) );
+
     if ( InTransition.Before != ERHIResourceState::Undefined and Entry.States.front() != InTransition.Before )
     {
         return Reporter->Reject( ERHIValidationMessageCode::InvalidResourceTransition, ERHIErrorCondition::Resource,
@@ -218,23 +228,18 @@ Lumen::RHI::FRHIValidationState::ValidateBufferIn ( TMap<UInt64, FEntry> &InObje
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIValidationState::ValidateTextureIn ( TMap<UInt64, FEntry> &InObjects,
-                                                     const FRHITextureTransition &InTransition,
-                                                     const ERHIQueueType InRecordingQueue,
-                                                     const Bool bApply ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationState::ValidateTextureIn ( TMap<UInt64, FEntry> &InObjects,
+                                                                              const FRHITextureTransition &InTransition,
+                                                                              const ERHIQueueType InRecordingQueue,
+                                                                              const Bool bApply ) const noexcept
 {
     if ( not InTransition.Texture )
     {
         return Reporter->Reject( ERHIValidationMessageCode::InvalidResourceTransition, ERHIErrorCondition::Resource,
                                  "Texture transition has no resource" );
     }
-    IRHITexture &Texture                   = *UnwrapRHI( InTransition.Texture.Get() );
-    const TExpected<void, FRHIError> Owned = CheckObject( InObjects, Texture, ERHIValidationObjectKind::Texture );
-    if ( not Owned )
-    {
-        return Owned;
-    }
+    IRHITexture &Texture = *UnwrapRHI( InTransition.Texture.Get() );
+    LUMEN_TRY_EXPECT_ERROR( CheckObject( InObjects, Texture, ERHIValidationObjectKind::Texture ) );
     if ( not InTransition.Range.IsContainedIn( Texture.GetDesc().MipCount, Texture.GetDesc().LayerCount ) )
     {
         return Reporter->Reject( ERHIValidationMessageCode::InvalidResourceTransition, ERHIErrorCondition::Resource,
@@ -242,20 +247,17 @@ Lumen::RHI::FRHIValidationState::ValidateTextureIn ( TMap<UInt64, FEntry> &InObj
     }
     const TMap<UInt64, FEntry>::iterator Found = InObjects.find( Texture.GetId().GetValue() );
     FEntry &Entry                              = Found->second;
-    const TExpected<void, FRHIError> TransitionValid =
-        ValidateTransition( Texture, Entry, InTransition.Before, InTransition.After, InTransition.SourceQueue,
-                            InTransition.DestinationQueue, InRecordingQueue );
-    if ( not TransitionValid )
-    {
-        return TransitionValid;
-    }
+
+    LUMEN_TRY_EXPECT_ERROR( ValidateTransition( Texture, Entry, InTransition.Before, InTransition.After, InTransition.SourceQueue,
+                                                InTransition.DestinationQueue, InRecordingQueue ) );
+
     const USize Stride = static_cast<USize>( Texture.GetDesc().LayerCount );
     for ( UInt32 Mip = InTransition.Range.BaseMip; Mip < InTransition.Range.BaseMip + InTransition.Range.MipCount; ++Mip )
     {
         for ( UInt32 Layer = InTransition.Range.BaseLayer; Layer < InTransition.Range.BaseLayer + InTransition.Range.LayerCount;
               ++Layer )
         {
-            const USize Index = static_cast<USize>( Mip ) * Stride + Layer;
+            const USize Index = ( static_cast<USize>( Mip ) * Stride ) + Layer;
             if ( InTransition.Before != ERHIResourceState::Undefined and Entry.States[Index] != InTransition.Before )
             {
                 return Reporter->Reject( ERHIValidationMessageCode::InvalidResourceTransition, ERHIErrorCondition::Resource,
@@ -277,6 +279,7 @@ void Lumen::RHI::FRHIValidationState::ApplyBuffer ( TMap<UInt64, FEntry> &InObje
     {
         return;
     }
+
     IRHIBuffer &Buffer                         = *UnwrapRHI( InTransition.Buffer.Get() );
     const TMap<UInt64, FEntry>::iterator Found = InObjects.find( Buffer.GetId().GetValue() );
     if ( Found != InObjects.end() and not Found->second.States.empty() )
@@ -306,7 +309,7 @@ void Lumen::RHI::FRHIValidationState::ApplyTexture ( TMap<UInt64, FEntry> &InObj
         for ( UInt32 Layer = InTransition.Range.BaseLayer; Layer < InTransition.Range.BaseLayer + InTransition.Range.LayerCount;
               ++Layer )
         {
-            const USize Index = static_cast<USize>( Mip ) * Stride + Layer;
+            const USize Index = ( static_cast<USize>( Mip ) * Stride ) + Layer;
             if ( Index < Entry.States.size() )
             {
                 Entry.States[Index] = InTransition.After;
@@ -316,7 +319,7 @@ void Lumen::RHI::FRHIValidationState::ApplyTexture ( TMap<UInt64, FEntry> &InObj
     Entry.OwnerQueue = InTransition.DestinationQueue;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIExpected
 Lumen::RHI::FRHIValidationState::ValidateTransitions ( const TSpan<const FRHITransition> InTransitions,
                                                        const ERHIQueueType InRecordingQueue ) const noexcept
 {
@@ -329,19 +332,11 @@ Lumen::RHI::FRHIValidationState::ValidateTransitions ( const TSpan<const FRHITra
     {
         if ( const FRHIBufferTransition *Buffer = std::get_if<FRHIBufferTransition>( &Transition ) )
         {
-            const TExpected<void, FRHIError> Valid = ValidateBufferIn( Speculative, *Buffer, InRecordingQueue, true );
-            if ( not Valid )
-            {
-                return Valid;
-            }
+            LUMEN_TRY_EXPECT_ERROR( ValidateBufferIn( Speculative, *Buffer, InRecordingQueue, true ) );
         }
         else if ( const FRHITextureTransition *Texture = std::get_if<FRHITextureTransition>( &Transition ) )
         {
-            const TExpected<void, FRHIError> Valid = ValidateTextureIn( Speculative, *Texture, InRecordingQueue, true );
-            if ( not Valid )
-            {
-                return Valid;
-            }
+            LUMEN_TRY_EXPECT_ERROR( ValidateTextureIn( Speculative, *Texture, InRecordingQueue, true ) );
         }
         else
         {

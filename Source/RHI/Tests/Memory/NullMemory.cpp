@@ -10,14 +10,22 @@
  * Public
  */
 
-Lumen::RHI::Tests::FNullHeap::FNullHeap ( const FRHIHeapDesc &InDesc, const FRHIObjectId InId ) noexcept
-    : Identity( InId, FHash::TypeHash<FNullHeap>() ), Desc( InDesc ),
+Lumen::RHI::Tests::FNullHeap::FNullHeap ( const FRHIHeapDesc &InDesc,
+                                          const FRHIObjectId InId,
+                                          const FRHIObjectId InOwnerId ) noexcept
+    : Identity( InId, FHash::TypeHash<FNullHeap>() ), OwnerId( InOwnerId ), Desc( InDesc ),
       Storage( MakeUnique<Byte[]>( static_cast<USize>( InDesc.Size ) ) )
 {
     /* */
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullHeap )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullHeap )
+
+Lumen::RHI::FRHIObjectId Lumen::RHI::Tests::FNullHeap::GetOwnerId () const noexcept
+{
+    return OwnerId;
+}
+
 const Lumen::RHI::FRHIHeapDesc &Lumen::RHI::Tests::FNullHeap::GetDesc () const noexcept
 {
     return Desc;

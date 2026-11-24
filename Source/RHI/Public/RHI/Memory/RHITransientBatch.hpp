@@ -23,7 +23,7 @@ namespace RHI
     {
         TVector<FRHITransientDesc> Requests;
         /** @return Success when every request is valid. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
 

@@ -27,7 +27,7 @@ namespace RHI
         Bool bAllowEviction = true;
 
         /** @return Success when limits are nonzero and initial data fits the declared budget. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

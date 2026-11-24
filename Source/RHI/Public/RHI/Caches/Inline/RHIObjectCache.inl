@@ -72,8 +72,9 @@ Lumen::RHI::TRHIObjectCache<KeyType, ValueType, HashType>::GetOrCreate (
 }
 
 template <typename KeyType, typename ValueType, typename HashType>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::TRHIObjectCache<KeyType, ValueType, HashType>::Store (
-    const KeyType &InKey, TSharedRef<ValueType> InValue, const UInt64 InBytes ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::TRHIObjectCache<KeyType, ValueType, HashType>::Store ( const KeyType &InKey,
+                                                                                            TSharedRef<ValueType> InValue,
+                                                                                            const UInt64 InBytes ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const typename TMap<KeyType, FEntry, HashType>::iterator Existing = Entries.find( InKey );

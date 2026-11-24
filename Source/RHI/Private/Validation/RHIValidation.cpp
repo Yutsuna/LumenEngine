@@ -6,6 +6,10 @@
 #include "RHIValidationDevice.hpp"
 #include <RHI/Validation/RHIValidation.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDevice>, Lumen::RHI::FRHIError>
 Lumen::RHI::WrapRHIDevice ( const TSharedRef<IRHIDevice> &InDevice, const FRHIValidationDesc &InDesc ) noexcept
 {

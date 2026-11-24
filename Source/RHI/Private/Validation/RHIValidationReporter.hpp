@@ -4,8 +4,9 @@
  */
 #pragma once
 
-#include <HAL/PlatformMutex.hpp>
 #include <RHI/Validation/RHIValidationDesc.hpp>
+
+#include <HAL/PlatformMutex.hpp>
 #include <Templates/Map.hpp>
 
 namespace Lumen
@@ -48,10 +49,10 @@ namespace RHI
                       const IRHIObject *InObject   = nullptr,
                       ERHIDebugSeverity InSeverity = ERHIDebugSeverity::Error ) const noexcept;
         /** @return A ValidationFailed error and emits its corresponding diagnostic. */
-        [[nodiscard]] TExpected<void, FRHIError> Reject ( ERHIValidationMessageCode InCode,
-                                                          ERHIErrorCondition InCondition,
-                                                          FStringView InMessage,
-                                                          const IRHIObject *InObject = nullptr ) const noexcept;
+        [[nodiscard]] FRHIExpected Reject ( ERHIValidationMessageCode InCode,
+                                            ERHIErrorCondition InCondition,
+                                            FStringView InMessage,
+                                            const IRHIObject *InObject = nullptr ) const noexcept;
         /** @return The immutable diagnostic policy. */
         [[nodiscard]] const FRHIValidationDesc &GetDesc () const noexcept;
 

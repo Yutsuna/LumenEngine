@@ -22,7 +22,7 @@ Lumen::RHI::Tests::FNullQueue::FNullQueue ( const ERHIQueueType InType,
     Identity.SetDebugName( std::format( "Null Queue %u", InIndex ) );
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullQueue )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullQueue )
 Lumen::RHI::ERHIQueueType Lumen::RHI::Tests::FNullQueue::GetType () const noexcept
 {
     return Type;
@@ -34,7 +34,7 @@ Lumen::RHI::FRHITimelineValue Lumen::RHI::Tests::FNullQueue::GetCompletedValue (
     return Completed;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Submit ( const FRHISubmitDesc &InDesc ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullQueue::Submit ( const FRHISubmitDesc &InDesc ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bLost )
@@ -48,7 +48,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Sub
             return TUnexpected<FRHIError>( *Error );
         }
     }
-    TExpected<void, FRHIError> Valid = InDesc.Validate();
+    FRHIExpected Valid = InDesc.Validate();
     if ( not Valid )
     {
         return Valid;
@@ -87,7 +87,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Sub
     {
         if ( Wait.Semaphore->GetDesc().Type == ERHISemaphoreType::Binary )
         {
-            const TExpected<void, FRHIError> Result = Wait.Semaphore->Wait( 1ULL, 0.0 );
+            const FRHIExpected Result = Wait.Semaphore->Wait( 1ULL, 0.0 );
             if ( not Result )
             {
                 return Result;
@@ -96,7 +96,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Sub
     }
     for ( const auto &Signal : InDesc.Signals )
     {
-        const TExpected<void, FRHIError> Result = Signal.Semaphore->Signal( Signal.Value );
+        const FRHIExpected Result = Signal.Semaphore->Signal( Signal.Value );
         if ( not Result )
         {
             return Result;
@@ -104,7 +104,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Sub
     }
     for ( const auto &List : InDesc.CommandLists )
     {
-        const TExpected<void, FRHIError> Result = List->MarkPending( InDesc.Completion );
+        const FRHIExpected Result = List->MarkPending( InDesc.Completion );
         if ( not Result )
         {
             return Result;
@@ -114,7 +114,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Sub
     ++SubmitCount;
     for ( const auto &List : InDesc.CommandLists )
     {
-        const TExpected<void, FRHIError> Result = List->MarkCompleted( Completed );
+        const FRHIExpected Result = List->MarkCompleted( Completed );
         if ( not Result )
         {
             return Result;
@@ -124,7 +124,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Sub
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::WaitIdle () noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullQueue::WaitIdle () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bLost )
@@ -134,8 +134,8 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Wai
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullQueue::Wait ( const FRHITimelineValue InValue,
-                                                                                    const Float64 InTimeoutSeconds ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullQueue::Wait ( const FRHITimelineValue InValue,
+                                                               const Float64 InTimeoutSeconds ) noexcept
 {
     if ( InTimeoutSeconds < 0.0 )
     {

@@ -7,7 +7,9 @@
 #include <Core/CoreTypes.hpp>
 #include <Core/EnumFlags.hpp>
 #include <RHI/Types/RHIError.hpp>
+#include <RHI/Types/RHIShaderFormat.hpp>
 #include <RHIExport.hpp>
+#include <Templates/Vector.hpp>
 
 namespace Lumen
 {
@@ -53,11 +55,14 @@ namespace RHI
         ERHICapabilityFlags Features = ERHICapabilityFlags::None;
         UInt32 ShaderModelMajor      = 0U;
         UInt32 ShaderModelMinor      = 0U;
+        TVector<ERHIShaderFormat> ShaderFormats;
 
         /** @return True when every bit in InRequired is present. */
         [[nodiscard]] Bool Supports ( ERHICapabilityFlags InRequired ) const noexcept;
+        /** @return True when the advertised formats contain InFormat. */
+        [[nodiscard]] Bool Supports ( ERHIShaderFormat InFormat ) const noexcept;
         /** @return Success, or the first unsupported feature group. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

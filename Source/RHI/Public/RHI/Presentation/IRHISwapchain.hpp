@@ -49,10 +49,10 @@ namespace RHI
         /** @brief Acquires the next free image; OutOfDate requires recreation. */
         [[nodiscard]] virtual TExpected<FRHIAcquiredImage, FRHIError> AcquireNextImage () noexcept = 0;
         /** @brief Presents an acquired image after waiting on the optional binary render-complete semaphore. */
-        [[nodiscard]] virtual TExpected<void, FRHIError>
+        [[nodiscard]] virtual FRHIExpected
         Present ( IRHIQueue &InQueue, const FRHIAcquiredImage &InImage, IRHISemaphore *InRenderComplete ) noexcept = 0;
         /** @brief Recreates the image ring without invalidating already acquired images. */
-        [[nodiscard]] virtual TExpected<void, FRHIError> Resize ( const FRHIExtent3D &InExtent ) noexcept = 0;
+        [[nodiscard]] virtual FRHIExpected Resize ( const FRHIExtent3D &InExtent ) noexcept = 0;
     };
 
 } // namespace RHI

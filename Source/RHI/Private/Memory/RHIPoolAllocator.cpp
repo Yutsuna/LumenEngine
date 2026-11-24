@@ -73,7 +73,7 @@ Lumen::RHI::FRHIPoolAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noe
     return Result;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIPoolAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIPoolAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     if ( not InAllocation.IsValid() or SlotSize == 0ULL or InAllocation.Offset % SlotSize != 0ULL or
          InAllocation.Offset / SlotSize >= Stats.Capacity / SlotSize )

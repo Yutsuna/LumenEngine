@@ -25,7 +25,7 @@ namespace RHI
         ERHIMemoryClass MemoryClass = ERHIMemoryClass::DeviceLocal;
         ERHIObjectFlags Flags       = ERHIObjectFlags::None;
         /** @return Success for a nonzero heap size. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
 

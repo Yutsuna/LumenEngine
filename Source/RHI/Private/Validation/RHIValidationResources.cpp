@@ -5,6 +5,36 @@
 
 #include "RHIValidationResources.hpp"
 
+Lumen::RHI::FRHIValidationHeap::FRHIValidationHeap ( TSharedRef<IRHIHeap> InUnderlying,
+                                                     TSharedPtr<FRHIValidationState> InState ) noexcept
+    : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
+{
+    State->Track( *Underlying, ERHIValidationObjectKind::Heap );
+}
+
+Lumen::RHI::FRHIValidationHeap::~FRHIValidationHeap () noexcept
+{
+    State->Untrack( *Underlying );
+}
+
+LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationHeap )
+
+const Lumen::RHI::FRHIHeapDesc &Lumen::RHI::FRHIValidationHeap::GetDesc () const noexcept
+{
+    return Underlying->GetDesc();
+}
+
+Lumen::TExpected<Lumen::TSpan<Lumen::Byte>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIValidationHeap::Map ( const UInt64 InOffset, const UInt64 InSize ) noexcept
+{
+    return Underlying->Map( InOffset, InSize );
+}
+
+void Lumen::RHI::FRHIValidationHeap::Unmap () noexcept
+{
+    Underlying->Unmap();
+}
+
 Lumen::RHI::FRHIValidationBuffer::FRHIValidationBuffer ( TSharedRef<IRHIBuffer> InUnderlying,
                                                          TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
@@ -109,8 +139,10 @@ Lumen::RHI::FRHIResourceLifetime Lumen::RHI::FRHIValidationTexture::GetLifetime 
 Lumen::RHI::FRHIValidationTextureView::FRHIValidationTextureView ( TSharedRef<IRHITextureView> InUnderlying,
                                                                    TSharedPtr<IRHITexture> InParent,
                                                                    TSharedPtr<FRHIValidationState> InState ) noexcept
-    : Underlying( std::move( InUnderlying ) ), Parent( std::move( InParent ) ), State( std::move( InState ) )
+    : Underlying( std::move( InUnderlying ) ), Parent( std::move( InParent ) ), State( std::move( InState ) ),
+      Desc( Underlying->GetDesc() )
 {
+    Desc.Texture = Parent;
     State->Track( *Underlying, ERHIValidationObjectKind::TextureView );
 }
 
@@ -123,7 +155,7 @@ LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationTextureView )
 
 const Lumen::RHI::FRHITextureViewDesc &Lumen::RHI::FRHIValidationTextureView::GetDesc () const noexcept
 {
-    return Underlying->GetDesc();
+    return Desc;
 }
 
 Lumen::TSharedPtr<Lumen::RHI::IRHITexture> Lumen::RHI::FRHIValidationTextureView::GetTexture () const noexcept

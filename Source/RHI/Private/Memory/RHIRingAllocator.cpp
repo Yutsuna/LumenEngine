@@ -66,7 +66,7 @@ Lumen::RHI::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noe
     return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Memory, "Ring has no completed contiguous range" ) );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIRingAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIRingAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 

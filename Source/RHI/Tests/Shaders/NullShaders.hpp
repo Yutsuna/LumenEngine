@@ -6,7 +6,7 @@
 #pragma once
 
 #include <RHI/Shaders/IRHIShader.hpp>
-#include <Types/RHIObjectForward.hpp>
+#include <RHI/Types/RHIObjectForward.hpp>
 
 namespace Lumen
 {

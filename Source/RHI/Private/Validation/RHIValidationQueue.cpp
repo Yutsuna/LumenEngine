@@ -30,12 +30,12 @@ Lumen::RHI::FRHITimelineValue Lumen::RHI::FRHIValidationQueue::GetCompletedValue
     return Underlying->GetCompletedValue();
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationQueue::Submit ( const FRHISubmitDesc &InDesc ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationQueue::Submit ( const FRHISubmitDesc &InDesc ) noexcept
 {
     const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Queues );
     if ( bValidate )
     {
-        const TExpected<void, FRHIError> DescValid = InDesc.Validate();
+        const FRHIExpected DescValid = InDesc.Validate();
         if ( not DescValid )
         {
             return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission, ERHIErrorCondition::Queue,
@@ -54,7 +54,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationQueue::S
     {
         if ( bValidate )
         {
-            const TExpected<void, FRHIError> Owned = State->ValidateObject( *List, ERHIValidationObjectKind::CommandList );
+            const FRHIExpected Owned = State->ValidateObject( *List, ERHIValidationObjectKind::CommandList );
             if ( not Owned )
             {
                 return Owned;
@@ -73,8 +73,8 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationQueue::S
         Wait.Semaphore = UnwrapRHIShared( Wait.Semaphore );
         if ( bValidate and Wait.Semaphore->GetValue() < Wait.Value )
         {
-            return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission,
-                                                 ERHIErrorCondition::Synchronization, "Submission wait is not signaled", this );
+            return State->GetReporter()->Reject( ERHIValidationMessageCode::InvalidQueueSubmission, ERHIErrorCondition::Queue,
+                                                 "Submission wait is not signaled", this );
         }
     }
     Unwrapped.Signals = InDesc.Signals;
@@ -85,13 +85,13 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationQueue::S
     return Underlying->Submit( Unwrapped );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationQueue::WaitIdle () noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationQueue::WaitIdle () noexcept
 {
     return Underlying->WaitIdle();
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationQueue::Wait ( const FRHITimelineValue InValue,
-                                                                                      const Float64 InTimeoutSeconds ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationQueue::Wait ( const FRHITimelineValue InValue,
+                                                                 const Float64 InTimeoutSeconds ) noexcept
 {
     return Underlying->Wait( InValue, InTimeoutSeconds );
 }

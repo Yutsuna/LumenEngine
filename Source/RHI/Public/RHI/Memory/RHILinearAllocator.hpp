@@ -49,7 +49,7 @@ namespace RHI
          * @return Success for a valid allocation; InvalidArgument with the Memory
          *         condition when InAllocation is invalid. No storage is released.
          */
-        TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept override;
+        FRHIExpected Free ( const FRHIAllocation &InAllocation ) noexcept override;
 
         /** @brief Reclaims the whole region; safe to call concurrently with other members. */
         void Reset () noexcept override;

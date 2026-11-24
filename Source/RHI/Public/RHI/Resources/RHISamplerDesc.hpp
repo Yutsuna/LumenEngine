@@ -71,7 +71,7 @@ namespace RHI
         UInt32 MaxAnisotropy            = 1U;
         TOptional<ERHICompareFunction> CompareFunction;
         /** @return Success for ordered LOD and valid anisotropy. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

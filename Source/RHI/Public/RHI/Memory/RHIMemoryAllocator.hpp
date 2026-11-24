@@ -34,7 +34,7 @@ namespace RHI
         /** @brief Reserves budget and allocates; failure releases the reservation. */
         [[nodiscard]] TExpected<FRHIAllocation, FRHIError> Allocate ( const FRHIAllocationDesc &InDesc ) noexcept;
         /** @brief Frees a range and releases its budget. */
-        [[nodiscard]] TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept;
+        [[nodiscard]] FRHIExpected Free ( const FRHIAllocation &InAllocation ) noexcept;
 
     private:
 

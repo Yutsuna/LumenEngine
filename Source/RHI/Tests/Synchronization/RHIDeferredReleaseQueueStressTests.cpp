@@ -30,7 +30,7 @@ namespace RHI
                     };
                     for ( UInt32 Index = 0U; Index < 128U; ++Index )
                     {
-                        const TExpected<void, FRHIError> Enqueued = Queue.Enqueue( { 1ULL }, IncrementReleased );
+                        const FRHIExpected Enqueued = Queue.Enqueue( { 1ULL }, IncrementReleased );
                         if ( not Enqueued )
                         {
                             return;

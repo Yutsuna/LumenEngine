@@ -26,7 +26,7 @@ namespace RHI
         TVector<FRHIInlineConstantRange> InlineConstants;
 
         /** @return Success for nonnull layouts and nonoverlapping valid inline ranges. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

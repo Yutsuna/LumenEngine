@@ -46,7 +46,7 @@ namespace RHI
          * @param InAllocation Allocation previously returned by Allocate.
          * @return Success, or InvalidArgument for a foreign, invalid or double free.
          */
-        TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept override;
+        FRHIExpected Free ( const FRHIAllocation &InAllocation ) noexcept override;
 
         /**
          * @brief Reclaims all ranges; callers must ensure no GPU work uses them.

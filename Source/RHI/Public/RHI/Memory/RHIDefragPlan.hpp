@@ -41,7 +41,7 @@ namespace RHI
         UInt64 ReclaimedBytes                = 0ULL;
         FRHITimelineValue ObservedCompletion = {};
         /** @return Success when every source/destination is valid and ranges do not overlap incorrectly. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
 

@@ -10,6 +10,7 @@
 #include <RHI/Queries/RHIQueryPoolDesc.hpp>
 #include <RHI/Queue/IRHIQueue.hpp>
 #include <RHI/Resources/RHIBufferDesc.hpp>
+#include <RHI/Synchronization/IRHISemaphore.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
@@ -86,8 +87,8 @@ namespace RHI
         {
             TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
             LUMEN_CHECK_TRUE( Device.HasValue() );
-            TExpected<TSharedRef<IRHIQueue>, FRHIError> Queue = ( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
-            LUMEN_CHECK_TRUE( Queue.HasValue() );
+            TSharedRef<IRHIQueue> Queue         = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+            TSharedRef<IRHISemaphore> Semaphore = *( *Device )->CreateSemaphore( {} );
             if ( not Tests::GetRHIConformanceDeviceFactory().InjectDeviceLost( **Device ) )
             {
                 return;
@@ -101,8 +102,9 @@ namespace RHI
             LUMEN_CHECK_EQ( Buffer.Error().Condition, ERHIErrorCondition::Device );
 
             FRHISubmitDesc Submit;
-            Submit.Completion                           = { 1ULL };
-            const TExpected<void, FRHIError> Submission = ( *Queue )->Submit( Submit );
+            Submit.Completion             = { 1ULL };
+            Submit.Signals                = { { .Semaphore = Semaphore, .Value = 1ULL } };
+            const FRHIExpected Submission = Queue->Submit( Submit );
             LUMEN_CHECK_HAS_ERROR( Submission );
             LUMEN_CHECK_EQ( Submission.Error().Code, ERHIErrorCode::DeviceLost );
         }

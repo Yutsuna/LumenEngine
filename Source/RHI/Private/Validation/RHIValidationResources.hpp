@@ -6,6 +6,7 @@
 #pragma once
 
 #include "RHIValidationState.hpp"
+#include <RHI/Memory/IRHIHeap.hpp>
 #include <RHI/Resources/IRHISampler.hpp>
 #include <RHI/Resources/IRHITextureView.hpp>
 
@@ -14,6 +15,32 @@ namespace Lumen
 
 namespace RHI
 {
+
+    /**
+     * @class FRHIValidationHeap
+     * @brief Tracks heap ownership and forwards mapping operations.
+     */
+    class FRHIValidationHeap final : public IRHIHeap, public IRHIValidationObject
+    {
+    public:
+
+        FRHIValidationHeap ( TSharedRef<IRHIHeap> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
+        ~FRHIValidationHeap () noexcept override;
+        [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+        [[nodiscard]] FString GetDebugName () const noexcept override;
+        void SetDebugName ( FStringView InName ) noexcept override;
+        [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+        [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+        [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+        [[nodiscard]] const FRHIHeapDesc &GetDesc () const noexcept override;
+        [[nodiscard]] TExpected<TSpan<Byte>, FRHIError> Map ( UInt64 InOffset, UInt64 InSize ) noexcept override;
+        void Unmap () noexcept override;
+
+    private:
+
+        TSharedRef<IRHIHeap> Underlying;
+        TSharedPtr<FRHIValidationState> State;
+    };
 
     /**
      * @class FRHIValidationBuffer
@@ -100,6 +127,7 @@ namespace RHI
         TSharedRef<IRHITextureView> Underlying;
         TSharedPtr<IRHITexture> Parent;
         TSharedPtr<FRHIValidationState> State;
+        FRHITextureViewDesc Desc;
     };
 
     /**

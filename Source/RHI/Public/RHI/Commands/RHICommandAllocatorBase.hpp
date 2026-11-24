@@ -33,7 +33,7 @@ namespace RHI
          * @param InCompleted Timeline value known to have completed.
          * @return Success, or InvalidState if a tracked list is still pending above InCompleted.
          */
-        TExpected<void, FRHIError> Reset ( FRHITimelineValue InCompleted ) noexcept override;
+        FRHIExpected Reset ( FRHITimelineValue InCompleted ) noexcept override;
         /** @brief Adds/removes a list owned by the concrete backend allocator. */
         void RegisterList ( IRHICommandList &InList ) noexcept;
         /**

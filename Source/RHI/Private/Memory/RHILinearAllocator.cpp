@@ -46,8 +46,7 @@ Lumen::RHI::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) n
                            .Heap        = nullptr };
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHILinearAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHILinearAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     if ( not InAllocation.IsValid() )
     {

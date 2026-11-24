@@ -26,7 +26,7 @@ namespace RHI
          * @brief Validates the copy range without reference buffer sizes.
          * @return Success, or a structured FRHIError with the relevant condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
 
         /**
          * @brief Validates the copy against the source and destination sizes.
@@ -35,8 +35,7 @@ namespace RHI
          * @param bSameBuffer True when both ranges belong to the same buffer.
          * @return Success, or a structured FRHIError with the relevant condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError>
-        Validate ( UInt64 InSourceSize, UInt64 InDestinationSize, Bool bSameBuffer ) const noexcept;
+        [[nodiscard]] FRHIExpected Validate ( UInt64 InSourceSize, UInt64 InDestinationSize, Bool bSameBuffer ) const noexcept;
     };
     struct RHI_EXPORT FRHITextureCopy
     {
@@ -56,7 +55,7 @@ namespace RHI
          * @param InFormat Format whose aspect and footprint are checked.
          * @return Success, or a structured FRHIError with the relevant condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError> Validate ( ERHIFormat InFormat ) const noexcept;
+        [[nodiscard]] FRHIExpected Validate ( ERHIFormat InFormat ) const noexcept;
     };
 
     /**
@@ -77,7 +76,7 @@ namespace RHI
         ERHIFormatAspect Aspect = ERHIFormatAspect::Color;
 
         /** @brief Zero pitches select a tightly packed footprint. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate ( ERHIFormat InFormat ) const noexcept;
+        [[nodiscard]] FRHIExpected Validate ( ERHIFormat InFormat ) const noexcept;
     };
 } // namespace RHI
 

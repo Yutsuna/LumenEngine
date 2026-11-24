@@ -4,10 +4,10 @@
  */
 #pragma once
 
-#include "../Types/RHIObjectForward.hpp"
 #include <RHI/Device/IRHIDevice.hpp>
 #include <RHI/Memory/IRHIBufferPool.hpp>
 #include <RHI/Resources/RHIBufferDesc.hpp>
+#include <RHI/Types/RHIObjectForward.hpp>
 #include <RHI/Types/RHITimeline.hpp>
 #include <Templates/Vector.hpp>
 
@@ -26,12 +26,17 @@ namespace RHI
     public:
 
         LUMEN_RHI_OBJECT_DECLARATIONS;
+
         /** @brief Uses InDevice for creation and InId for identity. */
         FRHIBufferPool ( IRHIDevice &InDevice, FRHIObjectId InId ) noexcept;
+
         TExpected<TSharedRef<IRHIBuffer>, FRHIError> Acquire ( const FRHIBufferDesc &InDesc ) noexcept override;
-        TExpected<void, FRHIError> Release ( TSharedRef<IRHIBuffer> InBuffer, FRHITimelineValue InCompletion ) noexcept override;
+
+        FRHIExpected Release ( TSharedRef<IRHIBuffer> InBuffer, FRHITimelineValue InCompletion ) noexcept override;
+
         /** @brief Publishes the current GPU completion value so finished entries become reusable. */
         void AdvanceCompleted ( FRHITimelineValue InCompleted ) noexcept override;
+
         /** @return Number of released entries still waiting for their completion value. */
         [[nodiscard]] USize GetPendingCount () const noexcept override;
 
@@ -47,6 +52,7 @@ namespace RHI
         TVector<FEntry> Released;
         FRHITimelineValue CurrentCompleted;
     };
+
 } // namespace RHI
 
 } // namespace Lumen

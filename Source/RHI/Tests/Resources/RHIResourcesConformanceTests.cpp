@@ -5,6 +5,9 @@
 
 #include "Device/RHIConformanceDeviceFactory.hpp"
 #include <RHI/Device/IRHIDevice.hpp>
+#include <RHI/Memory/IRHIHeap.hpp>
+#include <RHI/Memory/RHIAllocation.hpp>
+#include <RHI/Memory/RHIHeapDesc.hpp>
 #include <RHI/Resources/IRHIBuffer.hpp>
 #include <RHI/Resources/IRHISampler.hpp>
 #include <RHI/Resources/IRHITexture.hpp>
@@ -71,8 +74,8 @@ namespace RHI
             LUMEN_CHECK_TRUE( Device.HasValue() );
             const TExpected<TSharedRef<IRHITextureView>, FRHIError> EmptyView = ( *Device )->CreateTextureView( {} );
             LUMEN_CHECK_HAS_ERROR( EmptyView );
-            LUMEN_CHECK_EQ( EmptyView.Error().Code, ERHIErrorCode::InvalidArgument );
-            LUMEN_CHECK_EQ( EmptyView.Error().Condition, ERHIErrorCondition::Resource );
+            LUMEN_CHECK_TRUE( Tests::HasRHIConformanceError( EmptyView.Error(), ERHIErrorCode::InvalidArgument,
+                                                             ERHIErrorCondition::Resource ) );
 
             const TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
                 ( *Device )->CreateBuffer( { .Size = 16ULL, .Usage = ERHIResourceUsage::CopyDestination } );
@@ -138,6 +141,70 @@ namespace RHI
             LUMEN_CHECK_TRUE( View->GetTexture().Get() != nullptr );
             LUMEN_CHECK_EQ( View->GetTexture()->GetDesc().Extent.Width, 8U );
             LUMEN_CHECK_EQ( View->GetDesc().Texture.Get(), View->GetTexture().Get() );
+        }
+
+        LUMEN_TEST( RHIResourcesConformance, PlacesResourcesAndRetainsTheirHeap )
+        {
+            TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice( true );
+            LUMEN_CHECK_TRUE( Device.HasValue() );
+            TExpected<TSharedRef<IRHIHeap>, FRHIError> Heap =
+                ( *Device )->CreateHeap( { .Size = 8192ULL, .MemoryClass = ERHIMemoryClass::Upload } );
+            LUMEN_CHECK_TRUE( Heap.HasValue() );
+
+            FRHIAllocation BufferAllocation{ .Id          = FRHIAllocationId{ 1ULL },
+                                             .Offset      = 256ULL,
+                                             .Size        = 512ULL,
+                                             .Alignment   = 256ULL,
+                                             .MemoryClass = ERHIMemoryClass::Upload,
+                                             .Heap        = ( *Heap ).Get() };
+            const FRHIBufferDesc BufferDesc{
+                .Size = 64ULL, .Usage = ERHIResourceUsage::CopySource, .MemoryClass = ERHIMemoryClass::Upload };
+            TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
+                ( *Device )->CreatePlacedBuffer( BufferDesc, *Heap, BufferAllocation );
+            LUMEN_CHECK_TRUE( Buffer.HasValue() );
+            TExpected<TSpan<Byte>, FRHIError> Mapped = ( *Buffer )->Map( 0ULL, 64ULL );
+            LUMEN_CHECK_TRUE( Mapped.HasValue() );
+            ( *Mapped )[0] = Byte{ 0x5AU };
+            ( *Buffer )->Unmap();
+            TExpected<TSpan<Byte>, FRHIError> HeapBytes = ( *Heap )->Map( 256ULL, 1ULL );
+            LUMEN_CHECK_TRUE( HeapBytes.HasValue() );
+            LUMEN_CHECK_EQ( static_cast<UInt32>( ( *HeapBytes )[0] ), 0x5AU );
+            ( *Heap )->Unmap();
+
+            const FRHITextureDesc TextureDesc{ .Extent         = { 4U, 4U, 1U },
+                                               .Format         = ERHIFormat::RGBA8Unorm,
+                                               .Usage          = ERHIResourceUsage::CopySource,
+                                               .MemoryClass    = ERHIMemoryClass::Upload,
+                                               .OptimizedClear = {} };
+            const FRHIAllocation TextureAllocation{ .Id          = FRHIAllocationId{ 2ULL },
+                                                    .Offset      = 2048ULL,
+                                                    .Size        = 2048ULL,
+                                                    .Alignment   = 256ULL,
+                                                    .MemoryClass = ERHIMemoryClass::Upload,
+                                                    .Heap        = ( *Heap ).Get() };
+            LUMEN_CHECK_TRUE( ( *Device )->CreatePlacedTexture( TextureDesc, *Heap, TextureAllocation ).HasValue() );
+
+            FRHIAllocation Misaligned = BufferAllocation;
+            Misaligned.Offset         = 2ULL;
+            LUMEN_CHECK_HAS_ERROR( ( *Device )->CreatePlacedBuffer( BufferDesc, *Heap, Misaligned ) );
+            FRHIAllocation WrongHeap = BufferAllocation;
+            WrongHeap.Heap           = nullptr;
+            LUMEN_CHECK_HAS_ERROR( ( *Device )->CreatePlacedBuffer( BufferDesc, *Heap, WrongHeap ) );
+
+            TSharedRef<IRHIBuffer> RetainedBuffer = [&Device, &BufferDesc]
+            {
+                TSharedRef<IRHIHeap> LocalHeap =
+                    *( *Device )->CreateHeap( { .Size = 512ULL, .MemoryClass = ERHIMemoryClass::Upload } );
+                const FRHIAllocation Allocation{ .Id          = FRHIAllocationId{ 3ULL },
+                                                 .Offset      = 0ULL,
+                                                 .Size        = 64ULL,
+                                                 .Alignment   = 16ULL,
+                                                 .MemoryClass = ERHIMemoryClass::Upload,
+                                                 .Heap        = LocalHeap.Get() };
+                return *( *Device )->CreatePlacedBuffer( BufferDesc, LocalHeap, Allocation );
+            }();
+            LUMEN_CHECK_TRUE( RetainedBuffer->Map( 0ULL, 64ULL ).HasValue() );
+            RetainedBuffer->Unmap();
         }
 
     } // namespace

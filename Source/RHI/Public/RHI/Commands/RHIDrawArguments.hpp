@@ -30,7 +30,7 @@ namespace RHI
          * @brief Validates the direct draw arguments.
          * @return Success, or a structured FRHIError with the relevant condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
     struct RHI_EXPORT FRHIDrawIndexedArguments
     {
@@ -43,7 +43,7 @@ namespace RHI
          * @brief Validates the indexed draw arguments.
          * @return Success, or a structured FRHIError with the relevant condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
     struct RHI_EXPORT FRHIDispatchArguments
     {
@@ -55,7 +55,7 @@ namespace RHI
          * @param InMaximumPerDimension Maximum groups allowed in each dimension.
          * @return Success, or a structured FRHIError with the relevant condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError> Validate ( UInt32 InMaximumPerDimension = 65535U ) const noexcept;
+        [[nodiscard]] FRHIExpected Validate ( UInt32 InMaximumPerDimension = 65535U ) const noexcept;
     };
     struct RHI_EXPORT FRHIIndirectArguments
     {
@@ -68,7 +68,7 @@ namespace RHI
          * @param InMinimumStride Minimum legal stride between records.
          * @return Success, or a structured FRHIError with the relevant condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError> Validate ( UInt64 InBufferSize, UInt32 InMinimumStride ) const noexcept;
+        [[nodiscard]] FRHIExpected Validate ( UInt64 InBufferSize, UInt32 InMinimumStride ) const noexcept;
     };
 } // namespace RHI
 

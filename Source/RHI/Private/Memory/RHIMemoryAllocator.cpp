@@ -41,8 +41,7 @@ Lumen::RHI::FRHIMemoryAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) n
     } );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIMemoryAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIMemoryAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     return Allocator->Free( InAllocation )
         .Inspect( [this, &InAllocation] () noexcept

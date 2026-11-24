@@ -44,7 +44,7 @@ namespace RHI
          * @param bDepthStencil True when the attachment is a depth/stencil target.
          * @return Success, or a structured FRHIError with the relevant condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError> Validate ( Bool bDepthStencil ) const noexcept;
+        [[nodiscard]] FRHIExpected Validate ( Bool bDepthStencil ) const noexcept;
     };
     struct RHI_EXPORT FRHIRenderingDesc
     {
@@ -55,7 +55,7 @@ namespace RHI
          * @brief Validates the rendering area and all attachments.
          * @return Success, or a structured FRHIError with the relevant condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
 

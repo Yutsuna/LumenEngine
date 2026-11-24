@@ -13,8 +13,7 @@ Lumen::RHI::ERHIQueueType Lumen::RHI::FRHICommandAllocatorBase::GetQueueType () 
 {
     return QueueType;
 }
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHICommandAllocatorBase::Reset ( const FRHITimelineValue InCompleted ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHICommandAllocatorBase::Reset ( const FRHITimelineValue InCompleted ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( IRHICommandList *List : Lists )

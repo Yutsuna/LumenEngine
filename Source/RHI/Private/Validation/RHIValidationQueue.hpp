@@ -32,9 +32,9 @@ namespace RHI
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
         [[nodiscard]] ERHIQueueType GetType () const noexcept override;
         [[nodiscard]] FRHITimelineValue GetCompletedValue () const noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> Submit ( const FRHISubmitDesc &InDesc ) noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> WaitIdle () noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept override;
+        [[nodiscard]] FRHIExpected Submit ( const FRHISubmitDesc &InDesc ) noexcept override;
+        [[nodiscard]] FRHIExpected WaitIdle () noexcept override;
+        [[nodiscard]] FRHIExpected Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept override;
 
     private:
 

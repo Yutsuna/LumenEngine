@@ -44,7 +44,7 @@ namespace RHI
         ERHIFormat DepthStencilFormat = ERHIFormat::Unknown;
 
         /** @return Success when required shaders/layout and all states are valid. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

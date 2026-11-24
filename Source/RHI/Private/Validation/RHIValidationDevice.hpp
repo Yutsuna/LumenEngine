@@ -39,13 +39,17 @@ namespace RHI
         [[nodiscard]] const FRHICapabilities &GetCapabilities () const noexcept override;
         [[nodiscard]] const FRHILimits &GetLimits () const noexcept override;
         [[nodiscard]] ERHIDeviceStatus GetStatus () const noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> WaitIdle () noexcept override;
+        [[nodiscard]] FRHIExpected WaitIdle () noexcept override;
         [[nodiscard]] TExpected<TSharedRef<IRHIQueue>, FRHIError> GetQueue ( ERHIQueueType InType,
                                                                              UInt32 InIndex ) noexcept override;
         [[nodiscard]] TExpected<TSharedRef<IRHIBuffer>, FRHIError>
         CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcept override;
+        [[nodiscard]] TExpected<TSharedRef<IRHIBuffer>, FRHIError> CreatePlacedBuffer (
+            const FRHIBufferDesc &InDesc, TSharedRef<IRHIHeap> InHeap, const FRHIAllocation &InAllocation ) noexcept override;
         [[nodiscard]] TExpected<TSharedRef<IRHITexture>, FRHIError>
         CreateTexture ( const FRHITextureDesc &InDesc ) noexcept override;
+        [[nodiscard]] TExpected<TSharedRef<IRHITexture>, FRHIError> CreatePlacedTexture (
+            const FRHITextureDesc &InDesc, TSharedRef<IRHIHeap> InHeap, const FRHIAllocation &InAllocation ) noexcept override;
         [[nodiscard]] TExpected<TSharedRef<IRHITextureView>, FRHIError>
         CreateTextureView ( const FRHITextureViewDesc &InDesc ) noexcept override;
         [[nodiscard]] TExpected<TSharedRef<IRHISampler>, FRHIError>

@@ -33,10 +33,16 @@ namespace RHI
             explicit FNullDevice ( FNullDeviceDesc InDesc = {} ) noexcept;
             ~FNullDevice () noexcept override;
 
-            TExpected<void, FRHIError> WaitIdle () noexcept override;
+            FRHIExpected WaitIdle () noexcept override;
             TExpected<TSharedRef<IRHIQueue>, FRHIError> GetQueue ( ERHIQueueType InType, UInt32 InIndex ) noexcept override;
             TExpected<TSharedRef<IRHIBuffer>, FRHIError> CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcept override;
+            TExpected<TSharedRef<IRHIBuffer>, FRHIError> CreatePlacedBuffer (
+                const FRHIBufferDesc &InDesc, TSharedRef<IRHIHeap> InHeap, const FRHIAllocation &InAllocation ) noexcept override;
             TExpected<TSharedRef<IRHITexture>, FRHIError> CreateTexture ( const FRHITextureDesc &InDesc ) noexcept override;
+            TExpected<TSharedRef<IRHITexture>, FRHIError>
+            CreatePlacedTexture ( const FRHITextureDesc &InDesc,
+                                  TSharedRef<IRHIHeap> InHeap,
+                                  const FRHIAllocation &InAllocation ) noexcept override;
             TExpected<TSharedRef<IRHITextureView>, FRHIError>
             CreateTextureView ( const FRHITextureViewDesc &InDesc ) noexcept override;
             TExpected<TSharedRef<IRHISampler>, FRHIError> CreateSampler ( const FRHISamplerDesc &InDesc ) noexcept override;

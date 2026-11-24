@@ -5,7 +5,7 @@
 
 #include <RHI/Validation/RHIValidationDesc.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationDesc::Validate () const noexcept
 {
     if ( Level >= ERHIValidationLevel::Count )
     {

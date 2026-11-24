@@ -4,7 +4,7 @@
  */
 #include <RHI/Resources/RHITextureDesc.hpp>
 #include <RHI/Types/RHISampleCount.hpp>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHITextureDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHITextureDesc::Validate () const noexcept
 {
     if ( not Extent.IsValid() or Format == ERHIFormat::Unknown or Format >= ERHIFormat::Count or MipCount == 0U or
          MipCount > Extent.GetMaxMipLevelCount() or LayerCount == 0U or ToSampleCount( SampleCount ) == 0U or

@@ -18,7 +18,7 @@ Lumen::RHI::Tests::FNullBindingLayout::FNullBindingLayout ( const FRHIBindingLay
     /* */
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullBindingLayout )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullBindingLayout )
 const Lumen::RHI::FRHIBindingLayoutDesc &Lumen::RHI::Tests::FNullBindingLayout::GetDesc () const noexcept
 {
     return Desc;
@@ -29,14 +29,13 @@ Lumen::RHI::Tests::FNullBindingSet::FNullBindingSet ( TSharedRef<IRHIBindingLayo
 {
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullBindingSet )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullBindingSet )
 Lumen::TSharedRef<Lumen::RHI::IRHIBindingLayout> Lumen::RHI::Tests::FNullBindingSet::GetLayout () const noexcept
 {
     return Layout;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWrites ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWrites ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( const FRHIBindingWrite &Write : InWrites )
@@ -58,6 +57,10 @@ Lumen::RHI::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> 
         {
             return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Binding slot is absent from layout" ) );
         }
+        if ( Write.ArrayElement >= Entry->Count )
+        {
+            return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Binding array element exceeds the layout count" ) );
+        }
         const Bool Valid = std::visit( [Entry] ( const auto &Payload )
         {
             if constexpr ( requires { Payload.Buffer; } )
@@ -77,11 +80,22 @@ Lumen::RHI::Tests::FNullBindingSet::Write ( const TSpan<const FRHIBindingWrite> 
                 return Payload.Offset <= Desc.Size and Payload.Size <= Desc.Size - Payload.Offset and
                        HasAnyFlags( Desc.Usage, Required );
             }
+            else if constexpr ( requires {
+                                    Payload.View;
+                                    Payload.Sampler;
+                                } )
+            {
+                if ( Entry->Type != ERHIBindingType::CombinedTextureSampler or not Payload.Sampler.IsValid() )
+                {
+                    return false;
+                }
+                const TSharedPtr<IRHITexture> Texture = Payload.View->GetTexture();
+                return Texture and HasAnyFlags( Texture->GetUsage(), ERHIResourceUsage::ShaderResource );
+            }
             else if constexpr ( requires { Payload.View; } )
             {
-                const Bool bTypeMatches = Entry->Type == ERHIBindingType::Texture or
-                                          Entry->Type == ERHIBindingType::StorageTexture or
-                                          Entry->Type == ERHIBindingType::CombinedTextureSampler;
+                const Bool bTypeMatches =
+                    Entry->Type == ERHIBindingType::Texture or Entry->Type == ERHIBindingType::StorageTexture;
                 const TSharedPtr<IRHITexture> Texture = Payload.View->GetTexture();
                 if ( not bTypeMatches or not Texture )
                 {
@@ -143,4 +157,4 @@ Lumen::RHI::Tests::FNullDescriptorAllocator::FNullDescriptorAllocator ( const FR
     /* */
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullDescriptorAllocator )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullDescriptorAllocator )

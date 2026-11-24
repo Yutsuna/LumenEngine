@@ -44,7 +44,7 @@ Lumen::RHI::FRHITransientResourceAllocator::FRHITransientResourceAllocator ( con
     /* */
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( FRHITransientResourceAllocator )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI, FRHITransientResourceAllocator )
 void Lumen::RHI::FRHITransientResourceAllocator::BeginBatch () noexcept
 {
     bInBatch = true;

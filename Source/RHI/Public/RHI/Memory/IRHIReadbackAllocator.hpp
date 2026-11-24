@@ -3,6 +3,7 @@
  * @brief Declares GPU readback allocation.
  */
 #pragma once
+#include <Memory/SharedPtr.hpp>
 #include <Memory/Span.hpp>
 #include <RHI/Memory/IRHIAllocator.hpp>
 #include <RHI/Types/IRHIObject.hpp>
@@ -11,6 +12,8 @@ namespace Lumen
 
 namespace RHI
 {
+    class IRHIBuffer;
+
     /**
      * @struct FRHIReadbackAllocation
      * @brief Readback metadata and readable bytes after completion.
@@ -34,8 +37,11 @@ namespace RHI
         /** @brief Maps a completed readback range. */
         [[nodiscard]] virtual TExpected<FRHIReadbackAllocation, FRHIError>
         Map ( const FRHIAllocation &InAllocation ) noexcept = 0;
+        /** @brief Returns the copy destination containing the validated allocation. */
+        [[nodiscard]] virtual TExpected<TSharedRef<IRHIBuffer>, FRHIError>
+        GetBuffer ( const FRHIAllocation &InAllocation ) noexcept = 0;
         /** @brief Releases a readback range. */
-        [[nodiscard]] virtual TExpected<void, FRHIError> Free ( const FRHIAllocation &InAllocation ) noexcept = 0;
+        [[nodiscard]] virtual FRHIExpected Free ( const FRHIAllocation &InAllocation ) noexcept = 0;
     };
 } // namespace RHI
 

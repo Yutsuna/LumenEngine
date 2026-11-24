@@ -5,7 +5,7 @@
 
 #include <RHI/Presentation/RHISwapchainCapabilities.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHISwapchainCapabilities::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHISwapchainCapabilities::Validate () const noexcept
 {
     if ( Formats.empty() or ColorSpaces.empty() or PresentModes.empty() or not MinExtent.IsValid() or not MaxExtent.IsValid() or
          MinImageCount == 0U or MaxImageCount < MinImageCount or MaxExtent.Width < MinExtent.Width or

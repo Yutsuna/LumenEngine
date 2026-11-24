@@ -4,9 +4,9 @@
  */
 #pragma once
 
-#include "../Types/RHIObjectForward.hpp"
 #include <RHI/Memory/IRHITransientResourceAllocator.hpp>
 #include <RHI/Memory/RHITlsfAllocator.hpp>
+#include <RHI/Types/RHIObjectForward.hpp>
 
 namespace Lumen
 {

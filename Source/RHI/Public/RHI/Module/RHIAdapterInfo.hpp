@@ -44,7 +44,7 @@ namespace RHI
         TVector<FRHIQueueFamilyInfo> QueueFamilies;
 
         /** @return Success when identity, limits, and at least one queue are valid. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

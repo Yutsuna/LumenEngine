@@ -8,8 +8,12 @@
 #include <RHI/Bindings/IRHIDescriptorAllocator.hpp>
 #include <RHI/Bindings/RHIDescriptorAllocatorDesc.hpp>
 #include <RHI/Device/IRHIDevice.hpp>
+#include <RHI/Resources/IRHITextureView.hpp>
 #include <RHI/Resources/RHIBufferDesc.hpp>
 #include <RHI/Resources/RHISamplerDesc.hpp>
+#include <RHI/Resources/RHITextureDesc.hpp>
+#include <RHI/Resources/RHITextureViewDesc.hpp>
+#include <Templates/Array.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
@@ -72,7 +76,7 @@ namespace RHI
             TExpected<TSharedRef<IRHISampler>, FRHIError> Sampler = ( *Device )->CreateSampler( FRHISamplerDesc{} );
             LUMEN_CHECK_TRUE( Sampler.HasValue() );
             const FRHIBindingWrite WrongType{ .Slot = 0U, .Resource = FRHISamplerBinding{ .Sampler = *Sampler } };
-            const TExpected<void, FRHIError> WrongTypeResult = ( *Set )->Write( TSpan<const FRHIBindingWrite>( &WrongType, 1U ) );
+            const FRHIExpected WrongTypeResult = ( *Set )->Write( TSpan<const FRHIBindingWrite>( &WrongType, 1U ) );
             LUMEN_CHECK_HAS_ERROR( WrongTypeResult );
             LUMEN_CHECK_EQ( WrongTypeResult.Error().Condition, ERHIErrorCondition::Binding );
             LUMEN_CHECK_FALSE( ( *Set )->IsDirty() );
@@ -81,8 +85,7 @@ namespace RHI
                 ( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::ShaderResource } );
             LUMEN_CHECK_TRUE( Buffer.HasValue() );
             const FRHIBindingWrite UnknownSlot{ .Slot = 99U, .Resource = FRHIBufferBinding{ .Buffer = *Buffer } };
-            const TExpected<void, FRHIError> UnknownSlotResult =
-                ( *Set )->Write( TSpan<const FRHIBindingWrite>( &UnknownSlot, 1U ) );
+            const FRHIExpected UnknownSlotResult = ( *Set )->Write( TSpan<const FRHIBindingWrite>( &UnknownSlot, 1U ) );
             LUMEN_CHECK_HAS_ERROR( UnknownSlotResult );
             LUMEN_CHECK_FALSE( ( *Set )->IsDirty() );
         }
@@ -131,6 +134,51 @@ namespace RHI
             LUMEN_CHECK_HAS_ERROR( Layout );
             LUMEN_CHECK_EQ( Layout.Error().Code, ERHIErrorCode::Unsupported );
             LUMEN_CHECK_EQ( Layout.Error().Condition, ERHIErrorCondition::Capability );
+        }
+
+        LUMEN_TEST( RHIBindingsConformance, WritesArrayElementsAndCombinedResourcesAtomically )
+        {
+            TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice( true );
+            LUMEN_CHECK_TRUE( Device.HasValue() );
+            FRHIBindingLayoutDesc LayoutDesc;
+            LayoutDesc.Entries.push_back( { .Slot = 0U, .Type = ERHIBindingType::ReadOnlyBuffer, .Count = 2U } );
+            LayoutDesc.Entries.push_back( { .Slot = 1U, .Type = ERHIBindingType::CombinedTextureSampler } );
+            TExpected<TSharedRef<IRHIBindingLayout>, FRHIError> Layout = ( *Device )->CreateBindingLayout( LayoutDesc );
+            LUMEN_CHECK_TRUE( Layout.HasValue() );
+            TExpected<TSharedRef<IRHIBindingSet>, FRHIError> Set = ( *Device )->CreateBindingSet( *Layout );
+            LUMEN_CHECK_TRUE( Set.HasValue() );
+
+            TExpected<TSharedRef<IRHIBuffer>, FRHIError> Buffer =
+                ( *Device )->CreateBuffer( { .Size = 64ULL, .Usage = ERHIResourceUsage::ShaderResource } );
+            TExpected<TSharedRef<IRHITexture>, FRHIError> Texture =
+                ( *Device )->CreateTexture( { .Extent         = { 4U, 4U, 1U },
+                                              .Format         = ERHIFormat::RGBA8Unorm,
+                                              .Usage          = ERHIResourceUsage::ShaderResource,
+                                              .OptimizedClear = {} } );
+            LUMEN_CHECK_TRUE( Buffer.HasValue() );
+            LUMEN_CHECK_TRUE( Texture.HasValue() );
+            FRHITextureViewDesc ViewDesc;
+            ViewDesc.Texture                                       = *Texture;
+            TExpected<TSharedRef<IRHITextureView>, FRHIError> View = ( *Device )->CreateTextureView( ViewDesc );
+            TExpected<TSharedRef<IRHISampler>, FRHIError> Sampler  = ( *Device )->CreateSampler( {} );
+            LUMEN_CHECK_TRUE( View.HasValue() );
+            LUMEN_CHECK_TRUE( Sampler.HasValue() );
+
+            const FRHIBindingWrite ArrayWrite{
+                .Slot = 0U, .ArrayElement = 1U, .Resource = FRHIBufferBinding{ .Buffer = *Buffer } };
+            const FRHIBindingWrite CombinedWrite{
+                .Slot = 1U, .Resource = FRHICombinedTextureSamplerBinding{ .View = *View, .Sampler = *Sampler } };
+            const TArray<FRHIBindingWrite, 2U> Writes = { ArrayWrite, CombinedWrite };
+            LUMEN_CHECK_TRUE( ( *Set )->Write( Writes ).HasValue() );
+            ( *Set )->ClearDirty();
+
+            FRHIBindingWrite InvalidArray = ArrayWrite;
+            InvalidArray.ArrayElement     = 2U;
+            LUMEN_CHECK_HAS_ERROR( ( *Set )->Write( TSpan<const FRHIBindingWrite>( &InvalidArray, 1U ) ) );
+            LUMEN_CHECK_FALSE( ( *Set )->IsDirty() );
+            const FRHIBindingWrite MissingSampler{ .Slot = 1U, .Resource = FRHITextureBinding{ .View = *View } };
+            LUMEN_CHECK_HAS_ERROR( ( *Set )->Write( TSpan<const FRHIBindingWrite>( &MissingSampler, 1U ) ) );
+            LUMEN_CHECK_FALSE( ( *Set )->IsDirty() );
         }
 
     } // namespace

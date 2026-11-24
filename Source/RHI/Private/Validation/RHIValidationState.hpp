@@ -6,11 +6,13 @@
 #pragma once
 
 #include "RHIValidationReporter.hpp"
-#include <HAL/PlatformMutex.hpp>
-#include <Memory/Span.hpp>
+
 #include <RHI/Commands/RHITransition.hpp>
 #include <RHI/Resources/IRHIBuffer.hpp>
 #include <RHI/Resources/IRHITexture.hpp>
+
+#include <HAL/PlatformMutex.hpp>
+#include <Memory/Span.hpp>
 #include <Templates/Hash.hpp>
 
 #define LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( Class )                                                                          \
@@ -75,7 +77,8 @@ namespace RHI
         Queue,
         Swapchain,
         TransientAllocator,
-        Defragmenter
+        Defragmenter,
+        Heap
     };
 
     /**
@@ -89,40 +92,54 @@ namespace RHI
         explicit FRHIValidationState ( TSharedPtr<FRHIValidationReporter> InReporter ) noexcept;
         ~FRHIValidationState () noexcept;
 
+    public:
+
         void Track ( IRHIObject &InObject, ERHIValidationObjectKind InKind ) noexcept;
+
         void TrackResource ( IRHIResource &InResource, ERHIValidationObjectKind InKind ) noexcept;
+
         void Untrack ( IRHIObject &InObject ) noexcept;
+
         /** @return Success when the object belongs to this device tree and has the expected category. */
-        [[nodiscard]] TExpected<void, FRHIError> ValidateObject ( const IRHIObject &InObject,
-                                                                  ERHIValidationObjectKind InKind ) const noexcept;
+        [[nodiscard]] FRHIExpected ValidateObject ( const IRHIObject &InObject, ERHIValidationObjectKind InKind ) const noexcept;
+
         /** @return True when the unwrapped object is currently tracked. */
         [[nodiscard]] Bool Contains ( const IRHIObject &InObject ) const noexcept;
+
         [[nodiscard]] USize GetLiveObjectCount () const noexcept;
+
         /** @return The state of a buffer, or of a texture when all its subresources agree. */
         [[nodiscard]] TOptional<ERHIResourceState> GetResourceState ( const IRHIResource &InResource ) const noexcept;
+
         /** @return The state of one texture subresource. */
         [[nodiscard]] TOptional<ERHIResourceState>
         GetTextureState ( const IRHITexture &InTexture, UInt32 InMip, UInt32 InLayer ) const noexcept;
+
         /** @brief Validates and applies one buffer transition, including queue ownership transfer. */
-        [[nodiscard]] TExpected<void, FRHIError> TransitionBuffer ( const FRHIBufferTransition &InTransition,
-                                                                    ERHIQueueType InRecordingQueue,
-                                                                    Bool bApply = true ) noexcept;
+        [[nodiscard]] FRHIExpected TransitionBuffer ( const FRHIBufferTransition &InTransition,
+                                                      ERHIQueueType InRecordingQueue,
+                                                      Bool bApply = true ) noexcept;
+
         /** @brief Validates and applies a transition independently to every selected subresource. */
-        [[nodiscard]] TExpected<void, FRHIError> TransitionTexture ( const FRHITextureTransition &InTransition,
-                                                                     ERHIQueueType InRecordingQueue,
-                                                                     Bool bApply = true ) noexcept;
+        [[nodiscard]] FRHIExpected TransitionTexture ( const FRHITextureTransition &InTransition,
+                                                       ERHIQueueType InRecordingQueue,
+                                                       Bool bApply = true ) noexcept;
+
         /**
          * @brief Validates an entire batch against a speculative copy of the tracked state.
          * @details Each entry observes the state produced by the preceding entries, so a rejection is
          *          produced here rather than after the backend has recorded the batch. No registry is changed.
          * @return Success, or the first structured error raised while replaying the batch.
          */
-        [[nodiscard]] TExpected<void, FRHIError> ValidateTransitions ( TSpan<const FRHITransition> InTransitions,
-                                                                       ERHIQueueType InRecordingQueue ) const noexcept;
+        [[nodiscard]] FRHIExpected ValidateTransitions ( TSpan<const FRHITransition> InTransitions,
+                                                         ERHIQueueType InRecordingQueue ) const noexcept;
+
         /** @brief Commits a previously validated batch; this operation cannot reject or report an error. */
         void CommitTransitions ( TSpan<const FRHITransition> InTransitions ) noexcept;
+
         /** @brief Emits one snapshot of objects that remain live at validation shutdown. */
         void ReportLeaks () noexcept;
+
         /** @return The shared diagnostic reporter. */
         [[nodiscard]] const TSharedPtr<FRHIValidationReporter> &GetReporter () const noexcept;
 
@@ -136,27 +153,27 @@ namespace RHI
             ERHIQueueType OwnerQueue = ERHIQueueType::Graphics;
         };
 
-        [[nodiscard]] TExpected<void, FRHIError> ValidateTransition ( const IRHIResource &InResource,
-                                                                      const FEntry &InEntry,
-                                                                      ERHIResourceState InBefore,
-                                                                      ERHIResourceState InAfter,
-                                                                      ERHIQueueType InSourceQueue,
-                                                                      ERHIQueueType InDestinationQueue,
-                                                                      ERHIQueueType InRecordingQueue ) const noexcept;
+        [[nodiscard]] FRHIExpected ValidateTransition ( const IRHIResource &InResource,
+                                                        const FEntry &InEntry,
+                                                        ERHIResourceState InBefore,
+                                                        ERHIResourceState InAfter,
+                                                        ERHIQueueType InSourceQueue,
+                                                        ERHIQueueType InDestinationQueue,
+                                                        ERHIQueueType InRecordingQueue ) const noexcept;
         /** @return Success when the object belongs to the supplied registry and has the expected category. */
-        [[nodiscard]] TExpected<void, FRHIError> CheckObject ( const TMap<UInt64, FEntry> &InObjects,
-                                                               const IRHIObject &InObject,
-                                                               ERHIValidationObjectKind InKind ) const noexcept;
+        [[nodiscard]] FRHIExpected CheckObject ( const TMap<UInt64, FEntry> &InObjects,
+                                                 const IRHIObject &InObject,
+                                                 ERHIValidationObjectKind InKind ) const noexcept;
         /** @brief Replays one buffer barrier against a registry, optionally writing the resulting state. */
-        [[nodiscard]] TExpected<void, FRHIError> ValidateBufferIn ( TMap<UInt64, FEntry> &InObjects,
-                                                                    const FRHIBufferTransition &InTransition,
-                                                                    ERHIQueueType InRecordingQueue,
-                                                                    Bool bApply ) const noexcept;
+        [[nodiscard]] FRHIExpected ValidateBufferIn ( TMap<UInt64, FEntry> &InObjects,
+                                                      const FRHIBufferTransition &InTransition,
+                                                      ERHIQueueType InRecordingQueue,
+                                                      Bool bApply ) const noexcept;
         /** @brief Replays one texture barrier against a registry, optionally writing the resulting states. */
-        [[nodiscard]] TExpected<void, FRHIError> ValidateTextureIn ( TMap<UInt64, FEntry> &InObjects,
-                                                                     const FRHITextureTransition &InTransition,
-                                                                     ERHIQueueType InRecordingQueue,
-                                                                     Bool bApply ) const noexcept;
+        [[nodiscard]] FRHIExpected ValidateTextureIn ( TMap<UInt64, FEntry> &InObjects,
+                                                       const FRHITextureTransition &InTransition,
+                                                       ERHIQueueType InRecordingQueue,
+                                                       Bool bApply ) const noexcept;
         /** @brief Writes a validated buffer barrier result without any further checks. */
         void ApplyBuffer ( TMap<UInt64, FEntry> &InObjects, const FRHIBufferTransition &InTransition ) const noexcept;
         /** @brief Writes a validated texture barrier result without any further checks. */

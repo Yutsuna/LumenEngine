@@ -40,7 +40,7 @@ namespace RHI
          * @return Success when Size is nonzero and Usage and InitialState are known
          *         values; otherwise InvalidArgument with the Resource condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

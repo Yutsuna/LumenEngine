@@ -29,12 +29,12 @@ namespace RHI
             Write.Resource = FRHIBufferBinding{ .Buffer = Buffer };
             LUMEN_CHECK_TRUE( Set->Write( TSpan<const FRHIBindingWrite>( &Write, 1U ) ).HasValue() );
             LUMEN_CHECK_TRUE( Set->IsDirty() );
-            Write.Slot                             = 2U;
-            TExpected<void, FRHIError> MissingSlot = Set->Write( TSpan<const FRHIBindingWrite>( &Write, 1U ) );
+            Write.Slot               = 2U;
+            FRHIExpected MissingSlot = Set->Write( TSpan<const FRHIBindingWrite>( &Write, 1U ) );
             LUMEN_CHECK_HAS_ERROR( MissingSlot );
             LUMEN_CHECK_EQ( MissingSlot.Error().Code, ERHIErrorCode::ValidationFailed );
-            Write.Slot                           = 1U;
-            TExpected<void, FRHIError> WrongType = Set->Write( TSpan<const FRHIBindingWrite>( &Write, 1U ) );
+            Write.Slot             = 1U;
+            FRHIExpected WrongType = Set->Write( TSpan<const FRHIBindingWrite>( &Write, 1U ) );
             LUMEN_CHECK_EQ( WrongType.Error().Code, ERHIErrorCode::ValidationFailed );
             LUMEN_CHECK_TRUE( Sink.ContainsCode( static_cast<UInt32>( ERHIValidationMessageCode::InvalidBinding ) ) );
         }

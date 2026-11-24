@@ -6,7 +6,7 @@
 #include <RHI/Types/RHILimits.hpp>
 #include <RHI/Utilities/RHIAlignment.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHILimits::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHILimits::Validate () const noexcept
 {
     const Bool bValid = MaxBufferSize > 0ULL and MaxTextureDimension1D > 0U and MaxTextureDimension2D > 0U and
                         MaxTextureDimension3D > 0U and MaxTextureArrayLayers > 0U and MaxColorAttachments > 0U and

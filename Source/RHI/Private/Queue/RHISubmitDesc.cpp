@@ -4,7 +4,7 @@
  */
 
 #include <RHI/Queue/RHISubmitDesc.hpp>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHISubmitDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHISubmitDesc::Validate () const noexcept
 {
     if ( not Completion.IsValid() or ( CommandLists.empty() and Signals.empty() ) )
     {

@@ -3,7 +3,7 @@
  * @brief Implements sampler descriptor validation.
  */
 #include <RHI/Resources/RHISamplerDesc.hpp>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHISamplerDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHISamplerDesc::Validate () const noexcept
 {
     if ( MinLod < 0.0F or MaxLod < MinLod or MaxAnisotropy == 0U )
     {

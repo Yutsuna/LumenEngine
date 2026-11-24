@@ -34,7 +34,7 @@ namespace RHI
         UInt32 MaxImageCount = 8U;
 
         /** @return Success when the capability ranges and supported value lists are usable. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
         /** @return True when the exact format, color space, and mode combination is advertised. */
         [[nodiscard]] Bool
         /**

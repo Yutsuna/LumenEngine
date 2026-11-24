@@ -35,9 +35,9 @@ namespace RHI
         [[nodiscard]] UInt32 GetImageCount () const noexcept override;
         [[nodiscard]] TExpected<TSharedRef<IRHITexture>, FRHIError> GetImage ( UInt32 InIndex ) const noexcept override;
         [[nodiscard]] TExpected<FRHIAcquiredImage, FRHIError> AcquireNextImage () noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError>
+        [[nodiscard]] FRHIExpected
         Present ( IRHIQueue &InQueue, const FRHIAcquiredImage &InImage, IRHISemaphore *InRenderComplete ) noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> Resize ( const FRHIExtent3D &InExtent ) noexcept override;
+        [[nodiscard]] FRHIExpected Resize ( const FRHIExtent3D &InExtent ) noexcept override;
 
     private:
 
