@@ -19,13 +19,13 @@ namespace RHIVulkan
         LUMEN_CHECK_TRUE( Module.HasValue() );
     }
 
-    LUMEN_TEST( VulkanModule, ApiVersionIsOneZeroZero )
+    LUMEN_TEST( VulkanModule, ApiVersionIsOneOneZero )
     {
         const TExpected<TSharedRef<RHI::IRHIModule>, RHI::FRHIError> Module = CreateRHIVulkanModule();
         LUMEN_CHECK_TRUE( Module.HasValue() );
         const RHI::FRHIApiVersion Version = ( *Module )->GetApiVersion();
         LUMEN_CHECK_EQ( Version.Major, 1U );
-        LUMEN_CHECK_EQ( Version.Minor, 0U );
+        LUMEN_CHECK_EQ( Version.Minor, 1U );
         LUMEN_CHECK_EQ( Version.Patch, 0U );
     }
 
