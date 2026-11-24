@@ -7,6 +7,8 @@
 #include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
 
+#include <Thread/Thread.hpp>
+
 #include <Benchmarks/Benchmark.hpp>
 #include <Benchmarks/BenchmarkOptimizer.hpp>
 
@@ -29,8 +31,6 @@ constexpr Lumen::USize MaxDrainBatch = 4096U;
 {
     return Lumen::FMessage::Make( Lumen::EEngineMessage::Tick, Lumen::InvalidActorID, Lumen::FTickPayload{ .DeltaTime = 0.016 } );
 }
-
-} // namespace
 
 /**
  * Micro
@@ -127,11 +127,11 @@ LUMEN_MACRO_BENCHMARK( FMailBox, MpscContentionExchange )
             }
         };
 
-        FThread ProducerThreads[ProducerCount];
+        Lumen::FThread ProducerThreads[ProducerCount];
 
-        for ( FThread &ProducerThread : ProducerThreads )
+        for ( Lumen::FThread &ProducerThread : ProducerThreads )
         {
-            ProducerThread = FThread( ProducerLoop );
+            ProducerThread = Lumen::FThread( ProducerLoop );
         }
 
         Lumen::USize ReceivedCount = 0U;
@@ -147,11 +147,11 @@ LUMEN_MACRO_BENCHMARK( FMailBox, MpscContentionExchange )
             }
             else
             {
-                FThread::Yield();
+                Lumen::FThread::Yield();
             }
         }
 
-        for ( FThread &ProducerThread : ProducerThreads )
+        for ( Lumen::FThread &ProducerThread : ProducerThreads )
         {
             ProducerThread.Join();
         }
@@ -159,3 +159,5 @@ LUMEN_MACRO_BENCHMARK( FMailBox, MpscContentionExchange )
         Lumen::Benchmarks::DoNotOptimize( ReceivedCount );
     }
 }
+
+} // namespace

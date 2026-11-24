@@ -90,7 +90,7 @@ public:
     void OnTick ( const Lumen::Float64 InDeltaTime ) noexcept override
     {
         const Lumen::Float32 SweepOffset =
-            static_cast<Lumen::Float32>( TickIndex ) * 0.01F + static_cast<Lumen::Float32>( InDeltaTime );
+            ( static_cast<Lumen::Float32>( TickIndex ) * 0.01F ) + static_cast<Lumen::Float32>( InDeltaTime );
 
         Transform =
             Lumen::Maths::FMat4x4f::Translate( Lumen::Maths::FVec3f{ SweepOffset, SweepOffset, SweepOffset } ) * Transform;
@@ -125,8 +125,6 @@ void PopulateWorldWithSceneActors ( Lumen::FWorld &World, const Lumen::USize Act
         Lumen::Benchmarks::DoNotOptimize( Spawned );
     }
 }
-
-} // namespace
 
 /**
  * Micro
@@ -236,3 +234,5 @@ LUMEN_MACRO_BENCHMARK( FWorld, TickFrame1kActorsWithMail )
         World.Tick( FrameDeltaTime );
     }
 }
+
+} // namespace
