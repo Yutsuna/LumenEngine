@@ -82,5 +82,32 @@
 
 /* */
 
+#if defined( NDEBUG )
+    #define LUMEN_ASSERT( Condition )                                                                                            \
+        do                                                                                                                       \
+        {                                                                                                                        \
+        } while ( false )
+#elif defined( LUMEN_COMPILER_CLANG ) or defined( LUMEN_COMPILER_GCC )
+    #define LUMEN_ASSERT( Condition )                                                                                            \
+        do                                                                                                                       \
+        {                                                                                                                        \
+            if ( not( Condition ) ) [[unlikely]]                                                                                 \
+            {                                                                                                                    \
+                __builtin_trap();                                                                                                \
+            }                                                                                                                    \
+        } while ( false )
+#elif defined( LUMEN_COMPILER_MSVC )
+    #define LUMEN_ASSERT( Condition )                                                                                            \
+        do                                                                                                                       \
+        {                                                                                                                        \
+            if ( not( Condition ) ) [[unlikely]]                                                                                 \
+            {                                                                                                                    \
+                __debugbreak();                                                                                                  \
+            }                                                                                                                    \
+        } while ( false )
+#endif
+
+/* */
+
 #define LUMEN_EXIT_SUCCESS 0
 #define LUMEN_EXIT_FAILURE 84
