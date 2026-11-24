@@ -465,4 +465,15 @@ namespace Internal
     [[maybe_unused]] auto &&Var =                                                                                                \
         Lumen::Internal::UnpackExpected( std::forward<decltype( Var##_lumenExpected_ )>( Var##_lumenExpected_ ) )
 
+#define LUMEN_TRY_EXPECT_ERROR( Expr )                                                                                           \
+                                                                                                                                 \
+    do                                                                                                                           \
+    {                                                                                                                            \
+        auto &&_lumenExpected_ = ( Expr );                                                                                       \
+        if ( not _lumenExpected_ ) [[unlikely]]                                                                                  \
+        {                                                                                                                        \
+            return Lumen::MakeUnexpected( std::forward<decltype( _lumenExpected_ )>( _lumenExpected_ ).Error() );                \
+        }                                                                                                                        \
+    } while ( false )
+
 } // namespace Lumen

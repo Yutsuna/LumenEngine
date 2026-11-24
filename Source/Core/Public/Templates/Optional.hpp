@@ -7,12 +7,9 @@
 
 #include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
-#include <Templates/Monadic.hpp>
 
-#include <concepts>
-#include <memory>
-#include <type_traits>
-#include <utility>
+#include <Concepts/SameAs.hpp>
+#include <Templates/Monadic.hpp>
 
 namespace Lumen
 {
@@ -100,7 +97,7 @@ public:
 
     /** @brief Converting copy constructor (implicit if ValueType is implicitly constructible from Other) */
     template <class Other>
-        requires( not std::same_as<Other, ValueType> ) && std::constructible_from<ValueType, const Other &>
+        requires( not Concepts::CSameAs<Other, ValueType> ) && std::constructible_from<ValueType, const Other &>
     constexpr explicit( not std::convertible_to<const Other &, ValueType> )
         TOptional( const TOptional<Other> &InOptional ) noexcept( std::is_nothrow_constructible_v<ValueType, const Other &> )
         : Dummy( 0 )
@@ -114,7 +111,7 @@ public:
 
     /** @brief Converting move constructor (implicit if ValueType is implicitly constructible from Other) */
     template <class Other>
-        requires( not std::same_as<Other, ValueType> ) && std::constructible_from<ValueType, Other &&>
+        requires( not Concepts::CSameAs<Other, ValueType> ) && std::constructible_from<ValueType, Other &&>
     constexpr explicit( not std::convertible_to<Other &&, ValueType> )
         TOptional( TOptional<Other> &&InOptional ) noexcept( std::is_nothrow_constructible_v<ValueType, Other &&> )
         : Dummy( 0 )
