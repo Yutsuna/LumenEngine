@@ -36,7 +36,7 @@ const Lumen::FLogCategory LogLinuxApplication( "LinuxApplication" );
 
 Lumen::FLinuxApplication::~FLinuxApplication () noexcept
 {
-    Shutdown();
+    FLinuxApplication::Shutdown();
 
     if ( GLinuxApplication == this )
     {
@@ -59,8 +59,8 @@ Lumen::TSharedPtr<Lumen::FGenericApplication> Lumen::FLinuxApplication::MakeLinu
     }
 
     /** Use MakeShared to align the control block and pointer cleanly together */
-    TSharedPtr<FLinuxApplication> Application = MakeShared<FLinuxApplication>();
-    GLinuxApplication                         = Application.Get();
+    const TSharedPtr<FLinuxApplication> Application = MakeShared<FLinuxApplication>();
+    GLinuxApplication                               = Application.Get();
 
     return StaticCastSharedPtr<FGenericApplication>( Application );
 }
@@ -70,8 +70,7 @@ void Lumen::FLinuxApplication::InitializeWindow ( const TSharedRef<FGenericWindo
                                                   const TSharedPtr<FGenericWindow> &InParentWindow,
                                                   const Bool bShowImmediately ) noexcept
 {
-    const TSharedRef<FLinuxWindow> LinuxWindow  = StaticCastSharedRef<FLinuxWindow>( InWindow );
-    const TSharedPtr<FLinuxWindow> ParentWindow = StaticCastSharedPtr<FLinuxWindow>( InParentWindow );
+    const TSharedRef<FLinuxWindow> LinuxWindow = StaticCastSharedRef<FLinuxWindow>( InWindow );
 
     LinuxWindow->Initialize( this, InDescription, InParentWindow, bShowImmediately );
     Windows.push_back( LinuxWindow );
