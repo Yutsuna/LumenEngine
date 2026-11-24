@@ -14,7 +14,11 @@ namespace Lumen
 namespace EMouseButton
 {
 
-    enum Type : UInt8
+    /**
+     * @enum EMouseButton::Type
+     * @brief Enumeration of mouse button types.
+     */
+    enum Type : UInt8 /** NOLINT(performance-enum-size) */
     {
         Left    = 0,
         Middle  = 1,
@@ -29,7 +33,11 @@ namespace EMouseButton
 namespace EModifierKey
 {
 
-    enum Type : UInt32
+    /**
+     * @enum EModifierKey::Type
+     * @brief Enumeration of modifier key types.
+     */
+    enum Type : UInt32 /** NOLINT(performance-enum-size) */
     {
         None    = 0,
         Shift   = 1 << 0,
@@ -43,7 +51,11 @@ namespace EModifierKey
 namespace EKeys
 {
 
-    enum Type : UInt32
+    /**
+     * @enum EKeys::Type
+     * @brief Enumeration of keyboard key types.
+     */
+    enum Type : UInt32 /** NOLINT(performance-enum-size) */
     {
         Unknown = 0,
         A,
