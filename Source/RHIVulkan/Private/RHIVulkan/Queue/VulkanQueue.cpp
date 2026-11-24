@@ -17,12 +17,14 @@ Lumen::RHIVulkan::FVulkanQueue::FVulkanQueue ( RHI::FRHIObjectId InId,
                                                RHI::ERHIQueueType InType,
                                                UInt32 InFamilyIndex,
                                                VkQueue InQueue ) noexcept
-    : ObjectBase( MakeVulkanObjectBase<FVulkanQueue>( InId ) ),
+    : Identity( MakeVulkanObjectBase<FVulkanQueue>( InId ) ),
       Context( static_cast<TSharedRef<FVulkanDeviceContext> &&>( InContext ) ), QueueType( InType ), FamilyIndex( InFamilyIndex ),
       NativeQueue( InQueue )
 {
     /* */
 }
+
+LUMEN_RHI_OBJECT_FORWARDERS( RHIVulkan, FVulkanQueue )
 
 Lumen::RHI::ERHIQueueType Lumen::RHIVulkan::FVulkanQueue::GetType () const noexcept
 {

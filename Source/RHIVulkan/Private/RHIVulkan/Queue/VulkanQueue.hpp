@@ -35,7 +35,7 @@ namespace RHIVulkan
                        VkQueue InQueue ) noexcept;
         ~FVulkanQueue () noexcept override = default;
 
-        LUMEN_VK_OBJECT_FORWARDERS( ObjectBase )
+        LUMEN_RHI_OBJECT_DECLARATIONS;
 
         /** @return Fixed queue type. */
         [[nodiscard]] RHI::ERHIQueueType GetType () const noexcept override;
@@ -54,9 +54,10 @@ namespace RHIVulkan
 
     private:
 
-        RHI::FRHIObjectBase ObjectBase;
+        RHI::FRHIObjectBase Identity;
         TSharedRef<FVulkanDeviceContext> Context;
         RHI::ERHIQueueType QueueType;
+
         UInt32 FamilyIndex  = 0U;
         VkQueue NativeQueue = VK_NULL_HANDLE;
         TAtomic<UInt64> CompletedValue{ 0ULL };
