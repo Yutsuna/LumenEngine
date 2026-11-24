@@ -3,7 +3,6 @@
  * @brief Implements Vulkan logical device creation, queue lookup, idle, and V2 factory stubs.
  */
 
-#include "RHI/Types/RHIError.hpp"
 #include <RHIVulkan/Device/VulkanDevice.hpp>
 
 #include <RHI/Bindings/IRHIBindingLayout.hpp>
@@ -29,6 +28,7 @@
 #include <RHI/Resources/IRHITextureView.hpp>
 #include <RHI/Shaders/IRHIShader.hpp>
 #include <RHI/Synchronization/IRHISemaphore.hpp>
+#include <RHI/Types/RHIError.hpp>
 
 #include <RHIVulkan/Device/VulkanFeatureNegotiation.hpp>
 #include <RHIVulkan/Module/VulkanInstance.hpp>
@@ -128,7 +128,7 @@ const Lumen::TSharedRef<Lumen::RHIVulkan::FVulkanDeviceContext> &Lumen::RHIVulka
     return Context;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIVulkan::FVulkanDevice::WaitIdle () noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIVulkan::FVulkanDevice::WaitIdle () noexcept
 {
     LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "WaitIdle" ) );
 
