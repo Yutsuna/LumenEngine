@@ -33,6 +33,8 @@ foreach ModuleDefinition : ModuleDefinitions
         endforeach
     endif
 
+    TestSources += ModuleDefinition.get('ExtraTestSources', [])
+
     if TestSources.length() > 0
         HasCustomTestMain = FileSystem.is_file(TestsPath / 'Main.cpp')\
 or FileSystem.is_file(TestsPath / 'TestMain.cpp')
@@ -53,8 +55,10 @@ or FileSystem.is_file(TestsPath / 'TestMain.cpp')
         if FileSystem.is_dir(RelPrivatePath)
             TestIncludeDirectories += include_directories(RelPrivatePath)
         endif
+        TestIncludeDirectories += ModuleDefinition.get('ExtraTestIncludeDirectories', [])
 
         TestDependencies = [GlobalTestModules.get(ModuleName)]
+        TestDependencies += ModuleDefinition.get('ExtraTestDependencies', [])
         TestEnvironment = ModuleDefinition.get('TestEnvironment', [])
 
         CompileArguments = ALL_WARNINGS
