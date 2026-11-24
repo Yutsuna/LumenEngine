@@ -11,6 +11,9 @@
       meson
       ninja
       pkg-config
+      shaderc
+      spirv-cross
+      spirv-tools
     ]
     ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
       mold
