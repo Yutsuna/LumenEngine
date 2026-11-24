@@ -13,8 +13,6 @@
 
 #include <Memory/UniquePtr.hpp>
 
-#include <cassert>
-
 namespace Lumen
 {
 

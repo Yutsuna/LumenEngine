@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 #include <Core/EnumFlags.hpp>
 #include <Core/NonCopyable.hpp>
@@ -16,7 +17,6 @@
 
 #include <Memory/UniquePtr.hpp>
 
-#include <cassert>
 #include <type_traits>
 
 namespace Lumen
