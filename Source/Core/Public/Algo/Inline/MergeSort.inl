@@ -45,7 +45,7 @@ template <typename TRangeType, typename TPredicate>
     requires Lumen::Concepts::CSortableRange<TRangeType, TPredicate>
 void Lumen::Algo::MergeSort ( TRangeType &&InRange, TPredicate InPredicate ) noexcept
 {
-    MergeSort( std::ranges::begin( InRange ), std::ranges::end( InRange ), InPredicate );
+    MergeSort( Begin( InRange ), End( InRange ), InPredicate );
 }
 
 /**

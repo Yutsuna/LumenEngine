@@ -21,10 +21,10 @@ template <typename TRangeA, typename TRangeB, typename TPredicate>
 constexpr Lumen::Bool Lumen::Algo::Equal ( TRangeA &&InRangeA, TRangeB &&InRangeB, TPredicate &&InPredicate )
 {
     auto &&Pred = std::forward<TPredicate>( InPredicate );
-    auto ItA    = std::begin( InRangeA );
-    auto ItB    = std::begin( InRangeB );
-    auto EndA   = std::end( InRangeA );
-    auto EndB   = std::end( InRangeB );
+    auto ItA    = Begin( InRangeA );
+    auto ItB    = Begin( InRangeB );
+    auto EndA   = End( InRangeA );
+    auto EndB   = End( InRangeB );
 
     for ( ; ItA != EndA and ItB != EndB; ++ItA, ++ItB )
     {

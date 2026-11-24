@@ -59,7 +59,7 @@ template <typename TRangeType, typename TPredicate>
     requires Lumen::Concepts::CSortableRange<TRangeType, TPredicate>
 void Lumen::Algo::HeapSort ( TRangeType &&InRange, TPredicate InPredicate ) noexcept
 {
-    HeapSort( std::ranges::begin( InRange ), std::ranges::end( InRange ), InPredicate );
+    HeapSort( Begin( InRange ), End( InRange ), InPredicate );
 }
 
 /**

@@ -50,7 +50,7 @@ template <typename TRangeType, typename TPredicate>
     requires Lumen::Concepts::CSortableRange<TRangeType, TPredicate>
 void Lumen::Algo::InsertionSort ( TRangeType &&InRange, TPredicate InPredicate ) noexcept
 {
-    InsertionSort( std::ranges::begin( InRange ), std::ranges::end( InRange ), InPredicate );
+    InsertionSort( Begin( InRange ), End( InRange ), InPredicate );
 }
 
 /**

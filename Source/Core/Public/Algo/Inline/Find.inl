@@ -10,8 +10,9 @@
 
 #include <Templates/Invoke.hpp>
 
+#include <Concepts/IsIntegral.hpp>
+
 #include <memory>
-#include <ranges>
 #include <utility>
 
 /**
@@ -121,14 +122,23 @@ template <class TRangeType, class TValue>
     requires Lumen::Algo::Internal::CPointerReturnRange<TRangeType>
 constexpr Lumen::Algo::Internal::TRangeElementPtr<TRangeType> Lumen::Algo::Find ( TRangeType &&InRange, const TValue &InValue )
 {
-    for ( auto &&Elem : InRange )
+    if constexpr ( Concepts::CCommonRange<TRangeType> )
     {
-        if ( Elem == InValue )
-        {
-            return std::addressof( Elem );
-        }
+        auto Last   = End( InRange );
+        auto Result = Find( Begin( InRange ), Last, InValue );
+        return Result == Last ? nullptr : std::addressof( *Result );
     }
-    return {};
+    else
+    {
+        for ( auto &&Elem : InRange )
+        {
+            if ( Elem == InValue )
+            {
+                return std::addressof( Elem );
+            }
+        }
+        return {};
+    }
 }
 
 template <class TRangeType, class TPredicate>
@@ -167,13 +177,13 @@ Lumen::Algo::FindIfOrNone ( TRangeType &&InRange, TPredicate &&InPredicate )
     }
     else
     {
-        auto End    = std::ranges::end( InRange );
-        auto Result = FindIf( std::ranges::begin( InRange ), End, std::forward<TPredicate>( InPredicate ) );
-        if ( Result != End )
+        auto Last   = End( InRange );
+        auto Result = FindIf( Begin( InRange ), Last, std::forward<TPredicate>( InPredicate ) );
+        if ( Result != Last )
         {
             if constexpr ( Internal::bConsumeRangeElements<TRangeType> )
             {
-                return TOptional<TElement>( std::ranges::iter_move( Result ) );
+                return TOptional<TElement>( IterMove( Result ) );
             }
             else
             {
@@ -199,13 +209,13 @@ Lumen::Algo::FindOrNone ( TRangeType &&InRange, const TValue &InValue )
     }
     else
     {
-        auto End    = std::ranges::end( InRange );
-        auto Result = Find( std::ranges::begin( InRange ), End, InValue );
-        if ( Result != End )
+        auto Last   = End( InRange );
+        auto Result = Find( Begin( InRange ), Last, InValue );
+        if ( Result != Last )
         {
             if constexpr ( Internal::bConsumeRangeElements<TRangeType> )
             {
-                return TOptional<TElement>( std::ranges::iter_move( Result ) );
+                return TOptional<TElement>( IterMove( Result ) );
             }
             else
             {
@@ -231,13 +241,13 @@ Lumen::Algo::FindIfNotOrNone ( TRangeType &&InRange, TPredicate &&InPredicate )
     }
     else
     {
-        auto End    = std::ranges::end( InRange );
-        auto Result = FindIfNot( std::ranges::begin( InRange ), End, std::forward<TPredicate>( InPredicate ) );
-        if ( Result != End )
+        auto Last   = End( InRange );
+        auto Result = FindIfNot( Begin( InRange ), Last, std::forward<TPredicate>( InPredicate ) );
+        if ( Result != Last )
         {
             if constexpr ( Internal::bConsumeRangeElements<TRangeType> )
             {
-                return TOptional<TElement>( std::ranges::iter_move( Result ) );
+                return TOptional<TElement>( IterMove( Result ) );
             }
             else
             {

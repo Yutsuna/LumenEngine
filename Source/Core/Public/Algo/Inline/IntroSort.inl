@@ -25,8 +25,8 @@ template <typename TRangeType, typename TPredicate>
     requires Lumen::Concepts::CSortableRange<TRangeType, TPredicate>
 void Lumen::Algo::IntroSort ( TRangeType &&InRange, TPredicate InPredicate ) noexcept
 {
-    const auto First = std::ranges::begin( InRange );
-    const auto Last  = std::ranges::end( InRange );
+    const auto First = Begin( InRange );
+    const auto Last  = End( InRange );
 
     const auto Count = Last - First;
     if ( Count < 2 )

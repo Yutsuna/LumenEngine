@@ -8,7 +8,6 @@
 #include <Algo/Any.hpp>
 #include <Algo/ForEach.hpp>
 
-#include <memory>
 #include <utility>
 
 /**
