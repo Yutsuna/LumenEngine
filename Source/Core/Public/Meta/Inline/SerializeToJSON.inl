@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Algo/Range.hpp>
 #include <Meta/SerializeToJSON.hpp>
 #include <Templates/Variant.hpp>
 
@@ -151,7 +152,7 @@ void Lumen::Meta::Detail::WriteJSONValue ( FString &Out, const TValue &Value, co
             Out.push_back( '}' );
         }
     }
-    else if constexpr ( std::ranges::input_range<const Bare> )
+    else if constexpr ( Concepts::CInputRange<const Bare> )
     {
         Out.push_back( '[' );
         Bool bFirst = true;
