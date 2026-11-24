@@ -33,7 +33,8 @@ meson setup Build --reconfigure
 - Compiler **GCC 16**, C++ **26**, C **23**, `-freflection` passed
   project-wide (`meson.build`). Meson >= 1.10. The GCC 16 pin lives in the
   Nix layer (`gcc16` in `Nix/deps.nix`, `gcc16Stdenv` in `Nix/package.nix`);
-  `Meson/Native.ini` only selects `gcc`/`g++` from that environment.
+  `Meson/Native.ini` wraps those compilers with `ccache` (`ccache gcc` /
+  `ccache g++`).
 - clangd cannot parse reflection code; `.clangd` strips `-freflection` for
   tooling. Don't "fix" that config by adding it back.
 - `meson.options`: `enable_testing`, `enable_benchmarking` (default true),
@@ -41,7 +42,8 @@ meson setup Build --reconfigure
 - Nix devshell (`Nix/shell.nix`, `Nix/deps.nix`): GCC, Meson, Ninja, SDL3,
   Vulkan loader/headers, clang-tools, shaderc, spirv-tools and spirv-cross;
   exports `LD_LIBRARY_PATH`, sets `VK_LAYER_PATH` to validation layers, links
-  with `mold`. Shader artifacts are generated only under the build directory.
+  with `mold`. Shader tooling is available there; no shader generation target
+  exists yet.
 
 ## Warnings behave like errors
 

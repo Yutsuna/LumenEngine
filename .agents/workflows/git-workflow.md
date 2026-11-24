@@ -21,7 +21,8 @@ Example: Feat(AppCore): #142 Add SDL3 window support
 - `Description` must start with an uppercase letter.
 - CI ("Build & Test") runs **only after** the PR Title Check workflow
   succeeds (triggered by `workflow_run`). A bad PR title blocks the whole CI,
-  not just the title job. Pushes to `main` trigger CI directly.
+  not just the title job. `push` to `main` is declared in `Ci.yml`, but the
+  `workflow_run.conclusion` guard skips the job on push events.
 
 ## Commit style
 

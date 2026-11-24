@@ -7,7 +7,8 @@ module per directory under `Source/`.
 ## Read on demand
 
 Load the rule file for the area you are touching **before** editing, and
-treat it as mandatory. Do not preload everything.
+treat it as mandatory. Do not preload everything. Document paths are relative
+to `.agents/`; an explicit `.agents/` prefix is equally valid.
 
 | File | Read when… |
 | --- | --- |

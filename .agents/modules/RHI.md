@@ -173,8 +173,8 @@ validates lengths and checksums without exceptions. Reflection describes
 inputs, outputs, bindings, combined texture/samplers, inline constants and
 compute workgroup size. Backends advertise accepted shader formats through the
 `ShaderFormats` collection in capabilities; required formats are negotiated at
-device creation. Build-time shader packages are generated outside the source
-tree by the Meson shader pipeline.
+device creation. Build-time shader package generation is planned; no Meson
+shader target exists yet.
 
 Pipeline layouts combine binding layouts and inline constant ranges. Graphics
 pipelines use dynamic rendering attachment formats, not legacy render-pass or

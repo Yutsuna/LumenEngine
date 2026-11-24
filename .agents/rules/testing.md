@@ -34,8 +34,8 @@ will be wrong.
   module, tests link the same implementation objects statically through
   `GlobalTestModules`; production consumers still use the shared library through
   `GlobalModules`, and no additional symbols are exported.
-- Core is auto-linked into every test/benchmark target even when not in
-  `Depends`.
+- Core is auto-linked into every benchmark target even when not in `Depends`;
+  test targets list `Core` in their `Depends` explicitly.
 
 ## Running
 

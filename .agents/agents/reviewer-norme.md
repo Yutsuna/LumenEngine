@@ -41,9 +41,10 @@ the modules touched.
    PascalCase everywhere, no single-letter variable names, doxygen
    `/** */` + `NOTE:`/`INFO:`/`TODO:` tags, file split
    (`.hpp` signatures only / `.inl` in `Inline/` / `.cpp` implementations),
-   `namespace Lumen { }` in `.hpp` but never opened in `.cpp`/`.inl`. RHI
-   headers use nested `namespace Lumen { namespace RHI { ... } }` blocks
-   (never `namespace Lumen::RHI { }`), and RHI `.cpp`/`.inl` qualify with
+   `namespace Lumen { }` in `.hpp` but never in production `.cpp`/`.inl`
+   (test and benchmark `.cpp` do open it). RHI headers use nested
+   `namespace Lumen { namespace RHI { ... } }` blocks (never the shortened
+   `namespace Lumen::RHI { }`), and RHI production `.cpp`/`.inl` qualify with
    `Lumen::RHI::` while keeping Core/Maths types under `Lumen::`.
 2. `.agents/rules/core-first.md` + `.agents/modules/Core.md` — flag any
    re-implementation of what Core already provides (`std::vector` instead of

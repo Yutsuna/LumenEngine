@@ -101,8 +101,9 @@ Use only the in-house framework (`Source/Core/Public/Tests/`):
 
 ## Coding standard inside tests
 
-- Open `namespace Lumen { }` (or `namespace Lumen::RHI { }` for RHI tests) in
-  `.cpp` files. Put file-local helpers in an anonymous namespace.
+- Open `namespace Lumen { }` in `.cpp` files (RHI tests included — the
+  shortened `namespace Lumen::RHI { }` form is forbidden). Put file-local
+  helpers in an anonymous namespace.
 - Name helper types with the correct prefix (`F` for structs/classes, `E` for
   enums, `b` for bool locals).
 - Use Lumen typedefs and Core containers in fixtures and assertions.

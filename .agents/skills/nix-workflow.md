@@ -25,7 +25,7 @@ Nix/shell.nix        — mkShell wrapping deps with dev env hooks
     `lib.optionals … isLinux`).
   - `buildInputs` — runtime libs (sdl3, vulkan-loader, vulkan-headers).
   - `devInputs` — dev-only tools, present in the devshell but NOT in the
-    package (valgrind, gdb, clang-tools, jq, nil, nixd, vulkan-tools,
+    package (valgrind, gdb, clang-tools, jq, muon, nil, nixd, vulkan-tools,
     vulkan-validation-layers).
 - Platform conditionals must follow the existing pattern
   (`lib.optionals pkgs.stdenv.hostPlatform.isLinux [...]`) — darwin is a

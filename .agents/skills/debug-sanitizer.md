@@ -19,7 +19,7 @@ Build a clean sanitized debug tree and reproduce (commands detail in
    to a file:line via debug info (builds are unstripped, `-Og`).
 4. Frequent findings in this codebase and where they usually come from:
    - use-after-free / dangling `FStringView`/`TSpan`: lifetime doubts in
-     `Scene` actor payloads — that is why mailbox queues exist (`Core/Thread/SPMCQueue.hpp`);
+     `Scene` actor payloads — that is why mailbox queues exist (`Thread/SPMCQueue.hpp`);
      check `Scene/Actor` ownership before editing.
    - double-free: manual `delete`/mismatched ownership — engine policy is
      `Memory/UniquePtr.hpp`/`SharedPtr.hpp` and no raw `new` in engine code.

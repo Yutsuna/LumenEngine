@@ -18,7 +18,7 @@ description: Author and run Lumen benchmarks with LUMEN_BENCHMARK macros correct
    variable names, `namespace Lumen`, note the benchmark loop "do not
    optimize away" pitfalls).
 4. Do-case: benchmark containers on hot paths must NOT allocate per
-   iteration — prefer Core primitives (pre-sized `TVector`, `Core/Thread`
+   iteration — prefer Core primitives (pre-sized `TVector`, `Thread`
    structures) and benchmark both the contenders from Core you intend to
    replace (Core-first rule).
 

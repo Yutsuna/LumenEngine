@@ -2,7 +2,7 @@
 
 - **Type:** Shared library (`Source/Core/meson.build`), no dependencies.
 - **Status:** built; everything else depends on it (auto-linked into every
-  test/benchmark target even when not in `Depends`).
+  benchmark target; test targets list `Core` in `Depends` explicitly).
 - **Role:** engine foundation — containers, strings, memory, algorithms,
   threading, synchronization, filesystem, HAL, reflection, logging, the
   in-house test and benchmark frameworks.
@@ -30,8 +30,8 @@ variables, atomic bitsets, locks, the HAL and the algorithms.
 | `Templates/Optional.hpp` | `TOptional<T>` | maybe-value (hand-written) |
 | `Templates/Expected.hpp` (+ `Unexpected.hpp`, `Monadic.hpp`, `MonadicDetails.hpp`) | `TExpected<T, E>`, `TUnexpected<E>`, `MakeUnexpected`, `Unexpect`, `FMonadic`, `Transform`/`AndThen`/`OrElse`/`Inspect`/`ValueOr`; concepts `CMonadic`, `CTransformable`, `CBindable`, `CRecoverable` (`TOptional` and non-array `TUniquePtr` also inherit `FMonadic`) | error propagation without exceptions |
 | `Templates/Function.hpp` | `TFunction<Signature>` | type-erased callable (`std::function` equivalent) |
-| `String/String.hpp`, `StringView.hpp`, `StringUtils.hpp` | `FString`, `FStringView`; `IsSpace`, `ToLower`/`ToLowerInline`, `EqualsIgnoreCase`, `StripParam`/`StripDashes`/`AsOption` | all text handling (currently aliases; TODO real types) |
-| `Memory/UniquePtr.hpp`, `SharedPtr.hpp`, `Span.hpp` | `TUniquePtr`/`MakeUnique`, `TSharedPtr`/`TSharedRef`, `MakeShared` (returns `TSharedRef`)/`MakeSharedRef`/`MakeShareable`, `StaticCastSharedPtr`/`StaticCastSharedRef`, `TSpan` | memory ownership (no raw `new`) |
+| `String/String.hpp`, `String/StringView.hpp`, `String/StringUtils.hpp` | `FString`, `FStringView`; `IsSpace`, `ToLower`/`ToLowerInline`, `EqualsIgnoreCase`, `StripParam`/`StripDashes`/`AsOption` | all text handling (currently aliases; TODO real types) |
+| `Memory/UniquePtr.hpp`, `Memory/SharedPtr.hpp`, `Memory/Span.hpp` | `TUniquePtr`/`MakeUnique`, `TSharedPtr`/`TSharedRef`, `MakeShared` (returns `TSharedRef`)/`MakeSharedRef`/`MakeShareable`, `StaticCastSharedPtr`/`StaticCastSharedRef`, `TSpan` | memory ownership (no raw `new`) |
 | `Memory/IndiceAllocator.hpp` | `FIndiceAllocator` (free-list, first-fit), `FIndiceHeapAllocator` (bitmap), `FIndiceAllocation`, `FIndiceAllocatorRange` | thread-safe index/descriptor allocation, variable-size or fixed-size |
 | `Core/CoreTypes.hpp` | `Int8`…`UInt64`, `Float32/64`, `AnsiChar`, `WideChar`, `Byte`, `Bool`, `USize`, `ISize`, `UPtr/IPtr`, `NullPtrType`, `AlwaysFalseV`, `TVoid`/`TVoidT`, `TAtomic<T>`, `FAtomicFlag` | Lumen typedefs, compile-time helpers and atomics |
 | `Core/CoreDefinitions.hpp` | `LUMEN_PLATFORM_{UNIX,WINDOWS,LINUX,MACOS}`, `LUMEN_ARCH_*`, `LUMEN_COMPILER_*`, `LUMEN_PATH_SEPARATOR`, `LUMEN_NEWLINE`, `LUMEN_SHARED_LIB_EXTENSION`, `LUMEN_EXIT_SUCCESS`/`LUMEN_EXIT_FAILURE`, `LUMEN_FORCE_INLINE`/`LUMEN_NO_INLINE`, `LUMEN_UNUSED`, `LUMEN_DISABLE_UBSAN` | platform/compiler gating, path/exit constants and inline attributes |
@@ -49,7 +49,7 @@ variables, atomic bitsets, locks, the HAL and the algorithms.
 | `Templates/Hash.hpp` | `FHash::TypeHash<T>()` | compile-time stable type hashing |
 | `Templates/Invoke.hpp` | `Invoke`, `TInvokeResult`/`TInvokeResultT`, `TIsInvocable`/`TIsInvocableV`, `CIsInvocable` (in `Lumen`) | invoking callables/member pointers without `std::invoke` |
 | `Templates/AtomicBitset.hpp` | `FAtomicBitset` (`Resize`/`ClearAll`/`GetNumBits`, `Set`/`Clear`/`Test`/`ForEachSetBitAndClear`) | concurrent dirty tracking / flag sets |
-| `Core/EnumFlags.hpp`, `NonCopyable.hpp`, `NonMovable.hpp` | `LUMEN_ENUM_FLAGS`, `FNonCopyable`, `FNonMovable` | bitmask enums, reuse control |
+| `Core/EnumFlags.hpp`, `Core/NonCopyable.hpp`, `Core/NonMovable.hpp` | `LUMEN_ENUM_FLAGS`, `FNonCopyable`, `FNonMovable` | bitmask enums, reuse control |
 | `Concepts/*.hpp` | `CConstructibleFrom`, `CConvertibleTo`, `CIsBool`, `CIsIntegral`, `CIsInvocable`, `CIsLockable`, `CIsStringLike`, `CIsVoid`, `CSameAs`/`CIsSame`, `CSortableRange`, `CTriviallyCopyable` | constraining templates; use these instead of `std::` concepts (full list in `rules/core-first.md`) |
 
 ### Threading and synchronization
@@ -75,7 +75,7 @@ variables, atomic bitsets, locks, the HAL and the algorithms.
 | `HAL/PlatformSignal.hpp` | `HAL::FPlatformSignal` (alias `HAL::FSignal`), `ESystemSignal`, `Bind`/`Raise`/`Dispatch`/`Unbind`/`Reset` | OS signal trapping (never `std::signal` handling directly) |
 | `Filesystem/Path.hpp`, `File.hpp`, `Directory.hpp`, `IFileSystem.hpp`, `IFileHandle.hpp` | `FPath`, file/dir abstractions behind interfaces | any file/dir work |
 | `Logging/Logger.hpp`, `LoggingCategory.hpp`, `LoggingVerbosity.hpp` | `FLogger`, `FLogCategory`, verbosity levels | all diagnostics (tests init/shutdown it) |
-| `Meta/Reflection.hpp`, `Overloaded.hpp`, `SerializeToJSON.hpp` | C++26 reflection-based introspection (`CReflected` concept), `Meta::Overloaded` visitor helper, `Meta::EnumName` (unqualified) and `Meta::EnumQualifiedName` (qualified) enum-name helpers, `Meta::SerializeToJSON` with `FJSONOptions` | field iteration, serialization, enum → name conversion |
+| `Meta/Reflection.hpp`, `Meta/Overloaded.hpp`, `Meta/SerializeToJSON.hpp` | C++26 reflection-based introspection (`CReflected` concept), `Meta::Overloaded` visitor helper, `Meta::EnumName` (unqualified) and `Meta::EnumQualifiedName` (qualified) enum-name helpers, `Meta::SerializeToJSON` with `FJSONOptions` | field iteration, serialization, enum → name conversion |
 | `Tests/UnitTest.hpp` (framework) | `LUMEN_TEST`, `LUMEN_INTEGRATION_TEST`, `LUMEN_CHECK*` | unit tests (see `rules/testing.md`) |
 | `Benchmarks/Benchmark.hpp` (framework) | `LUMEN_BENCHMARK*` | benchmarks (see `rules/testing.md`) |
 

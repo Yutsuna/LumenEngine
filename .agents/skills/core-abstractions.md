@@ -16,8 +16,8 @@ type conventions are those of `rules/coding-style.md`.
 
 Why bother: these are hand-written Core types, not `std` aliases. Optimisation
 lands in Core, so every call site using them improves at once. Bespoke
-sentinels, loops and `if (!Result) return ...` ladders have to be found and
-rewritten module by module. Adoption is the multiplier.
+sentinels, loops and `if (!Result) return ...` ladders are rewritten module by
+module with these types.
 
 ---
 
@@ -435,9 +435,10 @@ Result->Member();                                                // arrow overlo
 return MakeUnexpected( std::forward<decltype( Result )>( Result ).Error() ); // rvalue → move
 ```
 
-`HasValue()`, `operator Bool`, `*`, `->` and `Error()` exist on both
-specializations; `Error()` asserts the object holds an error. Forwarding the
-result before calling `Error()` is what lets the macros move instead of copy.
+`HasValue()`, `operator Bool`, `*` and `Error()` exist on both specializations;
+`->` exists on the value-carrying one. `Error()` asserts the object holds an
+error. Forwarding the result before calling `Error()` is what lets the macros
+move instead of copy.
 
 ## 3.4 Propagate another expected's failure → `LUMEN_EXPECT( Var, Expr )`
 
@@ -707,7 +708,7 @@ write the single manual pass instead, or add a Core algorithm with tests.
 # 6. Workflow
 
 1. Classify: absence → `TOptional`, failure → `TExpected<T, E>`; put it in the
-   public signature with `noexcept`.
+   public signature.
 2. Map loops to §1, including the `ForEachUntil` overload that matches your
    early-exit shape.
 3. Use §2/§3 for creation, propagation and monadic composition; check §5 if

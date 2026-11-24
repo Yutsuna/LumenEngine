@@ -9,7 +9,7 @@
 
 - `Actor/` — `AActor` (pure actor base, actor-model), `FMailBox` (wait-free
   intrusive MPSC mailbox using `FMessage`; its node free-list uses
-  `Core/Thread/SPMCQueue.hpp`, a lock-free bounded SPMC queue),
+  `Thread/SPMCQueue.hpp`, a lock-free bounded SPMC queue),
   `FMessage` (`ActorMessage.hpp`), `FActorRegistry`, `FActorRef` and `ActorID`
   (`ActorTypes.hpp`).
 - `World/` — `FWorld` (world/phases, `bInParallelPhase` parallel phasing,

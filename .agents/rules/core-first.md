@@ -34,11 +34,12 @@ That's your index reference for what Core offers and when to use each part:
 ## std → Core map
 
 Use the right-hand name whenever the left-hand facility is needed. Several
-`Templates/` types are still aliases over `std` (`TVector`, `TArray`, `TMap`,
-`TPair`, `TQueue`, `TVariant`, `TFunction`, `TSpan`, `TAtomic`, `FAtomicFlag`);
-that does not change the rule — use the Lumen name. Hand-written replacements
-live in the same headers (`TOptional`, `TExpected`, ownership, threads, stop
-tokens, condition variables, locks, the HAL and the algorithms).
+Core types are still aliases over `std` (`TVector`, `TArray`, `TMap`, `TPair`,
+`TQueue`, `TVariant`, `TFunction` in `Templates/`; `TSpan` in
+`Memory/Span.hpp`; `TAtomic`/`FAtomicFlag` in `Core/CoreTypes.hpp`); that does
+not change the rule — use the Lumen name. Hand-written replacements live in
+the same headers (`TOptional`, `TExpected`, ownership, threads, stop tokens,
+condition variables, locks, the HAL and the algorithms).
 
 | Need | std | Lumen Core |
 | --- | --- | --- |
