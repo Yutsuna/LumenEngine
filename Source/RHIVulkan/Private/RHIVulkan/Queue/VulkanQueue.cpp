@@ -36,8 +36,7 @@ Lumen::RHI::FRHITimelineValue Lumen::RHIVulkan::FVulkanQueue::GetCompletedValue 
     return RHI::FRHITimelineValue{ CompletedValue.load() };
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanQueue::Submit ( const RHI::FRHISubmitDesc &InDesc ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIVulkan::FVulkanQueue::Submit ( const RHI::FRHISubmitDesc &InDesc ) noexcept
 {
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::Submit" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
@@ -46,7 +45,7 @@ Lumen::RHIVulkan::FVulkanQueue::Submit ( const RHI::FRHISubmitDesc &InDesc ) noe
         RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Queue, "Vulkan queue submission is implemented in V4." ) );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIVulkan::FVulkanQueue::WaitIdle () noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIVulkan::FVulkanQueue::WaitIdle () noexcept
 {
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::WaitIdle" ) );
 
@@ -62,8 +61,8 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIVulkan::FVulkanQueue::Wa
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIVulkan::FVulkanQueue::Wait ( RHI::FRHITimelineValue InValue,
-                                                                                     Float64 InTimeoutSeconds ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIVulkan::FVulkanQueue::Wait ( RHI::FRHITimelineValue InValue,
+                                                                Float64 InTimeoutSeconds ) noexcept
 {
     if ( not std::isfinite( InTimeoutSeconds ) or InTimeoutSeconds < 0.0 )
     {
