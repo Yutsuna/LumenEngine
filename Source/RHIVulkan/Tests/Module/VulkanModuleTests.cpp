@@ -13,13 +13,13 @@ namespace Lumen
 namespace RHIVulkan
 {
 
-    LUMEN_TEST( VulkanModule, CreateReturnsModule )
+    LUMEN_TEST( VulkanBootstrap, CreateReturnsModule )
     {
         const TExpected<TSharedRef<RHI::IRHIModule>, RHI::FRHIError> Module = CreateRHIVulkanModule();
         LUMEN_CHECK_TRUE( Module.HasValue() );
     }
 
-    LUMEN_TEST( VulkanModule, ApiVersionIsOneOneZero )
+    LUMEN_TEST( VulkanBootstrap, ApiVersionIsOneOneZero )
     {
         const TExpected<TSharedRef<RHI::IRHIModule>, RHI::FRHIError> Module = CreateRHIVulkanModule();
         LUMEN_CHECK_TRUE( Module.HasValue() );
@@ -34,11 +34,7 @@ namespace RHIVulkan
         const TExpected<TSharedRef<RHI::IRHIModule>, RHI::FRHIError> Module = CreateRHIVulkanModule();
         LUMEN_CHECK_TRUE( Module.HasValue() );
         const TExpected<TVector<RHI::FRHIAdapterInfo>, RHI::FRHIError> Adapters = ( *Module )->EnumerateAdapters();
-        if ( not Adapters )
-        {
-            LUMEN_CHECK_EQ( Adapters.Error().Code, RHI::ERHIErrorCode::Unsupported );
-            return;
-        }
+        LUMEN_CHECK_TRUE( Adapters.HasValue() );
 
         for ( const RHI::FRHIAdapterInfo &Adapter : *Adapters )
         {
@@ -51,11 +47,7 @@ namespace RHIVulkan
         const TExpected<TSharedRef<RHI::IRHIModule>, RHI::FRHIError> Module = CreateRHIVulkanModule();
         LUMEN_CHECK_TRUE( Module.HasValue() );
         const TExpected<TSharedRef<RHI::IRHIDevice>, RHI::FRHIError> Device = ( *Module )->CreateDevice( RHI::FRHIDeviceDesc{} );
-        if ( not Device )
-        {
-            LUMEN_CHECK_EQ( Device.Error().Code, RHI::ERHIErrorCode::Unsupported );
-            return;
-        }
+        LUMEN_CHECK_TRUE( Device.HasValue() );
 
         LUMEN_CHECK_EQ( ( *Device )->GetStatus(), RHI::ERHIDeviceStatus::Ready );
     }

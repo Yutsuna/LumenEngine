@@ -172,8 +172,10 @@ Lumen::RHIVulkan::FVulkanDevice::GetQueue ( RHI::ERHIQueueType InType, UInt32 In
     } while ( false )
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreateBuffer ( const RHI::FRHIBufferDesc & ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreateBuffer ( const RHI::FRHIBufferDesc &InDesc ) noexcept
 {
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateBuffer" ) );
+    LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateBuffer", RHI::ERHIErrorCondition::Resource );
 }
 
@@ -212,8 +214,10 @@ Lumen::RHIVulkan::FVulkanDevice::CreateSampler ( const RHI::FRHISamplerDesc & ) 
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIHeap>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreateHeap ( const RHI::FRHIHeapDesc & ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreateHeap ( const RHI::FRHIHeapDesc &InDesc ) noexcept
 {
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateHeap" ) );
+    LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateHeap", RHI::ERHIErrorCondition::Memory );
 }
 
@@ -224,8 +228,14 @@ Lumen::RHIVulkan::FVulkanDevice::CreateBufferPool () noexcept
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIUploadAllocator>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreateUploadAllocator ( UInt64 ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreateUploadAllocator ( const UInt64 InCapacity ) noexcept
 {
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateUploadAllocator" ) );
+    if ( InCapacity == 0ULL )
+    {
+        return TUnexpected(
+            RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Memory, "Upload allocator capacity must be nonzero." ) );
+    }
     LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateUploadAllocator", RHI::ERHIErrorCondition::Memory );
 }
 
@@ -296,8 +306,14 @@ Lumen::RHIVulkan::FVulkanDevice::CreatePipelineCache ( const RHI::FRHIPipelineCa
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHICommandAllocator>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreateCommandAllocator ( RHI::ERHIQueueType ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreateCommandAllocator ( const RHI::ERHIQueueType InQueueType ) noexcept
 {
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateCommandAllocator" ) );
+    if ( InQueueType >= RHI::ERHIQueueType::Count )
+    {
+        return TUnexpected(
+            RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Command, "Invalid command allocator queue type." ) );
+    }
     LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateCommandAllocator", RHI::ERHIErrorCondition::Command );
 }
 
@@ -320,8 +336,10 @@ Lumen::RHIVulkan::FVulkanDevice::CreateSwapchain ( const RHI::FRHISwapchainDesc 
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIQueryPool>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreateQueryPool ( const RHI::FRHIQueryPoolDesc & ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreateQueryPool ( const RHI::FRHIQueryPoolDesc &InDesc ) noexcept
 {
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateQueryPool" ) );
+    LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateQueryPool", RHI::ERHIErrorCondition::Query );
 }
 

@@ -69,7 +69,7 @@ Lumen::RHIVulkan::SelectVulkanAdapter ( const FVulkanInstance &InInstance, TOpti
     if ( Adapters.empty() )
     {
         return TUnexpected( RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Device,
-                                                     "No Vulkan physical device satisfies the Vulkan 1.3 baseline." ) );
+                                                     "No Vulkan physical device satisfies the Vulkan 1.4 baseline." ) );
     }
 
     if ( InAdapterId )

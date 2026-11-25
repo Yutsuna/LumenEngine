@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <RHI/Module/RHIDeviceDesc.hpp>
 #include <RHI/Types/RHICapabilities.hpp>
 #include <RHI/Types/RHIError.hpp>
 #include <RHI/Types/RHILimits.hpp>

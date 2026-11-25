@@ -1,6 +1,6 @@
 /**
  * @file VulkanAdapter.hpp
- * @brief Declares physical-device discovery and Vulkan 1.3 baseline evaluation.
+ * @brief Declares physical-device discovery and Vulkan 1.4 baseline evaluation.
  */
 
 #pragma once
@@ -40,7 +40,7 @@ namespace RHIVulkan
         Bool bHasBindlessIndexing  = false;
     };
 
-    /** @brief Enumerates physical devices satisfying the Vulkan 1.3 baseline. */
+    /** @brief Enumerates physical devices satisfying the Vulkan 1.4 baseline. */
     [[nodiscard]] TExpected<TVector<FVulkanAdapter>, RHI::FRHIError>
     EnumerateVulkanAdapters ( const FVulkanInstance &InInstance ) noexcept;
 

@@ -139,44 +139,8 @@ void PopulateCapabilities ( Lumen::RHIVulkan::FVulkanAdapter &InAdapter,
                             const Lumen::Bool bGraphicsSupportsTimestamps,
                             const Lumen::Bool bSupportsPresentation ) noexcept
 {
-    Lumen::RHI::ERHICapabilityFlags FeatureFlags =
-        Lumen::RHI::ERHICapabilityFlags::DynamicRendering | Lumen::RHI::ERHICapabilityFlags::TimelineSemaphores |
-        Lumen::RHI::ERHICapabilityFlags::IndirectDraw | Lumen::RHI::ERHICapabilityFlags::OcclusionQueries;
-
-    if ( InAdapter.bHasBindlessIndexing )
-    {
-        FeatureFlags |= Lumen::RHI::ERHICapabilityFlags::BindlessResources;
-    }
-    if ( InFeatures.features.multiDrawIndirect == VK_TRUE )
-    {
-        FeatureFlags |= Lumen::RHI::ERHICapabilityFlags::MultiDrawIndirect;
-    }
-    if ( bExactTimestampPeriod and bGraphicsSupportsTimestamps )
-    {
-        FeatureFlags |= Lumen::RHI::ERHICapabilityFlags::TimestampQueries;
-    }
-    if ( InFeatures.features.pipelineStatisticsQuery == VK_TRUE )
-    {
-        FeatureFlags |= Lumen::RHI::ERHICapabilityFlags::PipelineStatistics;
-    }
-    if ( InFeatures.features.depthClamp == VK_TRUE )
-    {
-        FeatureFlags |= Lumen::RHI::ERHICapabilityFlags::DepthClamp;
-    }
-    if ( InFeatures.features.samplerAnisotropy == VK_TRUE and InLimits.maxSamplerAnisotropy > 1.0F )
-    {
-        FeatureFlags |= Lumen::RHI::ERHICapabilityFlags::AnisotropicFiltering;
-    }
-    if ( InAdapter.ComputeQueueFamilyIndex )
-    {
-        FeatureFlags |= Lumen::RHI::ERHICapabilityFlags::AsyncCompute;
-    }
-    if ( bSupportsPresentation )
-    {
-        FeatureFlags |= Lumen::RHI::ERHICapabilityFlags::Presentation;
-    }
-
-    InAdapter.Info.Capabilities.Features         = FeatureFlags;
+    InAdapter.Info.Capabilities.Features = Lumen::RHIVulkan::BuildVulkanFeatureFlags(
+        InAdapter, InFeatures, InLimits, bExactTimestampPeriod, bGraphicsSupportsTimestamps, bSupportsPresentation );
     InAdapter.Info.Capabilities.ShaderModelMajor = 0U;
     InAdapter.Info.Capabilities.ShaderModelMinor = 0U;
     InAdapter.Info.Capabilities.ShaderFormats    = { Lumen::RHI::ERHIShaderFormat::PortableBytecode };
@@ -250,6 +214,52 @@ void PopulateQueueFamilies ( Lumen::RHIVulkan::FVulkanAdapter &InAdapter,
 
 } // namespace
 
+Lumen::RHI::ERHICapabilityFlags Lumen::RHIVulkan::BuildVulkanFeatureFlags ( const FVulkanAdapter &InAdapter,
+                                                                            const VkPhysicalDeviceFeatures2 &InFeatures,
+                                                                            const VkPhysicalDeviceLimits &InLimits,
+                                                                            const Bool bExactTimestampPeriod,
+                                                                            const Bool bGraphicsSupportsTimestamps,
+                                                                            const Bool bSupportsPresentation ) noexcept
+{
+    RHI::ERHICapabilityFlags FeatureFlags = RHI::ERHICapabilityFlags::DynamicRendering |
+                                            RHI::ERHICapabilityFlags::TimelineSemaphores |
+                                            RHI::ERHICapabilityFlags::IndirectDraw | RHI::ERHICapabilityFlags::OcclusionQueries;
+
+    if ( InAdapter.bHasBindlessIndexing )
+    {
+        FeatureFlags |= RHI::ERHICapabilityFlags::BindlessResources;
+    }
+    if ( InFeatures.features.multiDrawIndirect == VK_TRUE )
+    {
+        FeatureFlags |= RHI::ERHICapabilityFlags::MultiDrawIndirect;
+    }
+    if ( bExactTimestampPeriod and bGraphicsSupportsTimestamps )
+    {
+        FeatureFlags |= RHI::ERHICapabilityFlags::TimestampQueries;
+    }
+    if ( InFeatures.features.pipelineStatisticsQuery == VK_TRUE )
+    {
+        FeatureFlags |= RHI::ERHICapabilityFlags::PipelineStatistics;
+    }
+    if ( InFeatures.features.depthClamp == VK_TRUE )
+    {
+        FeatureFlags |= RHI::ERHICapabilityFlags::DepthClamp;
+    }
+    if ( InFeatures.features.samplerAnisotropy == VK_TRUE and InLimits.maxSamplerAnisotropy > 1.0F )
+    {
+        FeatureFlags |= RHI::ERHICapabilityFlags::AnisotropicFiltering;
+    }
+    if ( InAdapter.ComputeQueueFamilyIndex )
+    {
+        FeatureFlags |= RHI::ERHICapabilityFlags::AsyncCompute;
+    }
+    if ( bSupportsPresentation )
+    {
+        FeatureFlags |= RHI::ERHICapabilityFlags::Presentation;
+    }
+    return FeatureFlags;
+}
+
 /**
  * Public
  */
@@ -259,7 +269,7 @@ Lumen::RHIVulkan::BuildVulkanAdapter ( const FVulkanInstance &InInstance, VkPhys
 {
     VkPhysicalDeviceProperties BaseProperties{};
     vkGetPhysicalDeviceProperties( InPhysicalDevice, &BaseProperties );
-    if ( BaseProperties.apiVersion < VK_API_VERSION_1_3 )
+    if ( BaseProperties.apiVersion < VK_API_VERSION_1_4 )
     {
         return TOptional<FVulkanAdapter>{};
     }

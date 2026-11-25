@@ -38,7 +38,7 @@ namespace RHIVulkan
         /** @brief Validates the loader and selects available instance features. */
         [[nodiscard]] static TExpected<FVulkanApplication, RHI::FRHIError> Create ( Bool bEnableDebug ) noexcept;
 
-        /** @return Application information for the Vulkan 1.3 device baseline. */
+        /** @return Application information for the Vulkan 1.4 device baseline. */
         [[nodiscard]] VkApplicationInfo MakeApplicationInfo () const noexcept;
 
         /** @return Debug messenger configuration shared by instance and messenger creation. */

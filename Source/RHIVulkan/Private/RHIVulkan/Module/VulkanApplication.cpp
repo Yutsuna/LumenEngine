@@ -117,7 +117,7 @@ VkApplicationInfo Lumen::RHIVulkan::FVulkanApplication::MakeApplicationInfo () c
     ApplicationInfo.applicationVersion = VK_MAKE_VERSION( 1U, 0U, 0U );
     ApplicationInfo.pEngineName        = "Lumen";
     ApplicationInfo.engineVersion      = VK_MAKE_VERSION( 1U, 0U, 0U );
-    ApplicationInfo.apiVersion         = VK_API_VERSION_1_3;
+    ApplicationInfo.apiVersion         = VK_API_VERSION_1_4;
     return ApplicationInfo;
 }
 
