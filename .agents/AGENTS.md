@@ -40,6 +40,11 @@ has a `meson.build` in its `Source/` directory.
 
 ## Fast facts (always apply)
 
+- Three build trees exist and **all three must compile at the end of every
+  task** — a task is not done until each one builds cleanly:
+  1. `Build` — Debug, ASan+UBSan (`b_sanitize=address,undefined`)
+  2. `Build-Release` — Release, `-O3`
+  3. `Build-TSAN` — Debug, TSan (`b_sanitize=thread`)
 - `.agents/` is the canonical agent-documentation directory. `.kimi-code` and
   `.opencode` are symbolic links to it: never edit files through those paths;
   all agent-documentation changes must be made directly under `.agents/`.

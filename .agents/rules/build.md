@@ -11,6 +11,18 @@ meson compile -C Build
 meson test -C Build
 ```
 
+**Three build trees — compile ALL of them at the end of every task:**
+
+| Tree | Config |
+| --- | --- |
+| `Build` | Debug, ASan+UBSan (`b_sanitize=address,undefined`) |
+| `Build-Release` | Release, `-O3` |
+| `Build-TSAN` | Debug, TSan (`b_sanitize=thread`) |
+
+Release-only failures happen (e.g. GCC `-Warray-bounds` false positives that
+only fire at `-O3` through speculative devirtualization): never declare a task
+done on the debug build alone.
+
 Focused verification:
 
 ```sh
