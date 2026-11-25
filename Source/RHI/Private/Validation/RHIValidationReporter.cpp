@@ -8,6 +8,16 @@
 #include <RHI/Debug/IRHIDebugSink.hpp>
 #include <RHI/Types/IRHIObject.hpp>
 
+/**
+ * Public
+ */
+
+Lumen::TSharedRef<Lumen::RHI::FRHIValidationReporter>
+Lumen::RHI::FRHIValidationReporter::Create ( const FRHIValidationDesc &InDesc ) noexcept
+{
+    return MakeShared<FRHIValidationReporter>( InDesc );
+}
+
 Lumen::RHI::FRHIValidationReporter::FRHIValidationReporter ( const FRHIValidationDesc &InDesc ) noexcept : Desc( InDesc )
 {
     /* */

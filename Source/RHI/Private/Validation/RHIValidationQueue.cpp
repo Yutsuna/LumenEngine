@@ -6,6 +6,10 @@
 #include "RHIValidationQueue.hpp"
 #include <RHI/Validation/RHIValidation.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIValidationQueue::FRHIValidationQueue ( TSharedRef<IRHIQueue> InUnderlying,
                                                        TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )

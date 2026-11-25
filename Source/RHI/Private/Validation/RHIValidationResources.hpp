@@ -25,15 +25,27 @@ namespace RHI
     public:
 
         FRHIValidationHeap ( TSharedRef<IRHIHeap> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
+
         ~FRHIValidationHeap () noexcept override;
+
+    public:
+
         [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+
         [[nodiscard]] FString GetDebugName () const noexcept override;
+
         void SetDebugName ( FStringView InName ) noexcept override;
+
         [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+
         [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+
         [[nodiscard]] const FRHIHeapDesc &GetDesc () const noexcept override;
+
         [[nodiscard]] TExpected<TSpan<Byte>, FRHIError> Map ( UInt64 InOffset, UInt64 InSize ) noexcept override;
+
         void Unmap () noexcept override;
 
     private:
@@ -51,19 +63,35 @@ namespace RHI
     public:
 
         FRHIValidationBuffer ( TSharedRef<IRHIBuffer> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
+
         ~FRHIValidationBuffer () noexcept override;
+
+    public:
+
         [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+
         [[nodiscard]] FString GetDebugName () const noexcept override;
+
         void SetDebugName ( FStringView InName ) noexcept override;
+
         [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+
         [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+
         [[nodiscard]] const FRHIBufferDesc &GetDesc () const noexcept override;
+
         [[nodiscard]] const FRHIResourceRequirements &GetRequirements () const noexcept override;
+
         [[nodiscard]] ERHIResourceUsage GetUsage () const noexcept override;
+
         [[nodiscard]] ERHIResourceState GetInitialState () const noexcept override;
+
         [[nodiscard]] FRHIResourceLifetime GetLifetime () const noexcept override;
+
         [[nodiscard]] TExpected<TSpan<Byte>, FRHIError> Map ( UInt64 InOffset, UInt64 InSize ) noexcept override;
+
         void Unmap () noexcept override;
 
     private:
@@ -82,17 +110,31 @@ namespace RHI
     public:
 
         FRHIValidationTexture ( TSharedRef<IRHITexture> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
+
         ~FRHIValidationTexture () noexcept override;
+
+    public:
+
         [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+
         [[nodiscard]] FString GetDebugName () const noexcept override;
+
         void SetDebugName ( FStringView InName ) noexcept override;
+
         [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+
         [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+
         [[nodiscard]] const FRHITextureDesc &GetDesc () const noexcept override;
+
         [[nodiscard]] const FRHIResourceRequirements &GetRequirements () const noexcept override;
+
         [[nodiscard]] ERHIResourceUsage GetUsage () const noexcept override;
+
         [[nodiscard]] ERHIResourceState GetInitialState () const noexcept override;
+
         [[nodiscard]] FRHIResourceLifetime GetLifetime () const noexcept override;
 
     private:
@@ -112,14 +154,25 @@ namespace RHI
         FRHIValidationTextureView ( TSharedRef<IRHITextureView> InUnderlying,
                                     TSharedPtr<IRHITexture> InParent,
                                     TSharedPtr<FRHIValidationState> InState ) noexcept;
+
         ~FRHIValidationTextureView () noexcept override;
+
+    public:
+
         [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+
         [[nodiscard]] FString GetDebugName () const noexcept override;
+
         void SetDebugName ( FStringView InName ) noexcept override;
+
         [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+
         [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+
         [[nodiscard]] const FRHITextureViewDesc &GetDesc () const noexcept override;
+
         [[nodiscard]] TSharedPtr<IRHITexture> GetTexture () const noexcept override;
 
     private:

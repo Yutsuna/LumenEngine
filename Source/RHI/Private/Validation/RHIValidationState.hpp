@@ -89,6 +89,9 @@ namespace RHI
     {
     public:
 
+        /** @brief Creates the validation state and its reporter for one validated device tree. */
+        [[nodiscard]] static TSharedPtr<FRHIValidationState> Create ( const FRHIValidationDesc &InDesc ) noexcept;
+
         explicit FRHIValidationState ( TSharedPtr<FRHIValidationReporter> InReporter ) noexcept;
         ~FRHIValidationState () noexcept;
 

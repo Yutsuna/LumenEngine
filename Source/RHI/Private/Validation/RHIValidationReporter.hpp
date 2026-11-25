@@ -7,6 +7,7 @@
 #include <RHI/Validation/RHIValidationDesc.hpp>
 
 #include <HAL/PlatformMutex.hpp>
+#include <Memory/SharedPtr.hpp>
 #include <Templates/Map.hpp>
 
 namespace Lumen
@@ -40,6 +41,9 @@ namespace RHI
     class RHI_EXPORT FRHIValidationReporter final
     {
     public:
+
+        /** @brief Creates a reporter for the given validation policy. */
+        [[nodiscard]] static TSharedRef<FRHIValidationReporter> Create ( const FRHIValidationDesc &InDesc ) noexcept;
 
         explicit FRHIValidationReporter ( const FRHIValidationDesc &InDesc ) noexcept;
 

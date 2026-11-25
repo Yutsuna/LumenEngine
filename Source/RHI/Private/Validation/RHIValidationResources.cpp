@@ -5,6 +5,10 @@
 
 #include "RHIValidationResources.hpp"
 
+/**
+ * ValidationHeap
+ */
+
 Lumen::RHI::FRHIValidationHeap::FRHIValidationHeap ( TSharedRef<IRHIHeap> InUnderlying,
                                                      TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
@@ -34,6 +38,10 @@ void Lumen::RHI::FRHIValidationHeap::Unmap () noexcept
 {
     Underlying->Unmap();
 }
+
+/**
+ * ValidationBuffer
+ */
 
 Lumen::RHI::FRHIValidationBuffer::FRHIValidationBuffer ( TSharedRef<IRHIBuffer> InUnderlying,
                                                          TSharedPtr<FRHIValidationState> InState ) noexcept
@@ -97,6 +105,10 @@ void Lumen::RHI::FRHIValidationBuffer::Unmap () noexcept
     bMapped = false;
 }
 
+/**
+ * ValidationTexture
+ */
+
 Lumen::RHI::FRHIValidationTexture::FRHIValidationTexture ( TSharedRef<IRHITexture> InUnderlying,
                                                            TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
@@ -135,6 +147,10 @@ Lumen::RHI::FRHIResourceLifetime Lumen::RHI::FRHIValidationTexture::GetLifetime 
 {
     return Underlying->GetLifetime();
 }
+
+/**
+ * ValidationTextureView
+ */
 
 Lumen::RHI::FRHIValidationTextureView::FRHIValidationTextureView ( TSharedRef<IRHITextureView> InUnderlying,
                                                                    TSharedPtr<IRHITexture> InParent,

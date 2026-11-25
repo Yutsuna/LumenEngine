@@ -6,6 +6,10 @@
 #include "RHIValidationTransientResourceAllocator.hpp"
 #include <RHI/Utilities/RHIAlignment.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIValidationTransientResourceAllocator::FRHIValidationTransientResourceAllocator (
     TSharedRef<IRHITransientResourceAllocator> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )

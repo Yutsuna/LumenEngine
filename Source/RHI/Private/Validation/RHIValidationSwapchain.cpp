@@ -8,6 +8,10 @@
 #include <RHI/Synchronization/IRHISemaphore.hpp>
 #include <RHI/Validation/RHIValidation.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIValidationSwapchain::FRHIValidationSwapchain ( TSharedRef<IRHISwapchain> InUnderlying,
                                                                TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )

@@ -15,6 +15,12 @@
  * Public
  */
 
+Lumen::TSharedPtr<Lumen::RHI::FRHIValidationState>
+Lumen::RHI::FRHIValidationState::Create ( const FRHIValidationDesc &InDesc ) noexcept
+{
+    return MakeShared<FRHIValidationState>( FRHIValidationReporter::Create( InDesc ) );
+}
+
 Lumen::RHI::FRHIValidationState::FRHIValidationState ( TSharedPtr<FRHIValidationReporter> InReporter ) noexcept
     : Reporter( std::move( InReporter ) )
 {
