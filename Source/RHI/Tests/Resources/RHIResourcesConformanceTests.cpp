@@ -143,6 +143,24 @@ namespace RHI
             LUMEN_CHECK_EQ( View->GetDesc().Texture.Get(), View->GetTexture().Get() );
         }
 
+        LUMEN_TEST( RHIResourcesConformance, ChildBufferIdentitiesAreUniqueAndStable )
+        {
+            TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+            LUMEN_CHECK_TRUE( Device.HasValue() );
+            FRHIBufferDesc Desc;
+            Desc.Size                                           = 64ULL;
+            Desc.Usage                                          = ERHIResourceUsage::CopySource;
+            TExpected<TSharedRef<IRHIBuffer>, FRHIError> First  = ( *Device )->CreateBuffer( Desc );
+            TExpected<TSharedRef<IRHIBuffer>, FRHIError> Second = ( *Device )->CreateBuffer( Desc );
+            LUMEN_CHECK_TRUE( First.HasValue() );
+            LUMEN_CHECK_TRUE( Second.HasValue() );
+            LUMEN_CHECK_NOT_EQ( ( *First )->GetId().GetValue(), ( *Second )->GetId().GetValue() );
+            const FRHIObjectId FirstId = ( *First )->GetId();
+            ( *First )->SetDebugName( "ConformanceBuffer" );
+            LUMEN_CHECK_TRUE( ( *First )->GetId() == FirstId );
+            LUMEN_CHECK_TRUE( ( *First )->GetDebugName() == "ConformanceBuffer" );
+        }
+
         LUMEN_TEST( RHIResourcesConformance, PlacesResourcesAndRetainsTheirHeap )
         {
             TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice( true );

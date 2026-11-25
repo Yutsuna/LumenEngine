@@ -84,6 +84,25 @@ namespace RHI
             }
         }
 
+        LUMEN_TEST( RHIQueueConformance, RejectsSubmissionAfterDeviceLoss )
+        {
+            TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
+            LUMEN_CHECK_TRUE( Device.HasValue() );
+            TSharedRef<IRHIQueue> Queue         = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+            TSharedRef<IRHISemaphore> Semaphore = *( *Device )->CreateSemaphore( {} );
+            if ( not Tests::GetRHIConformanceDeviceFactory().InjectDeviceLost( **Device ) )
+            {
+                return;
+            }
+
+            FRHISubmitDesc Submit;
+            Submit.Completion             = { 1ULL };
+            Submit.Signals                = { { .Semaphore = Semaphore, .Value = 1ULL } };
+            const FRHIExpected Submission = Queue->Submit( Submit );
+            LUMEN_CHECK_HAS_ERROR( Submission );
+            LUMEN_CHECK_EQ( Submission.Error().Code, ERHIErrorCode::DeviceLost );
+        }
+
     } // namespace
 } // namespace RHI
 

@@ -8,9 +8,7 @@
 #include <RHI/Device/IRHIDevice.hpp>
 #include <RHI/Memory/RHIHeapDesc.hpp>
 #include <RHI/Queries/RHIQueryPoolDesc.hpp>
-#include <RHI/Queue/IRHIQueue.hpp>
 #include <RHI/Resources/RHIBufferDesc.hpp>
-#include <RHI/Synchronization/IRHISemaphore.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
@@ -65,30 +63,10 @@ namespace RHI
             LUMEN_CHECK_EQ( Query.Error().Condition, ERHIErrorCondition::Query );
         }
 
-        LUMEN_TEST( RHIDeviceConformance, ChildIdentitiesAreUniqueAndStable )
+        LUMEN_TEST( RHIDeviceConformance, DeviceLossBlocksCreation )
         {
             TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
             LUMEN_CHECK_TRUE( Device.HasValue() );
-            FRHIBufferDesc Desc;
-            Desc.Size                                           = 64ULL;
-            Desc.Usage                                          = ERHIResourceUsage::CopySource;
-            TExpected<TSharedRef<IRHIBuffer>, FRHIError> First  = ( *Device )->CreateBuffer( Desc );
-            TExpected<TSharedRef<IRHIBuffer>, FRHIError> Second = ( *Device )->CreateBuffer( Desc );
-            LUMEN_CHECK_TRUE( First.HasValue() );
-            LUMEN_CHECK_TRUE( Second.HasValue() );
-            LUMEN_CHECK_NOT_EQ( ( *First )->GetId().GetValue(), ( *Second )->GetId().GetValue() );
-            const FRHIObjectId FirstId = ( *First )->GetId();
-            ( *First )->SetDebugName( "ConformanceBuffer" );
-            LUMEN_CHECK_TRUE( ( *First )->GetId() == FirstId );
-            LUMEN_CHECK_TRUE( ( *First )->GetDebugName() == "ConformanceBuffer" );
-        }
-
-        LUMEN_TEST( RHIDeviceConformance, DeviceLossBlocksCreationAndSubmission )
-        {
-            TExpected<TSharedRef<IRHIDevice>, FRHIError> Device = Tests::GetRHIConformanceDeviceFactory().CreateDevice();
-            LUMEN_CHECK_TRUE( Device.HasValue() );
-            TSharedRef<IRHIQueue> Queue         = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
-            TSharedRef<IRHISemaphore> Semaphore = *( *Device )->CreateSemaphore( {} );
             if ( not Tests::GetRHIConformanceDeviceFactory().InjectDeviceLost( **Device ) )
             {
                 return;
@@ -100,13 +78,6 @@ namespace RHI
             LUMEN_CHECK_HAS_ERROR( Buffer );
             LUMEN_CHECK_EQ( Buffer.Error().Code, ERHIErrorCode::DeviceLost );
             LUMEN_CHECK_EQ( Buffer.Error().Condition, ERHIErrorCondition::Device );
-
-            FRHISubmitDesc Submit;
-            Submit.Completion             = { 1ULL };
-            Submit.Signals                = { { .Semaphore = Semaphore, .Value = 1ULL } };
-            const FRHIExpected Submission = Queue->Submit( Submit );
-            LUMEN_CHECK_HAS_ERROR( Submission );
-            LUMEN_CHECK_EQ( Submission.Error().Code, ERHIErrorCode::DeviceLost );
         }
 
     } // namespace
