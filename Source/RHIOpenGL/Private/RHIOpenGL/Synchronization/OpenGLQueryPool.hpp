@@ -31,10 +31,12 @@ namespace RHIOpenGL
 
     /**
      * @class FOpenGLQueryPool
-     * @brief A fixed-size array of GL query objects read back on the GL executor.
-     * @details Occlusion uses SamplesPassed and timestamp uses TimeElapsed; both
-     *          produce one UInt64 per query. Pipeline statistics are rejected at
-     *          creation because GL has no portable equivalent.
+     * @brief A fixed-size array of GL query objects with executor-published results.
+     * @details Occlusion uses SamplesPassed; timestamp uses an absolute
+     *          glQueryCounter(GL_TIMESTAMP) value. Both produce one UInt64 per
+     *          query. Recording only mutates CPU state: all native calls and
+     *          result publication happen on the GL Executor. Pipeline statistics
+     *          are rejected at creation because GL has no portable equivalent.
      */
     class FOpenGLQueryPool final : public RHI::IRHIQueryPool, public FNonCopyable, public FNonMovable
     {
@@ -62,8 +64,15 @@ namespace RHIOpenGL
     public:
 
         [[nodiscard]] GLuint GetQuery ( UInt32 InIndex ) const noexcept;
+        [[nodiscard]] GLenum GetNativeTarget () const noexcept;
+        [[nodiscard]] UInt32 GetGeneration ( UInt32 InIndex ) const noexcept;
+        /** @brief Validates and marks a query active; no native GL call is made. */
         [[nodiscard]] RHI::FRHIExpected Begin ( UInt32 InIndex ) noexcept;
+        /** @brief Marks a query pending publication; no native GL call is made. */
         [[nodiscard]] RHI::FRHIExpected End ( UInt32 InIndex ) noexcept;
+        /** @brief Publishes an executor result, gated by the submission completion. */
+        [[nodiscard]] RHI::FRHIExpected
+        PublishResult ( UInt32 InIndex, UInt32 InGeneration, UInt64 InValue, RHI::FRHITimelineValue InCompletion ) noexcept;
         [[nodiscard]] const FOpenGLDeviceContext &GetDeviceContext () const noexcept;
 
     private:
@@ -73,7 +82,9 @@ namespace RHIOpenGL
         RHI::FRHIQueryPoolDesc Desc;
         TVector<GLuint> Queries;
         TVector<Bool> Active;
+        TVector<Bool> Pending;
         TVector<Bool> Available;
+        TVector<UInt32> Generations;
         TVector<UInt64> Results;
         TVector<RHI::FRHITimelineValue> Availability;
         mutable HAL::FPlatformRecursiveSharedMutex Mutex;

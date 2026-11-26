@@ -23,7 +23,7 @@ namespace
 
 [[nodiscard]] Lumen::RHIOpenGL::GLenum MapQueryTarget ( const Lumen::RHI::ERHIQueryType InType ) noexcept
 {
-    return InType == Lumen::RHI::ERHIQueryType::Timestamp ? Lumen::RHIOpenGL::GlTimeElapsed : Lumen::RHIOpenGL::GlSamplesPassed;
+    return InType == Lumen::RHI::ERHIQueryType::Timestamp ? Lumen::RHIOpenGL::GlTimestamp : Lumen::RHIOpenGL::GlSamplesPassed;
 }
 
 void DeleteQueryHandles ( const Lumen::RHIOpenGL::FGLDispatchTable &InDispatch,
@@ -72,7 +72,10 @@ Lumen::RHIOpenGL::FOpenGLQueryPool::Create ( TSharedRef<FOpenGLDeviceContext> In
     LUMEN_TRY_EXPECT_ERROR( Created );
     if ( NativeError != GlNoError )
     {
-        DeleteQueryHandles( Dispatch, NativeQueries );
+        ( void )Pool->Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, NativeQueries] () noexcept
+        {
+            DeleteQueryHandles( Dispatch, NativeQueries );
+        } );
         return TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Query, "OpenGL refused query pool creation." ) );
     }
     if ( Algo::AnyOf( NativeQueries, [] ( const GLuint InHandle ) noexcept -> Bool
@@ -80,7 +83,10 @@ Lumen::RHIOpenGL::FOpenGLQueryPool::Create ( TSharedRef<FOpenGLDeviceContext> In
         return InHandle == 0U;
     } ) )
     {
-        DeleteQueryHandles( Dispatch, NativeQueries );
+        ( void )Pool->Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, NativeQueries] () noexcept
+        {
+            DeleteQueryHandles( Dispatch, NativeQueries );
+        } );
         return TUnexpected(
             RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Query, "OpenGL returned an invalid query handle." ) );
     }
@@ -94,7 +100,8 @@ Lumen::RHIOpenGL::FOpenGLQueryPool::FOpenGLQueryPool ( TSharedRef<FOpenGLDeviceC
     : Identity( MakeOpenGLObjectBase<FOpenGLQueryPool>( InId ) ),
       Context( static_cast<TSharedRef<FOpenGLDeviceContext> &&>( InContext ) ), Desc( InDesc ),
       Queries( static_cast<USize>( InDesc.Count ), 0U ), Active( static_cast<USize>( InDesc.Count ), false ),
-      Available( static_cast<USize>( InDesc.Count ), false ), Results( static_cast<USize>( InDesc.Count ), 0ULL ),
+      Pending( static_cast<USize>( InDesc.Count ), false ), Available( static_cast<USize>( InDesc.Count ), false ),
+      Generations( static_cast<USize>( InDesc.Count ), 0U ), Results( static_cast<USize>( InDesc.Count ), 0ULL ),
       Availability( static_cast<USize>( InDesc.Count ) )
 {
     /* */
@@ -130,7 +137,9 @@ void Lumen::RHIOpenGL::FOpenGLQueryPool::Reset () noexcept
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( USize Index = 0U; Index < Active.size(); ++Index )
     {
+        ++Generations[Index];
         Active[Index]       = false;
+        Pending[Index]      = false;
         Available[Index]    = false;
         Results[Index]      = 0ULL;
         Availability[Index] = {};
@@ -174,75 +183,75 @@ Lumen::RHIOpenGL::GLuint Lumen::RHIOpenGL::FOpenGLQueryPool::GetQuery ( const UI
     return InIndex < Queries.size() ? Queries[InIndex] : 0U;
 }
 
+Lumen::RHIOpenGL::GLenum Lumen::RHIOpenGL::FOpenGLQueryPool::GetNativeTarget () const noexcept
+{
+    return MapQueryTarget( Desc.Type );
+}
+
+Lumen::UInt32 Lumen::RHIOpenGL::FOpenGLQueryPool::GetGeneration ( const UInt32 InIndex ) const noexcept
+{
+    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    return InIndex < Generations.size() ? Generations[InIndex] : 0U;
+}
+
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueryPool::Begin ( const UInt32 InIndex ) noexcept
 {
-    GLuint Handle = 0U;
+    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    if ( InIndex >= Queries.size() )
     {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-        if ( InIndex >= Queries.size() )
-        {
-            return TUnexpected( RHI::MakeRHIInvalidQuery( "Query index is out of range." ) );
-        }
-        if ( Active[InIndex] )
-        {
-            return TUnexpected(
-                RHI::FRHIError( RHI::ERHIErrorCode::InvalidState, RHI::ERHIErrorCondition::Query, "Query is already active." ) );
-        }
-        Handle                = Queries[InIndex];
-        Active[InIndex]       = true;
-        Available[InIndex]    = false;
-        Results[InIndex]      = 0ULL;
-        Availability[InIndex] = {};
+        return TUnexpected( RHI::MakeRHIInvalidQuery( "Query index is out of range." ) );
     }
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    const GLenum Target              = MapQueryTarget( Desc.Type );
-    const RHI::FRHIExpected Started  = Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, Target, Handle] () noexcept
+    if ( Active[InIndex] or Pending[InIndex] )
     {
-        Dispatch.BeginQuery( Target, Handle );
-    } );
-    if ( not Started )
-    {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-        Active[InIndex] = false;
+        return TUnexpected( RHI::FRHIError( RHI::ERHIErrorCode::InvalidState, RHI::ERHIErrorCondition::Query,
+                                            "Query is already active or awaiting its result." ) );
     }
-    return Started;
+    Active[InIndex]       = true;
+    Available[InIndex]    = false;
+    Results[InIndex]      = 0ULL;
+    Availability[InIndex] = {};
+    return {};
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueryPool::End ( const UInt32 InIndex ) noexcept
 {
-    GLuint Handle = 0U;
-    {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-        if ( InIndex >= Queries.size() )
-        {
-            return TUnexpected( RHI::MakeRHIInvalidQuery( "Query index is out of range." ) );
-        }
-        if ( not Active[InIndex] )
-        {
-            return TUnexpected(
-                RHI::FRHIError( RHI::ERHIErrorCode::InvalidState, RHI::ERHIErrorCondition::Query, "Query is not active." ) );
-        }
-        Handle = Queries[InIndex];
-    }
-    GLuint64 Value                   = 0ULL;
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    const GLenum Target              = MapQueryTarget( Desc.Type );
-    const RHI::FRHIExpected Ended    = Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, Target, Handle, &Value] () noexcept
-    {
-        Dispatch.EndQuery( Target );
-        Dispatch.GetQueryObjectui64v( Handle, GlQueryResult, &Value );
-    } );
-    if ( not Ended )
-    {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-        Active[InIndex] = false;
-        return Ended;
-    }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    if ( InIndex >= Queries.size() )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidQuery( "Query index is out of range." ) );
+    }
+    if ( not Active[InIndex] )
+    {
+        return TUnexpected(
+            RHI::FRHIError( RHI::ERHIErrorCode::InvalidState, RHI::ERHIErrorCondition::Query, "Query is not active." ) );
+    }
     Active[InIndex]       = false;
-    Available[InIndex]    = true;
-    Results[InIndex]      = static_cast<UInt64>( Value );
+    Pending[InIndex]      = true;
+    Available[InIndex]    = false;
+    Results[InIndex]      = 0ULL;
     Availability[InIndex] = {};
+    return {};
+}
+
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueryPool::PublishResult ( const UInt32 InIndex,
+                                                                             const UInt32 InGeneration,
+                                                                             const UInt64 InValue,
+                                                                             const RHI::FRHITimelineValue InCompletion ) noexcept
+{
+    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    if ( InIndex >= Queries.size() )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidQuery( "Query index is out of range." ) );
+    }
+    if ( Generations[InIndex] != InGeneration or not Pending[InIndex] )
+    {
+        return TUnexpected( RHI::FRHIError( RHI::ERHIErrorCode::InvalidState, RHI::ERHIErrorCondition::Query,
+                                            "Query result no longer matches the recorded query." ) );
+    }
+    Pending[InIndex]      = false;
+    Available[InIndex]    = true;
+    Results[InIndex]      = InValue;
+    Availability[InIndex] = InCompletion;
     return {};
 }
 
