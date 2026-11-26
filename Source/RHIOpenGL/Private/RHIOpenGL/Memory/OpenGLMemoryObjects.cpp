@@ -6,6 +6,7 @@
 #include <RHIOpenGL/Memory/OpenGLMemoryObjects.hpp>
 
 #include <Algo/Any.hpp>
+#include <Algo/Find.hpp>
 #include <Algo/Sort.hpp>
 
 #include <HAL/LockGuard.hpp>
@@ -62,14 +63,16 @@ Lumen::RHIOpenGL::FOpenGLBufferPool::Acquire ( const RHI::FRHIBufferDesc &InDesc
 {
     LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
     HAL::TLockGuard Lock( Mutex );
-    for ( USize Index = 0U; Index < Available.size(); ++Index )
+    const auto Found = Algo::FindIf( Available.begin(), Available.end(),
+                                     [&InDesc] ( const TSharedRef<RHI::IRHIBuffer> &InBuffer ) noexcept -> Bool
     {
-        if ( SameBufferDesc( Available[Index]->GetDesc(), InDesc ) )
-        {
-            TSharedRef<RHI::IRHIBuffer> Reused = Available[Index];
-            Available.erase( Available.begin() + static_cast<decltype( Available )::difference_type>( Index ) );
-            return Reused;
-        }
+        return SameBufferDesc( InBuffer->GetDesc(), InDesc );
+    } );
+    if ( Found != Available.end() )
+    {
+        TSharedRef<RHI::IRHIBuffer> Reused = *Found;
+        Available.erase( Found );
+        return Reused;
     }
     TExpected<TSharedRef<RHI::IRHIBuffer>, RHI::FRHIError> Created = Creator( InDesc );
     LUMEN_TRY_EXPECT_ERROR( Created );
@@ -223,10 +226,7 @@ Lumen::RHIOpenGL::FOpenGLTransientResourceAllocator::Allocate ( const RHI::FRHIT
                                         .Alignment   = Request.Requirements.Alignment,
                                         .MemoryClass = RHI::ERHIMemoryClass::DeviceLocal,
                                         .Heap        = nullptr };
-        if ( Request.Requirements.PreferredMemoryClass.HasValue() )
-        {
-            Allocation.MemoryClass = *Request.Requirements.PreferredMemoryClass;
-        }
+        Allocation.MemoryClass = Request.Requirements.PreferredMemoryClass.ValueOr( Allocation.MemoryClass );
         Result.push_back(
             RHI::FRHITransientAllocation{ .Allocation = Allocation, .ResourceId = {}, .Lifetime = Request.Lifetime } );
     }
