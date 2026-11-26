@@ -80,8 +80,8 @@ namespace RHIOpenGL
     inline constexpr GLenum GlMaxVertexAttribBindings               = 0x82DAU;
     inline constexpr GLenum GlMaxComputeWorkGroupInvocations        = 0x90EBU;
     inline constexpr GLenum GlMaxUniformBufferOffsetAlignment       = 0x8A34U;
-    inline constexpr GLenum GlMaxShaderStorageBufferOffsetAlignment = 0x90D0U;
-    inline constexpr GLenum GlMaxShaderStorageBlockSize             = 0x90D7U;
+    inline constexpr GLenum GlMaxShaderStorageBufferOffsetAlignment = 0x90DFU;
+    inline constexpr GLenum GlMaxShaderStorageBlockSize             = 0x90DEU;
     inline constexpr GLenum GlMaxCombinedTextureImageUnits          = 0x8B4DU;
     inline constexpr GLenum GlMaxCombinedUniformBlocks              = 0x8A2EU;
     inline constexpr GLenum GlMaxShaderStorageBufferBindings        = 0x90D3U;
@@ -89,7 +89,7 @@ namespace RHIOpenGL
     inline constexpr GLenum GlMaxTextureMaxAnisotropy               = 0x84FFU;
     inline constexpr GLenum GlMaxSamples                            = 0x8D57U;
     inline constexpr GLenum GlLowerLeft                             = 0x8CA1U;
-    inline constexpr GLenum GlZeroToOne                             = 0x8CA3U;
+    inline constexpr GLenum GlZeroToOne                             = 0x935FU;
     inline constexpr GLenum GlDepthClamp                            = 0x864FU;
     inline constexpr GLenum GlTextureCubeMapSeamless                = 0x884FU;
 
@@ -123,7 +123,7 @@ namespace RHIOpenGL
     inline constexpr GLenum GlTextureMagFilter     = 0x2800U;
     inline constexpr GLenum GlTextureWrapS         = 0x2802U;
     inline constexpr GLenum GlTextureWrapT         = 0x2803U;
-    inline constexpr GLenum GlTextureWrapR         = 0x2807U;
+    inline constexpr GLenum GlTextureWrapR         = 0x8072U;
     inline constexpr GLenum GlTextureCompareMode   = 0x884CU;
     inline constexpr GLenum GlTextureCompareFunc   = 0x884DU;
     inline constexpr GLenum GlCompareRefToTexture  = 0x884EU;
