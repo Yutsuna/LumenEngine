@@ -34,11 +34,20 @@ meson test -C Build SceneTests              # one named test target
 **Gotcha — reconfigure after source changes:** `Private/`, `Tests/`, and
 `Benchmarks/` sources are discovered by `find` at configure time
 (`Source/Meson/{Private,Tests,Benchmarks}/meson.build`). After adding,
-deleting, or renaming any `.cpp`, run:
+deleting, or renaming any `.cpp`, reconfigure.
+
+**Prefer reconfiguring via `Scripts/BuildMeson.bash`.** It reconfigures all
+three build trees in one shot with the correct settings (`--native-file`,
+buildtype, and sanitizer flags), so no tree is left stale:
 
 ```sh
-meson setup Build --reconfigure
+Scripts/BuildMeson.bash
 ```
+
+The script runs `meson setup ... --reconfigure` for `Build`, `Build-Release`,
+and `Build-TSAN` in parallel. Only fall back to a manual reconfigure (e.g.
+`meson setup Build --reconfigure`) when you intentionally want to touch a
+single tree or need different flags.
 
 ## Toolchain (do not assume defaults)
 
