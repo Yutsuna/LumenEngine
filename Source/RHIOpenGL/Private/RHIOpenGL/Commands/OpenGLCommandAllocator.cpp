@@ -4,10 +4,11 @@
  */
 
 #include <RHIOpenGL/Commands/OpenGLCommandAllocator.hpp>
+#include <RHIOpenGL/Commands/OpenGLCommandList.hpp>
 
 #include <RHI/Types/RHIError.hpp>
 
-#include <RHIOpenGL/Commands/OpenGLCommandList.hpp>
+#include <Algo/ForEach.hpp>
 
 /**
  * Public
@@ -29,14 +30,11 @@ LUMEN_RHI_OBJECT_FORWARDERS( RHIOpenGL, FOpenGLCommandAllocator );
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandAllocator::Reset ( const RHI::FRHITimelineValue InCompleted ) noexcept
 {
-    if ( const RHI::FRHIExpected ResetLists = RHI::FRHICommandAllocatorBase::Reset( InCompleted ); not ResetLists )
-    {
-        return TUnexpected( ResetLists.Error() );
-    }
-    for ( FOpenGLCommandList *List : Lists )
+    LUMEN_TRY_EXPECT_ERROR( RHI::FRHICommandAllocatorBase::Reset( InCompleted ) );
+    Algo::ForEach( Lists, [InCompleted] ( FOpenGLCommandList *List )
     {
         ( void )List->MarkCompleted( InCompleted );
-    }
+    } );
     return {};
 }
 

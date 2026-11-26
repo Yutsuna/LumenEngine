@@ -10,6 +10,8 @@
 
 #include <Memory/SharedPtr.hpp>
 
+#include <Templates/Optional.hpp>
+
 #include <RHI/Commands/IRHICommandList.hpp>
 
 #include <RHIOpenGL/Commands/OpenGLCommandAllocator.hpp>
@@ -24,9 +26,7 @@ namespace RHIOpenGL
 
     /**
      * @class FOpenGLCommandList
-     * @brief Records validated commands for replay on the single GL Executor.
-     * @details M1 implements the portable state machine and buffer copies; all
-     *          other command families return structured Unsupported errors.
+     * @brief Records fully validated commands for replay on the GL Executor.
      */
     class FOpenGLCommandList final : public RHI::IRHICommandList, public FNonCopyable, public FNonMovable
     {
@@ -36,8 +36,6 @@ namespace RHIOpenGL
         Create ( TSharedRef<FOpenGLCommandAllocator> InAllocator,
                  TSharedRef<FOpenGLDeviceContext> InContext,
                  RHI::FRHIObjectId InId ) noexcept;
-
-    public:
 
         FOpenGLCommandList ( TSharedRef<FOpenGLCommandAllocator> InAllocator,
                              TSharedRef<FOpenGLDeviceContext> InContext,
@@ -134,7 +132,9 @@ namespace RHIOpenGL
 
     private:
 
-        [[nodiscard]] RHI::FRHIExpected RequireRecording () const noexcept;
+        [[nodiscard]] RHI::FRHIExpected RequireRecording ( Bool bAllowRendering ) const noexcept;
+        [[nodiscard]] RHI::FRHIExpected RequireRendering () const noexcept;
+        [[nodiscard]] RHI::FRHIExpected RequirePipeline ( RHI::ERHIPipelineType InType ) const noexcept;
         [[nodiscard]] static RHI::FRHIExpected UnsupportedCommand ( FStringView InOperation,
                                                                     RHI::ERHIErrorCondition InCondition ) noexcept;
 
@@ -146,7 +146,11 @@ namespace RHIOpenGL
         RHI::FRHICommandStream Stream;
         RHI::ERHICommandListState State = RHI::ERHICommandListState::Initial;
         RHI::FRHITimelineValue Completion;
-        Bool bRendering = false;
+        Bool bHasPipeline                       = false;
+        RHI::ERHIPipelineType BoundPipelineType = RHI::ERHIPipelineType::Graphics;
+        RHI::IRHIQueryPool *ActiveQueryPool     = nullptr;
+        UInt32 ActiveQueryIndex                 = 0U;
+        UInt32 DebugDepth                       = 0U;
     };
 
 } // namespace RHIOpenGL
