@@ -27,7 +27,7 @@ Lumen::TSharedPtr<Lumen::FGenericApplicationMessageHandler> Lumen::FGenericAppli
     return MessageHandler;
 }
 
-Lumen::TSharedRef<Lumen::FGenericWindow> Lumen::FGenericApplication::MakeWindow ()
+Lumen::TSharedRef<Lumen::FGenericWindow> Lumen::FGenericApplication::MakeWindow () noexcept
 {
     return MakeShareable( new FGenericWindow() );
 }
