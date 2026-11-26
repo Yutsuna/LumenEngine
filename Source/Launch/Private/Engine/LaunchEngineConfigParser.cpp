@@ -14,6 +14,8 @@
 #include <Logging/Logger.hpp>
 #include <Templates/Array.hpp>
 
+#include <Maths/Macros.hpp>
+
 #include <cmath>
 #include <type_traits>
 
@@ -48,7 +50,7 @@ namespace
         FOptionKey Key;
 
         const USize Begin   = ( bIsBool and not InName.empty() and InName.front() == 'b' ) ? 1 : 0;
-        const USize Count   = std::min( InName.size() - Begin, Key.Buffer.size() );
+        const USize Count   = Maths::Min( InName.size() - Begin, Key.Buffer.size() );
         const AnsiChar *Src = InName.data() + Begin;
         AnsiChar *Dest      = Key.Buffer.data();
 
