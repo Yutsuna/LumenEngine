@@ -34,14 +34,24 @@ inline Lumen::TExpected<void, Lumen::RHI::FRHIError> EglFailure ( Lumen::FString
     return Lumen::TUnexpected( Lumen::RHI::MakeRHIBackendFailure( Lumen::RHI::ERHIErrorCondition::Device, InMessage ) );
 }
 
+/** @brief EGL's library and default display are process-wide; re-creating them per
+ *         device exhausts Mesa's display slots after a few dozen devices. */
+void *GCachedEglLibrary                        = nullptr;
+Lumen::RHIOpenGL::EGLDisplay GCachedEglDisplay = 0U;
+
 inline void *TryOpenEGL () noexcept
 {
+    if ( GCachedEglLibrary != nullptr )
+    {
+        return GCachedEglLibrary;
+    }
     void *Library = ::dlopen( "libEGL.so.1", RTLD_NOW | RTLD_LOCAL );
 
     if ( Library == nullptr )
     {
         Library = ::dlopen( "libEGL.so", RTLD_NOW | RTLD_LOCAL );
     }
+    GCachedEglLibrary = Library;
     return Library;
 }
 
@@ -78,6 +88,7 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug ) no
         return EglFailure( "libEGL is missing a required core entry point." );
     }
 
+    const Bool bInitializeDisplay = GCachedEglDisplay == 0U;
     GetPlatformDisplay =
         CastEglProcedure<TEGLGetPlatformDisplayEXT>( reinterpret_cast<UPtr>( GetProc( "eglGetPlatformDisplayEXT" ) ) );
     if ( GetPlatformDisplay != nullptr )
@@ -88,7 +99,12 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug ) no
     {
         Display = GetDisplay( 0U );
     }
-    if ( Display == 0U or InitializeDisplay( Display, nullptr, nullptr ) == EglFalse or BindAPI( EglOpenGLApi ) == EglFalse )
+    if ( GCachedEglDisplay != 0U )
+    {
+        Display = GCachedEglDisplay;
+    }
+    if ( Display == 0U or ( bInitializeDisplay and InitializeDisplay( Display, nullptr, nullptr ) == EglFalse ) or
+         BindAPI( EglOpenGLApi ) == EglFalse )
     {
         const EGLenum Error = ( GetErrorProc != nullptr ) ? GetErrorProc() : 0U;
         ( void )Error;
@@ -146,6 +162,7 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug ) no
         }
     }
 
+    GCachedEglDisplay = Display;
     return {};
 }
 
@@ -165,15 +182,7 @@ void Lumen::RHIOpenGL::FEGLPlatformContext::Shutdown () noexcept
         ( void )DestroyContextProc( Display, Context );
     }
     Context = 0U;
-    if ( Display != 0U and TerminateDisplay != nullptr )
-    {
-        ( void )TerminateDisplay( Display );
-    }
     Display = 0U;
-    if ( Library != nullptr )
-    {
-        ( void )::dlclose( Library );
-    }
     Library = nullptr;
     GetProc = nullptr;
 }
