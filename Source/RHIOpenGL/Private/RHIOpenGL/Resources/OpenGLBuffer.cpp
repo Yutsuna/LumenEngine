@@ -139,15 +139,14 @@ void Lumen::RHIOpenGL::FOpenGLBuffer::Unmap () noexcept
 
 Lumen::RHIOpenGL::GLuint Lumen::RHIOpenGL::FOpenGLBuffer::GetGLBuffer () const noexcept
 {
-    if ( ParentHeap.HasValue() )
+    return ParentHeap
+        .AndThen( [] ( const TSharedRef<RHI::IRHIHeap> &InHeap ) noexcept -> TOptional<GLuint>
     {
-        const TOptional<FOpenGLHeap *> NativeHeap = RHI::TryRHIBackendCast<FOpenGLHeap>( **ParentHeap );
-        if ( NativeHeap )
+        return RHI::TryRHIBackendCast<FOpenGLHeap>( *InHeap ).Transform( [] ( FOpenGLHeap *InNativeHeap ) noexcept -> GLuint
         {
-            return ( *NativeHeap )->GetBuffer();
-        }
-    }
-    return Buffer;
+            return InNativeHeap->GetBuffer();
+        } );
+    } ).ValueOr( Buffer );
 }
 
 Lumen::UInt64 Lumen::RHIOpenGL::FOpenGLBuffer::GetGLBufferOffset () const noexcept

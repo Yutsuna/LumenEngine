@@ -120,40 +120,27 @@ Lumen::RHIOpenGL::FOpenGLTexture::ComputeTextureRequirements ( const RHI::FRHITe
         const UInt64 Width  = InDesc.Extent.Width >> Mip;
         const UInt64 Height = InDesc.Extent.Height >> Mip;
         const UInt64 Depth  = InDesc.Extent.Depth >> Mip;
-        const TOptional<UInt64> BlocksWide =
-            RHI::RHICheckedDivideCeil( Width < 1ULL ? 1ULL : Width, static_cast<UInt64>( Info.BlockWidth ) );
-        const TOptional<UInt64> BlocksHigh =
-            RHI::RHICheckedDivideCeil( Height < 1ULL ? 1ULL : Height, static_cast<UInt64>( Info.BlockHeight ) );
-        if ( not BlocksWide or not BlocksHigh )
+        LUMEN_OPTIONAL( BlocksWide,
+                        RHI::RHICheckedDivideCeil( Width < 1ULL ? 1ULL : Width, static_cast<UInt64>( Info.BlockWidth ) ) );
+        LUMEN_OPTIONAL( BlocksHigh,
+                        RHI::RHICheckedDivideCeil( Height < 1ULL ? 1ULL : Height, static_cast<UInt64>( Info.BlockHeight ) ) );
+        LUMEN_OPTIONAL( LevelBytes, RHI::RHICheckedMultiply( BlocksWide, static_cast<UInt64>( Info.BytesPerBlock ) )
+                                        .AndThen(
+                                            [&Alignment] ( const UInt64 InRowBytes ) noexcept -> TOptional<UInt64>
         {
-            return {};
-        }
-        const TOptional<UInt64> RowBytes = RHI::RHICheckedMultiply( *BlocksWide, static_cast<UInt64>( Info.BytesPerBlock ) );
-        if ( not RowBytes )
+            return RHI::RHIAlignUp( InRowBytes, Alignment );
+        } )
+                                        .AndThen(
+                                            [&BlocksHigh] ( const UInt64 InAlignedRow ) noexcept -> TOptional<UInt64>
         {
-            return {};
-        }
-        const TOptional<UInt64> AlignedRow = RHI::RHIAlignUp( *RowBytes, Alignment );
-        if ( not AlignedRow )
+            return RHI::RHICheckedMultiply( InAlignedRow, BlocksHigh );
+        } )
+                                        .AndThen( [Depth] ( const UInt64 InPlaneBytes ) noexcept -> TOptional<UInt64>
         {
-            return {};
-        }
-        const TOptional<UInt64> PlaneBytes = RHI::RHICheckedMultiply( *AlignedRow, *BlocksHigh );
-        if ( not PlaneBytes )
-        {
-            return {};
-        }
-        const TOptional<UInt64> LevelBytes = RHI::RHICheckedMultiply( *PlaneBytes, Depth < 1ULL ? 1ULL : Depth );
-        if ( not LevelBytes )
-        {
-            return {};
-        }
-        const TOptional<UInt64> Sum = RHI::RHICheckedAdd( Total, *LevelBytes );
-        if ( not Sum )
-        {
-            return {};
-        }
-        Total = *Sum;
+            return RHI::RHICheckedMultiply( InPlaneBytes, Depth < 1ULL ? 1ULL : Depth );
+        } ) );
+        LUMEN_OPTIONAL( Sum, RHI::RHICheckedAdd( Total, LevelBytes ) );
+        Total = Sum;
     }
     return TOptional<UInt64>( Total );
 }
@@ -165,8 +152,7 @@ Lumen::RHIOpenGL::FOpenGLTexture::FOpenGLTexture ( TSharedRef<FOpenGLDeviceConte
       Context( static_cast<TSharedRef<FOpenGLDeviceContext> &&>( InContext ) ), Desc( InDesc ),
       Requirements{ .Size = [&] () noexcept -> UInt64
 {
-    const TOptional<UInt64> Bytes = ComputeTextureRequirements( InDesc, InContext->GetLimits().MinBufferAlignment );
-    return Bytes.HasValue() ? *Bytes : 0ULL;
+    return ComputeTextureRequirements( InDesc, InContext->GetLimits().MinBufferAlignment ).ValueOr( 0ULL );
 }(),
                     .Alignment            = InContext->GetLimits().MinBufferAlignment,
                     .PreferredMemoryClass = TOptional<RHI::ERHIMemoryClass>( InDesc.MemoryClass ) }
