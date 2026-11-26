@@ -1,17 +1,19 @@
 /**
  * @file OpenGLQueue.cpp
- * @brief Implements synchronous OpenGL command replay and timeline waits.
+ * @brief Implements serialized submission with non-blocking GL fence completion.
  */
 
 #include <RHIOpenGL/Queue/OpenGLQueue.hpp>
 
 #include <HAL/LockGuard.hpp>
+#include <HAL/PlatformTime.hpp>
 
 #include <RHI/Device/RHIBackendCast.hpp>
 #include <RHI/Types/RHIError.hpp>
 
 #include <RHIOpenGL/Commands/OpenGLCommandExecutor.hpp>
 #include <RHIOpenGL/Commands/OpenGLCommandList.hpp>
+#include <RHIOpenGL/Synchronization/OpenGLSemaphore.hpp>
 
 #include <Templates/Optional.hpp>
 
@@ -49,7 +51,7 @@ Lumen::RHI::ERHIQueueType Lumen::RHIOpenGL::FOpenGLQueue::GetType () const noexc
 
 Lumen::RHI::FRHITimelineValue Lumen::RHIOpenGL::FOpenGLQueue::GetCompletedValue () const noexcept
 {
-    return RHI::FRHITimelineValue{ CompletedValue.load() };
+    return RHI::FRHITimelineValue{ CompletedValue->load() };
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRHISubmitDesc &InDesc ) noexcept
@@ -58,6 +60,12 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
     LUMEN_EXPECT( Validated, InDesc.Validate() );
 
     HAL::TLockGuard<HAL::FPlatformMutex> Lock( SubmitMutex );
+    if ( InDesc.Completion.Value <= SubmittedValue.load() )
+    {
+        return TUnexpected(
+            RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Queue, "Queue completion values must increase." ) );
+    }
+
     if ( not Executor.IsValid() )
     {
         const TExpected<TSharedRef<FOpenGLCommandExecutor>, RHI::FRHIError> Created = FOpenGLCommandExecutor::Create( Context );
@@ -65,55 +73,152 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
         Executor = *Created;
     }
 
-    RHI::FRHIExpected Result;
+    TVector<TSharedRef<RHI::IRHICommandList>> Lists;
+    Lists.reserve( InDesc.CommandLists.size() );
     for ( const TSharedRef<RHI::IRHICommandList> &CommandList : InDesc.CommandLists )
     {
         const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *CommandList );
         if ( not Native )
         {
-            if ( Result )
-            {
-                Result = TUnexpected( RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Queue,
-                                                                   "Submission contains a foreign command list." ) );
-            }
-            continue;
+            return TUnexpected(
+                RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Queue, "Submission contains a foreign command list." ) );
         }
-        FOpenGLCommandList *List = *Native;
+        if ( ( *Native )->GetQueueType() != QueueType )
+        {
+            return TUnexpected( RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Queue,
+                                                             "Command list queue type does not match the queue." ) );
+        }
+        Lists.push_back( CommandList );
+    }
 
-        const RHI::FRHIExpected Pending = List->MarkPending( InDesc.Completion );
+    FOpenGLSubmission Packet;
+    TVector<TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64>> BinaryWaits;
+    for ( const RHI::FRHISemaphoreOperation &Operation : InDesc.Waits )
+    {
+        const TOptional<FOpenGLSemaphore *> Native =
+            RHI::TryRHIBackendCast<FOpenGLSemaphore>( static_cast<RHI::IRHIObject &>( *Operation.Semaphore ) );
+        if ( not Native )
+        {
+            return TUnexpected(
+                RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Queue, "Submission contains a foreign wait semaphore." ) );
+        }
+        if ( ( *Native )->GetValue() < Operation.Value )
+        {
+            return TUnexpected( RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Queue, "Submission wait is not signaled." ) );
+        }
+        TSharedPtr<RHI::IRHISemaphore> Retained = Operation.Semaphore;
+        const Bool bBinaryWait                  = Retained->GetDesc().Type == RHI::ERHISemaphoreType::Binary;
+        if ( bBinaryWait )
+        {
+            BinaryWaits.push_back( TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64>( Retained, Operation.Value ) );
+        }
+        else
+        {
+            Packet.Waits.push_back( TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64>( Retained, Operation.Value ) );
+        }
+    }
+
+    for ( const RHI::FRHISemaphoreOperation &Operation : InDesc.Signals )
+    {
+        const TOptional<FOpenGLSemaphore *> Native =
+            RHI::TryRHIBackendCast<FOpenGLSemaphore>( static_cast<RHI::IRHIObject &>( *Operation.Semaphore ) );
+        if ( not Native )
+        {
+            return TUnexpected( RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Queue,
+                                                             "Submission contains a foreign signal semaphore." ) );
+        }
+        Packet.Signals.push_back( TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64>(
+            TSharedPtr<RHI::IRHISemaphore>( Operation.Semaphore ), Operation.Value ) );
+    }
+
+    /* Binary waits consume the semaphore, so only do so after every wait and signal has been validated. */
+    for ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &BinaryWait : BinaryWaits )
+    {
+        LUMEN_TRY_EXPECT_ERROR( BinaryWait.first->Wait( BinaryWait.second, 0.0 ) );
+    }
+
+    USize MarkedCount = 0U;
+    for ( const TSharedRef<RHI::IRHICommandList> &CommandList : Lists )
+    {
+        const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *CommandList );
+        const RHI::FRHIExpected Pending              = ( *Native )->MarkPending( InDesc.Completion );
         if ( not Pending )
         {
-            if ( Result )
+            /* Earlier lists are already Pending; release them so they can be recorded again. */
+            for ( USize Index = 0U; Index < MarkedCount; ++Index )
             {
-                Result = Pending;
+                const TOptional<FOpenGLCommandList *> Marked = RHI::TryRHIBackendCast<FOpenGLCommandList>( *Lists[Index] );
+                ( void )( *Marked )->MarkCompleted( InDesc.Completion );
             }
-            ( void )List->MarkCompleted( InDesc.Completion );
-            continue;
+            return TUnexpected<RHI::FRHIError>( Pending.Error() );
         }
-
-        const RHI::FRHIExpected Replayed = Executor->Execute( List->GetStream() );
-        if ( not Replayed and Result )
-        {
-            Result = Replayed;
-        }
-        const RHI::FRHIExpected Completed = List->MarkCompleted( InDesc.Completion );
-        if ( not Completed and Result )
-        {
-            Result = Completed;
-        }
+        ++MarkedCount;
     }
 
-    UInt64 Observed = CompletedValue.load();
-    while ( Observed < InDesc.Completion.Value and not CompletedValue.compare_exchange_weak( Observed, InDesc.Completion.Value ) )
+    const TSharedRef<TAtomic<UInt64>> RetiredValue            = CompletedValue;
+    const TSharedPtr<FOpenGLCommandExecutor> RetainedExecutor = Executor;
+    Packet.Completion                                         = InDesc.Completion;
+    Packet.Replay                                             = [RetainedExecutor, Lists] () noexcept -> RHI::FRHIExpected
     {
-        /* The failed exchange refreshes Observed with the current value. */
+        RHI::FRHIExpected Result;
+        for ( const TSharedRef<RHI::IRHICommandList> &CommandList : Lists )
+        {
+            const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *CommandList );
+            const RHI::FRHIExpected Replayed             = RetainedExecutor->Execute( ( *Native )->GetStream() );
+            if ( not Replayed and Result )
+            {
+                Result = Replayed;
+            }
+        }
+        return Result;
+    };
+    Packet.OnComplete = [RetiredValue, Lists, InDesc] () noexcept
+    {
+        UInt64 Observed = RetiredValue->load();
+        while ( Observed < InDesc.Completion.Value and
+                not RetiredValue->compare_exchange_weak( Observed, InDesc.Completion.Value ) )
+        {
+            /* A failed exchange refreshes Observed with the current value. */
+        }
+        for ( const TSharedRef<RHI::IRHICommandList> &CommandList : Lists )
+        {
+            const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *CommandList );
+            if ( Native )
+            {
+                ( void )( *Native )->MarkCompleted( InDesc.Completion );
+            }
+        }
+    };
+    Packet.OnFailure = [Lists, InDesc] ( RHI::FRHIError ) noexcept
+    {
+        for ( const TSharedRef<RHI::IRHICommandList> &CommandList : Lists )
+        {
+            const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *CommandList );
+            if ( Native )
+            {
+                ( void )( *Native )->MarkCompleted( InDesc.Completion );
+            }
+        }
+    };
+
+    LUMEN_TRY_EXPECT_ERROR( Context->GetExecutor()->Submit( static_cast<FOpenGLSubmission &&>( Packet ) ) );
+    UInt64 Submitted = SubmittedValue.load();
+    while ( Submitted < InDesc.Completion.Value and
+            not SubmittedValue.compare_exchange_weak( Submitted, InDesc.Completion.Value ) )
+    {
+        /* A failed exchange refreshes Submitted with the current value. */
     }
-    return Result;
+    return {};
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::WaitIdle () noexcept
 {
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::WaitIdle" ) );
+    while ( CompletedValue->load() < SubmittedValue.load() )
+    {
+        LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::WaitIdle" ) );
+        HAL::FPlatformTime::Sleep( 0.0005 );
+    }
     return {};
 }
 
@@ -127,10 +232,29 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Wait ( const RHI::FRHIT
     }
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::Wait" ) );
 
-    if ( not InValue.IsValid() or RHI::IsRHICompletionReached( GetCompletedValue(), InValue ) )
+    if ( not InValue.IsValid() or InValue.Value <= CompletedValue->load() )
     {
         return {};
     }
-    return TUnexpected(
-        RHI::MakeRHITimeout( RHI::ERHIErrorCondition::Synchronization, "Requested timeline value has not completed." ) );
+    const Float64 Deadline = HAL::FPlatformTime::Seconds() + InTimeoutSeconds;
+    while ( InValue.Value > CompletedValue->load() )
+    {
+        LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::Wait" ) );
+        if ( HAL::FPlatformTime::Seconds() >= Deadline )
+        {
+            break;
+        }
+        HAL::FPlatformTime::Sleep( 0.0005 );
+    }
+    if ( InValue.Value > CompletedValue->load() )
+    {
+        return TUnexpected(
+            RHI::MakeRHITimeout( RHI::ERHIErrorCondition::Synchronization, "Requested timeline value has not completed." ) );
+    }
+    if ( Context->GetUnavailableError( "Queue::Wait" ) )
+    {
+        return TUnexpected(
+            RHI::MakeRHIDeviceLost( RHI::ERHIErrorCondition::Synchronization, "OpenGL device was lost during a queue wait." ) );
+    }
+    return {};
 }

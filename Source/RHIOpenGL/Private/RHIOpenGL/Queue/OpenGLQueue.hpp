@@ -1,6 +1,6 @@
 /**
  * @file OpenGLQueue.hpp
- * @brief Declares the logical OpenGL queue and its synchronous command replay.
+ * @brief Declares the logical OpenGL queue with fence-driven async submission.
  */
 
 #pragma once
@@ -26,7 +26,7 @@ namespace RHIOpenGL
 
     /**
      * @class FOpenGLQueue
-     * @brief Logical queue that serially replays command streams on the GL executor.
+     * @brief Serializes submission and retires command lists only after GL fence completion.
      */
     class FOpenGLQueue final : public RHI::IRHIQueue, public FNonCopyable, public FNonMovable
     {
@@ -61,9 +61,10 @@ namespace RHIOpenGL
 
         RHI::FRHIObjectBase Identity;
         TSharedRef<FOpenGLDeviceContext> Context;
-        RHI::ERHIQueueType QueueType = RHI::ERHIQueueType::Graphics;
-        UInt32 QueueIndex            = 0U;
-        TAtomic<UInt64> CompletedValue{ 0ULL };
+        RHI::ERHIQueueType QueueType               = RHI::ERHIQueueType::Graphics;
+        UInt32 QueueIndex                          = 0U;
+        TSharedRef<TAtomic<UInt64>> CompletedValue = MakeShared<TAtomic<UInt64>>( 0ULL );
+        TAtomic<UInt64> SubmittedValue{ 0ULL };
         HAL::FPlatformMutex SubmitMutex;
         TSharedPtr<FOpenGLCommandExecutor> Executor;
     };
