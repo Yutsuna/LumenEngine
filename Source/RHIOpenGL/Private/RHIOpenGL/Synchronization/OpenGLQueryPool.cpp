@@ -6,6 +6,7 @@
 #include <RHIOpenGL/Synchronization/OpenGLQueryPool.hpp>
 
 #include <Algo/Any.hpp>
+#include <Algo/ForEach.hpp>
 
 #include <HAL/LockGuard.hpp>
 
@@ -28,13 +29,14 @@ namespace
 void DeleteQueryHandles ( const Lumen::RHIOpenGL::FGLDispatchTable &InDispatch,
                           const Lumen::TVector<Lumen::RHIOpenGL::GLuint> &InQueries ) noexcept
 {
-    for ( const Lumen::RHIOpenGL::GLuint Handle : InQueries )
+    Lumen::Algo::ForEach( InQueries,
+                          [] ( const Lumen::RHIOpenGL::GLuint InHandle ) noexcept -> Lumen::Bool
     {
-        if ( Handle != 0U )
-        {
-            InDispatch.DeleteQueries( 1, &Handle );
-        }
-    }
+        return InHandle != 0U;
+    }, [&InDispatch] ( const Lumen::RHIOpenGL::GLuint InHandle ) noexcept
+    {
+        InDispatch.DeleteQueries( 1, &InHandle );
+    } );
 }
 
 } // namespace
