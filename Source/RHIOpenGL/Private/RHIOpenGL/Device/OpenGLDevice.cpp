@@ -6,6 +6,9 @@
 #include "Templates/Optional.hpp"
 #include <RHIOpenGL/Device/OpenGLDevice.hpp>
 
+#include <Algo/Find.hpp>
+#include <Algo/ForEach.hpp>
+
 #include <RHI/Bindings/RHIBindingLayoutDesc.hpp>
 #include <RHI/Bindings/RHIDescriptorAllocatorDesc.hpp>
 #include <RHI/Caches/RHIPipelineCacheDesc.hpp>
@@ -83,13 +86,13 @@ Lumen::RHIOpenGL::FOpenGLDevice::Create ( const RHI::FRHIAdapterInfo &InAdapter,
     LUMEN_EXPECT( Context, FOpenGLDeviceContext::Create( InAdapter, InDesc.bEnableDebug, InDesc.DebugSink ) );
 
     TSharedRef<FOpenGLDevice> Device = MakeShared<FOpenGLDevice>( static_cast<TSharedRef<FOpenGLDeviceContext> &&>( Context ) );
-    for ( const RHI::FRHIQueueRequest &Request : InDesc.Queues )
+    Algo::ForEach( InDesc.Queues, [&Device] ( const RHI::FRHIQueueRequest &InRequest ) noexcept
     {
-        for ( UInt32 Index = 0U; Index < Request.Count; ++Index )
+        for ( UInt32 Index = 0U; Index < InRequest.Count; ++Index )
         {
-            Device->AddQueue( Request.Type, Index );
+            Device->AddQueue( InRequest.Type, Index );
         }
-    }
+    } );
     return Device;
 }
 
@@ -145,12 +148,13 @@ Lumen::RHIOpenGL::FOpenGLDevice::GetQueue ( const RHI::ERHIQueueType InType, con
     {
         return TUnexpected( RHI::MakeRHIInvalidQueue( "Invalid ERHIQueueType value." ) );
     }
-    for ( const FQueueEntry &Entry : Queues )
+    const FQueueEntry *Found = Algo::FindIf( Queues, [InType, InIndex] ( const FQueueEntry &InEntry ) noexcept -> Bool
     {
-        if ( Entry.Type == InType and Entry.Index == InIndex )
-        {
-            return Entry.Queue;
-        }
+        return InEntry.Type == InType and InEntry.Index == InIndex;
+    } );
+    if ( Found != nullptr )
+    {
+        return Found->Queue;
     }
     return TUnexpected(
         RHI::MakeRHINotFound( RHI::ERHIErrorCondition::Queue, "Requested OpenGL queue was not created on this device." ) );
@@ -389,7 +393,6 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreatePipelineCache ( const RHI::FRHIPipelineCa
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreatePipelineCache" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Cache, FOpenGLPipelineCache::Create( InDesc, NextObjectId() ) );
-    LUMEN_TRY_EXPECT_ERROR( Cache->Initialize() );
 
     TrackObject( *Cache );
     return Cache;

@@ -5,6 +5,9 @@
 
 #include <RHIOpenGL/Device/OpenGLContext.hpp>
 
+#include <Algo/Any.hpp>
+#include <Algo/ForEach.hpp>
+
 #include <HAL/LockGuard.hpp>
 #include <HAL/PlatformTime.hpp>
 
@@ -280,15 +283,10 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
 
     for ( USize Index = 0U; Index < Blocked.size(); )
     {
-        Bool bDependenciesReady = true;
-        for ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &Wait : Blocked[Index].Waits )
+        const Bool bDependenciesReady = not Algo::AnyOf( Blocked[Index].Waits, [] ( const auto &InWait ) noexcept -> Bool
         {
-            if ( not Wait.first or Wait.first->GetValue() < Wait.second )
-            {
-                bDependenciesReady = false;
-                break;
-            }
-        }
+            return not InWait.first or InWait.first->GetValue() < InWait.second;
+        } );
         if ( bDependenciesReady )
         {
             FOpenGLSubmission Ready = static_cast<FOpenGLSubmission &&>( Blocked[Index] );
@@ -312,13 +310,14 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
             }
             if ( Sync == nullptr )
             {
-                for ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &Signal : Ready.Signals )
+                Algo::ForEach( Ready.Signals,
+                               [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept -> Bool
                 {
-                    if ( Signal.first )
-                    {
-                        ( void )Signal.first->Signal( Signal.second );
-                    }
-                }
+                    return static_cast<Bool>( InSignal.first );
+                }, [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept
+                {
+                    ( void )InSignal.first->Signal( InSignal.second );
+                } );
                 if ( Ready.OnComplete )
                 {
                     Ready.OnComplete();
@@ -352,13 +351,14 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
         FOpenGLSubmission Completed = static_cast<FOpenGLSubmission &&>( Fence.Submission );
         ActiveFences.erase( ActiveFences.begin() + static_cast<ISize>( Index ) );
 
-        for ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &Signal : Completed.Signals )
+        Algo::ForEach( Completed.Signals,
+                       [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept -> Bool
         {
-            if ( Signal.first )
-            {
-                ( void )Signal.first->Signal( Signal.second );
-            }
-        }
+            return static_cast<Bool>( InSignal.first );
+        }, [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept
+        {
+            ( void )InSignal.first->Signal( InSignal.second );
+        } );
         if ( Completed.OnComplete )
         {
             Completed.OnComplete();
@@ -442,21 +442,22 @@ void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) n
                     Abandoned.push_back( static_cast<FOpenGLSubmission &&>( Pending.front() ) );
                     Pending.pop();
                 }
-                for ( FOpenGLSubmission &BlockedSubmission : Blocked )
+                Algo::ForEach( Blocked, [&Abandoned] ( FOpenGLSubmission &InBlockedSubmission ) noexcept
                 {
-                    Abandoned.push_back( static_cast<FOpenGLSubmission &&>( BlockedSubmission ) );
-                }
+                    Abandoned.push_back( static_cast<FOpenGLSubmission &&>( InBlockedSubmission ) );
+                } );
                 Blocked.clear();
             }
             const RHI::FRHIError Failure = RHI::MakeRHIDeviceLost(
                 RHI::ERHIErrorCondition::Queue, "OpenGL executor stopped before the submission was replayed." );
-            for ( FOpenGLSubmission &Submission : Abandoned )
+            Algo::ForEach( Abandoned,
+                           [] ( FOpenGLSubmission &InSubmission ) noexcept -> Bool
             {
-                if ( Submission.OnFailure )
-                {
-                    Submission.OnFailure( Failure );
-                }
-            }
+                return static_cast<Bool>( InSubmission.OnFailure );
+            }, [&Failure] ( FOpenGLSubmission &InSubmission ) noexcept
+            {
+                InSubmission.OnFailure( Failure );
+            } );
         }
 
         Bool bPending = false;

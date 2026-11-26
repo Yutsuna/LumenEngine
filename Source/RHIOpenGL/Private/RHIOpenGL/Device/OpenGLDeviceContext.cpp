@@ -7,6 +7,8 @@
 
 #include <RHI/Types/RHIError.hpp>
 
+#include <RHIOpenGL/Loader/GLSpec.hpp>
+
 #include <String/StringView.hpp>
 
 /**
@@ -20,15 +22,26 @@ Lumen::RHIOpenGL::FOpenGLDeviceContext::Create ( const RHI::FRHIAdapterInfo &InA
 {
     LUMEN_EXPECT( Context, FOpenGLContext::Create( bEnableDebug ) );
     Context->SetDebugSink( InDebugSink );
+
+    FOpenGLNativeLimits NativeLimits;
+    const FGLDispatchTable &Dispatch = Context->GetDispatch();
+    LUMEN_TRY_EXPECT_ERROR( Context->ExecuteOnGLThread( [&Dispatch, &NativeLimits] () noexcept
+    {
+        Dispatch.GetIntegerv( GlMaxUniformBufferBindings, &NativeLimits.MaxUniformBufferBindings );
+        Dispatch.GetIntegerv( GlMaxShaderStorageBufferBindings, &NativeLimits.MaxShaderStorageBufferBindings );
+        Dispatch.GetIntegerv( GlMaxCombinedTextureImageUnits, &NativeLimits.MaxCombinedTextureImageUnits );
+        Dispatch.GetIntegerv( GlMaxImageUnits, &NativeLimits.MaxImageUnits );
+    } ) );
     return MakeShared<FOpenGLDeviceContext>( static_cast<TSharedRef<FOpenGLContext> &&>( Context ), InAdapter.Capabilities,
-                                             InAdapter.Limits );
+                                             InAdapter.Limits, NativeLimits );
 }
 
 Lumen::RHIOpenGL::FOpenGLDeviceContext::FOpenGLDeviceContext ( TSharedRef<FOpenGLContext> InContext,
                                                                RHI::FRHICapabilities InCapabilities,
-                                                               RHI::FRHILimits InLimits ) noexcept
+                                                               RHI::FRHILimits InLimits,
+                                                               FOpenGLNativeLimits InNativeLimits ) noexcept
     : Context( static_cast<TSharedRef<FOpenGLContext> &&>( InContext ) ),
-      Capabilities( static_cast<RHI::FRHICapabilities &&>( InCapabilities ) ), Limits( InLimits )
+      Capabilities( static_cast<RHI::FRHICapabilities &&>( InCapabilities ) ), Limits( InLimits ), NativeLimits( InNativeLimits )
 {
     /* */
 }
@@ -51,6 +64,11 @@ const Lumen::RHI::FRHICapabilities &Lumen::RHIOpenGL::FOpenGLDeviceContext::GetC
 const Lumen::RHI::FRHILimits &Lumen::RHIOpenGL::FOpenGLDeviceContext::GetLimits () const noexcept
 {
     return Limits;
+}
+
+const Lumen::RHIOpenGL::FOpenGLNativeLimits &Lumen::RHIOpenGL::FOpenGLDeviceContext::GetNativeLimits () const noexcept
+{
+    return NativeLimits;
 }
 
 Lumen::TOptional<Lumen::RHI::FRHIError>
