@@ -7,6 +7,8 @@
 #include <Generic/GenericApplicationMessageHandler.hpp>
 #include <Generic/GenericWindow.hpp>
 
+Lumen::TSharedPtr<Lumen::FGenericApplication> Lumen::GPlatformApplication;
+
 /**
  * public
  */
