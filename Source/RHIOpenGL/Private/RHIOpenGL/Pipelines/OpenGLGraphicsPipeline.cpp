@@ -252,3 +252,17 @@ Lumen::RHIOpenGL::GLuint Lumen::RHIOpenGL::FOpenGLGraphicsPipeline::GetVertexArr
 {
     return VertexArray;
 }
+
+const Lumen::RHI::FRHIGraphicsPipelineDesc &Lumen::RHIOpenGL::FOpenGLGraphicsPipeline::GetDesc () const noexcept
+{
+    return Desc;
+}
+
+Lumen::RHIOpenGL::FOpenGLPipelineLayout *Lumen::RHIOpenGL::FOpenGLGraphicsPipeline::GetNativeLayout () const noexcept
+{
+    if ( not Desc.Layout )
+    {
+        return nullptr;
+    }
+    return RHI::TryUnwrapRHIBackend<FOpenGLPipelineLayout>( RHI::UnwrapRHIShared( Desc.Layout ).Get() ).ValueOr( nullptr );
+}

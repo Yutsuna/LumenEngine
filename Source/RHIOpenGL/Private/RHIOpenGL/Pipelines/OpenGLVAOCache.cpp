@@ -5,6 +5,9 @@
 
 #include <RHIOpenGL/Pipelines/OpenGLVAOCache.hpp>
 
+#include <Algo/Any.hpp>
+#include <Algo/ForEach.hpp>
+
 #include <RHI/Types/RHIError.hpp>
 #include <RHI/Types/RHIFormatInfo.hpp>
 
@@ -64,10 +67,10 @@ Lumen::RHIOpenGL::FOpenGLVAOCache::~FOpenGLVAOCache () noexcept
     }
     TVector<GLuint> NativeVAOs;
     NativeVAOs.reserve( VAOs.size() );
-    for ( const auto &Pair : VAOs )
+    Algo::ForEach( VAOs, [&NativeVAOs] ( const auto &InPair ) noexcept
     {
-        NativeVAOs.push_back( Pair.second );
-    }
+        NativeVAOs.push_back( InPair.second );
+    } );
     const FGLDispatchTable &Dispatch = Context->GetDispatch();
     ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, &NativeVAOs] () noexcept
     {
@@ -93,13 +96,14 @@ Lumen::RHIOpenGL::FOpenGLVAOCache::GetOrCreate ( const RHI::FRHIVertexLayout &In
     {
         return TUnexpected( RHI::MakeRHIInvalidLimit( "Vertex layout exceeds the advertised vertex input limits." ) );
     }
-    for ( const RHI::FRHIVertexBufferLayout &Buffer : InLayout.Buffers )
+    if ( Algo::AnyOf( InLayout.Buffers, [&Limits] ( const RHI::FRHIVertexBufferLayout &InBuffer ) noexcept -> Bool
     {
-        if ( Buffer.Slot >= Limits.MaxVertexBuffers )
-        {
-            return TUnexpected( RHI::MakeRHIInvalidLimit( "Vertex buffer slot exceeds the advertised binding limit." ) );
-        }
+        return InBuffer.Slot >= Limits.MaxVertexBuffers;
+    } ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidLimit( "Vertex buffer slot exceeds the advertised binding limit." ) );
     }
+    /* One pass: both failures are reported from the same attribute, so their original order is preserved. */
     for ( const RHI::FRHIVertexAttribute &Attribute : InLayout.Attributes )
     {
         if ( Attribute.Location >= Limits.MaxVertexAttributes or Attribute.BufferSlot >= Limits.MaxVertexBuffers )
@@ -127,21 +131,21 @@ Lumen::RHIOpenGL::FOpenGLVAOCache::GetOrCreate ( const RHI::FRHIVertexLayout &In
             return;
         }
         Dispatch.BindVertexArray( NativeVAO );
-        for ( const RHI::FRHIVertexBufferLayout &Buffer : InLayout.Buffers )
+        Algo::ForEach( InLayout.Buffers, [&] ( const RHI::FRHIVertexBufferLayout &InBuffer ) noexcept
         {
-            Dispatch.VertexArrayVertexBuffer( NativeVAO, Buffer.Slot, 0U, 0, static_cast<GLsizei>( Buffer.Stride ) );
-            Dispatch.VertexArrayBindingDivisor( NativeVAO, Buffer.Slot,
-                                                Buffer.Rate == RHI::ERHIVertexInputRate::Instance ? 1U : 0U );
-        }
-        for ( const RHI::FRHIVertexAttribute &Attribute : InLayout.Attributes )
+            Dispatch.VertexArrayVertexBuffer( NativeVAO, InBuffer.Slot, 0U, 0, static_cast<GLsizei>( InBuffer.Stride ) );
+            Dispatch.VertexArrayBindingDivisor( NativeVAO, InBuffer.Slot,
+                                                InBuffer.Rate == RHI::ERHIVertexInputRate::Instance ? 1U : 0U );
+        } );
+        Algo::ForEach( InLayout.Attributes, [&] ( const RHI::FRHIVertexAttribute &InAttribute ) noexcept
         {
-            const FOpenGLFormatMapping Mapping = *MapOpenGLFormat( Attribute.Format );
-            const GLboolean Normalized         = static_cast<GLboolean>( IsNormalizedVertexFormat( Attribute.Format ) ? 1U : 0U );
-            Dispatch.VertexArrayAttribFormat( NativeVAO, Attribute.Location, Mapping.Components, Mapping.Type, Normalized,
-                                              Attribute.Offset );
-            Dispatch.VertexArrayAttribBinding( NativeVAO, Attribute.Location, Attribute.BufferSlot );
-            Dispatch.EnableVertexArrayAttrib( NativeVAO, Attribute.Location );
-        }
+            const FOpenGLFormatMapping Mapping = *MapOpenGLFormat( InAttribute.Format );
+            const GLboolean Normalized = static_cast<GLboolean>( IsNormalizedVertexFormat( InAttribute.Format ) ? 1U : 0U );
+            Dispatch.VertexArrayAttribFormat( NativeVAO, InAttribute.Location, Mapping.Components, Mapping.Type, Normalized,
+                                              InAttribute.Offset );
+            Dispatch.VertexArrayAttribBinding( NativeVAO, InAttribute.Location, InAttribute.BufferSlot );
+            Dispatch.EnableVertexArrayAttrib( NativeVAO, InAttribute.Location );
+        } );
         NativeError = Dispatch.GetError();
     } );
     LUMEN_TRY_EXPECT_ERROR( Created );

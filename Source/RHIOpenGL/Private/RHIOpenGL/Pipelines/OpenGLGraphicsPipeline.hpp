@@ -24,6 +24,8 @@ namespace Lumen
 namespace RHIOpenGL
 {
 
+    class FOpenGLPipelineLayout;
+
     /**
      * @class FOpenGLGraphicsPipeline
      * @brief Linked GLSL program plus canonical graphics compatibility metadata.
@@ -56,6 +58,12 @@ namespace RHIOpenGL
 
         /** @return The cached vertex array object for this pipeline's vertex layout. */
         [[nodiscard]] GLuint GetVertexArray () const noexcept;
+
+        /** @return The immutable creation descriptor, including dynamic state flags. */
+        [[nodiscard]] const RHI::FRHIGraphicsPipelineDesc &GetDesc () const noexcept;
+
+        /** @return The native pipeline layout, or null when the layout is foreign. */
+        [[nodiscard]] FOpenGLPipelineLayout *GetNativeLayout () const noexcept;
 
     private:
 

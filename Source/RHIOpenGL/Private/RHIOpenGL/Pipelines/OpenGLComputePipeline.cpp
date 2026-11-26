@@ -5,6 +5,10 @@
 
 #include <RHIOpenGL/Pipelines/OpenGLComputePipeline.hpp>
 
+#include <Algo/Any.hpp>
+#include <Algo/ForEach.hpp>
+#include <Memory/Span.hpp>
+
 #include <RHI/Device/RHIBackendCast.hpp>
 #include <RHI/Types/RHIError.hpp>
 #include <RHI/Validation/RHIValidation.hpp>
@@ -60,29 +64,29 @@ void BindReflectedBlocks ( const Lumen::RHIOpenGL::FGLDispatchTable &InDispatch,
                            const Lumen::RHI::FRHIShaderReflection &InReflection ) noexcept
 {
     Lumen::AnsiChar Name[GlBlockNameCapacity] = {};
-    for ( const Lumen::RHI::FRHIShaderBindingReflection &Binding : InReflection.Bindings )
+    Lumen::Algo::ForEach( InReflection.Bindings, [&] ( const Lumen::RHI::FRHIShaderBindingReflection &InBinding ) noexcept
     {
-        if ( Binding.Kind == Lumen::RHI::ERHIShaderBindingKind::ConstantBuffer )
+        if ( InBinding.Kind == Lumen::RHI::ERHIShaderBindingKind::ConstantBuffer )
         {
-            MakeBlockName( Name, GlBlockNameCapacity, "UniformBlock", Binding.Slot );
+            MakeBlockName( Name, GlBlockNameCapacity, "UniformBlock", InBinding.Slot );
             const Lumen::RHIOpenGL::GLuint Index = InDispatch.GetProgramResourceIndex( InProgram, GlUniformBlockInterface, Name );
             if ( Index != GlInvalidIndex )
             {
-                InDispatch.UniformBlockBinding( InProgram, Index, Binding.Slot );
+                InDispatch.UniformBlockBinding( InProgram, Index, InBinding.Slot );
             }
         }
-        else if ( Binding.Kind == Lumen::RHI::ERHIShaderBindingKind::ReadOnlyBuffer or
-                  Binding.Kind == Lumen::RHI::ERHIShaderBindingKind::ReadWriteBuffer )
+        else if ( InBinding.Kind == Lumen::RHI::ERHIShaderBindingKind::ReadOnlyBuffer or
+                  InBinding.Kind == Lumen::RHI::ERHIShaderBindingKind::ReadWriteBuffer )
         {
-            MakeBlockName( Name, GlBlockNameCapacity, "StorageBlock", Binding.Slot );
+            MakeBlockName( Name, GlBlockNameCapacity, "StorageBlock", InBinding.Slot );
             const Lumen::RHIOpenGL::GLuint Index =
                 InDispatch.GetProgramResourceIndex( InProgram, Lumen::RHIOpenGL::GlShaderStorageBlock, Name );
             if ( Index != GlInvalidIndex )
             {
-                InDispatch.ShaderStorageBlockBinding( InProgram, Index, Binding.Slot );
+                InDispatch.ShaderStorageBlockBinding( InProgram, Index, InBinding.Slot );
             }
         }
-    }
+    } );
 }
 
 } // namespace
@@ -112,13 +116,13 @@ Lumen::RHIOpenGL::FOpenGLComputePipeline::Create ( TSharedRef<FOpenGLDeviceConte
     }
 
     const RHI::FRHIShaderReflection &Reflection = ( *NativeShader )->GetDesc().Reflection;
-    for ( UInt32 Axis = 0U; Axis < 3U; ++Axis )
+    if ( Algo::AnyOf( TSpan<const UInt32>( Reflection.WorkgroupSize.data(), 3U ),
+                      [&InContext] ( const UInt32 InWorkgroupSize ) noexcept -> Bool
     {
-        if ( Reflection.WorkgroupSize[Axis] == 0U or
-             Reflection.WorkgroupSize[Axis] > InContext->GetLimits().MaxComputeWorkgroupSize )
-        {
-            return TUnexpected( RHI::MakeRHIInvalidLimit( "Compute workgroup size exceeds the advertised limit." ) );
-        }
+        return InWorkgroupSize == 0U or InWorkgroupSize > InContext->GetLimits().MaxComputeWorkgroupSize;
+    } ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidLimit( "Compute workgroup size exceeds the advertised limit." ) );
     }
 
     TSharedRef<FOpenGLComputePipeline> Pipeline =
@@ -213,4 +217,13 @@ const Lumen::RHI::FRHIPipelineCompatibility &Lumen::RHIOpenGL::FOpenGLComputePip
 Lumen::RHIOpenGL::GLuint Lumen::RHIOpenGL::FOpenGLComputePipeline::GetProgram () const noexcept
 {
     return Program;
+}
+
+Lumen::RHIOpenGL::FOpenGLPipelineLayout *Lumen::RHIOpenGL::FOpenGLComputePipeline::GetNativeLayout () const noexcept
+{
+    if ( not Desc.Layout )
+    {
+        return nullptr;
+    }
+    return RHI::TryUnwrapRHIBackend<FOpenGLPipelineLayout>( RHI::UnwrapRHIShared( Desc.Layout ).Get() ).ValueOr( nullptr );
 }

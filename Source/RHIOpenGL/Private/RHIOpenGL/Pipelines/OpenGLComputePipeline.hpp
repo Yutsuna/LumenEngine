@@ -23,6 +23,8 @@ namespace Lumen
 namespace RHIOpenGL
 {
 
+    class FOpenGLPipelineLayout;
+
     /**
      * @class FOpenGLComputePipeline
      * @brief Linked GLSL compute program plus canonical compatibility metadata.
@@ -52,6 +54,9 @@ namespace RHIOpenGL
 
         /** @return The linked native program object. */
         [[nodiscard]] GLuint GetProgram () const noexcept;
+
+        /** @return The native pipeline layout, or null when the layout is foreign. */
+        [[nodiscard]] FOpenGLPipelineLayout *GetNativeLayout () const noexcept;
 
     private:
 
