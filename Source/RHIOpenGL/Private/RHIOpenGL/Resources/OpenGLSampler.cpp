@@ -143,11 +143,16 @@ Lumen::RHIOpenGL::FOpenGLSampler::~FOpenGLSampler () noexcept
     {
         return;
     }
-    const GLuint NativeSampler       = Sampler;
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, NativeSampler] () noexcept
+    const GLuint NativeSampler = Sampler;
+    const RHI::FRHITimelineValue Required{ Context->GetExecutor()->GetCompletedTimeline() };
+    const TSharedRef<FOpenGLContext> Executor = Context->GetExecutor();
+    const FGLDispatchTable *Dispatch          = &Context->GetDispatch();
+    ( void )Context->GetExecutor()->DeferRelease( Required, [Executor, Dispatch, NativeSampler] () noexcept
     {
-        Dispatch.DeleteSamplers( 1, &NativeSampler );
+        ( void )Executor->ExecuteOnGLThread( [Dispatch, NativeSampler] () noexcept
+        {
+            Dispatch->DeleteSamplers( 1, &NativeSampler );
+        } );
     } );
 }
 

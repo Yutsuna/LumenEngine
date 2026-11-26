@@ -117,11 +117,16 @@ Lumen::RHIOpenGL::FOpenGLTextureView::~FOpenGLTextureView () noexcept
     {
         return;
     }
-    const GLuint NativeView          = View;
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, NativeView] () noexcept
+    const GLuint NativeView = View;
+    const RHI::FRHITimelineValue Required{ Context->GetExecutor()->GetCompletedTimeline() };
+    const TSharedRef<FOpenGLContext> Executor = Context->GetExecutor();
+    const FGLDispatchTable *Dispatch          = &Context->GetDispatch();
+    ( void )Context->GetExecutor()->DeferRelease( Required, [Executor, Dispatch, NativeView] () noexcept
     {
-        Dispatch.DeleteTextures( 1, &NativeView );
+        ( void )Executor->ExecuteOnGLThread( [Dispatch, NativeView] () noexcept
+        {
+            Dispatch->DeleteTextures( 1, &NativeView );
+        } );
     } );
 }
 
