@@ -105,7 +105,7 @@ namespace Maths
     {
         for ( USize Index = 0; Index < Dimension; ++Index )
         {
-            if ( const auto Comp = this->Data[Index] <=> Other.Data[Index]; Comp != 0 )
+            if ( const auto Comp = this->Data[Index] <=> Other.Data[Index]; Comp != nullptr )
             {
                 return Comp;
             }
