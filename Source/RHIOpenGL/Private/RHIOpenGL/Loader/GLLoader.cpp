@@ -57,16 +57,16 @@ Lumen::Bool Lumen::RHIOpenGL::FGLDispatchTable::IsComplete () const noexcept
            NamedFramebufferDrawBuffers != nullptr and NamedFramebufferReadBuffer != nullptr and
            CheckNamedFramebufferStatus != nullptr and ClearNamedFramebufferfv != nullptr and
            ClearNamedFramebufferiv != nullptr and ClearNamedFramebufferuiv != nullptr and ClearNamedFramebufferfi != nullptr and
-           InvalidateNamedFramebufferData != nullptr and Viewport != nullptr and Scissor != nullptr and Enable != nullptr and
-           Disable != nullptr and PixelStorei != nullptr and DrawArrays != nullptr and DrawElements != nullptr and
-           DrawArraysIndirect != nullptr and DrawElementsIndirect != nullptr and DispatchCompute != nullptr and
-           DispatchComputeIndirect != nullptr and TextureSubImage2D != nullptr and CopyImageSubData != nullptr and
-           CreateQueries != nullptr and DeleteQueries != nullptr and BeginQuery != nullptr and EndQuery != nullptr and
-           GetQueryObjectui64v != nullptr and GetQueryiv != nullptr and FenceSync != nullptr and DeleteSync != nullptr and
-           ClientWaitSync != nullptr and Flush != nullptr and NamedBufferSubData != nullptr and BlendColor != nullptr and
-           BlendEquationSeparate != nullptr and BlendFuncSeparate != nullptr and PolygonOffset != nullptr and
-           StencilFunc != nullptr and BindBuffer != nullptr and GetBufferSubData != nullptr and GetTextureImage != nullptr and
-           BlitFramebuffer != nullptr;
+           InvalidateNamedFramebufferData != nullptr and Viewport != nullptr and DepthRangef != nullptr and Scissor != nullptr and
+           Enable != nullptr and Disable != nullptr and PixelStorei != nullptr and DrawArrays != nullptr and
+           DrawElements != nullptr and DrawArraysIndirect != nullptr and DrawElementsIndirect != nullptr and
+           DispatchCompute != nullptr and DispatchComputeIndirect != nullptr and TextureSubImage2D != nullptr and
+           CopyImageSubData != nullptr and CreateQueries != nullptr and DeleteQueries != nullptr and BeginQuery != nullptr and
+           EndQuery != nullptr and GetQueryObjectui64v != nullptr and GetQueryiv != nullptr and FenceSync != nullptr and
+           DeleteSync != nullptr and ClientWaitSync != nullptr and Flush != nullptr and NamedBufferSubData != nullptr and
+           BlendColor != nullptr and BlendEquationSeparate != nullptr and BlendFuncSeparate != nullptr and
+           PolygonOffset != nullptr and StencilFunc != nullptr and BindBuffer != nullptr and GetBufferSubData != nullptr and
+           GetTextureImage != nullptr and BlitFramebuffer != nullptr;
 }
 
 Lumen::TExpected<void, Lumen::RHI::FRHIError>
@@ -85,6 +85,8 @@ Lumen::RHIOpenGL::LoadGLDispatchTable ( FGLDispatchTable &OutDispatch, const IOp
     ResolveProcedure( OutDispatch.Flush, InContext, "glFlush" );
     ResolveProcedure( OutDispatch.DebugMessageCallback, InContext, "glDebugMessageCallback" );
     ResolveProcedure( OutDispatch.DebugMessageControl, InContext, "glDebugMessageControl" );
+    ResolveProcedure( OutDispatch.DebugMessagePushGroup, InContext, "glPushDebugGroup" );
+    ResolveProcedure( OutDispatch.DebugMessagePopGroup, InContext, "glPopDebugGroup" );
 
     ResolveProcedure( OutDispatch.CreateBuffers, InContext, "glCreateBuffers" );
     ResolveProcedure( OutDispatch.DeleteBuffers, InContext, "glDeleteBuffers" );
@@ -151,6 +153,7 @@ Lumen::RHIOpenGL::LoadGLDispatchTable ( FGLDispatchTable &OutDispatch, const IOp
     ResolveProcedure( OutDispatch.ClearNamedFramebufferfi, InContext, "glClearNamedFramebufferfi" );
     ResolveProcedure( OutDispatch.InvalidateNamedFramebufferData, InContext, "glInvalidateNamedFramebufferData" );
     ResolveProcedure( OutDispatch.Viewport, InContext, "glViewport" );
+    ResolveProcedure( OutDispatch.DepthRangef, InContext, "glDepthRangef" );
     ResolveProcedure( OutDispatch.Scissor, InContext, "glScissor" );
     ResolveProcedure( OutDispatch.Enable, InContext, "glEnable" );
     ResolveProcedure( OutDispatch.Disable, InContext, "glDisable" );

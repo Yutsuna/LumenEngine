@@ -34,6 +34,8 @@ namespace RHIOpenGL
         TGLFlush Flush                                   = nullptr;
         TGLDebugMessageCallback DebugMessageCallback     = nullptr;
         TGLDebugMessageControl DebugMessageControl       = nullptr;
+        TGLPushDebugGroup DebugMessagePushGroup          = nullptr;
+        TGLPopDebugGroup DebugMessagePopGroup            = nullptr;
 
         TGLCreateBuffers CreateBuffers                             = nullptr;
         TGLDeleteBuffers DeleteBuffers                             = nullptr;
@@ -103,6 +105,7 @@ namespace RHIOpenGL
         TGLClearNamedFramebufferfi ClearNamedFramebufferfi               = nullptr;
         TGLInvalidateNamedFramebufferData InvalidateNamedFramebufferData = nullptr;
         TGLViewport Viewport                                             = nullptr;
+        TGLDepthRangef DepthRangef                                       = nullptr;
         TGLScissor Scissor                                               = nullptr;
         TGLEnable Enable                                                 = nullptr;
         TGLDisable Disable                                               = nullptr;

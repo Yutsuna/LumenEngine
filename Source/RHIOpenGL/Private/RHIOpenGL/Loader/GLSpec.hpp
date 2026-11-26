@@ -88,8 +88,9 @@ namespace RHIOpenGL
     inline constexpr GLenum GlMaxShaderStorageBlockSize             = 0x90DEU;
     inline constexpr GLenum GlMaxCombinedTextureImageUnits          = 0x8B4DU;
     inline constexpr GLenum GlMaxCombinedUniformBlocks              = 0x8A2EU;
-    inline constexpr GLenum GlMaxShaderStorageBufferBindings        = 0x90D3U;
-    inline constexpr GLenum GlMaxImageUnits                         = 0x8B39U;
+    inline constexpr GLenum GlMaxUniformBufferBindings              = 0x8A2FU;
+    inline constexpr GLenum GlMaxShaderStorageBufferBindings        = 0x90DDU;
+    inline constexpr GLenum GlMaxImageUnits                         = 0x8F38U;
     inline constexpr GLenum GlMaxTextureMaxAnisotropy               = 0x84FFU;
     inline constexpr GLenum GlMaxSamples                            = 0x8D57U;
     inline constexpr GLenum GlLowerLeft                             = 0x8CA1U;
@@ -250,6 +251,8 @@ namespace RHIOpenGL
     using TGLDebugProc              = void ( * )( GLenum, GLenum, GLuint, GLenum, GLsizei, const AnsiChar *, const void * );
     using TGLDebugMessageCallback   = void ( * )( TGLDebugProc, const void * );
     using TGLDebugMessageControl    = void ( * )( GLenum, GLenum, GLenum, GLsizei, const GLuint *, GLboolean );
+    using TGLPushDebugGroup         = void ( * )( GLenum, GLuint, GLsizei, const AnsiChar * );
+    using TGLPopDebugGroup          = void ( * )();
 
     using TGLCreateBuffers               = void ( * )( GLsizei, GLuint * );
     using TGLDeleteBuffers               = void ( * )( GLsizei, const GLuint * );
@@ -320,6 +323,7 @@ namespace RHIOpenGL
     using TGLClearNamedFramebufferfi        = void ( * )( GLuint, GLenum, GLint, GLfloat, GLint );
     using TGLInvalidateNamedFramebufferData = void ( * )( GLuint, GLsizei, const GLenum * );
     using TGLViewport                       = void ( * )( GLint, GLint, GLsizei, GLsizei );
+    using TGLDepthRangef                    = void ( * )( GLfloat, GLfloat );
     using TGLScissor                        = void ( * )( GLint, GLint, GLsizei, GLsizei );
     using TGLEnable                         = void ( * )( GLenum );
     using TGLDisable                        = void ( * )( GLenum );
