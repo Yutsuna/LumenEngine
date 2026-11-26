@@ -14,9 +14,12 @@
  */
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHIOpenGL::FOpenGLDeviceContext>, Lumen::RHI::FRHIError>
-Lumen::RHIOpenGL::FOpenGLDeviceContext::Create ( const RHI::FRHIAdapterInfo &InAdapter, const Bool bEnableDebug ) noexcept
+Lumen::RHIOpenGL::FOpenGLDeviceContext::Create ( const RHI::FRHIAdapterInfo &InAdapter,
+                                                 const Bool bEnableDebug,
+                                                 RHI::IRHIDebugSink *InDebugSink ) noexcept
 {
     LUMEN_EXPECT( Context, FOpenGLContext::Create( bEnableDebug ) );
+    Context->SetDebugSink( InDebugSink );
     return MakeShared<FOpenGLDeviceContext>( static_cast<TSharedRef<FOpenGLContext> &&>( Context ), InAdapter.Capabilities,
                                              InAdapter.Limits );
 }
@@ -53,15 +56,20 @@ const Lumen::RHI::FRHILimits &Lumen::RHIOpenGL::FOpenGLDeviceContext::GetLimits 
 Lumen::TOptional<Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDeviceContext::GetUnavailableError ( const FStringView InOperation ) const noexcept
 {
+    if ( Context->IsDeviceLost() )
+    {
+        Status.store( RHI::ERHIDeviceStatus::Lost );
+    }
     const RHI::ERHIDeviceStatus Current = Status.load();
     if ( Current == RHI::ERHIDeviceStatus::Ready )
     {
         return {};
     }
 
-    const RHI::ERHIErrorCode Code =
-        ( Current == RHI::ERHIDeviceStatus::Lost ) ? RHI::ERHIErrorCode::DeviceLost : RHI::ERHIErrorCode::DeviceClosed;
+    const Bool bIsLost            = Current == RHI::ERHIDeviceStatus::Lost;
+    const RHI::ERHIErrorCode Code = bIsLost ? RHI::ERHIErrorCode::DeviceLost : RHI::ERHIErrorCode::DeviceClosed;
     const RHI::FRHIError Error( Code, RHI::ERHIErrorCondition::Device, "OpenGL device is unavailable." );
+
     return TOptional<RHI::FRHIError>( InOperation.empty() ? Error : Error.WithContext( InOperation ) );
 }
 
@@ -74,4 +82,14 @@ void Lumen::RHIOpenGL::FOpenGLDeviceContext::MarkClosed () noexcept
 {
     RHI::ERHIDeviceStatus Expected = RHI::ERHIDeviceStatus::Ready;
     ( void )Status.compare_exchange_strong( Expected, RHI::ERHIDeviceStatus::Closed );
+}
+
+Lumen::Bool Lumen::RHIOpenGL::FOpenGLDeviceContext::IsDeviceLost () const noexcept
+{
+    return Context->IsDeviceLost();
+}
+
+void Lumen::RHIOpenGL::FOpenGLDeviceContext::DetachDebugSink () noexcept
+{
+    Context->SetDebugSink( nullptr );
 }

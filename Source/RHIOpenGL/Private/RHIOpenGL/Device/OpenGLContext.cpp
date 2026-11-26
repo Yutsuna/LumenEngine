@@ -1,15 +1,19 @@
 /**
  * @file OpenGLContext.cpp
- * @brief Implements the single-threaded OpenGL executor.
+ * @brief Implements the GL executor, fence-driven submission scheduler and debug bridge.
  */
 
 #include <RHIOpenGL/Device/OpenGLContext.hpp>
 
 #include <HAL/LockGuard.hpp>
+#include <HAL/PlatformTime.hpp>
+
+#include <String/StringView.hpp>
 
 #include <RHI/Types/RHIError.hpp>
 
 #include <RHIOpenGL/Loader/GLLoader.hpp>
+#include <RHIOpenGL/Synchronization/OpenGLSemaphore.hpp>
 
 #include <Templates/Optional.hpp>
 
@@ -33,6 +37,36 @@ LUMEN_NO_INLINE Lumen::TSharedRef<FTaskLatch> MakeTaskLatch () noexcept
     return Lumen::MakeShared<FTaskLatch>();
 }
 
+/** @brief KHR_debug thunk: copies the native message; never re-enters GL or RHI. */
+void DebugMessageThunk ( Lumen::RHIOpenGL::GLenum InSource,
+                         Lumen::RHIOpenGL::GLenum InType,
+                         Lumen::RHIOpenGL::GLuint InCode,
+                         Lumen::RHIOpenGL::GLenum InSeverity,
+                         Lumen::RHIOpenGL::GLsizei InLength,
+                         const Lumen::AnsiChar *InText,
+                         const void *InUserParam ) noexcept
+{
+    const Lumen::RHIOpenGL::FOpenGLContext *Context = static_cast<const Lumen::RHIOpenGL::FOpenGLContext *>( InUserParam );
+    if ( Context != nullptr )
+    {
+        Context->NotifyDebugMessage( InSource, InType, InSeverity, static_cast<Lumen::UInt32>( InCode ), InLength, InText );
+    }
+}
+
+[[nodiscard]] Lumen::RHI::ERHIDebugSeverity MapDebugSeverity ( const Lumen::RHIOpenGL::GLenum InSeverity ) noexcept
+{
+    using Lumen::RHI::ERHIDebugSeverity;
+    switch ( InSeverity )
+    {
+    case Lumen::RHIOpenGL::GlDebugSeverityHigh:
+        return ERHIDebugSeverity::Error;
+    case Lumen::RHIOpenGL::GlDebugSeverityMedium:
+        return ERHIDebugSeverity::Warning;
+    default:
+        return ERHIDebugSeverity::Info;
+    }
+}
+
 } // namespace
 
 /**
@@ -52,6 +86,7 @@ Lumen::RHIOpenGL::FOpenGLContext::~FOpenGLContext () noexcept
     ( void )WorkerThread.RequestStop();
     Wake.NotifyAll();
     WorkerThread.Join();
+    ( void )DeferredReleases.Drain();
 }
 
 const Lumen::RHIOpenGL::FGLDispatchTable &Lumen::RHIOpenGL::FOpenGLContext::GetDispatch () const noexcept
@@ -99,6 +134,51 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::InvokeOnGLThread ( TF
     return {};
 }
 
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::Submit ( FOpenGLSubmission &&InSubmission ) noexcept
+{
+    {
+        HAL::TLockGuard Lock( SchedulerMutex );
+        Pending.push( static_cast<FOpenGLSubmission &&>( InSubmission ) );
+    }
+    Wake.NotifyOne();
+    return {};
+}
+
+void Lumen::RHIOpenGL::FOpenGLContext::SetDebugSink ( RHI::IRHIDebugSink *InSink ) noexcept
+{
+    HAL::TLockGuard Lock( DebugSinkMutex );
+    DebugSink = InSink;
+}
+
+void Lumen::RHIOpenGL::FOpenGLContext::MarkDeviceLost () noexcept
+{
+    bDeviceLost.store( true );
+}
+
+Lumen::Bool Lumen::RHIOpenGL::FOpenGLContext::IsDeviceLost () const noexcept
+{
+    return bDeviceLost.load();
+}
+
+void Lumen::RHIOpenGL::FOpenGLContext::EmitDebugMessage ( RHI::FRHIDebugMessage InMessage ) noexcept
+{
+    RHI::IRHIDebugSink *Sink = nullptr;
+    {
+        HAL::TLockGuard Lock( DebugSinkMutex );
+        Sink = DebugSink;
+    }
+    if ( Sink != nullptr )
+    {
+        Sink->Emit( InMessage );
+    }
+}
+
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::DeferRelease ( const RHI::FRHITimelineValue InRequired,
+                                                                          TFunction<void()> InRelease ) noexcept
+{
+    return DeferredReleases.Enqueue( InRequired, static_cast<TFunction<void()> &&>( InRelease ) );
+}
+
 /**
  * Private
  */
@@ -134,6 +214,164 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::Start () noexcept
     return {};
 }
 
+void Lumen::RHIOpenGL::FOpenGLContext::NotifyDebugMessage ( const GLenum InSource,
+                                                            const GLenum InType,
+                                                            const GLenum InSeverity,
+                                                            const UInt32 InCode,
+                                                            const GLsizei InLength,
+                                                            const AnsiChar *InText ) const noexcept
+{
+    FStringView Text = InLength > 0 ? FStringView( InText, static_cast<USize>( InLength ) ) : FStringView( InText );
+    RHI::FRHIDebugMessage Message(
+        MapDebugSeverity( InSeverity ),
+        InType == GlDebugTypeErrorCode ? RHI::ERHIDebugCategory::Validation : RHI::ERHIDebugCategory::General, InCode, Text );
+    ( void )InSource;
+
+    RHI::IRHIDebugSink *Sink = nullptr;
+    {
+        HAL::TLockGuard Lock( DebugSinkMutex );
+        const Float64 Now   = HAL::FPlatformTime::Seconds();
+        const auto Previous = RecentMessages.find( InCode );
+        if ( Previous != RecentMessages.end() and Now - Previous->second < 0.25 )
+        {
+            return;
+        }
+        RecentMessages[InCode] = Now;
+        if ( RecentMessages.size() > 64U )
+        {
+            RecentMessages.clear();
+        }
+        Sink = DebugSink;
+    }
+    if ( Sink != nullptr )
+    {
+        Sink->Emit( Message );
+    }
+}
+
+void Lumen::RHIOpenGL::FOpenGLContext::PollResetStatus () noexcept
+{
+    if ( Dispatch.GetGraphicsResetStatus == nullptr or bResetReported.load() )
+    {
+        return;
+    }
+    const GLenum Status = Dispatch.GetGraphicsResetStatus();
+    if ( Status == GlNoError )
+    {
+        return;
+    }
+    bResetReported.store( true );
+
+    EmitDebugMessage( RHI::FRHIDebugMessage( RHI::ERHIDebugSeverity::Error, RHI::ERHIDebugCategory::General,
+                                             static_cast<UInt32>( Status ), "The OpenGL graphics context was reset." ) );
+    MarkDeviceLost();
+}
+
+void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
+{
+    {
+        HAL::TLockGuard Lock( SchedulerMutex );
+        while ( not Pending.empty() )
+        {
+            Blocked.push_back( static_cast<FOpenGLSubmission &&>( Pending.front() ) );
+            Pending.pop();
+        }
+    }
+
+    for ( USize Index = 0U; Index < Blocked.size(); )
+    {
+        Bool bDependenciesReady = true;
+        for ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &Wait : Blocked[Index].Waits )
+        {
+            if ( not Wait.first or Wait.first->GetValue() < Wait.second )
+            {
+                bDependenciesReady = false;
+                break;
+            }
+        }
+        if ( bDependenciesReady )
+        {
+            FOpenGLSubmission Ready = static_cast<FOpenGLSubmission &&>( Blocked[Index] );
+            Blocked.erase( Blocked.begin() + static_cast<ISize>( Index ) );
+
+            const RHI::FRHIExpected Replayed = Ready.Replay ? Ready.Replay() : RHI::FRHIExpected{};
+            if ( not Replayed )
+            {
+                EmitDebugMessage( RHI::FRHIDebugMessage( RHI::ERHIDebugSeverity::Error, RHI::ERHIDebugCategory::General, 0U,
+                                                         Replayed.Error().Message ) );
+                if ( Ready.OnFailure )
+                {
+                    Ready.OnFailure( Replayed.Error() );
+                }
+            }
+
+            GLsync Sync = Dispatch.FenceSync != nullptr ? Dispatch.FenceSync( GlSyncGpuCommandsComplete, 0U ) : nullptr;
+            if ( Dispatch.Flush != nullptr )
+            {
+                Dispatch.Flush();
+            }
+            if ( Sync == nullptr )
+            {
+                for ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &Signal : Ready.Signals )
+                {
+                    if ( Signal.first )
+                    {
+                        ( void )Signal.first->Signal( Signal.second );
+                    }
+                }
+                if ( Ready.OnComplete )
+                {
+                    Ready.OnComplete();
+                }
+            }
+            else
+            {
+                FActiveFence Fence;
+                Fence.Sync       = Sync;
+                Fence.Submission = static_cast<FOpenGLSubmission &&>( Ready );
+                ActiveFences.push_back( static_cast<FActiveFence &&>( Fence ) );
+            }
+            continue;
+        }
+        ++Index;
+    }
+
+    for ( USize Index = 0U; Index < ActiveFences.size(); )
+    {
+        FActiveFence &Fence = ActiveFences[Index];
+        const GLenum Status = Dispatch.ClientWaitSync( Fence.Sync, GlSyncFlushCommandsBit, 0ULL );
+        if ( Status == GlSyncTimeoutExpired )
+        {
+            ++Index;
+            continue;
+        }
+        if ( Dispatch.DeleteSync != nullptr )
+        {
+            Dispatch.DeleteSync( Fence.Sync );
+        }
+        FOpenGLSubmission Completed = static_cast<FOpenGLSubmission &&>( Fence.Submission );
+        ActiveFences.erase( ActiveFences.begin() + static_cast<ISize>( Index ) );
+
+        for ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &Signal : Completed.Signals )
+        {
+            if ( Signal.first )
+            {
+                ( void )Signal.first->Signal( Signal.second );
+            }
+        }
+        if ( Completed.OnComplete )
+        {
+            Completed.OnComplete();
+        }
+        const UInt64 Value = Completed.Completion.Value;
+        if ( Value > CompletedTimeline.load() )
+        {
+            CompletedTimeline.store( Value );
+        }
+        ( void )DeferredReleases.Poll( RHI::FRHITimelineValue{ CompletedTimeline.load() } );
+    }
+}
+
 void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) noexcept
 {
     const TExpected<void, RHI::FRHIError> Initialized = NativeContext.Initialize( bEnableDebug );
@@ -151,6 +389,10 @@ void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) n
         else
         {
             Dispatch.ClipControl( GlLowerLeft, GlZeroToOne );
+            if ( Dispatch.DebugMessageCallback != nullptr )
+            {
+                Dispatch.DebugMessageCallback( &DebugMessageThunk, this );
+            }
         }
     }
 
@@ -170,22 +412,68 @@ void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) n
         TFunction<void()> Task;
         {
             HAL::TUniqueLock Lock( QueueMutex );
-            Wake.Wait( Lock, [this, &InStopToken] () noexcept -> Bool
+            ( void )Wake.WaitFor( Lock, 0.01, [this, &InStopToken] () noexcept -> Bool
             {
                 return not Tasks.empty() or InStopToken.StopRequested();
             } );
-            if ( Tasks.empty() )
+            if ( not Tasks.empty() )
             {
-                if ( InStopToken.StopRequested() )
-                {
-                    break;
-                }
-                continue;
+                Task = static_cast<TFunction<void()> &&>( Tasks.front() );
+                Tasks.pop();
             }
-            Task = static_cast<TFunction<void()> &&>( Tasks.front() );
-            Tasks.pop();
         }
-        Task();
+        if ( Task )
+        {
+            Task();
+        }
+
+        StepScheduler();
+        PollResetStatus();
+
+        /* A submission blocked on a semaphore that is never signalled would keep the
+         * worker alive forever. Fail and release all not-yet-replayed work on stop. */
+        if ( InStopToken.StopRequested() )
+        {
+            TVector<FOpenGLSubmission> Abandoned;
+            {
+                HAL::TLockGuard Lock( SchedulerMutex );
+                while ( not Pending.empty() )
+                {
+                    Abandoned.push_back( static_cast<FOpenGLSubmission &&>( Pending.front() ) );
+                    Pending.pop();
+                }
+                for ( FOpenGLSubmission &BlockedSubmission : Blocked )
+                {
+                    Abandoned.push_back( static_cast<FOpenGLSubmission &&>( BlockedSubmission ) );
+                }
+                Blocked.clear();
+            }
+            const RHI::FRHIError Failure = RHI::MakeRHIDeviceLost(
+                RHI::ERHIErrorCondition::Queue, "OpenGL executor stopped before the submission was replayed." );
+            for ( FOpenGLSubmission &Submission : Abandoned )
+            {
+                if ( Submission.OnFailure )
+                {
+                    Submission.OnFailure( Failure );
+                }
+            }
+        }
+
+        Bool bPending = false;
+        {
+            HAL::TLockGuard Lock( SchedulerMutex );
+            bPending = not Pending.empty();
+        }
+        if ( InStopToken.StopRequested() and not Task and not bPending and Blocked.empty() and ActiveFences.empty() )
+        {
+            break;
+        }
     }
+
+    if ( Dispatch.DebugMessageCallback != nullptr )
+    {
+        Dispatch.DebugMessageCallback( nullptr, nullptr );
+    }
+    ( void )DeferredReleases.Drain();
     NativeContext.Shutdown();
 }

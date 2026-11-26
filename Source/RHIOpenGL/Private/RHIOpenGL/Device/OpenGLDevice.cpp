@@ -14,6 +14,7 @@
 #include <RHI/Pipelines/RHIComputePipelineDesc.hpp>
 #include <RHI/Pipelines/RHIGraphicsPipelineDesc.hpp>
 #include <RHI/Pipelines/RHIPipelineLayoutDesc.hpp>
+#include <RHI/Presentation/RHISwapchainCapabilities.hpp>
 #include <RHI/Presentation/RHISwapchainDesc.hpp>
 #include <RHI/Queries/RHIQueryPoolDesc.hpp>
 #include <RHI/Resources/RHIBufferDesc.hpp>
@@ -36,6 +37,7 @@
 #include <RHIOpenGL/Pipelines/OpenGLComputePipeline.hpp>
 #include <RHIOpenGL/Pipelines/OpenGLGraphicsPipeline.hpp>
 #include <RHIOpenGL/Pipelines/OpenGLPipelineLayout.hpp>
+#include <RHIOpenGL/Presentation/OpenGLSwapchain.hpp>
 #include <RHIOpenGL/Queue/OpenGLQueue.hpp>
 #include <RHIOpenGL/Resources/OpenGLBuffer.hpp>
 #include <RHIOpenGL/Resources/OpenGLSampler.hpp>
@@ -43,7 +45,33 @@
 #include <RHIOpenGL/Resources/OpenGLTextureView.hpp>
 #include <RHIOpenGL/Shaders/OpenGLShader.hpp>
 #include <RHIOpenGL/Synchronization/OpenGLQueryPool.hpp>
+#include <RHIOpenGL/Synchronization/OpenGLSemaphore.hpp>
 #include <RHIOpenGL/Types/OpenGLObject.hpp>
+
+/**
+ * File-local helpers
+ */
+
+namespace
+{
+
+/** @return The presentation contract actually delivered by an OpenGL 4.6 context. */
+[[nodiscard]] Lumen::RHI::FRHISwapchainCapabilities MakeSwapchainCapabilities () noexcept
+{
+    using Lumen::RHI::ERHIFormat;
+    using Lumen::RHI::ERHIPresentMode;
+    Lumen::RHI::FRHISwapchainCapabilities Capabilities;
+    Capabilities.Formats       = { ERHIFormat::RGBA8Unorm, ERHIFormat::BGRA8Unorm, ERHIFormat::RGBA16Float };
+    Capabilities.ColorSpaces   = { Lumen::RHI::ERHIColorSpace::SrgbNonLinear, Lumen::RHI::ERHIColorSpace::ExtendedSrgbLinear };
+    Capabilities.PresentModes  = { ERHIPresentMode::Fifo, ERHIPresentMode::Immediate };
+    Capabilities.MinExtent     = { 1U, 1U, 1U };
+    Capabilities.MaxExtent     = { 16384U, 16384U, 1U };
+    Capabilities.MinImageCount = 2U;
+    Capabilities.MaxImageCount = 8U;
+    return Capabilities;
+}
+
+} // namespace
 
 /**
  * Public
@@ -52,7 +80,7 @@
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDevice>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::Create ( const RHI::FRHIAdapterInfo &InAdapter, const RHI::FRHIDeviceDesc &InDesc ) noexcept
 {
-    LUMEN_EXPECT( Context, FOpenGLDeviceContext::Create( InAdapter, InDesc.bEnableDebug ) );
+    LUMEN_EXPECT( Context, FOpenGLDeviceContext::Create( InAdapter, InDesc.bEnableDebug, InDesc.DebugSink ) );
 
     TSharedRef<FOpenGLDevice> Device = MakeShared<FOpenGLDevice>( static_cast<TSharedRef<FOpenGLDeviceContext> &&>( Context ) );
     for ( const RHI::FRHIQueueRequest &Request : InDesc.Queues )
@@ -83,6 +111,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::FOpenGLDevice ( TSharedRef<FOpenGLDeviceContext
 
 Lumen::RHIOpenGL::FOpenGLDevice::~FOpenGLDevice () noexcept
 {
+    Context->DetachDebugSink();
     if ( GetStatus() != RHI::ERHIDeviceStatus::Lost )
     {
         Context->MarkClosed();
@@ -96,16 +125,21 @@ void Lumen::RHIOpenGL::FOpenGLDevice::InjectDeviceLost () noexcept
     Context->MarkLost();
 }
 
+Lumen::RHI::ERHIDeviceStatus Lumen::RHIOpenGL::FOpenGLDevice::GetStatus () const noexcept
+{
+    return Context->IsDeviceLost() ? RHI::ERHIDeviceStatus::Lost : RHI::FRHIDeviceBase::GetStatus();
+}
+
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLDevice::WaitIdle () noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "WaitIdle" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "WaitIdle" ) );
     return {};
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIQueue>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::GetQueue ( const RHI::ERHIQueueType InType, const UInt32 InIndex ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "GetQueue" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "GetQueue" ) );
 
     if ( static_cast<USize>( InType ) >= static_cast<USize>( RHI::ERHIQueueType::Count ) )
     {
@@ -125,14 +159,14 @@ Lumen::RHIOpenGL::FOpenGLDevice::GetQueue ( const RHI::ERHIQueueType InType, con
 #define LUMEN_OPENGL_UNIMPLEMENTED_FACTORY( OperationName, Condition )                                                           \
     do                                                                                                                           \
     {                                                                                                                            \
-        LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( OperationName ) );                                                        \
+        LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( OperationName ) );                                               \
         return TUnexpected( RHI::MakeRHIUnsupported( Condition, OperationName " is not implemented in RHIOpenGL M0 yet." ) );    \
     } while ( false )
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateBuffer ( const RHI::FRHIBufferDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateBuffer" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateBuffer" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Buffer, FOpenGLBuffer::Create( Context, InDesc, NextObjectId() ) );
 
@@ -145,7 +179,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreatePlacedBuffer ( const RHI::FRHIBufferDesc 
                                                       TSharedRef<RHI::IRHIHeap> InHeap,
                                                       const RHI::FRHIAllocation &InAllocation ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreatePlacedBuffer" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreatePlacedBuffer" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Buffer, FOpenGLBuffer::CreatePlaced( Context, InDesc, static_cast<TSharedRef<RHI::IRHIHeap> &&>( InHeap ),
                                                        InAllocation, NextObjectId() ) );
@@ -157,7 +191,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreatePlacedBuffer ( const RHI::FRHIBufferDesc 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateTexture ( const RHI::FRHITextureDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateTexture" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateTexture" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Texture, FOpenGLTexture::Create( Context, InDesc, NextObjectId() ) );
 
@@ -170,7 +204,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreatePlacedTexture ( const RHI::FRHITextureDes
                                                        TSharedRef<RHI::IRHIHeap> InHeap,
                                                        const RHI::FRHIAllocation &InAllocation ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreatePlacedTexture" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreatePlacedTexture" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Texture, FOpenGLTexture::CreatePlaced( Context, InDesc, static_cast<TSharedRef<RHI::IRHIHeap> &&>( InHeap ),
                                                          InAllocation, NextObjectId() ) );
@@ -182,7 +216,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreatePlacedTexture ( const RHI::FRHITextureDes
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITextureView>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateTextureView ( const RHI::FRHITextureViewDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateTextureView" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateTextureView" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( View, FOpenGLTextureView::Create( Context, InDesc, NextObjectId() ) );
 
@@ -193,7 +227,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateTextureView ( const RHI::FRHITextureViewD
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISampler>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateSampler ( const RHI::FRHISamplerDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateSampler" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateSampler" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Sampler, FOpenGLSampler::Create( Context, InDesc, NextObjectId() ) );
 
@@ -204,7 +238,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateSampler ( const RHI::FRHISamplerDesc &InD
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIHeap>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateHeap ( const RHI::FRHIHeapDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateHeap" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateHeap" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Heap, FOpenGLHeap::Create( Context, InDesc, NextObjectId() ) );
 
@@ -215,7 +249,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateHeap ( const RHI::FRHIHeapDesc &InDesc ) 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBufferPool>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateBufferPool () noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateBufferPool" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateBufferPool" ) );
     TSharedRef<TAtomic<UInt64>> Counter = MakeShared<TAtomic<UInt64>>( 1ULL << 40U );
 
     TFunction<TExpected<TSharedRef<RHI::IRHIBuffer>, RHI::FRHIError>( const RHI::FRHIBufferDesc & )> Creator =
@@ -236,7 +270,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateBufferPool () noexcept
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIUploadAllocator>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateUploadAllocator ( const UInt64 InCapacity ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateUploadAllocator" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateUploadAllocator" ) );
     if ( InCapacity == 0ULL )
     {
         return TUnexpected(
@@ -251,7 +285,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateUploadAllocator ( const UInt64 InCapacity
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIReadbackAllocator>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateReadbackAllocator ( const UInt64 InCapacity ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateReadbackAllocator" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateReadbackAllocator" ) );
     if ( InCapacity == 0ULL )
     {
         return TUnexpected(
@@ -283,7 +317,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateDefragmenter () noexcept
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBindingLayout>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateBindingLayout ( const RHI::FRHIBindingLayoutDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateBindingLayout" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateBindingLayout" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Layout, FOpenGLBindingLayout::Create( Context, InDesc, NextObjectId() ) );
     TrackObject( *Layout );
@@ -293,7 +327,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateBindingLayout ( const RHI::FRHIBindingLay
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBindingSet>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateBindingSet ( const TSharedRef<RHI::IRHIBindingLayout> &InLayout ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateBindingSet" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateBindingSet" ) );
     LUMEN_EXPECT( Set, FOpenGLBindingSet::Create( Context, InLayout, NextObjectId() ) );
     TrackObject( *Set );
     return Set;
@@ -302,7 +336,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateBindingSet ( const TSharedRef<RHI::IRHIBi
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDescriptorAllocator>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateDescriptorAllocator ( const RHI::FRHIDescriptorAllocatorDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateDescriptorAllocator" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateDescriptorAllocator" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Allocator, FOpenGLDescriptorAllocator::Create( InDesc, NextObjectId() ) );
     TrackObject( *Allocator );
@@ -312,7 +346,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateDescriptorAllocator ( const RHI::FRHIDesc
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIShader>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateShader ( const RHI::FRHIShaderDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateShader" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateShader" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Shader, FOpenGLShader::Create( Context, InDesc, NextObjectId() ) );
     TrackObject( *Shader );
@@ -322,7 +356,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateShader ( const RHI::FRHIShaderDesc &InDes
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipelineLayout>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreatePipelineLayout ( const RHI::FRHIPipelineLayoutDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreatePipelineLayout" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreatePipelineLayout" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Layout, FOpenGLPipelineLayout::Create( Context, InDesc, NextObjectId() ) );
     TrackObject( *Layout );
@@ -332,7 +366,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreatePipelineLayout ( const RHI::FRHIPipelineL
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipeline>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateGraphicsPipeline ( const RHI::FRHIGraphicsPipelineDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateGraphicsPipeline" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateGraphicsPipeline" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Pipeline, FOpenGLGraphicsPipeline::Create( Context, InDesc, NextObjectId() ) );
     TrackObject( *Pipeline );
@@ -342,7 +376,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateGraphicsPipeline ( const RHI::FRHIGraphic
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipeline>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateComputePipeline ( const RHI::FRHIComputePipelineDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateComputePipeline" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateComputePipeline" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Pipeline, FOpenGLComputePipeline::Create( Context, InDesc, NextObjectId() ) );
     TrackObject( *Pipeline );
@@ -352,7 +386,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateComputePipeline ( const RHI::FRHIComputeP
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipelineCache>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreatePipelineCache ( const RHI::FRHIPipelineCacheDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreatePipelineCache" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreatePipelineCache" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
     LUMEN_EXPECT( Cache, FOpenGLPipelineCache::Create( InDesc, NextObjectId() ) );
     LUMEN_TRY_EXPECT_ERROR( Cache->Initialize() );
@@ -364,7 +398,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreatePipelineCache ( const RHI::FRHIPipelineCa
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHICommandAllocator>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateCommandAllocator ( const RHI::ERHIQueueType InQueueType ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateCommandAllocator" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateCommandAllocator" ) );
     if ( static_cast<USize>( InQueueType ) >= static_cast<USize>( RHI::ERHIQueueType::Count ) )
     {
         return TUnexpected(
@@ -378,7 +412,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateCommandAllocator ( const RHI::ERHIQueueTy
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHICommandList>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateCommandList ( const TSharedRef<RHI::IRHICommandAllocator> &InAllocator ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateCommandList" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateCommandList" ) );
     if ( not RHI::TryRHIBackendCast<FOpenGLCommandAllocator>( *InAllocator ) )
     {
         return TUnexpected(
@@ -395,24 +429,48 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateCommandList ( const TSharedRef<RHI::IRHIC
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISemaphore>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateSemaphore ( const RHI::FRHISemaphoreDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateSemaphore" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateSemaphore" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
-    LUMEN_OPENGL_UNIMPLEMENTED_FACTORY( "CreateSemaphore", RHI::ERHIErrorCondition::Synchronization );
+    LUMEN_EXPECT( Semaphore, FOpenGLSemaphore::Create( Context, InDesc, NextObjectId() ) );
+    TrackObject( *Semaphore );
+    return Semaphore;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISwapchain>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateSwapchain ( const RHI::FRHISwapchainDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateSwapchain" ) );
-    LUMEN_EXPECT( Validation, InDesc.Validate() );
-    LUMEN_OPENGL_UNIMPLEMENTED_FACTORY( "CreateSwapchain", RHI::ERHIErrorCondition::Presentation );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateSwapchain" ) );
+    if ( not Context->GetCapabilities().Supports( RHI::ERHICapabilityFlags::Presentation ) )
+    {
+        return TUnexpected( RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Presentation,
+                                                     "Presentation was not negotiated by this adapter." ) );
+    }
+    const RHI::FRHISwapchainCapabilities Negotiated = MakeSwapchainCapabilities();
+    LUMEN_EXPECT( Validated, InDesc.Validate( Negotiated ) );
+    LUMEN_EXPECT( Swapchain, FOpenGLSwapchain::Create( Context, InDesc, Negotiated, NextObjectId() ) );
+    TrackObject( *Swapchain );
+    return Swapchain;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIQueryPool>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateQueryPool ( const RHI::FRHIQueryPoolDesc &InDesc ) noexcept
 {
-    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateQueryPool" ) );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateQueryPool" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
+    RHI::ERHICapabilityFlags Required = RHI::ERHICapabilityFlags::OcclusionQueries;
+    if ( InDesc.Type == RHI::ERHIQueryType::Timestamp )
+    {
+        Required = RHI::ERHICapabilityFlags::TimestampQueries;
+    }
+    else if ( InDesc.Type == RHI::ERHIQueryType::PipelineStatistics )
+    {
+        Required = RHI::ERHICapabilityFlags::PipelineStatistics;
+    }
+    if ( not Context->GetCapabilities().Supports( Required ) )
+    {
+        return TUnexpected(
+            RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Query, "The requested query type was not negotiated." ) );
+    }
     LUMEN_EXPECT( Pool, FOpenGLQueryPool::Create( Context, InDesc, NextObjectId() ) );
     TrackObject( *Pool );
     return Pool;

@@ -11,6 +11,7 @@
 
 #include <Memory/SharedPtr.hpp>
 
+#include <RHI/Debug/IRHIDebugSink.hpp>
 #include <RHI/Device/RHIDeviceStatus.hpp>
 #include <RHI/Module/RHIAdapterInfo.hpp>
 #include <RHI/Types/RHIError.hpp>
@@ -40,7 +41,7 @@ namespace RHIOpenGL
 
         /** @brief Creates the worker context from a probed adapter descriptor. */
         [[nodiscard]] static TExpected<TSharedRef<FOpenGLDeviceContext>, RHI::FRHIError>
-        Create ( const RHI::FRHIAdapterInfo &InAdapter, Bool bEnableDebug ) noexcept;
+        Create ( const RHI::FRHIAdapterInfo &InAdapter, Bool bEnableDebug, RHI::IRHIDebugSink *InDebugSink ) noexcept;
 
     public:
 
@@ -57,13 +58,17 @@ namespace RHIOpenGL
 
         void MarkLost () noexcept;
         void MarkClosed () noexcept;
+        void DetachDebugSink () noexcept;
+
+        /** @return True when the GL executor observed a graphics reset. */
+        [[nodiscard]] Bool IsDeviceLost () const noexcept;
 
     private:
 
         TSharedRef<FOpenGLContext> Context;
         RHI::FRHICapabilities Capabilities;
         RHI::FRHILimits Limits;
-        TAtomic<RHI::ERHIDeviceStatus> Status{ RHI::ERHIDeviceStatus::Ready };
+        mutable TAtomic<RHI::ERHIDeviceStatus> Status{ RHI::ERHIDeviceStatus::Ready };
     };
 
 } // namespace RHIOpenGL

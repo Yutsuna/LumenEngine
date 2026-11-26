@@ -42,6 +42,8 @@ namespace RHIOpenGL
         /** @brief Marks the device lost for conformance error-path scenarios. */
         void InjectDeviceLost () noexcept;
 
+        [[nodiscard]] RHI::ERHIDeviceStatus GetStatus () const noexcept override;
+
         [[nodiscard]] RHI::FRHIExpected WaitIdle () noexcept override;
 
         [[nodiscard]] TExpected<TSharedRef<RHI::IRHIQueue>, RHI::FRHIError> GetQueue ( RHI::ERHIQueueType InType,
