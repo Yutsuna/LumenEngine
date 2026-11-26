@@ -160,13 +160,14 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
     const TSharedRef<TAtomic<UInt64>> RetiredValue            = CompletedValue;
     const TSharedPtr<FOpenGLCommandExecutor> RetainedExecutor = Executor;
     Packet.Completion                                         = InDesc.Completion;
-    Packet.Replay                                             = [RetainedExecutor, Lists] () noexcept -> RHI::FRHIExpected
+    Packet.Replay = [RetainedExecutor, Lists, Completion = InDesc.Completion] () noexcept -> RHI::FRHIExpected
     {
         RHI::FRHIExpected Result;
         for ( const TSharedRef<RHI::IRHICommandList> &CommandList : Lists )
         {
             const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *CommandList );
-            const RHI::FRHIExpected Replayed             = RetainedExecutor->Execute( ( *Native )->GetStream() );
+            const RHI::FRHIExpected Replayed =
+                RetainedExecutor->Execute( ( *Native )->GetStream(), ( *Native )->GetQueryPools(), Completion );
             if ( not Replayed and Result )
             {
                 Result = Replayed;
