@@ -1,11 +1,17 @@
 /**
  * @file OpenGLQueue.cpp
- * @brief Implements logical OpenGL queue queries and host waits.
+ * @brief Implements synchronous OpenGL command replay and timeline waits.
  */
 
 #include <RHIOpenGL/Queue/OpenGLQueue.hpp>
 
+#include <HAL/LockGuard.hpp>
+
+#include <RHI/Device/RHIBackendCast.hpp>
 #include <RHI/Types/RHIError.hpp>
+
+#include <RHIOpenGL/Commands/OpenGLCommandExecutor.hpp>
+#include <RHIOpenGL/Commands/OpenGLCommandList.hpp>
 
 #include <Templates/Optional.hpp>
 
@@ -49,10 +55,63 @@ Lumen::RHI::FRHITimelineValue Lumen::RHIOpenGL::FOpenGLQueue::GetCompletedValue 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRHISubmitDesc &InDesc ) noexcept
 {
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::Submit" ) );
-    LUMEN_EXPECT( Validation, InDesc.Validate() );
+    LUMEN_EXPECT( Validated, InDesc.Validate() );
 
-    return TUnexpected( RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Queue,
-                                                 "OpenGL queue submission is implemented in a later milestone." ) );
+    HAL::TLockGuard<HAL::FPlatformMutex> Lock( SubmitMutex );
+    if ( not Executor.IsValid() )
+    {
+        const TExpected<TSharedRef<FOpenGLCommandExecutor>, RHI::FRHIError> Created = FOpenGLCommandExecutor::Create( Context );
+        if ( not Created )
+        {
+            return TUnexpected( Created.Error() );
+        }
+        Executor = *Created;
+    }
+
+    RHI::FRHIExpected Result;
+    for ( const TSharedRef<RHI::IRHICommandList> &CommandList : InDesc.CommandLists )
+    {
+        const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *CommandList );
+        if ( not Native )
+        {
+            if ( Result )
+            {
+                Result = TUnexpected( RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Queue,
+                                                                   "Submission contains a foreign command list." ) );
+            }
+            continue;
+        }
+        FOpenGLCommandList *List = *Native;
+
+        const RHI::FRHIExpected Pending = List->MarkPending( InDesc.Completion );
+        if ( not Pending )
+        {
+            if ( Result )
+            {
+                Result = Pending;
+            }
+            ( void )List->MarkCompleted( InDesc.Completion );
+            continue;
+        }
+
+        const RHI::FRHIExpected Replayed = Executor->Execute( List->GetStream() );
+        if ( not Replayed and Result )
+        {
+            Result = Replayed;
+        }
+        const RHI::FRHIExpected Completed = List->MarkCompleted( InDesc.Completion );
+        if ( not Completed and Result )
+        {
+            Result = Completed;
+        }
+    }
+
+    UInt64 Observed = CompletedValue.load();
+    while ( Observed < InDesc.Completion.Value and not CompletedValue.compare_exchange_weak( Observed, InDesc.Completion.Value ) )
+    {
+        /* The failed exchange refreshes Observed with the current value. */
+    }
+    return Result;
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::WaitIdle () noexcept

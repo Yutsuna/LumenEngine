@@ -1,16 +1,20 @@
 /**
  * @file OpenGLQueue.hpp
- * @brief Declares the logical OpenGL queue (M0: no native submission yet).
+ * @brief Declares the logical OpenGL queue and its synchronous command replay.
  */
 
 #pragma once
 
-#include <Core/CoreTypes.hpp>
+#include <Core/NonCopyable.hpp>
+#include <Core/NonMovable.hpp>
+
+#include <HAL/PlatformMutex.hpp>
 
 #include <Memory/SharedPtr.hpp>
 
 #include <RHI/Queue/IRHIQueue.hpp>
 
+#include <RHIOpenGL/Commands/OpenGLCommandExecutor.hpp>
 #include <RHIOpenGL/Device/OpenGLDeviceContext.hpp>
 #include <RHIOpenGL/Types/OpenGLObject.hpp>
 
@@ -22,9 +26,9 @@ namespace RHIOpenGL
 
     /**
      * @class FOpenGLQueue
-     * @brief Logical queue over the single GL executor, with M0 validation stubs.
+     * @brief Logical queue that serially replays command streams on the GL executor.
      */
-    class FOpenGLQueue final : public RHI::IRHIQueue
+    class FOpenGLQueue final : public RHI::IRHIQueue, public FNonCopyable, public FNonMovable
     {
     public:
 
@@ -60,6 +64,8 @@ namespace RHIOpenGL
         RHI::ERHIQueueType QueueType = RHI::ERHIQueueType::Graphics;
         UInt32 QueueIndex            = 0U;
         TAtomic<UInt64> CompletedValue{ 0ULL };
+        HAL::FPlatformMutex SubmitMutex;
+        TSharedPtr<FOpenGLCommandExecutor> Executor;
     };
 
 } // namespace RHIOpenGL
