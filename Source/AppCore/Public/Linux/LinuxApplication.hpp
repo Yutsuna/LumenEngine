@@ -10,6 +10,7 @@
 #if defined( LUMEN_PLATFORM_LINUX )
 
     #include <AppCoreExport.hpp>
+    #include <Core/CoreTypes.hpp>
 
     #include <Generic/GenericApplication.hpp>
     #include <Linux/LinuxBackend.hpp>
@@ -24,6 +25,10 @@ namespace Lumen
 
 class FLinuxWindow;
 
+/**
+ * @class FLinuxApplication
+ * @brief Linux (SDL-backed) implementation of the application interface.
+ */
 class APPCORE_EXPORT FLinuxApplication : public FGenericApplication
 {
 public:
@@ -37,7 +42,7 @@ public:
     void PumpMessages ( Float64 DeltaTime ) noexcept override;
 
     /** @brief Creates a new Linux window */
-    [[nodiscard]] TSharedRef<FGenericWindow> MakeWindow () override;
+    [[nodiscard]] TSharedRef<FGenericWindow> MakeWindow () noexcept override;
 
     /** @brief Initialize a Linux window with the given parameters */
     void InitializeWindow ( const TSharedRef<FGenericWindow> &InWindow,
@@ -45,6 +50,7 @@ public:
                             const TSharedPtr<FGenericWindow> &InParentWindow,
                             Bool bShowImmediately ) noexcept override;
 
+    /** @brief Dispatches a single SDL event to the registered message handler. */
     void AddPendingEvent ( const SDL_Event &InEvent ) noexcept;
 
     /** @brief Shuts down the application. */
@@ -65,7 +71,7 @@ private:
     TVector<TSharedRef<FLinuxWindow>> Windows;
 };
 
-extern APPCORE_EXPORT FLinuxApplication *GLinuxApplication;
+extern APPCORE_EXPORT TAtomic<FLinuxApplication *> GLinuxApplication;
 
 } // namespace Lumen
 

@@ -4,11 +4,14 @@
  */
 
 #include <Linux/LinuxWindow.hpp>
-#include <SDL3/SDL_video.h>
 
 #if defined( LUMEN_PLATFORM_LINUX )
 
     #include <Logging/Logger.hpp>
+
+    #include <Templates/Unexpected.hpp>
+
+    #include <SDL3/SDL_video.h>
 
 namespace
 {
@@ -47,7 +50,8 @@ inline SDL_WindowFlags GetSDLWindowFlags ( const Lumen::TSharedRef<Lumen::FGener
 
     case Lumen::EWindowMode::WindowedFullscreen:
     {
-        WindowFlags = static_cast<SDL_WindowFlags>( WindowFlags | SDL_WINDOW_FULLSCREEN );
+        /** INFO: SDL3 dropped SDL_WINDOW_FULLSCREEN_DESKTOP; a borderless window is the equivalent mode. */
+        WindowFlags = static_cast<SDL_WindowFlags>( WindowFlags | SDL_WINDOW_BORDERLESS );
         break;
     }
 
@@ -60,33 +64,26 @@ inline SDL_WindowFlags GetSDLWindowFlags ( const Lumen::TSharedRef<Lumen::FGener
 
 } // namespace
 
-/**
- * Public
- */
+/** INFO: FLinuxWindow lifetime implementation. */
 
 Lumen::FLinuxWindow::~FLinuxWindow () noexcept
 {
     this->FLinuxWindow::Destroy();
 }
 
-/**
- * Static
- */
+/** INFO: Factory for Linux-backed windows. */
 
-Lumen::TSharedRef<Lumen::FLinuxWindow> Lumen::FLinuxWindow::Make ()
+Lumen::TSharedRef<Lumen::FLinuxWindow> Lumen::FLinuxWindow::Make () noexcept
 {
     return MakeShareable<FLinuxWindow>( new FLinuxWindow() );
 }
 
-void Lumen::FLinuxWindow::Initialize ( FLinuxApplication *InApplication,
-                                       const TSharedRef<FGenericWindowDescription> &InDescription,
-                                       const TSharedPtr<FGenericWindow> &InParentWindow,
-                                       const Bool bShowImmediately ) noexcept
+Lumen::TExpected<void, Lumen::EAppCoreError::Type>
+Lumen::FLinuxWindow::Initialize ( FLinuxApplication *InApplication,
+                                  const TSharedRef<FGenericWindowDescription> &InDescription,
+                                  const TSharedPtr<FGenericWindow> &InParentWindow,
+                                  const Bool bShowImmediately ) noexcept
 {
-    LinuxApplication = InApplication;
-    Description      = InDescription;
-    ParentWindow     = InParentWindow;
-
     /** TODO: make this parametrable */
     const SDL_WindowFlags WindowBackendAPI = SDL_WINDOW_VULKAN;
     const SDL_WindowFlags WindowFlags      = GetSDLWindowFlags( InDescription, bShowImmediately, WindowBackendAPI );
@@ -96,15 +93,18 @@ void Lumen::FLinuxWindow::Initialize ( FLinuxApplication *InApplication,
     if ( WindowHandle == nullptr )
     {
         LUMEN_LOG_ERROR( LogLinuxWindow, "Failed to create SDL window: {}", SDL_GetError() );
-        return;
+        return MakeUnexpected( EAppCoreError::Type::WindowCreationFailed );
     }
 
+    LinuxApplication = InApplication;
+    Description      = InDescription;
+    ParentWindow     = InParentWindow;
+
     SDL_SetWindowPosition( WindowHandle, InDescription->Position.X, InDescription->Position.Y );
+    return {};
 }
 
-/**
- * Public
- */
+/** INFO: FGenericWindow overrides. */
 
 void Lumen::FLinuxWindow::Destroy () noexcept
 {
@@ -153,51 +153,51 @@ void Lumen::FLinuxWindow::Hide () noexcept
 
 void Lumen::FLinuxWindow::SetWindowMode ( EWindowMode::Type LUMEN_UNUSED InWindowMode ) noexcept
 {
-    /** TODO */
+    /** TODO: Apply the requested window mode through SDL. */
 }
 
 Lumen::EWindowMode::Type Lumen::FLinuxWindow::GetWindowMode () const noexcept
 {
-    /** TODO */
+    /** TODO: Query the current mode from the SDL window. */
     return EWindowMode::Windowed;
 }
 
 Lumen::Bool Lumen::FLinuxWindow::IsMaximized () const noexcept
 {
-    /** TODO */
+    /** TODO: Query the maximized state from the SDL window. */
     return false;
 }
 
 Lumen::Bool Lumen::FLinuxWindow::IsMinimized () const noexcept
 {
-    /** TODO */
+    /** TODO: Query the minimized state from the SDL window. */
     return false;
 }
 
 void Lumen::FLinuxWindow::SetWindowFocus () noexcept
 {
-    /** TODO */
+    /** TODO: Request OS focus for the SDL window. */
 }
 
 void Lumen::FLinuxWindow::SetOpacity ( Float32 LUMEN_UNUSED InOpacity ) noexcept
 {
-    /** TODO */
+    /** TODO: Apply opacity through SDL. */
 }
 
 void Lumen::FLinuxWindow::EnableInput ( Bool LUMEN_UNUSED bEnable ) noexcept
 {
-    /** TODO */
+    /** TODO: Toggle SDL window input acceptance. */
 }
 
 Lumen::Int32 Lumen::FLinuxWindow::GetOSWindowBorderSize () const noexcept
 {
-    /** TODO */
+    /** TODO: Query the native border size. */
     return 0;
 }
 
 Lumen::Int32 Lumen::FLinuxWindow::GetOSWindowTitleBarSize () const noexcept
 {
-    /** TODO */
+    /** TODO: Query the native title bar size. */
     return 0;
 }
 
@@ -219,13 +219,13 @@ SDL_Window *Lumen::FLinuxWindow::GetOSWindowHandle () const noexcept
 
 Lumen::Bool Lumen::FLinuxWindow::IsForegroundWindow () const noexcept
 {
-    /** TODO */
+    /** TODO: Query the foreground state from the SDL window. */
     return false;
 }
 
 void Lumen::FLinuxWindow::SetWindowTitle ( LUMEN_UNUSED const AnsiChar *const InText ) noexcept
 {
-    /** TODO */
+    /** TODO: Set the SDL window title. */
 }
 
 #endif

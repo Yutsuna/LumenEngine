@@ -8,7 +8,11 @@
 #include <Core/CoreDefinitions.hpp>
 
 #if defined( LUMEN_PLATFORM_LINUX )
+    #include <Generic/AppCoreError.hpp>
     #include <Generic/GenericWindow.hpp>
+
+    #include <Templates/Expected.hpp>
+
     #include <SDL3/SDL.h>
 
 namespace Lumen
@@ -28,13 +32,19 @@ public:
 
 public:
 
-    [[nodiscard]] static TSharedRef<FLinuxWindow> Make ();
+    /**
+     * @brief Factory that creates a Linux window instance.
+     */
+    [[nodiscard]] static TSharedRef<FLinuxWindow> Make () noexcept;
 
-    /** @brief Creates the native SDL window and applies the given description. */
-    void Initialize ( FLinuxApplication *InApplication,
-                      const TSharedRef<FGenericWindowDescription> &InDescription,
-                      const TSharedPtr<FGenericWindow> &InParentWindow,
-                      Bool bShowImmediately ) noexcept;
+    /**
+     * @brief Creates the native SDL window and applies the given description.
+     * @return Success, or EAppCoreError::Type::WindowCreationFailed if SDL refused to create the window.
+     */
+    [[nodiscard]] TExpected<void, EAppCoreError::Type> Initialize ( FLinuxApplication *InApplication,
+                                                                    const TSharedRef<FGenericWindowDescription> &InDescription,
+                                                                    const TSharedPtr<FGenericWindow> &InParentWindow,
+                                                                    Bool bShowImmediately ) noexcept;
 
 public:
 
@@ -75,7 +85,7 @@ public:
     void SetOpacity ( Float32 InOpacity ) noexcept override;
 
     /**
-     * / @brief Enables or disable  the window's ability to accept input
+     * @brief Enables or disables the window's ability to accept input
      * @param bEnable true to enable input, false to disable it.
      */
     void EnableInput ( Bool bEnable ) noexcept override;
