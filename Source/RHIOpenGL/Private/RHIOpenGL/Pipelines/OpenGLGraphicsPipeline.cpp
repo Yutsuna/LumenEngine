@@ -5,6 +5,8 @@
 
 #include <RHIOpenGL/Pipelines/OpenGLGraphicsPipeline.hpp>
 
+#include <Algo/ForEach.hpp>
+
 #include <RHI/Device/RHIBackendCast.hpp>
 #include <RHI/Types/RHIError.hpp>
 #include <RHI/Validation/RHIValidation.hpp>
@@ -60,29 +62,29 @@ void BindReflectedBlocks ( const Lumen::RHIOpenGL::FGLDispatchTable &InDispatch,
                            const Lumen::RHI::FRHIShaderReflection &InReflection ) noexcept
 {
     Lumen::AnsiChar Name[GlBlockNameCapacity] = {};
-    for ( const Lumen::RHI::FRHIShaderBindingReflection &Binding : InReflection.Bindings )
+    Lumen::Algo::ForEach( InReflection.Bindings, [&] ( const Lumen::RHI::FRHIShaderBindingReflection &InBinding ) noexcept
     {
-        if ( Binding.Kind == Lumen::RHI::ERHIShaderBindingKind::ConstantBuffer )
+        if ( InBinding.Kind == Lumen::RHI::ERHIShaderBindingKind::ConstantBuffer )
         {
-            MakeBlockName( Name, GlBlockNameCapacity, "UniformBlock", Binding.Slot );
+            MakeBlockName( Name, GlBlockNameCapacity, "UniformBlock", InBinding.Slot );
             const Lumen::RHIOpenGL::GLuint Index = InDispatch.GetProgramResourceIndex( InProgram, GlUniformBlockInterface, Name );
             if ( Index != GlInvalidIndex )
             {
-                InDispatch.UniformBlockBinding( InProgram, Index, Binding.Slot );
+                InDispatch.UniformBlockBinding( InProgram, Index, InBinding.Slot );
             }
         }
-        else if ( Binding.Kind == Lumen::RHI::ERHIShaderBindingKind::ReadOnlyBuffer or
-                  Binding.Kind == Lumen::RHI::ERHIShaderBindingKind::ReadWriteBuffer )
+        else if ( InBinding.Kind == Lumen::RHI::ERHIShaderBindingKind::ReadOnlyBuffer or
+                  InBinding.Kind == Lumen::RHI::ERHIShaderBindingKind::ReadWriteBuffer )
         {
-            MakeBlockName( Name, GlBlockNameCapacity, "StorageBlock", Binding.Slot );
+            MakeBlockName( Name, GlBlockNameCapacity, "StorageBlock", InBinding.Slot );
             const Lumen::RHIOpenGL::GLuint Index =
                 InDispatch.GetProgramResourceIndex( InProgram, Lumen::RHIOpenGL::GlShaderStorageBlock, Name );
             if ( Index != GlInvalidIndex )
             {
-                InDispatch.ShaderStorageBlockBinding( InProgram, Index, Binding.Slot );
+                InDispatch.ShaderStorageBlockBinding( InProgram, Index, InBinding.Slot );
             }
         }
-    }
+    } );
 }
 
 } // namespace
@@ -223,11 +225,16 @@ Lumen::RHIOpenGL::FOpenGLGraphicsPipeline::~FOpenGLGraphicsPipeline () noexcept
     {
         return;
     }
-    const GLuint NativeProgram       = Program;
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, NativeProgram] () noexcept
+    const GLuint NativeProgram = Program;
+    const RHI::FRHITimelineValue Required{ Context->GetExecutor()->GetCompletedTimeline() };
+    const TSharedRef<FOpenGLContext> Executor = Context->GetExecutor();
+    const FGLDispatchTable *Dispatch          = &Context->GetDispatch();
+    ( void )Context->GetExecutor()->DeferRelease( Required, [Executor, Dispatch, NativeProgram] () noexcept
     {
-        Dispatch.DeleteProgram( NativeProgram );
+        ( void )Executor->ExecuteOnGLThread( [Dispatch, NativeProgram] () noexcept
+        {
+            Dispatch->DeleteProgram( NativeProgram );
+        } );
     } );
 }
 

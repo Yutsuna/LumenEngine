@@ -71,10 +71,15 @@ Lumen::RHIOpenGL::FOpenGLVAOCache::~FOpenGLVAOCache () noexcept
     {
         NativeVAOs.push_back( InPair.second );
     } );
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, &NativeVAOs] () noexcept
+    const RHI::FRHITimelineValue Required{ Context->GetExecutor()->GetCompletedTimeline() };
+    const TSharedRef<FOpenGLContext> Executor = Context->GetExecutor();
+    const FGLDispatchTable *Dispatch          = &Context->GetDispatch();
+    ( void )Context->GetExecutor()->DeferRelease( Required, [Executor, Dispatch, NativeVAOs] () noexcept
     {
-        Dispatch.DeleteVertexArrays( static_cast<GLsizei>( NativeVAOs.size() ), NativeVAOs.data() );
+        ( void )Executor->ExecuteOnGLThread( [Dispatch, NativeVAOs] () noexcept
+        {
+            Dispatch->DeleteVertexArrays( static_cast<GLsizei>( NativeVAOs.size() ), NativeVAOs.data() );
+        } );
     } );
 }
 

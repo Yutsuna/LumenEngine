@@ -194,11 +194,16 @@ Lumen::RHIOpenGL::FOpenGLComputePipeline::~FOpenGLComputePipeline () noexcept
     {
         return;
     }
-    const GLuint NativeProgram       = Program;
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, NativeProgram] () noexcept
+    const GLuint NativeProgram = Program;
+    const RHI::FRHITimelineValue Required{ Context->GetExecutor()->GetCompletedTimeline() };
+    const TSharedRef<FOpenGLContext> Executor = Context->GetExecutor();
+    const FGLDispatchTable *Dispatch          = &Context->GetDispatch();
+    ( void )Context->GetExecutor()->DeferRelease( Required, [Executor, Dispatch, NativeProgram] () noexcept
     {
-        Dispatch.DeleteProgram( NativeProgram );
+        ( void )Executor->ExecuteOnGLThread( [Dispatch, NativeProgram] () noexcept
+        {
+            Dispatch->DeleteProgram( NativeProgram );
+        } );
     } );
 }
 
