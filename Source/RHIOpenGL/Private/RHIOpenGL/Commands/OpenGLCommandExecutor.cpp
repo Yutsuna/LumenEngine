@@ -287,7 +287,7 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
 
     case EOpenGLCommandOpcode::CopyBufferToTexture:
         return WithPayload<Lumen::RHIOpenGL::FOpenGLBufferTextureCopyPayload>(
-            InStream, InIndex, Opcode, [&InState, Opcode] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
+            InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
             if ( InPayload.Buffer == 0U or InPayload.Texture == 0U or InPayload.Width == 0U )
             {
@@ -590,13 +590,16 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
             {
                 Lumen::RHIOpenGL::GLuint Available = 0U;
                 Dispatch.GetQueryObjectuiv( Query, Lumen::RHIOpenGL::GlQueryResultAvailable, &Available );
-                if ( Available == 0U )
-                {
-                    /** WARN: drop a poll that never becomes available rather than leaking it on shutdown. */
-                    return ++Attempts >= 10000U;
-                }
                 Lumen::RHIOpenGL::GLuint64 Value = 0ULL;
-                Dispatch.GetQueryObjectui64v( Query, Lumen::RHIOpenGL::GlQueryResult, &Value );
+                if ( Available != 0U )
+                {
+                    Dispatch.GetQueryObjectui64v( Query, Lumen::RHIOpenGL::GlQueryResult, &Value );
+                }
+                else if ( ++Attempts < 10000U )
+                {
+                    return false;
+                }
+                /* Give up: publish a zero result so the slot leaves Pending and can be reused. */
                 const Lumen::TOptional<Lumen::RHIOpenGL::FOpenGLQueryPool *> Native =
                     Lumen::RHI::TryUnwrapRHIBackend<Lumen::RHIOpenGL::FOpenGLQueryPool>( RetainedPool.Get() );
                 if ( Native )
@@ -731,19 +734,24 @@ Lumen::RHIOpenGL::FOpenGLCommandExecutor::~FOpenGLCommandExecutor () noexcept
     {
         return;
     }
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    const GLuint NativeBuffer        = InlineConstantsBuffer;
-    const GLuint NativeVertexArray   = VertexArray;
-    ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, NativeBuffer, NativeVertexArray] () noexcept
+    const RHI::FRHITimelineValue Required     = Context->GetExecutor()->GetCompletedTimeline();
+    const TSharedRef<FOpenGLContext> Executor = Context->GetExecutor();
+    const FGLDispatchTable *Dispatch          = &Context->GetDispatch();
+    const GLuint NativeBuffer                 = InlineConstantsBuffer;
+    const GLuint NativeVertexArray            = VertexArray;
+    ( void )Context->GetExecutor()->DeferRelease( Required, [Executor, Dispatch, NativeBuffer, NativeVertexArray] () noexcept
     {
-        if ( NativeBuffer != 0U and Dispatch.DeleteBuffers != nullptr )
+        ( void )Executor->ExecuteOnGLThread( [Dispatch, NativeBuffer, NativeVertexArray] () noexcept
         {
-            Dispatch.DeleteBuffers( 1, &NativeBuffer );
-        }
-        if ( NativeVertexArray != 0U and Dispatch.DeleteVertexArrays != nullptr )
-        {
-            Dispatch.DeleteVertexArrays( 1, &NativeVertexArray );
-        }
+            if ( NativeBuffer != 0U and Dispatch->DeleteBuffers != nullptr )
+            {
+                Dispatch->DeleteBuffers( 1, &NativeBuffer );
+            }
+            if ( NativeVertexArray != 0U and Dispatch->DeleteVertexArrays != nullptr )
+            {
+                Dispatch->DeleteVertexArrays( 1, &NativeVertexArray );
+            }
+        } );
     } );
 }
 

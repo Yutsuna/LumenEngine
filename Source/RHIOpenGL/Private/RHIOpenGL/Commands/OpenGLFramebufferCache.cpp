@@ -52,10 +52,15 @@ Lumen::RHIOpenGL::FOpenGLFramebufferCache::~FOpenGLFramebufferCache () noexcept
     {
         return;
     }
-    const Lumen::RHIOpenGL::FGLDispatchTable &Dispatch = Context->GetDispatch();
-    ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, Framebuffers] () noexcept
+    const Lumen::RHI::FRHITimelineValue Required{ Context->GetExecutor()->GetCompletedTimeline() };
+    const Lumen::TSharedRef<Lumen::RHIOpenGL::FOpenGLContext> Executor = Context->GetExecutor();
+    const Lumen::RHIOpenGL::FGLDispatchTable *Dispatch                 = &Context->GetDispatch();
+    ( void )Context->GetExecutor()->DeferRelease( Required, [Executor, Dispatch, Framebuffers] () noexcept
     {
-        Dispatch.DeleteFramebuffers( static_cast<Lumen::RHIOpenGL::GLsizei>( Framebuffers.size() ), Framebuffers.data() );
+        ( void )Executor->ExecuteOnGLThread( [Dispatch, Framebuffers] () noexcept
+        {
+            Dispatch->DeleteFramebuffers( static_cast<Lumen::RHIOpenGL::GLsizei>( Framebuffers.size() ), Framebuffers.data() );
+        } );
     } );
 }
 
