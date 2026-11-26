@@ -71,13 +71,13 @@ Lumen::TExpected<Lumen::TVector<Lumen::RHI::FRHIAdapterInfo>, Lumen::RHI::FRHIEr
 Lumen::RHIOpenGL::FOpenGLModule::EnumerateAdapters () const noexcept
 {
     FEGLPlatformContext Probe;
-    LUMEN_TRY_EXPECT_ERROR(Probe.Initialize( false ));
+    LUMEN_TRY_EXPECT_ERROR( Probe.Initialize( false ) );
 
     FGLDispatchTable Dispatch;
-    LUMEN_TRY_EXPECT_ERROR(LoadGLDispatchTable( Dispatch, Probe ));
+    LUMEN_TRY_EXPECT_ERROR( LoadGLDispatchTable( Dispatch, Probe ) );
 
     RHI::FRHIAdapterInfo Info;
-    LUMEN_TRY_EXPECT_ERROR(ProbeOpenGLCapabilities( Info, Dispatch ));
+    LUMEN_TRY_EXPECT_ERROR( ProbeOpenGLCapabilities( Info, Dispatch ) );
 
     TVector<RHI::FRHIAdapterInfo> Result;
     Result.push_back( static_cast<RHI::FRHIAdapterInfo &&>( Info ) );
