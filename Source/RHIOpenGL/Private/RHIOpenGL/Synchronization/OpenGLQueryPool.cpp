@@ -118,10 +118,15 @@ Lumen::RHIOpenGL::FOpenGLQueryPool::~FOpenGLQueryPool () noexcept
     {
         return;
     }
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, &Handles] () noexcept
+    const RHI::FRHITimelineValue Required{ Context->GetExecutor()->GetCompletedTimeline() };
+    const TSharedRef<FOpenGLContext> Executor = Context->GetExecutor();
+    const FGLDispatchTable *Dispatch          = &Context->GetDispatch();
+    ( void )Context->GetExecutor()->DeferRelease( Required, [Executor, Dispatch, Handles] () noexcept
     {
-        DeleteQueryHandles( Dispatch, Handles );
+        ( void )Executor->ExecuteOnGLThread( [Dispatch, Handles] () noexcept
+        {
+            DeleteQueryHandles( *Dispatch, Handles );
+        } );
     } );
 }
 
