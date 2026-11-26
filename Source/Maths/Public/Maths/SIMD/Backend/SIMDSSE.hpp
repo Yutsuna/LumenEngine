@@ -72,5 +72,7 @@ namespace Maths
     #include "Inline/SIMDSSE.inl"
 
 #else
-    #error "SIMDSSE.hpp should only be included on x86 platforms with SSE support."
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "SIMDSSE.hpp should only be included on x86 platforms with SSE support."
+    #endif
 #endif

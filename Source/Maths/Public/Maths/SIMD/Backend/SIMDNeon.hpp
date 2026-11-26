@@ -66,5 +66,7 @@ namespace Maths
     #include "Inline/SIMDNeon.inl"
 
 #else
-    #error "SIMDNeon.hpp should only be included on ARM64 platforms with Neon support."
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "SIMDNeon.hpp should only be included on ARM64 platforms with Neon support."
+    #endif
 #endif
