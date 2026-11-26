@@ -5,6 +5,7 @@
 
 #include <RHIOpenGL/Caches/OpenGLPipelineCache.hpp>
 
+#include <Algo/ForEach.hpp>
 #include <Algo/Sort.hpp>
 
 #include <HAL/LockGuard.hpp>
@@ -13,6 +14,7 @@
 #include <RHI/Types/RHIError.hpp>
 #include <RHI/Types/RHIHash.hpp>
 
+#include <Templates/Optional.hpp>
 #include <Templates/Pair.hpp>
 
 /**
@@ -50,34 +52,29 @@ void WriteU64 ( Lumen::TVector<Lumen::Byte> &InData, const Lumen::UInt64 InValue
     WriteU32( InData, static_cast<Lumen::UInt32>( InValue >> 32U ) );
 }
 
-[[nodiscard]] Lumen::Bool
-ReadU32 ( const Lumen::TSpan<const Lumen::Byte> InData, Lumen::USize &InOutOffset, Lumen::UInt32 &OutValue ) noexcept
+[[nodiscard]] Lumen::TOptional<Lumen::UInt32> ReadU32 ( const Lumen::TSpan<const Lumen::Byte> InData,
+                                                        Lumen::USize &InOutOffset ) noexcept
 {
     if ( InOutOffset > InData.size() or InData.size() - InOutOffset < 4U )
     {
-        return false;
+        return {};
     }
-    OutValue = 0U;
+    Lumen::UInt32 Value = 0U;
     for ( Lumen::UInt32 ByteIndex = 0U; ByteIndex < 4U; ++ByteIndex )
     {
         const Lumen::UInt32 Shift = ByteIndex * 8U;
-        OutValue |= static_cast<Lumen::UInt32>( InData[InOutOffset + ByteIndex] ) << Shift;
+        Value |= static_cast<Lumen::UInt32>( InData[InOutOffset + ByteIndex] ) << Shift;
     }
     InOutOffset += 4U;
-    return true;
+    return Lumen::TOptional<Lumen::UInt32>( Value );
 }
 
-[[nodiscard]] Lumen::Bool
-ReadU64 ( const Lumen::TSpan<const Lumen::Byte> InData, Lumen::USize &InOutOffset, Lumen::UInt64 &OutValue ) noexcept
+[[nodiscard]] Lumen::TOptional<Lumen::UInt64> ReadU64 ( const Lumen::TSpan<const Lumen::Byte> InData,
+                                                        Lumen::USize &InOutOffset ) noexcept
 {
-    Lumen::UInt32 Low  = 0U;
-    Lumen::UInt32 High = 0U;
-    if ( not ReadU32( InData, InOutOffset, Low ) or not ReadU32( InData, InOutOffset, High ) )
-    {
-        return false;
-    }
-    OutValue = static_cast<Lumen::UInt64>( Low ) | ( static_cast<Lumen::UInt64>( High ) << 32U );
-    return true;
+    LUMEN_OPTIONAL( Low, ReadU32( InData, InOutOffset ) );
+    LUMEN_OPTIONAL( High, ReadU32( InData, InOutOffset ) );
+    return Lumen::TOptional<Lumen::UInt64>( static_cast<Lumen::UInt64>( Low ) | ( static_cast<Lumen::UInt64>( High ) << 32U ) );
 }
 
 void WriteKey ( Lumen::TVector<Lumen::Byte> &InData, const Lumen::RHI::FRHIPipelineCacheKey &InKey ) noexcept
@@ -90,57 +87,56 @@ void WriteKey ( Lumen::TVector<Lumen::Byte> &InData, const Lumen::RHI::FRHIPipel
     WriteU64( InData, InKey.Compatibility.VertexLayoutHash );
     WriteU32( InData, static_cast<Lumen::UInt32>( InKey.Compatibility.ColorFormats.size() ) );
     WriteU32( InData, static_cast<Lumen::UInt32>( InKey.ShaderHashes.size() ) );
-    for ( const Lumen::RHI::ERHIFormat Format : InKey.Compatibility.ColorFormats )
+    Lumen::Algo::ForEach( InKey.Compatibility.ColorFormats, [&InData] ( const Lumen::RHI::ERHIFormat InFormat ) noexcept
     {
-        WriteU32( InData, static_cast<Lumen::UInt32>( Format ) );
-    }
-    for ( const Lumen::UInt64 ShaderHash : InKey.ShaderHashes )
+        WriteU32( InData, static_cast<Lumen::UInt32>( InFormat ) );
+    } );
+    Lumen::Algo::ForEach( InKey.ShaderHashes, [&InData] ( const Lumen::UInt64 InShaderHash ) noexcept
     {
-        WriteU64( InData, ShaderHash );
-    }
+        WriteU64( InData, InShaderHash );
+    } );
 }
 
-[[nodiscard]] Lumen::Bool ReadKey ( const Lumen::TSpan<const Lumen::Byte> InData,
-                                    Lumen::USize &InOutOffset,
-                                    Lumen::RHI::FRHIPipelineCacheKey &OutKey ) noexcept
+[[nodiscard]] Lumen::TOptional<Lumen::RHI::FRHIPipelineCacheKey> ReadKey ( const Lumen::TSpan<const Lumen::Byte> InData,
+                                                                           Lumen::USize &InOutOffset ) noexcept
 {
-    Lumen::UInt32 DepthFormat = 0U;
-    Lumen::UInt32 SampleCount = 0U;
-    Lumen::UInt32 ColorCount  = 0U;
-    Lumen::UInt32 ShaderCount = 0U;
-    if ( not ReadU64( InData, InOutOffset, OutKey.BackendCacheSchemaVersion ) or
-         not ReadU64( InData, InOutOffset, OutKey.StateHash ) or
-         not ReadU64( InData, InOutOffset, OutKey.Compatibility.LayoutHash ) or not ReadU32( InData, InOutOffset, DepthFormat ) or
-         not ReadU32( InData, InOutOffset, SampleCount ) or
-         not ReadU64( InData, InOutOffset, OutKey.Compatibility.VertexLayoutHash ) or
-         not ReadU32( InData, InOutOffset, ColorCount ) or not ReadU32( InData, InOutOffset, ShaderCount ) or
-         OutKey.BackendCacheSchemaVersion == 0ULL or ColorCount > 64U or ShaderCount > 16U or
+    LUMEN_OPTIONAL( BackendSchema, ReadU64( InData, InOutOffset ) );
+    LUMEN_OPTIONAL( StateHash, ReadU64( InData, InOutOffset ) );
+    LUMEN_OPTIONAL( LayoutHash, ReadU64( InData, InOutOffset ) );
+    LUMEN_OPTIONAL( DepthFormat, ReadU32( InData, InOutOffset ) );
+    LUMEN_OPTIONAL( SampleCount, ReadU32( InData, InOutOffset ) );
+    LUMEN_OPTIONAL( VertexLayoutHash, ReadU64( InData, InOutOffset ) );
+    LUMEN_OPTIONAL( ColorCount, ReadU32( InData, InOutOffset ) );
+    LUMEN_OPTIONAL( ShaderCount, ReadU32( InData, InOutOffset ) );
+    if ( BackendSchema == 0ULL or ColorCount > 64U or ShaderCount > 16U or
          DepthFormat >= static_cast<Lumen::UInt32>( Lumen::RHI::ERHIFormat::Count ) or
          Lumen::RHI::ToSampleCount( static_cast<Lumen::RHI::ERHISampleCount>( SampleCount ) ) == 0U )
     {
-        return false;
+        return {};
     }
-    OutKey.Compatibility.DepthStencilFormat = static_cast<Lumen::RHI::ERHIFormat>( DepthFormat );
-    OutKey.Compatibility.SampleCount        = static_cast<Lumen::RHI::ERHISampleCount>( SampleCount );
+
+    Lumen::RHI::FRHIPipelineCacheKey Key;
+    Key.BackendCacheSchemaVersion        = BackendSchema;
+    Key.StateHash                        = StateHash;
+    Key.Compatibility.LayoutHash         = LayoutHash;
+    Key.Compatibility.VertexLayoutHash   = VertexLayoutHash;
+    Key.Compatibility.DepthStencilFormat = static_cast<Lumen::RHI::ERHIFormat>( DepthFormat );
+    Key.Compatibility.SampleCount        = static_cast<Lumen::RHI::ERHISampleCount>( SampleCount );
     for ( Lumen::UInt32 ColorIndex = 0U; ColorIndex < ColorCount; ++ColorIndex )
     {
-        Lumen::UInt32 Format = 0U;
-        if ( not ReadU32( InData, InOutOffset, Format ) or Format >= static_cast<Lumen::UInt32>( Lumen::RHI::ERHIFormat::Count ) )
+        LUMEN_OPTIONAL( Format, ReadU32( InData, InOutOffset ) );
+        if ( Format >= static_cast<Lumen::UInt32>( Lumen::RHI::ERHIFormat::Count ) )
         {
-            return false;
+            return {};
         }
-        OutKey.Compatibility.ColorFormats.push_back( static_cast<Lumen::RHI::ERHIFormat>( Format ) );
+        Key.Compatibility.ColorFormats.push_back( static_cast<Lumen::RHI::ERHIFormat>( Format ) );
     }
     for ( Lumen::UInt32 ShaderIndex = 0U; ShaderIndex < ShaderCount; ++ShaderIndex )
     {
-        Lumen::UInt64 ShaderHash = 0ULL;
-        if ( not ReadU64( InData, InOutOffset, ShaderHash ) )
-        {
-            return false;
-        }
-        OutKey.ShaderHashes.push_back( ShaderHash );
+        LUMEN_OPTIONAL( ShaderHash, ReadU64( InData, InOutOffset ) );
+        Key.ShaderHashes.push_back( ShaderHash );
     }
-    return true;
+    return Lumen::TOptional<Lumen::RHI::FRHIPipelineCacheKey>( static_cast<Lumen::RHI::FRHIPipelineCacheKey &&>( Key ) );
 }
 
 [[nodiscard]] Lumen::RHI::FRHIError CorruptedCacheError () noexcept
@@ -197,22 +193,24 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLPipelineCache::Initialize () n
         return TUnexpected<RHI::FRHIError>( CorruptedCacheError() );
     }
 
-    USize Offset      = 4U;
-    UInt32 Version    = 0U;
-    UInt64 Backend    = 0ULL;
-    UInt32 EntryCount = 0U;
-    UInt32 Reserved   = 0U;
-    if ( not ReadU32( InitialData, Offset, Version ) or not ReadU64( InitialData, Offset, Backend ) or
-         not ReadU32( InitialData, Offset, EntryCount ) or not ReadU32( InitialData, Offset, Reserved ) )
+    USize Offset                                          = 4U;
+    const Lumen::TOptional<Lumen::UInt32> MaybeVersion    = ReadU32( InitialData, Offset );
+    const Lumen::TOptional<Lumen::UInt64> MaybeBackend    = ReadU64( InitialData, Offset );
+    const Lumen::TOptional<Lumen::UInt32> MaybeEntryCount = ReadU32( InitialData, Offset );
+    const Lumen::TOptional<Lumen::UInt32> MaybeReserved   = ReadU32( InitialData, Offset );
+    if ( not MaybeVersion or not MaybeBackend or not MaybeEntryCount or not MaybeReserved )
     {
         return TUnexpected<RHI::FRHIError>( CorruptedCacheError() );
     }
-    const USize PayloadSize = InitialData.size() - PipelineCacheChecksumSize;
-    USize ChecksumOffset    = PayloadSize;
-    UInt64 StoredChecksum   = 0ULL;
+    const UInt32 Version                                = *MaybeVersion;
+    const UInt64 Backend                                = *MaybeBackend;
+    const UInt32 EntryCount                             = *MaybeEntryCount;
+    const UInt32 Reserved                               = *MaybeReserved;
+    const USize PayloadSize                             = InitialData.size() - PipelineCacheChecksumSize;
+    USize ChecksumOffset                                = PayloadSize;
+    const Lumen::TOptional<Lumen::UInt64> MaybeChecksum = ReadU64( InitialData, ChecksumOffset );
     if ( Version != PipelineCacheVersion or Backend != Desc.BackendVersion or Reserved != 0U or EntryCount > Desc.MaxEntries or
-         not ReadU64( InitialData, ChecksumOffset, StoredChecksum ) or
-         RHI::RHIHashBytes( TSpan<const Byte>( InitialData.data(), PayloadSize ) ) != StoredChecksum )
+         not MaybeChecksum or RHI::RHIHashBytes( TSpan<const Byte>( InitialData.data(), PayloadSize ) ) != *MaybeChecksum )
     {
         return TUnexpected<RHI::FRHIError>( CorruptedCacheError() );
     }
@@ -221,18 +219,18 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLPipelineCache::Initialize () n
     UInt64 TotalBytes = 0ULL;
     for ( UInt32 EntryIndex = 0U; EntryIndex < EntryCount; ++EntryIndex )
     {
-        RHI::FRHIPipelineCacheKey Key;
-        if ( not ReadKey( InitialData, Offset, Key ) or Key.BackendCacheSchemaVersion != Desc.BackendVersion )
+        Lumen::TOptional<RHI::FRHIPipelineCacheKey> MaybeKey = ReadKey( InitialData, Offset );
+        if ( not MaybeKey or MaybeKey->BackendCacheSchemaVersion != Desc.BackendVersion )
         {
             return TUnexpected<RHI::FRHIError>( CorruptedCacheError() );
         }
-        const UInt64 KeyBytes = GetKeyBytes( Key );
+        const UInt64 KeyBytes = GetKeyBytes( *MaybeKey );
         if ( TotalBytes > Desc.MaxBytes or KeyBytes > Desc.MaxBytes - TotalBytes )
         {
             return TUnexpected<RHI::FRHIError>( CorruptedCacheError() );
         }
         TotalBytes += KeyBytes;
-        Restored.push_back( static_cast<RHI::FRHIPipelineCacheKey &&>( Key ) );
+        Restored.push_back( static_cast<RHI::FRHIPipelineCacheKey &&>( *MaybeKey ) );
     }
     if ( Offset != PayloadSize )
     {
@@ -337,10 +335,10 @@ Lumen::RHIOpenGL::FOpenGLPipelineCache::Serialize () const noexcept
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     TVector<RHI::FRHIPipelineCacheKey> Keys;
     Keys.reserve( Entries.size() );
-    for ( const auto &Pair : Entries )
+    Algo::ForEach( Entries, [&Keys] ( const auto &InItem ) noexcept
     {
-        Keys.push_back( Pair.first );
-    }
+        Keys.push_back( InItem.first );
+    } );
     Algo::Sort( Keys, [] ( const RHI::FRHIPipelineCacheKey &Left, const RHI::FRHIPipelineCacheKey &Right ) noexcept
     {
         const UInt64 LeftHash  = Left.GetHash();
@@ -386,10 +384,10 @@ Lumen::RHIOpenGL::FOpenGLPipelineCache::Serialize () const noexcept
     WriteU64( Data, Desc.BackendVersion );
     WriteU32( Data, static_cast<UInt32>( Keys.size() ) );
     WriteU32( Data, 0U );
-    for ( const RHI::FRHIPipelineCacheKey &Key : Keys )
+    Algo::ForEach( Keys, [&Data] ( const RHI::FRHIPipelineCacheKey &InKey ) noexcept
     {
-        WriteKey( Data, Key );
-    }
+        WriteKey( Data, InKey );
+    } );
     WriteU64( Data, RHI::RHIHashBytes( TSpan<const Byte>( Data.data(), Data.size() ) ) );
     return Data;
 }
