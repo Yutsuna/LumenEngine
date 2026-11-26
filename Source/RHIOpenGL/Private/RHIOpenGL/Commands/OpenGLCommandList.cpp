@@ -375,7 +375,8 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetPipeline ( TSh
         return TUnexpected(
             RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Pipeline, "Compute pipelines are not available on this queue." ) );
     }
-    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetPipeline ), FOpenGLSetPipelinePayload{ .Program = Program, .bIsCompute = bCompute } ) );
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetPipeline ),
+                                          FOpenGLSetPipelinePayload{ .Program = Program, .bIsCompute = bCompute } ) );
     bHasPipeline      = true;
     BoundPipelineType = bCompute ? RHI::ERHIPipelineType::Compute : RHI::ERHIPipelineType::Graphics;
     Stream.Retain( StaticCastSharedRef<RHI::IRHIObject>( InPipeline ) );
@@ -585,7 +586,8 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::BeginQuery ( TSha
         return TUnexpected( RHI::MakeRHIInvalidResource( "Query pool is not owned by this queue." ) );
     }
     LUMEN_TRY_EXPECT_ERROR( ( *Pool )->Begin( InIndex ) );
-    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::BeginQuery ), FOpenGLQueryPayload{ .Query = ( *Pool )->GetQuery( InIndex ), .Index = InIndex } ) );
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::BeginQuery ),
+                                          FOpenGLQueryPayload{ .Query = ( *Pool )->GetQuery( InIndex ), .Index = InIndex } ) );
     ActiveQueryPool  = InPool.Get();
     ActiveQueryIndex = InIndex;
     Stream.Retain( StaticCastSharedRef<RHI::IRHIObject>( InPool ) );
@@ -606,7 +608,8 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::EndQuery ( TShare
         return TUnexpected( RHI::MakeRHIInvalidResource( "Query pool is not an OpenGL pool." ) );
     }
     LUMEN_TRY_EXPECT_ERROR( ( *Pool )->End( InIndex ) );
-    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::EndQuery ), FOpenGLQueryPayload{ .Query = ( *Pool )->GetQuery( InIndex ), .Index = InIndex } ) );
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::EndQuery ),
+                                          FOpenGLQueryPayload{ .Query = ( *Pool )->GetQuery( InIndex ), .Index = InIndex } ) );
     ActiveQueryPool  = nullptr;
     ActiveQueryIndex = 0U;
     return {};
