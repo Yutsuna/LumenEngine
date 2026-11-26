@@ -18,3 +18,13 @@ Lumen::Bool Lumen::Maths::IsEqual ( const Float64 Fa, const Float64 Fb, const Fl
 {
     return std::fabs( Fa - Fb ) <= Tolerance;
 }
+
+template <typename Type> constexpr Type Lumen::Maths::Max ( Type A, Type B ) noexcept
+{
+    return std::max( A, B );
+}
+
+template <typename Type> constexpr Type Lumen::Maths::Min ( Type A, Type B ) noexcept
+{
+    return std::min( A, B );
+}
