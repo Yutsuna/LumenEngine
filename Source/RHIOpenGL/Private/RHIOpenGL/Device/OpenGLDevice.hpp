@@ -24,7 +24,7 @@ namespace RHIOpenGL
 
     /**
      * @class FOpenGLDevice
-     * @brief M0 OpenGL device: identity, status, queues, and structured stubs.
+     * @brief OpenGL device: identity, status, negotiated factories and logical queues.
      */
     class FOpenGLDevice final : public RHI::FRHIDeviceBase, public FNonCopyable, public FNonMovable
     {

@@ -64,6 +64,12 @@ namespace RHIOpenGL
 
         [[nodiscard]] TSharedRef<FOpenGLContext> GetExecutor () const noexcept;
 
+        /** @return Address of the executor-owned leaf state used by host-side waits. */
+        [[nodiscard]] FOpenGLWaitState *GetWaitState () const noexcept;
+
+        /** @return True when status is not Ready or the executor observed a reset. */
+        [[nodiscard]] Bool IsUnavailable () const noexcept;
+
         [[nodiscard]] const RHI::FRHICapabilities &GetCapabilities () const noexcept;
 
         [[nodiscard]] const RHI::FRHILimits &GetLimits () const noexcept;

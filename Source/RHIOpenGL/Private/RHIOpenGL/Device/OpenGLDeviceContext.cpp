@@ -5,6 +5,8 @@
 
 #include <RHIOpenGL/Device/OpenGLDeviceContext.hpp>
 
+#include <HAL/LockGuard.hpp>
+
 #include <RHI/Types/RHIError.hpp>
 
 #include <RHIOpenGL/Loader/GLSpec.hpp>
@@ -56,6 +58,16 @@ Lumen::TSharedRef<Lumen::RHIOpenGL::FOpenGLContext> Lumen::RHIOpenGL::FOpenGLDev
     return Context;
 }
 
+Lumen::RHIOpenGL::FOpenGLWaitState *Lumen::RHIOpenGL::FOpenGLDeviceContext::GetWaitState () const noexcept
+{
+    return Context->GetWaitState();
+}
+
+Lumen::Bool Lumen::RHIOpenGL::FOpenGLDeviceContext::IsUnavailable () const noexcept
+{
+    return Status.load() != RHI::ERHIDeviceStatus::Ready or Context->IsDeviceLost();
+}
+
 const Lumen::RHI::FRHICapabilities &Lumen::RHIOpenGL::FOpenGLDeviceContext::GetCapabilities () const noexcept
 {
     return Capabilities;
@@ -94,12 +106,21 @@ Lumen::RHIOpenGL::FOpenGLDeviceContext::GetUnavailableError ( const FStringView 
 void Lumen::RHIOpenGL::FOpenGLDeviceContext::MarkLost () noexcept
 {
     Status.store( RHI::ERHIDeviceStatus::Lost );
+    Context->MarkDeviceLost();
 }
 
 void Lumen::RHIOpenGL::FOpenGLDeviceContext::MarkClosed () noexcept
 {
     RHI::ERHIDeviceStatus Expected = RHI::ERHIDeviceStatus::Ready;
-    ( void )Status.compare_exchange_strong( Expected, RHI::ERHIDeviceStatus::Closed );
+    if ( Status.compare_exchange_strong( Expected, RHI::ERHIDeviceStatus::Closed ) )
+    {
+        FOpenGLWaitState *State = Context->GetWaitState();
+        {
+            HAL::TLockGuard Lock( State->Mutex );
+            State->bUnavailable = true;
+        }
+        State->Condition.NotifyAll();
+    }
 }
 
 Lumen::Bool Lumen::RHIOpenGL::FOpenGLDeviceContext::IsDeviceLost () const noexcept

@@ -89,12 +89,24 @@ Lumen::RHIOpenGL::FOpenGLContext::~FOpenGLContext () noexcept
     ( void )WorkerThread.RequestStop();
     Wake.NotifyAll();
     WorkerThread.Join();
-    ( void )DeferredReleases.Drain();
+    /* The worker drains deferred releases on the GL thread before shutting down
+     * the native context; Shutdown() here only closes the queue to later Enqueues. */
+    DeferredReleases.Shutdown();
 }
 
 const Lumen::RHIOpenGL::FGLDispatchTable &Lumen::RHIOpenGL::FOpenGLContext::GetDispatch () const noexcept
 {
     return Dispatch;
+}
+
+Lumen::RHI::FRHITimelineValue Lumen::RHIOpenGL::FOpenGLContext::GetCompletedTimeline () const noexcept
+{
+    return RHI::FRHITimelineValue{ CompletedTimeline.load() };
+}
+
+Lumen::RHIOpenGL::FOpenGLWaitState *Lumen::RHIOpenGL::FOpenGLContext::GetWaitState () noexcept
+{
+    return &WaitState;
 }
 
 Lumen::Bool Lumen::RHIOpenGL::FOpenGLContext::IsExecutorThread () const noexcept
@@ -115,6 +127,10 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::ExecuteOnGLThread ( T
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::InvokeOnGLThread ( TFunction<void()> InTask ) noexcept
 {
     LUMEN_ASSERT( not IsExecutorThread() );
+    if ( not WorkerThread.IsJoinable() )
+    {
+        return TUnexpected( RHI::MakeRHIDeviceLost( RHI::ERHIErrorCondition::Device, "OpenGL executor is stopped." ) );
+    }
 
     TSharedRef<FTaskLatch> Latch = MakeTaskLatch();
     {
@@ -156,6 +172,23 @@ void Lumen::RHIOpenGL::FOpenGLContext::SetDebugSink ( RHI::IRHIDebugSink *InSink
 void Lumen::RHIOpenGL::FOpenGLContext::MarkDeviceLost () noexcept
 {
     bDeviceLost.store( true );
+    {
+        HAL::TLockGuard Lock( WaitState.Mutex );
+        WaitState.bUnavailable = true;
+    }
+    WaitState.Condition.NotifyAll();
+
+    if ( IsExecutorThread() )
+    {
+        FailAllSubmissions();
+    }
+    else
+    {
+        ( void )ExecuteOnGLThread( [this] () noexcept
+        {
+            FailAllSubmissions();
+        } );
+    }
 }
 
 Lumen::Bool Lumen::RHIOpenGL::FOpenGLContext::IsDeviceLost () const noexcept
@@ -179,6 +212,8 @@ void Lumen::RHIOpenGL::FOpenGLContext::EmitDebugMessage ( RHI::FRHIDebugMessage 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::DeferRelease ( const RHI::FRHITimelineValue InRequired,
                                                                           TFunction<void()> InRelease ) noexcept
 {
+    /* Always retire through the queue: Poll()/Drain() run on the executor, so the
+     * native GL calls stay on the GL thread even when the value is already complete. */
     return DeferredReleases.Enqueue( InRequired, static_cast<TFunction<void()> &&>( InRelease ) );
 }
 
@@ -353,6 +388,12 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
                 {
                     Ready.OnComplete();
                 }
+                const UInt64 NoFenceValue = Ready.Completion.Value;
+                if ( NoFenceValue > CompletedTimeline.load() )
+                {
+                    CompletedTimeline.store( NoFenceValue );
+                }
+                ( void )DeferredReleases.Poll( RHI::FRHITimelineValue{ CompletedTimeline.load() } );
             }
             else
             {
@@ -405,6 +446,57 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
         }
         ( void )DeferredReleases.Poll( RHI::FRHITimelineValue{ CompletedTimeline.load() } );
     }
+}
+
+void Lumen::RHIOpenGL::FOpenGLContext::FailAllSubmissions () noexcept
+{
+    LUMEN_ASSERT( IsExecutorThread() );
+
+    TVector<FOpenGLSubmission> Abandoned;
+    TVector<GLsync> ObsoleteSyncs;
+    {
+        HAL::TLockGuard Lock( SchedulerMutex );
+        while ( not Pending.empty() )
+        {
+            Abandoned.push_back( static_cast<FOpenGLSubmission &&>( Pending.front() ) );
+            Pending.pop();
+        }
+        Algo::ForEach( Blocked, [&Abandoned] ( FOpenGLSubmission &InSubmission ) noexcept
+        {
+            Abandoned.push_back( static_cast<FOpenGLSubmission &&>( InSubmission ) );
+        } );
+        Blocked.clear();
+        Algo::ForEach( ActiveFences, [&Abandoned, &ObsoleteSyncs] ( FActiveFence &InFence ) noexcept
+        {
+            if ( InFence.Sync != nullptr )
+            {
+                ObsoleteSyncs.push_back( InFence.Sync );
+                InFence.Sync = nullptr;
+            }
+            Abandoned.push_back( static_cast<FOpenGLSubmission &&>( InFence.Submission ) );
+        } );
+        ActiveFences.clear();
+    }
+
+    /* Native GL calls run outside SchedulerMutex: the debug sink is a rank-6 leaf. */
+    if ( Dispatch.DeleteSync != nullptr )
+    {
+        Algo::ForEach( ObsoleteSyncs, [this] ( GLsync InSync ) noexcept
+        {
+            Dispatch.DeleteSync( InSync );
+        } );
+    }
+
+    const RHI::FRHIError Failure = RHI::MakeRHIDeviceLost(
+        RHI::ERHIErrorCondition::Queue, "OpenGL submission was abandoned after device loss or executor stop." );
+    Algo::ForEach( Abandoned,
+                   [] ( FOpenGLSubmission &InSubmission ) noexcept -> Bool
+    {
+        return static_cast<Bool>( InSubmission.OnFailure );
+    }, [&Failure] ( FOpenGLSubmission &InSubmission ) noexcept
+    {
+        InSubmission.OnFailure( Failure );
+    } );
 }
 
 void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) noexcept
@@ -469,30 +561,7 @@ void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) n
          * worker alive forever. Fail and release all not-yet-replayed work on stop. */
         if ( InStopToken.StopRequested() )
         {
-            TVector<FOpenGLSubmission> Abandoned;
-            {
-                HAL::TLockGuard Lock( SchedulerMutex );
-                while ( not Pending.empty() )
-                {
-                    Abandoned.push_back( static_cast<FOpenGLSubmission &&>( Pending.front() ) );
-                    Pending.pop();
-                }
-                Algo::ForEach( Blocked, [&Abandoned] ( FOpenGLSubmission &InBlockedSubmission ) noexcept
-                {
-                    Abandoned.push_back( static_cast<FOpenGLSubmission &&>( InBlockedSubmission ) );
-                } );
-                Blocked.clear();
-            }
-            const RHI::FRHIError Failure = RHI::MakeRHIDeviceLost(
-                RHI::ERHIErrorCondition::Queue, "OpenGL executor stopped before the submission was replayed." );
-            Algo::ForEach( Abandoned,
-                           [] ( FOpenGLSubmission &InSubmission ) noexcept -> Bool
-            {
-                return static_cast<Bool>( InSubmission.OnFailure );
-            }, [&Failure] ( FOpenGLSubmission &InSubmission ) noexcept
-            {
-                InSubmission.OnFailure( Failure );
-            } );
+            FailAllSubmissions();
         }
 
         Bool bPending = false;

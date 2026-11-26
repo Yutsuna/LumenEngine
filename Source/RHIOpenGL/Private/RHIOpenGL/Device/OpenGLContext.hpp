@@ -38,6 +38,20 @@ namespace RHIOpenGL
 {
 
     /**
+     * @struct FOpenGLWaitState
+     * @brief Shared leaf lock and condition variable for host-side queue waits.
+     * @details Rank 7 leaf: no other lock may be acquired while it is held. All logical
+     *          queues share one GL executor, so one shared wait state is sufficient;
+     *          waiters re-evaluate their own queue value after every notification.
+     */
+    struct FOpenGLWaitState
+    {
+        HAL::FPlatformMutex Mutex;
+        FConditionVariable Condition;
+        Bool bUnavailable = false;
+    };
+
+    /**
      * @struct FOpenGLSubmission
      * @brief Immutable async replay packet retained by the GL executor until fence completion.
      */
@@ -74,6 +88,12 @@ namespace RHIOpenGL
         /** @return Resolved OpenGL 4.6 entry points for the worker context. */
         [[nodiscard]] const FGLDispatchTable &GetDispatch () const noexcept;
 
+        /** @return Highest timeline value published by the executor after fence completion. */
+        [[nodiscard]] RHI::FRHITimelineValue GetCompletedTimeline () const noexcept;
+
+        /** @return Address of the leaf wait state owned by this context. */
+        [[nodiscard]] FOpenGLWaitState *GetWaitState () noexcept;
+
         /** @brief Runs a task on the GL Executor; inline when already on that thread. */
         [[nodiscard]] RHI::FRHIExpected ExecuteOnGLThread ( TFunction<void()> InTask ) noexcept;
 
@@ -98,8 +118,18 @@ namespace RHIOpenGL
         /** @brief Forwards an already-owned debug message to the attached sink. */
         void EmitDebugMessage ( RHI::FRHIDebugMessage InMessage ) noexcept;
 
-        /** @brief Retires a GL-thread release when the tracked timeline completes. */
+        /**
+         * @brief Retires a GL-thread release when the tracked timeline completes.
+         * @details Must never be called under one of the six ranked locks. The release
+         *          callback contains native GL calls and always runs on the executor.
+         */
         [[nodiscard]] RHI::FRHIExpected DeferRelease ( RHI::FRHITimelineValue InRequired, TFunction<void()> InRelease ) noexcept;
+
+        /** @brief Registers a query-result poll that runs on the GL Executor. */
+        void TrackQueryPoll ( TFunction<Bool()> InPoll ) noexcept;
+
+        /** @brief Publishes every query result that became available. */
+        void PollPendingQueries () noexcept;
 
         /** @brief Native KHR_debug thunk entry; copies text under the leaf lock only. */
         void NotifyDebugMessage ( GLenum InSource,
@@ -121,6 +151,8 @@ namespace RHIOpenGL
         void Worker ( FStopToken InStopToken ) noexcept;
         void StepScheduler () noexcept;
         void PollResetStatus () noexcept;
+        /** @brief Fails every unfinished submission; executor thread only. */
+        void FailAllSubmissions () noexcept;
 
     private:
 
@@ -142,7 +174,9 @@ namespace RHIOpenGL
         TVector<FOpenGLSubmission> Blocked;
         TVector<FActiveFence> ActiveFences;
         RHI::FRHIDeferredReleaseQueue DeferredReleases;
+        TVector<TFunction<Bool()>> PendingQueryPolls;
         TAtomic<UInt64> CompletedTimeline{ 0ULL };
+        FOpenGLWaitState WaitState;
 
         /** Rank 6: leaf lock protecting the non-owning sink and its deduplication map. */
         mutable HAL::FPlatformMutex DebugSinkMutex;

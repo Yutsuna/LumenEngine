@@ -1,6 +1,6 @@
 /**
  * @file OpenGLDevice.cpp
- * @brief Implements the M0 OpenGL device surface and structured stubs.
+ * @brief Implements the negotiated OpenGL device factories and logical queues.
  */
 
 #include "Templates/Optional.hpp"
@@ -126,6 +126,8 @@ void Lumen::RHIOpenGL::FOpenGLDevice::InjectDeviceLost () noexcept
 {
     SetStatus( RHI::ERHIDeviceStatus::Lost );
     Context->MarkLost();
+    Context->GetExecutor()->EmitDebugMessage( RHI::FRHIDebugMessage(
+        RHI::ERHIDebugSeverity::Error, RHI::ERHIDebugCategory::General, 0U, "OpenGL device loss was injected." ) );
 }
 
 Lumen::RHI::ERHIDeviceStatus Lumen::RHIOpenGL::FOpenGLDevice::GetStatus () const noexcept
@@ -159,13 +161,6 @@ Lumen::RHIOpenGL::FOpenGLDevice::GetQueue ( const RHI::ERHIQueueType InType, con
     return TUnexpected(
         RHI::MakeRHINotFound( RHI::ERHIErrorCondition::Queue, "Requested OpenGL queue was not created on this device." ) );
 }
-
-#define LUMEN_OPENGL_UNIMPLEMENTED_FACTORY( OperationName, Condition )                                                           \
-    do                                                                                                                           \
-    {                                                                                                                            \
-        LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( OperationName ) );                                               \
-        return TUnexpected( RHI::MakeRHIUnsupported( Condition, OperationName " is not implemented in RHIOpenGL M0 yet." ) );    \
-    } while ( false )
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateBuffer ( const RHI::FRHIBufferDesc &InDesc ) noexcept
@@ -304,6 +299,7 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateReadbackAllocator ( const UInt64 InCapaci
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITransientResourceAllocator>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateTransientResourceAllocator () noexcept
 {
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateTransientResourceAllocator" ) );
     TSharedRef<FOpenGLTransientResourceAllocator> Allocator =
         MakeShared<FOpenGLTransientResourceAllocator>( NextObjectId(), Context->GetLimits().MinBufferAlignment );
     TrackObject( *Allocator );
@@ -313,7 +309,8 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateTransientResourceAllocator () noexcept
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDefragmenter>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDevice::CreateDefragmenter () noexcept
 {
-    TSharedRef<FOpenGLDefragmenter> Defragmenter = MakeShared<FOpenGLDefragmenter>( NextObjectId() );
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "CreateDefragmenter" ) );
+    TSharedRef<FOpenGLDefragmenter> Defragmenter = MakeShared<FOpenGLDefragmenter>( Context, NextObjectId() );
     TrackObject( *Defragmenter );
     return Defragmenter;
 }
@@ -478,5 +475,3 @@ Lumen::RHIOpenGL::FOpenGLDevice::CreateQueryPool ( const RHI::FRHIQueryPoolDesc 
     TrackObject( *Pool );
     return Pool;
 }
-
-#undef LUMEN_OPENGL_UNIMPLEMENTED_FACTORY
