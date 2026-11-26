@@ -16,6 +16,7 @@ namespace RHIOpenGL
     /** @brief OpenGL scalars compatible with the Khronos GL ABI. */
     using GLenum     = UInt32;
     using GLuint     = UInt32;
+    using GLuint64   = UInt64;
     using GLint      = Int32;
     using GLint64    = Int64;
     using GLubyte    = Byte;
@@ -93,7 +94,7 @@ namespace RHIOpenGL
     inline constexpr GLenum GlDepthClamp                            = 0x864FU;
     inline constexpr GLenum GlTextureCubeMapSeamless                = 0x884FU;
 
-    /* Buffer storage flags (core 4.6). */
+    /** INFO: Buffer storage flags (core 4.6). */
     inline constexpr GLbitfield GlMapReadBit        = 0x0001U;
     inline constexpr GLbitfield GlMapWriteBit       = 0x0002U;
     inline constexpr GLbitfield GlMapPersistentBit  = 0x0040U;
@@ -101,7 +102,7 @@ namespace RHIOpenGL
     inline constexpr GLbitfield GlDynamicStorageBit = 0x0100U;
     inline constexpr GLbitfield GlClientStorageBit  = 0x0200U;
 
-    /* Texture targets and formats needed by immutable storage and views. */
+    /** INFO: Texture targets and formats needed by immutable storage and views. */
     inline constexpr GLenum GlTexture1D                 = 0x0DE0U;
     inline constexpr GLenum GlTexture2D                 = 0x0DE1U;
     inline constexpr GLenum GlTexture3D                 = 0x806FU;
@@ -118,7 +119,7 @@ namespace RHIOpenGL
     inline constexpr GLenum GlTextureViewMinLayer       = 0x82DDU;
     inline constexpr GLenum GlTextureViewNumLayers      = 0x82DEU;
 
-    /* Sampler state (core 4.6 plus the ARB anisotropy constant). */
+    /** INFO: Sampler state (core 4.6 plus the ARB anisotropy constant). */
     inline constexpr GLenum GlTextureMinFilter     = 0x2801U;
     inline constexpr GLenum GlTextureMagFilter     = 0x2800U;
     inline constexpr GLenum GlTextureWrapS         = 0x2802U;
@@ -142,6 +143,62 @@ namespace RHIOpenGL
     inline constexpr GLenum GlNotEqual             = 0x0205U;
     inline constexpr GLenum GlGreaterEqual         = 0x0206U;
     inline constexpr GLenum GlAlways               = 0x0207U;
+
+    /* Shader and program objects (core 4.6). */
+    inline constexpr GLenum GlVertexShader        = 0x8B31U;
+    inline constexpr GLenum GlFragmentShader      = 0x8B30U;
+    inline constexpr GLenum GlComputeShader       = 0x91B9U;
+    inline constexpr GLenum GlCompileStatus       = 0x8B81U;
+    inline constexpr GLenum GlLinkStatus          = 0x8B82U;
+    inline constexpr GLenum GlInfoLogLength       = 0x8B84U;
+    inline constexpr GLenum GlShaderStorageBlock  = 0x92E6U;
+    inline constexpr GLenum GlUniformBlockBinding = 0x8A3FU;
+
+    /* Buffer binding targets and global barriers (core 4.6). */
+    inline constexpr GLenum GlArrayBuffer                      = 0x8892U;
+    inline constexpr GLenum GlElementArrayBuffer               = 0x8893U;
+    inline constexpr GLenum GlUniformBuffer                    = 0x8A11U;
+    inline constexpr GLenum GlShaderStorageBuffer              = 0x90D2U;
+    inline constexpr GLenum GlPixelUnpackBuffer                = 0x88ECU;
+    inline constexpr GLenum GlPixelPackBuffer                  = 0x88EDU;
+    inline constexpr GLbitfield GlVertexAttribArrayBarrierBit  = 0x00000001U;
+    inline constexpr GLbitfield GlElementArrayBarrierBit       = 0x00000002U;
+    inline constexpr GLbitfield GlUniformBarrierBit            = 0x00000004U;
+    inline constexpr GLbitfield GlTextureFetchBarrierBit       = 0x00000008U;
+    inline constexpr GLbitfield GlShaderImageAccessBarrierBit  = 0x00000020U;
+    inline constexpr GLbitfield GlCommandBarrierBit            = 0x00000040U;
+    inline constexpr GLbitfield GlBufferUpdateBarrierBit       = 0x00000200U;
+    inline constexpr GLbitfield GlFramebufferBarrierBit        = 0x00000400U;
+    inline constexpr GLbitfield GlShaderStorageBarrierBit      = 0x00002000U;
+    inline constexpr GLbitfield GlClientMappedBufferBarrierBit = 0x00004000U;
+
+    /* Framebuffer, clearing, drawing and fixed-function state (core 4.6). */
+    inline constexpr GLenum GlDrawFramebuffer        = 0x8CA9U;
+    inline constexpr GLenum GlReadFramebuffer        = 0x8CA8U;
+    inline constexpr GLenum GlFramebufferComplete    = 0x8CD5U;
+    inline constexpr GLenum GlColorAttachment0       = 0x8CE0U;
+    inline constexpr GLenum GlDepthAttachment        = 0x8D00U;
+    inline constexpr GLenum GlStencilAttachment      = 0x8D20U;
+    inline constexpr GLenum GlDepthStencilAttachment = 0x821AU;
+    inline constexpr GLenum GlNone                   = 0U;
+    inline constexpr GLbitfield GlColorBufferBit     = 0x00004000U;
+    inline constexpr GLbitfield GlDepthBufferBit     = 0x00000100U;
+    inline constexpr GLbitfield GlStencilBufferBit   = 0x00000400U;
+    inline constexpr GLenum GlTriangles              = 0x0004U;
+    inline constexpr GLenum GlUnsignedShort          = 0x1403U;
+    inline constexpr GLenum GlUnsignedInt            = 0x1405U;
+    inline constexpr GLenum GlInt                    = 0x1404U;
+    inline constexpr GLenum GlFloat                  = 0x1406U;
+    inline constexpr GLenum GlScissorTest            = 0x0C11U;
+    inline constexpr GLenum GlFramebufferSrgb        = 0x8DB9U;
+    inline constexpr GLenum GlMultisample            = 0x809DU;
+
+    /* Query objects (core 4.6). */
+    inline constexpr GLenum GlSamplesPassed        = 0x8914U;
+    inline constexpr GLenum GlAnySamplesPassed     = 0x8C22U;
+    inline constexpr GLenum GlTimeElapsed          = 0x88BFU;
+    inline constexpr GLenum GlQueryResult          = 0x8866U;
+    inline constexpr GLenum GlQueryResultAvailable = 0x8867U;
 
     using TGLGetString              = const GLubyte *( * )( GLenum );
     using TGLGetStringi             = const GLubyte *( * )( GLenum, GLuint );
@@ -167,6 +224,81 @@ namespace RHIOpenGL
     using TGLDeleteSamplers              = void ( * )( GLsizei, const GLuint * );
     using TGLSamplerParameteri           = void ( * )( GLuint, GLenum, GLint );
     using TGLSamplerParameterf           = void ( * )( GLuint, GLenum, GLfloat );
+
+    /* Shader, program and resource binding entry points (core 4.6). */
+    using TGLCreateShader              = GLuint ( * )( GLenum );
+    using TGLDeleteShader              = void ( * )( GLuint );
+    using TGLShaderSource              = void ( * )( GLuint, GLsizei, const AnsiChar *const *, const GLint * );
+    using TGLCompileShader             = void ( * )( GLuint );
+    using TGLGetShaderiv               = void ( * )( GLuint, GLenum, GLint * );
+    using TGLGetShaderInfoLog          = void ( * )( GLuint, GLsizei, GLsizei *, AnsiChar * );
+    using TGLCreateProgram             = GLuint ( * )();
+    using TGLDeleteProgram             = void ( * )( GLuint );
+    using TGLAttachShader              = void ( * )( GLuint, GLuint );
+    using TGLLinkProgram               = void ( * )( GLuint );
+    using TGLGetProgramiv              = void ( * )( GLuint, GLenum, GLint * );
+    using TGLGetProgramInfoLog         = void ( * )( GLuint, GLsizei, GLsizei *, AnsiChar * );
+    using TGLUseProgram                = void ( * )( GLuint );
+    using TGLUniformBlockBinding       = void ( * )( GLuint, GLuint, GLuint );
+    using TGLShaderStorageBlockBinding = void ( * )( GLuint, GLuint, GLuint );
+    using TGLGetProgramResourceIndex   = GLuint ( * )( GLuint, GLenum, const AnsiChar * );
+    using TGLProgramUniform1i          = void ( * )( GLuint, GLint, GLint );
+    using TGLGetUniformLocation        = GLint ( * )( GLuint, const AnsiChar * );
+    using TGLBindBufferBase            = void ( * )( GLenum, GLuint, GLuint );
+    using TGLBindBufferRange           = void ( * )( GLenum, GLuint, GLuint, GLintptr, GLsizeiptr );
+    using TGLBindTextureUnit           = void ( * )( GLuint, GLuint );
+    using TGLBindSampler               = void ( * )( GLuint, GLuint );
+    using TGLMemoryBarrier             = void ( * )( GLbitfield );
+
+    /* Vertex array objects (core 4.6 DSA). */
+    using TGLCreateVertexArrays        = void ( * )( GLsizei, GLuint * );
+    using TGLDeleteVertexArrays        = void ( * )( GLsizei, const GLuint * );
+    using TGLBindVertexArray           = void ( * )( GLuint );
+    using TGLVertexArrayAttribFormat   = void ( * )( GLuint, GLuint, GLint, GLenum, GLboolean, GLuint );
+    using TGLVertexArrayAttribBinding  = void ( * )( GLuint, GLuint, GLuint );
+    using TGLEnableVertexArrayAttrib   = void ( * )( GLuint, GLuint );
+    using TGLVertexArrayBindingDivisor = void ( * )( GLuint, GLuint, GLuint );
+    using TGLVertexArrayVertexBuffer   = void ( * )( GLuint, GLuint, GLuint, GLintptr, GLsizei );
+    using TGLVertexArrayElementBuffer  = void ( * )( GLuint, GLuint );
+
+    /* Framebuffer objects and fixed-function state (core 4.6 DSA). */
+    using TGLCreateFramebuffers             = void ( * )( GLsizei, GLuint * );
+    using TGLDeleteFramebuffers             = void ( * )( GLsizei, const GLuint * );
+    using TGLBindFramebuffer                = void ( * )( GLenum, GLuint );
+    using TGLNamedFramebufferTexture        = void ( * )( GLuint, GLenum, GLuint, GLint );
+    using TGLNamedFramebufferTextureLayer   = void ( * )( GLuint, GLenum, GLuint, GLint, GLint );
+    using TGLNamedFramebufferDrawBuffers    = void ( * )( GLuint, GLsizei, const GLenum * );
+    using TGLNamedFramebufferReadBuffer     = void ( * )( GLuint, GLenum );
+    using TGLCheckNamedFramebufferStatus    = GLenum ( * )( GLuint, GLenum );
+    using TGLClearNamedFramebufferfv        = void ( * )( GLuint, GLenum, GLint, const GLfloat * );
+    using TGLClearNamedFramebufferiv        = void ( * )( GLuint, GLenum, GLint, const GLint * );
+    using TGLClearNamedFramebufferuiv       = void ( * )( GLuint, GLenum, GLint, const GLuint * );
+    using TGLClearNamedFramebufferfi        = void ( * )( GLuint, GLenum, GLint, GLfloat, GLint );
+    using TGLInvalidateNamedFramebufferData = void ( * )( GLuint, GLsizei, const GLenum * );
+    using TGLViewport                       = void ( * )( GLint, GLint, GLsizei, GLsizei );
+    using TGLScissor                        = void ( * )( GLint, GLint, GLsizei, GLsizei );
+    using TGLEnable                         = void ( * )( GLenum );
+    using TGLDisable                        = void ( * )( GLenum );
+    using TGLPixelStorei                    = void ( * )( GLenum, GLint );
+
+    /* Draw commands (core 4.6). */
+    using TGLDrawArrays              = void ( * )( GLenum, GLint, GLsizei );
+    using TGLDrawElements            = void ( * )( GLenum, GLsizei, GLenum, const void * );
+    using TGLDrawArraysIndirect      = void ( * )( GLenum, const void * );
+    using TGLDrawElementsIndirect    = void ( * )( GLenum, GLenum, const void * );
+    using TGLDispatchCompute         = void ( * )( GLuint, GLuint, GLuint );
+    using TGLDispatchComputeIndirect = void ( * )( GLintptr );
+
+    /* Texture and query commands (core 4.6). */
+    using TGLTextureSubImage2D = void ( * )( GLuint, GLint, GLint, GLint, GLsizei, GLsizei, GLenum, GLenum, const void * );
+    using TGLCopyImageSubData  = void ( * )(
+        GLuint, GLenum, GLint, GLint, GLint, GLint, GLuint, GLenum, GLint, GLint, GLint, GLint, GLsizei, GLsizei, GLsizei );
+    using TGLCreateQueries       = void ( * )( GLenum, GLsizei, GLuint * );
+    using TGLDeleteQueries       = void ( * )( GLsizei, const GLuint * );
+    using TGLBeginQuery          = void ( * )( GLenum, GLuint );
+    using TGLEndQuery            = void ( * )( GLenum );
+    using TGLGetQueryObjectui64v = void ( * )( GLuint, GLenum, GLuint64 * );
+    using TGLGetQueryiv          = void ( * )( GLenum, GLenum, GLint * );
 
     using TEGLGetProcAddress        = void *( * )( const AnsiChar * );
     using TEGLGetDisplay            = EGLDisplay ( * )( EGLNativeDisplayType );

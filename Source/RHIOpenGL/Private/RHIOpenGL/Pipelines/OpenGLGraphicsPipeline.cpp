@@ -96,10 +96,7 @@ Lumen::RHIOpenGL::FOpenGLGraphicsPipeline::Create ( TSharedRef<FOpenGLDeviceCont
                                                     const RHI::FRHIGraphicsPipelineDesc &InDesc,
                                                     const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
     const RHI::FRHILimits &Limits = InContext->GetLimits();
     if ( InDesc.ColorFormats.size() > static_cast<USize>( Limits.MaxColorAttachments ) )
     {
@@ -132,10 +129,7 @@ Lumen::RHIOpenGL::FOpenGLGraphicsPipeline::Create ( TSharedRef<FOpenGLDeviceCont
     {
         Dispatch.GetIntegerv( GlMaxSamples, &MaxGLSamples );
     } );
-    if ( not Queried )
-    {
-        return TUnexpected( Queried.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Queried );
     const UInt32 RequestedSamples = RHI::ToSampleCount( InDesc.Multisample.Count );
     if ( RequestedSamples == 0U or MaxGLSamples <= 0 or RequestedSamples > static_cast<UInt32>( MaxGLSamples ) )
     {
@@ -184,10 +178,7 @@ Lumen::RHIOpenGL::FOpenGLGraphicsPipeline::Create ( TSharedRef<FOpenGLDeviceCont
             BindReflectedBlocks( Dispatch, NativeProgram, NativePixelShader->GetDesc().Reflection );
         }
     } );
-    if ( not Linked )
-    {
-        return TUnexpected( Linked.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Linked );
     if ( NativeError != GlNoError or NativeProgram == 0U or LinkStatus == 0 )
     {
         const FString Message =
@@ -209,7 +200,7 @@ Lumen::RHIOpenGL::FOpenGLGraphicsPipeline::Create ( TSharedRef<FOpenGLDeviceCont
         {
             Dispatch.DeleteProgram( NativeProgram );
         } );
-        return TUnexpected( VertexArray.Error() );
+        LUMEN_TRY_EXPECT_ERROR( VertexArray );
     }
 
     Pipeline->Program     = NativeProgram;

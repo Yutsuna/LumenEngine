@@ -61,10 +61,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
     if ( not Executor.IsValid() )
     {
         const TExpected<TSharedRef<FOpenGLCommandExecutor>, RHI::FRHIError> Created = FOpenGLCommandExecutor::Create( Context );
-        if ( not Created )
-        {
-            return TUnexpected( Created.Error() );
-        }
+        LUMEN_TRY_EXPECT_ERROR( Created );
         Executor = *Created;
     }
 

@@ -74,10 +74,7 @@ Lumen::RHIOpenGL::FOpenGLSampler::Create ( TSharedRef<FOpenGLDeviceContext> InCo
                                            const RHI::FRHISamplerDesc &InDesc,
                                            const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
     if ( InDesc.MaxAnisotropy > 1U and
          not InContext->GetCapabilities().Supports( RHI::ERHICapabilityFlags::AnisotropicFiltering ) )
     {
@@ -115,10 +112,7 @@ Lumen::RHIOpenGL::FOpenGLSampler::Create ( TSharedRef<FOpenGLDeviceContext> InCo
         }
         NativeError = Dispatch.GetError();
     } );
-    if ( not Created )
-    {
-        return TUnexpected( Created.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Created );
     if ( NativeError != GlNoError or NativeSampler == 0U )
     {
         if ( NativeSampler != 0U )
@@ -162,4 +156,14 @@ LUMEN_RHI_OBJECT_FORWARDERS( RHIOpenGL, FOpenGLSampler );
 const Lumen::RHI::FRHISamplerDesc &Lumen::RHIOpenGL::FOpenGLSampler::GetDesc () const noexcept
 {
     return Desc;
+}
+
+Lumen::RHIOpenGL::GLuint Lumen::RHIOpenGL::FOpenGLSampler::GetSampler () const noexcept
+{
+    return Sampler;
+}
+
+const Lumen::RHIOpenGL::FOpenGLDeviceContext &Lumen::RHIOpenGL::FOpenGLSampler::GetDeviceContext () const noexcept
+{
+    return *Context;
 }

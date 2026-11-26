@@ -24,21 +24,12 @@ Lumen::RHIOpenGL::FOpenGLTexture::Create ( TSharedRef<FOpenGLDeviceContext> InCo
                                            const RHI::FRHITextureDesc &InDesc,
                                            const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
-    if ( const RHI::FRHIExpected Limited = ValidateLimits( *InContext, InDesc ); not Limited )
-    {
-        return TUnexpected( Limited.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
+    LUMEN_TRY_EXPECT_ERROR( ValidateLimits( *InContext, InDesc ) );
 
     TSharedRef<FOpenGLTexture> Texture =
         MakeShared<FOpenGLTexture>( static_cast<TSharedRef<FOpenGLDeviceContext> &&>( InContext ), InDesc, InId );
-    if ( const RHI::FRHIExpected Created = Texture->AllocateStorage(); not Created )
-    {
-        return TUnexpected( Created.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Texture->AllocateStorage() );
     return Texture;
 }
 
@@ -49,14 +40,8 @@ Lumen::RHIOpenGL::FOpenGLTexture::CreatePlaced ( TSharedRef<FOpenGLDeviceContext
                                                  const RHI::FRHIAllocation &InAllocation,
                                                  const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
-    if ( const RHI::FRHIExpected Limited = ValidateLimits( *InContext, InDesc ); not Limited )
-    {
-        return TUnexpected( Limited.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
+    LUMEN_TRY_EXPECT_ERROR( ValidateLimits( *InContext, InDesc ) );
     if ( not InAllocation.IsValid() or InAllocation.Heap != InHeap.Get() )
     {
         return TUnexpected( RHI::MakeRHIInvalidMemory( "Placed texture allocation does not identify the supplied heap." ) );
@@ -82,13 +67,38 @@ Lumen::RHIOpenGL::FOpenGLTexture::CreatePlaced ( TSharedRef<FOpenGLDeviceContext
     {
         return TUnexpected( RHI::MakeRHIInvalidMemory( "Placed texture alignment is insufficient." ) );
     }
+    const RHI::FRHIFormatInfo &FormatInfo = RHI::GetRHIFormatInfo( InDesc.Format );
+    UInt64 RequiredBytes                  = 0ULL;
+    Bool bRequirementsValid = FormatInfo.BytesPerBlock > 0U and FormatInfo.BlockWidth > 0U and FormatInfo.BlockHeight > 0U;
+    for ( UInt32 Mip = 0U; bRequirementsValid and Mip < InDesc.MipCount; ++Mip )
+    {
+        const UInt64 MipWidth  = InDesc.Extent.Width >> Mip;
+        const UInt64 MipHeight = InDesc.Extent.Height >> Mip;
+        const UInt64 MipDepth  = ( InDesc.Extent.Depth >> Mip ) < 1U ? 1ULL : static_cast<UInt64>( InDesc.Extent.Depth >> Mip );
+        const TOptional<UInt64> BlocksWide = RHI::RHICheckedDivideCeil( MipWidth, static_cast<UInt64>( FormatInfo.BlockWidth ) );
+        const TOptional<UInt64> BlocksHigh =
+            RHI::RHICheckedDivideCeil( MipHeight, static_cast<UInt64>( FormatInfo.BlockHeight ) );
+        const TOptional<UInt64> RowBytes =
+            BlocksWide ? RHI::RHICheckedMultiply( *BlocksWide, static_cast<UInt64>( FormatInfo.BytesPerBlock ) )
+                       : TOptional<UInt64>{};
+        const TOptional<UInt64> PlaneBytes = RowBytes ? RHI::RHICheckedMultiply( *RowBytes, *BlocksHigh ) : TOptional<UInt64>{};
+        const TOptional<UInt64> LevelBytes = PlaneBytes ? RHI::RHICheckedMultiply( *PlaneBytes, MipDepth ) : TOptional<UInt64>{};
+        const TOptional<UInt64> TotalBytes = LevelBytes ? RHI::RHICheckedAdd( RequiredBytes, *LevelBytes ) : TOptional<UInt64>{};
+        if ( not TotalBytes )
+        {
+            bRequirementsValid = false;
+            break;
+        }
+        RequiredBytes = *TotalBytes;
+    }
+    if ( not bRequirementsValid or RequiredBytes > InAllocation.Size )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidMemory( "Placed texture exceeds its allocation." ) );
+    }
 
     TSharedRef<FOpenGLTexture> Texture =
         MakeShared<FOpenGLTexture>( static_cast<TSharedRef<FOpenGLDeviceContext> &&>( InContext ), InDesc, InId );
-    if ( const RHI::FRHIExpected Created = Texture->AllocateStorage(); not Created )
-    {
-        return TUnexpected( Created.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Texture->AllocateStorage() );
     Texture->ParentHeap      = TOptional<TSharedRef<RHI::IRHIHeap>>( static_cast<TSharedRef<RHI::IRHIHeap> &&>( InHeap ) );
     Texture->PlacementOffset = InAllocation.Offset;
     return Texture;
@@ -226,8 +236,8 @@ const Lumen::RHIOpenGL::FOpenGLDeviceContext &Lumen::RHIOpenGL::FOpenGLTexture::
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLTexture::AllocateStorage () noexcept
 {
-    const FOpenGLFormatMapping Mapping = MapOpenGLFormat( Desc.Format );
-    if ( Mapping.InternalFormat == 0U or Mapping.bCompressed )
+    const TOptional<FOpenGLFormatMapping> Mapping = MapOpenGLFormat( Desc.Format );
+    if ( not Mapping or Mapping->bCompressed )
     {
         return TUnexpected(
             RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Resource, "RHI format has no GL 4.6 storage mapping." ) );
@@ -268,25 +278,25 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLTexture::AllocateStorage () no
         }
         if ( Target == GlTexture2DMultisample or Target == GlTexture2DMultisampleArray )
         {
-            Dispatch.TextureStorage2DMultisample( NativeTexture, static_cast<GLsizei>( Samples ), Mapping.InternalFormat,
+            Dispatch.TextureStorage2DMultisample( NativeTexture, static_cast<GLsizei>( Samples ), Mapping->InternalFormat,
                                                   static_cast<GLsizei>( Desc.Extent.Width ),
                                                   static_cast<GLsizei>( Desc.Extent.Height ), 1U );
         }
         else if ( Target == GlTexture3D )
         {
-            Dispatch.TextureStorage3D( NativeTexture, static_cast<GLsizei>( Desc.MipCount ), Mapping.InternalFormat,
+            Dispatch.TextureStorage3D( NativeTexture, static_cast<GLsizei>( Desc.MipCount ), Mapping->InternalFormat,
                                        static_cast<GLsizei>( Desc.Extent.Width ), static_cast<GLsizei>( Desc.Extent.Height ),
                                        static_cast<GLsizei>( Desc.Extent.Depth ) );
         }
         else if ( Target == GlTexture2DArray )
         {
-            Dispatch.TextureStorage3D( NativeTexture, static_cast<GLsizei>( Desc.MipCount ), Mapping.InternalFormat,
+            Dispatch.TextureStorage3D( NativeTexture, static_cast<GLsizei>( Desc.MipCount ), Mapping->InternalFormat,
                                        static_cast<GLsizei>( Desc.Extent.Width ), static_cast<GLsizei>( Desc.Extent.Height ),
                                        static_cast<GLsizei>( Desc.LayerCount ) );
         }
         else
         {
-            Dispatch.TextureStorage2D( NativeTexture, static_cast<GLsizei>( Desc.MipCount ), Mapping.InternalFormat,
+            Dispatch.TextureStorage2D( NativeTexture, static_cast<GLsizei>( Desc.MipCount ), Mapping->InternalFormat,
                                        static_cast<GLsizei>( Desc.Extent.Width ), static_cast<GLsizei>( Desc.Extent.Height ) );
         }
         NativeError = Dispatch.GetError();

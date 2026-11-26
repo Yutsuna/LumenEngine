@@ -43,10 +43,7 @@ Lumen::TExpected<Lumen::TSharedRef<Lumen::RHIOpenGL::FOpenGLContext>, Lumen::RHI
 Lumen::RHIOpenGL::FOpenGLContext::Create ( const Bool bEnableDebug ) noexcept
 {
     TSharedRef<FOpenGLContext> Context = MakeShared<FOpenGLContext>( bEnableDebug );
-    if ( const RHI::FRHIExpected Started = Context->Start(); not Started )
-    {
-        return TUnexpected( Started.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Context->Start() );
     return Context;
 }
 
@@ -106,7 +103,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::InvokeOnGLThread ( TF
  * Private
  */
 
-Lumen::RHIOpenGL::FOpenGLContext::FOpenGLContext ( const Bool InEnableDebug ) noexcept : bEnableDebug( InEnableDebug )
+Lumen::RHIOpenGL::FOpenGLContext::FOpenGLContext ( const Bool bDebugEnabled ) noexcept : bEnableDebug( bDebugEnabled )
 {
     /* */
 }

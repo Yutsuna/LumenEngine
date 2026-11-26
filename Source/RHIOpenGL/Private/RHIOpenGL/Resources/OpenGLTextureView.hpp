@@ -46,6 +46,14 @@ namespace RHIOpenGL
         [[nodiscard]] const RHI::FRHITextureViewDesc &GetDesc () const noexcept override;
         [[nodiscard]] TSharedPtr<RHI::IRHITexture> GetTexture () const noexcept override;
 
+        /** @return Native view name (aliases the parent texture when no view object was needed). */
+        [[nodiscard]] GLuint GetView () const noexcept;
+
+        /** @return The GL target the view is bound to. */
+        [[nodiscard]] GLenum GetTarget () const noexcept;
+
+        [[nodiscard]] const FOpenGLDeviceContext &GetDeviceContext () const noexcept;
+
     private:
 
         RHI::FRHIObjectBase Identity;

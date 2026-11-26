@@ -21,10 +21,7 @@ Lumen::RHIOpenGL::FOpenGLBuffer::Create ( TSharedRef<FOpenGLDeviceContext> InCon
                                           const RHI::FRHIBufferDesc &InDesc,
                                           const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
     if ( InDesc.Size > InContext->GetLimits().MaxBufferSize )
     {
         return TUnexpected( RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Limit, "Buffer exceeds MaxBufferSize." ) );
@@ -32,10 +29,7 @@ Lumen::RHIOpenGL::FOpenGLBuffer::Create ( TSharedRef<FOpenGLDeviceContext> InCon
 
     TSharedRef<FOpenGLBuffer> Buffer =
         MakeShared<FOpenGLBuffer>( static_cast<TSharedRef<FOpenGLDeviceContext> &&>( InContext ), InDesc, InId );
-    if ( const RHI::FRHIExpected Created = Buffer->AllocateStorage(); not Created )
-    {
-        return TUnexpected( Created.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Buffer->AllocateStorage() );
     return Buffer;
 }
 
@@ -46,14 +40,8 @@ Lumen::RHIOpenGL::FOpenGLBuffer::CreatePlaced ( TSharedRef<FOpenGLDeviceContext>
                                                 const RHI::FRHIAllocation &InAllocation,
                                                 const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
-    if ( const RHI::FRHIExpected Placement = ValidatePlacement( *InContext, InDesc, *InHeap, InAllocation ); not Placement )
-    {
-        return TUnexpected( Placement.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
+    LUMEN_TRY_EXPECT_ERROR( ValidatePlacement( *InContext, InDesc, *InHeap, InAllocation ) );
 
     TSharedRef<FOpenGLBuffer> Buffer =
         MakeShared<FOpenGLBuffer>( static_cast<TSharedRef<FOpenGLDeviceContext> &&>( InContext ), InDesc, InId );
@@ -228,7 +216,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLBuffer::AllocateStorage () noe
     {
         return Created;
     }
-    if ( NativeError != GlNoError or NativeBuffer == 0U )
+    if ( NativeError != GlNoError or NativeBuffer == 0U or ( ( Flags & GlMapPersistentBit ) != 0U and NativeMapped == nullptr ) )
     {
         if ( NativeBuffer != 0U )
         {

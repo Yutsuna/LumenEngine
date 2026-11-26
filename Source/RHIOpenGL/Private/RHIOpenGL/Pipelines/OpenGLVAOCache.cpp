@@ -78,10 +78,7 @@ Lumen::RHIOpenGL::FOpenGLVAOCache::~FOpenGLVAOCache () noexcept
 Lumen::TExpected<Lumen::RHIOpenGL::GLuint, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLVAOCache::GetOrCreate ( const RHI::FRHIVertexLayout &InLayout ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InLayout.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InLayout.Validate() );
 
     const UInt64 LayoutHash                          = InLayout.GetHash();
     const TMap<UInt64, GLuint>::const_iterator Found = VAOs.find( LayoutHash );
@@ -147,10 +144,7 @@ Lumen::RHIOpenGL::FOpenGLVAOCache::GetOrCreate ( const RHI::FRHIVertexLayout &In
         }
         NativeError = Dispatch.GetError();
     } );
-    if ( not Created )
-    {
-        return TUnexpected( Created.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Created );
     if ( NativeError != GlNoError or NativeVAO == 0U )
     {
         if ( NativeVAO != 0U )

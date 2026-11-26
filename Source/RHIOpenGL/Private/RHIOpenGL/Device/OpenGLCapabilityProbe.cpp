@@ -184,9 +184,6 @@ Lumen::RHIOpenGL::ProbeOpenGLCapabilities ( RHI::FRHIAdapterInfo &OutInfo, const
     Limits.MinTextureRowAlignment = 1ULL;
     Limits.TimestampPeriod        = 1ULL;
 
-    if ( const RHI::FRHIExpected Validation = OutInfo.Validate(); not Validation )
-    {
-        return TUnexpected( Validation.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( OutInfo.Validate() );
     return {};
 }

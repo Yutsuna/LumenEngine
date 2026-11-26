@@ -21,10 +21,7 @@ Lumen::RHIOpenGL::FOpenGLPipelineLayout::Create ( TSharedRef<FOpenGLDeviceContex
                                                   const RHI::FRHIPipelineLayoutDesc &InDesc,
                                                   const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
 
     const RHI::FRHILimits &Limits = InContext->GetLimits();
     if ( InDesc.BindingLayouts.size() > static_cast<USize>( Limits.MaxBindingSets ) )

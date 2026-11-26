@@ -96,10 +96,7 @@ Lumen::RHIOpenGL::FOpenGLComputePipeline::Create ( TSharedRef<FOpenGLDeviceConte
                                                    const RHI::FRHIComputePipelineDesc &InDesc,
                                                    const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
 
     const TOptional<FOpenGLShader *> NativeShader =
         RHI::TryUnwrapRHIBackend<FOpenGLShader>( static_cast<RHI::IRHIObject *>( InDesc.Shader.Get() ) );
@@ -159,10 +156,7 @@ Lumen::RHIOpenGL::FOpenGLComputePipeline::Create ( TSharedRef<FOpenGLDeviceConte
             BindReflectedBlocks( Dispatch, NativeProgram, ComputeShader->GetDesc().Reflection );
         }
     } );
-    if ( not Linked )
-    {
-        return TUnexpected( Linked.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Linked );
     if ( NativeError != GlNoError or NativeProgram == 0U or LinkStatus == 0 )
     {
         const FString Message =

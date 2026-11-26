@@ -20,10 +20,7 @@ Lumen::RHIOpenGL::FOpenGLTextureView::Create ( TSharedRef<FOpenGLDeviceContext> 
                                                const RHI::FRHITextureViewDesc &InDesc,
                                                const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
     const TOptional<FOpenGLTexture *> Parent = RHI::TryRHIBackendCast<FOpenGLTexture>( *InDesc.Texture );
     if ( not Parent or &( *Parent )->GetDeviceContext() != InContext.Get() )
     {
@@ -63,13 +60,14 @@ Lumen::RHIOpenGL::FOpenGLTextureView::Create ( TSharedRef<FOpenGLDeviceContext> 
     default:
         break;
     }
-    const GLenum InternalFormat = InDesc.Format == RHI::ERHIFormat::Unknown ? MapOpenGLFormat( ParentDesc.Format ).InternalFormat
-                                                                            : MapOpenGLFormat( InDesc.Format ).InternalFormat;
-    if ( InternalFormat == 0U )
+    const TOptional<FOpenGLFormatMapping> Mapping =
+        MapOpenGLFormat( InDesc.Format == RHI::ERHIFormat::Unknown ? ParentDesc.Format : InDesc.Format );
+    if ( not Mapping )
     {
         return TUnexpected(
             RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Resource, "Texture view format has no GL mapping." ) );
     }
+    const GLenum InternalFormat = Mapping->InternalFormat;
 
     const FGLDispatchTable &Dispatch = View->Context->GetDispatch();
     const GLuint SourceTexture       = ( *Parent )->GetTexture();
@@ -87,10 +85,7 @@ Lumen::RHIOpenGL::FOpenGLTextureView::Create ( TSharedRef<FOpenGLDeviceContext> 
                                InDesc.Range.BaseLayer, InDesc.Range.LayerCount );
         NativeError = Dispatch.GetError();
     } );
-    if ( not Created )
-    {
-        return TUnexpected( Created.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Created );
     if ( NativeError != GlNoError or NativeView == 0U )
     {
         if ( NativeView != 0U )
@@ -140,4 +135,36 @@ const Lumen::RHI::FRHITextureViewDesc &Lumen::RHIOpenGL::FOpenGLTextureView::Get
 Lumen::TSharedPtr<Lumen::RHI::IRHITexture> Lumen::RHIOpenGL::FOpenGLTextureView::GetTexture () const noexcept
 {
     return Parent;
+}
+
+Lumen::RHIOpenGL::GLuint Lumen::RHIOpenGL::FOpenGLTextureView::GetView () const noexcept
+{
+    if ( View != 0U )
+    {
+        return View;
+    }
+    const TOptional<FOpenGLTexture *> Texture = RHI::TryRHIBackendCast<FOpenGLTexture>( *Parent );
+    return Texture ? ( *Texture )->GetTexture() : 0U;
+}
+
+Lumen::RHIOpenGL::GLenum Lumen::RHIOpenGL::FOpenGLTextureView::GetTarget () const noexcept
+{
+    switch ( Desc.Type )
+    {
+    case RHI::ERHITextureViewType::Texture1D:
+        return GlTexture1D;
+    case RHI::ERHITextureViewType::Texture3D:
+        return GlTexture3D;
+    case RHI::ERHITextureViewType::TextureCube:
+        return GlTextureCubeMap;
+    case RHI::ERHITextureViewType::Texture2DArray:
+        return GlTexture2DArray;
+    default:
+        return GlTexture2D;
+    }
+}
+
+const Lumen::RHIOpenGL::FOpenGLDeviceContext &Lumen::RHIOpenGL::FOpenGLTextureView::GetDeviceContext () const noexcept
+{
+    return *Context;
 }

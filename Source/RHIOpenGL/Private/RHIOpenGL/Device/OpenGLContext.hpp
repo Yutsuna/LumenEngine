@@ -40,7 +40,7 @@ namespace RHIOpenGL
     public:
 
         /** @brief Constructs an unstarted context; prefer Create() for normal use. */
-        explicit FOpenGLContext ( Bool InEnableDebug ) noexcept;
+        explicit FOpenGLContext ( Bool bDebugEnabled ) noexcept;
 
         /** @brief Creates the context and waits until its worker is ready. */
         [[nodiscard]] static TExpected<TSharedRef<FOpenGLContext>, RHI::FRHIError> Create ( Bool bEnableDebug ) noexcept;

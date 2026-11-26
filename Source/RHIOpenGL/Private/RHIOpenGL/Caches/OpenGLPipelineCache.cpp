@@ -27,7 +27,7 @@ constexpr Lumen::USize PipelineCacheHeaderSize    = 24U;
 constexpr Lumen::USize PipelineCacheChecksumSize  = 8U;
 constexpr Lumen::USize PipelineCacheKeyHeaderSize = 48U;
 
-Lumen::UInt64 GetKeyBytes ( const Lumen::RHI::FRHIPipelineCacheKey &InKey ) noexcept
+[[nodiscard]] Lumen::UInt64 GetKeyBytes ( const Lumen::RHI::FRHIPipelineCacheKey &InKey ) noexcept
 {
     return static_cast<Lumen::UInt64>( PipelineCacheKeyHeaderSize ) +
            ( static_cast<Lumen::UInt64>( InKey.Compatibility.ColorFormats.size() ) *
@@ -50,7 +50,8 @@ void WriteU64 ( Lumen::TVector<Lumen::Byte> &InData, const Lumen::UInt64 InValue
     WriteU32( InData, static_cast<Lumen::UInt32>( InValue >> 32U ) );
 }
 
-Lumen::Bool ReadU32 ( const Lumen::TSpan<const Lumen::Byte> InData, Lumen::USize &InOutOffset, Lumen::UInt32 &OutValue ) noexcept
+[[nodiscard]] Lumen::Bool
+ReadU32 ( const Lumen::TSpan<const Lumen::Byte> InData, Lumen::USize &InOutOffset, Lumen::UInt32 &OutValue ) noexcept
 {
     if ( InOutOffset > InData.size() or InData.size() - InOutOffset < 4U )
     {
@@ -66,7 +67,8 @@ Lumen::Bool ReadU32 ( const Lumen::TSpan<const Lumen::Byte> InData, Lumen::USize
     return true;
 }
 
-Lumen::Bool ReadU64 ( const Lumen::TSpan<const Lumen::Byte> InData, Lumen::USize &InOutOffset, Lumen::UInt64 &OutValue ) noexcept
+[[nodiscard]] Lumen::Bool
+ReadU64 ( const Lumen::TSpan<const Lumen::Byte> InData, Lumen::USize &InOutOffset, Lumen::UInt64 &OutValue ) noexcept
 {
     Lumen::UInt32 Low  = 0U;
     Lumen::UInt32 High = 0U;
@@ -98,9 +100,9 @@ void WriteKey ( Lumen::TVector<Lumen::Byte> &InData, const Lumen::RHI::FRHIPipel
     }
 }
 
-Lumen::Bool ReadKey ( const Lumen::TSpan<const Lumen::Byte> InData,
-                      Lumen::USize &InOutOffset,
-                      Lumen::RHI::FRHIPipelineCacheKey &OutKey ) noexcept
+[[nodiscard]] Lumen::Bool ReadKey ( const Lumen::TSpan<const Lumen::Byte> InData,
+                                    Lumen::USize &InOutOffset,
+                                    Lumen::RHI::FRHIPipelineCacheKey &OutKey ) noexcept
 {
     Lumen::UInt32 DepthFormat = 0U;
     Lumen::UInt32 SampleCount = 0U;
@@ -141,7 +143,7 @@ Lumen::Bool ReadKey ( const Lumen::TSpan<const Lumen::Byte> InData,
     return true;
 }
 
-Lumen::RHI::FRHIError CorruptedCacheError () noexcept
+[[nodiscard]] Lumen::RHI::FRHIError CorruptedCacheError () noexcept
 {
     return Lumen::RHI::MakeRHICorrupted( Lumen::RHI::ERHIErrorCondition::Cache, "Invalid OpenGL pipeline cache data" );
 }

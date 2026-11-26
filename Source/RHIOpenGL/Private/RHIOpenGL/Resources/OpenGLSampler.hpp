@@ -45,6 +45,10 @@ namespace RHIOpenGL
 
         [[nodiscard]] const RHI::FRHISamplerDesc &GetDesc () const noexcept override;
 
+        [[nodiscard]] GLuint GetSampler () const noexcept;
+
+        [[nodiscard]] const FOpenGLDeviceContext &GetDeviceContext () const noexcept;
+
     private:
 
         RHI::FRHIObjectBase Identity;

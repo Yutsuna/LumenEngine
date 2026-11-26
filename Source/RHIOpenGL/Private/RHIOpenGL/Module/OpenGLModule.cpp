@@ -94,15 +94,11 @@ Lumen::RHIOpenGL::FOpenGLModule::CreateDevice ( const RHI::FRHIDeviceDesc &InDes
 
     for ( const RHI::FRHIQueueRequest &Request : InDesc.Queues )
     {
-        const RHI::FRHIQueueFamilyInfo *Family = nullptr;
-        for ( const RHI::FRHIQueueFamilyInfo &Candidate : Adapter->QueueFamilies )
+        const RHI::FRHIQueueFamilyInfo *Family =
+            Algo::FindIf( Adapter->QueueFamilies, [&] ( const RHI::FRHIQueueFamilyInfo &Candidate )
         {
-            if ( Candidate.Type == Request.Type )
-            {
-                Family = &Candidate;
-                break;
-            }
-        }
+            return Candidate.Type == Request.Type;
+        } );
         if ( Family == nullptr )
         {
             return TUnexpected( RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Queue,
