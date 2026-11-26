@@ -24,11 +24,24 @@ ModuleDefinition = {
     'Depends' : ['Core', 'Maths', 'RHI'],
     'ExternalDeps' : OpenGLDependencies,
 
-    # M0 conformance gate: shared helper + Module and Device portable suites.
+    # M3 conformance gate: all portable suites, including Synchronization, Queue,
+    # Presentation and Queries on top of the M1/M2 coverage.
     'ExtraTestSources' : [
         RHIConformanceSources[0],
         RHIConformanceSources[1],
         RHIConformanceSources[2],
+        RHIConformanceSources[3],
+        RHIConformanceSources[4],
+        RHIConformanceSources[5],
+        RHIConformanceSources[6],
+        RHIConformanceSources[7],
+        RHIConformanceSources[8],
+        RHIConformanceSources[9],
+        RHIConformanceSources[10],
+        RHIConformanceSources[11],
+        RHIConformanceSources[12],
+        RHIConformanceSources[13],
+        RHIConformanceSources[14],
     ],
 
     'ExtraTestIncludeDirectories' : [ RHIConformanceIncludeDirectories ],

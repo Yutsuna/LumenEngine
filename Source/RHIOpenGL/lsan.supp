@@ -3,3 +3,7 @@ leak:__pthread_once_slow
 leak:eglInitialize
 leak:eglGetProcAddress
 leak:glGetString
+# Mesa allocates per-program draw state during DrawArrays replay; it is held by
+# the process-wide driver caches suppressed above and never individually freed.
+leak:ReplayCommand
+leak:DrawArrays
