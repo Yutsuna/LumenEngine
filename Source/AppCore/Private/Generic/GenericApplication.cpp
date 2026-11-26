@@ -31,6 +31,7 @@ Lumen::TSharedPtr<Lumen::FGenericApplicationMessageHandler> Lumen::FGenericAppli
 
 Lumen::TSharedRef<Lumen::FGenericWindow> Lumen::FGenericApplication::MakeWindow () noexcept
 {
+    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new)
     return MakeShareable( new FGenericWindow() );
 }
 
