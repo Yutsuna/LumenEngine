@@ -75,6 +75,7 @@ Lumen::FLinuxWindow::~FLinuxWindow () noexcept
 
 Lumen::TSharedRef<Lumen::FLinuxWindow> Lumen::FLinuxWindow::Make () noexcept
 {
+    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new)
     return MakeShareable<FLinuxWindow>( new FLinuxWindow() );
 }
 
