@@ -5,6 +5,8 @@
 
 #include <RHIOpenGL/Queue/OpenGLQueue.hpp>
 
+#include <Algo/ForEach.hpp>
+
 #include <HAL/LockGuard.hpp>
 #include <HAL/PlatformTime.hpp>
 
@@ -180,25 +182,27 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
         {
             /* A failed exchange refreshes Observed with the current value. */
         }
-        for ( const TSharedRef<RHI::IRHICommandList> &CommandList : Lists )
+        Algo::ForEach( Lists,
+                       [] ( const TSharedRef<RHI::IRHICommandList> &InCommandList ) noexcept -> Bool
         {
-            const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *CommandList );
-            if ( Native )
-            {
-                ( void )( *Native )->MarkCompleted( InDesc.Completion );
-            }
-        }
+            return RHI::TryRHIBackendCast<FOpenGLCommandList>( *InCommandList ).HasValue();
+        }, [&InDesc] ( const TSharedRef<RHI::IRHICommandList> &InCommandList ) noexcept
+        {
+            const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *InCommandList );
+            ( void )( *Native )->MarkCompleted( InDesc.Completion );
+        } );
     };
     Packet.OnFailure = [Lists, InDesc] ( RHI::FRHIError ) noexcept
     {
-        for ( const TSharedRef<RHI::IRHICommandList> &CommandList : Lists )
+        Algo::ForEach( Lists,
+                       [] ( const TSharedRef<RHI::IRHICommandList> &InCommandList ) noexcept -> Bool
         {
-            const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *CommandList );
-            if ( Native )
-            {
-                ( void )( *Native )->MarkCompleted( InDesc.Completion );
-            }
-        }
+            return RHI::TryRHIBackendCast<FOpenGLCommandList>( *InCommandList ).HasValue();
+        }, [&InDesc] ( const TSharedRef<RHI::IRHICommandList> &InCommandList ) noexcept
+        {
+            const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *InCommandList );
+            ( void )( *Native )->MarkCompleted( InDesc.Completion );
+        } );
     };
 
     LUMEN_TRY_EXPECT_ERROR( Context->GetExecutor()->Submit( static_cast<FOpenGLSubmission &&>( Packet ) ) );
