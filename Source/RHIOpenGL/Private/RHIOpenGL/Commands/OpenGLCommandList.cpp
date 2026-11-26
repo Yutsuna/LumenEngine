@@ -5,6 +5,9 @@
 
 #include <RHIOpenGL/Commands/OpenGLCommandList.hpp>
 
+#include <Algo/Find.hpp>
+#include <Algo/Sort.hpp>
+
 #include <HAL/LockGuard.hpp>
 
 #include <RHI/Commands/RHICommandListState.hpp>
@@ -21,6 +24,7 @@
 #include <RHI/Resources/RHIBufferDesc.hpp>
 #include <RHI/Resources/RHITextureDesc.hpp>
 #include <RHI/Types/RHIError.hpp>
+#include <RHI/Types/RHIFormatInfo.hpp>
 #include <RHI/Types/RHIHash.hpp>
 
 #include <RHI/Validation/RHIValidation.hpp>
@@ -30,6 +34,7 @@
 #include <RHIOpenGL/Commands/OpenGLCommandStreamOpcodes.hpp>
 #include <RHIOpenGL/Pipelines/OpenGLComputePipeline.hpp>
 #include <RHIOpenGL/Pipelines/OpenGLGraphicsPipeline.hpp>
+#include <RHIOpenGL/Pipelines/OpenGLPipelineLayout.hpp>
 #include <RHIOpenGL/Resources/OpenGLBuffer.hpp>
 #include <RHIOpenGL/Resources/OpenGLSampler.hpp>
 #include <RHIOpenGL/Resources/OpenGLTexture.hpp>
@@ -61,6 +66,56 @@ using namespace Lumen::RHI;
 [[nodiscard]] Bool SupportsCompute ( ERHIQueueType InQueueType ) noexcept
 {
     return InQueueType == ERHIQueueType::Graphics or InQueueType == ERHIQueueType::Compute;
+}
+
+/** @brief Resolves a descriptor slot into a deterministic per-class array index. */
+[[nodiscard]] Bool ResolveBindingClass ( const FOpenGLBindingLayout &InLayout,
+                                         const UInt32 InSlot,
+                                         const UInt32 InArrayElement,
+                                         ERHIBindingType &OutType,
+                                         UInt32 &OutClassIndex ) noexcept
+{
+    TVector<FRHIBindingLayoutEntry> Entries = InLayout.GetDesc().Entries;
+    Algo::Sort( Entries, [] ( const FRHIBindingLayoutEntry &InLeft, const FRHIBindingLayoutEntry &InRight ) noexcept -> Bool
+    {
+        return InLeft.Slot < InRight.Slot;
+    } );
+    UInt32 UniformCount = 0U;
+    UInt32 StorageCount = 0U;
+    UInt32 TextureCount = 0U;
+    UInt32 ImageCount   = 0U;
+    for ( const FRHIBindingLayoutEntry &Entry : Entries )
+    {
+        UInt32 *ClassCount = nullptr;
+        switch ( Entry.Type )
+        {
+        case ERHIBindingType::ConstantBuffer:
+            ClassCount = &UniformCount;
+            break;
+        case ERHIBindingType::ReadOnlyBuffer:
+        case ERHIBindingType::ReadWriteBuffer:
+            ClassCount = &StorageCount;
+            break;
+        case ERHIBindingType::Texture:
+        case ERHIBindingType::Sampler:
+        case ERHIBindingType::CombinedTextureSampler:
+            ClassCount = &TextureCount;
+            break;
+        case ERHIBindingType::StorageTexture:
+            ClassCount = &ImageCount;
+            break;
+        default:
+            return false;
+        }
+        if ( Entry.Slot == InSlot )
+        {
+            OutType       = Entry.Type;
+            OutClassIndex = *ClassCount + InArrayElement;
+            return true;
+        }
+        *ClassCount += Entry.Count;
+    }
+    return false;
 }
 
 [[nodiscard]] GLbitfield BarrierBitsForState ( ERHIResourceState InState ) noexcept
@@ -149,11 +204,16 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::Begin () noexcept
 {
     LUMEN_TRY_EXPECT_ERROR( RHI::RHITransitionCommandList( State, RHI::ERHICommandListState::Recording ) );
     Stream.Clear();
-    bHasPipeline     = false;
-    ActiveQueryPool  = nullptr;
-    ActiveQueryIndex = 0U;
-    DebugDepth       = 0U;
-    Completion       = {};
+    bHasPipeline       = false;
+    BoundGraphics      = nullptr;
+    BoundLayout        = nullptr;
+    BoundDynamicStates = RHI::ERHIDynamicState::None;
+    bHasIndexBuffer    = false;
+    BoundIndexType     = GlUnsignedInt;
+    ActiveQueryPool    = nullptr;
+    ActiveQueryIndex   = 0U;
+    DebugDepth         = 0U;
+    Completion         = {};
     return {};
 }
 
@@ -176,12 +236,17 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::Reset () noexcept
         return TUnexpected( RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Command, "Command list cannot be reset." ) );
     }
     Stream.Clear();
-    State            = RHI::ERHICommandListState::Initial;
-    Completion       = {};
-    bHasPipeline     = false;
-    ActiveQueryPool  = nullptr;
-    ActiveQueryIndex = 0U;
-    DebugDepth       = 0U;
+    State              = RHI::ERHICommandListState::Initial;
+    Completion         = {};
+    bHasPipeline       = false;
+    BoundGraphics      = nullptr;
+    BoundLayout        = nullptr;
+    BoundDynamicStates = RHI::ERHIDynamicState::None;
+    bHasIndexBuffer    = false;
+    BoundIndexType     = GlUnsignedInt;
+    ActiveQueryPool    = nullptr;
+    ActiveQueryIndex   = 0U;
+    DebugDepth         = 0U;
     return {};
 }
 
@@ -264,25 +329,67 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::CopyBuffer ( TSha
     return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::CopyTexture ( TSharedRef<RHI::IRHITexture>,
-                                                                             TSharedRef<RHI::IRHITexture>,
-                                                                             const RHI::FRHITextureCopy & ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::CopyTexture ( TSharedRef<RHI::IRHITexture> InSource,
+                                                                             TSharedRef<RHI::IRHITexture> InDestination,
+                                                                             const RHI::FRHITextureCopy &InCopy ) noexcept
 {
-    return UnsupportedCommand( "CopyTexture", RHI::ERHIErrorCondition::Command );
+    LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    const RHI::ERHIFormat Format =
+        InSource->GetDesc().Format != RHI::ERHIFormat::Unknown ? InSource->GetDesc().Format : InDestination->GetDesc().Format;
+    LUMEN_TRY_EXPECT_ERROR( InCopy.Validate( Format ) );
+    if ( not HasAnyFlags( InSource->GetDesc().Usage, RHI::ERHIResourceUsage::CopySource ) or
+         not HasAnyFlags( InDestination->GetDesc().Usage, RHI::ERHIResourceUsage::CopyDestination ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "CopyTexture source/destination usage is incompatible." ) );
+    }
+    const TOptional<FOpenGLTexture *> Source =
+        RHI::TryUnwrapRHIBackend<FOpenGLTexture>( StaticCastSharedRef<RHI::IRHIObject>( InSource ).Get() );
+    const TOptional<FOpenGLTexture *> Destination =
+        RHI::TryUnwrapRHIBackend<FOpenGLTexture>( StaticCastSharedRef<RHI::IRHIObject>( InDestination ).Get() );
+    if ( not Source or not Destination )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "CopyTexture requires OpenGL textures on this device." ) );
+    }
+    const FOpenGLCopyTexturePayload Payload{
+        .Source            = ( *Source )->GetTexture(),
+        .Destination       = ( *Destination )->GetTexture(),
+        .SourceTarget      = ( *Source )->GetTarget(),
+        .DestinationTarget = ( *Destination )->GetTarget(),
+        .SourceLevel       = static_cast<Int32>( InCopy.SourceMip ),
+        .DestinationLevel  = static_cast<Int32>( InCopy.DestinationMip ),
+        .SourceX           = InCopy.SourceOffset.X,
+        .SourceY           = InCopy.SourceOffset.Y,
+        .SourceZ           = InCopy.SourceOffset.Z + static_cast<Int32>( InCopy.SourceLayer ),
+        .DestinationX      = InCopy.DestinationOffset.X,
+        .DestinationY      = InCopy.DestinationOffset.Y,
+        .DestinationZ      = InCopy.DestinationOffset.Z + static_cast<Int32>( InCopy.DestinationLayer ),
+        .Width             = InCopy.Extent.Width,
+        .Height            = InCopy.Extent.Height,
+        .Depth             = InCopy.Extent.Depth,
+    };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::CopyTexture ), Payload ) );
+    Stream.Retain( StaticCastSharedRef<RHI::IRHIObject>( InSource ) );
+    Stream.Retain( StaticCastSharedRef<RHI::IRHIObject>( InDestination ) );
+    return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::CopyBufferToTexture ( TSharedRef<RHI::IRHIBuffer>,
-                                                                                     TSharedRef<RHI::IRHITexture>,
-                                                                                     const RHI::FRHIBufferTextureCopy & ) noexcept
+Lumen::RHI::FRHIExpected
+Lumen::RHIOpenGL::FOpenGLCommandList::CopyBufferToTexture ( TSharedRef<RHI::IRHIBuffer> InSource,
+                                                            TSharedRef<RHI::IRHITexture> InDestination,
+                                                            const RHI::FRHIBufferTextureCopy &InCopy ) noexcept
 {
-    return UnsupportedCommand( "CopyBufferToTexture", RHI::ERHIErrorCondition::Command );
+    return RecordBufferTextureTransfer( InSource.Get(), InDestination.Get(), StaticCastSharedRef<RHI::IRHIObject>( InSource ),
+                                        StaticCastSharedRef<RHI::IRHIObject>( InDestination ), InCopy, true );
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::CopyTextureToBuffer ( TSharedRef<RHI::IRHITexture>,
-                                                                                     TSharedRef<RHI::IRHIBuffer>,
-                                                                                     const RHI::FRHIBufferTextureCopy & ) noexcept
+Lumen::RHI::FRHIExpected
+Lumen::RHIOpenGL::FOpenGLCommandList::CopyTextureToBuffer ( TSharedRef<RHI::IRHITexture> InSource,
+                                                            TSharedRef<RHI::IRHIBuffer> InDestination,
+                                                            const RHI::FRHIBufferTextureCopy &InCopy ) noexcept
 {
-    return UnsupportedCommand( "CopyTextureToBuffer", RHI::ERHIErrorCondition::Command );
+    return RecordBufferTextureTransfer( InDestination.Get(), InSource.Get(),
+                                        StaticCastSharedRef<RHI::IRHIObject>( InDestination ),
+                                        StaticCastSharedRef<RHI::IRHIObject>( InSource ), InCopy, false );
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::BeginRendering ( const RHI::FRHIRenderingDesc &InDesc ) noexcept
@@ -360,18 +467,27 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::EndRendering () n
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetPipeline ( TSharedRef<RHI::IRHIPipeline> InPipeline ) noexcept
 {
     LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
-    GLuint Program = 0U;
-    Bool bCompute  = false;
+    GLuint Program     = 0U;
+    GLuint VertexArray = 0U;
+    Bool bCompute      = false;
+    BoundGraphics      = nullptr;
+    BoundLayout        = nullptr;
+    BoundDynamicStates = RHI::ERHIDynamicState::None;
     if ( const TOptional<FOpenGLGraphicsPipeline *> Graphics =
              RHI::TryUnwrapRHIBackend<FOpenGLGraphicsPipeline>( InPipeline.Get() ) )
     {
-        Program = ( *Graphics )->GetProgram();
+        Program            = ( *Graphics )->GetProgram();
+        VertexArray        = ( *Graphics )->GetVertexArray();
+        BoundGraphics      = *Graphics;
+        BoundLayout        = ( *Graphics )->GetNativeLayout();
+        BoundDynamicStates = ( *Graphics )->GetDesc().DynamicStates;
     }
     else if ( const TOptional<FOpenGLComputePipeline *> Compute =
                   RHI::TryUnwrapRHIBackend<FOpenGLComputePipeline>( InPipeline.Get() ) )
     {
-        Program  = ( *Compute )->GetProgram();
-        bCompute = true;
+        Program     = ( *Compute )->GetProgram();
+        BoundLayout = ( *Compute )->GetNativeLayout();
+        bCompute    = true;
     }
     else
     {
@@ -382,8 +498,9 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetPipeline ( TSh
         return TUnexpected(
             RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Pipeline, "Compute pipelines are not available on this queue." ) );
     }
-    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetPipeline ),
-                                          FOpenGLSetPipelinePayload{ .Program = Program, .bIsCompute = bCompute } ) );
+    LUMEN_TRY_EXPECT_ERROR(
+        Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetPipeline ),
+                      FOpenGLSetPipelinePayload{ .Program = Program, .VertexArray = VertexArray, .bIsCompute = bCompute } ) );
     bHasPipeline      = true;
     BoundPipelineType = bCompute ? RHI::ERHIPipelineType::Compute : RHI::ERHIPipelineType::Graphics;
     Stream.Retain( StaticCastSharedRef<RHI::IRHIObject>( InPipeline ) );
@@ -394,6 +511,11 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetBindingSet ( U
                                                                                TSharedRef<RHI::IRHIBindingSet> InSet ) noexcept
 {
     LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    if ( not bHasPipeline or BoundLayout == nullptr )
+    {
+        return TUnexpected(
+            RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Command, "SetBindingSet requires a bound pipeline layout." ) );
+    }
     const TOptional<FOpenGLBindingSet *> Set = RHI::TryUnwrapRHIBackend<FOpenGLBindingSet>( InSet.Get() );
     if ( not Set )
     {
@@ -403,42 +525,110 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetBindingSet ( U
     {
         return TUnexpected( RHI::MakeRHIInvalidLimit( "Binding set index exceeds the device limit." ) );
     }
+    const TOptional<FOpenGLBindingSetUnits> Units = BoundLayout->GetBindingSetUnits( InIndex );
+    if ( not Units )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidLimit( "Pipeline layout has no units for this binding set." ) );
+    }
+    const TOptional<FOpenGLBindingLayout *> SetLayout =
+        RHI::TryUnwrapRHIBackend<FOpenGLBindingLayout>( ( *Set )->GetLayout().Get() );
+    if ( not SetLayout )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Binding layout does not belong to the OpenGL backend." ) );
+    }
+
     FOpenGLBindingSetPayload Payload;
+    Payload.SetIndex           = InIndex;
+    Payload.UniformBufferBase  = Units->UniformBuffers.Base;
+    Payload.StorageBufferBase  = Units->StorageBuffers.Base;
+    Payload.TextureBase        = Units->Textures.Base;
+    Payload.ImageBase          = Units->Images.Base;
+    Payload.UniformBufferCount = Units->UniformBuffers.Count;
+    Payload.StorageBufferCount = Units->StorageBuffers.Count;
+    Payload.TextureCount       = Units->Textures.Count;
+    Payload.ImageCount         = Units->Images.Count;
+
     for ( const RHI::FRHIBindingWrite &Write : ( *Set )->GetWrites() )
     {
-        if ( Payload.UnitCount >= 8U )
+        ERHIBindingType Type          = ERHIBindingType::ReadOnlyBuffer;
+        UInt32 ClassIndex             = 0U;
+        const Bool bResolved          = ResolveBindingClass( **SetLayout, Write.Slot, Write.ArrayElement, Type, ClassIndex );
+        const FOpenGLUnitRange *Range = nullptr;
+        UInt32 MaxClassIndex          = GOpenGLMaxDescriptorsPerSet;
+        switch ( Type )
         {
+        case ERHIBindingType::ConstantBuffer:
+            Range = &Units->UniformBuffers;
+            break;
+        case ERHIBindingType::ReadOnlyBuffer:
+        case ERHIBindingType::ReadWriteBuffer:
+            Range = &Units->StorageBuffers;
+            break;
+        case ERHIBindingType::Texture:
+        case ERHIBindingType::Sampler:
+        case ERHIBindingType::CombinedTextureSampler:
+            Range = &Units->Textures;
+            break;
+        case ERHIBindingType::StorageTexture:
+            Range = &Units->Images;
+            break;
+        default:
             break;
         }
-        const UInt32 Unit = Payload.UnitCount++;
+        if ( not bResolved or Range == nullptr or ClassIndex >= Range->Count or ClassIndex >= MaxClassIndex )
+        {
+            return TUnexpected( RHI::MakeRHIInvalidLimit( "Binding write does not fit its resolved unit range." ) );
+        }
+        const UInt32 Unit = Range->Base + ClassIndex;
         if ( const auto *BufferWrite = std::get_if<RHI::FRHIBufferBinding>( &Write.Resource ) )
         {
             const TOptional<FOpenGLBuffer *> Buffer = RHI::TryUnwrapRHIBackend<FOpenGLBuffer>( BufferWrite->Buffer.Get() );
-            if ( Buffer )
+            if ( not Buffer )
+            {
+                return TUnexpected( RHI::MakeRHIInvalidResource( "Bound buffer does not belong to this backend." ) );
+            }
+            if ( Type == ERHIBindingType::ConstantBuffer )
             {
                 Payload.UniformBuffers[Unit] = ( *Buffer )->GetGLBuffer();
             }
+            else
+            {
+                Payload.ShaderStorageBuffers[Unit] = ( *Buffer )->GetGLBuffer();
+            }
+            Stream.Retain( StaticCastSharedPtr<RHI::IRHIObject>( BufferWrite->Buffer ) );
         }
         else if ( const auto *Combined = std::get_if<RHI::FRHICombinedTextureSamplerBinding>( &Write.Resource ) )
         {
             const TOptional<FOpenGLTextureView *> View = RHI::TryUnwrapRHIBackend<FOpenGLTextureView>( Combined->View.Get() );
             const TOptional<FOpenGLSampler *> Sampler  = RHI::TryUnwrapRHIBackend<FOpenGLSampler>( Combined->Sampler.Get() );
-            if ( View )
+            if ( not View or not Sampler )
             {
-                Payload.Textures[Unit] = ( *View )->GetView();
+                return TUnexpected( RHI::MakeRHIInvalidResource( "Bound view/sampler does not belong to this backend." ) );
             }
-            if ( Sampler )
-            {
-                Payload.Samplers[Unit] = ( *Sampler )->GetSampler();
-            }
+            Payload.Textures[Unit] = ( *View )->GetView();
+            Payload.Samplers[Unit] = ( *Sampler )->GetSampler();
+            Stream.Retain( StaticCastSharedPtr<RHI::IRHIObject>( Combined->View ) );
+            Stream.Retain( StaticCastSharedPtr<RHI::IRHIObject>( Combined->Sampler ) );
         }
         else if ( const auto *TextureWrite = std::get_if<RHI::FRHITextureBinding>( &Write.Resource ) )
         {
             const TOptional<FOpenGLTextureView *> View = RHI::TryUnwrapRHIBackend<FOpenGLTextureView>( TextureWrite->View.Get() );
-            if ( View )
+            if ( not View )
             {
-                Payload.Textures[Unit] = ( *View )->GetView();
+                return TUnexpected( RHI::MakeRHIInvalidResource( "Bound view does not belong to this backend." ) );
             }
+            Payload.Textures[Unit] = ( *View )->GetView();
+            Stream.Retain( StaticCastSharedPtr<RHI::IRHIObject>( TextureWrite->View ) );
+        }
+        else if ( const auto *SamplerWrite = std::get_if<RHI::FRHISamplerBinding>( &Write.Resource ) )
+        {
+            const TOptional<FOpenGLSampler *> Sampler = RHI::TryUnwrapRHIBackend<FOpenGLSampler>( SamplerWrite->Sampler.Get() );
+            if ( not Sampler )
+            {
+                return TUnexpected( RHI::MakeRHIInvalidResource( "Bound sampler does not belong to this backend." ) );
+            }
+            Payload.Samplers[Unit] = ( *Sampler )->GetSampler();
+            Stream.Retain( StaticCastSharedPtr<RHI::IRHIObject>( SamplerWrite->Sampler ) );
         }
     }
     LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetBindingSet ), Payload ) );
@@ -472,16 +662,63 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetInlineConstant
     return {};
 }
 
-Lumen::RHI::FRHIExpected
-Lumen::RHIOpenGL::FOpenGLCommandList::SetVertexBuffer ( UInt32, TSharedRef<RHI::IRHIBuffer>, UInt64 ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetVertexBuffer ( const UInt32 InSlot,
+                                                                                 TSharedRef<RHI::IRHIBuffer> InBuffer,
+                                                                                 const UInt64 InOffset ) noexcept
 {
-    return UnsupportedCommand( "SetVertexBuffer", RHI::ERHIErrorCondition::Command );
+    LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    if ( InSlot >= Context->GetLimits().MaxVertexBuffers )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidLimit( "Vertex buffer slot exceeds the device limit." ) );
+    }
+    const UInt32 Stride = GetVertexBufferStride( InSlot );
+    if ( Stride == 0U )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Command,
+                                                      "The bound vertex layout has no buffer for this slot." ) );
+    }
+    if ( not HasAnyFlags( InBuffer->GetDesc().Usage, RHI::ERHIResourceUsage::VertexBuffer ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Vertex buffer has incompatible usage." ) );
+    }
+    const TOptional<FOpenGLBuffer *> Native =
+        RHI::TryUnwrapRHIBackend<FOpenGLBuffer>( StaticCastSharedRef<RHI::IRHIObject>( InBuffer ).Get() );
+    if ( not Native )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Vertex buffer does not belong to this backend." ) );
+    }
+    const FOpenGLVertexBufferPayload Payload{ .Buffer = ( *Native )->GetGLBuffer(),
+                                              .Offset = InOffset + ( *Native )->GetGLBufferOffset(),
+                                              .Slot   = InSlot,
+                                              .Stride = Stride };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetVertexBuffer ), Payload ) );
+    Stream.Retain( StaticCastSharedRef<RHI::IRHIObject>( InBuffer ) );
+    return {};
 }
 
-Lumen::RHI::FRHIExpected
-Lumen::RHIOpenGL::FOpenGLCommandList::SetIndexBuffer ( TSharedRef<RHI::IRHIBuffer>, UInt64, RHI::ERHIIndexFormat ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetIndexBuffer ( TSharedRef<RHI::IRHIBuffer> InBuffer,
+                                                                                const UInt64 InOffset,
+                                                                                const RHI::ERHIIndexFormat InFormat ) noexcept
 {
-    return UnsupportedCommand( "SetIndexBuffer", RHI::ERHIErrorCondition::Command );
+    LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    if ( not HasAnyFlags( InBuffer->GetDesc().Usage, RHI::ERHIResourceUsage::IndexBuffer ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Index buffer has incompatible usage." ) );
+    }
+    const TOptional<FOpenGLBuffer *> Native =
+        RHI::TryUnwrapRHIBackend<FOpenGLBuffer>( StaticCastSharedRef<RHI::IRHIObject>( InBuffer ).Get() );
+    if ( not Native )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Index buffer does not belong to this backend." ) );
+    }
+    const GLenum IndexType = InFormat == RHI::ERHIIndexFormat::Index16 ? GlUnsignedShort : GlUnsignedInt;
+    const FOpenGLIndexBufferPayload Payload{
+        .Buffer = ( *Native )->GetGLBuffer(), .Offset = InOffset + ( *Native )->GetGLBufferOffset(), .IndexType = IndexType };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetIndexBuffer ), Payload ) );
+    Stream.Retain( StaticCastSharedRef<RHI::IRHIObject>( InBuffer ) );
+    bHasIndexBuffer = true;
+    BoundIndexType  = IndexType;
+    return {};
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::Draw ( const RHI::FRHIDrawArguments &InArguments ) noexcept
@@ -501,15 +738,56 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::Draw ( const RHI:
     return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::DrawIndexed ( const RHI::FRHIDrawIndexedArguments & ) noexcept
+Lumen::RHI::FRHIExpected
+Lumen::RHIOpenGL::FOpenGLCommandList::DrawIndexed ( const RHI::FRHIDrawIndexedArguments &InArguments ) noexcept
 {
-    return UnsupportedCommand( "DrawIndexed", RHI::ERHIErrorCondition::Command );
+    LUMEN_TRY_EXPECT_ERROR( RequireRendering() );
+    LUMEN_TRY_EXPECT_ERROR( RequirePipeline( RHI::ERHIPipelineType::Graphics ) );
+    LUMEN_TRY_EXPECT_ERROR( InArguments.Validate() );
+    if ( not bHasIndexBuffer )
+    {
+        return TUnexpected(
+            RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Command, "DrawIndexed requires an index buffer." ) );
+    }
+    const FOpenGLDrawIndexedPayload Payload{ .IndexCount    = InArguments.IndexCount,
+                                             .InstanceCount = InArguments.InstanceCount,
+                                             .FirstIndex    = InArguments.FirstIndex,
+                                             .VertexOffset  = InArguments.VertexOffset,
+                                             .FirstInstance = InArguments.FirstInstance,
+                                             .IndexType     = BoundIndexType };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::DrawIndexed ), Payload ) );
+    return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::DrawIndirect ( TSharedRef<RHI::IRHIBuffer>,
-                                                                              const RHI::FRHIIndirectArguments & ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::DrawIndirect ( TSharedRef<RHI::IRHIBuffer> InArguments,
+                                                                              const RHI::FRHIIndirectArguments &InDesc ) noexcept
 {
-    return UnsupportedCommand( "DrawIndirect", RHI::ERHIErrorCondition::Command );
+    if ( not Context->GetCapabilities().Supports( RHI::ERHICapabilityFlags::IndirectDraw ) )
+    {
+        return TUnexpected( RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Command, "Indirect draws are unavailable." ) );
+    }
+    LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    LUMEN_TRY_EXPECT_ERROR( RequirePipeline( RHI::ERHIPipelineType::Graphics ) );
+    if ( not HasAnyFlags( InArguments->GetDesc().Usage, RHI::ERHIResourceUsage::IndirectArgument ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Indirect arguments buffer has the wrong usage." ) );
+    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate( InArguments->GetDesc().Size, 16U ) );
+    const TOptional<FOpenGLBuffer *> Native =
+        RHI::TryUnwrapRHIBackend<FOpenGLBuffer>( StaticCastSharedRef<RHI::IRHIObject>( InArguments ).Get() );
+    if ( not Native )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Indirect arguments buffer is not an OpenGL buffer." ) );
+    }
+    const FOpenGLIndirectPayload Payload{ .Buffer    = ( *Native )->GetGLBuffer(),
+                                          .Offset    = InDesc.Offset + ( *Native )->GetGLBufferOffset(),
+                                          .Count     = InDesc.Count,
+                                          .Stride    = InDesc.Stride,
+                                          .bIndexed  = false,
+                                          .IndexType = GlUnsignedInt };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::DrawIndirect ), Payload ) );
+    Stream.Retain( StaticCastSharedRef<RHI::IRHIObject>( InArguments ) );
+    return {};
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::Dispatch ( const RHI::FRHIDispatchArguments &InArguments ) noexcept
@@ -554,29 +832,62 @@ Lumen::RHIOpenGL::FOpenGLCommandList::DispatchIndirect ( TSharedRef<RHI::IRHIBuf
     return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetViewport ( const RHI::FRHIViewport & ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetViewport ( const RHI::FRHIViewport &InViewport ) noexcept
 {
-    return UnsupportedCommand( "SetViewport", RHI::ERHIErrorCondition::Command );
+    LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    if ( not InViewport.IsValid() )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Command, "Viewport is invalid." ) );
+    }
+    const FOpenGLViewportPayload Payload{ .X        = InViewport.X,
+                                          .Y        = InViewport.Y,
+                                          .Width    = InViewport.Width,
+                                          .Height   = InViewport.Height,
+                                          .MinDepth = InViewport.MinDepth,
+                                          .MaxDepth = InViewport.MaxDepth };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetViewport ), Payload ) );
+    return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetScissor ( const RHI::FRHIRect2D & ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetScissor ( const RHI::FRHIRect2D &InScissor ) noexcept
 {
-    return UnsupportedCommand( "SetScissor", RHI::ERHIErrorCondition::Command );
+    LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    if ( not InScissor.IsValid() )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Command, "Scissor extent is empty." ) );
+    }
+    const FOpenGLScissorPayload Payload{
+        .X = InScissor.Position.X, .Y = InScissor.Position.Y, .Width = InScissor.Size.Width, .Height = InScissor.Size.Height };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetScissor ), Payload ) );
+    return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetBlendConstants ( const Float32 ( & )[4] ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetBlendConstants ( const Float32 ( &InConstants )[4] ) noexcept
 {
-    return UnsupportedCommand( "SetBlendConstants", RHI::ERHIErrorCondition::Command );
+    LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    LUMEN_TRY_EXPECT_ERROR( RequireDynamicState( RHI::ERHIDynamicState::BlendConstants ) );
+    const FOpenGLFloat4Payload Payload{ .Values = { InConstants[0], InConstants[1], InConstants[2], InConstants[3] } };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetBlendConstants ), Payload ) );
+    return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetDepthBias ( Float32, Float32 ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetDepthBias ( const Float32 InConstant,
+                                                                              const Float32 InSlope ) noexcept
 {
-    return UnsupportedCommand( "SetDepthBias", RHI::ERHIErrorCondition::Command );
+    LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    LUMEN_TRY_EXPECT_ERROR( RequireDynamicState( RHI::ERHIDynamicState::DepthBias ) );
+    const FOpenGLDepthBiasPayload Payload{ .Constant = InConstant, .Slope = InSlope };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetDepthBias ), Payload ) );
+    return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetStencilReference ( UInt32 ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetStencilReference ( const UInt32 InReference ) noexcept
 {
-    return UnsupportedCommand( "SetStencilReference", RHI::ERHIErrorCondition::Command );
+    LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    LUMEN_TRY_EXPECT_ERROR( RequireDynamicState( RHI::ERHIDynamicState::StencilReference ) );
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetStencilReference ),
+                                          FOpenGLUIntPayload{ .Value = InReference } ) );
+    return {};
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::BeginQuery ( TSharedRef<RHI::IRHIQueryPool> InPool,
@@ -696,4 +1007,111 @@ Lumen::RHIOpenGL::FOpenGLCommandList::UnsupportedCommand ( const FStringView InO
                                                            const RHI::ERHIErrorCondition InCondition ) noexcept
 {
     return TUnexpected( RHI::MakeRHIUnsupported( InCondition, InOperation ) );
+}
+
+Lumen::RHI::FRHIExpected
+Lumen::RHIOpenGL::FOpenGLCommandList::RequireDynamicState ( const RHI::ERHIDynamicState InState ) const noexcept
+{
+    if ( not HasAnyFlags( BoundDynamicStates, InState ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Command,
+                                                      "The bound graphics pipeline does not declare this dynamic state." ) );
+    }
+    return {};
+}
+
+Lumen::UInt32 Lumen::RHIOpenGL::FOpenGLCommandList::GetVertexBufferStride ( const UInt32 InSlot ) const noexcept
+{
+    if ( BoundGraphics == nullptr )
+    {
+        return 0U;
+    }
+    const RHI::FRHIVertexBufferLayout *Found = Algo::FindIf(
+        BoundGraphics->GetDesc().VertexLayout.Buffers, [InSlot] ( const RHI::FRHIVertexBufferLayout &InLayout ) noexcept -> Bool
+    {
+        return InLayout.Slot == InSlot;
+    } );
+    return Found ? Found->Stride : 0U;
+}
+
+Lumen::RHI::FRHIExpected
+Lumen::RHIOpenGL::FOpenGLCommandList::RecordBufferTextureTransfer ( RHI::IRHIBuffer *InBuffer,
+                                                                    RHI::IRHITexture *InTexture,
+                                                                    TSharedPtr<RHI::IRHIObject> InBufferRef,
+                                                                    TSharedPtr<RHI::IRHIObject> InTextureRef,
+                                                                    const RHI::FRHIBufferTextureCopy &InCopy,
+                                                                    const Bool bFromBuffer ) noexcept
+{
+    LUMEN_TRY_EXPECT_ERROR( RequireRecording( true ) );
+    if ( InBuffer == nullptr or InTexture == nullptr )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Buffer/texture copy requires valid resources." ) );
+    }
+    const RHI::ERHIFormat Format = InTexture->GetDesc().Format;
+    LUMEN_TRY_EXPECT_ERROR( InCopy.Validate( Format ) );
+    const RHI::FRHIFormatInfo &FormatInfo = RHI::GetRHIFormatInfo( Format );
+    if ( FormatInfo.bIsCompressed or FormatInfo.BlockWidth == 0U or FormatInfo.BytesPerBlock == 0U )
+    {
+        return TUnexpected(
+            RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Command, "Compressed buffer/texture transfers are unavailable." ) );
+    }
+    const UInt32 BytesPerPixel = static_cast<UInt32>( FormatInfo.BytesPerBlock ) / static_cast<UInt32>( FormatInfo.BlockWidth );
+    if ( BytesPerPixel == 0U or ( InCopy.RowPitch != 0ULL and ( InCopy.RowPitch % BytesPerPixel ) != 0ULL ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Command, "Invalid transfer row pitch." ) );
+    }
+    const UInt64 RowLength64 = InCopy.RowPitch != 0ULL ? InCopy.RowPitch / BytesPerPixel : 0ULL;
+    if ( RowLength64 > 0xFFFFFFFFULL )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidLimit( "Transfer row length exceeds the OpenGL limit." ) );
+    }
+    if ( bFromBuffer and not HasAnyFlags( InBuffer->GetDesc().Usage, RHI::ERHIResourceUsage::CopySource ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Transfer buffer is not a copy source." ) );
+    }
+    if ( ( not bFromBuffer ) and not HasAnyFlags( InBuffer->GetDesc().Usage, RHI::ERHIResourceUsage::CopyDestination ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Transfer buffer is not a copy destination." ) );
+    }
+    if ( bFromBuffer and not HasAnyFlags( InTexture->GetDesc().Usage, RHI::ERHIResourceUsage::CopyDestination ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Transfer texture is not a copy destination." ) );
+    }
+    if ( ( not bFromBuffer ) and not HasAnyFlags( InTexture->GetDesc().Usage, RHI::ERHIResourceUsage::CopySource ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Transfer texture is not a copy source." ) );
+    }
+    const TOptional<FOpenGLBuffer *> NativeBuffer =
+        RHI::TryUnwrapRHIBackend<FOpenGLBuffer>( static_cast<RHI::IRHIObject *>( InBuffer ) );
+    const TOptional<FOpenGLTexture *> NativeTexture =
+        RHI::TryUnwrapRHIBackend<FOpenGLTexture>( static_cast<RHI::IRHIObject *>( InTexture ) );
+    const TOptional<FOpenGLFormatMapping> Mapping = MapOpenGLFormat( Format );
+    if ( not NativeBuffer or not NativeTexture or not Mapping )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Transfer resources require an OpenGL mapping." ) );
+    }
+    const FOpenGLBufferTextureCopyPayload Payload{
+        .Buffer        = ( *NativeBuffer )->GetGLBuffer(),
+        .BufferOffset  = InCopy.BufferOffset + ( *NativeBuffer )->GetGLBufferOffset(),
+        .Texture       = ( *NativeTexture )->GetTexture(),
+        .TextureTarget = ( *NativeTexture )->GetTarget(),
+        .Level         = static_cast<Int32>( InCopy.Mip ),
+        .X             = InCopy.TextureOffset.X,
+        .Y             = InCopy.TextureOffset.Y,
+        .Z             = InCopy.TextureOffset.Z + static_cast<Int32>( InCopy.Layer ),
+        .Width         = InCopy.Extent.Width,
+        .Height        = InCopy.Extent.Height,
+        .Depth         = InCopy.Extent.Depth,
+        .RowLength     = static_cast<UInt32>( RowLength64 ),
+        .BytesPerPixel = BytesPerPixel,
+        .Format        = Mapping->ExternalFormat,
+        .Type          = Mapping->Type,
+        .bFromBuffer   = bFromBuffer,
+    };
+    const EOpenGLCommandOpcode Opcode =
+        bFromBuffer ? EOpenGLCommandOpcode::CopyBufferToTexture : EOpenGLCommandOpcode::CopyTextureToBuffer;
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( Opcode ), Payload ) );
+    Stream.Retain( static_cast<TSharedPtr<RHI::IRHIObject> &&>( InBufferRef ) );
+    Stream.Retain( static_cast<TSharedPtr<RHI::IRHIObject> &&>( InTextureRef ) );
+    return {};
 }

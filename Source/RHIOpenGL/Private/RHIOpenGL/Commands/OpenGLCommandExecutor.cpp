@@ -12,8 +12,11 @@
 #include <RHIOpenGL/Pipelines/OpenGLGraphicsPipeline.hpp>
 #include <RHIOpenGL/Synchronization/OpenGLQueryPool.hpp>
 
+#include <Algo/Any.hpp>
+#include <Memory/Span.hpp>
 #include <String/StringView.hpp>
-#include <Templates/Optional.hpp>
+#include <Templates/Expected.hpp>
+#include <Templates/Unexpected.hpp>
 
 #include <cstring>
 
@@ -41,6 +44,10 @@ struct FReplayState
     Lumen::UInt32 FramebufferHeight                = 0U;
     Lumen::UInt64 IndexBufferOffset                = 0ULL;
     Lumen::RHIOpenGL::GLenum IndexType             = Lumen::RHIOpenGL::GlUnsignedInt;
+    Lumen::UInt32 UniformUnitHighWater             = 0U;
+    Lumen::UInt32 StorageUnitHighWater             = 0U;
+    Lumen::UInt32 TextureUnitHighWater             = 0U;
+    Lumen::UInt32 DebugGroupDepth                  = 0U;
     Lumen::Bool bRendering                         = false;
 };
 
@@ -121,12 +128,13 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
 
     InState.Dispatch.BindFramebuffer( Lumen::RHIOpenGL::GlDrawFramebuffer, Framebuffer );
 
-    Lumen::Bool bSrgb              = false;
     const Lumen::UInt32 ColorCount = EffectiveColorCount( Payload );
-    for ( Lumen::UInt32 Index = 0U; Index < ColorCount; ++Index )
+    const Lumen::Bool bSrgb =
+        Lumen::Algo::AnyOf( Lumen::TSpan<const Lumen::RHIOpenGL::GLenum>( Payload.ColorFormats, ColorCount ),
+                            [] ( const Lumen::RHIOpenGL::GLenum InFormat ) noexcept -> Lumen::Bool
     {
-        bSrgb = bSrgb or IsSrgbFormat( Payload.ColorFormats[Index] );
-    }
+        return IsSrgbFormat( InFormat );
+    } );
     InState.State.SetEnabled( Lumen::RHIOpenGL::GlFramebufferSrgb, bSrgb );
     InState.State.SetEnabled( Lumen::RHIOpenGL::GlMultisample, true );
 
@@ -163,30 +171,33 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
                                                             const Lumen::UInt32 InOpcode,
                                                             FReplayState &InState ) noexcept
 {
-    LUMEN_EXPECT( View, InStream.Read( InIndex ) );
-    if ( View.Opcode != InOpcode )
+    return InStream.Read( InIndex ).AndThen(
+        [InOpcode, &InState] ( const Lumen::RHI::FRHICommandView &InView ) noexcept -> Lumen::RHI::FRHIExpected
     {
-        return Lumen::MakeUnexpected(
-            Lumen::RHI::MakeRHICorrupted( Lumen::RHI::ERHIErrorCondition::Command, "EndRendering opcode mismatch." ) );
-    }
+        if ( InView.Opcode != InOpcode )
+        {
+            return Lumen::MakeUnexpected(
+                Lumen::RHI::MakeRHICorrupted( Lumen::RHI::ERHIErrorCondition::Command, "EndRendering opcode mismatch." ) );
+        }
 
-    Lumen::RHIOpenGL::FOpenGLEndRenderingPayload Payload;
-    if ( View.Payload.size() >= sizeof( Payload ) )
-    {
-        std::memcpy( &Payload, View.Payload.data(), sizeof( Payload ) );
-    }
+        Lumen::RHIOpenGL::FOpenGLEndRenderingPayload Payload;
+        if ( InView.Payload.size() >= sizeof( Payload ) )
+        {
+            std::memcpy( &Payload, InView.Payload.data(), sizeof( Payload ) );
+        }
 
-    const Lumen::RHIOpenGL::GLuint Framebuffer = Payload.Framebuffer != 0U ? Payload.Framebuffer : InState.CurrentFramebuffer;
-    if ( Framebuffer != 0U )
-    {
-        InState.Framebuffers.NotifyEndRendering( Framebuffer, Payload.bInvalidate );
-    }
-    InState.State.SetEnabled( Lumen::RHIOpenGL::GlFramebufferSrgb, false );
-    InState.State.SetEnabled( Lumen::RHIOpenGL::GlMultisample, false );
-    InState.CurrentFramebuffer = 0U;
-    InState.FramebufferHeight  = 0U;
-    InState.bRendering         = false;
-    return {};
+        const Lumen::RHIOpenGL::GLuint Framebuffer = Payload.Framebuffer != 0U ? Payload.Framebuffer : InState.CurrentFramebuffer;
+        if ( Framebuffer != 0U )
+        {
+            InState.Framebuffers.NotifyEndRendering( Framebuffer, Payload.bInvalidate );
+        }
+        InState.State.SetEnabled( Lumen::RHIOpenGL::GlFramebufferSrgb, false );
+        InState.State.SetEnabled( Lumen::RHIOpenGL::GlMultisample, false );
+        InState.CurrentFramebuffer = 0U;
+        InState.FramebufferHeight  = 0U;
+        InState.bRendering         = false;
+        return {};
+    } );
 }
 
 [[nodiscard]] Lumen::RHI::FRHIExpected ReplayCommand ( const Lumen::RHI::FRHICommandView &InView,
@@ -247,21 +258,26 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
         return WithPayload<Lumen::RHIOpenGL::FOpenGLBufferTextureCopyPayload>(
             InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
-            if ( InPayload.Buffer == 0U or InPayload.Texture == 0U or InPayload.Width == 0U or
-                 InState.Dispatch.GetTextureImage == nullptr )
+            if ( InPayload.Buffer == 0U or InPayload.Texture == 0U or InPayload.Width == 0U )
             {
                 return {};
             }
+            if ( InState.Dispatch.GetTextureImage == nullptr )
+            {
+                return Lumen::MakeUnexpected( Lumen::RHI::MakeRHIUnsupported( Lumen::RHI::ERHIErrorCondition::Command,
+                                                                              "Texture readback entry point is unavailable." ) );
+            }
+            const Lumen::UInt32 BytesPerPixel     = InPayload.BytesPerPixel != 0U ? InPayload.BytesPerPixel : 4U;
             const Lumen::UInt32 RowPixels         = InPayload.RowLength != 0U ? InPayload.RowLength : InPayload.Width;
             const Lumen::UInt32 Rows              = InPayload.Height != 0U ? InPayload.Height : 1U;
-            const Lumen::RHIOpenGL::GLsizei Bytes = static_cast<Lumen::RHIOpenGL::GLsizei>( RowPixels * Rows * 4U );
-            InState.Dispatch.BindBuffer( Lumen::RHIOpenGL::GlPixelPackBuffer, InPayload.Buffer );
+            const Lumen::RHIOpenGL::GLsizei Bytes = static_cast<Lumen::RHIOpenGL::GLsizei>( RowPixels * Rows * BytesPerPixel );
+            InState.State.BindBuffer( Lumen::RHIOpenGL::GlPixelPackBuffer, InPayload.Buffer );
             InState.Dispatch.PixelStorei( Lumen::RHIOpenGL::GlPackRowLength,
                                           static_cast<Lumen::RHIOpenGL::GLint>( InPayload.RowLength ) );
             InState.Dispatch.GetTextureImage( InPayload.Texture, InPayload.Level, InPayload.Format, InPayload.Type, Bytes,
                                               reinterpret_cast<void *>( static_cast<Lumen::UPtr>( InPayload.BufferOffset ) ) );
             InState.Dispatch.PixelStorei( Lumen::RHIOpenGL::GlPackRowLength, 0 );
-            InState.Dispatch.BindBuffer( Lumen::RHIOpenGL::GlPixelPackBuffer, 0U );
+            InState.State.BindBuffer( Lumen::RHIOpenGL::GlPixelPackBuffer, 0U );
             return {};
         } );
 
@@ -278,16 +294,15 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
                 return Lumen::MakeUnexpected( Lumen::RHI::MakeRHIUnsupported(
                     Lumen::RHI::ERHIErrorCondition::Command, "Three-dimensional buffer/texture transfers are unavailable." ) );
             }
-            const Lumen::RHIOpenGL::GLenum BufferTarget = Lumen::RHIOpenGL::GlPixelUnpackBuffer;
-            InState.Dispatch.PixelStorei( BufferTarget, static_cast<Lumen::RHIOpenGL::GLint>( InPayload.Buffer ) );
+            InState.State.BindBuffer( Lumen::RHIOpenGL::GlPixelUnpackBuffer, InPayload.Buffer );
             InState.Dispatch.PixelStorei( GlUnpackRowLength, static_cast<Lumen::RHIOpenGL::GLint>( InPayload.RowLength ) );
             InState.Dispatch.TextureSubImage2D(
                 InPayload.Texture, InPayload.Level, InPayload.X, InPayload.Y,
                 static_cast<Lumen::RHIOpenGL::GLsizei>( InPayload.Width ),
                 static_cast<Lumen::RHIOpenGL::GLsizei>( InPayload.Height == 0U ? 1U : InPayload.Height ), InPayload.Format,
                 InPayload.Type, reinterpret_cast<const void *>( static_cast<Lumen::UPtr>( InPayload.BufferOffset ) ) );
-            InState.Dispatch.PixelStorei( BufferTarget, 0 );
             InState.Dispatch.PixelStorei( GlUnpackRowLength, 0 );
+            InState.State.BindBuffer( Lumen::RHIOpenGL::GlPixelUnpackBuffer, 0U );
             return {};
         } );
 
@@ -302,6 +317,11 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
             InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
             InState.State.UseProgram( InPayload.Program );
+            if ( not InPayload.bIsCompute and InPayload.VertexArray != 0U )
+            {
+                InState.State.BindVertexArray( InPayload.VertexArray );
+                InState.VertexArray = InPayload.VertexArray;
+            }
             return {};
         } );
 
@@ -309,28 +329,51 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
         return WithPayload<Lumen::RHIOpenGL::FOpenGLBindingSetPayload>(
             InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
-            const Lumen::UInt32 Count = InPayload.UnitCount < Lumen::RHIOpenGL::MaxOpenGLCommandBindingUnits
-                                            ? InPayload.UnitCount
-                                            : Lumen::RHIOpenGL::MaxOpenGLCommandBindingUnits;
-            for ( Lumen::UInt32 Index = 0U; Index < Count; ++Index )
+            const Lumen::UInt32 UniformEnd = InPayload.UniformBufferBase + InPayload.UniformBufferCount;
+            const Lumen::UInt32 StorageEnd = InPayload.StorageBufferBase + InPayload.StorageBufferCount;
+            const Lumen::UInt32 TextureEnd = InPayload.TextureBase + InPayload.TextureCount;
+            for ( Lumen::UInt32 Index = UniformEnd; Index < InState.UniformUnitHighWater; ++Index )
             {
-                /* Unit zero is reserved for the inline constant ring. */
-                if ( InPayload.UniformBuffers[Index] != 0U and Index != 0U )
+                InState.State.BindBufferBase( Lumen::RHIOpenGL::GlUniformBuffer, Index, 0U );
+            }
+            for ( Lumen::UInt32 Index = StorageEnd; Index < InState.StorageUnitHighWater; ++Index )
+            {
+                InState.State.BindBufferBase( Lumen::RHIOpenGL::GlShaderStorageBuffer, Index, 0U );
+            }
+            for ( Lumen::UInt32 Index = TextureEnd; Index < InState.TextureUnitHighWater; ++Index )
+            {
+                InState.State.BindTextureUnit( Index, 0U );
+                InState.State.BindSampler( Index, 0U );
+            }
+            InState.UniformUnitHighWater = UniformEnd > InState.UniformUnitHighWater ? UniformEnd : InState.UniformUnitHighWater;
+            InState.StorageUnitHighWater = StorageEnd > InState.StorageUnitHighWater ? StorageEnd : InState.StorageUnitHighWater;
+            InState.TextureUnitHighWater = TextureEnd > InState.TextureUnitHighWater ? TextureEnd : InState.TextureUnitHighWater;
+
+            for ( Lumen::UInt32 Index = 0U; Index < InPayload.UniformBufferCount; ++Index )
+            {
+                if ( InPayload.UniformBuffers[Index] != 0U )
                 {
-                    InState.State.BindBufferBase( Lumen::RHIOpenGL::GlUniformBuffer, Index, InPayload.UniformBuffers[Index] );
+                    InState.State.BindBufferBase( Lumen::RHIOpenGL::GlUniformBuffer, InPayload.UniformBufferBase + Index,
+                                                  InPayload.UniformBuffers[Index] );
                 }
+            }
+            for ( Lumen::UInt32 Index = 0U; Index < InPayload.StorageBufferCount; ++Index )
+            {
                 if ( InPayload.ShaderStorageBuffers[Index] != 0U )
                 {
-                    InState.State.BindBufferBase( Lumen::RHIOpenGL::GlShaderStorageBuffer, Index,
+                    InState.State.BindBufferBase( Lumen::RHIOpenGL::GlShaderStorageBuffer, InPayload.StorageBufferBase + Index,
                                                   InPayload.ShaderStorageBuffers[Index] );
                 }
+            }
+            for ( Lumen::UInt32 Index = 0U; Index < InPayload.TextureCount; ++Index )
+            {
                 if ( InPayload.Textures[Index] != 0U )
                 {
-                    InState.State.BindTextureUnit( Index, InPayload.Textures[Index] );
+                    InState.State.BindTextureUnit( InPayload.TextureBase + Index, InPayload.Textures[Index] );
                 }
                 if ( InPayload.Samplers[Index] != 0U )
                 {
-                    InState.State.BindSampler( Index, InPayload.Samplers[Index] );
+                    InState.State.BindSampler( InPayload.TextureBase + Index, InPayload.Samplers[Index] );
                 }
             }
             return {};
@@ -443,6 +486,10 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
                                                      static_cast<Lumen::UInt32>( InPayload.Height ) ),
                                        static_cast<Lumen::RHIOpenGL::GLsizei>( InPayload.Width ),
                                        static_cast<Lumen::RHIOpenGL::GLsizei>( InPayload.Height ) );
+            if ( InState.Dispatch.DepthRangef != nullptr )
+            {
+                InState.Dispatch.DepthRangef( InPayload.MinDepth, InPayload.MaxDepth );
+            }
             return {};
         } );
 
@@ -525,6 +572,15 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
                     reinterpret_cast<const Lumen::AnsiChar *>( View.Payload.data() + sizeof( Header ) ), NameLength );
                 InState.Context.GetExecutor()->EmitDebugMessage( Lumen::RHI::FRHIDebugMessage(
                     Lumen::RHI::ERHIDebugSeverity::Info, Lumen::RHI::ERHIDebugCategory::General, 0U, Label ) );
+                if ( InState.Dispatch.DebugMessagePushGroup != nullptr )
+                {
+                    Lumen::AnsiChar Name[128]     = {};
+                    const Lumen::USize CopyLength = NameLength < 127U ? NameLength : 127U;
+                    std::memcpy( Name, View.Payload.data() + sizeof( Header ), CopyLength );
+                    InState.Dispatch.DebugMessagePushGroup( 0x8245U, 0U, static_cast<Lumen::RHIOpenGL::GLsizei>( CopyLength ),
+                                                            Name );
+                    ++InState.DebugGroupDepth;
+                }
             }
         }
         return {};
@@ -533,6 +589,11 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
     case EOpenGLCommandOpcode::EndDebugRegion:
     {
         LUMEN_TRY_EXPECT_ERROR( InStream.Read( InIndex ) );
+        if ( InState.DebugGroupDepth != 0U and InState.Dispatch.DebugMessagePopGroup != nullptr )
+        {
+            InState.Dispatch.DebugMessagePopGroup();
+            --InState.DebugGroupDepth;
+        }
         return {};
     }
 
@@ -643,8 +704,8 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandExecutor::Execute ( con
                          .Framebuffers          = *FramebufferCache,
                          .VertexArray           = VertexArray,
                          .InlineConstantsBuffer = InlineConstantsBuffer };
-    TOptional<RHI::FRHIError> Failure;
-    const RHI::FRHIExpected Posted = Context->GetExecutor()->ExecuteOnGLThread( [&InStream, &Replay, &Failure] () noexcept
+    RHI::FRHIExpected ReplayResult;
+    const RHI::FRHIExpected Posted = Context->GetExecutor()->ExecuteOnGLThread( [&InStream, &Replay, &ReplayResult] () noexcept
     {
         const USize CommandCount = InStream.GetCommandCount();
         for ( USize Index = 0U; Index < CommandCount; ++Index )
@@ -652,21 +713,26 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandExecutor::Execute ( con
             const auto View = InStream.Read( Index );
             if ( not View )
             {
-                Failure = TOptional<RHI::FRHIError>( View.Error() );
+                ReplayResult = Lumen::MakeUnexpected( View.Error() );
                 break;
             }
             const RHI::FRHIExpected Replayed = ReplayCommand( *View, InStream, Index, Replay );
             if ( not Replayed )
             {
-                Failure = TOptional<RHI::FRHIError>( Replayed.Error() );
+                ReplayResult = Lumen::MakeUnexpected( Replayed.Error() );
+                break;
+            }
+            const Lumen::RHIOpenGL::GLenum NativeError = Replay.Dispatch.GetError();
+            if ( NativeError != Lumen::RHIOpenGL::GlNoError )
+            {
+                ReplayResult =
+                    Lumen::MakeUnexpected( RHI::FRHIError( RHI::ERHIErrorCode::BackendFailure, RHI::ERHIErrorCondition::Command,
+                                                           "OpenGL reported an error while replaying a command." ) );
                 break;
             }
         }
     } );
     LUMEN_TRY_EXPECT_ERROR( Posted );
-    if ( Failure.HasValue() )
-    {
-        return TUnexpected( *Failure );
-    }
+    LUMEN_TRY_EXPECT_ERROR( ReplayResult );
     return {};
 }

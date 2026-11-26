@@ -54,8 +54,8 @@ namespace RHIOpenGL
     /** @brief Maximum number of color attachments carried in one payload. */
     inline constexpr UInt32 MaxOpenGLCommandColorAttachments = 8U;
 
-    /** @brief Maximum number of flat units per resource class in a binding set payload. */
-    inline constexpr UInt32 MaxOpenGLCommandBindingUnits = 8U;
+    /** @brief Maximum number of descriptors carried per class by one binding-set payload. */
+    inline constexpr UInt32 GOpenGLMaxDescriptorsPerSet = 32U;
 
     /** @brief Maximum number of bytes carried by one inline constant payload. */
     inline constexpr UInt32 MaxOpenGLInlineConstantBytes = 256U;
@@ -161,6 +161,7 @@ namespace RHIOpenGL
         UInt32 Height        = 0U;
         UInt32 Depth         = 0U;
         UInt32 RowLength     = 0U;
+        UInt32 BytesPerPixel = 4U;
         GLenum Format        = GlRgba;
         GLenum Type          = GlUnsignedByte;
         Bool bFromBuffer     = true;
@@ -169,18 +170,28 @@ namespace RHIOpenGL
     /** @brief Program switch, with the compute flag retained for validation. */
     struct FOpenGLSetPipelinePayload
     {
-        GLuint Program  = 0U;
-        Bool bIsCompute = false;
+        GLuint Program     = 0U;
+        GLuint VertexArray = 0U;
+        Bool bIsCompute    = false;
     };
 
-    /** @brief Flat unit assignments for one binding set. */
+    /** @brief Absolute flat unit bases and handles for one binding set. */
     struct FOpenGLBindingSetPayload
     {
-        UInt32 UnitCount               = 0U;
-        GLuint UniformBuffers[8]       = {};
-        GLuint ShaderStorageBuffers[8] = {};
-        GLuint Textures[8]             = {};
-        GLuint Samplers[8]             = {};
+        UInt32 SetIndex                                          = 0U;
+        UInt32 UniformBufferBase                                 = 0U;
+        UInt32 StorageBufferBase                                 = 0U;
+        UInt32 TextureBase                                       = 0U;
+        UInt32 ImageBase                                         = 0U;
+        UInt32 UniformBufferCount                                = 0U;
+        UInt32 StorageBufferCount                                = 0U;
+        UInt32 TextureCount                                      = 0U;
+        UInt32 ImageCount                                        = 0U;
+        GLuint UniformBuffers[GOpenGLMaxDescriptorsPerSet]       = {};
+        GLuint ShaderStorageBuffers[GOpenGLMaxDescriptorsPerSet] = {};
+        GLuint Textures[GOpenGLMaxDescriptorsPerSet]             = {};
+        GLuint Samplers[GOpenGLMaxDescriptorsPerSet]             = {};
+        GLuint Images[GOpenGLMaxDescriptorsPerSet]               = {};
     };
 
     /** @brief Fixed-size inline constant record; stream may carry variable bytes. */

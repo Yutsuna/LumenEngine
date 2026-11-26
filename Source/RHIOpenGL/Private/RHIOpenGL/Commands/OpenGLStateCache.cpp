@@ -53,16 +53,35 @@ void Lumen::RHIOpenGL::FOpenGLStateCache::BindBufferBase ( const GLenum InTarget
 {
     if ( const TOptional<USize> TargetIndex = GetTargetIndex( InTarget ) )
     {
-        const UInt32 Slot = InIndex < 8U ? InIndex : 0U;
-        if ( BoundBuffers[*TargetIndex][Slot] == InBuffer )
+        if ( InIndex >= 32U )
         {
             return;
         }
-        BoundBuffers[*TargetIndex][Slot] = InBuffer;
+        if ( BoundBuffers[*TargetIndex][InIndex] == InBuffer )
+        {
+            return;
+        }
+        BoundBuffers[*TargetIndex][InIndex] = InBuffer;
     }
     if ( Dispatch.BindBufferBase != nullptr )
     {
         Dispatch.BindBufferBase( InTarget, InIndex, InBuffer );
+    }
+}
+
+void Lumen::RHIOpenGL::FOpenGLStateCache::BindBuffer ( const GLenum InTarget, const GLuint InBuffer ) noexcept
+{
+    if ( const TOptional<USize> TargetIndex = GetTargetIndex( InTarget ) )
+    {
+        if ( BoundBuffers[*TargetIndex][0] == InBuffer )
+        {
+            return;
+        }
+        BoundBuffers[*TargetIndex][0] = InBuffer;
+    }
+    if ( Dispatch.BindBuffer != nullptr )
+    {
+        Dispatch.BindBuffer( InTarget, InBuffer );
     }
 }
 

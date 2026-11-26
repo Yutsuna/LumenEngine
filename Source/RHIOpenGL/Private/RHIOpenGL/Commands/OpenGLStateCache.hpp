@@ -39,6 +39,7 @@ namespace RHIOpenGL
         void BindVertexArray ( GLuint InVertexArray ) noexcept;
 
         void BindBufferBase ( GLenum InTarget, GLuint InIndex, GLuint InBuffer ) noexcept;
+        void BindBuffer ( GLenum InTarget, GLuint InBuffer ) noexcept;
         void BindTextureUnit ( GLuint InUnit, GLuint InTexture ) noexcept;
         void BindSampler ( GLuint InUnit, GLuint InSampler ) noexcept;
 
@@ -66,13 +67,13 @@ namespace RHIOpenGL
     private:
 
         const FGLDispatchTable &Dispatch;
-        GLuint CurrentProgram     = 0U;
-        GLuint CurrentVertexArray = 0U;
-        GLuint BoundBuffers[6][8] = {};
-        GLuint BoundTextures[32]  = {};
-        GLuint BoundSamplers[32]  = {};
-        Int32 CurrentViewport[4]  = { 0, 0, 0, 0 };
-        Int32 CurrentScissor[4]   = { 0, 0, 0, 0 };
+        GLuint CurrentProgram      = 0U;
+        GLuint CurrentVertexArray  = 0U;
+        GLuint BoundBuffers[6][32] = {};
+        GLuint BoundTextures[32]   = {};
+        GLuint BoundSamplers[32]   = {};
+        Int32 CurrentViewport[4]   = { 0, 0, 0, 0 };
+        Int32 CurrentScissor[4]    = { 0, 0, 0, 0 };
         TVector<FCapabilityState> Capabilities;
     };
 

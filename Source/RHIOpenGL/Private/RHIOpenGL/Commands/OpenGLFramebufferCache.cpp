@@ -5,6 +5,12 @@
 
 #include <RHIOpenGL/Commands/OpenGLFramebufferCache.hpp>
 
+#include <Algo/Any.hpp>
+#include <Algo/Find.hpp>
+#include <Algo/ForEach.hpp>
+
+#include <Memory/Span.hpp>
+
 #include <RHI/Types/RHIError.hpp>
 
 /**
@@ -34,13 +40,14 @@ Lumen::RHIOpenGL::FOpenGLFramebufferCache::FOpenGLFramebufferCache ( TSharedRef<
 Lumen::RHIOpenGL::FOpenGLFramebufferCache::~FOpenGLFramebufferCache () noexcept
 {
     Lumen::TVector<Lumen::RHIOpenGL::GLuint> Framebuffers;
-    for ( const FCacheEntry &Entry : Entries )
+    Algo::ForEach( Entries,
+                   [] ( const FCacheEntry &InEntry ) noexcept -> Bool
     {
-        if ( Entry.Framebuffer != 0U )
-        {
-            Framebuffers.push_back( Entry.Framebuffer );
-        }
-    }
+        return InEntry.Framebuffer != 0U;
+    }, [&Framebuffers] ( const FCacheEntry &InEntry ) noexcept
+    {
+        Framebuffers.push_back( InEntry.Framebuffer );
+    } );
     if ( Framebuffers.empty() )
     {
         return;
@@ -55,12 +62,12 @@ Lumen::RHIOpenGL::FOpenGLFramebufferCache::~FOpenGLFramebufferCache () noexcept
 Lumen::TExpected<Lumen::RHIOpenGL::GLuint, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLFramebufferCache::GetOrCreate ( const FOpenGLRenderingPayload &InDesc ) noexcept
 {
-    for ( const FCacheEntry &Entry : Entries )
+    if ( const FCacheEntry *Found = Algo::FindIf( Entries, [&InDesc] ( const FCacheEntry &InEntry ) noexcept -> Bool
     {
-        if ( Entry.Framebuffer != 0U and Matches( Entry, InDesc ) )
-        {
-            return Entry.Framebuffer;
-        }
+        return InEntry.Framebuffer != 0U and Matches( InEntry, InDesc );
+    } ) )
+    {
+        return Found->Framebuffer;
     }
 
     const UInt32 ColorCount                            = GetColorCount( InDesc );
@@ -108,10 +115,11 @@ Lumen::RHIOpenGL::FOpenGLFramebufferCache::GetOrCreate ( const FOpenGLRenderingP
     Entry.Desc        = InDesc;
     Entry.Framebuffer = NativeFramebuffer;
     Entry.bSrgb       = false;
-    for ( UInt32 Index = 0U; Index < ColorCount and Index < MaxOpenGLCommandColorAttachments; ++Index )
+    const Lumen::TSpan<const Lumen::RHIOpenGL::GLenum> FormatSpan( InDesc.ColorFormats, ColorCount );
+    Entry.bSrgb = Algo::AnyOf( FormatSpan, [] ( const Lumen::RHIOpenGL::GLenum InFormat ) noexcept -> Bool
     {
-        Entry.bSrgb = Entry.bSrgb or IsSrgbFormat( InDesc.ColorFormats[Index] );
-    }
+        return IsSrgbFormat( InFormat );
+    } );
     Entries.push_back( Entry );
     return NativeFramebuffer;
 }

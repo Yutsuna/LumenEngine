@@ -15,6 +15,7 @@
 #include <Templates/Optional.hpp>
 
 #include <RHI/Commands/IRHICommandList.hpp>
+#include <RHI/Pipelines/RHIDynamicState.hpp>
 
 #include <RHIOpenGL/Commands/OpenGLCommandAllocator.hpp>
 #include <RHIOpenGL/Device/OpenGLDeviceContext.hpp>
@@ -25,6 +26,9 @@ namespace Lumen
 
 namespace RHIOpenGL
 {
+
+    class FOpenGLGraphicsPipeline;
+    class FOpenGLPipelineLayout;
 
     /**
      * @class FOpenGLCommandList
@@ -137,6 +141,14 @@ namespace RHIOpenGL
         [[nodiscard]] RHI::FRHIExpected RequireRecording ( Bool bAllowRendering ) const noexcept;
         [[nodiscard]] RHI::FRHIExpected RequireRendering () const noexcept;
         [[nodiscard]] RHI::FRHIExpected RequirePipeline ( RHI::ERHIPipelineType InType ) const noexcept;
+        [[nodiscard]] RHI::FRHIExpected RequireDynamicState ( RHI::ERHIDynamicState InState ) const noexcept;
+        [[nodiscard]] UInt32 GetVertexBufferStride ( UInt32 InSlot ) const noexcept;
+        [[nodiscard]] RHI::FRHIExpected RecordBufferTextureTransfer ( RHI::IRHIBuffer *InBuffer,
+                                                                      RHI::IRHITexture *InTexture,
+                                                                      TSharedPtr<RHI::IRHIObject> InBufferRef,
+                                                                      TSharedPtr<RHI::IRHIObject> InTextureRef,
+                                                                      const RHI::FRHIBufferTextureCopy &InCopy,
+                                                                      Bool bFromBuffer ) noexcept;
         [[nodiscard]] static RHI::FRHIExpected UnsupportedCommand ( FStringView InOperation,
                                                                     RHI::ERHIErrorCondition InCondition ) noexcept;
 
@@ -149,11 +161,16 @@ namespace RHIOpenGL
         RHI::ERHICommandListState State = RHI::ERHICommandListState::Initial;
         mutable HAL::FPlatformRecursiveSharedMutex Mutex;
         RHI::FRHITimelineValue Completion;
-        Bool bHasPipeline                       = false;
-        RHI::ERHIPipelineType BoundPipelineType = RHI::ERHIPipelineType::Graphics;
-        RHI::IRHIQueryPool *ActiveQueryPool     = nullptr;
-        UInt32 ActiveQueryIndex                 = 0U;
-        UInt32 DebugDepth                       = 0U;
+        Bool bHasPipeline                        = false;
+        RHI::ERHIPipelineType BoundPipelineType  = RHI::ERHIPipelineType::Graphics;
+        FOpenGLGraphicsPipeline *BoundGraphics   = nullptr;
+        FOpenGLPipelineLayout *BoundLayout       = nullptr;
+        RHI::ERHIDynamicState BoundDynamicStates = RHI::ERHIDynamicState::None;
+        Bool bHasIndexBuffer                     = false;
+        GLenum BoundIndexType                    = GlUnsignedInt;
+        RHI::IRHIQueryPool *ActiveQueryPool      = nullptr;
+        UInt32 ActiveQueryIndex                  = 0U;
+        UInt32 DebugDepth                        = 0U;
     };
 
 } // namespace RHIOpenGL
