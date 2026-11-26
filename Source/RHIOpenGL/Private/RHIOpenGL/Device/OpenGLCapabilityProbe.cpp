@@ -5,6 +5,8 @@
 
 #include <RHIOpenGL/Device/OpenGLCapabilityProbe.hpp>
 
+#include <HAL/PlatformTime.hpp>
+
 #include <RHI/Types/RHIError.hpp>
 #include <RHI/Types/RHIHash.hpp>
 #include <RHI/Utilities/RHIAlignment.hpp>
@@ -94,6 +96,66 @@ namespace
     return Lumen::RHI::ERHIAdapterType::Unknown;
 }
 
+/**
+ * @brief Proves that timestamp queries work on the temporary probe context.
+ * @details M4-D3 exception: enumeration has no GL Executor yet, so this runs on
+ *          the caller thread on a private context that is destroyed before return.
+ */
+[[nodiscard]] Lumen::Bool ProbeTimestampQueries ( const Lumen::RHIOpenGL::FGLDispatchTable &InDispatch ) noexcept
+{
+    if ( InDispatch.CreateQueries == nullptr or InDispatch.DeleteQueries == nullptr or InDispatch.QueryCounter == nullptr or
+         InDispatch.GetQueryObjectuiv == nullptr or InDispatch.GetQueryObjectui64v == nullptr or InDispatch.Flush == nullptr or
+         InDispatch.GetError == nullptr )
+    {
+        return false;
+    }
+
+    Lumen::RHIOpenGL::GLuint Handles[2] = { 0U, 0U };
+    ( void )InDispatch.GetError();
+    InDispatch.CreateQueries( Lumen::RHIOpenGL::GlTimestamp, 2, Handles );
+    if ( Handles[0] == 0U or Handles[1] == 0U )
+    {
+        ( void )InDispatch.GetError();
+        InDispatch.DeleteQueries( 2, Handles );
+        return false;
+    }
+
+    InDispatch.QueryCounter( Handles[0], Lumen::RHIOpenGL::GlTimestamp );
+    InDispatch.QueryCounter( Handles[1], Lumen::RHIOpenGL::GlTimestamp );
+    InDispatch.Flush();
+
+    const Lumen::Float64 Deadline = Lumen::HAL::FPlatformTime::Seconds() + 0.1;
+    Lumen::Bool bAvailable        = false;
+    for ( ;; )
+    {
+        Lumen::RHIOpenGL::GLuint Available = 0U;
+        InDispatch.GetQueryObjectuiv( Handles[1], Lumen::RHIOpenGL::GlQueryResultAvailable, &Available );
+        if ( Available != 0U )
+        {
+            bAvailable = true;
+            break;
+        }
+        if ( Lumen::HAL::FPlatformTime::Seconds() >= Deadline )
+        {
+            break;
+        }
+        Lumen::HAL::FPlatformTime::Sleep( 0.0005 );
+    }
+
+    Lumen::Bool bSupported = false;
+    if ( bAvailable )
+    {
+        Lumen::RHIOpenGL::GLuint64 First  = 0ULL;
+        Lumen::RHIOpenGL::GLuint64 Second = 0ULL;
+        InDispatch.GetQueryObjectui64v( Handles[0], Lumen::RHIOpenGL::GlQueryResult, &First );
+        InDispatch.GetQueryObjectui64v( Handles[1], Lumen::RHIOpenGL::GlQueryResult, &Second );
+        bSupported = Second > First;
+    }
+    const Lumen::RHIOpenGL::GLenum NativeError = InDispatch.GetError();
+    InDispatch.DeleteQueries( 2, Handles );
+    return bSupported and NativeError == Lumen::RHIOpenGL::GlNoError;
+}
+
 [[nodiscard]] Lumen::UInt64 MakeAdapterId ( const Lumen::FStringView InVendor, const Lumen::FStringView InRenderer ) noexcept
 {
     Lumen::FString Identity( "RHIOpenGL:" );
@@ -142,9 +204,12 @@ Lumen::RHIOpenGL::ProbeOpenGLCapabilities ( RHI::FRHIAdapterInfo &OutInfo, const
     {
         OutInfo.Capabilities.Features |= EFlags::AnisotropicFiltering;
     }
+    const Bool bSupportsTimestamps = ProbeTimestampQueries( InDispatch );
+    if ( bSupportsTimestamps )
+    {
+        OutInfo.Capabilities.Features |= EFlags::TimestampQueries;
+    }
     OutInfo.Capabilities.ShaderFormats.push_back( RHI::ERHIShaderFormat::Source );
-
-    const Bool bSupportsTimestamps = OutInfo.Capabilities.Supports( RHI::ERHICapabilityFlags::TimestampQueries );
     OutInfo.QueueFamilies.push_back( RHI::FRHIQueueFamilyInfo{ .Type                  = RHI::ERHIQueueType::Graphics,
                                                                .Count                 = 1U,
                                                                .bSupportsPresentation = true,
@@ -182,7 +247,8 @@ Lumen::RHIOpenGL::ProbeOpenGLCapabilities ( RHI::FRHIAdapterInfo &OutInfo, const
         Limits.MinBufferAlignment = 256ULL;
     }
     Limits.MinTextureRowAlignment = 1ULL;
-    Limits.TimestampPeriod        = 1ULL;
+    /** INFO: GL timer queries report nanoseconds; the value is honest only with TimestampQueries advertised. */
+    Limits.TimestampPeriod = 1ULL;
 
     LUMEN_TRY_EXPECT_ERROR( OutInfo.Validate() );
     return {};
