@@ -7,6 +7,7 @@
 
 #include <RHI/Debug/RHIDebugMessage.hpp>
 #include <RHI/Pipelines/RHIInlineConstantRange.hpp>
+#include <RHI/Validation/RHIValidation.hpp>
 
 #include <RHIOpenGL/Pipelines/OpenGLComputePipeline.hpp>
 #include <RHIOpenGL/Pipelines/OpenGLGraphicsPipeline.hpp>
@@ -16,6 +17,7 @@
 #include <Memory/Span.hpp>
 #include <String/StringView.hpp>
 #include <Templates/Expected.hpp>
+#include <Templates/Optional.hpp>
 #include <Templates/Unexpected.hpp>
 
 #include <cstring>
@@ -38,6 +40,8 @@ struct FReplayState
     Lumen::RHIOpenGL::FOpenGLDeviceContext &Context;
     Lumen::RHIOpenGL::FOpenGLStateCache &State;
     Lumen::RHIOpenGL::FOpenGLFramebufferCache &Framebuffers;
+    const Lumen::TVector<Lumen::TSharedPtr<Lumen::RHI::IRHIQueryPool>> &QueryPools;
+    Lumen::RHI::FRHITimelineValue Completion;
     Lumen::RHIOpenGL::GLuint VertexArray           = 0U;
     Lumen::RHIOpenGL::GLuint InlineConstantsBuffer = 0U;
     Lumen::RHIOpenGL::GLuint CurrentFramebuffer    = 0U;
@@ -543,18 +547,65 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
         return WithPayload<Lumen::RHIOpenGL::FOpenGLQueryPayload>(
             InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
-            if ( InPayload.Query != 0U )
+            if ( InPayload.Pool == nullptr or InPayload.Query == 0U )
             {
-                InState.Dispatch.BeginQuery( Lumen::RHIOpenGL::GlSamplesPassed, InPayload.Query );
+                return Lumen::MakeUnexpected( Lumen::RHI::MakeRHIInvalidQuery( "The query payload is incomplete." ) );
             }
+            /** INFO: an absolute timestamp is captured by glQueryCounter at EndQuery; BeginQuery only marks CPU state. */
+            if ( InPayload.Target == Lumen::RHIOpenGL::GlTimestamp )
+            {
+                return {};
+            }
+            InState.Dispatch.BeginQuery( InPayload.Target, InPayload.Query );
             return {};
         } );
 
     case EOpenGLCommandOpcode::EndQuery:
         return WithPayload<Lumen::RHIOpenGL::FOpenGLQueryPayload>(
-            InStream, InIndex, Opcode, [&InState] ( const auto & ) noexcept -> Lumen::RHI::FRHIExpected
+            InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
-            InState.Dispatch.EndQuery( Lumen::RHIOpenGL::GlSamplesPassed );
+            if ( InPayload.Pool == nullptr or InPayload.PoolIndex >= InState.QueryPools.size() )
+            {
+                return Lumen::MakeUnexpected( Lumen::RHI::MakeRHIInvalidQuery( "The query pool snapshot is missing." ) );
+            }
+            const Lumen::TSharedPtr<Lumen::RHI::IRHIQueryPool> RetainedPool = InState.QueryPools[InPayload.PoolIndex];
+            if ( not RetainedPool )
+            {
+                return Lumen::MakeUnexpected( Lumen::RHI::MakeRHIInvalidQuery( "The query pool was released." ) );
+            }
+            if ( InPayload.Target == Lumen::RHIOpenGL::GlTimestamp )
+            {
+                InState.Dispatch.QueryCounter( InPayload.Query, InPayload.Target );
+            }
+            else
+            {
+                InState.Dispatch.EndQuery( InPayload.Target );
+            }
+
+            const Lumen::RHIOpenGL::FGLDispatchTable &Dispatch = InState.Dispatch;
+            const Lumen::RHI::FRHITimelineValue Completion     = InState.Completion;
+            auto Poll = [&Dispatch, RetainedPool, Query = InPayload.Query, Index = InPayload.Index,
+                         Generation = InPayload.Generation, Completion,
+                         Attempts   = Lumen::USize{ 0U }] () mutable noexcept -> Lumen::Bool
+            {
+                Lumen::RHIOpenGL::GLuint Available = 0U;
+                Dispatch.GetQueryObjectuiv( Query, Lumen::RHIOpenGL::GlQueryResultAvailable, &Available );
+                if ( Available == 0U )
+                {
+                    /** WARN: drop a poll that never becomes available rather than leaking it on shutdown. */
+                    return ++Attempts >= 10000U;
+                }
+                Lumen::RHIOpenGL::GLuint64 Value = 0ULL;
+                Dispatch.GetQueryObjectui64v( Query, Lumen::RHIOpenGL::GlQueryResult, &Value );
+                const Lumen::TOptional<Lumen::RHIOpenGL::FOpenGLQueryPool *> Native =
+                    Lumen::RHI::TryUnwrapRHIBackend<Lumen::RHIOpenGL::FOpenGLQueryPool>( RetainedPool.Get() );
+                if ( Native )
+                {
+                    ( void )( *Native )->PublishResult( Index, Generation, static_cast<Lumen::UInt64>( Value ), Completion );
+                }
+                return true;
+            };
+            InState.Context.GetExecutor()->TrackQueryPoll( Lumen::TFunction<Lumen::Bool()>( Poll ) );
             return {};
         } );
 
@@ -696,12 +747,17 @@ Lumen::RHIOpenGL::FOpenGLCommandExecutor::~FOpenGLCommandExecutor () noexcept
     } );
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandExecutor::Execute ( const RHI::FRHICommandStream &InStream ) noexcept
+Lumen::RHI::FRHIExpected
+Lumen::RHIOpenGL::FOpenGLCommandExecutor::Execute ( const RHI::FRHICommandStream &InStream,
+                                                    const TVector<TSharedPtr<RHI::IRHIQueryPool>> &InQueryPools,
+                                                    RHI::FRHITimelineValue InCompletion ) noexcept
 {
     FReplayState Replay{ .Dispatch              = Context->GetDispatch(),
                          .Context               = *Context,
                          .State                 = *StateCache,
                          .Framebuffers          = *FramebufferCache,
+                         .QueryPools            = InQueryPools,
+                         .Completion            = InCompletion,
                          .VertexArray           = VertexArray,
                          .InlineConstantsBuffer = InlineConstantsBuffer };
     RHI::FRHIExpected ReplayResult;

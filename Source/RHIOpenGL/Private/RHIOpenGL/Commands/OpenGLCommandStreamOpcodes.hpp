@@ -17,6 +17,8 @@ namespace Lumen
 namespace RHIOpenGL
 {
 
+    class FOpenGLQueryPool;
+
     /**
      * @enum EOpenGLCommandOpcode
      * @brief Stable opcode identifiers written into FRHICommandStream records.
@@ -304,11 +306,18 @@ namespace RHIOpenGL
         UInt32 Value = 0U;
     };
 
-    /** @brief Native query handle plus its pool index. */
+    /**
+     * @struct FOpenGLQueryPayload
+     * @brief Native query, its recording snapshot and the pool that publishes the result.
+     */
     struct FOpenGLQueryPayload
     {
-        GLuint Query = 0U;
-        UInt32 Index = 0U;
+        FOpenGLQueryPool *Pool = nullptr;
+        GLuint Query           = 0U;
+        UInt32 Index           = 0U;
+        UInt32 PoolIndex       = 0U;
+        UInt32 Generation      = 0U;
+        GLenum Target          = 0U;
     };
 
     /** @brief Debug region name length; the name bytes follow the payload. */

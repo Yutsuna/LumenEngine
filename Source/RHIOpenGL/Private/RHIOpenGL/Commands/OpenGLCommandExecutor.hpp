@@ -11,7 +11,11 @@
 #include <Memory/SharedPtr.hpp>
 
 #include <RHI/Commands/RHICommandStream.hpp>
+#include <RHI/Queries/IRHIQueryPool.hpp>
 #include <RHI/Types/RHIError.hpp>
+#include <RHI/Types/RHITimeline.hpp>
+
+#include <Templates/Vector.hpp>
 
 #include <RHIOpenGL/Commands/OpenGLFramebufferCache.hpp>
 #include <RHIOpenGL/Commands/OpenGLStateCache.hpp>
@@ -42,8 +46,14 @@ namespace RHIOpenGL
 
     public:
 
-        /** @brief Replays all commands in one GL-thread task. */
-        [[nodiscard]] RHI::FRHIExpected Execute ( const RHI::FRHICommandStream &InStream ) noexcept;
+        /**
+         * @brief Replays all commands in one GL-thread task.
+         * @param InQueryPools Pools referenced by recorded query commands.
+         * @param InCompletion Completion value gating the submitted query results.
+         */
+        [[nodiscard]] RHI::FRHIExpected Execute ( const RHI::FRHICommandStream &InStream,
+                                                  const TVector<TSharedPtr<RHI::IRHIQueryPool>> &InQueryPools,
+                                                  RHI::FRHITimelineValue InCompletion ) noexcept;
 
     private:
 

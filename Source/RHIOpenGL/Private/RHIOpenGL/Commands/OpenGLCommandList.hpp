@@ -13,9 +13,11 @@
 #include <Memory/SharedPtr.hpp>
 
 #include <Templates/Optional.hpp>
+#include <Templates/Vector.hpp>
 
 #include <RHI/Commands/IRHICommandList.hpp>
 #include <RHI/Pipelines/RHIDynamicState.hpp>
+#include <RHI/Queries/IRHIQueryPool.hpp>
 
 #include <RHIOpenGL/Commands/OpenGLCommandAllocator.hpp>
 #include <RHIOpenGL/Device/OpenGLDeviceContext.hpp>
@@ -60,6 +62,9 @@ namespace RHIOpenGL
         [[nodiscard]] RHI::FRHITimelineValue GetCompletion () const noexcept override;
 
         [[nodiscard]] const RHI::FRHICommandStream &GetStream () const noexcept override;
+
+        /** @brief Query pools referenced by recorded commands, indexed by payload PoolIndex. */
+        [[nodiscard]] const TVector<TSharedPtr<RHI::IRHIQueryPool>> &GetQueryPools () const noexcept;
 
         [[nodiscard]] RHI::FRHIExpected Begin () noexcept override;
 
@@ -158,6 +163,7 @@ namespace RHIOpenGL
         TSharedRef<FOpenGLCommandAllocator> Allocator;
         TSharedRef<FOpenGLDeviceContext> Context;
         RHI::FRHICommandStream Stream;
+        TVector<TSharedPtr<RHI::IRHIQueryPool>> QueryPools;
         RHI::ERHICommandListState State = RHI::ERHICommandListState::Initial;
         mutable HAL::FPlatformRecursiveSharedMutex Mutex;
         RHI::FRHITimelineValue Completion;

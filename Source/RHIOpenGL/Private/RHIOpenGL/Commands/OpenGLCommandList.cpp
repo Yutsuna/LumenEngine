@@ -28,7 +28,6 @@
 #include <RHI/Types/RHIHash.hpp>
 
 #include <RHI/Validation/RHIValidation.hpp>
-#include <cstring>
 
 #include <RHIOpenGL/Bindings/OpenGLBindingSet.hpp>
 #include <RHIOpenGL/Commands/OpenGLCommandStreamOpcodes.hpp>
@@ -49,59 +48,74 @@
 namespace
 {
 
-using namespace Lumen;
-using namespace Lumen::RHIOpenGL;
-using namespace Lumen::RHI;
-
-[[nodiscard]] FRHIExpected InvalidCommand ( FStringView InMessage ) noexcept
+[[nodiscard]] Lumen::RHI::FRHIExpected InvalidCommand ( const Lumen::FStringView InMessage ) noexcept
 {
-    return TUnexpected<FRHIError>( MakeRHIInvalidArgument( ERHIErrorCondition::Command, InMessage ) );
+    return Lumen::TUnexpected<Lumen::RHI::FRHIError>(
+        Lumen::RHI::MakeRHIInvalidArgument( Lumen::RHI::ERHIErrorCondition::Command, InMessage ) );
 }
 
-[[nodiscard]] Bool SupportsRendering ( ERHIQueueType InQueueType ) noexcept
+[[nodiscard]] Lumen::Bool SupportsRendering ( const Lumen::RHI::ERHIQueueType InQueueType ) noexcept
 {
-    return InQueueType == ERHIQueueType::Graphics;
+    return InQueueType == Lumen::RHI::ERHIQueueType::Graphics;
 }
 
-[[nodiscard]] Bool SupportsCompute ( ERHIQueueType InQueueType ) noexcept
+Lumen::Bool SupportsCompute ( const Lumen::RHI::ERHIQueueType InQueueType ) noexcept
 {
-    return InQueueType == ERHIQueueType::Graphics or InQueueType == ERHIQueueType::Compute;
+    return InQueueType == Lumen::RHI::ERHIQueueType::Graphics or InQueueType == Lumen::RHI::ERHIQueueType::Compute;
+}
+
+Lumen::UInt32 RegisterQueryPool ( Lumen::TVector<Lumen::TSharedPtr<Lumen::RHI::IRHIQueryPool>> &InPools,
+                                  const Lumen::TSharedRef<Lumen::RHI::IRHIQueryPool> &InPool ) noexcept
+{
+    const Lumen::TSharedPtr<Lumen::RHI::IRHIQueryPool> *Found = Lumen::Algo::FindIf(
+        InPools, [&InPool] ( const Lumen::TSharedPtr<Lumen::RHI::IRHIQueryPool> &InCandidate ) noexcept -> Lumen::Bool
+    {
+        return InCandidate.Get() == InPool.Get();
+    } );
+    if ( Found != nullptr )
+    {
+        return static_cast<Lumen::UInt32>( Found - InPools.data() );
+    }
+    InPools.emplace_back( InPool );
+    return static_cast<Lumen::UInt32>( InPools.size() - 1U );
 }
 
 /** @brief Resolves a descriptor slot into a deterministic per-class array index. */
-[[nodiscard]] Bool ResolveBindingClass ( const FOpenGLBindingLayout &InLayout,
-                                         const UInt32 InSlot,
-                                         const UInt32 InArrayElement,
-                                         ERHIBindingType &OutType,
-                                         UInt32 &OutClassIndex ) noexcept
+Lumen::Bool ResolveBindingClass ( const Lumen::RHIOpenGL::FOpenGLBindingLayout &InLayout,
+                                  const Lumen::UInt32 InSlot,
+                                  const Lumen::UInt32 InArrayElement,
+                                  Lumen::RHI::ERHIBindingType &OutType,
+                                  Lumen::UInt32 &OutClassIndex ) noexcept
 {
-    TVector<FRHIBindingLayoutEntry> Entries = InLayout.GetDesc().Entries;
-    Algo::Sort( Entries, [] ( const FRHIBindingLayoutEntry &InLeft, const FRHIBindingLayoutEntry &InRight ) noexcept -> Bool
+    Lumen::TVector<Lumen::RHI::FRHIBindingLayoutEntry> Entries = InLayout.GetDesc().Entries;
+    Lumen::Algo::Sort( Entries,
+                       [] ( const Lumen::RHI::FRHIBindingLayoutEntry &InLeft,
+                            const Lumen::RHI::FRHIBindingLayoutEntry &InRight ) noexcept -> Lumen::Bool
     {
         return InLeft.Slot < InRight.Slot;
     } );
-    UInt32 UniformCount = 0U;
-    UInt32 StorageCount = 0U;
-    UInt32 TextureCount = 0U;
-    UInt32 ImageCount   = 0U;
-    for ( const FRHIBindingLayoutEntry &Entry : Entries )
+    Lumen::UInt32 UniformCount = 0U;
+    Lumen::UInt32 StorageCount = 0U;
+    Lumen::UInt32 TextureCount = 0U;
+    Lumen::UInt32 ImageCount   = 0U;
+    for ( const Lumen::RHI::FRHIBindingLayoutEntry &Entry : Entries )
     {
-        UInt32 *ClassCount = nullptr;
+        Lumen::UInt32 *ClassCount = nullptr;
         switch ( Entry.Type )
         {
-        case ERHIBindingType::ConstantBuffer:
+        case Lumen::RHI::ERHIBindingType::ConstantBuffer:
             ClassCount = &UniformCount;
             break;
-        case ERHIBindingType::ReadOnlyBuffer:
-        case ERHIBindingType::ReadWriteBuffer:
+        case Lumen::RHI::ERHIBindingType::ReadOnlyBuffer:
+        case Lumen::RHI::ERHIBindingType::ReadWriteBuffer:
             ClassCount = &StorageCount;
             break;
-        case ERHIBindingType::Texture:
-        case ERHIBindingType::Sampler:
-        case ERHIBindingType::CombinedTextureSampler:
+        case Lumen::RHI::ERHIBindingType::Texture:
+        case Lumen::RHI::ERHIBindingType::Sampler:
+        case Lumen::RHI::ERHIBindingType::CombinedTextureSampler:
             ClassCount = &TextureCount;
             break;
-        case ERHIBindingType::StorageTexture:
+        case Lumen::RHI::ERHIBindingType::StorageTexture:
             ClassCount = &ImageCount;
             break;
         default:
@@ -118,28 +132,29 @@ using namespace Lumen::RHI;
     return false;
 }
 
-[[nodiscard]] GLbitfield BarrierBitsForState ( ERHIResourceState InState ) noexcept
+Lumen::RHIOpenGL::GLbitfield BarrierBitsForState ( const Lumen::RHI::ERHIResourceState InState ) noexcept
 {
     switch ( InState )
     {
-    case ERHIResourceState::CopySource:
-        return GlShaderStorageBarrierBit | GlBufferUpdateBarrierBit;
-    case ERHIResourceState::CopyDestination:
-        return GlBufferUpdateBarrierBit | GlFramebufferBarrierBit;
-    case ERHIResourceState::ShaderResource:
-        return GlTextureFetchBarrierBit | GlShaderStorageBarrierBit | GlUniformBarrierBit;
-    case ERHIResourceState::UnorderedAccess:
-        return GlShaderStorageBarrierBit | GlShaderImageAccessBarrierBit;
-    case ERHIResourceState::RenderTarget:
-        return GlFramebufferBarrierBit | GlColorBufferBit;
-    case ERHIResourceState::VertexBuffer:
-        return GlVertexAttribArrayBarrierBit;
-    case ERHIResourceState::IndexBuffer:
-        return GlElementArrayBarrierBit;
-    case ERHIResourceState::IndirectArgument:
-        return GlCommandBarrierBit;
+    case Lumen::RHI::ERHIResourceState::CopySource:
+        return Lumen::RHIOpenGL::GlShaderStorageBarrierBit | Lumen::RHIOpenGL::GlBufferUpdateBarrierBit;
+    case Lumen::RHI::ERHIResourceState::CopyDestination:
+        return Lumen::RHIOpenGL::GlBufferUpdateBarrierBit | Lumen::RHIOpenGL::GlFramebufferBarrierBit;
+    case Lumen::RHI::ERHIResourceState::ShaderResource:
+        return Lumen::RHIOpenGL::GlTextureFetchBarrierBit | Lumen::RHIOpenGL::GlShaderStorageBarrierBit |
+               Lumen::RHIOpenGL::GlUniformBarrierBit;
+    case Lumen::RHI::ERHIResourceState::UnorderedAccess:
+        return Lumen::RHIOpenGL::GlShaderStorageBarrierBit | Lumen::RHIOpenGL::GlShaderImageAccessBarrierBit;
+    case Lumen::RHI::ERHIResourceState::RenderTarget:
+        return Lumen::RHIOpenGL::GlFramebufferBarrierBit | Lumen::RHIOpenGL::GlColorBufferBit;
+    case Lumen::RHI::ERHIResourceState::VertexBuffer:
+        return Lumen::RHIOpenGL::GlVertexAttribArrayBarrierBit;
+    case Lumen::RHI::ERHIResourceState::IndexBuffer:
+        return Lumen::RHIOpenGL::GlElementArrayBarrierBit;
+    case Lumen::RHI::ERHIResourceState::IndirectArgument:
+        return Lumen::RHIOpenGL::GlCommandBarrierBit;
     default:
-        return GlClientMappedBufferBarrierBit;
+        return Lumen::RHIOpenGL::GlClientMappedBufferBarrierBit;
     }
 }
 
@@ -200,10 +215,17 @@ const Lumen::RHI::FRHICommandStream &Lumen::RHIOpenGL::FOpenGLCommandList::GetSt
     return Stream;
 }
 
+const Lumen::TVector<Lumen::TSharedPtr<Lumen::RHI::IRHIQueryPool>> &
+Lumen::RHIOpenGL::FOpenGLCommandList::GetQueryPools () const noexcept
+{
+    return QueryPools;
+}
+
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::Begin () noexcept
 {
     LUMEN_TRY_EXPECT_ERROR( RHI::RHITransitionCommandList( State, RHI::ERHICommandListState::Recording ) );
     Stream.Clear();
+    QueryPools.clear();
     bHasPipeline       = false;
     BoundGraphics      = nullptr;
     BoundLayout        = nullptr;
@@ -236,6 +258,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::Reset () noexcept
         return TUnexpected( RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Command, "Command list cannot be reset." ) );
     }
     Stream.Clear();
+    QueryPools.clear();
     State              = RHI::ERHICommandListState::Initial;
     Completion         = {};
     bHasPipeline       = false;
@@ -283,7 +306,7 @@ Lumen::RHIOpenGL::FOpenGLCommandList::Transition ( const TSpan<const RHI::FRHITr
     {
         LUMEN_TRY_EXPECT_ERROR( RHI::ValidateRHITransition( Transition ) );
         const auto *BufferTransition = std::get_if<RHI::FRHIBufferTransition>( &Transition );
-        BarrierBits |= BufferTransition ? BarrierBitsForState( BufferTransition->After ) : GlFramebufferBarrierBit;
+        BarrierBits |= ( BufferTransition != nullptr ) ? BarrierBitsForState( BufferTransition->After ) : GlFramebufferBarrierBit;
         if ( BufferTransition != nullptr )
         {
             Stream.Retain( StaticCastSharedPtr<RHI::IRHIObject>( BufferTransition->Buffer ) );
@@ -418,7 +441,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::BeginRendering ( 
         {
             return TUnexpected( RHI::MakeRHIInvalidResource( "Rendering attachment is not an OpenGL texture view." ) );
         }
-        ERHIFormat AttachmentFormat = Attachment.View->GetDesc().Format;
+        RHI::ERHIFormat AttachmentFormat = Attachment.View->GetDesc().Format;
         if ( AttachmentFormat == RHI::ERHIFormat::Unknown and Attachment.View->GetTexture() )
         {
             AttachmentFormat = Attachment.View->GetTexture()->GetDesc().Format;
@@ -550,26 +573,26 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetBindingSet ( U
 
     for ( const RHI::FRHIBindingWrite &Write : ( *Set )->GetWrites() )
     {
-        ERHIBindingType Type          = ERHIBindingType::ReadOnlyBuffer;
+        RHI::ERHIBindingType Type     = RHI::ERHIBindingType::ReadOnlyBuffer;
         UInt32 ClassIndex             = 0U;
         const Bool bResolved          = ResolveBindingClass( **SetLayout, Write.Slot, Write.ArrayElement, Type, ClassIndex );
         const FOpenGLUnitRange *Range = nullptr;
         UInt32 MaxClassIndex          = GOpenGLMaxDescriptorsPerSet;
         switch ( Type )
         {
-        case ERHIBindingType::ConstantBuffer:
+        case RHI::ERHIBindingType::ConstantBuffer:
             Range = &Units->UniformBuffers;
             break;
-        case ERHIBindingType::ReadOnlyBuffer:
-        case ERHIBindingType::ReadWriteBuffer:
+        case RHI::ERHIBindingType::ReadOnlyBuffer:
+        case RHI::ERHIBindingType::ReadWriteBuffer:
             Range = &Units->StorageBuffers;
             break;
-        case ERHIBindingType::Texture:
-        case ERHIBindingType::Sampler:
-        case ERHIBindingType::CombinedTextureSampler:
+        case RHI::ERHIBindingType::Texture:
+        case RHI::ERHIBindingType::Sampler:
+        case RHI::ERHIBindingType::CombinedTextureSampler:
             Range = &Units->Textures;
             break;
-        case ERHIBindingType::StorageTexture:
+        case RHI::ERHIBindingType::StorageTexture:
             Range = &Units->Images;
             break;
         default:
@@ -587,7 +610,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetBindingSet ( U
             {
                 return TUnexpected( RHI::MakeRHIInvalidResource( "Bound buffer does not belong to this backend." ) );
             }
-            if ( Type == ERHIBindingType::ConstantBuffer )
+            if ( Type == RHI::ERHIBindingType::ConstantBuffer )
             {
                 Payload.UniformBuffers[Unit] = ( *Buffer )->GetGLBuffer();
             }
@@ -904,8 +927,13 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::BeginQuery ( TSha
         return TUnexpected( RHI::MakeRHIInvalidResource( "Query pool is not owned by this queue." ) );
     }
     LUMEN_TRY_EXPECT_ERROR( ( *Pool )->Begin( InIndex ) );
-    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::BeginQuery ),
-                                          FOpenGLQueryPayload{ .Query = ( *Pool )->GetQuery( InIndex ), .Index = InIndex } ) );
+    const FOpenGLQueryPayload Payload{ .Pool       = *Pool,
+                                       .Query      = ( *Pool )->GetQuery( InIndex ),
+                                       .Index      = InIndex,
+                                       .PoolIndex  = RegisterQueryPool( QueryPools, InPool ),
+                                       .Generation = ( *Pool )->GetGeneration( InIndex ),
+                                       .Target     = ( *Pool )->GetNativeTarget() };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::BeginQuery ), Payload ) );
     ActiveQueryPool  = InPool.Get();
     ActiveQueryIndex = InIndex;
     Stream.Retain( StaticCastSharedRef<RHI::IRHIObject>( InPool ) );
@@ -926,8 +954,13 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::EndQuery ( TShare
         return TUnexpected( RHI::MakeRHIInvalidResource( "Query pool is not an OpenGL pool." ) );
     }
     LUMEN_TRY_EXPECT_ERROR( ( *Pool )->End( InIndex ) );
-    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::EndQuery ),
-                                          FOpenGLQueryPayload{ .Query = ( *Pool )->GetQuery( InIndex ), .Index = InIndex } ) );
+    const FOpenGLQueryPayload Payload{ .Pool       = *Pool,
+                                       .Query      = ( *Pool )->GetQuery( InIndex ),
+                                       .Index      = InIndex,
+                                       .PoolIndex  = RegisterQueryPool( QueryPools, InPool ),
+                                       .Generation = ( *Pool )->GetGeneration( InIndex ),
+                                       .Target     = ( *Pool )->GetNativeTarget() };
+    LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::EndQuery ), Payload ) );
     ActiveQueryPool  = nullptr;
     ActiveQueryIndex = 0U;
     return {};
@@ -1031,7 +1064,7 @@ Lumen::UInt32 Lumen::RHIOpenGL::FOpenGLCommandList::GetVertexBufferStride ( cons
     {
         return InLayout.Slot == InSlot;
     } );
-    return Found ? Found->Stride : 0U;
+    return ( Found != nullptr ) ? Found->Stride : 0U;
 }
 
 Lumen::RHI::FRHIExpected
