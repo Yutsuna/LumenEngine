@@ -5,6 +5,8 @@
 
 #include <RHIOpenGL/Presentation/OpenGLSwapchain.hpp>
 
+#include <Algo/Any.hpp>
+
 #include <HAL/LockGuard.hpp>
 
 #include <RHI/Queue/IRHIQueue.hpp>
@@ -202,13 +204,13 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLSwapchain::Resize ( const RHI:
 {
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Swapchain::Resize" ) );
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    for ( const FSlot &Slot : Slots )
+    if ( Algo::AnyOf( Slots, [] ( const FSlot &InSlot ) noexcept -> Bool
     {
-        if ( Slot.bAcquired )
-        {
-            return TUnexpected(
-                RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Presentation, "Cannot resize while an image is acquired." ) );
-        }
+        return InSlot.bAcquired;
+    } ) )
+    {
+        return TUnexpected(
+            RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Presentation, "Cannot resize while an image is acquired." ) );
     }
 
     RHI::FRHISwapchainDesc NewDesc = Desc;
