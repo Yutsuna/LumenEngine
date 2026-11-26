@@ -2,6 +2,9 @@
   pkgs,
   ...
 }:
+let
+  bIsLinux = pkgs.stdenv.hostPlatform.isLinux;
+in
 {
   nativeBuildInputs =
     with pkgs;
@@ -15,15 +18,19 @@
       spirv-cross
       spirv-tools
     ]
-    ++ lib.optionals pkgs.stdenv.hostPlatform.isLinux [
+    ++ lib.optionals bIsLinux [
       mold
       mesa
+      libglvnd
     ];
 
   buildInputs = with pkgs; [
     sdl3
     vulkan-loader
     vulkan-headers
+  ] ++ lib.optionals bIsLinux [
+    libglvnd
+    mesa.llvmpipeHook
   ];
 
   devInputs = with pkgs; [
