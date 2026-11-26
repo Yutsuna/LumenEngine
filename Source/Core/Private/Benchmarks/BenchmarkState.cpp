@@ -47,7 +47,7 @@ Lumen::Bool Lumen::Benchmarks::FBenchmarkState::FIterator::operator!=( std::defa
  */
 
 Lumen::Benchmarks::FBenchmarkState::FBenchmarkState ( const UInt64 InIterations, TOptional<Int64> InArgument ) noexcept
-    : Iterations{ InIterations }, Argument{ std::move( InArgument ) }
+    : Iterations{ InIterations }, Argument{ InArgument }
 {
     /**
      *
