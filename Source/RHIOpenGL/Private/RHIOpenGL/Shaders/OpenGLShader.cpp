@@ -116,11 +116,16 @@ Lumen::RHIOpenGL::FOpenGLShader::~FOpenGLShader () noexcept
     {
         return;
     }
-    const GLuint NativeShader        = Shader;
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, NativeShader] () noexcept
+    const GLuint NativeShader = Shader;
+    const RHI::FRHITimelineValue Required{ Context->GetExecutor()->GetCompletedTimeline() };
+    const TSharedRef<FOpenGLContext> Executor = Context->GetExecutor();
+    const FGLDispatchTable *Dispatch          = &Context->GetDispatch();
+    ( void )Context->GetExecutor()->DeferRelease( Required, [Executor, Dispatch, NativeShader] () noexcept
     {
-        Dispatch.DeleteShader( NativeShader );
+        ( void )Executor->ExecuteOnGLThread( [Dispatch, NativeShader] () noexcept
+        {
+            Dispatch->DeleteShader( NativeShader );
+        } );
     } );
 }
 
