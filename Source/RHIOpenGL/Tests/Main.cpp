@@ -1,6 +1,6 @@
 /**
  * @file Main.cpp
- * @brief Runs OpenGL tests and the M1 portable conformance validation matrix.
+ * @brief Runs backend-local OpenGL tests and the portable conformance validation matrix.
  */
 
 #include <Core/CoreDefinitions.hpp>

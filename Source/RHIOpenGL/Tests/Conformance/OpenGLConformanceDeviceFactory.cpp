@@ -33,15 +33,23 @@ namespace
     switch ( InStage )
     {
     case ERHIShaderStage::Vertex:
-        Source =
-            "#version 460 core\nlayout(location = 0) in vec3 inPosition;\nvoid main() { gl_Position = vec4(inPosition, 1.0); }\n";
+        Source = "#version 460 core\n"
+                 "layout(location = 0) in vec3 inPosition;\n"
+                 "layout(location = 1) in vec2 inTexCoord;\n"
+                 "layout(binding = 1) uniform UniformBlock1 { mat4 transform; };\n"
+                 "void main() { gl_Position = transform * vec4(inPosition, 1.0); }\n";
         break;
     case ERHIShaderStage::Pixel:
-        Source =
-            "#version 460 core\nlayout(location = 0) out vec4 outColor;\nvoid main() { outColor = vec4(1.0, 1.0, 1.0, 1.0); }\n";
+        Source = "#version 460 core\n"
+                 "layout(location = 0) out vec4 outColor;\n"
+                 "layout(binding = 1) uniform UniformBlock1 { mat4 transform; };\n"
+                 "void main() { outColor = transform[3]; }\n";
         break;
     case ERHIShaderStage::Compute:
-        Source = "#version 460 core\nlayout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;\nvoid main() { }\n";
+        Source = "#version 460 core\n"
+                 "layout(local_size_x = 1, local_size_y = 1, local_size_z = 1) in;\n"
+                 "layout(binding = 1) uniform UniformBlock1 { mat4 transform; };\n"
+                 "void main() { mat4 observed = transform; if (observed[0][0] == 0.0) { return; } }\n";
         break;
     default:
         return {};
@@ -102,6 +110,8 @@ Lumen::RHIOpenGL::Tests::FOpenGLConformanceDeviceFactory::CreateShader ( RHI::IR
     Desc.Stage    = InStage;
     Desc.Format   = RHI::ERHIShaderFormat::Source;
     Desc.Bytecode = TSpan<const Byte>( Source.data(), Source.size() );
+    Desc.Reflection.Bindings.push_back(
+        { .Slot = 1U, .Kind = RHI::ERHIShaderBindingKind::ConstantBuffer, .Count = 1U, .Stages = InStage } );
     return InDevice.CreateShader( Desc );
 }
 

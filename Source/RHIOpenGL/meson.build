@@ -24,8 +24,6 @@ ModuleDefinition = {
     'Depends' : ['Core', 'Maths', 'RHI'],
     'ExternalDeps' : OpenGLDependencies,
 
-    # M3 conformance gate: all portable suites, including Synchronization, Queue,
-    # Presentation and Queries on top of the M1/M2 coverage.
     'ExtraTestSources' : [
         RHIConformanceSources[0],
         RHIConformanceSources[1],
