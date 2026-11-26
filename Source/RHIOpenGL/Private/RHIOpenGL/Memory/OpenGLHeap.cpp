@@ -89,11 +89,16 @@ Lumen::RHIOpenGL::FOpenGLHeap::~FOpenGLHeap () noexcept
     {
         return;
     }
-    const GLuint NativeBuffer        = Buffer;
-    const FGLDispatchTable &Dispatch = Context->GetDispatch();
-    ( void )Context->GetExecutor()->ExecuteOnGLThread( [&Dispatch, NativeBuffer] () noexcept
+    const GLuint NativeBuffer = Buffer;
+    const RHI::FRHITimelineValue Required{ Context->GetExecutor()->GetCompletedTimeline() };
+    const TSharedRef<FOpenGLContext> Executor = Context->GetExecutor();
+    const FGLDispatchTable *Dispatch          = &Context->GetDispatch();
+    ( void )Context->GetExecutor()->DeferRelease( Required, [Executor, Dispatch, NativeBuffer] () noexcept
     {
-        Dispatch.DeleteBuffers( 1, &NativeBuffer );
+        ( void )Executor->ExecuteOnGLThread( [Dispatch, NativeBuffer] () noexcept
+        {
+            Dispatch->DeleteBuffers( 1, &NativeBuffer );
+        } );
     } );
 }
 

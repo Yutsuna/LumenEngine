@@ -17,6 +17,7 @@
 #include <RHI/Memory/IRHIDefragmenter.hpp>
 #include <RHI/Memory/IRHITransientResourceAllocator.hpp>
 
+#include <RHIOpenGL/Device/OpenGLDeviceContext.hpp>
 #include <RHIOpenGL/Types/OpenGLObject.hpp>
 
 #include <Templates/Function.hpp>
@@ -104,13 +105,13 @@ namespace RHIOpenGL
 
     /**
      * @class FOpenGLDefragmenter
-     * @brief Builds valid defrag plans; native moves are a later milestone.
+     * @brief Builds validated plans and executes native heap moves on the GL executor.
      */
     class FOpenGLDefragmenter final : public RHI::IRHIDefragmenter, public FNonCopyable, public FNonMovable
     {
     public:
 
-        explicit FOpenGLDefragmenter ( RHI::FRHIObjectId InId ) noexcept;
+        FOpenGLDefragmenter ( TSharedRef<FOpenGLDeviceContext> InContext, RHI::FRHIObjectId InId ) noexcept;
         ~FOpenGLDefragmenter () noexcept override;
 
     public:
@@ -124,6 +125,7 @@ namespace RHIOpenGL
     private:
 
         RHI::FRHIObjectBase Identity;
+        TSharedRef<FOpenGLDeviceContext> Context;
     };
 
 } // namespace RHIOpenGL
