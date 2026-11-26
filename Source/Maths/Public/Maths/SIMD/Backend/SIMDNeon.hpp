@@ -5,7 +5,9 @@
 
 #pragma once
 
-#if defined( __aarch64__ ) || defined( _M_ARM64 )
+#include <Core/CoreDefinitions.hpp>
+
+#if defined( LUMEN_ARCH_ARM64 )
     #include <Maths/SIMD/SIMDTypes.hpp>
     #include <MathsExport.hpp>
 

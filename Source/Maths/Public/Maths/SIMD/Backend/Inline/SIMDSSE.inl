@@ -7,6 +7,8 @@
 
 #include <Maths/SIMD/Backend/SIMDSSE.hpp>
 
+#if defined( LUMEN_ARCH_X64 ) or defined( LUMEN_ARCH_X86 )
+
 namespace Lumen
 {
 
@@ -47,3 +49,5 @@ namespace Maths
 } // namespace Maths
 
 } // namespace Lumen
+
+#endif

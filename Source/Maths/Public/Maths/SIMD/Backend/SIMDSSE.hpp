@@ -5,8 +5,10 @@
 
 #pragma once
 
-#if defined( __x86_64__ ) || defined( _M_X64 ) || defined( __i386__ )
-    #include "Maths/SIMD/SIMDTypes.hpp"
+#include <Core/CoreDefinitions.hpp>
+
+#if defined( LUMEN_ARCH_X64 ) or defined( LUMEN_ARCH_X86 )
+    #include <Maths/SIMD/SIMDTypes.hpp>
     #include <MathsExport.hpp>
 
     #include <immintrin.h>
