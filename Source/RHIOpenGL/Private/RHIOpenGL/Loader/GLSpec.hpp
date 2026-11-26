@@ -201,6 +201,7 @@ namespace RHIOpenGL
     inline constexpr GLenum GlSamplesPassed        = 0x8914U;
     inline constexpr GLenum GlAnySamplesPassed     = 0x8C22U;
     inline constexpr GLenum GlTimeElapsed          = 0x88BFU;
+    inline constexpr GLenum GlTimestamp            = 0x8E28U;
     inline constexpr GLenum GlQueryResult          = 0x8866U;
     inline constexpr GLenum GlQueryResultAvailable = 0x8867U;
     inline constexpr GLenum GlPackRowLength        = 0x0D02U;
@@ -345,6 +346,8 @@ namespace RHIOpenGL
     using TGLDeleteQueries       = void ( * )( GLsizei, const GLuint * );
     using TGLBeginQuery          = void ( * )( GLenum, GLuint );
     using TGLEndQuery            = void ( * )( GLenum );
+    using TGLQueryCounter        = void ( * )( GLuint, GLenum );
+    using TGLGetQueryObjectuiv   = void ( * )( GLuint, GLenum, GLuint * );
     using TGLGetQueryObjectui64v = void ( * )( GLuint, GLenum, GLuint64 * );
     using TGLGetQueryiv          = void ( * )( GLenum, GLenum, GLint * );
     using TGLGetTextureImage     = void ( * )( GLuint, GLint, GLenum, GLenum, GLsizei, void * );

@@ -62,11 +62,11 @@ Lumen::Bool Lumen::RHIOpenGL::FGLDispatchTable::IsComplete () const noexcept
            DrawElements != nullptr and DrawArraysIndirect != nullptr and DrawElementsIndirect != nullptr and
            DispatchCompute != nullptr and DispatchComputeIndirect != nullptr and TextureSubImage2D != nullptr and
            CopyImageSubData != nullptr and CreateQueries != nullptr and DeleteQueries != nullptr and BeginQuery != nullptr and
-           EndQuery != nullptr and GetQueryObjectui64v != nullptr and GetQueryiv != nullptr and FenceSync != nullptr and
-           DeleteSync != nullptr and ClientWaitSync != nullptr and Flush != nullptr and NamedBufferSubData != nullptr and
-           BlendColor != nullptr and BlendEquationSeparate != nullptr and BlendFuncSeparate != nullptr and
-           PolygonOffset != nullptr and StencilFunc != nullptr and BindBuffer != nullptr and GetBufferSubData != nullptr and
-           GetTextureImage != nullptr and BlitFramebuffer != nullptr;
+           EndQuery != nullptr and QueryCounter != nullptr and GetQueryObjectuiv != nullptr and GetQueryObjectui64v != nullptr and
+           GetQueryiv != nullptr and FenceSync != nullptr and DeleteSync != nullptr and ClientWaitSync != nullptr and
+           Flush != nullptr and NamedBufferSubData != nullptr and BlendColor != nullptr and BlendEquationSeparate != nullptr and
+           BlendFuncSeparate != nullptr and PolygonOffset != nullptr and StencilFunc != nullptr and BindBuffer != nullptr and
+           GetBufferSubData != nullptr and GetTextureImage != nullptr and BlitFramebuffer != nullptr;
 }
 
 Lumen::TExpected<void, Lumen::RHI::FRHIError>
@@ -172,6 +172,8 @@ Lumen::RHIOpenGL::LoadGLDispatchTable ( FGLDispatchTable &OutDispatch, const IOp
     ResolveProcedure( OutDispatch.DeleteQueries, InContext, "glDeleteQueries" );
     ResolveProcedure( OutDispatch.BeginQuery, InContext, "glBeginQuery" );
     ResolveProcedure( OutDispatch.EndQuery, InContext, "glEndQuery" );
+    ResolveProcedure( OutDispatch.QueryCounter, InContext, "glQueryCounter" );
+    ResolveProcedure( OutDispatch.GetQueryObjectuiv, InContext, "glGetQueryObjectuiv" );
     ResolveProcedure( OutDispatch.GetQueryObjectui64v, InContext, "glGetQueryObjectui64v" );
     ResolveProcedure( OutDispatch.GetQueryiv, InContext, "glGetQueryiv" );
 

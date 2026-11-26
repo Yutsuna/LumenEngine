@@ -126,6 +126,8 @@ namespace RHIOpenGL
         TGLDeleteQueries DeleteQueries             = nullptr;
         TGLBeginQuery BeginQuery                   = nullptr;
         TGLEndQuery EndQuery                       = nullptr;
+        TGLQueryCounter QueryCounter               = nullptr;
+        TGLGetQueryObjectuiv GetQueryObjectuiv     = nullptr;
         TGLGetQueryObjectui64v GetQueryObjectui64v = nullptr;
         TGLGetQueryiv GetQueryiv                   = nullptr;
 
