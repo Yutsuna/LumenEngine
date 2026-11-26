@@ -31,8 +31,15 @@
 #include <RHI/Types/RHIError.hpp>
 
 #include <RHIVulkan/Device/VulkanFeatureNegotiation.hpp>
+#include <RHIVulkan/Memory/VulkanHeap.hpp>
+#include <RHIVulkan/Memory/VulkanMemoryObjects.hpp>
+#include <RHIVulkan/Memory/VulkanStagingAllocator.hpp>
 #include <RHIVulkan/Module/VulkanInstance.hpp>
 #include <RHIVulkan/Queue/VulkanQueue.hpp>
+#include <RHIVulkan/Resources/VulkanBuffer.hpp>
+#include <RHIVulkan/Resources/VulkanSampler.hpp>
+#include <RHIVulkan/Resources/VulkanTexture.hpp>
+#include <RHIVulkan/Resources/VulkanTextureView.hpp>
 #include <RHIVulkan/Utilities/VulkanResult.hpp>
 
 /**
@@ -176,55 +183,109 @@ Lumen::RHIVulkan::FVulkanDevice::CreateBuffer ( const RHI::FRHIBufferDesc &InDes
 {
     LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateBuffer" ) );
     LUMEN_EXPECT( Validation, InDesc.Validate() );
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateBuffer", RHI::ERHIErrorCondition::Resource );
+    TExpected<TSharedRef<FVulkanBuffer>, RHI::FRHIError> Buffer = FVulkanBuffer::Create( Context, InDesc, NextObjectId() );
+    if ( not Buffer )
+    {
+        return TUnexpected( Buffer.Error() );
+    }
+    TrackObject( **Buffer );
+    return *Buffer;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreatePlacedBuffer ( const RHI::FRHIBufferDesc &,
-                                                      TSharedRef<RHI::IRHIHeap>,
-                                                      const RHI::FRHIAllocation & ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreatePlacedBuffer ( const RHI::FRHIBufferDesc &InDesc,
+                                                      TSharedRef<RHI::IRHIHeap> InHeap,
+                                                      const RHI::FRHIAllocation &InAllocation ) noexcept
 {
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreatePlacedBuffer", RHI::ERHIErrorCondition::Resource );
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreatePlacedBuffer" ) );
+    TExpected<TSharedRef<FVulkanBuffer>, RHI::FRHIError> Buffer = FVulkanBuffer::CreatePlaced(
+        Context, InDesc, static_cast<TSharedRef<RHI::IRHIHeap> &&>( InHeap ), InAllocation, NextObjectId() );
+    if ( not Buffer )
+    {
+        return TUnexpected( Buffer.Error() );
+    }
+    TrackObject( **Buffer );
+    return *Buffer;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreateTexture ( const RHI::FRHITextureDesc & ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreateTexture ( const RHI::FRHITextureDesc &InDesc ) noexcept
 {
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateTexture", RHI::ERHIErrorCondition::Resource );
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateTexture" ) );
+    LUMEN_EXPECT( Validation, InDesc.Validate() );
+    TExpected<TSharedRef<FVulkanTexture>, RHI::FRHIError> Texture = FVulkanTexture::Create( Context, InDesc, NextObjectId() );
+    if ( not Texture )
+    {
+        return TUnexpected( Texture.Error() );
+    }
+    TrackObject( **Texture );
+    return *Texture;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreatePlacedTexture ( const RHI::FRHITextureDesc &,
-                                                       TSharedRef<RHI::IRHIHeap>,
-                                                       const RHI::FRHIAllocation & ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreatePlacedTexture ( const RHI::FRHITextureDesc &InDesc,
+                                                       TSharedRef<RHI::IRHIHeap> InHeap,
+                                                       const RHI::FRHIAllocation &InAllocation ) noexcept
 {
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreatePlacedTexture", RHI::ERHIErrorCondition::Resource );
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreatePlacedTexture" ) );
+    TExpected<TSharedRef<FVulkanTexture>, RHI::FRHIError> Texture = FVulkanTexture::CreatePlaced(
+        Context, InDesc, static_cast<TSharedRef<RHI::IRHIHeap> &&>( InHeap ), InAllocation, NextObjectId() );
+    if ( not Texture )
+    {
+        return TUnexpected( Texture.Error() );
+    }
+    TrackObject( **Texture );
+    return *Texture;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITextureView>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreateTextureView ( const RHI::FRHITextureViewDesc & ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreateTextureView ( const RHI::FRHITextureViewDesc &InDesc ) noexcept
 {
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateTextureView", RHI::ERHIErrorCondition::Resource );
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateTextureView" ) );
+    LUMEN_EXPECT( Validation, InDesc.Validate() );
+    TExpected<TSharedRef<FVulkanTextureView>, RHI::FRHIError> View =
+        FVulkanTextureView::Create( Context, InDesc, NextObjectId() );
+    if ( not View )
+    {
+        return TUnexpected( View.Error() );
+    }
+    TrackObject( **View );
+    return *View;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISampler>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreateSampler ( const RHI::FRHISamplerDesc & ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreateSampler ( const RHI::FRHISamplerDesc &InDesc ) noexcept
 {
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateSampler", RHI::ERHIErrorCondition::Resource );
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateSampler" ) );
+    TExpected<TSharedRef<FVulkanSampler>, RHI::FRHIError> Sampler = FVulkanSampler::Create( Context, InDesc, NextObjectId() );
+    if ( not Sampler )
+    {
+        return TUnexpected( Sampler.Error() );
+    }
+    TrackObject( **Sampler );
+    return *Sampler;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIHeap>, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::FVulkanDevice::CreateHeap ( const RHI::FRHIHeapDesc &InDesc ) noexcept
 {
     LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateHeap" ) );
-    LUMEN_EXPECT( Validation, InDesc.Validate() );
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateHeap", RHI::ERHIErrorCondition::Memory );
+    TExpected<TSharedRef<FVulkanHeap>, RHI::FRHIError> Heap = FVulkanHeap::Create( Context, InDesc, NextObjectId() );
+    if ( not Heap )
+    {
+        return TUnexpected( Heap.Error() );
+    }
+    TrackObject( **Heap );
+    return *Heap;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBufferPool>, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::FVulkanDevice::CreateBufferPool () noexcept
 {
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateBufferPool", RHI::ERHIErrorCondition::Memory );
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateBufferPool" ) );
+    TSharedRef<FVulkanBufferPool> Pool = MakeShared<FVulkanBufferPool>( Context, NextObjectId() );
+    TrackObject( *Pool );
+    return Pool;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIUploadAllocator>, Lumen::RHI::FRHIError>
@@ -236,25 +297,56 @@ Lumen::RHIVulkan::FVulkanDevice::CreateUploadAllocator ( const UInt64 InCapacity
         return TUnexpected(
             RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Memory, "Upload allocator capacity must be nonzero." ) );
     }
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateUploadAllocator", RHI::ERHIErrorCondition::Memory );
+    TExpected<TSharedRef<FVulkanUploadAllocator>, RHI::FRHIError> Allocator =
+        FVulkanUploadAllocator::Create( Context, InCapacity, NextObjectId(), NextObjectId() );
+    if ( not Allocator )
+    {
+        return TUnexpected( Allocator.Error() );
+    }
+    TrackObject( **Allocator );
+    return *Allocator;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIReadbackAllocator>, Lumen::RHI::FRHIError>
-Lumen::RHIVulkan::FVulkanDevice::CreateReadbackAllocator ( UInt64 ) noexcept
+Lumen::RHIVulkan::FVulkanDevice::CreateReadbackAllocator ( const UInt64 InCapacity ) noexcept
 {
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateReadbackAllocator", RHI::ERHIErrorCondition::Memory );
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateReadbackAllocator" ) );
+    if ( InCapacity == 0ULL )
+    {
+        return TUnexpected(
+            RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Memory, "Readback allocator capacity must be nonzero." ) );
+    }
+    TExpected<TSharedRef<FVulkanReadbackAllocator>, RHI::FRHIError> Allocator =
+        FVulkanReadbackAllocator::Create( Context, InCapacity, NextObjectId(), NextObjectId() );
+    if ( not Allocator )
+    {
+        return TUnexpected( Allocator.Error() );
+    }
+    TrackObject( **Allocator );
+    return *Allocator;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITransientResourceAllocator>, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::FVulkanDevice::CreateTransientResourceAllocator () noexcept
 {
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateTransientResourceAllocator", RHI::ERHIErrorCondition::Memory );
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateTransientResourceAllocator" ) );
+    TExpected<TSharedRef<FVulkanTransientResourceAllocator>, RHI::FRHIError> Allocator =
+        FVulkanTransientResourceAllocator::Create( Context, NextObjectId(), NextObjectId() );
+    if ( not Allocator )
+    {
+        return TUnexpected( Allocator.Error() );
+    }
+    TrackObject( **Allocator );
+    return *Allocator;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDefragmenter>, Lumen::RHI::FRHIError>
 Lumen::RHIVulkan::FVulkanDevice::CreateDefragmenter () noexcept
 {
-    LUMEN_VULKAN_UNIMPLEMENTED_FACTORY( "CreateDefragmenter", RHI::ERHIErrorCondition::Memory );
+    LUMEN_TRY_OPTIONAL_ERROR( GetUnavailableError( "CreateDefragmenter" ) );
+    TSharedRef<FVulkanDefragmenter> Defragmenter = MakeShared<FVulkanDefragmenter>( NextObjectId() );
+    TrackObject( *Defragmenter );
+    return Defragmenter;
 }
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBindingLayout>, Lumen::RHI::FRHIError>
