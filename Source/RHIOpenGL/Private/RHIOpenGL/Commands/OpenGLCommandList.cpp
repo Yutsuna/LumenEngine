@@ -22,7 +22,9 @@
 #include <RHI/Resources/RHITextureDesc.hpp>
 #include <RHI/Types/RHIError.hpp>
 #include <RHI/Types/RHIHash.hpp>
+
 #include <RHI/Validation/RHIValidation.hpp>
+#include <cstring>
 
 #include <RHIOpenGL/Bindings/OpenGLBindingSet.hpp>
 #include <RHIOpenGL/Commands/OpenGLCommandStreamOpcodes.hpp>
@@ -128,11 +130,13 @@ Lumen::RHI::ERHIQueueType Lumen::RHIOpenGL::FOpenGLCommandList::GetQueueType () 
 
 Lumen::RHI::ERHICommandListState Lumen::RHIOpenGL::FOpenGLCommandList::GetState () const noexcept
 {
+    HAL::TLockGuard Lock( Mutex );
     return State;
 }
 
 Lumen::RHI::FRHITimelineValue Lumen::RHIOpenGL::FOpenGLCommandList::GetCompletion () const noexcept
 {
+    HAL::TLockGuard Lock( Mutex );
     return Completion;
 }
 
@@ -166,6 +170,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::End () noexcept
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::Reset () noexcept
 {
+    HAL::TLockGuard Lock( Mutex );
     if ( State == RHI::ERHICommandListState::Pending or ActiveQueryPool != nullptr or DebugDepth != 0U )
     {
         return TUnexpected( RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Command, "Command list cannot be reset." ) );
@@ -182,6 +187,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::Reset () noexcept
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::MarkPending ( const RHI::FRHITimelineValue InCompletion ) noexcept
 {
+    HAL::TLockGuard Lock( Mutex );
     if ( not InCompletion.IsValid() or State != RHI::ERHICommandListState::Executable )
     {
         return TUnexpected( RHI::MakeRHIInvalidArgument( RHI::ERHIErrorCondition::Command, "Invalid pending completion." ) );
@@ -193,6 +199,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::MarkPending ( con
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::MarkCompleted ( const RHI::FRHITimelineValue InCompleted ) noexcept
 {
+    HAL::TLockGuard Lock( Mutex );
     if ( State != RHI::ERHICommandListState::Pending or not RHI::IsRHICompletionReached( InCompleted, Completion ) )
     {
         return TUnexpected( RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Command, "Completion was not reached." ) );
@@ -623,7 +630,19 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::BeginDebugRegion 
         return InvalidCommand( "Debug region name is empty." );
     }
     ++DebugDepth;
-    return {};
+    FOpenGLDebugRegionPayload Payload;
+    Payload.Length = static_cast<UInt32>( InName.size() );
+    TVector<Byte> Record( sizeof( FOpenGLDebugRegionPayload ) + InName.size() );
+    const Byte *PayloadBytes = reinterpret_cast<const Byte *>( &Payload );
+    for ( USize Index = 0U; Index < sizeof( FOpenGLDebugRegionPayload ); ++Index )
+    {
+        Record[Index] = PayloadBytes[Index];
+    }
+    for ( USize Index = 0U; Index < InName.size(); ++Index )
+    {
+        Record[sizeof( FOpenGLDebugRegionPayload ) + Index] = static_cast<Byte>( InName[Index] );
+    }
+    return Stream.WritePayload( static_cast<UInt32>( EOpenGLCommandOpcode::BeginDebugRegion ), Record );
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::EndDebugRegion () noexcept
@@ -634,7 +653,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::EndDebugRegion ()
         return TUnexpected( RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Command, "No debug region is open." ) );
     }
     --DebugDepth;
-    return {};
+    return Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::EndDebugRegion ), FOpenGLUIntPayload{} );
 }
 
 /**

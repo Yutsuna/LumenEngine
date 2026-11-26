@@ -8,6 +8,7 @@
 #include <Core/NonCopyable.hpp>
 #include <Core/NonMovable.hpp>
 
+#include <Templates/Optional.hpp>
 #include <Templates/Vector.hpp>
 
 #include <RHIOpenGL/Loader/GLDispatchTable.hpp>
@@ -60,7 +61,7 @@ namespace RHIOpenGL
 
     private:
 
-        [[nodiscard]] static Int32 GetTargetIndex ( GLenum InTarget ) noexcept;
+        [[nodiscard]] static TOptional<USize> GetTargetIndex ( GLenum InTarget ) noexcept;
 
     private:
 

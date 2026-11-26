@@ -5,6 +5,8 @@
 
 #include <RHIOpenGL/Commands/OpenGLStateCache.hpp>
 
+#include <Algo/Find.hpp>
+
 /**
  * Public
  */
@@ -49,15 +51,14 @@ void Lumen::RHIOpenGL::FOpenGLStateCache::BindBufferBase ( const GLenum InTarget
                                                            const GLuint InIndex,
                                                            const GLuint InBuffer ) noexcept
 {
-    const Int32 TargetIndex = GetTargetIndex( InTarget );
-    if ( TargetIndex >= 0 )
+    if ( const TOptional<USize> TargetIndex = GetTargetIndex( InTarget ) )
     {
         const UInt32 Slot = InIndex < 8U ? InIndex : 0U;
-        if ( BoundBuffers[TargetIndex][Slot] == InBuffer )
+        if ( BoundBuffers[*TargetIndex][Slot] == InBuffer )
         {
             return;
         }
-        BoundBuffers[TargetIndex][Slot] = InBuffer;
+        BoundBuffers[*TargetIndex][Slot] = InBuffer;
     }
     if ( Dispatch.BindBufferBase != nullptr )
     {
@@ -148,17 +149,17 @@ void Lumen::RHIOpenGL::FOpenGLStateCache::Disable ( const GLenum InCapability ) 
 
 void Lumen::RHIOpenGL::FOpenGLStateCache::SetEnabled ( const GLenum InCapability, const Bool InbEnabled ) noexcept
 {
-    for ( FCapabilityState &Capability : Capabilities )
+    if ( FCapabilityState *Capability =
+             Algo::FindIf( Capabilities, [InCapability] ( const FCapabilityState &InState ) noexcept -> Bool
     {
-        if ( Capability.Capability != InCapability )
-        {
-            continue;
-        }
-        if ( Capability.bEnabled == InbEnabled )
+        return InState.Capability == InCapability;
+    } ) )
+    {
+        if ( Capability->bEnabled == InbEnabled )
         {
             return;
         }
-        Capability.bEnabled = InbEnabled;
+        Capability->bEnabled = InbEnabled;
         if ( InbEnabled )
         {
             if ( Dispatch.Enable != nullptr )
@@ -203,23 +204,23 @@ void Lumen::RHIOpenGL::FOpenGLStateCache::MemoryBarrier ( const GLbitfield InBar
  * Private
  */
 
-Lumen::Int32 Lumen::RHIOpenGL::FOpenGLStateCache::GetTargetIndex ( const GLenum InTarget ) noexcept
+Lumen::TOptional<Lumen::USize> Lumen::RHIOpenGL::FOpenGLStateCache::GetTargetIndex ( const GLenum InTarget ) noexcept
 {
     switch ( InTarget )
     {
     case GlUniformBuffer:
-        return 0;
+        return TOptional<USize>( 0U );
     case GlShaderStorageBuffer:
-        return 1;
+        return TOptional<USize>( 1U );
     case GlArrayBuffer:
-        return 2;
+        return TOptional<USize>( 2U );
     case GlElementArrayBuffer:
-        return 3;
+        return TOptional<USize>( 3U );
     case GlPixelUnpackBuffer:
-        return 4;
+        return TOptional<USize>( 4U );
     case GlPixelPackBuffer:
-        return 5;
+        return TOptional<USize>( 5U );
     default:
-        return -1;
+        return {};
     }
 }

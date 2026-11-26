@@ -8,6 +8,8 @@
 #include <Core/NonCopyable.hpp>
 #include <Core/NonMovable.hpp>
 
+#include <HAL/PlatformMutex.hpp>
+
 #include <Memory/SharedPtr.hpp>
 
 #include <Templates/Optional.hpp>
@@ -145,6 +147,7 @@ namespace RHIOpenGL
         TSharedRef<FOpenGLDeviceContext> Context;
         RHI::FRHICommandStream Stream;
         RHI::ERHICommandListState State = RHI::ERHICommandListState::Initial;
+        mutable HAL::FPlatformRecursiveSharedMutex Mutex;
         RHI::FRHITimelineValue Completion;
         Bool bHasPipeline                       = false;
         RHI::ERHIPipelineType BoundPipelineType = RHI::ERHIPipelineType::Graphics;

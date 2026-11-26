@@ -5,12 +5,14 @@
 
 #include <RHIOpenGL/Commands/OpenGLCommandExecutor.hpp>
 
+#include <RHI/Debug/RHIDebugMessage.hpp>
 #include <RHI/Pipelines/RHIInlineConstantRange.hpp>
 
 #include <RHIOpenGL/Pipelines/OpenGLComputePipeline.hpp>
 #include <RHIOpenGL/Pipelines/OpenGLGraphicsPipeline.hpp>
 #include <RHIOpenGL/Synchronization/OpenGLQueryPool.hpp>
 
+#include <String/StringView.hpp>
 #include <Templates/Optional.hpp>
 
 #include <cstring>
@@ -30,6 +32,7 @@ constexpr Lumen::RHIOpenGL::GLenum GlUnpackRowLength    = 0x0CF2U;
 struct FReplayState
 {
     const Lumen::RHIOpenGL::FGLDispatchTable &Dispatch;
+    Lumen::RHIOpenGL::FOpenGLDeviceContext &Context;
     Lumen::RHIOpenGL::FOpenGLStateCache &State;
     Lumen::RHIOpenGL::FOpenGLFramebufferCache &Framebuffers;
     Lumen::RHIOpenGL::GLuint VertexArray           = 0U;
@@ -48,12 +51,8 @@ template <typename PayloadType, typename HandlerType>
                                                      const Lumen::UInt32 InOpcode,
                                                      HandlerType &&InHandler ) noexcept
 {
-    const Lumen::TExpected<PayloadType, Lumen::RHI::FRHIError> Result = InStream.ReadPayload<PayloadType>( InIndex, InOpcode );
-    if ( not Result )
-    {
-        return Lumen::MakeUnexpected( Result.Error() );
-    }
-    return InHandler( *Result );
+    LUMEN_EXPECT( Payload, InStream.ReadPayload<PayloadType>( InIndex, InOpcode ) );
+    return InHandler( Payload );
 }
 
 [[nodiscard]] Lumen::UInt32 EffectiveColorCount ( const Lumen::RHIOpenGL::FOpenGLRenderingPayload &InDesc ) noexcept
@@ -88,24 +87,20 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
         return *Full;
     }
 
-    const auto Core = InStream.ReadPayload<Lumen::RHIOpenGL::FOpenGLRenderingCorePayload>( InIndex, InOpcode );
-    if ( not Core )
-    {
-        return Lumen::MakeUnexpected( Core.Error() );
-    }
+    LUMEN_EXPECT( Core, InStream.ReadPayload<Lumen::RHIOpenGL::FOpenGLRenderingCorePayload>( InIndex, InOpcode ) );
 
     Lumen::RHIOpenGL::FOpenGLRenderingPayload Result;
-    Result.Area                 = Core->Area;
-    Result.ColorAttachmentCount = Core->ColorAttachmentCount;
-    Result.bHasDepthStencil     = Core->bHasDepthStencil;
+    Result.Area                 = Core.Area;
+    Result.ColorAttachmentCount = Core.ColorAttachmentCount;
+    Result.bHasDepthStencil     = Core.bHasDepthStencil;
     for ( Lumen::UInt32 Index = 0U; Index < Lumen::RHIOpenGL::MaxOpenGLCommandColorAttachments; ++Index )
     {
-        Result.ColorViews[Index]   = Core->ColorViews[Index];
-        Result.ColorFormats[Index] = Core->ColorFormats[Index];
+        Result.ColorViews[Index]   = Core.ColorViews[Index];
+        Result.ColorFormats[Index] = Core.ColorFormats[Index];
     }
-    Result.DepthView   = Core->DepthView;
-    Result.DepthFormat = Core->DepthFormat;
-    Result.Count       = Core->ColorAttachmentCount;
+    Result.DepthView   = Core.DepthView;
+    Result.DepthFormat = Core.DepthFormat;
+    Result.Count       = Core.ColorAttachmentCount;
     return Result;
 }
 
@@ -114,20 +109,12 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
                                                               const Lumen::UInt32 InOpcode,
                                                               FReplayState &InState ) noexcept
 {
-    const auto Decoded = DecodeRendering( InStream, InIndex, InOpcode );
-    if ( not Decoded )
-    {
-        return Lumen::MakeUnexpected( Decoded.Error() );
-    }
-    const Lumen::RHIOpenGL::FOpenGLRenderingPayload &Payload = *Decoded;
+    LUMEN_EXPECT( Decoded, DecodeRendering( InStream, InIndex, InOpcode ) );
+    const Lumen::RHIOpenGL::FOpenGLRenderingPayload &Payload = Decoded;
 
-    const auto Fbo = InState.Framebuffers.GetOrCreate( Payload );
-    if ( not Fbo )
-    {
-        return Lumen::MakeUnexpected( Fbo.Error() );
-    }
+    LUMEN_EXPECT( Fbo, InState.Framebuffers.GetOrCreate( Payload ) );
 
-    const Lumen::RHIOpenGL::GLuint Framebuffer = *Fbo;
+    const Lumen::RHIOpenGL::GLuint Framebuffer = Fbo;
     InState.CurrentFramebuffer                 = Framebuffer;
     InState.FramebufferHeight                  = Payload.Area.Size.Height;
     InState.bRendering                         = true;
@@ -176,21 +163,17 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
                                                             const Lumen::UInt32 InOpcode,
                                                             FReplayState &InState ) noexcept
 {
-    const auto View = InStream.Read( InIndex );
-    if ( not View )
-    {
-        return Lumen::MakeUnexpected( View.Error() );
-    }
-    if ( View->Opcode != InOpcode )
+    LUMEN_EXPECT( View, InStream.Read( InIndex ) );
+    if ( View.Opcode != InOpcode )
     {
         return Lumen::MakeUnexpected(
             Lumen::RHI::MakeRHICorrupted( Lumen::RHI::ERHIErrorCondition::Command, "EndRendering opcode mismatch." ) );
     }
 
     Lumen::RHIOpenGL::FOpenGLEndRenderingPayload Payload;
-    if ( View->Payload.size() >= sizeof( Payload ) )
+    if ( View.Payload.size() >= sizeof( Payload ) )
     {
-        std::memcpy( &Payload, View->Payload.data(), sizeof( Payload ) );
+        std::memcpy( &Payload, View.Payload.data(), sizeof( Payload ) );
     }
 
     const Lumen::RHIOpenGL::GLuint Framebuffer = Payload.Framebuffer != 0U ? Payload.Framebuffer : InState.CurrentFramebuffer;
@@ -260,8 +243,29 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
             return {};
         } );
 
-    case EOpenGLCommandOpcode::CopyBufferToTexture:
     case EOpenGLCommandOpcode::CopyTextureToBuffer:
+        return WithPayload<Lumen::RHIOpenGL::FOpenGLBufferTextureCopyPayload>(
+            InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
+        {
+            if ( InPayload.Buffer == 0U or InPayload.Texture == 0U or InPayload.Width == 0U or
+                 InState.Dispatch.GetTextureImage == nullptr )
+            {
+                return {};
+            }
+            const Lumen::UInt32 RowPixels         = InPayload.RowLength != 0U ? InPayload.RowLength : InPayload.Width;
+            const Lumen::UInt32 Rows              = InPayload.Height != 0U ? InPayload.Height : 1U;
+            const Lumen::RHIOpenGL::GLsizei Bytes = static_cast<Lumen::RHIOpenGL::GLsizei>( RowPixels * Rows * 4U );
+            InState.Dispatch.BindBuffer( Lumen::RHIOpenGL::GlPixelPackBuffer, InPayload.Buffer );
+            InState.Dispatch.PixelStorei( Lumen::RHIOpenGL::GlPackRowLength,
+                                          static_cast<Lumen::RHIOpenGL::GLint>( InPayload.RowLength ) );
+            InState.Dispatch.GetTextureImage( InPayload.Texture, InPayload.Level, InPayload.Format, InPayload.Type, Bytes,
+                                              reinterpret_cast<void *>( static_cast<Lumen::UPtr>( InPayload.BufferOffset ) ) );
+            InState.Dispatch.PixelStorei( Lumen::RHIOpenGL::GlPackRowLength, 0 );
+            InState.Dispatch.BindBuffer( Lumen::RHIOpenGL::GlPixelPackBuffer, 0U );
+            return {};
+        } );
+
+    case EOpenGLCommandOpcode::CopyBufferToTexture:
         return WithPayload<Lumen::RHIOpenGL::FOpenGLBufferTextureCopyPayload>(
             InStream, InIndex, Opcode, [&InState, Opcode] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
@@ -274,20 +278,14 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
                 return Lumen::MakeUnexpected( Lumen::RHI::MakeRHIUnsupported(
                     Lumen::RHI::ERHIErrorCondition::Command, "Three-dimensional buffer/texture transfers are unavailable." ) );
             }
-            const Lumen::RHIOpenGL::GLenum BufferTarget =
-                Opcode == static_cast<Lumen::UInt32>( EOpenGLCommandOpcode::CopyBufferToTexture )
-                    ? Lumen::RHIOpenGL::GlPixelUnpackBuffer
-                    : Lumen::RHIOpenGL::GlPixelPackBuffer;
+            const Lumen::RHIOpenGL::GLenum BufferTarget = Lumen::RHIOpenGL::GlPixelUnpackBuffer;
             InState.Dispatch.PixelStorei( BufferTarget, static_cast<Lumen::RHIOpenGL::GLint>( InPayload.Buffer ) );
             InState.Dispatch.PixelStorei( GlUnpackRowLength, static_cast<Lumen::RHIOpenGL::GLint>( InPayload.RowLength ) );
-            if ( Opcode == static_cast<Lumen::UInt32>( EOpenGLCommandOpcode::CopyBufferToTexture ) )
-            {
-                InState.Dispatch.TextureSubImage2D(
-                    InPayload.Texture, InPayload.Level, InPayload.X, InPayload.Y,
-                    static_cast<Lumen::RHIOpenGL::GLsizei>( InPayload.Width ),
-                    static_cast<Lumen::RHIOpenGL::GLsizei>( InPayload.Height == 0U ? 1U : InPayload.Height ), InPayload.Format,
-                    InPayload.Type, reinterpret_cast<const void *>( static_cast<Lumen::UPtr>( InPayload.BufferOffset ) ) );
-            }
+            InState.Dispatch.TextureSubImage2D(
+                InPayload.Texture, InPayload.Level, InPayload.X, InPayload.Y,
+                static_cast<Lumen::RHIOpenGL::GLsizei>( InPayload.Width ),
+                static_cast<Lumen::RHIOpenGL::GLsizei>( InPayload.Height == 0U ? 1U : InPayload.Height ), InPayload.Format,
+                InPayload.Type, reinterpret_cast<const void *>( static_cast<Lumen::UPtr>( InPayload.BufferOffset ) ) );
             InState.Dispatch.PixelStorei( BufferTarget, 0 );
             InState.Dispatch.PixelStorei( GlUnpackRowLength, 0 );
             return {};
@@ -340,20 +338,17 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
 
     case EOpenGLCommandOpcode::SetInlineConstants:
     {
-        const auto View = InStream.Read( InIndex );
-        if ( not View )
+        return WithPayload<Lumen::RHIOpenGL::FOpenGLInlineConstantPayload>(
+            InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
-            return Lumen::MakeUnexpected( View.Error() );
-        }
-        if ( View->Payload.size() < sizeof( Lumen::RHI::FRHIInlineConstantCommand ) )
-        {
-            return Lumen::MakeUnexpected( Lumen::RHI::MakeRHICorrupted( Lumen::RHI::ERHIErrorCondition::Command,
-                                                                        "Inline constant payload is too short." ) );
-        }
-        /* The 64 KiB ring is bound at unit zero; the dispatch table has no
-         * glNamedBufferSubData entry, so byte contents are intentionally not
-         * uploaded during replay. */
-        return {};
+            if ( InState.InlineConstantsBuffer != 0U and InPayload.Size != 0U and InState.Dispatch.NamedBufferSubData != nullptr )
+            {
+                InState.Dispatch.NamedBufferSubData(
+                    InState.InlineConstantsBuffer, static_cast<Lumen::RHIOpenGL::GLintptr>( InPayload.Offset ),
+                    static_cast<Lumen::RHIOpenGL::GLsizeiptr>( InPayload.Size ), InPayload.Values );
+            }
+            return {};
+        } );
     }
 
     case EOpenGLCommandOpcode::SetVertexBuffer:
@@ -462,26 +457,38 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
         } );
 
     case EOpenGLCommandOpcode::SetBlendConstants:
-        return WithPayload<Lumen::RHIOpenGL::FOpenGLFloat4Payload>( InStream, InIndex, Opcode,
-                                                                    [] ( const auto & ) noexcept -> Lumen::RHI::FRHIExpected
+        return WithPayload<Lumen::RHIOpenGL::FOpenGLFloat4Payload>(
+            InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
-            /* No glBlendColor entry point is exposed by the dispatch table. */
+            if ( InState.Dispatch.BlendColor != nullptr )
+            {
+                InState.Dispatch.BlendColor( InPayload.Values[0], InPayload.Values[1], InPayload.Values[2], InPayload.Values[3] );
+            }
             return {};
         } );
 
     case EOpenGLCommandOpcode::SetDepthBias:
-        return WithPayload<Lumen::RHIOpenGL::FOpenGLDepthBiasPayload>( InStream, InIndex, Opcode,
-                                                                       [] ( const auto & ) noexcept -> Lumen::RHI::FRHIExpected
+        return WithPayload<Lumen::RHIOpenGL::FOpenGLDepthBiasPayload>(
+            InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
-            /* No glPolygonOffset entry point is exposed by the dispatch table. */
+            if ( InState.Dispatch.PolygonOffset != nullptr )
+            {
+                InState.Dispatch.PolygonOffset( InPayload.Slope, InPayload.Constant );
+                InState.State.SetEnabled( Lumen::RHIOpenGL::GlPolygonOffsetFill, true );
+            }
             return {};
         } );
 
     case EOpenGLCommandOpcode::SetStencilReference:
-        return WithPayload<Lumen::RHIOpenGL::FOpenGLUIntPayload>( InStream, InIndex, Opcode,
-                                                                  [] ( const auto & ) noexcept -> Lumen::RHI::FRHIExpected
+        return WithPayload<Lumen::RHIOpenGL::FOpenGLUIntPayload>(
+            InStream, InIndex, Opcode, [&InState] ( const auto &InPayload ) noexcept -> Lumen::RHI::FRHIExpected
         {
-            /* No glStencilFunc entry point is exposed by the dispatch table. */
+            if ( InState.Dispatch.StencilFunc != nullptr )
+            {
+                InState.Dispatch.StencilFunc( Lumen::RHIOpenGL::GlAlways, static_cast<Lumen::RHIOpenGL::GLint>( InPayload.Value ),
+                                              0xFFU );
+                InState.State.SetEnabled( Lumen::RHIOpenGL::GlStencilTest, true );
+            }
             return {};
         } );
 
@@ -505,20 +512,27 @@ ToBottomLeft ( const Lumen::UInt32 InFramebufferHeight, const Lumen::Int32 InY, 
         } );
 
     case EOpenGLCommandOpcode::BeginDebugRegion:
-        return WithPayload<Lumen::RHIOpenGL::FOpenGLDebugRegionPayload>( InStream, InIndex, Opcode,
-                                                                         [] ( const auto & ) noexcept -> Lumen::RHI::FRHIExpected
+    {
+        LUMEN_EXPECT( View, InStream.Read( InIndex ) );
+        if ( View.Payload.size() >= sizeof( Lumen::RHIOpenGL::FOpenGLDebugRegionPayload ) )
         {
-            /* Debug labels are routed through the device debug sink, not GL here. */
-            return {};
-        } );
+            Lumen::RHIOpenGL::FOpenGLDebugRegionPayload Header{};
+            std::memcpy( &Header, View.Payload.data(), sizeof( Header ) );
+            const Lumen::USize NameLength = static_cast<Lumen::USize>( Header.Length );
+            if ( View.Payload.size() >= sizeof( Header ) + NameLength )
+            {
+                const Lumen::FStringView Label(
+                    reinterpret_cast<const Lumen::AnsiChar *>( View.Payload.data() + sizeof( Header ) ), NameLength );
+                InState.Context.GetExecutor()->EmitDebugMessage( Lumen::RHI::FRHIDebugMessage(
+                    Lumen::RHI::ERHIDebugSeverity::Info, Lumen::RHI::ERHIDebugCategory::General, 0U, Label ) );
+            }
+        }
+        return {};
+    }
 
     case EOpenGLCommandOpcode::EndDebugRegion:
     {
-        const auto View = InStream.Read( InIndex );
-        if ( not View )
-        {
-            return Lumen::MakeUnexpected( View.Error() );
-        }
+        LUMEN_TRY_EXPECT_ERROR( InStream.Read( InIndex ) );
         return {};
     }
 
@@ -624,6 +638,7 @@ Lumen::RHIOpenGL::FOpenGLCommandExecutor::~FOpenGLCommandExecutor () noexcept
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandExecutor::Execute ( const RHI::FRHICommandStream &InStream ) noexcept
 {
     FReplayState Replay{ .Dispatch              = Context->GetDispatch(),
+                         .Context               = *Context,
                          .State                 = *StateCache,
                          .Framebuffers          = *FramebufferCache,
                          .VertexArray           = VertexArray,
