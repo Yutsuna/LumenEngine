@@ -15,6 +15,9 @@ ModuleNames = [
     # TODO: add validators before including Vulkan:
     # if the OS has Vulkan support, include it
     'RHIVulkan',
+    # TODO: add validators before including OpenGL:
+    # if the OS has OpenGL support, include it
+    'RHIOpenGL'
 ]
 
 ModuleDefinitions = []
