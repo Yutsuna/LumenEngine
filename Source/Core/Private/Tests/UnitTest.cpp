@@ -52,7 +52,7 @@ void Tests::FUnitTestRegistry::Register ( FUnitTestMetadata const &Metadata )
 Tests::FUnitTestTestRunSummary Tests::FUnitTestRegistry::Run ( const FStringView InSuiteFilter,
                                                                TOptional<EUnitTestKind> InKindFilter ) const
 {
-    return Run( InSuiteFilter, std::move( InKindFilter ), EUnitTestOutputMode::Compact );
+    return Run( InSuiteFilter, InKindFilter, EUnitTestOutputMode::Compact );
 }
 
 Tests::FUnitTestTestRunSummary Tests::FUnitTestRegistry::Run ( const FStringView InSuiteFilter,
