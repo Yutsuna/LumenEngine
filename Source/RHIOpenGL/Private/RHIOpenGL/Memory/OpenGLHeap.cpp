@@ -17,10 +17,7 @@
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHIOpenGL::FOpenGLHeap>, Lumen::RHI::FRHIError> Lumen::RHIOpenGL::FOpenGLHeap::Create (
     TSharedRef<FOpenGLDeviceContext> InContext, const RHI::FRHIHeapDesc &InDesc, const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
     if ( InDesc.Size > static_cast<UInt64>( ( std::numeric_limits<GLsizeiptr>::max )() ) )
     {
         return TUnexpected( RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Limit, "Heap exceeds the GL buffer size range." ) );
@@ -67,10 +64,7 @@ Lumen::TExpected<Lumen::TSharedRef<Lumen::RHIOpenGL::FOpenGLHeap>, Lumen::RHI::F
             NativeError = Dispatch.GetError();
         }
     } );
-    if ( not Created )
-    {
-        return TUnexpected( Created.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Created );
     if ( NativeError != GlNoError or Buffer == 0U or ( bCpuVisible and Mapped == nullptr ) )
     {
         if ( Buffer != 0U )

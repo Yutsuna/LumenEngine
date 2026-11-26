@@ -5,6 +5,7 @@
 
 #include <RHIOpenGL/Memory/OpenGLMemoryObjects.hpp>
 
+#include <Algo/Any.hpp>
 #include <Algo/Sort.hpp>
 
 #include <HAL/LockGuard.hpp>
@@ -17,6 +18,8 @@
 #include <RHI/Types/RHIError.hpp>
 #include <RHI/Utilities/RHIAlignment.hpp>
 
+#include <Maths/Macros.hpp>
+
 /**
  * File-local helpers
  */
@@ -24,8 +27,8 @@
 namespace
 {
 
-[[nodiscard]] Lumen::Bool SameBufferDesc ( const Lumen::RHI::FRHIBufferDesc &InFirst,
-                                           const Lumen::RHI::FRHIBufferDesc &InSecond ) noexcept
+inline Lumen::Bool SameBufferDesc ( const Lumen::RHI::FRHIBufferDesc &InFirst,
+                                    const Lumen::RHI::FRHIBufferDesc &InSecond ) noexcept
 {
     return InFirst.Size == InSecond.Size and InFirst.Usage == InSecond.Usage and InFirst.MemoryClass == InSecond.MemoryClass and
            InFirst.InitialState == InSecond.InitialState;
@@ -57,10 +60,7 @@ LUMEN_RHI_OBJECT_FORWARDERS( RHIOpenGL, FOpenGLBufferPool );
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLBufferPool::Acquire ( const RHI::FRHIBufferDesc &InDesc ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
     HAL::TLockGuard Lock( Mutex );
     for ( USize Index = 0U; Index < Available.size(); ++Index )
     {
@@ -72,10 +72,7 @@ Lumen::RHIOpenGL::FOpenGLBufferPool::Acquire ( const RHI::FRHIBufferDesc &InDesc
         }
     }
     TExpected<TSharedRef<RHI::IRHIBuffer>, RHI::FRHIError> Created = Creator( InDesc );
-    if ( not Created )
-    {
-        return TUnexpected( Created.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Created );
     Owned.push_back( *Created );
     return *Created;
 }
@@ -84,21 +81,32 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLBufferPool::Release ( TSharedR
                                                                         const RHI::FRHITimelineValue InCompletion ) noexcept
 {
     HAL::TLockGuard Lock( Mutex );
-    Bool bFound = false;
-    for ( const TSharedRef<RHI::IRHIBuffer> &OwnedBuffer : Owned )
+
+    if ( not Algo::AnyOf( Owned, [&] ( const TSharedRef<RHI::IRHIBuffer> &OwnedBuffer )
     {
-        if ( OwnedBuffer->GetId() == InBuffer->GetId() )
-        {
-            bFound = true;
-            break;
-        }
-    }
-    if ( not bFound )
+        return OwnedBuffer->GetId() == InBuffer->GetId();
+    } ) )
     {
         return TUnexpected( RHI::MakeRHIInvalidResource( "Buffer pool does not own this buffer." ) );
     }
-    Pending.push_back(
-        FPendingBuffer{ .Buffer = static_cast<TSharedRef<RHI::IRHIBuffer> &&>( InBuffer ), .Completion = InCompletion } );
+    if ( Algo::AnyOf( Pending, [&] ( const FPendingBuffer &PendingBuffer )
+    {
+        return PendingBuffer.Buffer->GetId() == InBuffer->GetId();
+    } ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Buffer was already released to this pool." ) );
+    }
+    if ( Algo::AnyOf( Available, [&] ( const TSharedRef<RHI::IRHIBuffer> &AvailableBuffer )
+    {
+        return AvailableBuffer->GetId() == InBuffer->GetId();
+    } ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidResource( "Buffer was already released to this pool." ) );
+    }
+
+    FPendingBuffer PendingBuffer = { .Buffer     = static_cast<TSharedRef<RHI::IRHIBuffer> &&>( InBuffer ),
+                                     .Completion = InCompletion };
+    Pending.push_back( PendingBuffer );
     return {};
 }
 
@@ -146,10 +154,7 @@ void Lumen::RHIOpenGL::FOpenGLTransientResourceAllocator::BeginBatch () noexcept
 Lumen::TExpected<Lumen::TVector<Lumen::RHI::FRHITransientAllocation>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLTransientResourceAllocator::Allocate ( const RHI::FRHITransientBatch &InBatch ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InBatch.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InBatch.Validate() );
     HAL::TLockGuard Lock( Mutex );
     if ( not bInBatch )
     {
@@ -177,10 +182,7 @@ Lumen::RHIOpenGL::FOpenGLTransientResourceAllocator::Allocate ( const RHI::FRHIT
         {
             return TUnexpected( RHI::MakeRHIInvalidMemory( "Transient requirement alignment overflowed." ) );
         }
-        if ( *Aligned > SlotSize )
-        {
-            SlotSize = *Aligned;
-        }
+        SlotSize = Maths::Max( *Aligned, SlotSize );
     }
     const TOptional<UInt64> AlignedSlot = RHI::RHIAlignUp( SlotSize, MinAlignment );
     if ( not AlignedSlot )
@@ -253,22 +255,19 @@ LUMEN_RHI_OBJECT_FORWARDERS( RHIOpenGL, FOpenGLDefragmenter );
 Lumen::TExpected<Lumen::RHI::FRHIDefragPlan, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDefragmenter::BuildPlan ( const TSpan<const RHI::FRHIAllocation> InAllocations ) noexcept
 {
-    for ( const RHI::FRHIAllocation &Allocation : InAllocations )
+    if ( Algo::AnyOf( InAllocations, [] ( const RHI::FRHIAllocation &Allocation ) noexcept -> Bool
     {
-        if ( not Allocation.IsValid() or Allocation.Heap == nullptr )
-        {
-            return TUnexpected( RHI::MakeRHIInvalidMemory( "Defrag input contains an invalid allocation." ) );
-        }
+        return not Allocation.IsValid() or Allocation.Heap == nullptr;
+    } ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidMemory( "Defrag input contains an invalid allocation." ) );
     }
     return RHI::FRHIDefragPlan{};
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLDefragmenter::Execute ( const RHI::FRHIDefragPlan &InPlan ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InPlan.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InPlan.Validate() );
     return TUnexpected(
         RHI::MakeRHIUnsupported( RHI::ERHIErrorCondition::Memory, "Native OpenGL defragmenter moves are a later milestone." ) );
 }

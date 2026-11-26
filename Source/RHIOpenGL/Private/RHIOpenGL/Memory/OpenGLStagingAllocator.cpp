@@ -22,10 +22,7 @@ Lumen::RHIOpenGL::FOpenGLUploadAllocator::Create ( TSharedRef<FOpenGLDeviceConte
     const RHI::FRHIBufferDesc Desc{
         .Size = InCapacity, .Usage = RHI::ERHIResourceUsage::CopySource, .MemoryClass = RHI::ERHIMemoryClass::Upload };
     TExpected<TSharedRef<FOpenGLBuffer>, RHI::FRHIError> Buffer = FOpenGLBuffer::Create( InContext, Desc, InBufferId );
-    if ( not Buffer )
-    {
-        return TUnexpected( Buffer.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Buffer );
     return MakeShared<FOpenGLUploadAllocator>( static_cast<TSharedRef<FOpenGLBuffer> &&>( *Buffer ), InId );
 }
 
@@ -47,18 +44,14 @@ LUMEN_RHI_OBJECT_FORWARDERS( RHIOpenGL, FOpenGLUploadAllocator );
 Lumen::TExpected<Lumen::RHI::FRHIUploadAllocation, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLUploadAllocator::Allocate ( const RHI::FRHIAllocationDesc &InDesc ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
     TExpected<RHI::FRHIAllocation, RHI::FRHIError> Allocation = Ring.Allocate( InDesc );
-    if ( not Allocation )
-    {
-        return TUnexpected( Allocation.Error() );
-    }
-    Byte *Base = Buffer->GetMappedBase();
+    LUMEN_TRY_EXPECT_ERROR( Allocation );
+    Allocation->MemoryClass = RHI::ERHIMemoryClass::Upload;
+    Byte *Base              = Buffer->GetMappedBase();
     if ( Base == nullptr )
     {
+        ( void )Ring.Free( *Allocation );
         return TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Memory, "Upload buffer is not mapped." ) );
     }
     return RHI::FRHIUploadAllocation{
@@ -69,6 +62,10 @@ Lumen::RHIOpenGL::FOpenGLUploadAllocator::Allocate ( const RHI::FRHIAllocationDe
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLUploadAllocator::Free ( const RHI::FRHIAllocation &InAllocation ) noexcept
 {
+    if ( not Owns( InAllocation ) )
+    {
+        return TUnexpected( RHI::MakeRHIInvalidMemory( "Upload allocation is not owned by this allocator." ) );
+    }
     return Ring.Free( InAllocation );
 }
 
@@ -88,10 +85,7 @@ Lumen::RHIOpenGL::FOpenGLReadbackAllocator::Create ( TSharedRef<FOpenGLDeviceCon
     const RHI::FRHIBufferDesc Desc{
         .Size = InCapacity, .Usage = RHI::ERHIResourceUsage::CopyDestination, .MemoryClass = RHI::ERHIMemoryClass::Readback };
     TExpected<TSharedRef<FOpenGLBuffer>, RHI::FRHIError> Buffer = FOpenGLBuffer::Create( InContext, Desc, InBufferId );
-    if ( not Buffer )
-    {
-        return TUnexpected( Buffer.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Buffer );
     return MakeShared<FOpenGLReadbackAllocator>( static_cast<TSharedRef<FOpenGLBuffer> &&>( *Buffer ), InId );
 }
 
@@ -113,15 +107,9 @@ LUMEN_RHI_OBJECT_FORWARDERS( RHIOpenGL, FOpenGLReadbackAllocator );
 Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLReadbackAllocator::Allocate ( const RHI::FRHIAllocationDesc &InDesc ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
     TExpected<RHI::FRHIAllocation, RHI::FRHIError> Allocation = Ring.Allocate( InDesc );
-    if ( not Allocation )
-    {
-        return TUnexpected( Allocation.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Allocation );
     Allocation->MemoryClass = RHI::ERHIMemoryClass::Readback;
     return *Allocation;
 }
