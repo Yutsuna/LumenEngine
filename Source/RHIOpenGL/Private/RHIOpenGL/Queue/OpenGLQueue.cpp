@@ -22,6 +22,31 @@
 #include <cmath>
 
 /**
+ * File-local helpers
+ */
+
+namespace
+{
+
+/** @brief Publishes a monotonic completion under the wait leaf lock, then wakes waiters. */
+void PublishQueueCompletion ( Lumen::RHIOpenGL::FOpenGLWaitState &InState,
+                              Lumen::TAtomic<Lumen::UInt64> &InCompleted,
+                              const Lumen::UInt64 InValue ) noexcept
+{
+    {
+        Lumen::HAL::TLockGuard Lock( InState.Mutex );
+        Lumen::UInt64 Observed = InCompleted.load();
+        while ( Observed < InValue and not InCompleted.compare_exchange_weak( Observed, InValue ) )
+        {
+            /* A failed exchange refreshes Observed with the current value. */
+        }
+    }
+    InState.Condition.NotifyAll();
+}
+
+} // namespace
+
+/**
  * Public
  */
 
@@ -133,12 +158,6 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
             TSharedPtr<RHI::IRHISemaphore>( Operation.Semaphore ), Operation.Value ) );
     }
 
-    /* Binary waits consume the semaphore, so only do so after every wait and signal has been validated. */
-    for ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &BinaryWait : BinaryWaits )
-    {
-        LUMEN_TRY_EXPECT_ERROR( BinaryWait.first->Wait( BinaryWait.second, 0.0 ) );
-    }
-
     USize MarkedCount = 0U;
     for ( const TSharedRef<RHI::IRHICommandList> &CommandList : Lists )
     {
@@ -155,6 +174,13 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
             return TUnexpected<RHI::FRHIError>( Pending.Error() );
         }
         ++MarkedCount;
+    }
+
+    /* Binary waits consume the semaphore, so only do so after validation and every
+     * state transition succeeded: an early exit must leave the signals intact. */
+    for ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &BinaryWait : BinaryWaits )
+    {
+        LUMEN_TRY_EXPECT_ERROR( BinaryWait.first->Wait( BinaryWait.second, 0.0 ) );
     }
 
     const TSharedRef<TAtomic<UInt64>> RetiredValue            = CompletedValue;
@@ -175,14 +201,10 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
         }
         return Result;
     };
-    Packet.OnComplete = [RetiredValue, Lists, InDesc] () noexcept
+    FOpenGLWaitState *Wait = Context->GetWaitState();
+    Packet.OnComplete      = [Wait, RetiredValue, Lists, InDesc] () noexcept
     {
-        UInt64 Observed = RetiredValue->load();
-        while ( Observed < InDesc.Completion.Value and
-                not RetiredValue->compare_exchange_weak( Observed, InDesc.Completion.Value ) )
-        {
-            /* A failed exchange refreshes Observed with the current value. */
-        }
+        PublishQueueCompletion( *Wait, *RetiredValue, InDesc.Completion.Value );
         Algo::ForEach( Lists,
                        [] ( const TSharedRef<RHI::IRHICommandList> &InCommandList ) noexcept -> Bool
         {
@@ -193,8 +215,9 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
             ( void )( *Native )->MarkCompleted( InDesc.Completion );
         } );
     };
-    Packet.OnFailure = [Lists, InDesc] ( RHI::FRHIError ) noexcept
+    Packet.OnFailure = [Wait, RetiredValue, Lists, InDesc] ( RHI::FRHIError ) noexcept
     {
+        PublishQueueCompletion( *Wait, *RetiredValue, InDesc.Completion.Value );
         Algo::ForEach( Lists,
                        [] ( const TSharedRef<RHI::IRHICommandList> &InCommandList ) noexcept -> Bool
         {
@@ -219,11 +242,20 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::WaitIdle () noexcept
 {
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::WaitIdle" ) );
-    while ( CompletedValue->load() < SubmittedValue.load() )
+    const UInt64 Target = SubmittedValue.load();
+    if ( Target <= CompletedValue->load() )
     {
-        LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::WaitIdle" ) );
-        HAL::FPlatformTime::Sleep( 0.0005 );
+        return {};
     }
+    FOpenGLWaitState *State = Context->GetWaitState();
+    {
+        HAL::TUniqueLock Lock( State->Mutex );
+        State->Condition.Wait( Lock, [this, State, Target] () noexcept -> Bool
+        {
+            return Target <= CompletedValue->load() or State->bUnavailable or Context->IsUnavailable();
+        } );
+    }
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::WaitIdle" ) );
     return {};
 }
 
@@ -241,25 +273,28 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Wait ( const RHI::FRHIT
     {
         return {};
     }
-    const Float64 Deadline = HAL::FPlatformTime::Seconds() + InTimeoutSeconds;
-    while ( InValue.Value > CompletedValue->load() )
+    const Float64 Deadline  = HAL::FPlatformTime::Seconds() + InTimeoutSeconds;
+    FOpenGLWaitState *State = Context->GetWaitState();
     {
-        LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::Wait" ) );
-        if ( HAL::FPlatformTime::Seconds() >= Deadline )
+        HAL::TUniqueLock Lock( State->Mutex );
+        const auto IsReady = [this, State, &InValue] () noexcept -> Bool
         {
-            break;
+            return InValue.Value <= CompletedValue->load() or State->bUnavailable or Context->IsUnavailable();
+        };
+        if ( InTimeoutSeconds <= 0.0 )
+        {
+            ( void )State->Condition.WaitFor( Lock, 0.0, IsReady );
         }
-        HAL::FPlatformTime::Sleep( 0.0005 );
+        else
+        {
+            ( void )State->Condition.WaitUntil( Lock, Deadline, IsReady );
+        }
     }
+    LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::Wait" ) );
     if ( InValue.Value > CompletedValue->load() )
     {
         return TUnexpected(
             RHI::MakeRHITimeout( RHI::ERHIErrorCondition::Synchronization, "Requested timeline value has not completed." ) );
-    }
-    if ( Context->GetUnavailableError( "Queue::Wait" ) )
-    {
-        return TUnexpected(
-            RHI::MakeRHIDeviceLost( RHI::ERHIErrorCondition::Synchronization, "OpenGL device was lost during a queue wait." ) );
     }
     return {};
 }
