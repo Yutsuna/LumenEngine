@@ -182,10 +182,7 @@ Lumen::RHIOpenGL::FOpenGLPipelineCache::FKeyHasher::operator()( const RHI::FRHIP
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLPipelineCache::Initialize () noexcept
 {
-    if ( const RHI::FRHIExpected Validated = Desc.Validate(); not Validated )
-    {
-        return TUnexpected<RHI::FRHIError>( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( Desc.Validate() );
 
     const TSpan<const Byte> InitialData = Desc.InitialData;
     Desc.InitialData                    = {};
