@@ -21,10 +21,14 @@
 
 /* */
 
+#if defined( __i386__ ) or defined( _M_IX86 )
+    #define LUMEN_ARCH_X86
+#endif
+
 #if defined( __x86_64__ ) or defined( _M_X64 )
     #define LUMEN_ARCH_X64
 
-#elif defined( __arm64__ ) or defined( _M_ARM64 )
+#elif defined( __aarch64__ ) or defined( __arm64__ ) or defined( _M_ARM64 )
     #define LUMEN_ARCH_ARM64
 
 #endif
