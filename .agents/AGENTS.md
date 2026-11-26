@@ -33,7 +33,7 @@ to `.agents/`; an explicit `.agents/` prefix is equally valid.
 | `AppCore` | built (shared library) | `modules/AppCore.md` |
 | `Launch` | built (executable entry point) | `modules/Launch.md` |
 | `Renderer` | **not built** (empty stub, absent from `ModuleNames`) | `modules/Renderer.md` |
-| `RHIOpenGL` | built on Linux (M0 skeleton; Module/Device conformance) | `modules/RHIOpenGL.md` |
+| `RHIOpenGL` | built on Linux (OpenGL 4.6 backend; full conformance matrix) | `modules/RHIOpenGL.md` |
 | `RHIVulkan` | built (shared library, listed in `ModuleNames`; do not depend on it from production renderer code yet) | `modules/RHIVulkan.md` |
 
 A module is compiled only if listed in `ModuleNames` (`Source/meson.build`) and
