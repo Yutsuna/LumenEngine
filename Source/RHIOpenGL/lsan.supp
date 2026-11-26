@@ -1,0 +1,5 @@
+# Mesa/libglvnd keep process-wide driver caches alive after EGL teardown.
+leak:__pthread_once_slow
+leak:eglInitialize
+leak:eglGetProcAddress
+leak:glGetString
