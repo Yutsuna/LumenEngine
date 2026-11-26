@@ -5,6 +5,8 @@
 
 #include <RHIOpenGL/Synchronization/OpenGLQueryPool.hpp>
 
+#include <Algo/Any.hpp>
+
 #include <HAL/LockGuard.hpp>
 
 #include <RHI/Queries/RHIQueryType.hpp>
@@ -71,14 +73,14 @@ Lumen::RHIOpenGL::FOpenGLQueryPool::Create ( TSharedRef<FOpenGLDeviceContext> In
         DeleteQueryHandles( Dispatch, NativeQueries );
         return TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Query, "OpenGL refused query pool creation." ) );
     }
-    for ( const GLuint Handle : NativeQueries )
+    if ( Algo::AnyOf( NativeQueries, [] ( const GLuint InHandle ) noexcept -> Bool
     {
-        if ( Handle == 0U )
-        {
-            DeleteQueryHandles( Dispatch, NativeQueries );
-            return TUnexpected(
-                RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Query, "OpenGL returned an invalid query handle." ) );
-        }
+        return InHandle == 0U;
+    } ) )
+    {
+        DeleteQueryHandles( Dispatch, NativeQueries );
+        return TUnexpected(
+            RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Query, "OpenGL returned an invalid query handle." ) );
     }
     Pool->Queries = NativeQueries;
     return Pool;
