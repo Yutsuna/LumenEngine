@@ -66,10 +66,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLBindingSet::Write ( const TSpa
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( const RHI::FRHIBindingWrite &Write : InWrites )
     {
-        if ( const RHI::FRHIExpected Validated = ValidateWrite( Write ); not Validated )
-        {
-            return TUnexpected( Validated.Error() );
-        }
+        LUMEN_TRY_EXPECT_ERROR( ValidateWrite( Write ) );
     }
     Writes.assign( InWrites.begin(), InWrites.end() );
     bDirty = true;
@@ -128,10 +125,7 @@ Lumen::RHIOpenGL::FOpenGLBindingSet::ValidateWrite ( const RHI::FRHIBindingWrite
     using RHI::FRHIError;
     using RHI::MakeRHIInvalidBinding;
 
-    if ( const RHI::FRHIExpected Validated = InWrite.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InWrite.Validate() );
 
     const RHI::FRHIBindingLayoutEntry *Entry =
         Algo::FindIf( Layout->GetDesc().Entries, [&] ( const RHI::FRHIBindingLayoutEntry &Candidate )

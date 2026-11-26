@@ -16,10 +16,7 @@ Lumen::RHIOpenGL::FOpenGLBindingLayout::Create ( TSharedRef<FOpenGLDeviceContext
                                                  const RHI::FRHIBindingLayoutDesc &InDesc,
                                                  const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
 
     UInt64 DescriptorCount = 0ULL;
     for ( const RHI::FRHIBindingLayoutEntry &Entry : InDesc.Entries )

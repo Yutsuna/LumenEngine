@@ -50,10 +50,7 @@ Lumen::TExpected<Lumen::TSharedRef<Lumen::RHIOpenGL::FOpenGLDescriptorAllocator>
 Lumen::RHIOpenGL::FOpenGLDescriptorAllocator::Create ( const RHI::FRHIDescriptorAllocatorDesc &InDesc,
                                                        const RHI::FRHIObjectId InId ) noexcept
 {
-    if ( const RHI::FRHIExpected Validated = InDesc.Validate(); not Validated )
-    {
-        return TUnexpected( Validated.Error() );
-    }
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
     TSharedRef<FOpenGLDescriptorPoolBackend> Backend = GetSharedBackend();
     return MakeShared<FOpenGLDescriptorAllocator>( InDesc, *Backend,
                                                    static_cast<TSharedRef<FOpenGLDescriptorPoolBackend> &&>( Backend ), InId );
