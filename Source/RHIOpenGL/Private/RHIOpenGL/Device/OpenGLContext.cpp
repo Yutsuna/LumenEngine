@@ -252,6 +252,34 @@ void Lumen::RHIOpenGL::FOpenGLContext::NotifyDebugMessage ( const GLenum InSourc
     }
 }
 
+void Lumen::RHIOpenGL::FOpenGLContext::TrackQueryPoll ( TFunction<Bool()> InPoll ) noexcept
+{
+    if ( not InPoll )
+    {
+        return;
+    }
+    HAL::TLockGuard Lock( SchedulerMutex );
+    PendingQueryPolls.push_back( static_cast<TFunction<Bool()> &&>( InPoll ) );
+}
+
+void Lumen::RHIOpenGL::FOpenGLContext::PollPendingQueries () noexcept
+{
+    TVector<TFunction<Bool()>> Polls;
+    {
+        HAL::TLockGuard Lock( SchedulerMutex );
+        Polls = static_cast<TVector<TFunction<Bool()>> &&>( PendingQueryPolls );
+        PendingQueryPolls.clear();
+    }
+    for ( TFunction<Bool()> &Poll : Polls )
+    {
+        if ( Poll and not Poll() )
+        {
+            HAL::TLockGuard Lock( SchedulerMutex );
+            PendingQueryPolls.push_back( static_cast<TFunction<Bool()> &&>( Poll ) );
+        }
+    }
+}
+
 void Lumen::RHIOpenGL::FOpenGLContext::PollResetStatus () noexcept
 {
     if ( Dispatch.GetGraphicsResetStatus == nullptr or bResetReported.load() )
@@ -280,6 +308,8 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
             Pending.pop();
         }
     }
+
+    PollPendingQueries();
 
     for ( USize Index = 0U; Index < Blocked.size(); )
     {
@@ -310,6 +340,7 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
             }
             if ( Sync == nullptr )
             {
+                PollPendingQueries();
                 Algo::ForEach( Ready.Signals,
                                [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept -> Bool
                 {
@@ -335,6 +366,8 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
         ++Index;
     }
 
+    PollPendingQueries();
+
     for ( USize Index = 0U; Index < ActiveFences.size(); )
     {
         FActiveFence &Fence = ActiveFences[Index];
@@ -351,6 +384,8 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
         FOpenGLSubmission Completed = static_cast<FOpenGLSubmission &&>( Fence.Submission );
         ActiveFences.erase( ActiveFences.begin() + static_cast<ISize>( Index ) );
 
+        /** M4.2: publish query results before the queue completion value becomes visible. */
+        PollPendingQueries();
         Algo::ForEach( Completed.Signals,
                        [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept -> Bool
         {
