@@ -62,7 +62,11 @@ Lumen::Bool Lumen::RHIOpenGL::FGLDispatchTable::IsComplete () const noexcept
            DrawArraysIndirect != nullptr and DrawElementsIndirect != nullptr and DispatchCompute != nullptr and
            DispatchComputeIndirect != nullptr and TextureSubImage2D != nullptr and CopyImageSubData != nullptr and
            CreateQueries != nullptr and DeleteQueries != nullptr and BeginQuery != nullptr and EndQuery != nullptr and
-           GetQueryObjectui64v != nullptr and GetQueryiv != nullptr;
+           GetQueryObjectui64v != nullptr and GetQueryiv != nullptr and FenceSync != nullptr and DeleteSync != nullptr and
+           ClientWaitSync != nullptr and Flush != nullptr and NamedBufferSubData != nullptr and BlendColor != nullptr and
+           BlendEquationSeparate != nullptr and BlendFuncSeparate != nullptr and PolygonOffset != nullptr and
+           StencilFunc != nullptr and BindBuffer != nullptr and GetBufferSubData != nullptr and GetTextureImage != nullptr and
+           BlitFramebuffer != nullptr;
 }
 
 Lumen::TExpected<void, Lumen::RHI::FRHIError>
@@ -75,6 +79,12 @@ Lumen::RHIOpenGL::LoadGLDispatchTable ( FGLDispatchTable &OutDispatch, const IOp
     ResolveProcedure( OutDispatch.GetError, InContext, "glGetError" );
     ResolveProcedure( OutDispatch.ClipControl, InContext, "glClipControl" );
     ResolveProcedure( OutDispatch.GetGraphicsResetStatus, InContext, "glGetGraphicsResetStatus" );
+    ResolveProcedure( OutDispatch.FenceSync, InContext, "glFenceSync" );
+    ResolveProcedure( OutDispatch.DeleteSync, InContext, "glDeleteSync" );
+    ResolveProcedure( OutDispatch.ClientWaitSync, InContext, "glClientWaitSync" );
+    ResolveProcedure( OutDispatch.Flush, InContext, "glFlush" );
+    ResolveProcedure( OutDispatch.DebugMessageCallback, InContext, "glDebugMessageCallback" );
+    ResolveProcedure( OutDispatch.DebugMessageControl, InContext, "glDebugMessageControl" );
 
     ResolveProcedure( OutDispatch.CreateBuffers, InContext, "glCreateBuffers" );
     ResolveProcedure( OutDispatch.DeleteBuffers, InContext, "glDeleteBuffers" );
@@ -161,6 +171,17 @@ Lumen::RHIOpenGL::LoadGLDispatchTable ( FGLDispatchTable &OutDispatch, const IOp
     ResolveProcedure( OutDispatch.EndQuery, InContext, "glEndQuery" );
     ResolveProcedure( OutDispatch.GetQueryObjectui64v, InContext, "glGetQueryObjectui64v" );
     ResolveProcedure( OutDispatch.GetQueryiv, InContext, "glGetQueryiv" );
+
+    ResolveProcedure( OutDispatch.NamedBufferSubData, InContext, "glNamedBufferSubData" );
+    ResolveProcedure( OutDispatch.BlendColor, InContext, "glBlendColor" );
+    ResolveProcedure( OutDispatch.BlendEquationSeparate, InContext, "glBlendEquationSeparate" );
+    ResolveProcedure( OutDispatch.BlendFuncSeparate, InContext, "glBlendFuncSeparate" );
+    ResolveProcedure( OutDispatch.PolygonOffset, InContext, "glPolygonOffset" );
+    ResolveProcedure( OutDispatch.StencilFunc, InContext, "glStencilFunc" );
+    ResolveProcedure( OutDispatch.BindBuffer, InContext, "glBindBuffer" );
+    ResolveProcedure( OutDispatch.GetBufferSubData, InContext, "glGetBufferSubData" );
+    ResolveProcedure( OutDispatch.GetTextureImage, InContext, "glGetTextureImage" );
+    ResolveProcedure( OutDispatch.BlitFramebuffer, InContext, "glBlitFramebuffer" );
 
     if ( not OutDispatch.IsComplete() )
     {

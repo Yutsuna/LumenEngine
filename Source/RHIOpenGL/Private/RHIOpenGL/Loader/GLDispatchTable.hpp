@@ -28,6 +28,12 @@ namespace RHIOpenGL
         TGLGetError GetError                             = nullptr;
         TGLClipControl ClipControl                       = nullptr;
         TGLGetGraphicsResetStatus GetGraphicsResetStatus = nullptr;
+        TGLFenceSync FenceSync                           = nullptr;
+        TGLDeleteSync DeleteSync                         = nullptr;
+        TGLClientWaitSync ClientWaitSync                 = nullptr;
+        TGLFlush Flush                                   = nullptr;
+        TGLDebugMessageCallback DebugMessageCallback     = nullptr;
+        TGLDebugMessageControl DebugMessageControl       = nullptr;
 
         TGLCreateBuffers CreateBuffers                             = nullptr;
         TGLDeleteBuffers DeleteBuffers                             = nullptr;
@@ -119,6 +125,18 @@ namespace RHIOpenGL
         TGLEndQuery EndQuery                       = nullptr;
         TGLGetQueryObjectui64v GetQueryObjectui64v = nullptr;
         TGLGetQueryiv GetQueryiv                   = nullptr;
+
+        /* Dynamic state, readback and presentation. */
+        TGLNamedBufferSubData NamedBufferSubData       = nullptr;
+        TGLBlendColor BlendColor                       = nullptr;
+        TGLBlendEquationSeparate BlendEquationSeparate = nullptr;
+        TGLBlendFuncSeparate BlendFuncSeparate         = nullptr;
+        TGLPolygonOffset PolygonOffset                 = nullptr;
+        TGLStencilFunc StencilFunc                     = nullptr;
+        TGLBindBuffer BindBuffer                       = nullptr;
+        TGLGetBufferSubData GetBufferSubData           = nullptr;
+        TGLGetTextureImage GetTextureImage             = nullptr;
+        TGLBlitFramebuffer BlitFramebuffer             = nullptr;
 
         /** @return True when every required core entry point was resolved. */
         [[nodiscard]] Bool IsComplete () const noexcept;

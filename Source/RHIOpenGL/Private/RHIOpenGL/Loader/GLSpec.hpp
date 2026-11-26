@@ -27,6 +27,9 @@ namespace RHIOpenGL
     using GLfloat    = Float32;
     using GLboolean  = UInt8;
 
+    /** @brief Opaque sync object handle (core 4.6). */
+    using GLsync = void *;
+
     /** @brief EGL opaque handles, represented as pointer-sized integers. */
     using EGLNativeDisplayType = UPtr;
     using EGLDisplay           = UPtr;
@@ -199,6 +202,39 @@ namespace RHIOpenGL
     inline constexpr GLenum GlTimeElapsed          = 0x88BFU;
     inline constexpr GLenum GlQueryResult          = 0x8866U;
     inline constexpr GLenum GlQueryResultAvailable = 0x8867U;
+    inline constexpr GLenum GlPackRowLength        = 0x0D02U;
+
+    /** INFO: Sync objects and client wait results (core 4.6). */
+    inline constexpr GLenum GlSyncGpuCommandsComplete  = 0x9117U;
+    inline constexpr GLenum GlSyncFlushedCommands      = 0x9118U;
+    inline constexpr GLenum GlSyncConditionSatisfied   = 0x9119U;
+    inline constexpr GLenum GlSyncAlreadySignaled      = 0x911AU;
+    inline constexpr GLenum GlSyncTimeoutExpired       = 0x911BU;
+    inline constexpr GLenum GlSyncWaitFailed           = 0x911CU;
+    inline constexpr GLbitfield GlSyncFlushCommandsBit = 0x00000001U;
+
+    /** INFO: KHR_debug message routing (core 4.6). */
+    inline constexpr GLenum GlDebugOutput         = 0x92E0U;
+    inline constexpr GLenum GlDebugSourceApi      = 0x8246U;
+    inline constexpr GLenum GlDebugTypeErrorCode  = 0x824AU;
+    inline constexpr GLenum GlDebugSeverityHigh   = 0x9146U;
+    inline constexpr GLenum GlDebugSeverityMedium = 0x9147U;
+    inline constexpr GLenum GlDebugSeverityLow    = 0x9148U;
+    inline constexpr GLenum GlDontCare            = 0x110BU;
+
+    /** INFO: Dynamic state entry point constants (core 4.6). */
+    inline constexpr GLenum GlBlendColorValue   = 0x8005U;
+    inline constexpr GLenum GlBlend             = 0x0BE2U;
+    inline constexpr GLenum GlDepthTest         = 0x0B71U;
+    inline constexpr GLenum GlStencilTest       = 0x0B90U;
+    inline constexpr GLenum GlPolygonOffsetFill = 0x8037U;
+    inline constexpr GLenum GlZero              = 0U;
+    inline constexpr GLenum GlOne               = 0x0001U;
+    inline constexpr GLenum GlSrcAlpha          = 0x0302U;
+    inline constexpr GLenum GlOneMinusSrcAlpha  = 0x0303U;
+    inline constexpr GLenum GlFuncAdd           = 0x8006U;
+    inline constexpr GLenum GlKeep              = 0x1E00U;
+    inline constexpr GLenum GlReplace           = 0x1E01U;
 
     using TGLGetString              = const GLubyte *( * )( GLenum );
     using TGLGetStringi             = const GLubyte *( * )( GLenum, GLuint );
@@ -207,10 +243,18 @@ namespace RHIOpenGL
     using TGLGetError               = GLenum ( * )();
     using TGLClipControl            = void ( * )( GLenum, GLenum );
     using TGLGetGraphicsResetStatus = GLenum ( * )();
+    using TGLFenceSync              = GLsync ( * )( GLenum, GLbitfield );
+    using TGLDeleteSync             = void ( * )( GLsync );
+    using TGLClientWaitSync         = GLenum ( * )( GLsync, GLbitfield, GLuint64 );
+    using TGLFlush                  = void ( * )();
+    using TGLDebugProc              = void ( * )( GLenum, GLenum, GLuint, GLenum, GLsizei, const AnsiChar *, const void * );
+    using TGLDebugMessageCallback   = void ( * )( TGLDebugProc, const void * );
+    using TGLDebugMessageControl    = void ( * )( GLenum, GLenum, GLenum, GLsizei, const GLuint *, GLboolean );
 
     using TGLCreateBuffers               = void ( * )( GLsizei, GLuint * );
     using TGLDeleteBuffers               = void ( * )( GLsizei, const GLuint * );
     using TGLNamedBufferStorage          = void ( * )( GLuint, GLsizeiptr, const void *, GLbitfield );
+    using TGLNamedBufferSubData          = void ( * )( GLuint, GLintptr, GLsizeiptr, const void * );
     using TGLMapNamedBufferRange         = void *( * )( GLuint, GLintptr, GLsizeiptr, GLbitfield );
     using TGLUnmapNamedBuffer            = GLboolean ( * )( GLuint );
     using TGLCopyNamedBufferSubData      = void ( * )( GLuint, GLuint, GLintptr, GLintptr, GLsizeiptr );
@@ -299,6 +343,17 @@ namespace RHIOpenGL
     using TGLEndQuery            = void ( * )( GLenum );
     using TGLGetQueryObjectui64v = void ( * )( GLuint, GLenum, GLuint64 * );
     using TGLGetQueryiv          = void ( * )( GLenum, GLenum, GLint * );
+    using TGLGetTextureImage     = void ( * )( GLuint, GLint, GLenum, GLenum, GLsizei, void * );
+
+    /* Dynamic state and readback entry points (core 4.6). */
+    using TGLBlendColor            = void ( * )( GLfloat, GLfloat, GLfloat, GLfloat );
+    using TGLBlendEquationSeparate = void ( * )( GLenum, GLenum );
+    using TGLBlendFuncSeparate     = void ( * )( GLenum, GLenum, GLenum, GLenum );
+    using TGLPolygonOffset         = void ( * )( GLfloat, GLfloat );
+    using TGLStencilFunc           = void ( * )( GLenum, GLint, GLuint );
+    using TGLGetBufferSubData      = void ( * )( GLenum, GLintptr, GLsizeiptr, void * );
+    using TGLBindBuffer            = void ( * )( GLenum, GLuint );
+    using TGLBlitFramebuffer       = void ( * )( GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLint, GLbitfield, GLenum );
 
     using TEGLGetProcAddress        = void *( * )( const AnsiChar * );
     using TEGLGetDisplay            = EGLDisplay ( * )( EGLNativeDisplayType );
