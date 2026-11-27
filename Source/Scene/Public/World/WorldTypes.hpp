@@ -9,6 +9,7 @@
 #include <SceneExport.hpp>
 
 #include <Rendering/RenderSnapshotTypes.hpp>
+#include <Replication/ReplicationTypes.hpp>
 
 namespace Lumen
 {
@@ -55,6 +56,13 @@ struct SCENE_EXPORT FWorldDesc
      * @details All-zero (the default) disables automatic extraction; any non-zero field enables it.
      */
     FRenderSnapshotCapacities RenderCapacities{};
+
+    /**
+     * @brief Opt-in replication capacities and authority role; all-zero MaxActors leaves replication disabled.
+     * @details Collaborators are injected later by InitializeReplication, never created by the world itself.
+     */
+    FReplicationConfig ReplicationConfig{};
+    EActorRole ReplicationRole = EActorRole::Standalone;
 };
 
 /**

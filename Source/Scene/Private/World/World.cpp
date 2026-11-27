@@ -7,6 +7,8 @@
 #include <World/WorldExecutor.hpp>
 #include <World/WorldSpatialRegistry.hpp>
 
+#include <Replication/ReplicationSystem.hpp>
+
 #include <Algo/ForEach.hpp>
 #include <Algo/Sort.hpp>
 
@@ -114,6 +116,7 @@ Lumen::FWorld::FWorld ( const FWorldDesc &InDesc ) noexcept
     RenderContent.Meshes.reserve( Desc.RenderCapacities.MeshCapacity );
     RenderContent.Cameras.reserve( Desc.RenderCapacities.CameraCapacity );
     RenderContent.Lights.reserve( Desc.RenderCapacities.LightCapacity );
+    ReplicationSourceScratch.reserve( Desc.MaxActors );
 
     /** INFO: Hierarchy is opt-in; a failed reservation leaves it disabled and never terminates the world. */
     if ( Desc.HierarchyCapacity > 0ULL )
@@ -223,6 +226,7 @@ Lumen::TExpected<Lumen::FWorldTickResult, Lumen::EWorldTickError> Lumen::FWorld:
     }
     ApplyIngressJournal();
     SortActorsIfNeeded();
+    TickReplication();
 
     VariableActors.clear();
     for ( const TSharedPtr<AActor> &Actor : ActiveActors )
@@ -346,6 +350,7 @@ Lumen::FWorld::TryFixedTick ( const Float64 InDeltaTime ) noexcept
     ApplyDeferredCommands();
     ApplyIngressJournal();
     SortActorsIfNeeded();
+    TickReplication();
 
     FWorldTickResult Result{ .FrameIndex = FrameIndex, .FixedStepsExecuted = 1U, .LastPhase = {} };
     TExpected<void, EWorldTickError> StepResult = RunFixedStep( 0ULL, InDeltaTime, Result );
@@ -367,6 +372,67 @@ Lumen::FWorld::TryFixedTick ( const Float64 InDeltaTime ) noexcept
     }
 
     return Result;
+}
+
+Lumen::TExpected<void, Lumen::EReplicationError>
+Lumen::FWorld::InitializeReplication ( IReplicationTransport &InTransport, IReplicationActorHandler &InHandler ) noexcept
+{
+    if ( Desc.ReplicationConfig.MaxActors == 0ULL )
+    {
+        return TUnexpected<EReplicationError>{ EReplicationError::InvalidCapacity };
+    }
+    if ( Replication )
+    {
+        return TUnexpected<EReplicationError>{ EReplicationError::AlreadyInitialized };
+    }
+    TUniquePtr<FReplicationSystem> System = MakeUnique<FReplicationSystem>();
+    TExpected<void, EReplicationError> Initialized =
+        System->Initialize( Desc.ReplicationConfig, Desc.ReplicationRole, InTransport, InHandler );
+    if ( not Initialized )
+    {
+        return TUnexpected<EReplicationError>{ Initialized.Error() };
+    }
+    Replication = std::move( System );
+    return {};
+}
+
+Lumen::FReplicationSystem *Lumen::FWorld::GetReplicationSystem () const noexcept
+{
+    return Replication.Get();
+}
+
+Lumen::Bool Lumen::FWorld::IsReplicationEnabled () const noexcept
+{
+    return Replication.IsValid() and Replication->IsInitialized();
+}
+
+void Lumen::FWorld::TickReplication () noexcept
+{
+    if ( not IsReplicationEnabled() )
+    {
+        return;
+    }
+
+    /** INFO: Built in the serial control phase, before hierarchy UpdateWorld and spatial publication. */
+    ReplicationSourceScratch.clear();
+    for ( const TSharedPtr<AActor> &Actor : ActiveActors )
+    {
+        if ( Actor->GetLifecycle() != EActorLifecycle::Active )
+        {
+            continue;
+        }
+        const ActorID LocalId = Actor->GetId();
+        FReplicationActorSourceRecord Record;
+        Record.LocalId        = LocalId;
+        Record.ParentLocalId  = Hierarchy.GetParentId( LocalId ).ValueOr( InvalidActorID );
+        Record.LocalTransform = Hierarchy.GetLocalTransform( LocalId ).ValueOr( Maths::FMat4x4f::Identity() );
+        ReplicationSourceScratch.push_back( Record );
+    }
+
+    const FReplicationSourceView View{
+        .Actors = TSpan<const FReplicationActorSourceRecord>( ReplicationSourceScratch.data(), ReplicationSourceScratch.size() ),
+        .FrameIndex = FrameIndex };
+    static_cast<void>( Replication->Tick( FrameIndex, View ) );
 }
 
 void Lumen::FWorld::SetIngressJournal ( const FWorldIngressJournal *InJournal ) noexcept
@@ -598,11 +664,21 @@ Lumen::TExpected<Lumen::FRenderSnapshotHeader, Lumen::FRenderSnapshotError> Lume
     RenderTransforms.clear();
     for ( USize Index = 0ULL; Index < Committed.EntityIDs.size(); ++Index )
     {
+        const ActorID Proxy         = Committed.EntityIDs[Index];
+        ERenderTransformFlags Flags = ERenderTransformFlags::Visible;
+        if ( IsReplicationEnabled() )
+        {
+            const TOptional<FPersistentActorId> Persistent = Replication->FindPersistentId( Proxy );
+            if ( Persistent and not Replication->GetVisibility( *Persistent ) )
+            {
+                Flags = ERenderTransformFlags::None;
+            }
+        }
         RenderTransforms.emplace_back( FRenderTransformRecord{
-            .ProxyId        = FRenderProxyId{ Committed.EntityIDs[Index] },
+            .ProxyId        = FRenderProxyId{ Proxy },
             .WorldTransform = Committed.Transforms[Index],
             .Bounds         = FRenderBounds{ .Min = Maths::FVec3f{ -1.0F }, .Max = Maths::FVec3f{ 1.0F } },
-            .Flags          = ERenderTransformFlags::Visible,
+            .Flags          = Flags,
         } );
     }
     Algo::Sort( RenderTransforms, &SortRenderTransforms );

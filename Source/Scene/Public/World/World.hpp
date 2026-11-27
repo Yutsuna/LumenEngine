@@ -38,6 +38,8 @@ namespace Lumen
 {
 
 class FWorldExecutor;
+class FReplicationSystem;
+class IReplicationTransport;
 
 /**
  * @class FWorld
@@ -129,6 +131,20 @@ public:
     /** @brief Changes a node's local transform, resolving descendants at the next serial hierarchy pass. */
     [[nodiscard]] TExpected<void, ESceneHierarchyError>
     TrySetHierarchyLocalTransform ( ActorID InActorId, const Maths::FMat4x4f &InLocalTransform ) noexcept;
+
+    /**
+     * @brief Injects the replication collaborators and reserves replication storage.
+     * @details Uses FWorldDesc::ReplicationConfig/ReplicationRole. A zero MaxActors is rejected;
+     *          the world never creates a transport or an actor handler itself.
+     */
+    [[nodiscard]] TExpected<void, EReplicationError> InitializeReplication ( IReplicationTransport &InTransport,
+                                                                             IReplicationActorHandler &InHandler ) noexcept;
+
+    /** @return The world-owned replication system, or nullptr when replication was not installed. */
+    [[nodiscard]] FReplicationSystem *GetReplicationSystem () const noexcept;
+
+    /** @return True when a replication system is installed and initialized. */
+    [[nodiscard]] Bool IsReplicationEnabled () const noexcept;
 
     /** @return The stable non-zero identity carried by every published snapshot. */
     [[nodiscard]] UInt64 GetWorldId () const noexcept;
@@ -243,6 +259,7 @@ private:
     [[nodiscard]] Bool MergeEmissions ( TSpan<AActor *const> InActors, FWorldTickResult &OutResult ) noexcept;
 
     void ApplyIngressJournal () noexcept;
+    void TickReplication () noexcept;
     Bool ApplyDeferredCommands () noexcept;
     void SortActorsIfNeeded () noexcept;
     void ShutdownActors () noexcept;
@@ -253,6 +270,8 @@ private:
     FSpatialRegistry Registry;
     FSceneHierarchy Hierarchy;
     TUniquePtr<FWorldExecutor> Executor;
+    TUniquePtr<FReplicationSystem> Replication;
+    TVector<FReplicationActorSourceRecord> ReplicationSourceScratch;
 
     /** INFO: The extraction stream lives per world; no actor, asset or renderer ownership crosses this boundary. */
     FRenderSnapshotStream RenderSnapshotStream;
