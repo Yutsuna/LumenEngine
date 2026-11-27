@@ -83,7 +83,7 @@ namespace RHIOpenGL
         /** @brief Creates the context and waits until its worker is ready. */
         [[nodiscard]] static TExpected<TSharedRef<FOpenGLContext>, RHI::FRHIError> Create ( Bool bEnableDebug ) noexcept;
 
-        /** @brief Test seam: makes the next worker initialization fail deterministically. */
+        /** @brief Test seam: forces worker initialization to fail until explicitly cleared. */
         static void SetForcedInitFailureForTests ( Bool bForce ) noexcept;
 
         ~FOpenGLContext () noexcept;
@@ -173,9 +173,10 @@ namespace RHIOpenGL
 
         /**
          * @brief Enqueues a tracked task and waits for its completion on the GL Executor.
-         * @details When bAllowWhileStopping is true the stop gate is bypassed, but the
-         *          enqueue still shares QueueMutex with the gate publication. Use only for
-         *          shutdown work that the worker must observe before it exits.
+         * @details When bAllowWhileStopping is true the gate check is bypassed; the enqueue
+         *          still shares QueueMutex with that check. The gate itself is claimed
+         *          atomically before this is called. Use only for shutdown work that the
+         *          worker must observe before it exits.
          */
         [[nodiscard]] RHI::FRHIExpected PostTaskAndWait ( TFunction<void()> InTask, Bool bAllowWhileStopping ) noexcept;
         [[nodiscard]] RHI::FRHIExpected Start () noexcept;
