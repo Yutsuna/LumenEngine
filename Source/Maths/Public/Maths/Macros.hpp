@@ -42,6 +42,10 @@ namespace Maths
 
     template <typename Type> static constexpr Type Min ( Type A, Type B ) noexcept;
 
+    template <typename Type> static constexpr Type Clamp ( Type V, Type Lo, Type Hi ) noexcept;
+
+    template <typename Type> static constexpr Type Abs ( Type V ) noexcept;
+
 } // namespace Maths
 
 } // namespace Lumen
