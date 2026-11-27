@@ -10,5 +10,5 @@ ModuleDefinition = {
     'Private' : 'Private',
     'Public' : 'Public',
     'Tests' : 'Tests',
-    'Depends' : ['Core', 'AppCore']
+    'Depends' : ['Core', 'AppCore', 'Scene', 'RHI', 'Renderer']
 }
