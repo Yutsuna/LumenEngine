@@ -1,6 +1,6 @@
 /**
  * @file LaunchEngineModuleTests.cpp
- * @brief Functional tests for engine module contract and registration.
+ * @brief Functional tests for engine module contract and descriptor registration.
  */
 
 #include <Engine/LaunchEngineModule.hpp>
@@ -8,6 +8,7 @@
 #include <Engine/LaunchEngineLoop.hpp>
 #include <Engine/Modules/LaunchApplicationModule.hpp>
 #include <Engine/Modules/LaunchWindowModule.hpp>
+#include <Launch/LaunchModuleStack.hpp>
 #include <Tests/UnitTest.hpp>
 
 namespace Lumen
@@ -20,21 +21,27 @@ namespace Lumen
 namespace
 {
 
+    constexpr FStringView ApplicationModuleName = "FLaunchApplicationModule";
+    constexpr FStringView WindowModuleName      = "FLaunchWindowModule";
+
     class FDefaultModule final : public Launch::IEngineModule
     {
     };
 
-    /** @brief Finds a registered factory by the traits of the module it creates. */
-    [[nodiscard]] Launch::FModuleFactory FindFactory ( const Launch::EModuleTraits InTraits ) noexcept
+    /** @brief Descriptor names come from reflection; match against either the short or qualified spelling. */
+    [[nodiscard]] Bool HasModuleName ( const Launch::FModuleDescriptor &InDescriptor, const FStringView InName ) noexcept
     {
-        const Launch::FLaunchEngineConfig Config{ .bHeadless = true };
+        return InDescriptor.Name.find( InName ) != FStringView::npos or
+               InDescriptor.QualifiedName.find( InName ) != FStringView::npos;
+    }
 
-        for ( const Launch::FModuleFactory &Factory : Launch::GetEngineModules() )
+    [[nodiscard]] const Launch::FModuleDescriptor *FindRegisteredModule ( const FStringView InName ) noexcept
+    {
+        for ( const Launch::FModuleDescriptor *const Descriptor : Launch::CollectRegisteredModules() )
         {
-            auto Created = Factory( Config );
-            if ( Created and ( *Created )->GetTraits() == InTraits )
+            if ( Descriptor != nullptr and HasModuleName( *Descriptor, InName ) )
             {
-                return Factory;
+                return Descriptor;
             }
         }
         return nullptr;
@@ -49,7 +56,7 @@ namespace
         FDefaultModule Module;
 
         LUMEN_CHECK_EQ( Module.GetTraits(), Launch::EModuleTraits::None );
-        LUMEN_CHECK_TRUE( Module.GetName() == "IEngineModule" );
+        LUMEN_CHECK_TRUE( Module.GetName() == "Unknown" );
 
         Module.FixedTick( 0.016 );
         Module.Tick( 0.016, 0.5 );
@@ -57,68 +64,70 @@ namespace
         LUMEN_CHECK_TRUE( true );
     }
 
-    LUMEN_TEST( GetEngineModules, ContainsApplicationAndWindow )
+    LUMEN_TEST( GetRegisteredModules, ContainsApplicationAndWindow )
     {
-        const auto Modules = Launch::GetEngineModules();
+        const auto Modules = Launch::CollectRegisteredModules();
 
-        LUMEN_CHECK_EQ( Modules.size(), 2ULL );
-        LUMEN_CHECK_TRUE( Modules[0] != nullptr );
-        LUMEN_CHECK_TRUE( Modules[1] != nullptr );
+        LUMEN_CHECK_TRUE( Modules.size() >= 2ULL );
+
+        const Launch::FModuleDescriptor *const Application = FindRegisteredModule( ApplicationModuleName );
+        const Launch::FModuleDescriptor *const Window      = FindRegisteredModule( WindowModuleName );
+
+        LUMEN_CHECK_TRUE( Application != nullptr );
+        LUMEN_CHECK_TRUE( Window != nullptr );
+        LUMEN_CHECK_TRUE( Application->Create != nullptr );
+        LUMEN_CHECK_TRUE( Application->IsEnabled != nullptr );
+        LUMEN_CHECK_TRUE( Window->Create != nullptr );
+        LUMEN_CHECK_TRUE( Window->IsEnabled != nullptr );
     }
 
-    LUMEN_TEST( MakeApplicationModule_Headless, ReturnsValidModule )
+    LUMEN_TEST( MakeApplicationModule_Headless, IsDisabled )
     {
-        Launch::FLaunchEngineConfig Config;
-        Config.bHeadless = true;
+        const Launch::FLaunchEngineConfig Config{ .bHeadless = true };
+        const Launch::FCommandLine CommandLine;
 
-        const Launch::FModuleFactory Factory = FindFactory( Launch::EModuleTraits::Tick );
-        LUMEN_CHECK_TRUE( Factory != nullptr );
-        const auto Result = Factory( Config );
-
-        LUMEN_CHECK_HAS_VALUE( Result );
-        LUMEN_CHECK_TRUE( static_cast<Bool>( *Result ) );
-        LUMEN_CHECK_TRUE( ( *Result )->GetName() == "IEngineModule" );
-        LUMEN_CHECK_TRUE( HasAnyFlags( ( *Result )->GetTraits(), Launch::EModuleTraits::Tick ) );
-        LUMEN_CHECK_FALSE( HasAnyFlags( ( *Result )->GetTraits(), Launch::EModuleTraits::FixedTick ) );
-
-        /** INFO: Ticking without a platform application must be a safe no-op. */
-        ( *Result )->Tick( 0.016, 0.5 );
+        const Launch::FModuleDescriptor *const Descriptor = FindRegisteredModule( ApplicationModuleName );
+        LUMEN_CHECK_TRUE( Descriptor != nullptr );
+        LUMEN_CHECK_FALSE( Descriptor->IsEnabled( Config, CommandLine ) );
     }
 
-    LUMEN_TEST( MakeWindowModule_Headless, ReturnsValidModule )
+    LUMEN_TEST( MakeWindowModule_Headless, IsDisabled )
     {
-        Launch::FLaunchEngineConfig Config;
-        Config.bHeadless = true;
+        const Launch::FLaunchEngineConfig Config{ .bHeadless = true };
+        const Launch::FCommandLine CommandLine;
 
-        const Launch::FModuleFactory Factory = FindFactory( Launch::EModuleTraits::None );
-        LUMEN_CHECK_TRUE( Factory != nullptr );
-        const auto Result = Factory( Config );
-
-        LUMEN_CHECK_HAS_VALUE( Result );
-        LUMEN_CHECK_TRUE( static_cast<Bool>( *Result ) );
-        LUMEN_CHECK_TRUE( ( *Result )->GetName() == "IEngineModule" );
-        LUMEN_CHECK_EQ( ( *Result )->GetTraits(), Launch::EModuleTraits::None );
+        const Launch::FModuleDescriptor *const Descriptor = FindRegisteredModule( WindowModuleName );
+        LUMEN_CHECK_TRUE( Descriptor != nullptr );
+        LUMEN_CHECK_FALSE( Descriptor->IsEnabled( Config, CommandLine ) );
     }
 
-    LUMEN_TEST( MakeWindowModule_NotHeadless, FailsWithoutApplication )
+    LUMEN_TEST( MakeWindowModule_NotHeadless, DeclaresApplicationRequirement )
     {
-        /** NOTE: Relies on no earlier test having created a platform application (only headless ones are). */
-        LUMEN_CHECK_FALSE( Launch::GetApplication().IsValid() );
-
         const Launch::FLaunchEngineConfig Config;
+        const Launch::FCommandLine CommandLine;
 
-        const Launch::FModuleFactory Factory = FindFactory( Launch::EModuleTraits::None );
-        LUMEN_CHECK_TRUE( Factory != nullptr );
-        const auto Result = Factory( Config );
+        const Launch::FModuleDescriptor *const Application = FindRegisteredModule( ApplicationModuleName );
+        const Launch::FModuleDescriptor *const Window      = FindRegisteredModule( WindowModuleName );
 
-        LUMEN_CHECK_HAS_ERROR( Result );
-        LUMEN_CHECK_EQ( Result.Error().Stage, Launch::ELaunchStage::Init );
-        LUMEN_CHECK_EQ( Result.Error().Code, Launch::ELaunchErrorCode::ModuleCreationFailed );
+        LUMEN_CHECK_TRUE( Application != nullptr );
+        LUMEN_CHECK_TRUE( Window != nullptr );
+        LUMEN_CHECK_TRUE( Application->IsEnabled( Config, CommandLine ) );
+        LUMEN_CHECK_TRUE( Window->IsEnabled( Config, CommandLine ) );
+        LUMEN_CHECK_EQ( Window->Requires.size(), 1ULL );
+        LUMEN_CHECK_TRUE( Window->Requires[0].Id == Application->Id );
+        LUMEN_CHECK_TRUE( Window->Requires[0].Name == ApplicationModuleName );
     }
 
-    LUMEN_TEST( GetApplication_Headless, ReturnsNull )
+    LUMEN_TEST( GetApplication_Headless, NoApplicationServiceRegistered )
     {
-        LUMEN_CHECK_FALSE( Launch::GetApplication().IsValid() );
+        const Launch::FLaunchEngineConfig Config{ .bHeadless = true };
+
+        Launch::FLaunchModuleStack Stack;
+        const auto Started = Stack.StartAll( Config );
+
+        LUMEN_CHECK_HAS_VALUE( Started );
+        LUMEN_CHECK_EQ( Stack.Num(), 0ULL );
+        LUMEN_CHECK_TRUE( Stack.FindService<Launch::FLaunchApplicationModule>() == nullptr );
     }
 
     LUMEN_TEST( FLaunchMessageHandler, RequestsExitOnEvents )
@@ -135,6 +144,13 @@ namespace
         Handler.OnQuit();
 
         LUMEN_CHECK_TRUE( Launch::FLaunchEngineLoop::IsExitRequested() );
+
+        Launch::FLaunchEngineLoop::ResetExitRequest();
+        Handler.OnKeyDown( EKeys::R, false );
+        LUMEN_CHECK_FALSE( Launch::FLaunchEngineLoop::IsExitRequested() );
+        Handler.OnKeyDown( EKeys::Escape, false );
+        LUMEN_CHECK_TRUE( Launch::FLaunchEngineLoop::IsExitRequested() );
+        Launch::FLaunchEngineLoop::ResetExitRequest();
     }
 
 } // namespace

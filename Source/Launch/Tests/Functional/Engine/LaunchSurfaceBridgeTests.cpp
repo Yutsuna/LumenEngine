@@ -105,27 +105,28 @@ namespace
         LUMEN_CHECK_FALSE( Desc->Extent.IsValid() );
     }
 
-    LUMEN_TEST( FLaunchSurfaceBridge, CreateSurfaceBridgeX11PropagatesBlocker )
+    LUMEN_TEST( FLaunchSurfaceBridge, CreateSurfaceBridgeX11CreatesBridge )
     {
         const auto Bridge =
             Launch::CreateSurfaceBridge( MakeHandles( ENativeWindowSystem::X11 ), RHI::FRHIExtent3D{ 320U, 200U, 1U } );
 
-        LUMEN_CHECK_HAS_ERROR( Bridge );
-        LUMEN_CHECK_EQ( Bridge.Error().Code, RHI::ERHIErrorCode::Unsupported );
-        LUMEN_CHECK_EQ( Bridge.Error().Condition, RHI::ERHIErrorCondition::Presentation );
-        LUMEN_CHECK_TRUE( Bridge.Error().Message.contains( "native EGLDisplay" ) );
-        LUMEN_CHECK_TRUE( Bridge.Error().Message.contains( "surfaceless" ) );
+        LUMEN_CHECK_HAS_VALUE( Bridge );
+        const auto Extent = Bridge->Get()->GetExtent();
+        LUMEN_CHECK_HAS_VALUE( Extent );
+        LUMEN_CHECK_EQ( Extent->Width, 320U );
+        LUMEN_CHECK_EQ( Extent->Height, 200U );
     }
 
-    LUMEN_TEST( FLaunchSurfaceBridge, CreateSurfaceBridgeWaylandPropagatesBlocker )
+    LUMEN_TEST( FLaunchSurfaceBridge, CreateSurfaceBridgeWaylandCreatesBridge )
     {
         const auto Bridge =
             Launch::CreateSurfaceBridge( MakeHandles( ENativeWindowSystem::Wayland ), RHI::FRHIExtent3D{ 640U, 480U, 1U } );
 
-        LUMEN_CHECK_HAS_ERROR( Bridge );
-        LUMEN_CHECK_EQ( Bridge.Error().Code, RHI::ERHIErrorCode::Unsupported );
-        LUMEN_CHECK_EQ( Bridge.Error().Condition, RHI::ERHIErrorCondition::Presentation );
-        LUMEN_CHECK_TRUE( Bridge.Error().Message.contains( "native EGLDisplay" ) );
+        LUMEN_CHECK_HAS_VALUE( Bridge );
+        const auto Extent = Bridge->Get()->GetExtent();
+        LUMEN_CHECK_HAS_VALUE( Extent );
+        LUMEN_CHECK_EQ( Extent->Width, 640U );
+        LUMEN_CHECK_EQ( Extent->Height, 480U );
     }
 
     LUMEN_TEST( FLaunchSurfaceBridge, CreateSurfaceBridgeWaylandWithoutAttachment )
