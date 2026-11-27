@@ -324,7 +324,7 @@ Lumen::RHIOpenGL::FOpenGLDefragmenter::BuildPlan ( const TSpan<const RHI::FRHIAl
     for ( auto &Group : Groups )
     {
         TVector<RHI::FRHIAllocation> &Sorted = Group.second;
-        Algo::Sort( Sorted, [] ( const RHI::FRHIAllocation &InLeft, const RHI::FRHIAllocation &InRight ) noexcept -> Bool
+        Algo::StableSort( Sorted, [] ( const RHI::FRHIAllocation &InLeft, const RHI::FRHIAllocation &InRight ) noexcept -> Bool
         {
             return InLeft.Offset < InRight.Offset;
         } );

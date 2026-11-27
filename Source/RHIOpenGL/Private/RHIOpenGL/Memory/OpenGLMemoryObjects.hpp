@@ -135,6 +135,16 @@ namespace RHIOpenGL
 
         [[nodiscard]] TExpected<RHI::FRHIDefragPlan, RHI::FRHIError>
         BuildPlan ( TSpan<const RHI::FRHIAllocation> InAllocations ) noexcept override;
+        /**
+         * @brief Executes a validated defragmentation plan as native heap copies on the GL executor.
+         * @details The caller must populate @c InPlan.ObservedCompletion, typically after calling
+         *          WaitIdle() on every queue that produced the source allocations, and every move's
+         *          completion must be reached or the call fails with InvalidState. The call is
+         *          synchronous with respect to the executor: the copies are visible on return, but
+         *          no new submission timeline value is created. Allocation observers are notified
+         *          only after all copies succeed, and never on failure.
+         * @return An empty expected on success, otherwise a structured RHI error.
+         */
         [[nodiscard]] RHI::FRHIExpected Execute ( const RHI::FRHIDefragPlan &InPlan ) noexcept override;
 
     private:
