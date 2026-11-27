@@ -1,12 +1,10 @@
 /**
  * @file LaunchApplicationModule.hpp
- * @brief Launch the application module
+ * @brief Launch the application module.
  */
 
 #pragma once
 
-#include "Engine/LaunchEngineConfig.hpp"
-#include "Launch/LaunchError.hpp"
 #include <Engine/LaunchEngineModule.hpp>
 #include <Generic/GenericApplicationMessageHandler.hpp>
 
@@ -24,7 +22,7 @@ namespace Launch
      * @class FLaunchMessageHandler
      * @brief Routes OS-level requests to the engine loop.
      */
-    class FLaunchMessageHandler : public FGenericApplicationMessageHandler
+    class FLaunchMessageHandler final : public FGenericApplicationMessageHandler
     {
     public:
 
@@ -34,10 +32,21 @@ namespace Launch
 
     /**
      * @class FLaunchApplicationModule
-     * @brief Launches the application module.
+     * @brief Launches and owns the platform application instance.
      */
-    class FLaunchApplicationModule final : public IEngineModule
+    class LAUNCH_EXPORT FLaunchApplicationModule final : public IEngineModule
     {
+    public:
+
+        static constexpr ETickPhase TickPhase = ETickPhase::Input;
+
+    public:
+
+        [[nodiscard]] static Bool IsEnabled ( const FLaunchEngineConfig &InConfig ) noexcept;
+
+        [[nodiscard]] static TLaunchResult<TUniquePtr<FLaunchApplicationModule>>
+        Create ( const TModuleContext<FLaunchApplicationModule> &InContext ) noexcept;
+
     public:
 
         explicit FLaunchApplicationModule ( TSharedPtr<FGenericApplication> InApplication ) noexcept;
@@ -45,22 +54,17 @@ namespace Launch
 
     public:
 
-        [[nodiscard]] FStringView GetName () const noexcept override;
         [[nodiscard]] EModuleTraits GetTraits () const noexcept override;
 
         void Tick ( Float64 InDeltaSeconds, Float64 InAlpha ) noexcept override;
+
+        [[nodiscard]] const TSharedPtr<FGenericApplication> &GetApplication () const noexcept;
 
     private:
 
         TSharedPtr<FGenericApplication> Application;
         TSharedRef<FLaunchMessageHandler> MessageHandler;
     };
-
-    /** @brief Accessor for modules created after this one. */
-    [[nodiscard]] TSharedPtr<FGenericApplication> GetApplication () noexcept;
-
-    /** @brief Factory registered in GetEngineModules. */
-    [[nodiscard]] TLaunchResult<TUniquePtr<IEngineModule>> MakeApplicationModule ( const FLaunchEngineConfig &InConfig ) noexcept;
 
 } // namespace Launch
 

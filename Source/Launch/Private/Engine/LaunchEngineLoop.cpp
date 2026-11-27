@@ -15,6 +15,8 @@
 
 #include <HAL/PlatformTime.hpp>
 
+#include <utility>
+
 namespace Lumen
 {
 
@@ -61,14 +63,16 @@ Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit 
     } );
 }
 
-/** NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved) */
 Launch::TLaunchResult<Launch::FInitState> Launch::FLaunchEngineLoop::Init ( FPreInitState &&InPreInitState ) noexcept
 {
+    /** NOLINTNEXTLINE(hicpp-move-const-arg,performance-move-const-arg) */
+    const FPreInitState PreInitState = std::move( InPreInitState );
+
     FInitState State;
-    State.Config = InPreInitState.Config;
+    State.Config = PreInitState.Config;
 
     LUMEN_LOG_INFO( LogEngineLoop, "Initializing engine modules..." );
-    LUMEN_EXPECT( Started, State.Modules.StartAll( GetEngineModules(), State.Config ) );
+    LUMEN_EXPECT( Started, State.Modules.StartAll( State.Config, PreInitState.CommandLine ) );
     LUMEN_LOG_INFO( LogEngineLoop, "{} module(s) started", State.Modules.Num() );
 
     return State;

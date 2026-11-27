@@ -5,17 +5,18 @@
 
 #pragma once
 
-#include "Concepts/TriviallyCopyable.hpp"
+#include <Concepts/TriviallyCopyable.hpp>
 #include <Core/CoreTypes.hpp>
+
 #include <String/StringView.hpp>
 #include <Templates/Expected.hpp>
 
-#include <type_traits>
-
 namespace Lumen
 {
+
 namespace Launch
 {
+
     /**
      * @enum ELaunchStage
      * @brief Pipeline stage that produced an error.
@@ -39,6 +40,9 @@ namespace Launch
         InvalidConfiguration,
         ModuleCreationFailed,
         OutOfMemory,
+        MissingDependency,
+        CircularDependency,
+        ConflictingModule,
         Unknown,
     };
 
@@ -75,6 +79,8 @@ namespace Launch
      * @brief Converts a launch stage to a string.
      * @param InStage The launch stage to convert.
      */
+    // TODO: remplacer ToCString par une Meta:: Reflection genre ToEnumName
+    // in fine: suppr la fonction
     [[nodiscard]] constexpr const AnsiChar *ToCString ( const ELaunchStage InStage ) noexcept
     {
         switch ( InStage )
@@ -89,5 +95,7 @@ namespace Launch
 
         return "Unknown";
     }
+
 } // namespace Launch
+
 } // namespace Lumen

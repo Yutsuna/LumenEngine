@@ -145,7 +145,10 @@ foreach ModuleDefinition : ModuleDefinitions
         ModuleTarget = shared_library(
             ModuleName,
             link_whole : ModuleImplementation,
+            include_directories : IncludeDirectories,
             dependencies : ResolvedDependencies,
+            cpp_args : CompileArguments + BuildDefines,
+            c_args : CompileArguments + BuildDefines,
             install : true,
         )
         ModuleDependency = declare_dependency(

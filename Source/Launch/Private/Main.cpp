@@ -5,7 +5,10 @@
 
 #include <Engine/LaunchEngine.hpp>
 
-Lumen::Int32 main ( const Lumen::Int32 Argc, const Lumen::AnsiChar *Argv[] )
+#include <LaunchExport.hpp>
+
+/** INFO: Exported so an executable linking libLaunch needs no main of its own. */
+LAUNCH_EXPORT Lumen::Int32 main ( const Lumen::Int32 Argc, const Lumen::AnsiChar *Argv[] )
 {
     return Lumen::Launch::GuardedMain( Argc, Argv );
 }

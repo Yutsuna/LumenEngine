@@ -151,11 +151,11 @@ LUMEN_TEST( FLaunchEngineLoop_Run, TicksModulesOncePerFrame )
     State.Config.MaxFrames    = 2ULL;
     State.Config.MaxFrameTime = 0.1;
 
-    static constexpr Launch::FModuleDescriptor Descriptors[] = {
-        Launch::FModuleDescriptor{ .Name = "TickProbe", .Create = &MakeTickProbeModule },
+    static constexpr Launch::FModuleFactory Factories[] = {
+        &MakeTickProbeModule,
     };
 
-    const auto Started = State.Modules.StartAll( Descriptors, State.Config );
+    const auto Started = State.Modules.StartAll( Factories, State.Config );
     LUMEN_CHECK_HAS_VALUE( Started );
 
     GTickCallCount = 0U;
