@@ -47,6 +47,12 @@ namespace RHIOpenGL
         void InitializeEglProcedure () noexcept;
         [[nodiscard]] Bool AreEglProcedureInvalid () const noexcept;
 
+        /** @brief Releases this context's EGL objects; leaves the display ownership flags untouched. */
+        void ReleaseEglObjects () noexcept;
+
+        /** @brief Failure-path cleanup while GEglCacheMutex is already held by Initialize(). */
+        void AbortInitialize () noexcept;
+
     private:
 
         void *Library              = nullptr;
@@ -74,6 +80,12 @@ namespace RHIOpenGL
         EGLContext Context = 0U;
         EGLSurface Surface = 0U;
         TOptional<FOpenGLNativeWindowDesc> NativeWindow;
+
+        /** @brief Display was initialized here and is still owned exclusively by this context. */
+        Bool bDisplayInitialized = false;
+
+        /** @brief One reference in GCachedDisplayUsers is held by this context. */
+        Bool bCachedDisplayReference = false;
     };
 
 } // namespace RHIOpenGL

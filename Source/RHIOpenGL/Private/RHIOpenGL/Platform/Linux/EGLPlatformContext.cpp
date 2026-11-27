@@ -45,6 +45,9 @@ void *GCachedEglLibrary                        = nullptr;
 Lumen::RHIOpenGL::EGLDisplay GCachedEglDisplay = 0U;
 Lumen::TMap<Lumen::UPtr, Lumen::RHIOpenGL::EGLDisplay> GCachedNativeEglDisplays;
 
+/** @brief Live FEGLPlatformContext users per cached display; the last one must eglTerminate it. */
+Lumen::TMap<Lumen::RHIOpenGL::EGLDisplay, Lumen::UInt32> GCachedDisplayUsers;
+
 /** @brief Opens libEGL once; the caller must hold GEglCacheMutex. */
 inline void *OpenEglLocked () noexcept
 {
@@ -104,13 +107,13 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug,
 
     if ( AreEglProcedureInvalid() )
     {
-        Shutdown();
+        AbortInitialize();
         return EglFailure( "libEGL is missing a required core entry point." );
     }
 
     if ( NativeWindow and ( CreateWindow == nullptr or SwapIntervalProc == nullptr or SwapBuffersProc == nullptr ) )
     {
-        Shutdown();
+        AbortInitialize();
         return EglFailure( "libEGL is missing native window presentation entry points." );
     }
 
@@ -139,12 +142,14 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug,
             Display = GCachedEglDisplay;
         }
     }
+    /* Ownership starts here: an eglInitialize failure still leaves a display that must be terminated. */
+    bDisplayInitialized = bInitializeDisplay;
     if ( Display == 0U or ( bInitializeDisplay and InitializeDisplay( Display, nullptr, nullptr ) == EglFalse ) or
          BindAPI( EglOpenGLApi ) == EglFalse )
     {
         const EGLenum Error = ( GetErrorProc != nullptr ) ? GetErrorProc() : 0U;
         ( void )Error;
-        Shutdown();
+        AbortInitialize();
         return EglFailure( "Unable to initialize the EGL display for the OpenGL API." );
     }
 
@@ -156,7 +161,7 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug,
     EGLint ConfigCount = 0;
     if ( ChooseConfig( Display, ConfigAttributes, &Config, 1, &ConfigCount ) == EglFalse or ConfigCount < 1 )
     {
-        Shutdown();
+        AbortInitialize();
         return EglFailure( "EGL could not provide an RGBA8/depth24 OpenGL config." );
     }
 
@@ -181,7 +186,7 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug,
     }
     if ( Context == 0U )
     {
-        Shutdown();
+        AbortInitialize();
         return EglFailure( "EGL refused an OpenGL 4.6 core context; no 4.5 fallback is permitted." );
     }
 
@@ -189,14 +194,14 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug,
     {
         if ( CreatePbuffer == nullptr )
         {
-            Shutdown();
+            AbortInitialize();
             return EglFailure( "EGL surfaceless context is unavailable and no Pbuffer provider exists." );
         }
         const EGLint SurfaceAttributes[] = { EglWidth, 1, EglHeight, 1, EglNone };
         Surface                          = CreatePbuffer( Display, Config, SurfaceAttributes );
         if ( Surface == 0U or MakeCurrentProc( Display, Surface, Surface, Context ) == EglFalse )
         {
-            Shutdown();
+            AbortInitialize();
             return EglFailure( "Unable to make the EGL OpenGL context current." );
         }
     }
@@ -209,10 +214,13 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug,
     {
         GCachedEglDisplay = Display;
     }
+    ++GCachedDisplayUsers[Display];
+    bDisplayInitialized     = false;
+    bCachedDisplayReference = true;
     return {};
 }
 
-void Lumen::RHIOpenGL::FEGLPlatformContext::Shutdown () noexcept
+void Lumen::RHIOpenGL::FEGLPlatformContext::ReleaseEglObjects () noexcept
 {
     if ( Display != 0U and MakeCurrentProc != nullptr )
     {
@@ -229,9 +237,76 @@ void Lumen::RHIOpenGL::FEGLPlatformContext::Shutdown () noexcept
     }
     Context = 0U;
     Config  = 0U;
-    Display = 0U;
-    Library = nullptr;
-    GetProc = nullptr;
+}
+
+void Lumen::RHIOpenGL::FEGLPlatformContext::AbortInitialize () noexcept
+{
+    /* Initialize() holds GEglCacheMutex: no cached reference can be taken on this path. */
+    ReleaseEglObjects();
+    if ( bDisplayInitialized and Display != 0U and TerminateDisplay != nullptr )
+    {
+        ( void )TerminateDisplay( Display );
+    }
+    bDisplayInitialized     = false;
+    bCachedDisplayReference = false;
+    Display                 = 0U;
+    Library                 = nullptr;
+    GetProc                 = nullptr;
+    NativeWindow.Reset();
+}
+
+void Lumen::RHIOpenGL::FEGLPlatformContext::Shutdown () noexcept
+{
+    ReleaseEglObjects();
+
+    if ( Display != 0U and TerminateDisplay != nullptr and ( bDisplayInitialized or bCachedDisplayReference ) )
+    {
+        Lumen::HAL::TLockGuard CacheLock( GEglCacheMutex );
+        Bool bTerminate = bDisplayInitialized;
+        if ( bCachedDisplayReference )
+        {
+            const auto CachedUser = GCachedDisplayUsers.find( Display );
+            if ( CachedUser == GCachedDisplayUsers.end() or CachedUser->second == 1U )
+            {
+                if ( CachedUser != GCachedDisplayUsers.end() )
+                {
+                    GCachedDisplayUsers.erase( CachedUser );
+                }
+                bTerminate = true;
+                if ( GCachedEglDisplay == Display )
+                {
+                    GCachedEglDisplay = 0U;
+                }
+                for ( auto CachedDisplay = GCachedNativeEglDisplays.begin();
+                      CachedDisplay != GCachedNativeEglDisplays.end(); )
+                {
+                    if ( CachedDisplay->second == Display )
+                    {
+                        CachedDisplay = GCachedNativeEglDisplays.erase( CachedDisplay );
+                    }
+                    else
+                    {
+                        ++CachedDisplay;
+                    }
+                }
+            }
+            else
+            {
+                --CachedUser->second;
+            }
+            bCachedDisplayReference = false;
+        }
+        /* Terminate under the cache lock: a concurrent Initialize must not reuse a dead display. */
+        if ( bTerminate )
+        {
+            ( void )TerminateDisplay( Display );
+        }
+    }
+
+    bDisplayInitialized     = false;
+    Display                 = 0U;
+    Library                 = nullptr;
+    GetProc                 = nullptr;
     NativeWindow.Reset();
 }
 
