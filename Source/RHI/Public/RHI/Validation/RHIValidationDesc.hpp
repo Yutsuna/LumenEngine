@@ -35,7 +35,7 @@ namespace RHI
      * @enum ERHIValidationFlags
      * @brief Independent validation domains that can be enabled selectively.
      */
-    enum class ERHIValidationFlags : UInt32
+    enum class ERHIValidationFlags : UInt32 /** NOLINT */
     {
         None               = 0U,
         ObjectLifetime     = 1U << 0U,
