@@ -169,14 +169,14 @@ void RetireSlot ( const Lumen::ActorID InId, FActorSlot &InSlot, const Lumen::Bo
 
 } // namespace
 
-Lumen::ActorID Lumen::Internal::FActorRegistry::AllocateId () noexcept
+Lumen::TExpected<Lumen::ActorID, Lumen::EActorSpawnError> Lumen::Internal::FActorRegistry::AllocateId () noexcept
 {
     const UInt32 SlotIndex = GRegistry.AcquireSlot();
 
     if ( SlotIndex == 0U ) [[unlikely]]
     {
         LUMEN_LOG_ERROR( LogActor, "FActorRegistry::AllocateId: failed to acquire slot, registry exhausted." );
-        return InvalidActorID;
+        return MakeUnexpected( EActorSpawnError::RegistryExhausted );
     }
 
     return MakeActorId( SlotIndex, GenerationOf( *GRegistry.FindSlot( SlotIndex ), std::memory_order_relaxed ) );

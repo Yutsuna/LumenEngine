@@ -9,6 +9,7 @@
 #include <SceneExport.hpp>
 
 #include <Memory/Span.hpp>
+#include <Templates/Expected.hpp>
 
 namespace Lumen
 {
@@ -38,8 +39,8 @@ namespace Internal
 
         static constexpr USize DeadLetterCapacity = 256ULL;
 
-        /** @brief Allocates a fresh ActorID. Safe from any thread. */
-        [[nodiscard]] static ActorID AllocateId () noexcept;
+        /** @brief Allocates a fresh ActorID or returns RegistryExhausted. Safe from any thread. */
+        [[nodiscard]] static TExpected<ActorID, EActorSpawnError> AllocateId () noexcept;
 
         /** @brief Total number of dead letters, preserving the historical counter contract. */
         [[nodiscard]] static UInt64 GetDeadLetterCount () noexcept;
