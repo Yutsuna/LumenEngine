@@ -1,180 +1,174 @@
 /**
  * @file ActorMailbox.cpp
- * @brief Implementation of the FMailBox class based on the Vyukov MPSC queue.
+ * @brief Implementation of the bounded FMailBox over Core's preallocated MPSC queue.
  */
 
 #include <Actor/ActorMailbox.hpp>
+
 #include <Logging/Logger.hpp>
 
-#include <new>
+#include <Templates/Unexpected.hpp>
+
+#include <utility>
 
 /**
  * Public
  */
 
-Lumen::FMailBox::FMailBox () noexcept : FreeNodes( 32ULL ), Head( &Stub )
+Lumen::FMailBox::FMailBox () noexcept : FMailBox( FMailBoxDesc{} )
 {
-    Tail.store( &Stub, std::memory_order_relaxed );
 }
 
-Lumen::FMailBox::~FMailBox () noexcept
+Lumen::FMailBox::FMailBox ( const FMailBoxDesc &InDesc ) noexcept
 {
-    /**
-     * INFO: Drain remaining nodes so no allocation leaks.
-     * The stub itself lives on the stack and must not be deleted.
-     */
-    FNode *CurrentNode = Head;
+    const TExpected<void, EActorMailboxError> Result = Initialize( InDesc.Capacity );
 
-    while ( CurrentNode != nullptr )
+    if ( not Result ) [[unlikely]]
     {
-        FNode *const NextNode = CurrentNode->Next.load( std::memory_order_relaxed );
-
-        if ( CurrentNode != &Stub )
-        {
-            delete CurrentNode;
-        }
-
-        CurrentNode = NextNode;
-    }
-
-    /** Clear the internal free list cache */
-    for ( ;; )
-    {
-        TOptional<FNode *> Pooled = FreeNodes.Pop();
-
-        if ( not Pooled.HasValue() )
-        {
-            break;
-        }
-
-        delete *Pooled;
+        LUMEN_LOG_ERROR( LogActor, "FMailBox: failed to reserve {} message slots (error {})", InDesc.Capacity,
+                         static_cast<UInt32>( Result.Error() ) );
     }
 }
 
 Lumen::Bool Lumen::FMailBox::Push ( const FMessage &InMessage ) noexcept
 {
-    /**
-     * INFO: Try taking an existing node lock-free; recover with an allocation
-     *       only when the free-list pool is depleted. The result stays inside
-     *       TOptional end-to-end — no null-pointer sentinel is materialized.
-     */
-    const TOptional<FNode *> Node = FreeNodes.Pop().OrElse( [] () noexcept -> TOptional<FNode *>
-    {
-        if ( FNode *const Allocated = new ( std::nothrow ) FNode() )
-        {
-            return TOptional<FNode *>( Allocated );
-        }
-        return TOptional<FNode *>{};
-    } );
+    const TExpected<void, EActorSendError> Result = TryPush( InMessage );
 
-    if ( not Node.HasValue() ) [[unlikely]]
+    if ( not Result ) [[unlikely]]
     {
-        LUMEN_LOG_ERROR( LogActor, "FMailBox::Push: failed to allocate node for new message" );
+        LUMEN_LOG_WARNING( LogActor, "FMailBox::Push: mailbox full, message rejected" );
         return false;
     }
 
-    FNode *const NewNode = *Node;
-
-    NewNode->Next.store( nullptr, std::memory_order_relaxed );
-    NewNode->Message.Emplace( InMessage );
-
-    /**
-     * INFO: the exchange synchronises with the consumer's acquire on Next
-     */
-    FNode *const PrevTail = Tail.exchange( NewNode, std::memory_order_acq_rel );
-
-    /**
-     * INFO: this store must be release to synchronize with the consumer's acquire on Next
-     */
-    PrevTail->Next.store( NewNode, std::memory_order_release );
     return true;
+}
+
+Lumen::TExpected<void, Lumen::EActorSendError> Lumen::FMailBox::TryPush ( const FMessage &InMessage ) noexcept
+{
+    if ( not Queue.IsValid() or not Queue->IsInitialized() ) [[unlikely]]
+    {
+        SaturationCount.fetch_add( 1ULL, std::memory_order_relaxed );
+        return MakeUnexpected( EActorSendError::MailboxFull );
+    }
+
+    const TExpected<void, Thread::EMPSCQueueError> Result = Queue->Push( InMessage );
+
+    if ( not Result ) [[unlikely]]
+    {
+        SaturationCount.fetch_add( 1ULL, std::memory_order_relaxed );
+        return MakeUnexpected( EActorSendError::MailboxFull );
+    }
+
+    /** Published after the queue link so BeginTick never counts a message that is not yet visible. */
+    AcceptedCount.fetch_add( 1ULL, std::memory_order_release );
+    return {};
 }
 
 Lumen::TOptional<Lumen::FMessage> Lumen::FMailBox::Pop () noexcept
 {
+    const USize CurrentBoundary = Boundary.load( std::memory_order_relaxed );
+
     /**
-     * INFO: Tick fence: if the consumer has caught up to the boundary frozen
-     *       at BeginTick, everything still in the queue was enqueued DURING
-     *       the parallel phase and belongs to the next tick.
+     * INFO: Tick fence — messages accepted after BeginTick belong to the next tick, even when the underlying
+     *       queue already exposes them. ConsumedCount is consumer-owned, so this check cannot race.
      */
-    if ( Boundary != nullptr and Head == Boundary )
+    if ( CurrentBoundary != NoBoundary and ConsumedCount >= CurrentBoundary )
     {
         return {};
     }
 
-    FNode *const NextNode = Head->Next.load( std::memory_order_acquire );
-
-    if ( NextNode == nullptr )
+    if ( not Queue.IsValid() ) [[unlikely]]
     {
         return {};
     }
 
-    if ( not NextNode->Message.HasValue() ) [[unlikely]]
+    const TOptional<FMessage> Result = Queue->Pop();
+
+    if ( not Result.HasValue() )
     {
-        FNode *const OldHead = std::exchange( Head, NextNode );
-        RecycleHead( OldHead );
-        LUMEN_LOG_ERROR( LogActor, "FMailBox::Pop: message-less non-stub node (advanced to avoid wedge)" );
         return {};
     }
 
-    TOptional<FMessage> Result = std::move( NextNode->Message );
-
-    FNode *const OldHead = std::exchange( Head, NextNode );
-    RecycleHead( OldHead );
-
+    ++ConsumedCount;
     return Result;
 }
 
-void Lumen::FMailBox::Reserve ( USize InCapacity ) noexcept
+Lumen::TExpected<void, Lumen::EActorMailboxError> Lumen::FMailBox::Reserve ( const USize InCapacity ) noexcept
 {
-    for ( USize Index = 0ULL; Index < InCapacity; ++Index )
+    /**
+     * INFO: Reserve is a serial control operation. Enlarging replaces the queue and transfers pending messages,
+     *       so the accepted/consumed counters stay valid across the swap.
+     */
+    if ( Queue.IsValid() and Queue->GetCapacity() >= InCapacity )
     {
-        FNode *const NewNode = new ( std::nothrow ) FNode();
-
-        if ( NewNode == nullptr )
-        {
-            break;
-        }
-
-        if ( not FreeNodes.Push( NewNode ) )
-        {
-            delete NewNode;
-            break;
-        }
+        return {};
     }
+
+    return Initialize( InCapacity );
 }
 
 void Lumen::FMailBox::BeginTick () noexcept
 {
-    Boundary = Tail.load( std::memory_order_acquire );
+    Boundary.store( AcceptedCount.load( std::memory_order_acquire ), std::memory_order_relaxed );
 }
 
 void Lumen::FMailBox::EndTick () noexcept
 {
-    Boundary = nullptr;
+    Boundary.store( NoBoundary, std::memory_order_relaxed );
 }
 
 Lumen::Bool Lumen::FMailBox::IsEmpty () const noexcept
 {
-    return Head->Next.load( std::memory_order_acquire ) == nullptr;
+    return not Queue.IsValid() or Queue->IsEmpty();
 }
 
-/*
+Lumen::USize Lumen::FMailBox::GetCapacity () const noexcept
+{
+    return Queue.IsValid() ? Queue->GetCapacity() : 0ULL;
+}
+
+Lumen::UInt64 Lumen::FMailBox::GetSaturationCount () const noexcept
+{
+    return SaturationCount.load( std::memory_order_relaxed );
+}
+
+Lumen::USize Lumen::FMailBox::GetPendingCount () const noexcept
+{
+    const USize Accepted = AcceptedCount.load( std::memory_order_acquire );
+    return Accepted > ConsumedCount ? Accepted - ConsumedCount : 0ULL;
+}
+
+/**
  * Private
  */
 
-void Lumen::FMailBox::RecycleHead ( FNode *const InOldHead ) noexcept
+Lumen::TExpected<void, Lumen::EActorMailboxError> Lumen::FMailBox::Initialize ( const USize InCapacity ) noexcept
 {
-    if ( InOldHead == &Stub ) [[unlikely]]
+    TUniquePtr<Thread::TMPSCQueue<FMessage>> NewQueue = MakeUnique<Thread::TMPSCQueue<FMessage>>();
+
+    if ( not NewQueue.IsValid() ) [[unlikely]]
     {
-        return;
+        return MakeUnexpected( EActorMailboxError::OutOfMemory );
     }
 
-    InOldHead->Message.Reset();
+    const TExpected<void, Thread::EMPSCQueueError> Result = NewQueue->Initialize( InCapacity );
 
-    /** Return node to pool, fallback to OS deallocation if the queue is full */
-    if ( not FreeNodes.Push( InOldHead ) )
+    if ( not Result ) [[unlikely]]
     {
-        delete InOldHead;
+        const EActorMailboxError Error = Result.Error() == Thread::EMPSCQueueError::OutOfMemory
+                                             ? EActorMailboxError::OutOfMemory
+                                             : EActorMailboxError::InvalidCapacity;
+        return MakeUnexpected( Error );
     }
+
+    if ( Queue.IsValid() )
+    {
+        while ( const TOptional<FMessage> Item = Queue->Pop() )
+        {
+            static_cast<void>( NewQueue->Push( *Item ) );
+        }
+    }
+
+    Queue = std::move( NewQueue );
+    return {};
 }
