@@ -12,11 +12,22 @@
 
 #include <Execution/RenderExecutor.hpp>
 
+#include <Frame/RenderAssetRegistry.hpp>
+#include <Frame/RenderFrameContracts.hpp>
+#include <Frame/RenderProxyRegistry.hpp>
+#include <RenderGraph/CompiledRenderGraph.hpp>
+#include <RenderGraph/RenderGraphBuilder.hpp>
+
 #include <Memory/SharedPtr.hpp>
+#include <Memory/Span.hpp>
 #include <Templates/Optional.hpp>
+#include <Templates/Vector.hpp>
 
 #include <RHI/Commands/RHIRenderingDesc.hpp>
+#include <RHI/Memory/IRHIReadbackAllocator.hpp>
+#include <RHI/Presentation/RHIAcquiredImage.hpp>
 #include <RHI/Types/RHIExtent.hpp>
+#include <Rendering/RenderSnapshotView.hpp>
 
 namespace Lumen
 {
@@ -26,8 +37,12 @@ namespace RHI
     class IRHICommandAllocator;
     class IRHICommandList;
     class IRHIDevice;
+    class IRHIPipeline;
+    class IRHIPipelineLayout;
     class IRHIQueue;
     class IRHISemaphore;
+    class IRHIShader;
+    class IRHISwapchain;
     class IRHITexture;
     class IRHITextureView;
 } // namespace RHI
@@ -47,6 +62,7 @@ enum class ERendererError : UInt8
     RHICreationFailed,
     ExecutorFailed,
     QueueFull,
+    GeometryFailed,
 };
 
 /**
@@ -59,6 +75,14 @@ struct RENDERER_EXPORT FRendererDesc final
     FRenderSnapshotStream *SnapshotStream = nullptr;
     RHI::FRHIExtent3D Extent{ 64U, 64U, 1U };
     USize CommandCapacity = 64ULL;
+
+    /** INFO: An absent swapchain selects the offscreen target; the Null backend supplies one only in tests. */
+    TSharedPtr<RHI::IRHISwapchain> Swapchain;
+    /** INFO: Empty bytecode keeps the historical clear-only slice; nonempty bytecode enables the opaque pass. */
+    FRenderShaderSet Shaders;
+    USize ProxyCapacity = 256ULL;
+    USize AssetCapacity = 64ULL;
+    FRenderFrameReadbackDesc Readback;
 };
 
 /**
@@ -72,7 +96,7 @@ class RENDERER_EXPORT FRenderer final : public IRenderCommandHandler, public FNo
 {
 public:
 
-    FRenderer () noexcept = default;
+    FRenderer () noexcept;
     ~FRenderer () noexcept override;
 
     /** @brief Creates the render resources and starts one render thread. */
@@ -86,6 +110,15 @@ public:
     void Join () noexcept;
     [[nodiscard]] Bool IsRunning () const noexcept;
 
+    /**
+     * @brief Registers indexed geometry for one opaque asset before Start.
+     * @details Control-time operation on the caller thread; the data is copied before the render
+     *          thread exists, so no span crosses the thread boundary.
+     */
+    [[nodiscard]] TExpected<void, ERendererError> RegisterGeometry ( const FRenderGeometryAssetDesc &InDesc ) noexcept;
+    /** @brief Returns the last completed readback span; valid until the next consumed frame. */
+    [[nodiscard]] TOptional<TSpan<const Byte>> GetReadbackData () const noexcept;
+
     /** @brief Promotes the latest status. Only one reader thread may call this function. */
     void SwapStatusBuffers () noexcept;
     [[nodiscard]] const FRenderFrameStatus &GetStatus () const noexcept;
@@ -97,15 +130,39 @@ public:
 
 private:
 
+    struct FPendingGeometry
+    {
+        FRenderAssetId Id;
+        TVector<Maths::FVec3f> Positions;
+        TVector<UInt32> Indices;
+    };
+
     [[nodiscard]] TExpected<void, ERendererError> CreateResources () noexcept;
+    [[nodiscard]] TExpected<void, ERendererError> CreateForwardResources () noexcept;
+    [[nodiscard]] TExpected<void, ERendererError> CreatePresentationResources () noexcept;
     void RenderLatest ( const FRenderFrameRequest &InFrame, FRenderFrameStatus &InOutStatus ) noexcept;
     void ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderFrameStatus &InOutStatus ) noexcept;
+    [[nodiscard]] Bool RecordForwardPass ( const FRenderSnapshotView &InView,
+                                           RHI::IRHICommandList &InCommandList,
+                                           FRenderFrameStatus &InOutStatus ) noexcept;
+    [[nodiscard]] Bool AcquireTarget ( FRenderFrameStatus &InOutStatus ) noexcept;
+    void PresentTarget ( FRenderFrameStatus &InOutStatus ) noexcept;
+    void UpdateReadback ( FRenderFrameStatus &InOutStatus ) noexcept;
 
 private:
 
     TSharedPtr<RHI::IRHIDevice> Device;
     FRenderSnapshotStream *SnapshotStream = nullptr;
     RHI::FRHIExtent3D Extent{ 64U, 64U, 1U };
+    TSharedPtr<RHI::IRHISwapchain> Swapchain;
+    FRenderShaderSet Shaders;
+    USize ProxyCapacity = 256ULL;
+    USize AssetCapacity = 64ULL;
+    FRenderFrameReadbackDesc ReadbackDesc;
+
+    TVector<FPendingGeometry> PendingGeometry;
+    FRenderProxyRegistry Proxies;
+    FRenderAssetRegistry Assets;
 
     TOptional<TSharedRef<RHI::IRHIQueue>> Queue;
     TOptional<TSharedRef<RHI::IRHICommandAllocator>> Allocator;
@@ -113,8 +170,24 @@ private:
     TOptional<TSharedRef<RHI::IRHITexture>> TargetTexture;
     TOptional<TSharedRef<RHI::IRHITextureView>> TargetView;
     TOptional<TSharedRef<RHI::IRHISemaphore>> Timeline;
+    TOptional<TSharedRef<RHI::IRHISemaphore>> RenderComplete;
+    TOptional<TSharedRef<RHI::IRHIReadbackAllocator>> ReadbackAllocator;
+    TOptional<RHI::FRHIAllocation> ReadbackAllocation;
+    TOptional<TSpan<const Byte>> ReadbackData;
+    TVector<TSharedRef<RHI::IRHITextureView>> SwapchainViews;
+
+    TSharedPtr<RHI::IRHIPipelineLayout> PipelineLayout;
+    TOptional<TSharedRef<RHI::IRHIPipeline>> Pipeline;
+    TOptional<TSharedRef<RHI::IRHITexture>> AcquiredTarget;
+    TOptional<FRenderGraphBuilder> GraphBuilder;
+    TOptional<FCompiledRenderGraph> CompiledGraph;
 
     RHI::FRHIRenderingDesc RenderingDesc{};
+    RHI::FRHIAcquiredImage AcquiredImage;
+    Bool bHasAcquiredImage   = false;
+    Bool bForwardEnabled     = false;
+    Bool bPresentation       = false;
+    Bool bReadbackEnabled    = false;
     UInt64 NextTimelineValue = 0ULL;
     Bool bFirstFrame         = true;
 

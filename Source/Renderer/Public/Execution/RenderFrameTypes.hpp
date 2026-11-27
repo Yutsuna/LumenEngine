@@ -85,6 +85,10 @@ enum class ERenderFrameResult : UInt8
     DeviceClosed,
     RHIError,
     GraphError,
+    Presented,
+    SwapchainOutOfDate,
+    SwapchainSuboptimal,
+    ReadbackReady,
     Shutdown,
 };
 
@@ -102,6 +106,10 @@ struct FRenderFrameStatus
     UInt64 LastCompletedTimeline = 0ULL;
     UInt64 DroppedSnapshotCount  = 0ULL;
     UInt64 RejectedCommandCount  = 0ULL;
+    UInt64 PresentCount          = 0ULL;
+    UInt64 DrawCallCount         = 0ULL;
+    UInt64 ProxyCount            = 0ULL;
+    UInt64 ReadbackByteCount     = 0ULL;
 };
 
 static_assert( Concepts::CTriviallyCopyable<FRenderFrameRequest> );
