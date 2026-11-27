@@ -19,7 +19,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDefragPlan::Validate () const noexcept
         {
             const FRHIAllocation &Left  = Moves[First].Destination;
             const FRHIAllocation &Right = Moves[Second].Destination;
-            if ( RHIRangesOverlap( Left.Offset, Left.Size, Right.Offset, Right.Size ) )
+            if ( Left.Heap == Right.Heap and RHIRangesOverlap( Left.Offset, Left.Size, Right.Offset, Right.Size ) )
             {
                 return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Defragmentation destinations overlap" ) );
             }

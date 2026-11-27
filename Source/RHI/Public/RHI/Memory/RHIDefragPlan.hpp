@@ -40,7 +40,12 @@ namespace RHI
         TVector<FRHIDefragMove> Moves;
         UInt64 ReclaimedBytes                = 0ULL;
         FRHITimelineValue ObservedCompletion = {};
-        /** @return Success when every source/destination is valid and ranges do not overlap incorrectly. */
+        /**
+         * @brief Validates moves, sources and destinations.
+         * @details Overlap is evaluated per heap: two destinations in distinct heaps never
+         *          conflict. A null heap denotes one anonymous address space.
+         * @return Success when every source/destination is valid and ranges do not overlap incorrectly.
+         */
         [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
