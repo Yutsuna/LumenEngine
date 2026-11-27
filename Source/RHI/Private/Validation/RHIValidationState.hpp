@@ -62,7 +62,10 @@ namespace RHI
         [[nodiscard]] virtual TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept = 0;
     };
 
-    /** @enum ERHIValidationObjectKind @brief Object categories retained by the live registry. */
+    /**
+     * @enum ERHIValidationObjectKind
+     * @brief Object categories retained by the live registry.
+     */
     enum class ERHIValidationObjectKind : UInt8
     {
         Device,

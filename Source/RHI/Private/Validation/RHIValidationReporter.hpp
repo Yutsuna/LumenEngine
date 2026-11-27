@@ -2,6 +2,7 @@
  * @file RHIValidationReporter.hpp
  * @brief Declares validation diagnostic filtering and structured rejection.
  */
+
 #pragma once
 
 #include <RHI/Validation/RHIValidationDesc.hpp>
@@ -18,8 +19,11 @@ namespace RHI
 
     class IRHIObject;
 
-    /** @enum ERHIValidationMessageCode @brief Stable private diagnostic codes used by validation tests and sinks. */
-    enum class ERHIValidationMessageCode : UInt32
+    /**
+     * @enum ERHIValidationMessageCode
+     * @brief Stable private diagnostic codes used by validation tests and sinks.
+     */
+    enum class ERHIValidationMessageCode : UInt32 /** NOLINT */
     {
         InvalidDescriptor = 1U,
         UnknownObject,

@@ -31,7 +31,7 @@ Lumen::RHI::FRHIValidationState::~FRHIValidationState () noexcept = default;
 
 void Lumen::RHI::FRHIValidationState::Track ( IRHIObject &InObject, const ERHIValidationObjectKind InKind ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     const UInt64 Key = InObject.GetId().GetValue();
     if ( Objects.contains( Key ) )
     {
@@ -45,7 +45,7 @@ void Lumen::RHI::FRHIValidationState::Track ( IRHIObject &InObject, const ERHIVa
 
 void Lumen::RHI::FRHIValidationState::TrackResource ( IRHIResource &InResource, const ERHIValidationObjectKind InKind ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     const UInt64 Key = InResource.GetId().GetValue();
     if ( Objects.contains( Key ) )
     {
@@ -69,7 +69,7 @@ void Lumen::RHI::FRHIValidationState::TrackResource ( IRHIResource &InResource, 
 
 void Lumen::RHI::FRHIValidationState::Untrack ( IRHIObject &InObject ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     const TMap<UInt64, FEntry>::iterator Found = Objects.find( UnwrapRHIObject( &InObject )->GetId().GetValue() );
     if ( Found != Objects.end() and Found->second.Object == UnwrapRHIObject( &InObject ) )
     {
@@ -188,7 +188,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationState::TransitionBuffer ( con
                                                                              const ERHIQueueType InRecordingQueue,
                                                                              const Bool bApply ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     return ValidateBufferIn( Objects, InTransition, InRecordingQueue, bApply );
 }
 
@@ -196,7 +196,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationState::TransitionTexture ( co
                                                                               const ERHIQueueType InRecordingQueue,
                                                                               const Bool bApply ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     return ValidateTextureIn( Objects, InTransition, InRecordingQueue, bApply );
 }
 
@@ -355,7 +355,7 @@ Lumen::RHI::FRHIValidationState::ValidateTransitions ( const TSpan<const FRHITra
 
 void Lumen::RHI::FRHIValidationState::CommitTransitions ( const TSpan<const FRHITransition> InTransitions ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
     for ( const FRHITransition &Transition : InTransitions )
     {
         if ( const FRHIBufferTransition *Buffer = std::get_if<FRHIBufferTransition>( &Transition ) )
@@ -377,7 +377,7 @@ void Lumen::RHI::FRHIValidationState::ReportLeaks () noexcept
     }
     TVector<FEntry> Leaked;
     {
-        HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
+        const HAL::TLockGuard<HAL::FPlatformSharedMutex> Lock( Mutex );
         if ( bLeakReported )
         {
             return;

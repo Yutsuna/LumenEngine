@@ -2,6 +2,7 @@
  * @file RHIValidationDevice.cpp
  * @brief Implements root device forwarding and child decoration.
  */
+
 #include "RHIValidationDevice.hpp"
 #include "RHIValidationMemory.hpp"
 #include <HAL/LockGuard.hpp>
@@ -9,10 +10,15 @@
 #include <RHI/Pipelines/RHIPipelineLayoutDesc.hpp>
 #include <RHI/Validation/RHIValidation.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIValidationDevice::FRHIValidationDevice ( TSharedRef<IRHIDevice> InUnderlying,
                                                          TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
 {
+    /* */
 }
 
 Lumen::RHI::FRHIValidationDevice::~FRHIValidationDevice () noexcept
@@ -55,12 +61,12 @@ Lumen::RHI::FRHIValidationDevice::GetQueue ( const ERHIQueueType InType, const U
         {
             if ( UnwrapRHIObject( Queue.Get() ) == BackendQueue )
             {
-                return TExpected<TSharedRef<IRHIQueue>, FRHIError>( Queue );
+                return { Queue };
             }
         }
         const TSharedRef<IRHIQueue> Wrapped = MakeShared<FRHIValidationQueue>( InQueue, State );
         Queues.push_back( Wrapped );
-        return TExpected<TSharedRef<IRHIQueue>, FRHIError>( Wrapped );
+        return { Wrapped };
     } );
 }
 

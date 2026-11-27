@@ -63,117 +63,134 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationBindingSet::ValidateWrite ( c
     {
         return Candidate.Slot == InWrite.Slot;
     } );
+
+    /** Reject if the binding slot is absent from the validated layout */
     if ( Entry == nullptr )
     {
         return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                  "Binding slot is absent from the validated layout", this );
     }
+
+    /** Reject if the binding array element exceeds the validated layout count */
     if ( InWrite.ArrayElement >= Entry->Count )
     {
         return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                  "Binding array element exceeds the validated layout count", this );
     }
+
+    /** Reject if the binding write contains no resource */
     if ( not InWrite.Validate() )
     {
         return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                  "Binding write contains no resource", this );
     }
-    return std::visit( [this, Entry, &Reporter] ( const auto &Payload ) -> FRHIExpected
+
+    try
     {
-        if constexpr ( requires { Payload.Buffer; } )
+
+        return std::visit( [this, Entry, &Reporter] ( const auto &Payload ) -> FRHIExpected
         {
-            if ( Entry->Type != ERHIBindingType::ConstantBuffer and Entry->Type != ERHIBindingType::ReadOnlyBuffer and
-                 Entry->Type != ERHIBindingType::ReadWriteBuffer )
+            if constexpr ( requires { Payload.Buffer; } )
             {
-                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
-                                         "Buffer type does not match the layout entry", this );
-            }
+                if ( Entry->Type != ERHIBindingType::ConstantBuffer and Entry->Type != ERHIBindingType::ReadOnlyBuffer and
+                     Entry->Type != ERHIBindingType::ReadWriteBuffer )
+                {
+                    return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                             "Buffer type does not match the layout entry", this );
+                }
 
-            LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.Buffer, ERHIValidationObjectKind::Buffer ) );
+                LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.Buffer, ERHIValidationObjectKind::Buffer ) );
 
-            const FRHIBufferDesc &Desc = Payload.Buffer->GetDesc();
+                const FRHIBufferDesc &Desc = Payload.Buffer->GetDesc();
 
-            ERHIResourceUsage Required = ERHIResourceUsage::None;
-            switch ( Entry->Type )
-            {
-            case ERHIBindingType::ConstantBuffer:
-                Required = ERHIResourceUsage::ConstantBuffer;
-                break;
-            case ERHIBindingType::ReadWriteBuffer:
-                Required = ERHIResourceUsage::UnorderedAccess;
-                break;
-            default:
-                Required = ERHIResourceUsage::ShaderResource;
-            }
+                ERHIResourceUsage Required = ERHIResourceUsage::None;
+                switch ( Entry->Type )
+                {
+                case ERHIBindingType::ConstantBuffer:
+                    Required = ERHIResourceUsage::ConstantBuffer;
+                    break;
+                case ERHIBindingType::ReadWriteBuffer:
+                    Required = ERHIResourceUsage::UnorderedAccess;
+                    break;
+                default:
+                    Required = ERHIResourceUsage::ShaderResource;
+                }
 
-            if ( Payload.Offset > Desc.Size or Payload.Size > Desc.Size - Payload.Offset or
-                 not HasAnyFlags( Desc.Usage, Required ) )
-            {
-                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
-                                         "Buffer binding range or usage is invalid", this );
+                if ( Payload.Offset > Desc.Size or Payload.Size > Desc.Size - Payload.Offset or
+                     not HasAnyFlags( Desc.Usage, Required ) )
+                {
+                    return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                             "Buffer binding range or usage is invalid", this );
+                }
             }
-        }
-        else if constexpr ( requires {
-                                Payload.View;
-                                Payload.Sampler;
-                            } )
-        {
-            if ( Entry->Type != ERHIBindingType::CombinedTextureSampler )
+            else if constexpr ( requires {
+                                    Payload.View;
+                                    Payload.Sampler;
+                                } )
             {
-                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
-                                         "Combined resource does not match the layout entry", this );
-            }
+                if ( Entry->Type != ERHIBindingType::CombinedTextureSampler )
+                {
+                    return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                             "Combined resource does not match the layout entry", this );
+                }
 
-            LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.View, ERHIValidationObjectKind::TextureView ) );
-            LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.Sampler, ERHIValidationObjectKind::Sampler ) );
+                LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.View, ERHIValidationObjectKind::TextureView ) );
+                LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.Sampler, ERHIValidationObjectKind::Sampler ) );
 
-            const TSharedPtr<IRHITexture> Texture = Payload.View->GetTexture();
-            if ( not Texture )
-            {
-                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
-                                         "Combined texture view has no parent", this );
+                const TSharedPtr<IRHITexture> Texture = Payload.View->GetTexture();
+                if ( not Texture )
+                {
+                    return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                             "Combined texture view has no parent", this );
+                }
+                if ( not HasAnyFlags( Texture->GetUsage(), ERHIResourceUsage::ShaderResource ) )
+                {
+                    return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                             "Combined texture binding usage is invalid", this );
+                }
             }
-            if ( not HasAnyFlags( Texture->GetUsage(), ERHIResourceUsage::ShaderResource ) )
+            else if constexpr ( requires { Payload.View; } )
             {
-                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
-                                         "Combined texture binding usage is invalid", this );
-            }
-        }
-        else if constexpr ( requires { Payload.View; } )
-        {
-            if ( Entry->Type != ERHIBindingType::Texture and Entry->Type != ERHIBindingType::StorageTexture )
-            {
-                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
-                                         "Texture type does not match the layout entry", this );
-            }
+                if ( Entry->Type != ERHIBindingType::Texture and Entry->Type != ERHIBindingType::StorageTexture )
+                {
+                    return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                             "Texture type does not match the layout entry", this );
+                }
 
-            LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.View, ERHIValidationObjectKind::TextureView ) );
+                LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.View, ERHIValidationObjectKind::TextureView ) );
 
-            const TSharedPtr<IRHITexture> Texture = Payload.View->GetTexture();
-            if ( not Texture )
-            {
-                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
-                                         "Texture view has no parent", this );
+                const TSharedPtr<IRHITexture> Texture = Payload.View->GetTexture();
+                if ( not Texture )
+                {
+                    return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                             "Texture view has no parent", this );
+                }
+                const ERHIResourceUsage Required = Entry->Type == ERHIBindingType::StorageTexture
+                                                       ? ERHIResourceUsage::UnorderedAccess
+                                                       : ERHIResourceUsage::ShaderResource;
+                if ( not HasAnyFlags( Texture->GetUsage(), Required ) )
+                {
+                    return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                             "Texture binding usage is invalid", this );
+                }
             }
-            const ERHIResourceUsage Required = Entry->Type == ERHIBindingType::StorageTexture ? ERHIResourceUsage::UnorderedAccess
-                                                                                              : ERHIResourceUsage::ShaderResource;
-            if ( not HasAnyFlags( Texture->GetUsage(), Required ) )
+            else
             {
-                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
-                                         "Texture binding usage is invalid", this );
+                if ( Entry->Type != ERHIBindingType::Sampler )
+                {
+                    return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                             "Sampler type does not match the layout entry", this );
+                }
+                return State->ValidateObject( *Payload.Sampler, ERHIValidationObjectKind::Sampler );
             }
-        }
-        else
-        {
-            if ( Entry->Type != ERHIBindingType::Sampler )
-            {
-                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
-                                         "Sampler type does not match the layout entry", this );
-            }
-            return State->ValidateObject( *Payload.Sampler, ERHIValidationObjectKind::Sampler );
-        }
-        return {};
-    }, InWrite.Resource );
+            return {};
+        }, InWrite.Resource );
+    }
+    catch ( ... )
+    {
+        return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                 "Resource validation failed", this );
+    }
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWrites ) noexcept

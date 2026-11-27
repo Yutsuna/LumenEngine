@@ -33,7 +33,7 @@ Lumen::RHI::ERHIQueueType Lumen::RHI::FRHIValidationCommandAllocator::GetQueueTy
 
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationCommandAllocator::Reset ( const FRHITimelineValue InCompleted ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( const FRHIValidationCommandList *List : Lists )
     {
         if ( List->GetState() == ERHICommandListState::Pending and
@@ -55,13 +55,13 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationCommandAllocator::Reset ( con
 
 void Lumen::RHI::FRHIValidationCommandAllocator::RegisterList ( FRHIValidationCommandList &InList ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Lists.push_back( &InList );
 }
 
 void Lumen::RHI::FRHIValidationCommandAllocator::UnregisterList ( FRHIValidationCommandList &InList ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( USize Index = 0U; Index < Lists.size(); ++Index )
     {
         if ( Lists[Index] == &InList )
@@ -74,6 +74,6 @@ void Lumen::RHI::FRHIValidationCommandAllocator::UnregisterList ( FRHIValidation
 
 Lumen::USize Lumen::RHI::FRHIValidationCommandAllocator::GetTrackedListCount () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Lists.size();
 }
