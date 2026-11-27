@@ -19,7 +19,9 @@
 #include <cmath>
 #include <type_traits>
 
+#if not defined( LUMEN_CLANG_TIDY )
 static_assert( LUMEN_HAS_REFLECTION == 1, "LaunchEngineConfigParser requires C++26 static reflection." );
+#endif
 
 namespace Lumen
 {

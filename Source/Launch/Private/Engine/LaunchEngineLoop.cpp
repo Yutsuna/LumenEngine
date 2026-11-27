@@ -51,14 +51,16 @@ Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit 
     return ParseEngineConfig( InCommandLine )
         .Transform( [&InCommandLine] ( FLaunchEngineConfig &&InConfig ) noexcept -> FPreInitState
     {
-        const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move( InConfig ) };
+        /** NOLINTNEXTLINE(hicpp-move-const-arg,performance-move-const-arg) */
+        const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move(InConfig) };
 
-        LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}", Meta::SerializeToJSON( InConfig ) );
+        LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}", Meta::SerializeToJSON( PreInitState.Config ) );
 
         return PreInitState;
     } );
 }
 
+/** NOLINTNEXTLINE(cppcoreguidelines-rvalue-reference-param-not-moved) */
 Launch::TLaunchResult<Launch::FInitState> Launch::FLaunchEngineLoop::Init ( FPreInitState &&InPreInitState ) noexcept
 {
     FInitState State;
@@ -96,7 +98,7 @@ Launch::TLaunchResult<Launch::FRunSummary> Launch::FLaunchEngineLoop::Run ( FIni
         Limiter.Wait();
     }
 
-    const FRunSummary RunSummary{
+    const FRunSummary RunSummary = {
         .FrameCount     = FrameCount,
         .ElapsedSeconds = Clock.ElapsedSeconds(),
         .bInterrupted   = IsExitRequested(),
