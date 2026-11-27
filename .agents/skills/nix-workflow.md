@@ -41,7 +41,6 @@ Nix/shell.nix        — mkShell wrapping deps with dev env hooks
   result/bin` — **after** a successful `nix build`, the freshly built
   binaries are available on PATH immediately.
 
-
 ## package.nix details agents must respect
 
 - Version is read as the **first line of `../VERSION.md`** — keep that file

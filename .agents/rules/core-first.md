@@ -170,12 +170,14 @@ Why this is enforced:
   chains keep hot paths allocation-free, inline-friendly, and
   branch-predictable.
 
-Banned in engine code (non-test): `throw`, `catch`, `try`, `std::expected`,
-`std::optional` (use Core's), and std APIs defined to throw (`std::stoi`,
-growth-`throwing` std containers in public paths, …). The single allowed
-throw site is the test framework (`LUMEN_CHECK*` throws
-`FUnitTestAssertionFailure`, caught and reported by the test runner —
-see `rules/testing.md`).
+Banned in engine code (non-test): `throw`, `std::expected`, `std::optional`
+(use Core's), and std APIs defined to throw (`std::stoi`, growth-`throwing`
+std containers in public paths, …). The single allowed throw site is the test
+framework (`LUMEN_CHECK*` throws `FUnitTestAssertionFailure`, caught and
+reported by the test runner — see `rules/testing.md`). `try`/`catch` are
+allowed only at boundaries that translate a throwing std call (e.g.
+`std::visit`) into a structured error (RHI binding and transition validation)
+or report console output failure (`FLogger`); they are never control flow.
 
 ## Non-negotiables behind the rule
 

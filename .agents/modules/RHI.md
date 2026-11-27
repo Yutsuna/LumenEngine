@@ -89,10 +89,13 @@ independent flag.
 `FRHIError` carries an `ERHIErrorCode`, a more specific condition, an owned
 message and an optional native result. It is a value suitable for monadic
 composition. Absence uses `TOptional`; failure uses `TExpected` and
-`TUnexpected`. Engine code is non-throwing. Device status is atomic: after loss
-or closure, creation and submission fail with `DeviceLost` or `DeviceClosed`;
-polling, diagnostics and safe cleanup remain available. No failure path throws
-or terminates by default. A missing capability is reported as
+`TUnexpected`. Engine code never throws; validation boundaries catch a throwing
+std call (`std::visit`) and return a structured error instead
+(`RHIValidationBindings.cpp`, `RHIBindingWrite.cpp`, `RHITransition.cpp`).
+Device status is atomic: after loss or closure, creation and submission fail
+with `DeviceLost` or `DeviceClosed`; polling, diagnostics and safe cleanup
+remain available. No failure path throws or terminates by default. A missing
+capability is reported as
 `ERHIErrorCode::Unsupported` with `ERHIErrorCondition::Capability`; there is no
 `UnsupportedFeature` enumerator.
 
@@ -256,8 +259,9 @@ retirement tests never depend on GPU timing.
 
 `IRHIConformanceDeviceFactory` abstracts device creation for conformance
 scenarios. Its no-argument `CreateDevice()` follows a configurable default
-validation policy, while `CreateDevice(bool)` remains explicit. Conformance
-translation units use only that factory and public RHI interfaces;
+validation policy, while `CreateDevice(Bool bEnableValidation)` remains
+explicit. Conformance translation units use only that factory and public RHI
+interfaces;
 `Lumen::RHI::Tests::GetRHIConformanceDeviceFactory()` supplies the Null factory.
 `RHINullTestSupportSources` in `Source/RHI/meson.build` lets other module test
 binaries reuse the deterministic Null implementation without moving it into
@@ -315,7 +319,7 @@ third-party dependency belongs here. No vendor name, native header, shader
 language or window-system name appears under `Source/RHI`.
 
 RHI itself contains only the Null and validation backends. RHIVulkan is a
-separate backend whose V2 module/device implementation is still in progress;
+separate backend whose native module/device implementation is present;
 no shared native conformance is currently wired. Optional shader formats, query
 types and presentation results are supplied or gated by the conformance factory,
 so every backend must validate them independently. Fuzz determinism holds for the

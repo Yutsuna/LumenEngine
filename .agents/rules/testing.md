@@ -22,8 +22,10 @@ will be wrong.
   `LUMEN_CHECK_HAS_VALUE`, `LUMEN_CHECK_HAS_ERROR`.
 - Layout: `Source/<Module>/Tests/{Functional,Integration}/<Topic>/…`,
   mirroring `Public/` topics. Test code follows `rules/coding-style.md`
-  (namespace `Lumen`, or `Lumen::RHI` in the RHI module where test helpers
-  live in `Lumen::RHI::Tests`, `F/E/T/b` names, precise variable names).
+  (open `namespace Lumen { }` in `Tests/` `.cpp` files, RHI tests included —
+  never the shortened `namespace Lumen::RHI { }`; qualify RHI symbols
+  explicitly with `Lumen::RHI::`, as required by `rules/coding-style.md`),
+  `F/E/T/b` names, precise variable names).
 - Every `*.cpp` under `Tests/` compiles into the **single** `<Module>Tests`
   binary; a default `main` (`Meson/TestRunner.cpp`) is appended unless
   `Tests/Main.cpp` or `TestMain.cpp` exists. Never put a `main()` in test files.

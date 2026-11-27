@@ -12,6 +12,12 @@ permissions:
   - action: websearch
     resource: "*"
     effect: deny
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
   - action: shell
     resource: "git diff*"
     effect: allow
@@ -24,9 +30,6 @@ permissions:
   - action: shell
     resource: "git status*"
     effect: allow
-  - action: shell
-    resource: "*"
-    effect: deny
   - action: subagent
     resource: "*"
     effect: deny
@@ -38,6 +41,26 @@ You audit the `.agents/` directory as an **instruction system**: every
 pointer in it must resolve, every claim must be verifiable against the
 repository, and no two files may contradict each other. You are strictly
 read-only — you produce a findings report, you fix nothing.
+
+## Tooling (read-only)
+
+Use the direct tools (`read`, `glob`, `grep`, `shell`). Code Mode (`execute`
+and `tools[...]`) is disabled for this agent — do not try to call tools
+through it.
+
+- Glob hidden directories (`.agents/`, `.github/`) with `hidden: true`. An
+  empty result from a non-hidden glob is **not** evidence that a file is
+  missing: rerun with `hidden: true` before reporting a broken reference.
+- Only `git diff/show/log/status` are allowed — no `git grep`, no
+  `git ls-files`, no `workdir` parameter; use `grep`/`glob`/`read` for file
+  discovery. Run commands one at a time: pipes and `&&` chains with other
+  commands are denied (e.g. `git status --short | head` fails). `grep` uses
+  ripgrep syntax (no backreferences). Use `git log --oneline -N` and
+  `git status --short` for staleness checks. `.git/logs/HEAD` is only a local reflog and may lag behind `HEAD`;
+  never use it as the primary history source.
+- If a command or tool is denied, report the tooling problem explicitly
+  instead of silently falling back to a weaker source. Parallelise reads and
+  greps, and paginate large files.
 
 ## Workflow
 

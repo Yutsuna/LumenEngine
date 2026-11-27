@@ -12,10 +12,15 @@
 
 ## Public surface (`Source/RHIOpenGL/Public/`)
 
-- `RHIOpenGL/RHIOpenGLModule.hpp` — `CreateRHIOpenGLModule()`, the module's only
-  exported symbol (`RHIOPENGL_EXPORT`). Concrete backend classes live in
-  `Private/` and are never exported; tests link them in through
-  `GlobalTestModules` instead.
+- `RHIOpenGL/RHIOpenGLModule.hpp` — `CreateRHIOpenGLModule()`
+  (`RHIOPENGL_EXPORT`).
+- `RHIOpenGL/RHIOpenGLSurfaceBridge.hpp` — `CreateRHIOpenGLSurfaceBridge()`
+  (`RHIOPENGL_EXPORT`) plus `FOpenGLNativeWindowDesc` and
+  `EOpenGLNativeWindowSystem`. The factory returns `Unsupported` while
+  native-display device initialization is unavailable. These are the module's
+  two exported factory functions. Concrete backend classes live in `Private/`
+  and are never exported; tests link them in through `GlobalTestModules`
+  instead.
 
 ## Private layout (`Source/RHIOpenGL/Private/RHIOpenGL/`)
 

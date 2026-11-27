@@ -12,6 +12,12 @@ permissions:
   - action: websearch
     resource: "*"
     effect: deny
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
   - action: shell
     resource: "git diff*"
     effect: allow
@@ -24,9 +30,6 @@ permissions:
   - action: shell
     resource: "git status*"
     effect: allow
-  - action: shell
-    resource: "*"
-    effect: deny
   - action: subagent
     resource: "*"
     effect: deny
@@ -42,6 +45,18 @@ permissions:
 
 You orchestrate the review of the current changes. **Do not review code
 yourself** — dispatch, correlate, and report.
+
+## Tooling (read-only)
+
+Use the direct tools (`git` via `shell`, `read`, `glob`, `grep`, `subagent`).
+Code Mode (`execute` and `tools[...]`) is disabled for this agent. Glob
+hidden directories with `hidden: true` before concluding a file or workflow
+is missing. Only `git diff/show/log/status` are allowed (no `git grep`/`git
+ls-files`, no `workdir`); use `grep`/`glob`/`read` for files. Run commands
+one at a time — pipes and `&&` chains are denied. Use `git status --short`
+to establish the working-tree state. If a shell command or subagent dispatch
+is denied, report the tooling problem explicitly rather than skipping that
+step silently.
 
 ## Workflow
 

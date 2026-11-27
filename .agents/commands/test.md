@@ -20,5 +20,7 @@ Notes:
   a failure exits **84**, not 1 (`Meson/TestRunner.cpp`).
 - New/deleted/renamed test `.cpp` files need `meson setup Build --reconfigure`
   before they are visible to the build (`rules/build.md`).
-- Test binaries also see their module's `Private/` headers; Core is linked
-  automatically (`rules/testing.md`).
+- Test binaries also see their module's `Private/` headers. Test dependencies
+  come from `GlobalTestModules` (`Source/Meson/Tests/meson.build`), which
+  inherits the module's `Depends` — modules list `Core` there explicitly.
+  Automatic Core injection is benchmark-only (`rules/testing.md`).

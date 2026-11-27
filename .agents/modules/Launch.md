@@ -1,7 +1,8 @@
 # Module: Launch
 
 - **Type:** Executable (`Source/Launch/meson.build`), depends on `Core`,
-  `AppCore`. Produces the `Launch` binary (`Build/Source/Launch/Launch`).
+  `AppCore`, `Scene`, `RHI`, `Renderer`. Produces the `Launch` binary
+  (`Build/Source/Launch/Launch`).
 - **Status:** built. Entry point of the engine.
 
 ## Public surface (`Source/Launch/Public/`)
