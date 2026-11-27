@@ -39,6 +39,7 @@ namespace Lumen
 
 class FWorldExecutor;
 class FReplicationSystem;
+class FWorldPartition;
 class IReplicationTransport;
 
 /**
@@ -146,6 +147,32 @@ public:
     /** @return True when a replication system is installed and initialized. */
     [[nodiscard]] Bool IsReplicationEnabled () const noexcept;
 
+    /** @return The world-owned partition, or nullptr when no valid configuration was supplied. */
+    [[nodiscard]] FWorldPartition *GetPartition () const noexcept;
+
+    /** @return True when a partition was successfully reserved at construction. */
+    [[nodiscard]] Bool IsPartitionEnabled () const noexcept;
+
+    /**
+     * @brief Assigns an existing actor to a cell; control-time only.
+     * @details When replication is active the persistent label is reconciled with the authority/replica mapping;
+     *          M10 never allocates a persistent identity itself.
+     */
+    [[nodiscard]] TExpected<void, EWorldPartitionError>
+    TryAssignActorToCell ( ActorID InActorId, FWorldCellId InCellId, FPersistentActorId InPersistentId ) noexcept;
+
+    /** @brief Removes an actor from its cell; control-time only. */
+    [[nodiscard]] TExpected<void, EWorldPartitionError> TryUnassignActorFromCell ( ActorID InActorId ) noexcept;
+
+    /** @brief Requests a cell load, deferred through the canonical queue during an actor phase. */
+    [[nodiscard]] TExpected<void, EWorldPartitionError> TryPartitionLoadCell ( FWorldCellId InCellId ) noexcept;
+
+    /** @brief Requests a cell unload, deferred through the canonical queue during an actor phase. */
+    [[nodiscard]] TExpected<void, EWorldPartitionError> TryPartitionUnloadCell ( FWorldCellId InCellId ) noexcept;
+
+    /** @return True when the actor belongs to a cell whose state is Unloaded. */
+    [[nodiscard]] Bool IsActorDormant ( ActorID InActorId ) const noexcept;
+
     /** @return The stable non-zero identity carried by every published snapshot. */
     [[nodiscard]] UInt64 GetWorldId () const noexcept;
 
@@ -225,6 +252,16 @@ private:
         Maths::FMat4x4f Local = Maths::FMat4x4f::Identity();
     };
 
+    struct FDeferredPartitionLoadCommand
+    {
+        FWorldCellId CellId;
+    };
+
+    struct FDeferredPartitionUnloadCommand
+    {
+        FWorldCellId CellId;
+    };
+
     /** INFO: New alternatives are appended so existing Payload.index() values and canonical ordering stay stable. */
     using FDeferredCommandPayload = TVariant<FDeferredSpawnCommand,
                                              FDeferredDestroyCommand,
@@ -232,7 +269,9 @@ private:
                                              FDeferredHierarchyRegisterCommand,
                                              FDeferredHierarchyAttachCommand,
                                              FDeferredHierarchyDetachCommand,
-                                             FDeferredHierarchyLocalTransformCommand>;
+                                             FDeferredHierarchyLocalTransformCommand,
+                                             FDeferredPartitionLoadCommand,
+                                             FDeferredPartitionUnloadCommand>;
 
     struct FDeferredCommand
     {
@@ -252,6 +291,13 @@ private:
     [[nodiscard]] TExpected<void, ESceneHierarchyError>
     ApplyHierarchyLocalTransform ( ActorID InActorId, const Maths::FMat4x4f &InLocalTransform ) noexcept;
     void ApplyHierarchyWorldTransforms () noexcept;
+    [[nodiscard]] TExpected<void, EWorldPartitionError> ApplyPartitionLoadCell ( FWorldCellId InCellId,
+                                                                                 UInt64 InSenderSequence ) noexcept;
+    [[nodiscard]] TExpected<void, EWorldPartitionError> ApplyPartitionUnloadCell ( FWorldCellId InCellId,
+                                                                                   UInt64 InSenderSequence ) noexcept;
+    void DetachExternalChildrenOfCell ( FWorldCellId InCellId ) noexcept;
+    void SetCellActorRouting ( FWorldCellId InCellId, Bool bInRoutable ) noexcept;
+    [[nodiscard]] Bool IsRenderProxyDormant ( FRenderProxyId InProxyId ) const noexcept;
     [[nodiscard]] TExpected<FWorldPhaseCompletion, EWorldTickError>
     RunPhase ( TSpan<AActor *const> InActors, EActorTickPhase InPhase, UInt64 InFixedStepIndex, Float64 InDeltaTime ) noexcept;
     [[nodiscard]] TExpected<void, EWorldTickError>
@@ -272,6 +318,7 @@ private:
     TUniquePtr<FWorldExecutor> Executor;
     TUniquePtr<FReplicationSystem> Replication;
     TVector<FReplicationActorSourceRecord> ReplicationSourceScratch;
+    TUniquePtr<FWorldPartition> Partition;
 
     /** INFO: The extraction stream lives per world; no actor, asset or renderer ownership crosses this boundary. */
     FRenderSnapshotStream RenderSnapshotStream;
@@ -279,6 +326,8 @@ private:
     FWorldRenderContent RenderContent;
     TVector<FRenderTransformRecord> RenderTransforms;
     TVector<FRenderMeshRecord> RenderMeshes;
+    TVector<FRenderCameraRecord> RenderCameras;
+    TVector<FRenderLightRecord> RenderLights;
     FRenderSnapshotError LastRenderError;
     UInt64 WorldId            = 0ULL;
     UInt64 RenderPublishCount = 0ULL;
@@ -294,6 +343,7 @@ private:
 
     TVector<AActor *> PhaseActors;
     TVector<AActor *> VariableActors;
+    TVector<ActorID> PartitionScratch;
     TVector<FActorEmission> MergedEmissions;
     TVector<FWorldIngressRecord> IngressBatch;
 

@@ -10,6 +10,7 @@
 
 #include <Rendering/RenderSnapshotTypes.hpp>
 #include <Replication/ReplicationTypes.hpp>
+#include <WorldPartition/WorldPartitionTypes.hpp>
 
 namespace Lumen
 {
@@ -63,6 +64,12 @@ struct SCENE_EXPORT FWorldDesc
      */
     FReplicationConfig ReplicationConfig{};
     EActorRole ReplicationRole = EActorRole::Standalone;
+
+    /**
+     * @brief Opt-in logical partition capacities; an all-zero configuration leaves partitioning disabled.
+     * @details A partial configuration is rejected at construction and the world stays unpartitioned.
+     */
+    FWorldPartitionConfig PartitionConfig{};
 };
 
 /**

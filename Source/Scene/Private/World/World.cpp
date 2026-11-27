@@ -8,6 +8,7 @@
 #include <World/WorldSpatialRegistry.hpp>
 
 #include <Replication/ReplicationSystem.hpp>
+#include <WorldPartition/WorldPartition.hpp>
 
 #include <Algo/ForEach.hpp>
 #include <Algo/Sort.hpp>
@@ -116,12 +117,25 @@ Lumen::FWorld::FWorld ( const FWorldDesc &InDesc ) noexcept
     RenderContent.Meshes.reserve( Desc.RenderCapacities.MeshCapacity );
     RenderContent.Cameras.reserve( Desc.RenderCapacities.CameraCapacity );
     RenderContent.Lights.reserve( Desc.RenderCapacities.LightCapacity );
+    RenderCameras.reserve( Desc.RenderCapacities.CameraCapacity );
+    RenderLights.reserve( Desc.RenderCapacities.LightCapacity );
     ReplicationSourceScratch.reserve( Desc.MaxActors );
+    PartitionScratch.reserve( Desc.MaxActors > Desc.HierarchyCapacity ? Desc.MaxActors : Desc.HierarchyCapacity );
 
     /** INFO: Hierarchy is opt-in; a failed reservation leaves it disabled and never terminates the world. */
     if ( Desc.HierarchyCapacity > 0ULL )
     {
         static_cast<void>( Hierarchy.Initialize( Desc.HierarchyCapacity ) );
+    }
+
+    /** INFO: Partitioning is opt-in; a failed or partial reservation leaves the world unpartitioned. */
+    if ( Desc.PartitionConfig.MaxCells > 0ULL )
+    {
+        TUniquePtr<FWorldPartition> Reserved = MakeUnique<FWorldPartition>();
+        if ( Reserved->Initialize( Desc.PartitionConfig ) )
+        {
+            Partition = std::move( Reserved );
+        }
     }
 }
 
@@ -156,7 +170,7 @@ Lumen::TExpected<void, Lumen::EActorSendError> Lumen::FWorld::TryBroadcast ( con
     TOptional<EActorSendError> FirstError;
     for ( const TSharedPtr<AActor> &Actor : ActiveActors )
     {
-        if ( Actor->GetLifecycle() != EActorLifecycle::Active )
+        if ( Actor->GetLifecycle() != EActorLifecycle::Active or IsActorDormant( Actor->GetId() ) )
         {
             continue;
         }
@@ -231,7 +245,8 @@ Lumen::TExpected<Lumen::FWorldTickResult, Lumen::EWorldTickError> Lumen::FWorld:
     VariableActors.clear();
     for ( const TSharedPtr<AActor> &Actor : ActiveActors )
     {
-        if ( Actor->GetLifecycle() == EActorLifecycle::Active and Actor->GetTickPhase() != EActorTickPhase::FixedUpdate )
+        if ( Actor->GetLifecycle() == EActorLifecycle::Active and Actor->GetTickPhase() != EActorTickPhase::FixedUpdate and
+             not IsActorDormant( Actor->GetId() ) )
         {
             VariableActors.push_back( Actor.Get() );
             Actor->BeginTick();
@@ -406,6 +421,184 @@ Lumen::Bool Lumen::FWorld::IsReplicationEnabled () const noexcept
     return Replication.IsValid() and Replication->IsInitialized();
 }
 
+Lumen::FWorldPartition *Lumen::FWorld::GetPartition () const noexcept
+{
+    return Partition.Get();
+}
+
+Lumen::Bool Lumen::FWorld::IsPartitionEnabled () const noexcept
+{
+    return Partition.IsValid() and Partition->IsInitialized();
+}
+
+Lumen::TExpected<void, Lumen::EWorldPartitionError> Lumen::FWorld::TryAssignActorToCell (
+    const ActorID InActorId, const FWorldCellId InCellId, const FPersistentActorId InPersistentId ) noexcept
+{
+    if ( bShuttingDown )
+    {
+        return MakeUnexpected( EWorldPartitionError::WorldClosed );
+    }
+    if ( not IsPartitionEnabled() )
+    {
+        return MakeUnexpected( EWorldPartitionError::NotInitialized );
+    }
+    if ( IsInParallelPhase() )
+    {
+        return MakeUnexpected( EWorldPartitionError::ControlPhaseRequired );
+    }
+    if ( not Actors.contains( InActorId ) )
+    {
+        return MakeUnexpected( EWorldPartitionError::UnknownActor );
+    }
+    /**
+     * INFO: Validate every non-label failure before the authority allocates a persistent ID. Replication has no
+     *       unbind API, so a later cell/capacity/journal rejection would leak an irreversible binding.
+     */
+    LUMEN_TRY_EXPECT_ERROR( Partition->CanAssignActor( InActorId, InCellId ) );
+
+    FPersistentActorId Label = InPersistentId;
+    if ( IsReplicationEnabled() )
+    {
+        const EActorRole Role = Replication->GetRole();
+        if ( Role == EActorRole::Authority )
+        {
+            /** INFO: Reject a conflicting caller label before allocation so a failed call has no replication side effect. */
+            const TOptional<FPersistentActorId> ExistingLabel = Replication->FindPersistentId( InActorId );
+            if ( Label.IsValid() and ( not ExistingLabel or Label != *ExistingLabel ) )
+            {
+                return MakeUnexpected( EWorldPartitionError::PersistentConflict );
+            }
+            if ( not ExistingLabel )
+            {
+                const TExpected<void, EReplicationError> Allocated = Replication->AssignPersistentId( InActorId );
+                if ( not Allocated )
+                {
+                    return MakeUnexpected( Allocated.Error() == EReplicationError::CapacityExceeded
+                                               ? EWorldPartitionError::CapacityExceeded
+                                               : EWorldPartitionError::ReplicationRejected );
+                }
+            }
+            const TOptional<FPersistentActorId> AuthorityLabel = Replication->FindPersistentId( InActorId );
+            if ( not AuthorityLabel )
+            {
+                return MakeUnexpected( EWorldPartitionError::ReplicationRejected );
+            }
+            Label = *AuthorityLabel;
+        }
+        else if ( Role == EActorRole::Replica )
+        {
+            if ( not Label.IsValid() )
+            {
+                return MakeUnexpected( EWorldPartitionError::InvalidPersistentId );
+            }
+            const TOptional<FPersistentActorId> Bound = Replication->FindPersistentId( InActorId );
+            if ( not Bound or Label != *Bound )
+            {
+                return MakeUnexpected( EWorldPartitionError::PersistentConflict );
+            }
+        }
+    }
+    else if ( not Label.IsValid() )
+    {
+        return MakeUnexpected( EWorldPartitionError::InvalidPersistentId );
+    }
+
+    TExpected<void, EWorldPartitionError> Assigned = Partition->TryAssignActor( InActorId, InCellId, Label );
+    if ( not Assigned )
+    {
+        return Assigned;
+    }
+    /** INFO: New cells start unloaded, so assignment alone must close routing until the cell is loaded. */
+    if ( IsActorDormant( InActorId ) )
+    {
+        const auto ActorFound = Actors.find( InActorId );
+        if ( ActorFound != Actors.end() )
+        {
+            Internal::FActorRegistry::CloseRouting( ActorFound->second.Get() );
+        }
+    }
+    return {};
+}
+
+Lumen::TExpected<void, Lumen::EWorldPartitionError> Lumen::FWorld::TryUnassignActorFromCell ( const ActorID InActorId ) noexcept
+{
+    if ( bShuttingDown )
+    {
+        return MakeUnexpected( EWorldPartitionError::WorldClosed );
+    }
+    if ( not IsPartitionEnabled() )
+    {
+        return MakeUnexpected( EWorldPartitionError::NotInitialized );
+    }
+    if ( IsInParallelPhase() )
+    {
+        return MakeUnexpected( EWorldPartitionError::ControlPhaseRequired );
+    }
+    const Bool bWasDormant                        = IsActorDormant( InActorId );
+    TExpected<void, EWorldPartitionError> Removed = Partition->TryUnassignActor( InActorId );
+    if ( not Removed )
+    {
+        return Removed;
+    }
+    /** INFO: Unassignment makes the actor non-dormant again; restore the routing closed on its behalf. */
+    if ( bWasDormant )
+    {
+        const auto ActorFound = Actors.find( InActorId );
+        if ( ActorFound != Actors.end() )
+        {
+            Internal::FActorRegistry::OpenRouting( ActorFound->second.Get() );
+        }
+    }
+    return {};
+}
+
+Lumen::TExpected<void, Lumen::EWorldPartitionError> Lumen::FWorld::TryPartitionLoadCell ( const FWorldCellId InCellId ) noexcept
+{
+    if ( bShuttingDown )
+    {
+        return MakeUnexpected( EWorldPartitionError::WorldClosed );
+    }
+    if ( not IsPartitionEnabled() )
+    {
+        return MakeUnexpected( EWorldPartitionError::NotInitialized );
+    }
+    if ( IsInParallelPhase() )
+    {
+        if ( not QueueDeferredCommand( InvalidActorID, FDeferredPartitionLoadCommand{ .CellId = InCellId } ) )
+        {
+            return MakeUnexpected( EWorldPartitionError::DeferredQueueFull );
+        }
+        return {};
+    }
+    return ApplyPartitionLoadCell( InCellId, 0ULL );
+}
+
+Lumen::TExpected<void, Lumen::EWorldPartitionError> Lumen::FWorld::TryPartitionUnloadCell ( const FWorldCellId InCellId ) noexcept
+{
+    if ( bShuttingDown )
+    {
+        return MakeUnexpected( EWorldPartitionError::WorldClosed );
+    }
+    if ( not IsPartitionEnabled() )
+    {
+        return MakeUnexpected( EWorldPartitionError::NotInitialized );
+    }
+    if ( IsInParallelPhase() )
+    {
+        if ( not QueueDeferredCommand( InvalidActorID, FDeferredPartitionUnloadCommand{ .CellId = InCellId } ) )
+        {
+            return MakeUnexpected( EWorldPartitionError::DeferredQueueFull );
+        }
+        return {};
+    }
+    return ApplyPartitionUnloadCell( InCellId, 0ULL );
+}
+
+Lumen::Bool Lumen::FWorld::IsActorDormant ( const ActorID InActorId ) const noexcept
+{
+    return IsPartitionEnabled() and Partition->IsActorDormant( InActorId );
+}
+
 void Lumen::FWorld::TickReplication () noexcept
 {
     if ( not IsReplicationEnabled() )
@@ -422,6 +615,11 @@ void Lumen::FWorld::TickReplication () noexcept
             continue;
         }
         const ActorID LocalId = Actor->GetId();
+        /**
+         * INFO: Dormancy is filtered only at snapshot extraction. Keeping bound actors in the replication source
+         *       view prevents M9 from emitting a Destroy tombstone once the state was acked by a replica; replicated
+         *       writes still reach the hierarchy and become visible when the cell loads.
+         */
         FReplicationActorSourceRecord Record;
         Record.LocalId        = LocalId;
         Record.ParentLocalId  = Hierarchy.GetParentId( LocalId ).ValueOr( InvalidActorID );
@@ -490,7 +688,7 @@ void Lumen::FWorld::ApplyIngressJournal () noexcept
         case EWorldIngressKind::Broadcast:
             for ( const TSharedPtr<AActor> &Actor : ActiveActors )
             {
-                if ( Actor->GetLifecycle() != EActorLifecycle::Active )
+                if ( Actor->GetLifecycle() != EActorLifecycle::Active or IsActorDormant( Actor->GetId() ) )
                 {
                     continue;
                 }
@@ -640,31 +838,66 @@ Lumen::TExpected<Lumen::FRenderSnapshotHeader, Lumen::FRenderSnapshotError> Lume
         return MakeUnexpected( LastRenderError );
     };
 
-    /** INFO: Validate before touching any scratch array so an oversized input cannot force an allocation. */
-    if ( Committed.EntityIDs.size() > Capacities.TransformCapacity ) [[unlikely]]
+    USize VisibleEntityCount = 0ULL;
+    for ( const ActorID Entity : Committed.EntityIDs )
+    {
+        if ( not IsActorDormant( Entity ) )
+        {
+            ++VisibleEntityCount;
+        }
+    }
+    USize VisibleMeshCount   = 0ULL;
+    USize VisibleCameraCount = 0ULL;
+    USize VisibleLightCount  = 0ULL;
+    for ( const FRenderMeshRecord &Mesh : RenderContent.Meshes )
+    {
+        if ( not IsRenderProxyDormant( Mesh.ProxyId ) )
+        {
+            ++VisibleMeshCount;
+        }
+    }
+    for ( const FRenderCameraRecord &Camera : RenderContent.Cameras )
+    {
+        if ( not IsRenderProxyDormant( Camera.ProxyId ) )
+        {
+            ++VisibleCameraCount;
+        }
+    }
+    for ( const FRenderLightRecord &Light : RenderContent.Lights )
+    {
+        if ( not IsRenderProxyDormant( Light.ProxyId ) )
+        {
+            ++VisibleLightCount;
+        }
+    }
+
+    /** INFO: Validate filtered counts before touching any scratch array so an oversized input cannot force an allocation. */
+    if ( VisibleEntityCount > Capacities.TransformCapacity ) [[unlikely]]
     {
         return Fail(
-            MakeCapacityError( ERenderSnapshotRecordType::Transform, Committed.EntityIDs.size(), Capacities.TransformCapacity ) );
+            MakeCapacityError( ERenderSnapshotRecordType::Transform, VisibleEntityCount, Capacities.TransformCapacity ) );
     }
-    if ( RenderContent.Meshes.size() > Capacities.MeshCapacity ) [[unlikely]]
+    if ( VisibleMeshCount > Capacities.MeshCapacity ) [[unlikely]]
     {
-        return Fail( MakeCapacityError( ERenderSnapshotRecordType::Mesh, RenderContent.Meshes.size(), Capacities.MeshCapacity ) );
+        return Fail( MakeCapacityError( ERenderSnapshotRecordType::Mesh, VisibleMeshCount, Capacities.MeshCapacity ) );
     }
-    if ( RenderContent.Cameras.size() > Capacities.CameraCapacity ) [[unlikely]]
+    if ( VisibleCameraCount > Capacities.CameraCapacity ) [[unlikely]]
     {
-        return Fail(
-            MakeCapacityError( ERenderSnapshotRecordType::Camera, RenderContent.Cameras.size(), Capacities.CameraCapacity ) );
+        return Fail( MakeCapacityError( ERenderSnapshotRecordType::Camera, VisibleCameraCount, Capacities.CameraCapacity ) );
     }
-    if ( RenderContent.Lights.size() > Capacities.LightCapacity ) [[unlikely]]
+    if ( VisibleLightCount > Capacities.LightCapacity ) [[unlikely]]
     {
-        return Fail(
-            MakeCapacityError( ERenderSnapshotRecordType::Light, RenderContent.Lights.size(), Capacities.LightCapacity ) );
+        return Fail( MakeCapacityError( ERenderSnapshotRecordType::Light, VisibleLightCount, Capacities.LightCapacity ) );
     }
 
     RenderTransforms.clear();
     for ( USize Index = 0ULL; Index < Committed.EntityIDs.size(); ++Index )
     {
-        const ActorID Proxy         = Committed.EntityIDs[Index];
+        const ActorID Proxy = Committed.EntityIDs[Index];
+        if ( IsActorDormant( Proxy ) )
+        {
+            continue;
+        }
         ERenderTransformFlags Flags = ERenderTransformFlags::Visible;
         if ( IsReplicationEnabled() )
         {
@@ -686,9 +919,30 @@ Lumen::TExpected<Lumen::FRenderSnapshotHeader, Lumen::FRenderSnapshotError> Lume
     RenderMeshes.clear();
     for ( const FRenderMeshRecord &Mesh : RenderContent.Meshes )
     {
+        if ( IsRenderProxyDormant( Mesh.ProxyId ) )
+        {
+            continue;
+        }
         FRenderMeshRecord Remapped = Mesh;
         Remapped.TransformIndex    = FindProxyRank( RenderTransforms, Mesh.ProxyId );
         RenderMeshes.emplace_back( Remapped );
+    }
+
+    RenderCameras.clear();
+    for ( const FRenderCameraRecord &Camera : RenderContent.Cameras )
+    {
+        if ( not IsRenderProxyDormant( Camera.ProxyId ) )
+        {
+            RenderCameras.push_back( Camera );
+        }
+    }
+    RenderLights.clear();
+    for ( const FRenderLightRecord &Light : RenderContent.Lights )
+    {
+        if ( not IsRenderProxyDormant( Light.ProxyId ) )
+        {
+            RenderLights.push_back( Light );
+        }
     }
 
     const FSceneExtractionInput Input{
@@ -696,8 +950,8 @@ Lumen::TExpected<Lumen::FRenderSnapshotHeader, Lumen::FRenderSnapshotError> Lume
         .FrameIndex = FrameIndex,
         .Transforms = TSpan<const FRenderTransformRecord>{ RenderTransforms.data(), RenderTransforms.size() },
         .Meshes     = TSpan<const FRenderMeshRecord>{ RenderMeshes.data(), RenderMeshes.size() },
-        .Cameras    = TSpan<const FRenderCameraRecord>{ RenderContent.Cameras.data(), RenderContent.Cameras.size() },
-        .Lights     = TSpan<const FRenderLightRecord>{ RenderContent.Lights.data(), RenderContent.Lights.size() },
+        .Cameras    = TSpan<const FRenderCameraRecord>{ RenderCameras.data(), RenderCameras.size() },
+        .Lights     = TSpan<const FRenderLightRecord>{ RenderLights.data(), RenderLights.size() },
     };
 
     auto Result = RenderExtractor.Publish( Input );
@@ -808,8 +1062,26 @@ Lumen::TExpected<void, Lumen::EActorDestroyError> Lumen::FWorld::DestroyActorImp
         return MakeUnexpected( EActorDestroyError::ActorRetiring );
     }
 
+    /**
+     * INFO: Refuse destruction while the partition journal cannot record the unassignment; otherwise a destroyed
+     *       ActorID would remain registered with stale dormancy and counters.
+     */
+    if ( IsPartitionEnabled() )
+    {
+        const TExpected<void, EWorldPartitionError> CanRemove = Partition->CanUnassignActor( InId );
+        /** INFO: ActorNotAssigned is the normal case for opt-in cells; only journal pressure can block a destroy. */
+        if ( not CanRemove and CanRemove.Error() == EWorldPartitionError::JournalFull )
+        {
+            return MakeUnexpected( EActorDestroyError::PartitionJournalFull );
+        }
+    }
+
     Actor->MarkPendingKill();
     Registry.UnregisterSpatialEntity( InId );
+    if ( IsPartitionEnabled() )
+    {
+        static_cast<void>( Partition->TryUnassignActor( InId ) );
+    }
     if ( Hierarchy.IsInitialized() )
     {
         /** INFO: Default destruction policy detaches children; the hierarchy never owns or cascades actor lifetimes. */
@@ -871,6 +1143,96 @@ void Lumen::FWorld::ApplyHierarchyWorldTransforms () noexcept
     }
 }
 
+Lumen::TExpected<void, Lumen::EWorldPartitionError>
+Lumen::FWorld::ApplyPartitionLoadCell ( const FWorldCellId InCellId, const UInt64 InSenderSequence ) noexcept
+{
+    if ( not IsPartitionEnabled() )
+    {
+        return MakeUnexpected( EWorldPartitionError::NotInitialized );
+    }
+    LUMEN_TRY_EXPECT_ERROR( Partition->TryLoadCell( InCellId, FrameIndex, InSenderSequence ) );
+    SetCellActorRouting( InCellId, true );
+    return {};
+}
+
+Lumen::TExpected<void, Lumen::EWorldPartitionError>
+Lumen::FWorld::ApplyPartitionUnloadCell ( const FWorldCellId InCellId, const UInt64 InSenderSequence ) noexcept
+{
+    if ( not IsPartitionEnabled() )
+    {
+        return MakeUnexpected( EWorldPartitionError::NotInitialized );
+    }
+    LUMEN_TRY_EXPECT_ERROR( Partition->TryUnloadCell( InCellId, FrameIndex, InSenderSequence ) );
+    DetachExternalChildrenOfCell( InCellId );
+    SetCellActorRouting( InCellId, false );
+    return {};
+}
+
+void Lumen::FWorld::DetachExternalChildrenOfCell ( const FWorldCellId InCellId ) noexcept
+{
+    if ( not Hierarchy.IsInitialized() )
+    {
+        return;
+    }
+    PartitionScratch.clear();
+    const TSpan<ActorID> Registered( PartitionScratch.data(), PartitionScratch.capacity() );
+    const USize Count = Hierarchy.GetRegisteredActorIds( Registered );
+    /** INFO: Working nodes are authoritative even before the next publication; only external children are detached. */
+    for ( USize Index = 0ULL; Index < Count; ++Index )
+    {
+        const ActorID Child             = PartitionScratch[Index];
+        const TOptional<ActorID> Parent = Hierarchy.GetParentId( Child );
+        if ( not Parent )
+        {
+            continue;
+        }
+        const TOptional<FWorldCellId> ParentCell = Partition->FindActorCell( *Parent );
+        if ( not ParentCell or *ParentCell != InCellId )
+        {
+            continue;
+        }
+        const TOptional<FWorldCellId> ChildCell = Partition->FindActorCell( Child );
+        if ( ChildCell and *ChildCell == InCellId )
+        {
+            continue;
+        }
+        static_cast<void>( Hierarchy.Detach( Child ) );
+    }
+}
+
+void Lumen::FWorld::SetCellActorRouting ( const FWorldCellId InCellId, const Bool bInRoutable ) noexcept
+{
+    PartitionScratch.clear();
+    const TSpan<ActorID> Candidates( PartitionScratch.data(), PartitionScratch.capacity() );
+    const USize Count = Partition->GetCellActors( InCellId, Candidates );
+    for ( USize Index = 0ULL; Index < Count; ++Index )
+    {
+        const auto ActorFound = Actors.find( PartitionScratch[Index] );
+        if ( ActorFound == Actors.end() )
+        {
+            continue;
+        }
+        if ( bInRoutable )
+        {
+            Internal::FActorRegistry::OpenRouting( ActorFound->second.Get() );
+        }
+        else
+        {
+            Internal::FActorRegistry::CloseRouting( ActorFound->second.Get() );
+        }
+    }
+}
+
+Lumen::Bool Lumen::FWorld::IsRenderProxyDormant ( const FRenderProxyId InProxyId ) const noexcept
+{
+    if ( not IsPartitionEnabled() )
+    {
+        return false;
+    }
+    const ActorID Proxy = InProxyId.GetValue();
+    return Partition->IsActorDormant( Proxy );
+}
+
 Lumen::TExpected<Lumen::FWorldPhaseCompletion, Lumen::EWorldTickError>
 Lumen::FWorld::RunPhase ( const TSpan<AActor *const> InActors,
                           const EActorTickPhase InPhase,
@@ -893,7 +1255,8 @@ Lumen::FWorld::RunFixedStep ( const UInt64 InFixedStepIndex, const Float64 InDel
     PhaseActors.clear();
     for ( const TSharedPtr<AActor> &Actor : ActiveActors )
     {
-        if ( Actor->GetLifecycle() == EActorLifecycle::Active and Actor->GetTickPhase() == EActorTickPhase::FixedUpdate )
+        if ( Actor->GetLifecycle() == EActorLifecycle::Active and Actor->GetTickPhase() == EActorTickPhase::FixedUpdate and
+             not IsActorDormant( Actor->GetId() ) )
         {
             PhaseActors.push_back( Actor.Get() );
             Actor->BeginTick();
@@ -1016,6 +1379,14 @@ Lumen::Bool Lumen::FWorld::ApplyDeferredCommands () noexcept
                                        [this] ( FDeferredHierarchyLocalTransformCommand &InTransform ) noexcept
         {
             static_cast<void>( ApplyHierarchyLocalTransform( InTransform.ActorId, InTransform.Local ) );
+        },
+                                       [this, &Command] ( FDeferredPartitionLoadCommand &InLoad ) noexcept
+        {
+            static_cast<void>( ApplyPartitionLoadCell( InLoad.CellId, Command.SenderSequence ) );
+        },
+                                       [this, &Command] ( FDeferredPartitionUnloadCommand &InUnload ) noexcept
+        {
+            static_cast<void>( ApplyPartitionUnloadCell( InUnload.CellId, Command.SenderSequence ) );
         } },
                     Command.Payload );
     }
@@ -1064,6 +1435,10 @@ void Lumen::FWorld::ShutdownActors () noexcept
         Actor->Retire();
     } );
 
+    if ( Partition.IsValid() )
+    {
+        Partition->Clear();
+    }
     Actors.clear();
     ActiveActors.clear();
     DeferredCommands.clear();
