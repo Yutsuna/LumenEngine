@@ -66,6 +66,11 @@ public:
         return TickCount;
     }
 
+    void ReserveMailbox ( const USize InCapacity )
+    {
+        LUMEN_CHECK_HAS_VALUE( GetMailbox().Reserve( InCapacity ) );
+    }
+
 private:
 
     TVector<UInt32> ReceivedTypes;
@@ -311,6 +316,7 @@ LUMEN_TEST( FWorld_Tick, ThrottlesMailboxThroughputPerActor )
     const TSharedRef<FWorldTestActor> Actor = World.SpawnActor<FWorldTestActor>();
 
     constexpr UInt32 PreloadedCount = 150U;
+    Actor->ReserveMailbox( static_cast<USize>( PreloadedCount ) );
 
     for ( UInt32 Index = 0U; Index < PreloadedCount; ++Index )
     {

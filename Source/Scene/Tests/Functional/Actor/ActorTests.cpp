@@ -56,9 +56,9 @@ public:
     }
 
     /** @brief Exposes the protected mailbox reservation for tests. */
-    void ReserveMailbox ( const USize InCapacity ) noexcept
+    void ReserveMailbox ( const USize InCapacity )
     {
-        GetMailbox().Reserve( InCapacity );
+        LUMEN_CHECK_HAS_VALUE( GetMailbox().Reserve( InCapacity ) );
     }
 
     [[nodiscard]] const TVector<FMessage> &GetReceivedMessages () const noexcept
@@ -381,22 +381,28 @@ LUMEN_TEST( AActor_Threading, MultipleProducersEnqueueToSingleActor )
      * INFO: EnqueueMessage routes into the MPSC mailbox, so any number of
      *       producers may push simultaneously without loss.
      */
-    FTestActor Actor( AllocateActorIdForTest() );
-    TAtomic<UInt32> PushedCount = 0;
-
     constexpr UInt32 ThreadsCount        = 4U;
     constexpr UInt32 MessagesPerProducer = 100U;
     constexpr UInt32 TargetTotal         = ThreadsCount * MessagesPerProducer;
+
+    FTestActor Actor( AllocateActorIdForTest() );
+    Actor.ReserveMailbox( TargetTotal );
+
+    TAtomic<UInt32> PushedCount  = 0;
+    TAtomic<UInt32> FailedPushes = 0;
 
     FThread Producers[ThreadsCount];
 
     for ( UInt32 Index = 0U; Index < ThreadsCount; ++Index )
     {
-        Producers[Index] = FThread( [&Actor, &PushedCount, Index] ()
+        Producers[Index] = FThread( [&Actor, &PushedCount, &FailedPushes, Index] ()
         {
             for ( UInt32 Message = 0U; Message < MessagesPerProducer; ++Message )
             {
-                Actor.EnqueueMessage( FMessage::Make( static_cast<UInt32>( Index ), 0ULL ) );
+                if ( not Actor.EnqueueMessage( FMessage::Make( static_cast<UInt32>( Index ), 0ULL ) ) )
+                {
+                    FailedPushes.fetch_add( 1U, std::memory_order_relaxed );
+                }
                 PushedCount.fetch_add( 1U, std::memory_order_relaxed );
             }
         } );
@@ -408,6 +414,7 @@ LUMEN_TEST( AActor_Threading, MultipleProducersEnqueueToSingleActor )
     }
 
     LUMEN_CHECK_EQ( PushedCount.load( std::memory_order_relaxed ), TargetTotal );
+    LUMEN_CHECK_EQ( FailedPushes.load( std::memory_order_relaxed ), 0U );
 
     Actor.RunFrame( 0.0, 0U );
 
@@ -429,6 +436,7 @@ LUMEN_TEST( AActor_EnqueueMessage, ReturnsTrueOnSuccess )
 LUMEN_TEST( AActor_EnqueueMessage, ReturnsTrueAcrossManyPushes )
 {
     FTestActor Actor( AllocateActorIdForTest() );
+    Actor.ReserveMailbox( 256ULL );
 
     for ( UInt32 Index = 0U; Index < 256U; ++Index )
     {

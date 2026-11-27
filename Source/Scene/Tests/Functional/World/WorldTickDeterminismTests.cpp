@@ -123,6 +123,11 @@ namespace
             return TickCount.load( std::memory_order_relaxed );
         }
 
+        void ReserveMailbox ( const USize InCapacity )
+        {
+            LUMEN_CHECK_HAS_VALUE( GetMailbox().Reserve( InCapacity ) );
+        }
+
     private:
 
         TAtomic<UInt32> ReceiveCount = { 0U };
@@ -333,6 +338,8 @@ LUMEN_TEST( FWorld_DeterministicTick, MessageBudgetCapsWorkPerTick )
     const FActorRef Sender = Receiver->GetRef();
 
     constexpr UInt32 MessageCount = 150U;
+    Receiver->ReserveMailbox( static_cast<USize>( MessageCount ) );
+
     for ( UInt32 Index = 0U; Index < MessageCount; ++Index )
     {
         Sender.EnqueueMessage( FMessage::Make( 72U, 0ULL ) );

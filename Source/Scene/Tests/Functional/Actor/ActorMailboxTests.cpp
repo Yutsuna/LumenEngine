@@ -206,19 +206,20 @@ LUMEN_TEST( FMailBox_Payload, DuplicatedPushYieldsIndependentCopies )
  * Volume
  */
 
-LUMEN_TEST( FMailBox_Load, ExceedsDefaultFreeList )
+LUMEN_TEST( FMailBox_Load, ReservedCapacitySustainsLargeBurst )
 {
     /**
-     * INFO: Going beyond the mailbox's initial free-list pool must transparently
-     *       allocate new nodes and keep the queue order intact.
+     * INFO: Large bursts require an explicit reserve; after that, the bounded
+     *       queue keeps every message and preserves their order without allocation.
      */
     FMailBox Mailbox;
 
     constexpr UInt32 MessageCount = 600U;
+    LUMEN_CHECK_HAS_VALUE( Mailbox.Reserve( static_cast<USize>( MessageCount ) ) );
 
     for ( UInt32 Index = 0U; Index < MessageCount; ++Index )
     {
-        Mailbox.Push( MakeTestMessage( Index, TestSenderId, static_cast<Int32>( Index ) ) );
+        LUMEN_CHECK_TRUE( Mailbox.Push( MakeTestMessage( Index, TestSenderId, static_cast<Int32>( Index ) ) ) );
     }
 
     LUMEN_CHECK_FALSE( Mailbox.IsEmpty() );
@@ -248,13 +249,12 @@ LUMEN_TEST( FMailBox_Reserve, SupportsBurstWithoutAllocation )
 {
     FMailBox Mailbox;
 
-    Mailbox.Reserve( 512ULL );
-
     constexpr UInt32 MessageCount = 512U;
+    LUMEN_CHECK_HAS_VALUE( Mailbox.Reserve( static_cast<USize>( MessageCount ) ) );
 
     for ( UInt32 Index = 0U; Index < MessageCount; ++Index )
     {
-        Mailbox.Push( MakeTestMessage( Index, TestSenderId, static_cast<Int32>( Index ) ) );
+        LUMEN_CHECK_TRUE( Mailbox.Push( MakeTestMessage( Index, TestSenderId, static_cast<Int32>( Index ) ) ) );
     }
 
     LUMEN_CHECK_FALSE( Mailbox.IsEmpty() );
@@ -289,23 +289,29 @@ LUMEN_TEST( FMailBox_Threading, ManyProducersSingleConsumer )
      * INFO: The mailbox is a wait-free MPSC queue; every message pushed by any
      *       producer must reach the single consumer exactly once.
      */
-    FMailBox Mailbox;
-    TAtomic<UInt32> PushedCount = 0;
-    UInt32 ReceivedCount        = 0U;
-
     constexpr UInt32 ThreadsCount        = 4U;
     constexpr UInt32 MessagesPerProducer = 250U;
     constexpr UInt32 TargetTotal         = ThreadsCount * MessagesPerProducer;
+
+    FMailBox Mailbox;
+    LUMEN_CHECK_HAS_VALUE( Mailbox.Reserve( static_cast<USize>( TargetTotal ) ) );
+
+    TAtomic<UInt32> PushedCount  = 0;
+    TAtomic<UInt32> FailedPushes = 0;
+    UInt32 ReceivedCount         = 0U;
 
     FThread Producers[ThreadsCount];
 
     for ( UInt32 Index = 0U; Index < ThreadsCount; ++Index )
     {
-        Producers[Index] = FThread( [&Mailbox, &PushedCount] ()
+        Producers[Index] = FThread( [&Mailbox, &PushedCount, &FailedPushes] ()
         {
             for ( UInt32 Message = 0U; Message < MessagesPerProducer; ++Message )
             {
-                Mailbox.Push( MakeTestMessage( Message, TestSenderId, static_cast<Int32>( Message ) ) );
+                if ( not Mailbox.Push( MakeTestMessage( Message, TestSenderId, static_cast<Int32>( Message ) ) ) )
+                {
+                    FailedPushes.fetch_add( 1U, std::memory_order_relaxed );
+                }
                 PushedCount.fetch_add( 1U, std::memory_order_release );
             }
         } );
@@ -337,28 +343,36 @@ LUMEN_TEST( FMailBox_Threading, ManyProducersSingleConsumer )
 
     Consumer.Join();
 
+    LUMEN_CHECK_EQ( FailedPushes.load( std::memory_order_relaxed ), 0U );
     LUMEN_CHECK_EQ( ReceivedCount, TargetTotal );
     LUMEN_CHECK_TRUE( Mailbox.IsEmpty() );
 }
 
 LUMEN_TEST( FMailBox_Threading, AllProducedMessagesAreReceived )
 {
-    FMailBox Mailbox;
-    UInt64 ReceivedCount = 0ULL;
-
     constexpr UInt32 ThreadsCount        = 4U;
     constexpr UInt32 MessagesPerProducer = 500U;
     constexpr UInt64 TargetTotal         = static_cast<UInt64>( ThreadsCount ) * MessagesPerProducer;
+
+    FMailBox Mailbox;
+    LUMEN_CHECK_HAS_VALUE( Mailbox.Reserve( static_cast<USize>( TargetTotal ) ) );
+
+    UInt64 ReceivedCount         = 0ULL;
+    TAtomic<UInt32> FailedPushes = 0U;
 
     FThread Producers[ThreadsCount];
 
     for ( UInt32 Index = 0U; Index < ThreadsCount; ++Index )
     {
-        Producers[Index] = FThread( [Index, &Mailbox] ()
+        Producers[Index] = FThread( [Index, &Mailbox, &FailedPushes] ()
         {
             for ( UInt32 Message = 0U; Message < MessagesPerProducer; ++Message )
             {
-                Mailbox.Push( MakeTestMessage( 0U, static_cast<ActorID>( Index ) + 1ULL, static_cast<Int32>( Index ) ) );
+                if ( not Mailbox.Push(
+                         MakeTestMessage( 0U, static_cast<ActorID>( Index ) + 1ULL, static_cast<Int32>( Index ) ) ) )
+                {
+                    FailedPushes.fetch_add( 1U, std::memory_order_relaxed );
+                }
             }
         } );
     }
@@ -381,6 +395,7 @@ LUMEN_TEST( FMailBox_Threading, AllProducedMessagesAreReceived )
         ++ReceivedCount;
     }
 
+    LUMEN_CHECK_EQ( FailedPushes.load( std::memory_order_relaxed ), 0U );
     LUMEN_CHECK_EQ( ReceivedCount, TargetTotal );
     LUMEN_CHECK_TRUE( Mailbox.IsEmpty() );
 }

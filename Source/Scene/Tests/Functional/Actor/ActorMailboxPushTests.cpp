@@ -20,6 +20,8 @@ LUMEN_TEST( FMailBox_Push, ReturnsTrueOnSuccess )
 LUMEN_TEST( FMailBox_Push, ReturnsTrueAcrossManyPushes )
 {
     FMailBox Box;
+    LUMEN_CHECK_HAS_VALUE( Box.Reserve( 256ULL ) );
+
     for ( UInt32 Index = 0U; Index < 256U; ++Index )
     {
         LUMEN_CHECK_TRUE( Box.Push( FMessage::Make( Index, 0ULL ) ) );
