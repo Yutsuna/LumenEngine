@@ -37,7 +37,10 @@ struct SCENE_EXPORT FRenderSnapshotHeader final
     FRenderSnapshotCapacities Capacities{};
 };
 
-/** @enum ERenderSnapshotRecordType @brief Record family associated with an extraction error. */
+/**
+ * @enum ERenderSnapshotRecordType
+ * @brief Record family associated with an extraction error.
+ */
 enum class ERenderSnapshotRecordType : UInt8
 {
     None,
@@ -47,7 +50,10 @@ enum class ERenderSnapshotRecordType : UInt8
     Light,
 };
 
-/** @enum ERenderSnapshotErrorCode @brief Failures rejected before a new snapshot can be published. */
+/**
+ * @enum ERenderSnapshotErrorCode
+ * @brief Failures rejected before a new snapshot can be published.
+ */
 enum class ERenderSnapshotErrorCode : UInt8
 {
     None,

@@ -19,8 +19,11 @@
 namespace Lumen
 {
 
-/** @enum ERenderTransformFlags @brief Visibility state attached to a world transform. */
-enum class ERenderTransformFlags : UInt32
+/**
+ * @enum ERenderTransformFlags
+ * @brief Visibility state attached to a world transform.
+ */
+enum class ERenderTransformFlags : UInt32 /** NOLINT */
 {
     None    = 0U,
     Visible = 1U << 0U,
@@ -28,8 +31,11 @@ enum class ERenderTransformFlags : UInt32
 
 LUMEN_ENUM_FLAGS( ERenderTransformFlags );
 
-/** @enum ERenderMeshFlags @brief Visibility and shadow state attached to a mesh proxy. */
-enum class ERenderMeshFlags : UInt32
+/**
+ * @enum ERenderMeshFlags
+ * @brief Visibility and shadow state attached to a mesh proxy.
+ */
+enum class ERenderMeshFlags : UInt32 /** NOLINT */
 {
     None        = 0U,
     Visible     = 1U << 0U,
@@ -38,8 +44,11 @@ enum class ERenderMeshFlags : UInt32
 
 LUMEN_ENUM_FLAGS( ERenderMeshFlags );
 
-/** @enum ERenderCameraFlags @brief Camera selection state; the active camera with the lowest proxy ID wins. */
-enum class ERenderCameraFlags : UInt32
+/**
+ * @enum ERenderCameraFlags
+ * @brief Camera selection state; the active camera with the lowest proxy ID wins.
+ */
+enum class ERenderCameraFlags : UInt32 /** NOLINT */
 {
     None   = 0U,
     Active = 1U << 0U,
@@ -47,8 +56,11 @@ enum class ERenderCameraFlags : UInt32
 
 LUMEN_ENUM_FLAGS( ERenderCameraFlags );
 
-/** @enum ERenderLightFlags @brief Visibility state attached to a light proxy. */
-enum class ERenderLightFlags : UInt32
+/**
+ * @enum ERenderLightFlags
+ * @brief Visibility state attached to a light proxy.
+ */
+enum class ERenderLightFlags : UInt32 /** NOLINT */
 {
     None    = 0U,
     Visible = 1U << 0U,
@@ -56,7 +68,10 @@ enum class ERenderLightFlags : UInt32
 
 LUMEN_ENUM_FLAGS( ERenderLightFlags );
 
-/** @enum ERenderLightType @brief Minimal light shapes represented by the extraction contract. */
+/**
+ * @enum ERenderLightType
+ * @brief Minimal light shapes represented by the extraction contract.
+ */
 enum class ERenderLightType : UInt8
 {
     Directional,
@@ -67,8 +82,8 @@ enum class ERenderLightType : UInt8
 /** @struct FRenderBounds @brief World-space axis-aligned bounds. */
 struct SCENE_EXPORT FRenderBounds final
 {
-    Maths::FVec3f Min{};
-    Maths::FVec3f Max{};
+    Maths::FVec3f Min;
+    Maths::FVec3f Max;
 };
 
 /** @struct FRenderViewport @brief Camera viewport and depth range in normalized depth units. */
@@ -85,7 +100,7 @@ struct SCENE_EXPORT FRenderViewport final
 /** @struct FRenderTransformRecord @brief World transform, bounds and visibility for one render proxy. */
 struct SCENE_EXPORT FRenderTransformRecord final
 {
-    FRenderProxyId ProxyId{};
+    FRenderProxyId ProxyId;
     Maths::FMat4x4f WorldTransform = Maths::FMat4x4f::Identity();
     FRenderBounds Bounds{};
     ERenderTransformFlags Flags = ERenderTransformFlags::Visible;
@@ -94,9 +109,9 @@ struct SCENE_EXPORT FRenderTransformRecord final
 /** @struct FRenderMeshRecord @brief Content references and canonical transform index for one mesh proxy. */
 struct SCENE_EXPORT FRenderMeshRecord final
 {
-    FRenderProxyId ProxyId{};
-    FRenderAssetId MeshAssetId{};
-    FRenderAssetId MaterialAssetId{};
+    FRenderProxyId ProxyId;
+    FRenderAssetId MeshAssetId;
+    FRenderAssetId MaterialAssetId;
     USize TransformIndex   = 0ULL;
     ERenderMeshFlags Flags = ERenderMeshFlags::Visible;
 };
@@ -104,7 +119,7 @@ struct SCENE_EXPORT FRenderMeshRecord final
 /** @struct FRenderCameraRecord @brief Camera matrices, clipping planes and viewport for one camera proxy. */
 struct SCENE_EXPORT FRenderCameraRecord final
 {
-    FRenderProxyId ProxyId{};
+    FRenderProxyId ProxyId;
     Maths::FMat4x4f View       = Maths::FMat4x4f::Identity();
     Maths::FMat4x4f Projection = Maths::FMat4x4f::Identity();
     Float32 NearPlane          = 0.1F;
@@ -116,12 +131,12 @@ struct SCENE_EXPORT FRenderCameraRecord final
 /** @struct FRenderLightRecord @brief Minimal POD light description; it does not promise a complete lighting model. */
 struct SCENE_EXPORT FRenderLightRecord final
 {
-    FRenderProxyId ProxyId{};
+    FRenderProxyId ProxyId;
     ERenderLightType Type   = ERenderLightType::Directional;
-    Maths::FVec3f Color     = Maths::FVec3f{ 1.0F };
+    Maths::FVec3f Color     = { 1.0F };
     Float32 Intensity       = 1.0F;
-    Maths::FVec3f Direction = Maths::FVec3f{ 0.0F, 0.0F, -1.0F };
-    Maths::FVec3f Position{};
+    Maths::FVec3f Direction = { 0.0F, 0.0F, -1.0F };
+    Maths::FVec3f Position;
     Float32 Range           = 0.0F;
     Float32 InnerConeAngle  = 0.0F;
     Float32 OuterConeAngle  = 0.0F;
