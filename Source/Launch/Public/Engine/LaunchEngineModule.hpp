@@ -47,7 +47,7 @@ namespace Launch
     public:
 
         /** @return The name of the module. */
-        [[nodiscard]] virtual FStringView GetName () const noexcept = 0;
+        [[nodiscard]] constexpr virtual FStringView GetName () const noexcept;
 
         /** @return The traits of the module. */
         [[nodiscard]] virtual EModuleTraits GetTraits () const noexcept;
@@ -85,3 +85,5 @@ namespace Launch
 } // namespace Launch
 
 } // namespace Lumen
+
+#include "Inline/LaunchEngineModule.inl"

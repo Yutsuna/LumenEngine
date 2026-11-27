@@ -1,5 +1,5 @@
 /**
- * @file ModuleStack.hpp
+ * @file LaunchModuleStack.hpp
  * @brief Owns running modules, guarantees reverse-order teardown.
  */
 
@@ -14,28 +14,28 @@ namespace Lumen
 namespace Launch
 {
     /**
-     * @class FModuleStack
+     * @class FLaunchModuleStack
      * @brief Move-only owner of the live modules. Last started, first destroyed.
      */
-    class FModuleStack final : public FNonCopyable
+    class FLaunchModuleStack final : public FNonCopyable
     {
     public:
 
         /** @brief Default constructor. */
-        FModuleStack () noexcept = default;
+        FLaunchModuleStack () noexcept = default;
 
     public:
 
         /** @brief Move constructor. */
-        FModuleStack ( FModuleStack &&Other ) noexcept;
+        FLaunchModuleStack ( FLaunchModuleStack &&Other ) noexcept;
 
         /** @brief Move assignment operator. */
-        FModuleStack &operator=( FModuleStack && ) = delete;
+        FLaunchModuleStack &operator=( FLaunchModuleStack && ) = delete;
 
     public:
 
         /** @brief Destructor. */
-        ~FModuleStack () noexcept;
+        ~FLaunchModuleStack () noexcept;
 
     public:
 

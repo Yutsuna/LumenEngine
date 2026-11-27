@@ -1,9 +1,9 @@
 /**
- * @file ModuleStack.cpp
- * @brief FModuleStack implementation.
+ * @file LaunchModuleStack.cpp
+ * @brief FLaunchModuleStack implementation.
  */
 
-#include <Launch/ModuleStack.hpp>
+#include <Launch/LaunchModuleStack.hpp>
 
 #include <Logging/Logger.hpp>
 
@@ -12,13 +12,13 @@
 namespace
 {
 
-LUMEN_LOG_DEFINE_CATEGORY( LogModuleStack, "ModuleStack" )
+LUMEN_LOG_DEFINE_CATEGORY( LogLaunchModuleStack, "LaunchModuleStack" )
 
 }
 
 namespace Lumen
 {
-Launch::FModuleStack::FModuleStack ( FModuleStack &&Other ) noexcept
+Launch::FLaunchModuleStack::FLaunchModuleStack ( FLaunchModuleStack &&Other ) noexcept
     : Modules( std::move( Other.Modules ) ), FixedTickList( std::move( Other.FixedTickList ) ),
       TickList( std::move( Other.TickList ) )
 {
@@ -27,13 +27,13 @@ Launch::FModuleStack::FModuleStack ( FModuleStack &&Other ) noexcept
     Other.TickList.clear();
 }
 
-Launch::FModuleStack::~FModuleStack () noexcept
+Launch::FLaunchModuleStack::~FLaunchModuleStack () noexcept
 {
     ShutdownAll();
 }
 
-Launch::TLaunchResult<void> Launch::FModuleStack::StartAll ( const TSpan<const FModuleDescriptor> InDescriptors,
-                                                             const FLaunchEngineConfig &InConfig ) noexcept
+Launch::TLaunchResult<void> Launch::FLaunchModuleStack::StartAll ( const TSpan<const FModuleDescriptor> InDescriptors,
+                                                                   const FLaunchEngineConfig &InConfig ) noexcept
 {
     /** Reserve once: the push_back calls below can no longer allocate. */
     Modules.reserve( Modules.size() + InDescriptors.size() );
@@ -42,11 +42,11 @@ Launch::TLaunchResult<void> Launch::FModuleStack::StartAll ( const TSpan<const F
 
     for ( const FModuleDescriptor &Descriptor : InDescriptors )
     {
-        LUMEN_LOG_INFO( LogModuleStack, "Starting module '{}'", Descriptor.Name );
+        LUMEN_LOG_INFO( LogLaunchModuleStack, "Starting module '{}'", Descriptor.Name );
 
         if ( Descriptor.Create == nullptr ) [[unlikely]]
         {
-            LUMEN_LOG_ERROR( LogModuleStack, "Module '{}' has no factory", Descriptor.Name );
+            LUMEN_LOG_ERROR( LogLaunchModuleStack, "Module '{}' has no factory", Descriptor.Name );
             return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::ModuleCreationFailed,
                                   "A module descriptor has no factory" );
         }
@@ -55,14 +55,14 @@ Launch::TLaunchResult<void> Launch::FModuleStack::StartAll ( const TSpan<const F
         if ( not Created ) [[unlikely]]
         {
             /** The error message is a static literal and cannot carry the module name: log it here. */
-            LUMEN_LOG_ERROR( LogModuleStack, "Module '{}' failed to start", Descriptor.Name );
+            LUMEN_LOG_ERROR( LogLaunchModuleStack, "Module '{}' failed to start", Descriptor.Name );
             return MakeUnexpected( Created.Error() );
         }
 
         TUniquePtr<IEngineModule> Module = std::move( *Created );
         if ( not Module ) [[unlikely]]
         {
-            LUMEN_LOG_ERROR( LogModuleStack, "Module '{}': factory returned a null module", Descriptor.Name );
+            LUMEN_LOG_ERROR( LogLaunchModuleStack, "Module '{}': factory returned a null module", Descriptor.Name );
             return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::ModuleCreationFailed,
                                   "A module factory returned a null module" );
         }
@@ -83,7 +83,7 @@ Launch::TLaunchResult<void> Launch::FModuleStack::StartAll ( const TSpan<const F
     return {};
 }
 
-void Launch::FModuleStack::ShutdownAll () noexcept
+void Launch::FLaunchModuleStack::ShutdownAll () noexcept
 {
     FixedTickList.clear();
     TickList.clear();
@@ -95,7 +95,7 @@ void Launch::FModuleStack::ShutdownAll () noexcept
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void Launch::FModuleStack::FixedTick ( const Float64 InFixedDeltaSeconds ) noexcept
+void Launch::FLaunchModuleStack::FixedTick ( const Float64 InFixedDeltaSeconds ) noexcept
 {
     for ( IEngineModule *const Module : FixedTickList )
     {
@@ -104,7 +104,7 @@ void Launch::FModuleStack::FixedTick ( const Float64 InFixedDeltaSeconds ) noexc
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void Launch::FModuleStack::Tick ( const Float64 InDeltaSeconds, const Float64 InAlpha ) noexcept
+void Launch::FLaunchModuleStack::Tick ( const Float64 InDeltaSeconds, const Float64 InAlpha ) noexcept
 {
     for ( IEngineModule *const Module : TickList )
     {

@@ -12,7 +12,7 @@
 #include <Engine/LaunchEngineConfig.hpp>
 
 #include <Launch/LaunchError.hpp>
-#include <Launch/ModuleStack.hpp>
+#include <Launch/LaunchModuleStack.hpp>
 
 namespace Lumen
 {
@@ -36,7 +36,7 @@ namespace Launch
     struct FInitState
     {
         FLaunchEngineConfig Config;
-        FModuleStack Modules;
+        FLaunchModuleStack Modules;
     };
 
     /**
