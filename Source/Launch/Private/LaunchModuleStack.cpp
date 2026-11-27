@@ -104,9 +104,10 @@ Lumen::Launch::TLaunchResult<void> Lumen::Launch::FLaunchModuleStack::StartAll (
     return StartAll( Registered, InConfig, InCommandLine );
 }
 
-Lumen::Launch::TLaunchResult<void> Lumen::Launch::FLaunchModuleStack::StartAll ( const TSpan<const FModuleDescriptor *const> InDescriptors,
-                                                                                 const FLaunchEngineConfig &InConfig,
-                                                                                 const FCommandLine &InCommandLine ) noexcept
+Lumen::Launch::TLaunchResult<void>
+Lumen::Launch::FLaunchModuleStack::StartAll ( const TSpan<const FModuleDescriptor *const> InDescriptors,
+                                              const FLaunchEngineConfig &InConfig,
+                                              const FCommandLine &InCommandLine ) noexcept
 {
     ShutdownAll();
 
@@ -153,8 +154,8 @@ Lumen::Launch::TLaunchResult<void> Lumen::Launch::FLaunchModuleStack::StartAll (
 
         for ( const FServiceProvider &Service : Desc->Provides )
         {
-            if ( const FIndexedProvider *const Existing = FindProvider( ActiveProviders, Service.Id );
-                 Existing != nullptr ) [[unlikely]]
+            if ( const FIndexedProvider *const Existing = FindProvider( ActiveProviders, Service.Id ); Existing != nullptr )
+                [[unlikely]]
             {
                 if ( Existing->QualifiedName != Service.QualifiedName )
                 {
@@ -202,9 +203,8 @@ Lumen::Launch::TLaunchResult<void> Lumen::Launch::FLaunchModuleStack::StartAll (
                 if ( const FIndexedProvider *const Disabled = FindProvider( DisabledProviders, Req.Id );
                      Disabled != nullptr and Disabled->QualifiedName == Req.QualifiedName )
                 {
-                    LUMEN_LOG_ERROR( LogLaunchModuleStack,
-                                     "Module '{}' requires '{}' which is disabled (provided by '{}')", Desc->Name,
-                                     Req.Name, Disabled->OwnerName );
+                    LUMEN_LOG_ERROR( LogLaunchModuleStack, "Module '{}' requires '{}' which is disabled (provided by '{}')",
+                                     Desc->Name, Req.Name, Disabled->OwnerName );
                     return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::InvalidConfiguration,
                                           "Required module dependency is disabled" );
                 }
@@ -305,8 +305,7 @@ Lumen::Launch::TLaunchResult<void> Lumen::Launch::FLaunchModuleStack::StartAll (
                 LUMEN_LOG_ERROR( LogLaunchModuleStack, "Circular module dependency involving '{}'", Enabled[Index]->Name );
             }
         }
-        return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::InvalidConfiguration,
-                              "Circular module dependency detected" );
+        return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::InvalidConfiguration, "Circular module dependency detected" );
     }
 
     /** 4. Instantiate modules in sorted dependency order; rollback via RAII if any fails. */

@@ -29,7 +29,10 @@ namespace Launch
     class IEngineModule;
     class FLaunchModuleStack;
 
-    /** @brief Stable compile-time module or service identifier (safe across shared library boundaries). */
+    /**
+     * @brief Stable compile-time module or service identifier (safe across shared library boundaries).
+     * @details Backed by Core's FHash::TypeHash — no module-local FNV-1a implementation.
+     */
     using FModuleId = UInt64;
 
     /**
@@ -239,6 +242,5 @@ namespace Launch
  * @param ModuleType Concrete class derived from `Lumen::Launch::IEngineModule`.
  */
 #define LUMEN_REGISTER_MODULE( ModuleType ) LUMEN_REGISTER_MODULE_DETAIL_IMPL( ModuleType, __COUNTER__ )
-
 
 #include "Inline/LaunchEngineModule.inl"

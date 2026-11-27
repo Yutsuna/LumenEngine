@@ -9,5 +9,5 @@
 
 template <typename TService> TService *Lumen::Launch::FLaunchModuleStack::FindService () const noexcept
 {
-    return static_cast<TService *>( FindServiceRaw( Detail::ModuleIdOf<TService>() ) );
+    return static_cast<TService *>( FindServiceRaw( Internal::ModuleIdOf<TService>() ) );
 }

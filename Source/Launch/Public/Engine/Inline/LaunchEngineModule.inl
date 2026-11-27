@@ -6,12 +6,15 @@
 #pragma once
 
 #include <Core/CoreDefinitions.hpp>
+#include <Core/CoreTypes.hpp>
 #include <Engine/LaunchEngineModule.hpp>
 
+#include <Concepts/ConstructibleFrom.hpp>
 #include <Concepts/SameAs.hpp>
 #include <Meta/Reflection.hpp>
+#include <Templates/Array.hpp>
+#include <Templates/Hash.hpp>
 
-#include <array>
 #include <iterator>
 #include <type_traits>
 #include <utility>
@@ -22,31 +25,18 @@ namespace Lumen
 namespace Launch
 {
 
-    namespace Detail
+    namespace Internal
     {
-
-        template <typename> inline constexpr Bool TAlwaysFalse = false;
 
         template <typename TType> [[nodiscard]] consteval FStringView CanonicalTypeName () noexcept
         {
-#if defined( __clang__ ) or defined( __GNUC__ )
+#if defined( LUMEN_COMPILER_CLANG ) or defined( LUMEN_COMPILER_GCC )
             return __PRETTY_FUNCTION__;
-#elif defined( _MSC_VER )
+#elif defined( LUMEN_COMPILER_MSVC )
             return __FUNCSIG__;
 #else
             return Meta::TypeName<std::remove_cvref_t<TType>>();
 #endif
-        }
-
-        [[nodiscard]] consteval FModuleId HashTypeName ( const FStringView InName ) noexcept
-        {
-            UInt64 Hash = 14695981039346656037ULL;
-            for ( const AnsiChar Ch : InName )
-            {
-                Hash ^= static_cast<UInt8>( Ch );
-                Hash *= 1099511628211ULL;
-            }
-            return Hash;
         }
 
         template <typename TType> [[nodiscard]] consteval FStringView QualifiedModuleNameOf () noexcept
@@ -54,9 +44,13 @@ namespace Launch
             return CanonicalTypeName<std::remove_cvref_t<TType>>();
         }
 
+        /**
+         * @brief Module identity is Core's stable FNV-1a type hash: one implementation for the whole engine,
+         *        no module-local duplicate and no cross-TU drift.
+         */
         template <typename TType> [[nodiscard]] consteval FModuleId ModuleIdOf () noexcept
         {
-            return HashTypeName( QualifiedModuleNameOf<TType>() );
+            return FHash::TypeHash<std::remove_cvref_t<TType>>();
         }
 
         template <typename TType> [[nodiscard]] consteval FStringView ModuleNameOf () noexcept
@@ -68,15 +62,12 @@ namespace Launch
 #endif
         }
 
-        template <typename TTarget, typename TList> struct TListContains : std::false_type
-        {
-        };
+        /** @brief Compile-time membership test built on Core's CSameAs concept. */
+        template <typename TTarget, typename TList> inline constexpr Bool TListContainsV = false;
 
         template <typename TTarget, typename... Ts>
-        struct TListContains<TTarget, TModuleList<Ts...>>
-            : std::bool_constant<( ::Lumen::Concepts::CSameAs<std::remove_cvref_t<TTarget>, std::remove_cvref_t<Ts>> or ... )>
-        {
-        };
+        inline constexpr Bool TListContainsV<TTarget, TModuleList<Ts...>> =
+            ( ::Lumen::Concepts::CSameAs<std::remove_cvref_t<TTarget>, std::remove_cvref_t<Ts>> or ... );
 
         template <typename TModule> struct TGetRequires
         {
@@ -124,14 +115,13 @@ namespace Launch
 
         template <typename TModule, typename TService> [[nodiscard]] void *UpcastService ( IEngineModule *const InBase ) noexcept
         {
-            static_assert( std::is_base_of_v<TService, TModule>,
-                           "Module must derive from every service listed in FProvides." );
+            static_assert( std::is_base_of_v<TService, TModule>, "Module must derive from every service listed in FProvides." );
             return static_cast<TService *>( static_cast<TModule *>( InBase ) );
         }
 
         template <typename... Ts> struct TDepStorage
         {
-            static constexpr std::array<FModuleDep, sizeof...( Ts )> Items = {
+            static constexpr TArray<FModuleDep, sizeof...( Ts )> Items = {
                 FModuleDep{
                     .Id            = ModuleIdOf<Ts>(),
                     .Name          = ModuleNameOf<Ts>(),
@@ -142,7 +132,7 @@ namespace Launch
 
         template <typename TModule, typename... TServices> struct TProvideStorage
         {
-            static constexpr std::array<FServiceProvider, 1 + sizeof...( TServices )> Items = {
+            static constexpr TArray<FServiceProvider, 1 + sizeof...( TServices )> Items = {
                 FServiceProvider{
                     .Id            = ModuleIdOf<TModule>(),
                     .Name          = ModuleNameOf<TModule>(),
@@ -245,17 +235,19 @@ namespace Launch
             if constexpr ( requires( const TModuleContext<TModule> &Typed ) { TModule::Create( Typed ); } )
             {
                 const TModuleContext<TModule> TypedContext( InContext );
-                return TModule::Create( TypedContext ).Transform( [] ( auto &&InPtr ) noexcept -> TUniquePtr<IEngineModule>
+                return TModule::Create( TypedContext )
+                    .Transform( [] ( auto &&InPtr ) noexcept -> TUniquePtr<IEngineModule>
                 {
                     return TUniquePtr<IEngineModule>( std::move( InPtr ) );
                 } );
             }
-            else if constexpr ( std::is_constructible_v<TModule, const TModuleContext<TModule> &> )
+            /** INFO: An empty argument list means default construction. */
+            else if constexpr ( ::Lumen::Concepts::CConstructibleFrom<TModule, const TModuleContext<TModule> &> )
             {
                 const TModuleContext<TModule> TypedContext( InContext );
                 return TUniquePtr<IEngineModule>( MakeUnique<TModule>( TypedContext ) );
             }
-            else if constexpr ( std::is_default_constructible_v<TModule> )
+            else if constexpr ( ::Lumen::Concepts::CConstructibleFrom<TModule> )
             {
                 static_cast<void>( InContext );
                 return TUniquePtr<IEngineModule>( MakeUnique<TModule>() );
@@ -263,7 +255,7 @@ namespace Launch
             else
             {
                 static_cast<void>( InContext );
-                static_assert( TAlwaysFalse<TModule>,
+                static_assert( AlwaysFalseV<TModule>,
                                "Module must define Create(const TModuleContext<Self>&), "
                                "a constructor taking const TModuleContext<Self>&, or a default constructor." );
             }
@@ -273,7 +265,7 @@ namespace Launch
         {
             static_assert( std::is_base_of_v<IEngineModule, TModule>,
                            "LUMEN_REGISTER_MODULE requires a type derived from IEngineModule." );
-            static_assert( not TListContains<TModule, typename TGetRequires<TModule>::Type>::value,
+            static_assert( not TListContainsV<TModule, typename TGetRequires<TModule>::Type>,
                            "A module cannot declare itself in FRequires." );
 
             static inline constinit FModuleDescriptor Descriptor = {
@@ -292,36 +284,32 @@ namespace Launch
             };
         };
 
-    } // namespace Detail
+    } // namespace Internal
 
     template <typename TModule>
-    TModuleContext<TModule>::TModuleContext ( const FModuleContext &InInner ) noexcept : Inner( InInner )
+    TModuleContext<TModule>::TModuleContext( const FModuleContext &InInner ) noexcept : Inner( InInner )
     {
         /** Empty */
     }
 
-    template <typename TModule>
-    template <typename TDep>
-    TDep &TModuleContext<TModule>::Get () const noexcept
+    template <typename TModule> template <typename TDep> TDep &TModuleContext<TModule>::Get () const noexcept
     {
-        using FRequires = typename Detail::TGetRequires<TModule>::Type;
-        static_assert( Detail::TListContains<TDep, FRequires>::value,
+        using FRequires = typename Internal::TGetRequires<TModule>::Type;
+        static_assert( Internal::TListContainsV<TDep, FRequires>,
                        "Declare TDep in TModule::FRequires before calling InContext.Get<TDep>()." );
 
-        void *const Ptr = Inner.FindRaw( Detail::ModuleIdOf<TDep>() );
+        void *const Ptr = Inner.FindRaw( Internal::ModuleIdOf<TDep>() );
         return *static_cast<TDep *>( Ptr );
     }
 
-    template <typename TModule>
-    template <typename TDep>
-    TDep *TModuleContext<TModule>::Find () const noexcept
+    template <typename TModule> template <typename TDep> TDep *TModuleContext<TModule>::Find () const noexcept
     {
-        using FRequires = typename Detail::TGetRequires<TModule>::Type;
-        using FOptional = typename Detail::TGetOptionalRequires<TModule>::Type;
-        static_assert( Detail::TListContains<TDep, FRequires>::value or Detail::TListContains<TDep, FOptional>::value,
+        using FRequires = typename Internal::TGetRequires<TModule>::Type;
+        using FOptional = typename Internal::TGetOptionalRequires<TModule>::Type;
+        static_assert( Internal::TListContainsV<TDep, FRequires> or Internal::TListContainsV<TDep, FOptional>,
                        "Declare TDep in FRequires or FOptionalRequires before calling InContext.Find<TDep>()." );
 
-        return static_cast<TDep *>( Inner.FindRaw( Detail::ModuleIdOf<TDep>() ) );
+        return static_cast<TDep *>( Inner.FindRaw( Internal::ModuleIdOf<TDep>() ) );
     }
 
     template <typename TModule> const FLaunchEngineConfig &TModuleContext<TModule>::GetConfig () const noexcept
@@ -345,20 +333,14 @@ namespace Launch
 #define LUMEN_REGISTER_MODULE_DETAIL_CONCAT_INNER( Left, Right ) Left##Right
 #define LUMEN_REGISTER_MODULE_DETAIL_CONCAT( Left, Right ) LUMEN_REGISTER_MODULE_DETAIL_CONCAT_INNER( Left, Right )
 
-#define LUMEN_REGISTER_MODULE_DETAIL_IMPL( ModuleType, UniqueId )                                                                \
-    namespace                                                                                                                    \
-    {                                                                                                                            \
+#define LUMEN_REGISTER_MODULE_DETAIL_IMPL( ModuleType, UniqueId )                                                                  \
+    namespace                                                                                                                      \
+    {                                                                                                                              \
         [[maybe_unused]] const ::Lumen::Int32 LUMEN_REGISTER_MODULE_DETAIL_CONCAT( GAutoRegisterModule_, UniqueId ) =            \
             [] () noexcept -> ::Lumen::Int32                                                                                     \
         {                                                                                                                        \
             ::Lumen::Launch::RegisterModuleDescriptor(                                                                           \
-                ::Lumen::Launch::Detail::TModuleStorage<ModuleType>::Descriptor );                                               \
+                ::Lumen::Launch::Internal::TModuleStorage<ModuleType>::Descriptor );                                               \
             return 0;                                                                                                            \
-        }();                                                                                                                     \
+        }(); \
     } // namespace
-
-/**
- * @brief Registers a module descriptor at static initialization time (SIOF-safe, zero heap allocation).
- * @param ModuleType Concrete class derived from `Lumen::Launch::IEngineModule`.
- */
-#define LUMEN_REGISTER_MODULE( ModuleType ) LUMEN_REGISTER_MODULE_DETAIL_IMPL( ModuleType, __COUNTER__ )
