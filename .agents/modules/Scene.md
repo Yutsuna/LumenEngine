@@ -41,24 +41,42 @@
   (`SceneHierarchy.hpp`, `Inline/SceneHierarchy.inl`). Level iteration is exposed
   through `GetDepth`, `GetLevelStarts`, `GetLevelOrderedTransforms` and an
   allocation-free `ForEachLevel` visitor.
+- `WorldPartition/` — `FWorldCellId`, `EWorldCellState`,
+  `EPartitionCommandKind`, `EWorldPartitionError`, `FWorldPartitionConfig`,
+  `FPartitionJournalRecord`, `FWorldPartitionStats` (`WorldPartitionTypes.hpp`)
+  and `FWorldPartition` (`WorldPartition.hpp`), a per-world bounded logical-cell
+  registry with a canonical replay journal and no actor ownership.
+- `Replication/` — `FReplicationSystem`, `FReplicationConfig`, `FPersistentActorId`
+  and structured replication errors (`ReplicationSystem.hpp`,
+  `ReplicationTypes.hpp`), `FReplicationFrame`/`FReplicationRecord`
+  (`ReplicationFrame.hpp`) and `IReplicationTransport` (`ReplicationTransport.hpp`).
+  See `rules/replication.md` for the fixed M9 arbitrages and wire contract.
 - `Messages/` — `EngineMessageTypes.hpp` (`EEngineMessage`, payload structs).
-- `Actor/Inline/`, `World/Inline/` — `.inl` implementations.
+- `Actor/Inline/`, `World/Inline/`, `WorldPartition/Inline/`,
+  `Replication/Inline/` — `.inl` implementations.
 
-Tests in `Source/Scene/Tests/Functional/{Actor,World,Rendering,Hierarchy}` (mailbox/fence/push,
-bounded mailbox capacity/saturation/fence/1M-allocation-free push-pop,
-actor message/ref/registry dead-letter, world phases, spatial registry,
+Tests in `Source/Scene/Tests/Functional/{Actor,World,Rendering,Hierarchy,Replication,WorldPartition}`
+(mailbox/fence/push, bounded mailbox capacity/saturation/fence/1M-allocation-free
+push-pop, actor message/ref/registry dead-letter, world phases, spatial registry,
 lifecycle hooks, bounded capacities, ingress journal capacity/sequence/
 concurrent producers/frame-targeted application, snapshot canonical order,
 latest-only publication, held-view stability and capacity errors) and
-`Tests/Integration/{World,Rendering}` (canonical message/command replay at
-1/2/4 workers and ingress-journal replay of 100 ticks × 32 runs over 3
-literal seeds with per-consumer FNV digests; World-owned extraction across
-skipped frames, deletions, isolated worlds, capacity+1 and allocation-free
-publication).
+`Tests/Integration/{World,Rendering,Replication,WorldPartition}` (canonical
+message/command replay at 1/2/4 workers and ingress-journal replay of 100 ticks
+× 32 runs over 3 literal seeds with per-consumer FNV digests; World-owned
+extraction across skipped frames, deletions, isolated worlds, capacity+1 and
+allocation-free publication). Replication coverage is described in the M9
+section below; `Tests/Functional/WorldPartition/` and
+`Tests/Integration/WorldPartition/` add bounded membership, canonical
+journal/replay, swap-remove index integrity, routing reconciliation, ingress
+broadcast skipping, side-effect-free authority conflicts and snapshot/routing/
+hierarchy isolation.
 
 Benchmarks in `Source/Scene/Benchmarks/` (`SceneBenchmarks` binary, suites
 `FMailBox`, `AActor`, `FActorRegistry`, `FWorld`, `FWorldExecutor`,
-`FSpatialRegistry`, `FWorldRenderExtraction`, `FSceneHierarchy`):
+`FSpatialRegistry`, `FWorldRenderExtraction`, `FSceneHierarchy`,
+`FReplicationApply`, `FReplicationEcho`, `FReplicationFrame`,
+`FWorldPartitionBench`, `FPartitionProxyChurn`):
 `Actor/ActorMailboxBenchmarks.cpp` (push/pop, structured TryPush, batch drain,
 preallocated saturation, MPSC contention), `Actor/ActorBenchmarks.cpp`
 (RunFrame, ID alloc),
@@ -69,8 +87,13 @@ scaling, full-frame ticks at 100/1k/10k actors),
 workers, saturated outbox) and `World/WorldSpatialRegistryBenchmarks.cpp`
 (transform updates, idle/all-dirty publish, structural churn) and
 `Rendering/RenderExtractionBenchmarks.cpp` (idle, all-dirty, structural churn
-at 100/1k/10k proxies with bytes copied per iteration). Release build
-only — see `skills/write-benchmarks.md`.
+at 100/1k/10k proxies with bytes copied per iteration),
+`Hierarchy/SceneHierarchyBenchmarks.cpp`, `Replication/{ReplicationApply,
+ReplicationEcho,ReplicationFrame}Benchmarks.cpp` (M9 suites — see the M9
+section), `WorldPartition/WorldPartitionBenchmarks.cpp` (cell churn,
+incremental extraction with a fixed dormant half, bounded queries) and
+`WorldPartition/PartitionProxyChurnBenchmarks.cpp` (snapshot churn through
+rendering DTOs only). Release build only — see `skills/write-benchmarks.md`.
 
 ## Notes for agents
 
@@ -204,3 +227,93 @@ only — see `skills/write-benchmarks.md`.
   for frame cost bounded by published records (100/1k/10k). The existing AoS node
   layout was kept: the measurements are dominated by the parent-first traversal,
   so an SoA rewrite showed no justification. JSON reports are kept in `TEMP/`.
+
+## M9 — bounded state replication
+
+- Public surface `Replication/` — `FPersistentActorId`, `EActorRole`,
+  `EReplicationDirection`, `EReplicationChannel`, `EActorReplicationProperty`,
+  `EActorReplicationKind`, `EReplicationControlKind`, `FDirtyPropertyMask`,
+  `FReplicationConfig`, `FReplicationStats`, `FReplicationChannelStats`,
+  `FReplicationFrame`, `FReplicationRecord`, `FReplicationFrameBuilder`,
+  `IReplicationTransport`, `IReplicationActorHandler`, `FReplicationSourceView`
+  and `FReplicationSystem`. No `AActor*`, no RHI and no backend type crosses
+  this boundary. The four arbitrages (determinism, authority, persistent ID,
+  hierarchy destruction) are recorded in `rules/replication.md`.
+- `FWorldDesc::ReplicationConfig`/`ReplicationRole` are opt-in. The world never
+  creates a transport or a handler: `InitializeReplication` injects both; a zero
+  `MaxActors` leaves `GetReplicationSystem()` null. The system ticks in the
+  serial control phase after `ApplyIngressJournal()` and before hierarchy
+  publication, so replicated local transforms and parents are resolved by the
+  same `Hierarchy.UpdateWorld()` pass.
+- All storage is reserved by `Initialize`: shadow maps, resend ring, gap buffer,
+  control records, pending parents and received inputs. Overflow is structured
+  `CapacityExceeded`/`OverflowFrameDropCount` with the previous state intact; no
+  per-actor priority is given (documented arbitrage).
+- Frames carry absolute values; the dirty mask selects fields. Only `Reliable`
+  is acked/baselined per `(Direction, Channel)`. Control records are unsequenced
+  and idempotent, including `Ack`, `Nack`, `BaselineRequest` and `BaselineReady`.
+  Stale baselines escalate to a full snapshot after a bounded number of resends
+  with a cooldown. Wire codec is fixed-endian with an FNV-1a checksum.
+- Inputs are bounded wire records translated into the existing
+  `FWorldIngressJournal`; no second journal and no network transport are added.
+  Visibility is owned by the replication system and published through
+  `ERenderTransformFlags`, never through a new renderer field.
+- Tests live in `Tests/{Functional,Integration}/Replication/`, benchmarks in
+  `Benchmarks/Replication/`. Canonical digests sort by persistent ID and fold
+  matrix bits, visibility, parent and alive; local IDs, sequences, acks and
+  stats are excluded. Seeds are literal, with 32 runs and 1/2/4 workers.
+
+## M10 — World partition (contract and evidence)
+
+- `FWorldPartition` is opt-in through an all-or-nothing `FWorldDesc::PartitionConfig`;
+  a zero configuration leaves M0-M9 behaviour unchanged. Cells are **logical**:
+  the registry owns membership and dormancy by weak `ActorID`, never actors,
+  and never allocates identities. `FPersistentActorId` is reused from M9 as an
+  opaque authority label: with replication active the authority allocates it
+  through `ReplicationSystem::AssignPersistentId` and the replica must already
+  have it bound; a mismatch is `PersistentConflict`. No property rank is added
+  to M9 — ranks 16..31 remain reserved but unused here.
+- Assignment/unassignment are **control-time only** and journaled with their
+  full control-time payload (`Kind`, `CellId`, `ActorId`, `PersistentId`;
+  `FrameIndex` and `SenderSequence` are zero for these records). Load/unload are
+  appended alternatives of the existing bounded `FDeferredCommandPayload` and
+  applied in `ApplyDeferredCommands()` at the top
+  of the tick, before `TickReplication()`, actor phases, the serial hierarchy
+  pass, `Registry.Publish()` and extraction. There is no second queue and no
+  mid-frame state change: every consumer sees one committed cell state.
+- An unloaded actor is not ticked, not broadcast to (including `EWorldIngressKind::Broadcast`
+  replays), not routable (`FActorRegistry::CloseRouting`), and physically absent
+  from the next full snapshot in all four record families. Routing is reconciled
+  on assignment to a still-unloaded cell and restored on unassignment of a
+  dormant actor; a conflicting authority label is rejected before any ID is
+  allocated, and cell/capacity/journal validation also precedes allocation so
+  no irreversible binding leaks on a failed call. This is distinct from M9
+  visibility, which keeps the transform and sets `ERenderTransformFlags::None`.
+  Dormancy is filtered **only at snapshot extraction**: bound dormant actors stay
+  in the replication source view so an acked replica never emits a Destroy
+  tombstone for them. Replicated writes are still applied to the hierarchy node
+  and become visible on load; composition must not issue local writes to dormant
+  actors. Destroy is refused while the partition journal cannot record the
+  unassignment, so no destroyed `ActorID` stays registered.
+- Unload detaches direct children outside the cell, preserving their world
+  transform as local; children inside the cell stay linked but dormant. No
+  recursive destruction and no cell ownership of actors.
+- Filing contract for a future `concurrency.md`: only the game thread mutates
+  the partition. Control-time calls commit immediately; calls issued from a
+  parallel phase are deferred and committed by `ApplyDeferredCommands()` at the
+  top of the next tick, before `TickReplication()`. Workers never write the
+  partition. The canonical digest folds journal fields in this order:
+  `(Kind, CellId, PersistentId, FrameIndex, SenderSequence)`, plus cell states —
+  never local `ActorID`s or addresses. Evidence uses 3 literal seeds × 32 runs ×
+  1/2/4 workers and a scoped allocation counter reporting 0 allocations after
+  reserve.
+- Release benchmarks are `FWorldPartitionBench/{CellChurn,IncrementalExtraction,
+  BoundedQueries}` at 100/1k/10k actors and `FPartitionProxyChurn.Snapshot`
+  through rendering DTOs only; no new Renderer include violates the include DAG.
+  Tests live in `Tests/{Functional,Integration}/WorldPartition/` and verify
+  capacity+1, partial configuration, journal order, swap-remove index integrity
+  after unassignment, routing reconciliation on assign/unassign, dormant actors
+  skipped by ingress broadcasts, side-effect-free authority conflicts, no M9
+  tombstone for a bound dormant actor, destruction of unassigned actors, refusal
+  on a full partition journal, conflict counters, 3 seeds × 32 runs × 1/2/4
+  workers, skipped publications, two isolated worlds and cross-cell detach.

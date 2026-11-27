@@ -16,6 +16,7 @@ to `.agents/`; an explicit `.agents/` prefix is equally valid.
 | `rules/core-first.md` | any new function/class/utility — check Core before writing |
 | `rules/build.md` | configuring, compiling, running tests/benchmarks |
 | `rules/testing.md` | adding or running tests or benchmarks |
+| `rules/replication.md` | working on M9 Scene replication — fixed arbitrages, wire contract, World integration, canonical replay |
 | `workflows/git-workflow.md` | creating commits or PRs |
 | `modules/<Module>.md` | working in `Source/<Module>/` (status, links, inventory) |
 | `agents/` | agent definitions — `reviewer` orchestrator + `reviewer-safety`/`reviewer-norme` subagents, `documentation` auditor of the `.agents/` corpus, and `test-writer` for unit-test authoring (definitions in `agents/*.md`) |

@@ -10,14 +10,14 @@
 - `Engine/` — `LaunchEngine`, `LaunchEngineLoop`, `LaunchEngineConfig(+Parser)`,
   `LaunchEngineModule`, `LaunchFrameTiming`, `LaunchProcessGuard`, and
   `Engine/Modules/` — engine module registration.
-- `Launch/` — `ModuleStack.hpp` (module boot order), `LaunchError.hpp`.
+- `Launch/` — `LaunchModuleStack.hpp` (module boot order), `LaunchError.hpp`.
 - `CLI/` — command-line interface handling.
 
-Private: `Main.cpp`, `ModuleStack.cpp`, engine implementation.
+Private: `Main.cpp`, `LaunchModuleStack.cpp`, engine implementation.
 
 ## Notes for agents
 
-- Module boot order lives in `ModuleStack` / `Engine/Modules` — when adding
+- Module boot order lives in `LaunchModuleStack` / `Engine/Modules` — when adding
   a new engine module to the stack, register it there; adding the module to
   `ModuleNames` only compiles it, it does not boot it. The runtime table still
   registers only `Application` and `Window`; Scene/RHI/Renderer engine-module
