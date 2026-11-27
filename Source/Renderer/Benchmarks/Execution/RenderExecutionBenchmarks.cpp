@@ -89,6 +89,11 @@ namespace
             .SnapshotStream  = &World.GetRenderSnapshotStream(),
             .Extent          = { Extent, Extent, 1U },
             .CommandCapacity = 64ULL,
+            .Swapchain       = {},
+            .Shaders         = {},
+            .ProxyCapacity   = 256ULL,
+            .AssetCapacity   = 64ULL,
+            .Readback        = {},
         };
         LUMEN_ASSERT( Renderer.Start( Desc ).HasValue() );
 
