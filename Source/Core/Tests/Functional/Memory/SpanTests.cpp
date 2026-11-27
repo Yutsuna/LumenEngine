@@ -7,8 +7,6 @@
 #include <Templates/Vector.hpp>
 #include <Tests/UnitTest.hpp>
 
-#include <type_traits>
-
 namespace Lumen
 {
 
