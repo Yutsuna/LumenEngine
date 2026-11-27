@@ -21,7 +21,7 @@ namespace
      * @param InDeadline The deadline to sleep until.
      * @return The current time in seconds.
      */
-    [[nodiscard]] Float64 WaitUntil ( const Float64 InDeadline ) noexcept
+    Float64 WaitUntil ( const Float64 InDeadline ) noexcept
     {
         static constexpr Float64 SpinMargin = 0.0015;
         Float64 NowSeconds                  = HAL::FPlatformTime::Seconds();

@@ -11,10 +11,10 @@ endif
 
 ModuleDefinition = {
     'Name' : 'Launch',
-    'Type' : 'Executable',
+    'Type' : 'SharedLibrary',
     'SourceDir' : meson.current_source_dir(),
     'Private' : 'Private',
     'Public' : 'Public',
     'Tests' : 'Tests',
-    'Depends' : ['Core', 'AppCore', 'Scene', 'RHI', 'Renderer'] + PlatformDepends
+    'Depends' : ['Core', 'AppCore', 'Scene', 'RHI', 'Renderer'] + PlatformDepends,
 }

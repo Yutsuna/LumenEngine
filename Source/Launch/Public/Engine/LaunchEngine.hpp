@@ -7,13 +7,15 @@
 
 #include <Core/CoreTypes.hpp>
 
+#include <LaunchExport.hpp>
+
 namespace Lumen
 {
 
 namespace Launch
 {
 
-    Int32 GuardedMain ( Int32 InArgc, const AnsiChar *const *InArgv ) noexcept;
+    LAUNCH_EXPORT Int32 GuardedMain ( Int32 InArgc, const AnsiChar *const *InArgv ) noexcept;
 
 }
 
