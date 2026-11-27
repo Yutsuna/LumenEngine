@@ -244,6 +244,13 @@ Lumen::FSpatialSnapshotView Lumen::FSpatialRegistry::GetReadSnapshot () const no
     return SnapshotBuffer.ReadBuffer().GetView();
 }
 
+Lumen::FSpatialCommittedView Lumen::FSpatialRegistry::GetCommittedView () const noexcept
+{
+    return FSpatialCommittedView{
+        .EntityIDs  = TSpan<const ActorID>{ WorkingData.EntityIDs.data(), WorkingData.EntityIDs.size() },
+        .Transforms = TSpan<const Maths::FMat4x4f>{ WorkingData.Transforms.data(), WorkingData.Transforms.size() } };
+}
+
 Lumen::FSpatialRegistryCapacities Lumen::FSpatialRegistry::GetCapacities () const noexcept
 {
     return Capacities;

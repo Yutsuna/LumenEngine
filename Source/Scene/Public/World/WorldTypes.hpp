@@ -8,6 +8,8 @@
 #include <Actor/ActorLifecycle.hpp>
 #include <SceneExport.hpp>
 
+#include <Rendering/RenderSnapshotTypes.hpp>
+
 namespace Lumen
 {
 
@@ -33,6 +35,15 @@ struct SCENE_EXPORT FWorldDesc
     USize ActorOutboxCapacity     = 16ULL;
     USize EmissionCapacity        = 4096ULL;
     Float64 FixedDeltaTime        = 0.0;
+
+    /** @brief Explicit world identity; zero asks FWorld to allocate a process-unique non-zero ID. */
+    UInt64 WorldId = 0ULL;
+
+    /**
+     * @brief Fixed capacities reserved in every rendering snapshot slot.
+     * @details All-zero (the default) disables automatic extraction; any non-zero field enables it.
+     */
+    FRenderSnapshotCapacities RenderCapacities{};
 };
 
 /** @struct FWorldFrameContext

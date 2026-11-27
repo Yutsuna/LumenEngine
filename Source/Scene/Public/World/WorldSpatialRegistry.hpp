@@ -65,6 +65,18 @@ struct SCENE_EXPORT FSpatialSnapshotView final
 };
 
 /**
+ * @struct FSpatialCommittedView
+ * @brief Non-owning view over the latest committed working state, before any snapshot publication.
+ * @details The owning game thread is the only writer. The spans stay valid until the next registration,
+ *          unregistration or transform update on that thread and must never be retained by a reader.
+ */
+struct SCENE_EXPORT FSpatialCommittedView final
+{
+    TSpan<const ActorID> EntityIDs;
+    TSpan<const Maths::FMat4x4f> Transforms;
+};
+
+/**
  * @struct FSpatialRegistryStorage
  * @brief Owning, pre-reserved storage behind one spatial snapshot slot.
  * @details This is registry implementation surface made visible for slot layout; consumers only receive FSpatialSnapshotView.
@@ -131,6 +143,12 @@ public:
 
     /** @brief Gets an immutable view of the current published snapshot. */
     [[nodiscard]] FSpatialSnapshotView GetReadSnapshot () const noexcept;
+
+    /**
+     * @brief Gets a non-owning view of the committed working state for Scene-side extraction.
+     * @note Owner-thread only, after all actor phases are fenced. Unlike GetReadSnapshot this needs no reader swap.
+     */
+    [[nodiscard]] FSpatialCommittedView GetCommittedView () const noexcept;
 
     /** @return The capacities reserved in all three slots. */
     [[nodiscard]] FSpatialRegistryCapacities GetCapacities () const noexcept;
