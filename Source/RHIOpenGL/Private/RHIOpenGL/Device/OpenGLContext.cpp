@@ -71,6 +71,9 @@ void DebugMessageThunk ( Lumen::RHIOpenGL::GLenum InSource,
     }
 }
 
+/** @brief Test seam state; see FOpenGLContext::SetForcedInitFailureForTests. */
+Lumen::TAtomic<Lumen::Bool> GForceInitFailure{ false };
+
 /** @brief Terminal error for work abandoned by a graphics reset. */
 [[nodiscard]] Lumen::RHI::FRHIError MakeLossAbandonError () noexcept
 {
@@ -106,6 +109,11 @@ Lumen::RHIOpenGL::FOpenGLContext::Create ( const Bool bEnableDebug ) noexcept
     return Context;
 }
 
+void Lumen::RHIOpenGL::FOpenGLContext::SetForcedInitFailureForTests ( const Bool bForce ) noexcept
+{
+    GForceInitFailure.store( bForce );
+}
+
 Lumen::RHIOpenGL::FOpenGLContext::~FOpenGLContext () noexcept
 {
     Shutdown();
@@ -113,24 +121,27 @@ Lumen::RHIOpenGL::FOpenGLContext::~FOpenGLContext () noexcept
 
 void Lumen::RHIOpenGL::FOpenGLContext::Shutdown () noexcept
 {
-    if ( bStopping.load() )
+    /* One atomic transition claims the stop: a concurrent caller returns at once, and
+     * InvokeOnGLThread starts rejecting new work before any task is posted. */
+    if ( bStopping.exchange( true ) )
     {
         return;
     }
 
-    /* Post the drain before publishing the stop: InvokeOnGLThread rejects work once
-     * bStopping is visible, and the worker must execute this task to release GL handles. */
-    if ( WorkerThread.IsJoinable() )
+    if ( WorkerThread.IsJoinable() and IsExecutorThread() )
     {
-        ( void )ExecuteOnGLThread( [this] () noexcept
+        /* A self-destruction cannot post and wait for a task on its own worker. */
+        DeferredReleases.Shutdown();
+    }
+    else if ( WorkerThread.IsJoinable() )
+    {
+        /* The gate is already closed; the internal path still lets the worker retire GL handles. */
+        ( void )PostTaskAndWait( [this] () noexcept
         {
             DeferredReleases.Shutdown();
-        } );
+        }, true );
     }
-    {
-        HAL::TLockGuard Lock( QueueMutex );
-        bStopping.store( true );
-    }
+
     ( void )WorkerThread.RequestStop();
     Wake.NotifyAll();
 
@@ -174,12 +185,19 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::ExecuteOnGLThread ( T
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::InvokeOnGLThread ( TFunction<void()> InTask ) noexcept
 {
     LUMEN_ASSERT( not IsExecutorThread() );
+    return PostTaskAndWait( static_cast<TFunction<void()> &&>( InTask ), false );
+}
+
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::PostTaskAndWait ( TFunction<void()> InTask,
+                                                                             const Bool bAllowWhileStopping ) noexcept
+{
     TSharedRef<FTaskLatch> Latch = MakeTaskLatch();
     {
         HAL::TLockGuard Lock( QueueMutex );
-        /* Publishing the stop and enqueueing share QueueMutex, so no accepted task can be
-         * stranded by the worker's exit check. */
-        if ( bStopping.load() )
+        /* The gate check and the enqueue share QueueMutex, so no accepted task can be
+         * stranded by the worker's exit check. The gate itself is claimed atomically before
+         * the drain is posted, or by Start() when initialization fails. */
+        if ( not bAllowWhileStopping and bStopping.load() )
         {
             return TUnexpected(
                 RHI::MakeRHIDeviceLost( RHI::ERHIErrorCondition::Device, "OpenGL executor is stopping or stopped." ) );
@@ -307,6 +325,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::Start () noexcept
             RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Device, "Unable to start the OpenGL Executor thread." ) );
     }
 
+    TOptional<RHI::FRHIError> StartupError;
     {
         HAL::TUniqueLock Lock( QueueMutex );
         Wake.Wait( Lock, [this] () noexcept -> Bool
@@ -315,8 +334,21 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::Start () noexcept
         } );
         if ( InitError )
         {
-            return TUnexpected( *InitError );
+            StartupError = InitError;
+            /* The worker has published readiness and will not enter its task loop. Claim
+             * the stop here: Shutdown() must not post a drain nobody would execute. */
+            bStopping.store( true );
         }
+    }
+    if ( StartupError )
+    {
+        ( void )WorkerThread.RequestStop();
+        Wake.NotifyAll();
+        if ( WorkerThread.IsJoinable() and not IsExecutorThread() )
+        {
+            WorkerThread.Join();
+        }
+        return TUnexpected( *StartupError );
     }
     return {};
 }
@@ -596,10 +628,18 @@ void Lumen::RHIOpenGL::FOpenGLContext::FailAllSubmissions ( const RHI::FRHIError
 void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) noexcept
 {
     ExecutorThreadId.store( FThread::GetCurrentId() );
-    const TExpected<void, RHI::FRHIError> Initialized = NativeContext.Initialize( bEnableDebug );
-    if ( not Initialized )
+    if ( GForceInitFailure.load() )
     {
-        InitError = TOptional<RHI::FRHIError>( Initialized.Error() );
+        InitError = TOptional<RHI::FRHIError>(
+            RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Device, "OpenGL initialization failed in tests." ) );
+    }
+    else
+    {
+        const TExpected<void, RHI::FRHIError> Initialized = NativeContext.Initialize( bEnableDebug );
+        if ( not Initialized )
+        {
+            InitError = TOptional<RHI::FRHIError>( Initialized.Error() );
+        }
     }
     if ( not InitError )
     {
