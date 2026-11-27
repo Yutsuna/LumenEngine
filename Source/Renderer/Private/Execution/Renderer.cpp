@@ -5,6 +5,7 @@
 
 #include <Execution/Renderer.hpp>
 
+#include <Logging/Logger.hpp>
 #include <Rendering/RenderSnapshotStream.hpp>
 #include <Rendering/RenderSnapshotView.hpp>
 
@@ -52,6 +53,8 @@
 
 namespace
 {
+
+LUMEN_LOG_DEFINE_CATEGORY( LogRenderer, "Renderer" );
 
 /** @brief Converts an executor enqueue failure into the facade's error set. */
 [[nodiscard]] Lumen::ERendererError ToRendererError ( const Lumen::ERenderExecutorError InError ) noexcept
@@ -131,6 +134,7 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::Start ( const FR
     ProxyCapacity  = InDesc.ProxyCapacity;
     AssetCapacity  = InDesc.AssetCapacity;
     ReadbackDesc   = InDesc.Readback;
+    FrameExtension = InDesc.FrameExtension;
 
     Proxies = FRenderProxyRegistry( ProxyCapacity );
     Assets  = FRenderAssetRegistry( AssetCapacity );
@@ -251,6 +255,12 @@ void Lumen::FRenderer::HandleRenderCommand ( const FRenderCommand &InCommand, FR
         InOutStatus.Result = ERenderFrameResult::InvalidState;
         break;
     case ERenderCommandType::Shutdown:
+        if ( not bFirstFrame and ( **Queue ).Wait( { NextTimelineValue }, 1.0 ).HasValue() )
+        {
+            InOutStatus.LastCompletedTimeline = NextTimelineValue;
+            UpdateReadback( InOutStatus );
+            PresentTarget( InOutStatus );
+        }
         InOutStatus.Result = ERenderFrameResult::Shutdown;
         break;
     }
@@ -372,6 +382,10 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreateResources 
     /** INFO: Asset uploads are control-time submissions on this queue; the frame timeline must continue past them. */
     NextTimelineValue = Queue->Get()->GetCompletedValue().Value;
     bFirstFrame       = true;
+    if ( FrameExtension.IsValid() and not FrameExtension->Initialize( *Device, Extent ) )
+    {
+        return MakeUnexpected( ERendererError::RHICreationFailed );
+    }
     return {};
 }
 
@@ -450,26 +464,45 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreatePresentati
     }
     RenderComplete.Emplace( *RenderCompleteResult );
 
-    SwapchainViews.reserve( Swapchain->GetImageCount() );
-    for ( UInt32 Index = 0U; Index < Swapchain->GetImageCount(); ++Index )
+    if ( not RecreateSwapchainViews() )
     {
-        const auto ImageResult = Swapchain->GetImage( Index );
-        if ( not ImageResult ) [[unlikely]]
-        {
-            return MakeUnexpected( ERendererError::RHICreationFailed );
-        }
-        RHI::FRHITextureViewDesc ViewDesc;
-        ViewDesc.Texture      = *ImageResult;
-        const auto ViewResult = Device->CreateTextureView( ViewDesc );
-        if ( not ViewResult ) [[unlikely]]
-        {
-            return MakeUnexpected( ERendererError::RHICreationFailed );
-        }
-        SwapchainViews.push_back( *ViewResult );
+        return MakeUnexpected( ERendererError::RHICreationFailed );
     }
 
     bPresentation = true;
     return {};
+}
+
+Lumen::Bool Lumen::FRenderer::RecreateSwapchainViews ( FRenderFrameStatus *InOutStatus ) noexcept
+{
+    TVector<TSharedRef<RHI::IRHITextureView>> Replacement;
+    Replacement.reserve( Swapchain->GetImageCount() );
+    for ( UInt32 Index = 0U; Index < Swapchain->GetImageCount(); ++Index )
+    {
+        const auto ImageResult = Swapchain->GetImage( Index );
+        if ( not ImageResult )
+        {
+            if ( InOutStatus != nullptr )
+            {
+                InOutStatus->Result = ERenderFrameResult::RHIError;
+            }
+            return false;
+        }
+        RHI::FRHITextureViewDesc ViewDesc;
+        ViewDesc.Texture      = *ImageResult;
+        const auto ViewResult = Device->CreateTextureView( ViewDesc );
+        if ( not ViewResult )
+        {
+            if ( InOutStatus != nullptr )
+            {
+                InOutStatus->Result = ERenderFrameResult::RHIError;
+            }
+            return false;
+        }
+        Replacement.push_back( *ViewResult );
+    }
+    SwapchainViews = std::move( Replacement );
+    return true;
 }
 
 Lumen::Bool Lumen::FRenderer::AcquireTarget ( FRenderFrameStatus &InOutStatus ) noexcept
@@ -483,7 +516,7 @@ Lumen::Bool Lumen::FRenderer::AcquireTarget ( FRenderFrameStatus &InOutStatus ) 
     auto AcquiredResult = Swapchain->AcquireNextImage();
     if ( not AcquiredResult and AcquiredResult.Error().Code == RHI::ERHIErrorCode::OutOfDate )
     {
-        if ( not Swapchain->Resize( Extent ).HasValue() )
+        if ( not Swapchain->Resize( Extent ).HasValue() or not RecreateSwapchainViews( &InOutStatus ) )
         {
             InOutStatus.Result = ERenderFrameResult::RHIError;
             return false;
@@ -528,9 +561,11 @@ void Lumen::FRenderer::PresentTarget ( FRenderFrameStatus &InOutStatus ) noexcep
     {
         return;
     }
-    if ( not Swapchain->Present( **Queue, AcquiredImage, bPresentation ? RenderComplete->Get() : nullptr ).HasValue() )
+    const RHI::FRHIExpected Presented = Swapchain->Present( **Queue, AcquiredImage, bPresentation ? RenderComplete->Get() : nullptr );
+    if ( not Presented )
     {
-        InOutStatus.Result = ERenderFrameResult::RHIError;
+        InOutStatus.Result = Presented.Error().Code == RHI::ERHIErrorCode::OutOfDate ? ERenderFrameResult::SwapchainOutOfDate
+                                                                                     : ERenderFrameResult::RHIError;
     }
     else
     {
@@ -710,6 +745,37 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
         return;
     }
 
+    RHI::IRHIQueue &QueueRef                = **Queue;
+    RHI::IRHICommandAllocator &AllocatorRef = **Allocator;
+    RHI::IRHICommandList &CommandListRef    = **CommandList;
+
+    if ( not bFirstFrame )
+    {
+        if ( not QueueRef.Wait( { NextTimelineValue }, 0.0 ).HasValue() )
+        {
+            InOutStatus.Result = bHasAcquiredImage ? ERenderFrameResult::Enqueued : ERenderFrameResult::Dropped;
+            return;
+        }
+        InOutStatus.LastCompletedTimeline = NextTimelineValue;
+        if ( bHasAcquiredImage )
+        {
+            PresentTarget( InOutStatus );
+            if ( InOutStatus.Result == ERenderFrameResult::RHIError )
+            {
+                return;
+            }
+        }
+        else
+        {
+            UpdateReadback( InOutStatus );
+        }
+        if ( not AllocatorRef.Reset( QueueRef.GetCompletedValue() ).HasValue() )
+        {
+            InOutStatus.Result = ERenderFrameResult::RHIError;
+            return;
+        }
+    }
+
     /** INFO: The render executor is the only reader allowed to swap this stream. Spans are copied into plain values here. */
     static_cast<void>( SnapshotStream->SwapReadBuffers() );
     const FRenderSnapshotView View   = SnapshotStream->GetReadSnapshot();
@@ -735,23 +801,8 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
         InOutStatus.ProxyCount = static_cast<UInt64>( Proxies.GetSize() );
     }
 
-    RHI::IRHIQueue &QueueRef                = **Queue;
-    RHI::IRHICommandAllocator &AllocatorRef = **Allocator;
-    RHI::IRHICommandList &CommandListRef    = **CommandList;
-
     if ( not AcquireTarget( InOutStatus ) )
     {
-        return;
-    }
-
-    if ( not bFirstFrame and not QueueRef.Wait( { NextTimelineValue }, 0.0 ).HasValue() )
-    {
-        InOutStatus.Result = ERenderFrameResult::Dropped;
-        return;
-    }
-    if ( not bFirstFrame and not AllocatorRef.Reset( QueueRef.GetCompletedValue() ).HasValue() )
-    {
-        InOutStatus.Result = ERenderFrameResult::RHIError;
         return;
     }
 
@@ -766,15 +817,37 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
         return;
     }
 
-    if ( bForwardEnabled and not RecordForwardPass( View, CommandListRef, InOutStatus ) )
+    if ( FrameExtension.IsValid() )
     {
-        return;
+        const TSharedRef<RHI::IRHITexture> Target         = bPresentation ? *AcquiredTarget : *TargetTexture;
+        const TSharedRef<RHI::IRHITextureView> FrameTargetView =
+            bPresentation ? SwapchainViews[AcquiredImage.ImageIndex] : *TargetView;
+        const FRenderFrameExtensionContext ExtensionContext{ .Snapshot      = View,
+                                                             .CommandList   = CommandListRef,
+                                                             .TargetTexture = Target,
+                                                             .TargetView    = FrameTargetView,
+                                                             .Extent        = Extent,
+                                                             .Status        = InOutStatus };
+        const RHI::FRHIExpected Recorded = FrameExtension->Record( ExtensionContext );
+        if ( not Recorded )
+        {
+            LUMEN_LOG_ERROR( LogRenderer, "Frame extension record failed: {}", Recorded.Error().Message );
+            InOutStatus.Result = ERenderFrameResult::RHIError;
+            return;
+        }
     }
-    if ( not bForwardEnabled and
-         ( not CommandListRef.BeginRendering( RenderingDesc ).HasValue() or not CommandListRef.EndRendering().HasValue() ) )
+    else
     {
-        InOutStatus.Result = ERenderFrameResult::RHIError;
-        return;
+        if ( bForwardEnabled and not RecordForwardPass( View, CommandListRef, InOutStatus ) )
+        {
+            return;
+        }
+        if ( not bForwardEnabled and
+             ( not CommandListRef.BeginRendering( RenderingDesc ).HasValue() or not CommandListRef.EndRendering().HasValue() ) )
+        {
+            InOutStatus.Result = ERenderFrameResult::RHIError;
+            return;
+        }
     }
 
     if ( bReadbackEnabled and ReadbackAllocator and ReadbackAllocation )
@@ -825,6 +898,10 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
     NextTimelineValue                 = CompletionValue;
     InOutStatus.LastSubmittedTimeline = CompletionValue;
     bFirstFrame                       = false;
+    if ( FrameExtension.IsValid() )
+    {
+        FrameExtension->Commit( CompletionValue, InOutStatus );
+    }
 
     if ( QueueRef.Wait( { CompletionValue }, 0.0 ).HasValue() )
     {
@@ -834,13 +911,12 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
             InOutStatus.Result = ERenderFrameResult::Completed;
         }
         UpdateReadback( InOutStatus );
+        PresentTarget( InOutStatus );
     }
     else
     {
         InOutStatus.Result = ERenderFrameResult::Enqueued;
     }
-
-    PresentTarget( InOutStatus );
 }
 
 void Lumen::FRenderer::ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderFrameStatus &InOutStatus ) noexcept
@@ -850,6 +926,30 @@ void Lumen::FRenderer::ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderF
         return;
     }
 
+    if ( not bFirstFrame )
+    {
+        if ( not ( **Queue ).Wait( { NextTimelineValue }, 1.0 ).HasValue() )
+        {
+            InOutStatus.Result = ERenderFrameResult::RHIError;
+            return;
+        }
+        InOutStatus.LastCompletedTimeline = NextTimelineValue;
+        if ( bHasAcquiredImage )
+        {
+            PresentTarget( InOutStatus );
+        }
+        else
+        {
+            UpdateReadback( InOutStatus );
+        }
+        if ( InOutStatus.Result == ERenderFrameResult::RHIError or
+             not ( **Allocator ).Reset( ( **Queue ).GetCompletedValue() ).HasValue() )
+        {
+            InOutStatus.Result = ERenderFrameResult::RHIError;
+            return;
+        }
+    }
+
     if ( bPresentation )
     {
         if ( not Swapchain->Resize( InExtent ).HasValue() )
@@ -857,25 +957,9 @@ void Lumen::FRenderer::ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderF
             InOutStatus.Result = ERenderFrameResult::RHIError;
             return;
         }
-        SwapchainViews.clear();
-        SwapchainViews.reserve( Swapchain->GetImageCount() );
-        for ( UInt32 Index = 0U; Index < Swapchain->GetImageCount(); ++Index )
+        if ( not RecreateSwapchainViews( &InOutStatus ) )
         {
-            const auto ImageResult = Swapchain->GetImage( Index );
-            if ( not ImageResult )
-            {
-                InOutStatus.Result = ERenderFrameResult::RHIError;
-                return;
-            }
-            RHI::FRHITextureViewDesc ViewDesc;
-            ViewDesc.Texture      = *ImageResult;
-            const auto ViewResult = Device->CreateTextureView( ViewDesc );
-            if ( not ViewResult )
-            {
-                InOutStatus.Result = ERenderFrameResult::RHIError;
-                return;
-            }
-            SwapchainViews.push_back( *ViewResult );
+            return;
         }
     }
 
@@ -910,4 +994,8 @@ void Lumen::FRenderer::ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderF
     TargetView.Emplace( *ViewResult );
     RenderingDesc.Area                     = RHI::FRHIRect2D{ 0, 0, Extent.Width, Extent.Height };
     RenderingDesc.ColorAttachments[0].View = *TargetView;
+    if ( FrameExtension.IsValid() and not FrameExtension->Resize( Extent ) )
+    {
+        InOutStatus.Result = ERenderFrameResult::RHIError;
+    }
 }

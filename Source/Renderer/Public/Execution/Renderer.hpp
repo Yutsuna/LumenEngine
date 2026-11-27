@@ -11,6 +11,7 @@
 #include <Core/NonMovable.hpp>
 
 #include <Execution/RenderExecutor.hpp>
+#include <Execution/RenderFrameExtension.hpp>
 
 #include <Frame/RenderAssetRegistry.hpp>
 #include <Frame/RenderFrameContracts.hpp>
@@ -83,6 +84,8 @@ struct RENDERER_EXPORT FRendererDesc final
     USize ProxyCapacity = 256ULL;
     USize AssetCapacity = 64ULL;
     FRenderFrameReadbackDesc Readback;
+    /** INFO: When present, replaces the built-in clear/forward command recording. */
+    TSharedPtr<IRenderFrameExtension> FrameExtension;
 };
 
 /**
@@ -140,6 +143,7 @@ private:
     [[nodiscard]] TExpected<void, ERendererError> CreateResources () noexcept;
     [[nodiscard]] TExpected<void, ERendererError> CreateForwardResources () noexcept;
     [[nodiscard]] TExpected<void, ERendererError> CreatePresentationResources () noexcept;
+    [[nodiscard]] Bool RecreateSwapchainViews ( FRenderFrameStatus *InOutStatus = nullptr ) noexcept;
     void RenderLatest ( const FRenderFrameRequest &InFrame, FRenderFrameStatus &InOutStatus ) noexcept;
     void ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderFrameStatus &InOutStatus ) noexcept;
     [[nodiscard]] Bool RecordForwardPass ( const FRenderSnapshotView &InView,
@@ -159,6 +163,7 @@ private:
     USize ProxyCapacity = 256ULL;
     USize AssetCapacity = 64ULL;
     FRenderFrameReadbackDesc ReadbackDesc;
+    TSharedPtr<IRenderFrameExtension> FrameExtension;
 
     TVector<FPendingGeometry> PendingGeometry;
     FRenderProxyRegistry Proxies;
