@@ -16,18 +16,16 @@
 
 #include <Tests/UnitTest.hpp>
 
+#include <AllocationTracking.hpp>
+
 #include <cstddef>
 #include <cstdlib>
 #include <new>
 
-namespace
-{
+Lumen::TAtomic<Lumen::UInt64> Lumen::GTrackedAllocations{ 0ULL };
+Lumen::TAtomic<Lumen::Bool> Lumen::bTrackingAllocations{ false };
 
-/** @brief Process-wide allocation counter; only sampled while bTrackingAllocations is set. */
-Lumen::TAtomic<Lumen::UInt64> GTrackedAllocations{ 0ULL };
-Lumen::TAtomic<Lumen::Bool> bTrackingAllocations{ false };
-
-[[nodiscard]] void *TrackedAllocate ( const std::size_t InSize, const std::size_t InAlignment ) noexcept
+[[nodiscard]] void *Lumen::TrackedAllocate ( const std::size_t InSize, const std::size_t InAlignment ) noexcept
 {
     if ( bTrackingAllocations.load( std::memory_order_relaxed ) )
     {
@@ -43,40 +41,10 @@ Lumen::TAtomic<Lumen::Bool> bTrackingAllocations{ false };
     return std::aligned_alloc( InAlignment, AlignedSize );
 }
 
-/** @class FAllocationTrackingScope
- * @brief Captures an allocation baseline and exposes the delta observed until destruction.
- */
-class FAllocationTrackingScope final
-{
-public:
-
-    FAllocationTrackingScope () noexcept
-    {
-        Baseline = GTrackedAllocations.load( std::memory_order_relaxed );
-        bTrackingAllocations.store( true, std::memory_order_release );
-    }
-
-    ~FAllocationTrackingScope () noexcept
-    {
-        bTrackingAllocations.store( false, std::memory_order_release );
-    }
-
-    [[nodiscard]] Lumen::UInt64 GetCount () const noexcept
-    {
-        return GTrackedAllocations.load( std::memory_order_relaxed ) - Baseline;
-    }
-
-private:
-
-    Lumen::UInt64 Baseline = 0ULL;
-};
-
-} // namespace
-
 /** INFO: Test-only global allocation hooks; engine code never replaces the global allocator. */
 void *operator new( const std::size_t InSize )
 {
-    void *const Result = TrackedAllocate( InSize, alignof( std::max_align_t ) );
+    void *const Result = Lumen::TrackedAllocate( InSize, alignof( std::max_align_t ) );
     if ( Result == nullptr ) [[unlikely]]
     {
         std::abort();
@@ -91,7 +59,7 @@ void *operator new[]( const std::size_t InSize )
 
 void *operator new( const std::size_t InSize, const std::align_val_t InAlignment )
 {
-    void *const Result = TrackedAllocate( InSize, static_cast<std::size_t>( InAlignment ) );
+    void *const Result = Lumen::TrackedAllocate( InSize, static_cast<std::size_t>( InAlignment ) );
     if ( Result == nullptr ) [[unlikely]]
     {
         std::abort();
@@ -106,22 +74,22 @@ void *operator new[]( const std::size_t InSize, const std::align_val_t InAlignme
 
 void *operator new( const std::size_t InSize, const std::nothrow_t & ) noexcept
 {
-    return TrackedAllocate( InSize, alignof( std::max_align_t ) );
+    return Lumen::TrackedAllocate( InSize, alignof( std::max_align_t ) );
 }
 
 void *operator new[]( const std::size_t InSize, const std::nothrow_t & ) noexcept
 {
-    return TrackedAllocate( InSize, alignof( std::max_align_t ) );
+    return Lumen::TrackedAllocate( InSize, alignof( std::max_align_t ) );
 }
 
 void *operator new( const std::size_t InSize, const std::align_val_t InAlignment, const std::nothrow_t & ) noexcept
 {
-    return TrackedAllocate( InSize, static_cast<std::size_t>( InAlignment ) );
+    return Lumen::TrackedAllocate( InSize, static_cast<std::size_t>( InAlignment ) );
 }
 
 void *operator new[]( const std::size_t InSize, const std::align_val_t InAlignment, const std::nothrow_t & ) noexcept
 {
-    return TrackedAllocate( InSize, static_cast<std::size_t>( InAlignment ) );
+    return Lumen::TrackedAllocate( InSize, static_cast<std::size_t>( InAlignment ) );
 }
 
 void operator delete( void *const InPointer ) noexcept
