@@ -79,8 +79,9 @@ LUMEN_BENCHMARK_ARGS( FWorldRenderExtraction, AllDirty, 100, 1000, 10000 )
     {
         const Lumen::FRenderProxyId Proxy{ 1ULL + static_cast<Lumen::UInt64>( Index ) };
         World.GetRenderContent().Meshes.emplace_back( Lumen::FRenderMeshRecord{
-            .ProxyId     = Proxy,
-            .MeshAssetId = Lumen::FRenderAssetId{ Proxy.GetValue() + 100000ULL },
+            .ProxyId         = Proxy,
+            .MeshAssetId     = Lumen::FRenderAssetId{ Proxy.GetValue() + 100000ULL },
+            .MaterialAssetId = Lumen::FRenderAssetId{ Proxy.GetValue() + 200000ULL },
         } );
     }
 

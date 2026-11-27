@@ -38,7 +38,14 @@ struct SCENE_EXPORT FWorldDesc
     USize DeferredCommandCapacity = 1024ULL;
     USize ActorOutboxCapacity     = 16ULL;
     USize EmissionCapacity        = 4096ULL;
-    Float64 FixedDeltaTime        = 0.0;
+
+    /**
+     * @brief Fixed hierarchy node capacity; zero leaves the spatial hierarchy disabled.
+     * @details Reserved once at World construction. Registration is opt-in so existing worlds keep their M0-M7 behaviour.
+     */
+    USize HierarchyCapacity = 0ULL;
+
+    Float64 FixedDeltaTime = 0.0;
 
     /** @brief Explicit world identity; zero asks FWorld to allocate a process-unique non-zero ID. */
     UInt64 WorldId = 0ULL;

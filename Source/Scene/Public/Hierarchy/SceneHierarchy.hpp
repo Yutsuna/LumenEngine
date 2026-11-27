@@ -40,6 +40,8 @@ enum class ESceneHierarchyError : UInt8
     SelfParent,
     CycleDetected,
     CapacityExceeded,
+    StaleParent,
+    DeferredQueueFull,
 };
 
 /**
@@ -76,7 +78,7 @@ class SCENE_EXPORT FSceneHierarchy final : public FNonCopyable, public FNonMovab
 public:
 
     /** @brief Creates an uninitialized hierarchy without allocating storage. */
-    FSceneHierarchy () noexcept = default;
+    FSceneHierarchy () noexcept;
 
     /** @brief Releases the preallocated node and publication storage. */
     ~FSceneHierarchy () noexcept;
@@ -155,6 +157,25 @@ public:
     /** @return A complete, immutable-until-next-publication view sorted by ascending ActorID. */
     [[nodiscard]] TSpan<const FSceneHierarchyTransformRecord> GetPublishedTransforms () const noexcept;
 
+    /** @return Working depth of a registered node, or an empty optional for an unknown actor. */
+    [[nodiscard]] TOptional<USize> GetDepth ( ActorID InActorId ) const noexcept;
+
+    /**
+     * @brief Level boundaries into the level-ordered transform view.
+     * @details Entry D is the first record at depth D; entry D+1 is the first record at depth D+1. The span has Capacity+1
+     *          entries after Initialize, so depth Capacity-1 is addressable. Records inside one level are ActorID ordered.
+     */
+    [[nodiscard]] TSpan<const USize> GetLevelStarts () const noexcept;
+
+    /** @return Published records grouped by depth, then sorted by ActorID; empty until the first UpdateWorld. */
+    [[nodiscard]] TSpan<const FSceneHierarchyTransformRecord> GetLevelOrderedTransforms () const noexcept;
+
+    /**
+     * @brief Visits every published record at one depth in canonical ActorID order.
+     * @tparam TVisitor Callable taking `const FSceneHierarchyTransformRecord &`; forwarded without type erasure or allocation.
+     */
+    template <typename TVisitor> void ForEachLevel ( USize InDepth, TVisitor &&InVisitor ) const noexcept;
+
 private:
 
     struct FNode;
@@ -166,11 +187,15 @@ private:
     void UnlinkNode ( FNode &InNode ) noexcept;
     void MarkDirty ( FNode &InNode ) noexcept;
     [[nodiscard]] USize UpdateWorldTransforms () noexcept;
+    void RebuildLevelOrder () noexcept;
 
 private:
 
     TUniquePtr<FNode[]> Nodes;
     TUniquePtr<FSceneHierarchyTransformRecord[]> PublishedTransforms;
+    TUniquePtr<FSceneHierarchyTransformRecord[]> LevelOrderedTransforms;
+    TUniquePtr<USize[]> LevelStarts;
+    TUniquePtr<USize[]> LevelCursor;
 
     USize Capacity                = 0ULL;
     USize NodeCount               = 0ULL;
@@ -184,3 +209,5 @@ private:
 };
 
 } // namespace Lumen
+
+#include "Inline/SceneHierarchy.inl"

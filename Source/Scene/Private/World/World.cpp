@@ -7,6 +7,7 @@
 #include <World/WorldExecutor.hpp>
 #include <World/WorldSpatialRegistry.hpp>
 
+#include <Algo/ForEach.hpp>
 #include <Algo/Sort.hpp>
 
 #include <Actor/Actor.hpp>
@@ -113,6 +114,12 @@ Lumen::FWorld::FWorld ( const FWorldDesc &InDesc ) noexcept
     RenderContent.Meshes.reserve( Desc.RenderCapacities.MeshCapacity );
     RenderContent.Cameras.reserve( Desc.RenderCapacities.CameraCapacity );
     RenderContent.Lights.reserve( Desc.RenderCapacities.LightCapacity );
+
+    /** INFO: Hierarchy is opt-in; a failed reservation leaves it disabled and never terminates the world. */
+    if ( Desc.HierarchyCapacity > 0ULL )
+    {
+        static_cast<void>( Hierarchy.Initialize( Desc.HierarchyCapacity ) );
+    }
 }
 
 Lumen::FWorld::~FWorld () noexcept
@@ -306,6 +313,12 @@ Lumen::TExpected<Lumen::FWorldTickResult, Lumen::EWorldTickError> Lumen::FWorld:
         FirstError.Emplace( EWorldTickError::EmissionCapacityExceeded );
     }
 
+    /** INFO: Single serial hierarchy pass after the last phase fence, before spatial publication. */
+    if ( Hierarchy.IsInitialized() and Hierarchy.UpdateWorld() )
+    {
+        ApplyHierarchyWorldTransforms();
+    }
+
     Registry.Publish();
 
     if ( IsRenderExtractionEnabled() )
@@ -339,6 +352,11 @@ Lumen::FWorld::TryFixedTick ( const Float64 InDeltaTime ) noexcept
     if ( not StepResult )
     {
         return MakeUnexpected( StepResult.Error() );
+    }
+
+    if ( Hierarchy.IsInitialized() and Hierarchy.UpdateWorld() )
+    {
+        ApplyHierarchyWorldTransforms();
     }
 
     Registry.Publish();
@@ -437,6 +455,93 @@ Lumen::FWorldPhaseCompletion Lumen::FWorld::GetLastPhaseCompletion () const noex
 Lumen::FSpatialRegistry &Lumen::FWorld::GetSpatialRegistry () noexcept
 {
     return Registry;
+}
+
+Lumen::FSceneHierarchy &Lumen::FWorld::GetHierarchy () noexcept
+{
+    return Hierarchy;
+}
+
+Lumen::TExpected<void, Lumen::ESceneHierarchyError>
+Lumen::FWorld::TryRegisterHierarchyActor ( const ActorID InActorId, const Maths::FMat4x4f &InLocalTransform ) noexcept
+{
+    if ( not Hierarchy.IsInitialized() )
+    {
+        return MakeUnexpected( ESceneHierarchyError::NotInitialized );
+    }
+
+    if ( IsInParallelPhase() )
+    {
+        if ( not QueueDeferredCommand( InActorId,
+                                       FDeferredHierarchyRegisterCommand{ .ActorId = InActorId, .Local = InLocalTransform } ) )
+        {
+            return MakeUnexpected( ESceneHierarchyError::DeferredQueueFull );
+        }
+        return {};
+    }
+
+    return ApplyHierarchyRegister( InActorId, InLocalTransform );
+}
+
+Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FWorld::TryHierarchyAttach ( const ActorID InActorId,
+                                                                                        const ActorID InParentId ) noexcept
+{
+    if ( not Hierarchy.IsInitialized() )
+    {
+        return MakeUnexpected( ESceneHierarchyError::NotInitialized );
+    }
+
+    if ( IsInParallelPhase() )
+    {
+        if ( not QueueDeferredCommand( InActorId,
+                                       FDeferredHierarchyAttachCommand{ .ActorId = InActorId, .ParentId = InParentId } ) )
+        {
+            return MakeUnexpected( ESceneHierarchyError::DeferredQueueFull );
+        }
+        return {};
+    }
+
+    return ApplyHierarchyAttach( InActorId, InParentId );
+}
+
+Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FWorld::TryHierarchyDetach ( const ActorID InActorId ) noexcept
+{
+    if ( not Hierarchy.IsInitialized() )
+    {
+        return MakeUnexpected( ESceneHierarchyError::NotInitialized );
+    }
+
+    if ( IsInParallelPhase() )
+    {
+        if ( not QueueDeferredCommand( InActorId, FDeferredHierarchyDetachCommand{ InActorId } ) )
+        {
+            return MakeUnexpected( ESceneHierarchyError::DeferredQueueFull );
+        }
+        return {};
+    }
+
+    return ApplyHierarchyDetach( InActorId );
+}
+
+Lumen::TExpected<void, Lumen::ESceneHierarchyError>
+Lumen::FWorld::TrySetHierarchyLocalTransform ( const ActorID InActorId, const Maths::FMat4x4f &InLocalTransform ) noexcept
+{
+    if ( not Hierarchy.IsInitialized() )
+    {
+        return MakeUnexpected( ESceneHierarchyError::NotInitialized );
+    }
+
+    if ( IsInParallelPhase() )
+    {
+        if ( not QueueDeferredCommand(
+                 InActorId, FDeferredHierarchyLocalTransformCommand{ .ActorId = InActorId, .Local = InLocalTransform } ) )
+        {
+            return MakeUnexpected( ESceneHierarchyError::DeferredQueueFull );
+        }
+        return {};
+    }
+
+    return ApplyHierarchyLocalTransform( InActorId, InLocalTransform );
 }
 
 Lumen::UInt64 Lumen::FWorld::GetWorldId () const noexcept
@@ -629,6 +734,11 @@ Lumen::TExpected<void, Lumen::EActorDestroyError> Lumen::FWorld::DestroyActorImp
 
     Actor->MarkPendingKill();
     Registry.UnregisterSpatialEntity( InId );
+    if ( Hierarchy.IsInitialized() )
+    {
+        /** INFO: Default destruction policy detaches children; the hierarchy never owns or cascades actor lifetimes. */
+        static_cast<void>( Hierarchy.Unregister( InId ) );
+    }
 
     Actors.erase( ActorIterator );
     for ( auto ActiveIterator = ActiveActors.begin(); ActiveIterator != ActiveActors.end(); ++ActiveIterator )
@@ -644,6 +754,45 @@ Lumen::TExpected<void, Lumen::EActorDestroyError> Lumen::FWorld::DestroyActorImp
     Actor->Retire();
     bNeedsSorting = true;
     return {};
+}
+
+Lumen::TExpected<void, Lumen::ESceneHierarchyError>
+Lumen::FWorld::ApplyHierarchyRegister ( const ActorID InActorId, const Maths::FMat4x4f &InLocalTransform ) noexcept
+{
+    if ( not Actors.contains( InActorId ) )
+    {
+        return MakeUnexpected( ESceneHierarchyError::UnknownActor );
+    }
+    return Hierarchy.Register( InActorId, InLocalTransform );
+}
+
+Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FWorld::ApplyHierarchyAttach ( const ActorID InActorId,
+                                                                                          const ActorID InParentId ) noexcept
+{
+    if ( InParentId != InvalidActorID and not Actors.contains( InParentId ) )
+    {
+        return MakeUnexpected( ESceneHierarchyError::StaleParent );
+    }
+    return Hierarchy.Attach( InActorId, InParentId );
+}
+
+Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FWorld::ApplyHierarchyDetach ( const ActorID InActorId ) noexcept
+{
+    return Hierarchy.Detach( InActorId );
+}
+
+Lumen::TExpected<void, Lumen::ESceneHierarchyError>
+Lumen::FWorld::ApplyHierarchyLocalTransform ( const ActorID InActorId, const Maths::FMat4x4f &InLocalTransform ) noexcept
+{
+    return Hierarchy.SetLocalTransform( InActorId, InLocalTransform );
+}
+
+void Lumen::FWorld::ApplyHierarchyWorldTransforms () noexcept
+{
+    for ( const FSceneHierarchyTransformRecord &Record : Hierarchy.GetPublishedTransforms() )
+    {
+        Registry.UpdateTransform( Record.ActorId, Record.WorldTransform );
+    }
 }
 
 Lumen::TExpected<Lumen::FWorldPhaseCompletion, Lumen::EWorldTickError>
@@ -775,6 +924,22 @@ Lumen::Bool Lumen::FWorld::ApplyDeferredCommands () noexcept
                                        [this] ( FDeferredBroadcastCommand &InBroadcast ) noexcept
         {
             static_cast<void>( TryBroadcast( InBroadcast.Message ) );
+        },
+                                       [this] ( FDeferredHierarchyRegisterCommand &InRegister ) noexcept
+        {
+            static_cast<void>( ApplyHierarchyRegister( InRegister.ActorId, InRegister.Local ) );
+        },
+                                       [this] ( FDeferredHierarchyAttachCommand &InAttach ) noexcept
+        {
+            static_cast<void>( ApplyHierarchyAttach( InAttach.ActorId, InAttach.ParentId ) );
+        },
+                                       [this] ( FDeferredHierarchyDetachCommand &InDetach ) noexcept
+        {
+            static_cast<void>( ApplyHierarchyDetach( InDetach.ActorId ) );
+        },
+                                       [this] ( FDeferredHierarchyLocalTransformCommand &InTransform ) noexcept
+        {
+            static_cast<void>( ApplyHierarchyLocalTransform( InTransform.ActorId, InTransform.Local ) );
         } },
                     Command.Payload );
     }
@@ -811,16 +976,17 @@ void Lumen::FWorld::ShutdownActors () noexcept
     RetirePendingSpawns( DeferredCommands );
     RetirePendingSpawns( DeferredCommandBatch );
 
-    for ( const TSharedPtr<AActor> &Actor : ActiveActors )
+    Algo::ForEach( ActiveActors, [&] ( const TSharedPtr<AActor> &Actor ) noexcept -> void
     {
         Registry.UnregisterSpatialEntity( Actor->GetId() );
         Actor->MarkPendingKill();
         Actor->EndPlay();
-    }
-    for ( const TSharedPtr<AActor> &Actor : ActiveActors )
+    } );
+
+    Algo::ForEach( ActiveActors, [] ( const TSharedPtr<AActor> &Actor ) noexcept -> void
     {
         Actor->Retire();
-    }
+    } );
 
     Actors.clear();
     ActiveActors.clear();

@@ -24,6 +24,7 @@
 #include <Actor/ActorEmitContext.hpp>
 #include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
+#include <Hierarchy/SceneHierarchy.hpp>
 #include <Rendering/RenderSnapshotStream.hpp>
 #include <Rendering/RenderSnapshotTypes.hpp>
 #include <Rendering/RenderSnapshotView.hpp>
@@ -111,6 +112,24 @@ public:
     /** @brief Returns this world's owned spatial registry. */
     [[nodiscard]] FSpatialRegistry &GetSpatialRegistry () noexcept;
 
+    /** @brief Returns this world's owned spatial hierarchy; Initialize depends on FWorldDesc::HierarchyCapacity. */
+    [[nodiscard]] FSceneHierarchy &GetHierarchy () noexcept;
+
+    /** @brief Opt-in registration of an existing actor as a hierarchy node. */
+    [[nodiscard]] TExpected<void, ESceneHierarchyError>
+    TryRegisterHierarchyActor ( ActorID InActorId,
+                                const Maths::FMat4x4f &InLocalTransform = Maths::FMat4x4f::Identity() ) noexcept;
+
+    /** @brief Attaches a node to a weak parent ID; deferred through the canonical command queue inside a phase. */
+    [[nodiscard]] TExpected<void, ESceneHierarchyError> TryHierarchyAttach ( ActorID InActorId, ActorID InParentId ) noexcept;
+
+    /** @brief Detaches a node, preserving its world transform as its new local transform. */
+    [[nodiscard]] TExpected<void, ESceneHierarchyError> TryHierarchyDetach ( ActorID InActorId ) noexcept;
+
+    /** @brief Changes a node's local transform, resolving descendants at the next serial hierarchy pass. */
+    [[nodiscard]] TExpected<void, ESceneHierarchyError>
+    TrySetHierarchyLocalTransform ( ActorID InActorId, const Maths::FMat4x4f &InLocalTransform ) noexcept;
+
     /** @return The stable non-zero identity carried by every published snapshot. */
     [[nodiscard]] UInt64 GetWorldId () const noexcept;
 
@@ -167,7 +186,37 @@ private:
         FMessage Message;
     };
 
-    using FDeferredCommandPayload = TVariant<FDeferredSpawnCommand, FDeferredDestroyCommand, FDeferredBroadcastCommand>;
+    struct FDeferredHierarchyRegisterCommand
+    {
+        ActorID ActorId       = InvalidActorID;
+        Maths::FMat4x4f Local = Maths::FMat4x4f::Identity();
+    };
+
+    struct FDeferredHierarchyAttachCommand
+    {
+        ActorID ActorId  = InvalidActorID;
+        ActorID ParentId = InvalidActorID;
+    };
+
+    struct FDeferredHierarchyDetachCommand
+    {
+        ActorID ActorId = InvalidActorID;
+    };
+
+    struct FDeferredHierarchyLocalTransformCommand
+    {
+        ActorID ActorId       = InvalidActorID;
+        Maths::FMat4x4f Local = Maths::FMat4x4f::Identity();
+    };
+
+    /** INFO: New alternatives are appended so existing Payload.index() values and canonical ordering stay stable. */
+    using FDeferredCommandPayload = TVariant<FDeferredSpawnCommand,
+                                             FDeferredDestroyCommand,
+                                             FDeferredBroadcastCommand,
+                                             FDeferredHierarchyRegisterCommand,
+                                             FDeferredHierarchyAttachCommand,
+                                             FDeferredHierarchyDetachCommand,
+                                             FDeferredHierarchyLocalTransformCommand>;
 
     struct FDeferredCommand
     {
@@ -180,6 +229,13 @@ private:
     [[nodiscard]] TExpected<void, EActorSpawnError> InsertSpawnedActor ( const TSharedPtr<AActor> &InActor ) noexcept;
     [[nodiscard]] Bool QueueDeferredCommand ( ActorID InTarget, FDeferredCommandPayload &&InPayload ) noexcept;
     [[nodiscard]] TExpected<void, EActorDestroyError> DestroyActorImpl ( ActorID InId ) noexcept;
+    [[nodiscard]] TExpected<void, ESceneHierarchyError>
+    ApplyHierarchyRegister ( ActorID InActorId, const Maths::FMat4x4f &InLocalTransform ) noexcept;
+    [[nodiscard]] TExpected<void, ESceneHierarchyError> ApplyHierarchyAttach ( ActorID InActorId, ActorID InParentId ) noexcept;
+    [[nodiscard]] TExpected<void, ESceneHierarchyError> ApplyHierarchyDetach ( ActorID InActorId ) noexcept;
+    [[nodiscard]] TExpected<void, ESceneHierarchyError>
+    ApplyHierarchyLocalTransform ( ActorID InActorId, const Maths::FMat4x4f &InLocalTransform ) noexcept;
+    void ApplyHierarchyWorldTransforms () noexcept;
     [[nodiscard]] TExpected<FWorldPhaseCompletion, EWorldTickError>
     RunPhase ( TSpan<AActor *const> InActors, EActorTickPhase InPhase, UInt64 InFixedStepIndex, Float64 InDeltaTime ) noexcept;
     [[nodiscard]] TExpected<void, EWorldTickError>
@@ -195,6 +251,7 @@ private:
 
     FWorldDesc Desc;
     FSpatialRegistry Registry;
+    FSceneHierarchy Hierarchy;
     TUniquePtr<FWorldExecutor> Executor;
 
     /** INFO: The extraction stream lives per world; no actor, asset or renderer ownership crosses this boundary. */

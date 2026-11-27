@@ -10,6 +10,10 @@
 #include <limits>
 #include <new>
 
+/**
+ * Public
+ */
+
 struct Lumen::FSceneHierarchy::FNode
 {
     ActorID Id                     = InvalidActorID;
@@ -25,6 +29,8 @@ struct Lumen::FSceneHierarchy::FNode
     Bool bWorldUpdated             = false;
     Bool bPublicationDirty         = false;
 };
+
+Lumen::FSceneHierarchy::FSceneHierarchy () noexcept = default;
 
 Lumen::FSceneHierarchy::~FSceneHierarchy () noexcept = default;
 
@@ -44,15 +50,23 @@ Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FSceneHierarchy::Init
     TUniquePtr<FNode[]> NewNodes( new ( std::nothrow ) FNode[InCapacity]() );
     TUniquePtr<FSceneHierarchyTransformRecord[]> NewPublishedTransforms( new ( std::nothrow )
                                                                              FSceneHierarchyTransformRecord[InCapacity]() );
+    TUniquePtr<FSceneHierarchyTransformRecord[]> NewLevelOrdered( new ( std::nothrow )
+                                                                      FSceneHierarchyTransformRecord[InCapacity]() );
+    TUniquePtr<USize[]> NewLevelStarts( new ( std::nothrow ) USize[InCapacity + 1ULL]() );
+    TUniquePtr<USize[]> NewLevelCursor( new ( std::nothrow ) USize[InCapacity + 1ULL]() );
 
-    if ( not NewNodes.IsValid() or not NewPublishedTransforms.IsValid() )
+    if ( not NewNodes.IsValid() or not NewPublishedTransforms.IsValid() or not NewLevelOrdered.IsValid() or
+         not NewLevelStarts.IsValid() or not NewLevelCursor.IsValid() )
     {
         return MakeUnexpected( ESceneHierarchyError::OutOfMemory );
     }
 
-    Nodes               = std::move( NewNodes );
-    PublishedTransforms = std::move( NewPublishedTransforms );
-    Capacity            = InCapacity;
+    Nodes                  = std::move( NewNodes );
+    PublishedTransforms    = std::move( NewPublishedTransforms );
+    LevelOrderedTransforms = std::move( NewLevelOrdered );
+    LevelStarts            = std::move( NewLevelStarts );
+    LevelCursor            = std::move( NewLevelCursor );
+    Capacity               = InCapacity;
     return {};
 }
 
@@ -329,6 +343,7 @@ Lumen::TExpected<Lumen::FSceneHierarchyUpdateResult, Lumen::ESceneHierarchyError
 
     bAnyPublicationDirty = false;
     ++PublicationSequence;
+    RebuildLevelOrder();
     Result.PublishedTransformCount = PublishedTransformCount;
     Result.PublicationSequence     = PublicationSequence;
     return Result;
@@ -404,7 +419,66 @@ Lumen::TSpan<const Lumen::FSceneHierarchyTransformRecord> Lumen::FSceneHierarchy
         return {};
     }
 
-    return TSpan<const FSceneHierarchyTransformRecord>( PublishedTransforms.Get(), PublishedTransformCount );
+    return { PublishedTransforms.Get(), PublishedTransformCount };
+}
+
+Lumen::TOptional<Lumen::USize> Lumen::FSceneHierarchy::GetDepth ( const ActorID InActorId ) const noexcept
+{
+    const USize NodeIndex = FindNodeIndex( InActorId );
+    if ( NodeIndex == NodeCount )
+    {
+        return {};
+    }
+
+    return TOptional<USize>( Nodes[NodeIndex].Depth );
+}
+
+Lumen::TSpan<const Lumen::USize> Lumen::FSceneHierarchy::GetLevelStarts () const noexcept
+{
+    if ( not LevelStarts.IsValid() )
+    {
+        return {};
+    }
+
+    return TSpan<const USize>( LevelStarts.Get(), Capacity + 1ULL );
+}
+
+Lumen::TSpan<const Lumen::FSceneHierarchyTransformRecord> Lumen::FSceneHierarchy::GetLevelOrderedTransforms () const noexcept
+{
+    if ( not LevelOrderedTransforms.IsValid() or PublishedTransformCount == 0ULL )
+    {
+        return {};
+    }
+
+    return { LevelOrderedTransforms.Get(), PublishedTransformCount };
+}
+
+void Lumen::FSceneHierarchy::RebuildLevelOrder () noexcept
+{
+    for ( USize Index = 0ULL; Index <= Capacity; ++Index )
+    {
+        LevelStarts[Index] = 0ULL;
+    }
+
+    for ( USize Index = 0ULL; Index < PublishedTransformCount; ++Index )
+    {
+        ++LevelStarts[Nodes[Index].Depth + 1ULL];
+    }
+
+    for ( USize Depth = 0ULL; Depth < Capacity; ++Depth )
+    {
+        LevelStarts[Depth + 1ULL] += LevelStarts[Depth];
+    }
+
+    for ( USize Index = 0ULL; Index <= Capacity; ++Index )
+    {
+        LevelCursor[Index] = LevelStarts[Index];
+    }
+
+    for ( USize Index = 0ULL; Index < PublishedTransformCount; ++Index )
+    {
+        LevelOrderedTransforms[LevelCursor[Nodes[Index].Depth]++] = PublishedTransforms[Index];
+    }
 }
 
 Lumen::USize Lumen::FSceneHierarchy::LowerBound ( const ActorID InActorId ) const noexcept
