@@ -5,13 +5,31 @@
 
 #include <RHIOpenGL/Device/OpenGLDeviceContext.hpp>
 
-#include <HAL/LockGuard.hpp>
-
 #include <RHI/Types/RHIError.hpp>
 
 #include <RHIOpenGL/Loader/GLSpec.hpp>
 
 #include <String/StringView.hpp>
+
+/**
+ * File-local helpers
+ */
+
+namespace
+{
+
+/** @brief Raises Status to Lost without ever downgrading a clean Closed state. */
+void RaiseStatusToLost ( Lumen::TAtomic<Lumen::RHI::ERHIDeviceStatus> &InStatus ) noexcept
+{
+    Lumen::RHI::ERHIDeviceStatus Current = InStatus.load();
+    while ( static_cast<Lumen::UInt8>( Lumen::RHI::ERHIDeviceStatus::Lost ) > static_cast<Lumen::UInt8>( Current ) and
+            not InStatus.compare_exchange_weak( Current, Lumen::RHI::ERHIDeviceStatus::Lost ) )
+    {
+        /* A concurrent transition only ever raises the status; refresh Current and retry. */
+    }
+}
+
+} // namespace
 
 /**
  * Public
@@ -88,7 +106,7 @@ Lumen::RHIOpenGL::FOpenGLDeviceContext::GetUnavailableError ( const FStringView 
 {
     if ( Context->IsDeviceLost() )
     {
-        Status.store( RHI::ERHIDeviceStatus::Lost );
+        RaiseStatusToLost( Status );
     }
     const RHI::ERHIDeviceStatus Current = Status.load();
     if ( Current == RHI::ERHIDeviceStatus::Ready )
@@ -105,7 +123,7 @@ Lumen::RHIOpenGL::FOpenGLDeviceContext::GetUnavailableError ( const FStringView 
 
 void Lumen::RHIOpenGL::FOpenGLDeviceContext::MarkLost () noexcept
 {
-    Status.store( RHI::ERHIDeviceStatus::Lost );
+    RaiseStatusToLost( Status );
     Context->MarkDeviceLost();
 }
 
@@ -114,12 +132,10 @@ void Lumen::RHIOpenGL::FOpenGLDeviceContext::MarkClosed () noexcept
     RHI::ERHIDeviceStatus Expected = RHI::ERHIDeviceStatus::Ready;
     if ( Status.compare_exchange_strong( Expected, RHI::ERHIDeviceStatus::Closed ) )
     {
-        FOpenGLWaitState *State = Context->GetWaitState();
-        {
-            HAL::TLockGuard Lock( State->Mutex );
-            State->bUnavailable = true;
-        }
-        State->Condition.NotifyAll();
+        /* Retire in-flight work before waking host waiters: OnFailure marks the command
+         * lists complete and publishes queue completions (D7 ordering). This is a blocking
+         * round-trip to the executor and must never be called under a ranked lock. */
+        Context->MarkDeviceClosed();
     }
 }
 

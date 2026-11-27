@@ -71,6 +71,27 @@ void DebugMessageThunk ( Lumen::RHIOpenGL::GLenum InSource,
     }
 }
 
+/** @brief Terminal error for work abandoned by a graphics reset. */
+[[nodiscard]] Lumen::RHI::FRHIError MakeLossAbandonError () noexcept
+{
+    return Lumen::RHI::MakeRHIDeviceLost( Lumen::RHI::ERHIErrorCondition::Queue,
+                                          "OpenGL submission was abandoned after device loss." );
+}
+
+/** @brief Terminal error for work abandoned by executor shutdown. */
+[[nodiscard]] Lumen::RHI::FRHIError MakeStopAbandonError () noexcept
+{
+    return Lumen::RHI::MakeRHIDeviceLost( Lumen::RHI::ERHIErrorCondition::Queue,
+                                          "OpenGL submission was abandoned after executor stop." );
+}
+
+/** @brief Terminal error for work abandoned by a clean device closure. */
+[[nodiscard]] Lumen::RHI::FRHIError MakeCloseAbandonError () noexcept
+{
+    return { Lumen::RHI::ERHIErrorCode::DeviceClosed, Lumen::RHI::ERHIErrorCondition::Queue,
+             "OpenGL submission was abandoned after device closure." };
+}
+
 } // namespace
 
 /**
@@ -200,22 +221,40 @@ void Lumen::RHIOpenGL::FOpenGLContext::SetDebugSink ( RHI::IRHIDebugSink *InSink
 void Lumen::RHIOpenGL::FOpenGLContext::MarkDeviceLost () noexcept
 {
     bDeviceLost.store( true );
-    {
-        HAL::TLockGuard Lock( WaitState.Mutex );
-        WaitState.bUnavailable = true;
-    }
-    WaitState.Condition.NotifyAll();
+    /* Loss wakes waiters immediately: the reset path must not wait for a stuck replay. */
+    PublishUnavailable();
 
     if ( IsExecutorThread() )
     {
-        FailAllSubmissions();
+        FailAllSubmissions( MakeLossAbandonError() );
     }
     else
     {
         ( void )ExecuteOnGLThread( [this] () noexcept
         {
-            FailAllSubmissions();
+            FailAllSubmissions( MakeLossAbandonError() );
         } );
+    }
+}
+
+void Lumen::RHIOpenGL::FOpenGLContext::MarkDeviceClosed () noexcept
+{
+    const auto FailAndWake = [this] () noexcept
+    {
+        FailAllSubmissions( MakeCloseAbandonError() );
+        /* D7 ordering: queue completions are published by OnFailure before waiters wake. */
+        PublishUnavailable();
+    };
+
+    if ( IsExecutorThread() )
+    {
+        FailAndWake();
+        return;
+    }
+    if ( not ExecuteOnGLThread( FailAndWake ) )
+    {
+        /* The executor is already stopping/stopped; Worker() has retired the work. */
+        PublishUnavailable();
     }
 }
 
@@ -496,7 +535,16 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
     }
 }
 
-void Lumen::RHIOpenGL::FOpenGLContext::FailAllSubmissions () noexcept
+void Lumen::RHIOpenGL::FOpenGLContext::PublishUnavailable () noexcept
+{
+    {
+        HAL::TLockGuard Lock( WaitState.Mutex );
+        WaitState.bUnavailable = true;
+    }
+    WaitState.Condition.NotifyAll();
+}
+
+void Lumen::RHIOpenGL::FOpenGLContext::FailAllSubmissions ( const RHI::FRHIError &InError ) noexcept
 {
     LUMEN_ASSERT( IsExecutorThread() );
 
@@ -535,15 +583,13 @@ void Lumen::RHIOpenGL::FOpenGLContext::FailAllSubmissions () noexcept
         } );
     }
 
-    const RHI::FRHIError Failure = RHI::MakeRHIDeviceLost(
-        RHI::ERHIErrorCondition::Queue, "OpenGL submission was abandoned after device loss or executor stop." );
     Algo::ForEach( Abandoned,
                    [] ( FOpenGLSubmission &InSubmission ) noexcept -> Bool
     {
         return static_cast<Bool>( InSubmission.OnFailure );
-    }, [&Failure] ( FOpenGLSubmission &InSubmission ) noexcept
+    }, [&InError] ( FOpenGLSubmission &InSubmission ) noexcept
     {
-        InSubmission.OnFailure( Failure );
+        InSubmission.OnFailure( InError );
     } );
 }
 
@@ -610,7 +656,7 @@ void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) n
          * worker alive forever. Fail and release all not-yet-replayed work on stop. */
         if ( InStopToken.StopRequested() )
         {
-            FailAllSubmissions();
+            FailAllSubmissions( MakeStopAbandonError() );
         }
 
         Bool bPending = false;

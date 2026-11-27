@@ -120,6 +120,16 @@ namespace RHIOpenGL
         /** @brief Records a graphics reset observed on the GL executor. */
         void MarkDeviceLost () noexcept;
 
+        /**
+         * @brief Retires every unfinished submission on a clean device closure.
+         * @details Posts the retirement to the GL Executor (inline when already there), then
+         *          wakes host waiters. Terminal callbacks therefore run before waiters are
+         *          released, preserving the single-terminal ordering (D7). If the executor is
+         *          already stopped, its stop path has retired the work and this only wakes
+         *          waiters. No GL call is made from the caller thread.
+         */
+        void MarkDeviceClosed () noexcept;
+
         /** @return True after a graphics reset was observed on the GL executor. */
         [[nodiscard]] Bool IsDeviceLost () const noexcept;
 
@@ -161,8 +171,16 @@ namespace RHIOpenGL
         void Worker ( FStopToken InStopToken ) noexcept;
         void StepScheduler () noexcept;
         void PollResetStatus () noexcept;
-        /** @brief Fails every unfinished submission; executor thread only. */
-        void FailAllSubmissions () noexcept;
+        /** @brief Publishes host-side unavailability and wakes every wait state waiter. */
+        void PublishUnavailable () noexcept;
+        /**
+         * @brief Fails every unfinished submission with InError; executor thread only.
+         * @details Drains Pending/Blocked/ActiveFences under SchedulerMutex, deletes native
+         *          sync objects on the executor, then invokes OnFailure outside the lock.
+         *          No timeline value is published here: per-queue completion is published
+         *          by the queue's OnFailure callback.
+         */
+        void FailAllSubmissions ( const RHI::FRHIError &InError ) noexcept;
 
         /**
          * @brief Publishes exactly one terminal callback for a retired submission.
