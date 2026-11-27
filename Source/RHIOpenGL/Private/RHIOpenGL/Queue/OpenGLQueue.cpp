@@ -81,23 +81,33 @@ Lumen::RHI::FRHITimelineValue Lumen::RHIOpenGL::FOpenGLQueue::GetCompletedValue 
     return RHI::FRHITimelineValue{ CompletedValue->load() };
 }
 
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::EnsureExecutor () noexcept
+{
+    /* Unranked leaf: creation calls ExecuteOnGLThread and must never run under a
+     * ranked lock (module plan §1.4). The lock is released before callers acquire
+     * SubmitMutex, so the two locks are never nested. */
+    HAL::TLockGuard<HAL::FPlatformMutex> Lock( ExecutorMutex );
+    if ( Executor.IsValid() )
+    {
+        return {};
+    }
+    const TExpected<TSharedRef<FOpenGLCommandExecutor>, RHI::FRHIError> Created = FOpenGLCommandExecutor::Create( Context );
+    LUMEN_TRY_EXPECT_ERROR( Created );
+    Executor = *Created;
+    return {};
+}
+
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRHISubmitDesc &InDesc ) noexcept
 {
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Queue::Submit" ) );
     LUMEN_EXPECT( Validated, InDesc.Validate() );
+    LUMEN_TRY_EXPECT_ERROR( EnsureExecutor() );
 
     HAL::TLockGuard<HAL::FPlatformMutex> Lock( SubmitMutex );
     if ( InDesc.Completion.Value <= SubmittedValue.load() )
     {
         return TUnexpected(
             RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Queue, "Queue completion values must increase." ) );
-    }
-
-    if ( not Executor.IsValid() )
-    {
-        const TExpected<TSharedRef<FOpenGLCommandExecutor>, RHI::FRHIError> Created = FOpenGLCommandExecutor::Create( Context );
-        LUMEN_TRY_EXPECT_ERROR( Created );
-        Executor = *Created;
     }
 
     TVector<TSharedRef<RHI::IRHICommandList>> Lists;

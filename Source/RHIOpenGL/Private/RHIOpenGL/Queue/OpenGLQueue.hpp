@@ -59,13 +59,24 @@ namespace RHIOpenGL
 
     private:
 
+        /**
+         * @brief Creates the replay executor once, before @ref SubmitMutex is acquired.
+         * @details Creation dispatches to the GL thread with `ExecuteOnGLThread`, which is
+         *          forbidden while a ranked lock is held (module plan §1.4). @ref ExecutorMutex
+         *          is an unranked leaf: it is never nested with a ranked lock and no GL-thread
+         *          task ever acquires it. Publication of @ref Executor is therefore safe against
+         *          concurrent first submissions.
+         */
+        [[nodiscard]] RHI::FRHIExpected EnsureExecutor () noexcept;
+
         RHI::FRHIObjectBase Identity;
         TSharedRef<FOpenGLDeviceContext> Context;
         RHI::ERHIQueueType QueueType               = RHI::ERHIQueueType::Graphics;
         UInt32 QueueIndex                          = 0U;
         TSharedRef<TAtomic<UInt64>> CompletedValue = MakeShared<TAtomic<UInt64>>( 0ULL );
         TAtomic<UInt64> SubmittedValue{ 0ULL };
-        HAL::FPlatformMutex SubmitMutex;
+        HAL::FPlatformMutex SubmitMutex;   ///< Rank 1: submission serialization.
+        HAL::FPlatformMutex ExecutorMutex; ///< Unranked leaf: one-time executor creation only.
         TSharedPtr<FOpenGLCommandExecutor> Executor;
     };
 
