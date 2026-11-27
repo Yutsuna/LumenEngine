@@ -9,6 +9,13 @@ ModuleNames = [
     'Core',
     'Maths',
     'RHI',
+]
+
+if host_machine.system() == 'linux'
+    ModuleNames += [ 'RHIOpenGL' ]
+endif
+
+ModuleNames += [
     'Scene',
     'AppCore',
     'Launch',

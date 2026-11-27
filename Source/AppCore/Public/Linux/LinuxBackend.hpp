@@ -15,6 +15,10 @@
 namespace Lumen
 {
 
+/**
+ * @struct FLinuxBackend
+ * @brief Owns the SDL subsystem lifetime and drives its event pump.
+ */
 struct APPCORE_EXPORT FLinuxBackend
 {
     /** @return True if SDL library is initialized */

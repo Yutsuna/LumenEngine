@@ -1,6 +1,6 @@
 /**
- * AppCore/Generic/GenericWindow.hpp
- * Declaration of the FGenericWindow class for cross-platform window management.
+ * @file GenericWindow.hpp
+ * @brief Declaration of the FGenericWindow class for cross-platform window management.
  */
 
 #pragma once
@@ -14,6 +14,10 @@
 namespace Lumen
 {
 
+/**
+ * @class FGenericWindow
+ * @brief Platform-independent interface for an OS window.
+ */
 class APPCORE_EXPORT FGenericWindow
 {
 
@@ -65,7 +69,7 @@ public:
     virtual void SetOpacity ( Float32 InOpacity ) noexcept;
 
     /**
-     * / @brief Enables or disable  the window's ability to accept input
+     * @brief Enables or disables the window's ability to accept input
      * @param bEnable true to enable input, false to disable it.
      */
     virtual void EnableInput ( Bool bEnable ) noexcept;

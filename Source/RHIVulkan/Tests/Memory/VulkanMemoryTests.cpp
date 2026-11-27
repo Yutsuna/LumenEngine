@@ -147,10 +147,9 @@ namespace RHIVulkan
         LUMEN_CHECK_TRUE( Disjoint.HasValue() );
         LUMEN_CHECK_EQ( Disjoint->size(), 2U );
 
-        RHI::FRHITransientBatch Overlapping = Batch;
-        Overlapping.Requests[1].Lifetime    = { .Begin = 0ULL, .End = 2ULL };
+        Batch.Requests[1].Lifetime = { .Begin = 0ULL, .End = 2ULL };
         Allocator->BeginBatch();
-        const TExpected<TVector<RHI::FRHITransientAllocation>, RHI::FRHIError> Result = Allocator->Allocate( Overlapping );
+        const TExpected<TVector<RHI::FRHITransientAllocation>, RHI::FRHIError> Result = Allocator->Allocate( Batch );
         Allocator->EndBatch();
         LUMEN_CHECK_TRUE( Result.HasValue() );
         LUMEN_CHECK_NOT_EQ( ( *Result )[0].Allocation.Offset, ( *Result )[1].Allocation.Offset );

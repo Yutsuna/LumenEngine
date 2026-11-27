@@ -6,7 +6,7 @@
 #include <Core/CoreDefinitions.hpp>
 #include <Generic/GenericApplicationMessageHandler.hpp>
 
-/** Application */
+/** INFO: Application lifecycle messages. */
 
 void Lumen::FGenericApplicationMessageHandler::OnRequestExit () noexcept
 {
@@ -18,7 +18,7 @@ void Lumen::FGenericApplicationMessageHandler::OnQuit () noexcept
     /** Empty */
 }
 
-/** Window */
+/** INFO: Window messages. */
 
 void Lumen::FGenericApplicationMessageHandler::OnOSPaint ( const TSharedRef<FGenericWindow> LUMEN_UNUSED &InWindow ) noexcept
 {
@@ -42,7 +42,7 @@ void Lumen::FGenericApplicationMessageHandler::OnWindowActivationChanged (
     /** Empty */
 }
 
-/** Mouse */
+/** INFO: Mouse messages. */
 
 void Lumen::FGenericApplicationMessageHandler::OnMouseDown ( EMouseButton::Type LUMEN_UNUSED InMouseButton ) noexcept
 {
@@ -64,7 +64,7 @@ void Lumen::FGenericApplicationMessageHandler::OnMouseWheel ( Int32 LUMEN_UNUSED
     /** Empty */
 }
 
-/** Keyboard */
+/** INFO: Keyboard messages. */
 
 void Lumen::FGenericApplicationMessageHandler::OnKeyDown ( EKeys::Type LUMEN_UNUSED InKey,
                                                            Bool LUMEN_UNUSED bIsRepeated ) noexcept

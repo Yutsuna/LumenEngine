@@ -32,7 +32,8 @@ to `.agents/`; an explicit `.agents/` prefix is equally valid.
 | `Scene` | built (shared library) | `modules/Scene.md` |
 | `AppCore` | built (shared library) | `modules/AppCore.md` |
 | `Launch` | built (executable entry point) | `modules/Launch.md` |
-| `Renderer`, `RHIOpenGL` | **not built** (empty stubs, absent from `ModuleNames`) | `modules/Renderer.md`, `modules/RHIOpenGL.md` |
+| `Renderer` | **not built** (empty stub, absent from `ModuleNames`) | `modules/Renderer.md` |
+| `RHIOpenGL` | built on Linux (OpenGL 4.6 backend; full conformance matrix) | `modules/RHIOpenGL.md` |
 | `RHIVulkan` | built (shared library, listed in `ModuleNames`; do not depend on it from production renderer code yet) | `modules/RHIVulkan.md` |
 
 A module is compiled only if listed in `ModuleNames` (`Source/meson.build`) and

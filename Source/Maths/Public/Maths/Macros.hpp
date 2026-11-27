@@ -38,6 +38,10 @@ namespace Maths
     [[nodiscard]] LUMEN_FORCE_INLINE Bool IsEqual ( Float32 Fa, Float32 Fb, const Float32 Tolerance = Epsilon<Float32> ) noexcept;
     [[nodiscard]] LUMEN_FORCE_INLINE Bool IsEqual ( Float64 Fa, Float64 Fb, const Float64 Tolerance = Epsilon<Float64> ) noexcept;
 
+    template <typename Type> static constexpr Type Max ( Type A, Type B ) noexcept;
+
+    template <typename Type> static constexpr Type Min ( Type A, Type B ) noexcept;
+
 } // namespace Maths
 
 } // namespace Lumen

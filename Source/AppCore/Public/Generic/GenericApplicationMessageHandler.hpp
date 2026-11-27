@@ -15,6 +15,10 @@ namespace Lumen
 
 class FGenericWindow;
 
+/**
+ * @class FGenericApplicationMessageHandler
+ * @brief Receives application and window messages dispatched by the platform layer.
+ */
 class APPCORE_EXPORT FGenericApplicationMessageHandler
 {
 

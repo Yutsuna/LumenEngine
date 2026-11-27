@@ -5,7 +5,9 @@
 
 #pragma once
 
-#if defined( __aarch64__ ) || defined( _M_ARM64 )
+#include <Core/CoreDefinitions.hpp>
+
+#if defined( LUMEN_ARCH_ARM64 )
     #include <Maths/SIMD/SIMDTypes.hpp>
     #include <MathsExport.hpp>
 
@@ -66,5 +68,7 @@ namespace Maths
     #include "Inline/SIMDNeon.inl"
 
 #else
-    #error "SIMDNeon.hpp should only be included on ARM64 platforms with Neon support."
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "SIMDNeon.hpp should only be included on ARM64 platforms with Neon support."
+    #endif
 #endif

@@ -97,11 +97,9 @@ namespace RHI
             }
             ( *Allocator )->EndBatch();
 
-            FRHITransientBatch OverlappingBatch   = DisjointBatch;
-            OverlappingBatch.Requests[1].Lifetime = { .Begin = 0ULL, .End = 2ULL };
+            DisjointBatch.Requests[1].Lifetime = { .Begin = 0ULL, .End = 2ULL };
             ( *Allocator )->BeginBatch();
-            const TExpected<TVector<FRHITransientAllocation>, FRHIError> Overlapping =
-                ( *Allocator )->Allocate( OverlappingBatch );
+            const TExpected<TVector<FRHITransientAllocation>, FRHIError> Overlapping = ( *Allocator )->Allocate( DisjointBatch );
             ( *Allocator )->EndBatch();
             LUMEN_CHECK_TRUE( Overlapping.HasValue() );
             LUMEN_CHECK_EQ( Overlapping->size(), 2U );
