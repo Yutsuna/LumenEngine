@@ -23,6 +23,7 @@
 #include <Actor/ActorEmitContext.hpp>
 #include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
+#include <World/WorldIngressJournal.hpp>
 #include <World/WorldSpatialRegistry.hpp>
 #include <World/WorldTypes.hpp>
 
@@ -83,6 +84,18 @@ public:
     /** @brief Runs exactly one explicit fixed step, independently from the variable accumulator. */
     [[nodiscard]] TExpected<FWorldTickResult, EWorldTickError> TryFixedTick ( Float64 InDeltaTime ) noexcept;
 
+    /**
+     * @brief Installs an external ingress journal consumed serially at each tick.
+     * @details The world does not own the journal. Installing one resets the replay cursor.
+     */
+    void SetIngressJournal ( const FWorldIngressJournal *InJournal ) noexcept;
+
+    /** @brief Returns the number of ingress records applied by the most recent tick. */
+    [[nodiscard]] UInt64 GetLastIngressRecordCount () const noexcept;
+
+    /** @brief Returns the frame index that the next tick will produce. */
+    [[nodiscard]] UInt64 GetFrameIndex () const noexcept;
+
     /** @returns True while an actor phase is active on the executor. */
     [[nodiscard]] Bool IsInParallelPhase () const noexcept;
 
@@ -132,6 +145,7 @@ private:
     RunFixedStep ( UInt64 InFixedStepIndex, Float64 InDeltaTime, FWorldTickResult &OutResult ) noexcept;
     [[nodiscard]] Bool MergeEmissions ( TSpan<AActor *const> InActors, FWorldTickResult &OutResult ) noexcept;
 
+    void ApplyIngressJournal () noexcept;
     Bool ApplyDeferredCommands () noexcept;
     void SortActorsIfNeeded () noexcept;
     void ShutdownActors () noexcept;
@@ -153,6 +167,12 @@ private:
     TVector<AActor *> PhaseActors;
     TVector<AActor *> VariableActors;
     TVector<FActorEmission> MergedEmissions;
+    TVector<FWorldIngressRecord> IngressBatch;
+
+    const FWorldIngressJournal *IngressJournal = nullptr;
+    USize IngressCursor                        = 0ULL;
+    UInt64 IngressGeneration                   = 0ULL;
+    UInt64 LastIngressRecordCount              = 0ULL;
 
     FWorldPhaseCompletion LastPhase;
     Float64 FixedAccumulator = 0.0;

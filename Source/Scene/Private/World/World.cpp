@@ -56,6 +56,7 @@ Lumen::FWorld::FWorld ( const FWorldDesc &InDesc ) noexcept
     PhaseActors.reserve( Desc.MaxActors );
     VariableActors.reserve( Desc.MaxActors );
     MergedEmissions.reserve( Desc.EmissionCapacity );
+    IngressBatch.reserve( FWorldIngressJournal::DefaultCapacity );
 }
 
 Lumen::FWorld::~FWorld () noexcept
@@ -157,6 +158,7 @@ Lumen::TExpected<Lumen::FWorldTickResult, Lumen::EWorldTickError> Lumen::FWorld:
     {
         FirstError.Emplace( EWorldTickError::WorldCapacityExceeded );
     }
+    ApplyIngressJournal();
     SortActorsIfNeeded();
 
     VariableActors.clear();
@@ -267,6 +269,7 @@ Lumen::FWorld::TryFixedTick ( const Float64 InDeltaTime ) noexcept
 
     ++FrameIndex;
     ApplyDeferredCommands();
+    ApplyIngressJournal();
     SortActorsIfNeeded();
 
     FWorldTickResult Result{ .FrameIndex = FrameIndex, .FixedStepsExecuted = 1U, .LastPhase = {} };
@@ -278,6 +281,79 @@ Lumen::FWorld::TryFixedTick ( const Float64 InDeltaTime ) noexcept
 
     Registry.Publish();
     return Result;
+}
+
+void Lumen::FWorld::SetIngressJournal ( const FWorldIngressJournal *InJournal ) noexcept
+{
+    IngressJournal    = InJournal;
+    IngressCursor     = 0ULL;
+    IngressGeneration = InJournal != nullptr ? InJournal->GetGeneration() : 0ULL;
+    if ( InJournal != nullptr )
+    {
+        if ( IngressBatch.capacity() < InJournal->GetCapacity() )
+        {
+            IngressBatch.reserve( InJournal->GetCapacity() );
+        }
+        IngressBatch.resize( IngressBatch.capacity() );
+    }
+}
+
+Lumen::UInt64 Lumen::FWorld::GetLastIngressRecordCount () const noexcept
+{
+    return LastIngressRecordCount;
+}
+
+Lumen::UInt64 Lumen::FWorld::GetFrameIndex () const noexcept
+{
+    return FrameIndex;
+}
+
+void Lumen::FWorld::ApplyIngressJournal () noexcept
+{
+    LastIngressRecordCount = 0ULL;
+    if ( IngressJournal == nullptr )
+    {
+        return;
+    }
+
+    const UInt64 Generation = IngressJournal->GetGeneration();
+    if ( Generation != IngressGeneration )
+    {
+        IngressCursor     = 0ULL;
+        IngressGeneration = Generation;
+    }
+
+    const USize Count = IngressJournal->CopyReadyRecords(
+        FrameIndex, IngressCursor, TSpan<FWorldIngressRecord>( IngressBatch.data(), IngressBatch.size() ) );
+
+    for ( USize Index = 0ULL; Index < Count; ++Index )
+    {
+        const FWorldIngressRecord &Record = IngressBatch[Index];
+        switch ( Record.Kind )
+        {
+        case EWorldIngressKind::Message:
+            static_cast<void>(
+                Internal::FActorRegistry::TryEnqueueMessage( Record.Target, Record.Message, FrameIndex, Record.Sequence ) );
+            break;
+        case EWorldIngressKind::Broadcast:
+            for ( const TSharedPtr<AActor> &Actor : ActiveActors )
+            {
+                if ( Actor->GetLifecycle() != EActorLifecycle::Active )
+                {
+                    continue;
+                }
+                static_cast<void>(
+                    Internal::FActorRegistry::TryEnqueueMessage( Actor->GetId(), Record.Message, FrameIndex, Record.Sequence ) );
+            }
+            break;
+        case EWorldIngressKind::Destroy:
+            static_cast<void>( TryDestroyActor( Record.Target ) );
+            break;
+        }
+
+        ++IngressCursor;
+        ++LastIngressRecordCount;
+    }
 }
 
 Lumen::Bool Lumen::FWorld::IsInParallelPhase () const noexcept
