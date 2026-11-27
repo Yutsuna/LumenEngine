@@ -12,6 +12,7 @@
 
 #include <Templates/Expected.hpp>
 #include <Templates/Map.hpp>
+#include <Templates/Optional.hpp>
 #include <Templates/Variant.hpp>
 #include <Templates/Vector.hpp>
 
@@ -23,7 +24,12 @@
 #include <Actor/ActorEmitContext.hpp>
 #include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
+#include <Rendering/RenderSnapshotStream.hpp>
+#include <Rendering/RenderSnapshotTypes.hpp>
+#include <Rendering/RenderSnapshotView.hpp>
+#include <Rendering/SceneExtractor.hpp>
 #include <World/WorldIngressJournal.hpp>
+#include <World/WorldRenderContent.hpp>
 #include <World/WorldSpatialRegistry.hpp>
 #include <World/WorldTypes.hpp>
 
@@ -105,6 +111,41 @@ public:
     /** @brief Returns this world's owned spatial registry. */
     [[nodiscard]] FSpatialRegistry &GetSpatialRegistry () noexcept;
 
+    /** @return The stable non-zero identity carried by every published snapshot. */
+    [[nodiscard]] UInt64 GetWorldId () const noexcept;
+
+    /** @return True when at least one render capacity was configured, enabling automatic extraction. */
+    [[nodiscard]] Bool IsRenderExtractionEnabled () const noexcept;
+
+    /** @brief Returns the world-owned latest-only rendering snapshot stream. */
+    [[nodiscard]] FRenderSnapshotStream &GetRenderSnapshotStream () noexcept;
+
+    /**
+     * @brief Publishes one complete snapshot from committed state and authored content.
+     * @details Called automatically after the last world fence when extraction is enabled. Control-time callers
+     *          may invoke it directly to force a publication without advancing the simulation. A capacity or
+     *          source-index failure leaves the previous published snapshot intact.
+     */
+    [[nodiscard]] TExpected<FRenderSnapshotHeader, FRenderSnapshotError> PublishRenderSnapshot () noexcept;
+
+    /** @brief Promotes the newest pending snapshot on the single render-reader thread. */
+    Bool SwapRenderSnapshotReadBuffers () noexcept;
+
+    /** @return The immutable view currently exposed to the render reader. */
+    [[nodiscard]] FRenderSnapshotView GetRenderSnapshot () const noexcept;
+
+    /** @return The last rejected publication, if any; a later success clears it. */
+    [[nodiscard]] TOptional<FRenderSnapshotError> GetLastRenderError () const noexcept;
+
+    /** @return Number of successful publications performed by this world. */
+    [[nodiscard]] UInt64 GetRenderPublishCount () const noexcept;
+
+    /**
+     * @brief Returns control-time authored mesh/camera/light records for future publications.
+     * @note Mutate only outside actor phases; transforms are always derived from committed spatial state.
+     */
+    [[nodiscard]] FWorldRenderContent &GetRenderContent () noexcept;
+
 public:
 
     static constexpr UInt32 MaxMessagesPerTick = 100U;
@@ -155,6 +196,17 @@ private:
     FWorldDesc Desc;
     FSpatialRegistry Registry;
     TUniquePtr<FWorldExecutor> Executor;
+
+    /** INFO: The extraction stream lives per world; no actor, asset or renderer ownership crosses this boundary. */
+    FRenderSnapshotStream RenderSnapshotStream;
+    FSceneExtractor RenderExtractor;
+    FWorldRenderContent RenderContent;
+    TVector<FRenderTransformRecord> RenderTransforms;
+    TVector<FRenderMeshRecord> RenderMeshes;
+    FRenderSnapshotError LastRenderError;
+    UInt64 WorldId            = 0ULL;
+    UInt64 RenderPublishCount = 0ULL;
+    Bool bHasRenderError      = false;
 
     TMap<ActorID, TSharedPtr<AActor>> Actors;
     TVector<TSharedPtr<AActor>> ActiveActors;

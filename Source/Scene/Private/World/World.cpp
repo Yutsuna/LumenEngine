@@ -18,6 +18,53 @@
 namespace
 {
 
+/** @brief Process-wide fallback identities; explicit FWorldDesc::WorldId values remain untouched. */
+Lumen::TAtomic<Lumen::UInt64> GNextWorldId{ 1ULL };
+
+[[nodiscard]] Lumen::FRenderSnapshotError MakeCapacityError ( const Lumen::ERenderSnapshotRecordType InRecordType,
+                                                              const Lumen::USize InRequiredCount,
+                                                              const Lumen::USize InCapacity ) noexcept
+{
+    return Lumen::FRenderSnapshotError{
+        .Code          = Lumen::ERenderSnapshotErrorCode::CapacityExceeded,
+        .RecordType    = InRecordType,
+        .RequiredCount = InRequiredCount,
+        .Capacity      = InCapacity,
+    };
+}
+
+/**
+ * @brief Rank of a proxy in the already canonical transform array.
+ * @return The rank, or the array size when the proxy has no committed transform.
+ */
+[[nodiscard]] Lumen::USize FindProxyRank ( const Lumen::TVector<Lumen::FRenderTransformRecord> &InTransforms,
+                                           const Lumen::FRenderProxyId InProxyId ) noexcept
+{
+    Lumen::USize Lower = 0ULL;
+    Lumen::USize Upper = InTransforms.size();
+
+    while ( Lower < Upper )
+    {
+        const Lumen::USize Middle = Lower + ( ( Upper - Lower ) / 2ULL );
+        if ( InTransforms[Middle].ProxyId < InProxyId )
+        {
+            Lower = Middle + 1ULL;
+        }
+        else
+        {
+            Upper = Middle;
+        }
+    }
+
+    return Lower < InTransforms.size() and InTransforms[Lower].ProxyId == InProxyId ? Lower : InTransforms.size();
+}
+
+[[nodiscard]] Lumen::Bool SortRenderTransforms ( const Lumen::FRenderTransformRecord &InLeft,
+                                                 const Lumen::FRenderTransformRecord &InRight ) noexcept
+{
+    return InLeft.ProxyId < InRight.ProxyId;
+}
+
 [[nodiscard]] Lumen::Bool SortActiveActors ( const Lumen::TSharedPtr<Lumen::AActor> &InLeft,
                                              const Lumen::TSharedPtr<Lumen::AActor> &InRight ) noexcept
 {
@@ -47,7 +94,9 @@ Lumen::FWorld::FWorld () noexcept : FWorld( FWorldDesc{} )
 
 Lumen::FWorld::FWorld ( const FWorldDesc &InDesc ) noexcept
     : Desc( InDesc ), Registry( FSpatialRegistryCapacities{ .EntityCapacity = InDesc.MaxActors } ),
-      Executor( MakeUnique<FWorldExecutor>( InDesc.WorkerCount, InDesc.MaxActors ) )
+      Executor( MakeUnique<FWorldExecutor>( InDesc.WorkerCount, InDesc.MaxActors ) ),
+      RenderSnapshotStream( InDesc.RenderCapacities ), RenderExtractor( RenderSnapshotStream ),
+      WorldId( InDesc.WorldId != 0ULL ? InDesc.WorldId : GNextWorldId.fetch_add( 1ULL, std::memory_order_relaxed ) )
 {
     Actors.reserve( Desc.MaxActors );
     ActiveActors.reserve( Desc.MaxActors );
@@ -57,6 +106,13 @@ Lumen::FWorld::FWorld ( const FWorldDesc &InDesc ) noexcept
     VariableActors.reserve( Desc.MaxActors );
     MergedEmissions.reserve( Desc.EmissionCapacity );
     IngressBatch.reserve( FWorldIngressJournal::DefaultCapacity );
+
+    /** INFO: Publication itself must never allocate; all record arrays are reserved once at construction. */
+    RenderTransforms.reserve( Desc.RenderCapacities.TransformCapacity );
+    RenderMeshes.reserve( Desc.RenderCapacities.MeshCapacity );
+    RenderContent.Meshes.reserve( Desc.RenderCapacities.MeshCapacity );
+    RenderContent.Cameras.reserve( Desc.RenderCapacities.CameraCapacity );
+    RenderContent.Lights.reserve( Desc.RenderCapacities.LightCapacity );
 }
 
 Lumen::FWorld::~FWorld () noexcept
@@ -252,6 +308,12 @@ Lumen::TExpected<Lumen::FWorldTickResult, Lumen::EWorldTickError> Lumen::FWorld:
 
     Registry.Publish();
 
+    if ( IsRenderExtractionEnabled() )
+    {
+        /** INFO: Render publication is observable but never masks the simulation result of this tick. */
+        static_cast<void>( PublishRenderSnapshot() );
+    }
+
     if ( FirstError )
     {
         return MakeUnexpected( *FirstError );
@@ -280,6 +342,12 @@ Lumen::FWorld::TryFixedTick ( const Float64 InDeltaTime ) noexcept
     }
 
     Registry.Publish();
+
+    if ( IsRenderExtractionEnabled() )
+    {
+        static_cast<void>( PublishRenderSnapshot() );
+    }
+
     return Result;
 }
 
@@ -369,6 +437,125 @@ Lumen::FWorldPhaseCompletion Lumen::FWorld::GetLastPhaseCompletion () const noex
 Lumen::FSpatialRegistry &Lumen::FWorld::GetSpatialRegistry () noexcept
 {
     return Registry;
+}
+
+Lumen::UInt64 Lumen::FWorld::GetWorldId () const noexcept
+{
+    return WorldId;
+}
+
+Lumen::Bool Lumen::FWorld::IsRenderExtractionEnabled () const noexcept
+{
+    const FRenderSnapshotCapacities &Capacities = Desc.RenderCapacities;
+    return Capacities.TransformCapacity != 0ULL or Capacities.MeshCapacity != 0ULL or Capacities.CameraCapacity != 0ULL or
+           Capacities.LightCapacity != 0ULL;
+}
+
+Lumen::FRenderSnapshotStream &Lumen::FWorld::GetRenderSnapshotStream () noexcept
+{
+    return RenderSnapshotStream;
+}
+
+Lumen::TExpected<Lumen::FRenderSnapshotHeader, Lumen::FRenderSnapshotError> Lumen::FWorld::PublishRenderSnapshot () noexcept
+{
+    const FSpatialCommittedView Committed       = Registry.GetCommittedView();
+    const FRenderSnapshotCapacities &Capacities = Desc.RenderCapacities;
+
+    const auto Fail =
+        [this] ( const FRenderSnapshotError &InError ) noexcept -> TExpected<FRenderSnapshotHeader, FRenderSnapshotError>
+    {
+        LastRenderError = InError;
+        bHasRenderError = true;
+        return MakeUnexpected( LastRenderError );
+    };
+
+    /** INFO: Validate before touching any scratch array so an oversized input cannot force an allocation. */
+    if ( Committed.EntityIDs.size() > Capacities.TransformCapacity ) [[unlikely]]
+    {
+        return Fail(
+            MakeCapacityError( ERenderSnapshotRecordType::Transform, Committed.EntityIDs.size(), Capacities.TransformCapacity ) );
+    }
+    if ( RenderContent.Meshes.size() > Capacities.MeshCapacity ) [[unlikely]]
+    {
+        return Fail( MakeCapacityError( ERenderSnapshotRecordType::Mesh, RenderContent.Meshes.size(), Capacities.MeshCapacity ) );
+    }
+    if ( RenderContent.Cameras.size() > Capacities.CameraCapacity ) [[unlikely]]
+    {
+        return Fail(
+            MakeCapacityError( ERenderSnapshotRecordType::Camera, RenderContent.Cameras.size(), Capacities.CameraCapacity ) );
+    }
+    if ( RenderContent.Lights.size() > Capacities.LightCapacity ) [[unlikely]]
+    {
+        return Fail(
+            MakeCapacityError( ERenderSnapshotRecordType::Light, RenderContent.Lights.size(), Capacities.LightCapacity ) );
+    }
+
+    RenderTransforms.clear();
+    for ( USize Index = 0ULL; Index < Committed.EntityIDs.size(); ++Index )
+    {
+        RenderTransforms.emplace_back( FRenderTransformRecord{
+            .ProxyId        = FRenderProxyId{ Committed.EntityIDs[Index] },
+            .WorldTransform = Committed.Transforms[Index],
+            .Bounds         = FRenderBounds{ .Min = Maths::FVec3f{ -1.0F }, .Max = Maths::FVec3f{ 1.0F } },
+            .Flags          = ERenderTransformFlags::Visible,
+        } );
+    }
+    Algo::Sort( RenderTransforms, &SortRenderTransforms );
+
+    RenderMeshes.clear();
+    for ( const FRenderMeshRecord &Mesh : RenderContent.Meshes )
+    {
+        FRenderMeshRecord Remapped = Mesh;
+        Remapped.TransformIndex    = FindProxyRank( RenderTransforms, Mesh.ProxyId );
+        RenderMeshes.emplace_back( Remapped );
+    }
+
+    const FSceneExtractionInput Input{
+        .WorldId    = WorldId,
+        .FrameIndex = FrameIndex,
+        .Transforms = TSpan<const FRenderTransformRecord>{ RenderTransforms.data(), RenderTransforms.size() },
+        .Meshes     = TSpan<const FRenderMeshRecord>{ RenderMeshes.data(), RenderMeshes.size() },
+        .Cameras    = TSpan<const FRenderCameraRecord>{ RenderContent.Cameras.data(), RenderContent.Cameras.size() },
+        .Lights     = TSpan<const FRenderLightRecord>{ RenderContent.Lights.data(), RenderContent.Lights.size() },
+    };
+
+    auto Result = RenderExtractor.Publish( Input );
+    if ( not Result ) [[unlikely]]
+    {
+        LastRenderError = Result.Error();
+        bHasRenderError = true;
+        return MakeUnexpected( LastRenderError );
+    }
+
+    LastRenderError = {};
+    bHasRenderError = false;
+    ++RenderPublishCount;
+    return Result;
+}
+
+Lumen::Bool Lumen::FWorld::SwapRenderSnapshotReadBuffers () noexcept
+{
+    return RenderSnapshotStream.SwapReadBuffers();
+}
+
+Lumen::FRenderSnapshotView Lumen::FWorld::GetRenderSnapshot () const noexcept
+{
+    return RenderSnapshotStream.GetReadSnapshot();
+}
+
+Lumen::TOptional<Lumen::FRenderSnapshotError> Lumen::FWorld::GetLastRenderError () const noexcept
+{
+    return bHasRenderError ? TOptional<FRenderSnapshotError>( LastRenderError ) : TOptional<FRenderSnapshotError>{};
+}
+
+Lumen::UInt64 Lumen::FWorld::GetRenderPublishCount () const noexcept
+{
+    return RenderPublishCount;
+}
+
+Lumen::FWorldRenderContent &Lumen::FWorld::GetRenderContent () noexcept
+{
+    return RenderContent;
 }
 
 Lumen::TExpected<void, Lumen::EActorSpawnError> Lumen::FWorld::InsertSpawnedActor ( const TSharedPtr<AActor> &InActor ) noexcept
