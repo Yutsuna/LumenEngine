@@ -11,7 +11,7 @@ regex in `Scripts/GitHub/Configuration.py`):
 Example: Feat(AppCore): #142 Add SDL3 window support
 ```
 
-- `PRType` ∈ `Chore | Fix | Feat | Refactor | CI | Test | Style | BREAKING`
+- `PRType` ∈ `Chore | Fix | Feat | Refactor | CI | Test | Style | Story | Epic | Theme | BREAKING`
   (capitalised exactly; `feat:` fails).
 - `PRScope` = a top-level directory under `Source/` (auto-discovered at
   validation time, so `Renderer`, `RHI`, … are valid even as WIP modules)

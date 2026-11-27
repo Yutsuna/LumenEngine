@@ -1,7 +1,9 @@
 import re
 from pathlib import Path
 
-GLOBAL_PR_TYPES: tuple[str, ...] = ("Chore", "Fix", "Feat", "Refactor", "CI", "Test", "Style", "BREAKING")
+GLOBAL_PR_TYPES: tuple[str, ...] = (
+    "Chore", "Fix", "Feat", "Refactor", "CI", "Test", "Style", "Story", "Epic", "Theme", "BREAKING"
+)
 GLOBAL_BASE_SCOPES: tuple[str, ...] = ("Lumen",)
 GLOBAL_SOURCE_ROOT = Path("Source")
 GLOBAL_EXAMPLE = "Feat(AppCore): #142 Add SDL3 window support"
