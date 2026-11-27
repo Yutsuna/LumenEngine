@@ -58,9 +58,58 @@ LUMEN_BENCHMARK( FMailBox, PushPopMessage )
 }
 
 /**
+ * Micro: structured Push/Pop pair. Same steady state as PushPopMessage, but
+ * measures the TExpected path retained by fallible routing.
+ */
+LUMEN_BENCHMARK( FMailBox, TryPushPopMessage )
+{
+    Lumen::FMailBox Mailbox( Lumen::FMailBoxDesc{ .Capacity = 1ULL } );
+    const Lumen::FMessage Message = MakeTickMessage();
+
+    for ( auto _ : State )
+    {
+        const auto Pushed                              = Mailbox.TryPush( Message );
+        const Lumen::TOptional<Lumen::FMessage> Popped = Mailbox.Pop();
+        Lumen::Benchmarks::DoNotOptimize( Pushed );
+        Lumen::Benchmarks::DoNotOptimize( Popped );
+    }
+}
+
+/**
+ * Micro: rejection of a full, preallocated mailbox. No node is allocated and
+ * no accepted message is modified; the saturation counter is the observable.
+ */
+LUMEN_BENCHMARK_ARGS( FMailBox, SaturatedTryPush, 8, 64, 512 )
+{
+    const Lumen::USize Capacity = static_cast<Lumen::USize>( State.GetArgument() );
+
+    Lumen::FMailBox Mailbox( Lumen::FMailBoxDesc{ .Capacity = Capacity } );
+    const Lumen::FMessage Message = MakeTickMessage();
+
+    for ( Lumen::USize Index = 0ULL; Index < Capacity; ++Index )
+    {
+        if ( not Mailbox.TryPush( Message ).HasValue() ) [[unlikely]]
+        {
+            return;
+        }
+    }
+
+    State.SetItemsPerIteration( 1ULL );
+    Lumen::UInt64 RejectedCount = 0ULL;
+
+    for ( auto _ : State )
+    {
+        RejectedCount += Mailbox.TryPush( Message ).HasValue() ? 0ULL : 1ULL;
+    }
+
+    Lumen::Benchmarks::DoNotOptimize( RejectedCount );
+    Lumen::Benchmarks::DoNotOptimize( Mailbox.GetSaturationCount() );
+}
+
+/**
  * Micro: push a batch of Argument messages, then drain it — enqueue and
- * consumer-drain cost across batch sizes. The free-list is pre-filled with
- * the largest batch, so steady-state iterations do not allocate.
+ * consumer-drain cost across batch sizes. Capacity is reserved once, so
+ * steady-state iterations do not allocate.
  */
 LUMEN_BENCHMARK_RANGE( FMailBox, DrainBatch, 1, MaxDrainBatch )
 {
@@ -68,7 +117,11 @@ LUMEN_BENCHMARK_RANGE( FMailBox, DrainBatch, 1, MaxDrainBatch )
     State.SetItemsPerIteration( BatchSize );
 
     Lumen::FMailBox Mailbox;
-    Mailbox.Reserve( MaxDrainBatch );
+
+    if ( not Mailbox.Reserve( MaxDrainBatch ) ) [[unlikely]]
+    {
+        return;
+    }
 
     const Lumen::FMessage Message = MakeTickMessage();
 
@@ -113,7 +166,11 @@ LUMEN_MACRO_BENCHMARK( FMailBox, MpscContentionExchange )
     State.SetItemsPerIteration( ExpectedCount );
 
     Lumen::FMailBox Mailbox;
-    Mailbox.Reserve( ExpectedCount );
+
+    if ( not Mailbox.Reserve( ExpectedCount ) ) [[unlikely]]
+    {
+        return;
+    }
 
     const Lumen::FMessage Message = MakeTickMessage();
 

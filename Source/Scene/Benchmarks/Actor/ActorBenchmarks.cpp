@@ -61,7 +61,11 @@ public:
     /** @brief Exposes the protected mailbox reservation for benchmark setup. */
     void ReserveMailbox ( const Lumen::USize InCapacity ) noexcept
     {
-        GetMailbox().Reserve( InCapacity );
+        const auto Result = GetMailbox().Reserve( InCapacity );
+        if ( not Result.HasValue() ) [[unlikely]]
+        {
+            Lumen::Benchmarks::DoNotOptimize( Result );
+        }
     }
 
     [[nodiscard]] Lumen::UInt32 GetProcessedMessageCount () const noexcept
