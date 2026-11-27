@@ -162,6 +162,49 @@ namespace
         LUMEN_CHECK_EQ( After.Error().Code, ERHIErrorCode::DeviceLost );
     }
 
+    LUMEN_TEST( OpenGLContextLifetime, ConcurrentShutdownClaimsOnce )
+    {
+        TSharedRef<RHIOpenGL::FOpenGLContext> Executor = MakeExecutor();
+        TAtomic<UInt32> Returned{ 0U };
+        FThread First( [&] () noexcept
+        {
+            Executor->Shutdown();
+            Returned.fetch_add( 1U );
+        } );
+        FThread Second( [&] () noexcept
+        {
+            Executor->Shutdown();
+            Returned.fetch_add( 1U );
+        } );
+        First.Join();
+        Second.Join();
+
+        LUMEN_CHECK_EQ( Returned.load(), 2U );
+        const FRHIExpected After = Executor->ExecuteOnGLThread( [] () noexcept
+        {
+        } );
+        LUMEN_CHECK_HAS_ERROR( After );
+        LUMEN_CHECK_EQ( After.Error().Code, ERHIErrorCode::DeviceLost );
+    }
+
+    LUMEN_TEST( OpenGLContextLifetime, FailedStartDoesNotStrandShutdown )
+    {
+        RHIOpenGL::FOpenGLContext::SetForcedInitFailureForTests( true );
+        struct FScopedReset
+        {
+            ~FScopedReset () noexcept
+            {
+                RHIOpenGL::FOpenGLContext::SetForcedInitFailureForTests( false );
+            }
+        } Reset;
+
+        /* A failed Start() must stop and join its worker before returning the error; the
+         * destructor's Shutdown() then returns early instead of waiting on a dead worker. */
+        const TExpected<TSharedRef<RHIOpenGL::FOpenGLContext>, FRHIError> Created = RHIOpenGL::FOpenGLContext::Create( false );
+        LUMEN_CHECK_HAS_ERROR( Created );
+        LUMEN_CHECK_EQ( Created.Error().Code, ERHIErrorCode::BackendFailure );
+    }
+
 } // namespace
 
 } // namespace Lumen

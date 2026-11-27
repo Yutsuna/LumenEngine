@@ -2,12 +2,11 @@ name: PR Title Check
 
 on:
   pull_request:
-    branches: [ main ]
     types: [ opened, edited, reopened, synchronize ]
 
 permissions:
-  contents: read        # checkout + lecture de Source/
-  issues: read          # vérification de l'Issue référencée
+  contents: read
+  issues: read
   pull-requests: read
 
 concurrency:

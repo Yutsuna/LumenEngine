@@ -7,6 +7,9 @@
 
 #include <dlfcn.h>
 
+#include <HAL/LockGuard.hpp>
+#include <HAL/PlatformMutex.hpp>
+
 #include <RHI/Types/RHIError.hpp>
 
 #include <String/String.hpp>
@@ -36,10 +39,12 @@ inline Lumen::TExpected<void, Lumen::RHI::FRHIError> EglFailure ( Lumen::FString
 
 /** @brief EGL's library and default display are process-wide; re-creating them per
  *         device exhausts Mesa's display slots after a few dozen devices. */
+Lumen::HAL::FPlatformMutex GEglCacheMutex;
 void *GCachedEglLibrary                        = nullptr;
 Lumen::RHIOpenGL::EGLDisplay GCachedEglDisplay = 0U;
 
-inline void *TryOpenEGL () noexcept
+/** @brief Opens libEGL once; the caller must hold GEglCacheMutex. */
+inline void *OpenEglLocked () noexcept
 {
     if ( GCachedEglLibrary != nullptr )
     {
@@ -74,7 +79,10 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug ) no
         return {};
     }
 
-    Library = TryOpenEGL();
+    /* One process-wide lock covers both cached handles: a single thread performs
+     * dlopen/eglInitialize and publishes the result to every other device. */
+    Lumen::HAL::TLockGuard CacheLock( GEglCacheMutex );
+    Library = OpenEglLocked();
     if ( Library == nullptr )
     {
         return EglFailure( "Unable to open libEGL (libEGL.so.1 / libEGL.so)." );

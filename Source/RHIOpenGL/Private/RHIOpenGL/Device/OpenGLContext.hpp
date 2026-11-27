@@ -83,13 +83,17 @@ namespace RHIOpenGL
         /** @brief Creates the context and waits until its worker is ready. */
         [[nodiscard]] static TExpected<TSharedRef<FOpenGLContext>, RHI::FRHIError> Create ( Bool bEnableDebug ) noexcept;
 
+        /** @brief Test seam: forces worker initialization to fail until explicitly cleared. */
+        static void SetForcedInitFailureForTests ( Bool bForce ) noexcept;
+
         ~FOpenGLContext () noexcept;
 
         /**
          * @brief Stops the executor and retires deferred releases on it.
-         * @details Idempotent. Drain and shutdown are posted before the stop is published so
-         *          every accepted task remains observable by the worker. After this returns,
-         *          ExecuteOnGLThread/InvokeOnGLThread fail fast with DeviceLost.
+         * @details Idempotent: one atomic transition claims the stop, so concurrent callers
+         *          return immediately. After that transition, ExecuteOnGLThread/
+         *          InvokeOnGLThread fail fast with DeviceLost; the drain itself is posted
+         *          through the internal path so the worker can still retire GL handles.
          */
         void Shutdown () noexcept;
 
@@ -167,6 +171,14 @@ namespace RHIOpenGL
             FOpenGLSubmission Submission;
         };
 
+        /**
+         * @brief Enqueues a tracked task and waits for its completion on the GL Executor.
+         * @details When bAllowWhileStopping is true the gate check is bypassed; the enqueue
+         *          still shares QueueMutex with that check. The gate itself is claimed
+         *          atomically before this is called. Use only for shutdown work that the
+         *          worker must observe before it exits.
+         */
+        [[nodiscard]] RHI::FRHIExpected PostTaskAndWait ( TFunction<void()> InTask, Bool bAllowWhileStopping ) noexcept;
         [[nodiscard]] RHI::FRHIExpected Start () noexcept;
         void Worker ( FStopToken InStopToken ) noexcept;
         void StepScheduler () noexcept;
@@ -203,7 +215,7 @@ namespace RHIOpenGL
         HAL::FPlatformMutex QueueMutex;
         FConditionVariable Wake;
         TQueue<TFunction<void()>> Tasks;
-        /** @brief Published under QueueMutex before stop; rejects new invokes atomically. */
+        /** @brief Atomic stop gate, claimed once by Shutdown()/Start() and checked under QueueMutex. */
         TAtomic<Bool> bStopping{ false };
         TOptional<RHI::FRHIError> InitError;
         Bool bReady = false;

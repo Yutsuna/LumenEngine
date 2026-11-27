@@ -224,11 +224,12 @@ Lumen::RHIOpenGL::GLuint Lumen::RHIOpenGL::FOpenGLComputePipeline::GetProgram ()
     return Program;
 }
 
-Lumen::RHIOpenGL::FOpenGLPipelineLayout *Lumen::RHIOpenGL::FOpenGLComputePipeline::GetNativeLayout () const noexcept
+Lumen::TOptional<Lumen::RHIOpenGL::FOpenGLPipelineLayout *>
+Lumen::RHIOpenGL::FOpenGLComputePipeline::GetNativeLayout () const noexcept
 {
     if ( not Desc.Layout )
     {
-        return nullptr;
+        return {};
     }
-    return RHI::TryUnwrapRHIBackend<FOpenGLPipelineLayout>( RHI::UnwrapRHIShared( Desc.Layout ).Get() ).ValueOr( nullptr );
+    return RHI::TryUnwrapRHIBackend<FOpenGLPipelineLayout>( RHI::UnwrapRHIShared( Desc.Layout ).Get() );
 }
