@@ -11,8 +11,10 @@
 namespace Lumen
 {
 
-/** @enum EActorLifecycle
- * @brief Logical actor lifetime, independent from its C++ storage lifetime. */
+/**
+ * @enum EActorLifecycle
+ * @brief Logical actor lifetime, independent from its C++ storage lifetime.
+ */
 enum class EActorLifecycle : UInt8
 {
     Spawning,
@@ -21,8 +23,10 @@ enum class EActorLifecycle : UInt8
     Retired,
 };
 
-/** @enum EActorTickPhase
- * @brief Explicit world dispatch phase selected by an actor. */
+/**
+ * @enum EActorTickPhase
+ * @brief Explicit world dispatch phase selected by an actor.
+ */
 enum class EActorTickPhase : UInt8
 {
     FixedUpdate,
@@ -31,8 +35,10 @@ enum class EActorTickPhase : UInt8
     PostUpdate,
 };
 
-/** @enum EActorSendError
- * @brief Structured actor routing and dead-letter reasons. */
+/**
+ * @enum EActorSendError
+ * @brief Structured actor routing and dead-letter reasons.
+ */
 enum class EActorSendError : UInt8
 {
     InvalidActor,
@@ -46,8 +52,10 @@ enum class EActorSendError : UInt8
     Count,
 };
 
-/** @enum EActorSpawnError
- * @brief Structured failures accepted by fallible spawn operations. */
+/**
+ * @enum EActorSpawnError
+ * @brief Structured failures accepted by fallible spawn operations.
+ */
 enum class EActorSpawnError : UInt8
 {
     RegistryExhausted,
@@ -57,8 +65,10 @@ enum class EActorSpawnError : UInt8
     WorldClosed,
 };
 
-/** @enum EActorDestroyError
- * @brief Structured failures accepted by fallible destroy operations. */
+/**
+ * @enum EActorDestroyError
+ * @brief Structured failures accepted by fallible destroy operations.
+ */
 enum class EActorDestroyError : UInt8
 {
     InvalidActor,

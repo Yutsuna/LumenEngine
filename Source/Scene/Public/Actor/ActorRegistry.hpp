@@ -14,7 +14,8 @@
 namespace Lumen
 {
 
-/** @struct FDeadLetterRecord
+/**
+ * @struct FDeadLetterRecord
  * @brief Bounded diagnostic metadata for a message that was not delivered. */
 struct SCENE_EXPORT FDeadLetterRecord
 {

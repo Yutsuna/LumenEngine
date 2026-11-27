@@ -16,7 +16,8 @@
 namespace Lumen
 {
 
-/** @struct FActorEmission
+/**
+ * @struct FActorEmission
  * @brief Message plus its deterministic routing key. */
 struct SCENE_EXPORT FActorEmission
 {
