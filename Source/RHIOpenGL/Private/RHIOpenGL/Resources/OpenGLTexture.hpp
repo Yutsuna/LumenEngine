@@ -51,6 +51,9 @@ namespace RHIOpenGL
         [[nodiscard]] static TOptional<UInt64> ComputeTextureRequirements ( const RHI::FRHITextureDesc &InDesc,
                                                                             UInt64 InMinAlignment ) noexcept;
 
+        /** @brief Unaligned byte requirement used to validate a placed allocation. */
+        [[nodiscard]] static TOptional<UInt64> ComputeTightTextureBytes ( const RHI::FRHITextureDesc &InDesc ) noexcept;
+
         FOpenGLTexture ( TSharedRef<FOpenGLDeviceContext> InContext,
                          const RHI::FRHITextureDesc &InDesc,
                          RHI::FRHIObjectId InId ) noexcept;

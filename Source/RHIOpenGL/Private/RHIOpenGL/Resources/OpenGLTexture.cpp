@@ -67,31 +67,8 @@ Lumen::RHIOpenGL::FOpenGLTexture::CreatePlaced ( TSharedRef<FOpenGLDeviceContext
     {
         return TUnexpected( RHI::MakeRHIInvalidMemory( "Placed texture alignment is insufficient." ) );
     }
-    const RHI::FRHIFormatInfo &FormatInfo = RHI::GetRHIFormatInfo( InDesc.Format );
-    UInt64 RequiredBytes                  = 0ULL;
-    Bool bRequirementsValid = FormatInfo.BytesPerBlock > 0U and FormatInfo.BlockWidth > 0U and FormatInfo.BlockHeight > 0U;
-    for ( UInt32 Mip = 0U; bRequirementsValid and Mip < InDesc.MipCount; ++Mip )
-    {
-        const UInt64 MipWidth  = InDesc.Extent.Width >> Mip;
-        const UInt64 MipHeight = InDesc.Extent.Height >> Mip;
-        const UInt64 MipDepth  = ( InDesc.Extent.Depth >> Mip ) < 1U ? 1ULL : static_cast<UInt64>( InDesc.Extent.Depth >> Mip );
-        const TOptional<UInt64> BlocksWide = RHI::RHICheckedDivideCeil( MipWidth, static_cast<UInt64>( FormatInfo.BlockWidth ) );
-        const TOptional<UInt64> BlocksHigh =
-            RHI::RHICheckedDivideCeil( MipHeight, static_cast<UInt64>( FormatInfo.BlockHeight ) );
-        const TOptional<UInt64> RowBytes =
-            BlocksWide ? RHI::RHICheckedMultiply( *BlocksWide, static_cast<UInt64>( FormatInfo.BytesPerBlock ) )
-                       : TOptional<UInt64>{};
-        const TOptional<UInt64> PlaneBytes = RowBytes ? RHI::RHICheckedMultiply( *RowBytes, *BlocksHigh ) : TOptional<UInt64>{};
-        const TOptional<UInt64> LevelBytes = PlaneBytes ? RHI::RHICheckedMultiply( *PlaneBytes, MipDepth ) : TOptional<UInt64>{};
-        const TOptional<UInt64> TotalBytes = LevelBytes ? RHI::RHICheckedAdd( RequiredBytes, *LevelBytes ) : TOptional<UInt64>{};
-        if ( not TotalBytes )
-        {
-            bRequirementsValid = false;
-            break;
-        }
-        RequiredBytes = *TotalBytes;
-    }
-    if ( not bRequirementsValid or RequiredBytes > InAllocation.Size )
+    const TOptional<UInt64> RequiredBytes = ComputeTightTextureBytes( InDesc );
+    if ( not RequiredBytes or *RequiredBytes > InAllocation.Size )
     {
         return TUnexpected( RHI::MakeRHIInvalidMemory( "Placed texture exceeds its allocation." ) );
     }
@@ -138,6 +115,38 @@ Lumen::RHIOpenGL::FOpenGLTexture::ComputeTextureRequirements ( const RHI::FRHITe
                                         .AndThen( [Depth] ( const UInt64 InPlaneBytes ) noexcept -> TOptional<UInt64>
         {
             return RHI::RHICheckedMultiply( InPlaneBytes, Depth < 1ULL ? 1ULL : Depth );
+        } ) );
+        LUMEN_OPTIONAL( Sum, RHI::RHICheckedAdd( Total, LevelBytes ) );
+        Total = Sum;
+    }
+    return TOptional<UInt64>( Total );
+}
+
+Lumen::TOptional<Lumen::UInt64>
+Lumen::RHIOpenGL::FOpenGLTexture::ComputeTightTextureBytes ( const RHI::FRHITextureDesc &InDesc ) noexcept
+{
+    const RHI::FRHIFormatInfo &Info = RHI::GetRHIFormatInfo( InDesc.Format );
+    if ( Info.BytesPerBlock == 0U )
+    {
+        return {};
+    }
+    UInt64 Total = 0ULL;
+    for ( UInt32 Mip = 0U; Mip < InDesc.MipCount; ++Mip )
+    {
+        const UInt64 Width  = InDesc.Extent.Width >> Mip;
+        const UInt64 Height = InDesc.Extent.Height >> Mip;
+        const UInt64 Depth  = ( InDesc.Extent.Depth >> Mip ) < 1ULL ? 1ULL : static_cast<UInt64>( InDesc.Extent.Depth >> Mip );
+        LUMEN_OPTIONAL( BlocksWide, RHI::RHICheckedDivideCeil( Width, static_cast<UInt64>( Info.BlockWidth ) ) );
+        LUMEN_OPTIONAL( BlocksHigh, RHI::RHICheckedDivideCeil( Height, static_cast<UInt64>( Info.BlockHeight ) ) );
+        LUMEN_OPTIONAL( LevelBytes, RHI::RHICheckedMultiply( BlocksWide, static_cast<UInt64>( Info.BytesPerBlock ) )
+                                        .AndThen(
+                                            [BlocksHigh] ( const UInt64 InRowBytes ) noexcept -> TOptional<UInt64>
+        {
+            return RHI::RHICheckedMultiply( InRowBytes, BlocksHigh );
+        } )
+                                        .AndThen( [Depth] ( const UInt64 InPlaneBytes ) noexcept -> TOptional<UInt64>
+        {
+            return RHI::RHICheckedMultiply( InPlaneBytes, Depth );
         } ) );
         LUMEN_OPTIONAL( Sum, RHI::RHICheckedAdd( Total, LevelBytes ) );
         Total = Sum;
