@@ -9,30 +9,38 @@
 
 #include <utility>
 
+/**
+ * Private
+ */
+
 namespace
 {
 
-Lumen::TUnexpected<Lumen::FRenderError>
+inline Lumen::TUnexpected<Lumen::FRenderError>
 MakeRenderError ( const Lumen::ERenderErrorCode InCode,
                   const Lumen::UInt32 InPass        = Lumen::InvalidRenderPassOrdinal,
                   const Lumen::UInt32 InResource    = Lumen::InvalidRenderResourceIndex,
                   const Lumen::UInt32 InRelatedPass = Lumen::InvalidRenderPassOrdinal ) noexcept
 {
-    return Lumen::TUnexpected<Lumen::FRenderError>( Lumen::FRenderError{
+    return MakeUnexpected( Lumen::FRenderError{
         .Code = InCode, .PassOrdinal = InPass, .ResourceIndex = InResource, .RelatedPassOrdinal = InRelatedPass } );
 }
 
-Lumen::Bool IsQueueValid ( const Lumen::RHI::ERHIQueueType InQueue ) noexcept
+inline Lumen::Bool IsQueueValid ( const Lumen::RHI::ERHIQueueType InQueue ) noexcept
 {
     return InQueue < Lumen::RHI::ERHIQueueType::Count;
 }
 
-Lumen::Bool IsDeclaredStateValid ( const Lumen::RHI::ERHIResourceState InState ) noexcept
+inline Lumen::Bool IsDeclaredStateValid ( const Lumen::RHI::ERHIResourceState InState ) noexcept
 {
     return InState != Lumen::RHI::ERHIResourceState::Undefined and Lumen::RHI::IsValidRHIResourceState( InState );
 }
 
 } // namespace
+
+/**
+ * Public
+ */
 
 Lumen::FRenderGraphBuilder::FRenderGraphBuilder ( const FRenderGraphCapacities &InCapacities ) noexcept : Graph( InCapacities )
 {
@@ -45,16 +53,19 @@ Lumen::FRenderGraphBuilder::AddResource ( FRenderResource &&InResource ) noexcep
     {
         return MakeRenderError( ERenderErrorCode::GraphAlreadyCompiled );
     }
-    if ( Resources.size() >= Graph.Capacities.ResourceCount or Graph.Resources.size() >= InvalidRenderResourceIndex or
+
+    if ( Graph.Resources.size() >= Graph.Capacities.ResourceCount or Graph.Resources.size() >= InvalidRenderResourceIndex or
          Graph.NextResourceGeneration == 0U )
     {
         return MakeRenderError( ERenderErrorCode::CapacityExceeded );
     }
 
-    InResource.Handle = FRenderResourceHandle{ static_cast<UInt32>( Graph.Resources.size() ), Graph.NextResourceGeneration };
+    InResource.Handle = { .Index = static_cast<UInt32>( Graph.Resources.size() ), .Generation = Graph.NextResourceGeneration };
     ++Graph.NextResourceGeneration;
+
     const FRenderResourceHandle Handle = InResource.Handle;
     Graph.Resources.push_back( std::move( InResource ) );
+
     return Handle;
 }
 
@@ -200,6 +211,7 @@ Lumen::FRenderExpected Lumen::FRenderGraphBuilder::AddAccess ( const FRenderPass
     }
 
     FRenderPass &Pass = Graph.Passes[InPass.Ordinal];
+
     for ( const FRenderResourceAccess &Access : Pass.Reads )
     {
         if ( Access.Resource == InResource )
@@ -207,6 +219,7 @@ Lumen::FRenderExpected Lumen::FRenderGraphBuilder::AddAccess ( const FRenderPass
             return MakeRenderError( ERenderErrorCode::InvalidAccess, InPass.Ordinal, InResource.Index );
         }
     }
+
     for ( const FRenderResourceAccess &Access : Pass.Writes )
     {
         if ( Access.Resource == InResource )
@@ -218,11 +231,13 @@ Lumen::FRenderExpected Lumen::FRenderGraphBuilder::AddAccess ( const FRenderPass
 
     TVector<FRenderResourceAccess> &Accesses = bWrite ? Pass.Writes : Pass.Reads;
     const USize Capacity                     = bWrite ? Graph.Capacities.WriteCountPerPass : Graph.Capacities.ReadCountPerPass;
+
     if ( Accesses.size() >= Capacity )
     {
         return MakeRenderError( ERenderErrorCode::CapacityExceeded, InPass.Ordinal, InResource.Index );
     }
-    Accesses.push_back( FRenderResourceAccess{ InResource, InState } );
+
+    Accesses.push_back( { .Resource = InResource, .State = InState } );
     return {};
 }
 

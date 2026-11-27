@@ -10,6 +10,9 @@
 namespace Lumen
 {
 
+/** @class FRenderGraphCompiler
+ * @brief Deterministic DAG, culling, lifetime, aliasing and barrier compilation stages.
+ */
 class FRenderGraphCompiler final
 {
 public:
