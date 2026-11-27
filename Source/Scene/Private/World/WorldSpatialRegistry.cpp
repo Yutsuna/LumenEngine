@@ -168,14 +168,14 @@ void Lumen::FSpatialRegistry::ResizeTrackersAndFlagStructuralChange () noexcept
     const USize EntityCount = WorkingData.EntityIDs.size();
 
     /** INFO: every buffer needs a full copy on the next Publish */
-    for ( USize BufferIdx = 0U; BufferIdx < 3U; ++BufferIdx )
+    for ( USize BufferIdx = 0U; BufferIdx < Thread::TripleBufferCount; ++BufferIdx )
     {
         DeltaTrackers[BufferIdx].bMetadataDirty = true;
         DeltaTrackers[BufferIdx].Resize( EntityCount );
     }
 
     /** INFO: Pending must cover the new entity range for future updates. */
-    for ( USize CompIdx = 0U; CompIdx < Thread::TripleBufferCount; ++CompIdx )
+    for ( USize CompIdx = 0U; CompIdx < static_cast<USize>( ESpatialComponentType::Count ); ++CompIdx )
     {
         Pending[CompIdx].Resize( EntityCount );
     }

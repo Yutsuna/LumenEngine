@@ -1,5 +1,5 @@
 /**
- * @file SpatialRegistry.hpp
+ * @file WorldSpatialRegistry.hpp
  * @brief Data-Oriented registry for spatial and renderable data.
  */
 
@@ -115,7 +115,7 @@ private:
         void ClearAll () noexcept;
     };
 
-    FDeltaTracker DeltaTrackers[3];
+    FDeltaTracker DeltaTrackers[Thread::TripleBufferCount];
 
     /** @brief One bitset per component. UpdateTransform marks here (1 atomic RMW). */
     FAtomicBitset Pending[static_cast<USize>( ESpatialComponentType::Count )];

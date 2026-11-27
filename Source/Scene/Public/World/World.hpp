@@ -10,95 +10,158 @@
 #include <Core/CoreTypes.hpp>
 #include <Core/NonCopyable.hpp>
 
-#include <Templates/Function.hpp>
+#include <Templates/Expected.hpp>
 #include <Templates/Map.hpp>
+#include <Templates/Variant.hpp>
 #include <Templates/Vector.hpp>
 
 #include <HAL/PlatformMutex.hpp>
 
 #include <Memory/SharedPtr.hpp>
+#include <Memory/UniquePtr.hpp>
 
+#include <Actor/ActorEmitContext.hpp>
+#include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
+#include <World/WorldTypes.hpp>
 
 namespace Lumen
 {
 
+class FWorldExecutor;
+
 /**
  * @class FWorld
- * @brief Manages the world state, including spawning and ticking actors.
+ * @brief Owns actors and executes explicit phases separated by CPU fences.
  */
 class SCENE_EXPORT FWorld : public FNonCopyable
 {
 public:
 
-    FWorld () noexcept = default;
+    FWorld () noexcept;
+    explicit FWorld ( const FWorldDesc &InDesc ) noexcept;
     virtual ~FWorld () noexcept;
 
 public:
 
-    /** @brief Spawns an actor of type ActorType and returns it */
+    /** @brief Legacy infallible spawn adapter; new code should consume TrySpawnActor. */
     template <typename ActorType, typename... Args> [[nodiscard]] TSharedRef<ActorType> SpawnActor ( Args &&...InArgs );
 
-    /**
-     * @brief Queues actor construction for the next serial phase.
-     * @details Safe to call from Receive() during the parallel phase.
-     *          The returned FActorRef carries a valid ActorID immediately,
-     *          but the does not exist (and cannot receive messages) until
-     *          the next Tick applies the deferred command.
-     */
+    /** @brief Spawns and activates an actor without terminating on registry or capacity exhaustion. */
+    template <typename ActorType, typename... Args>
+    [[nodiscard]] TExpected<TSharedRef<ActorType>, EActorSpawnError> TrySpawnActor ( Args &&...InArgs ) noexcept;
+
+    /** @brief Legacy deferred spawn adapter; new code should consume TrySpawnActorDeferred. */
     template <typename ActorType, typename... Args> [[nodiscard]] FActorRef SpawnActorDeferred ( Args &&...InArgs );
 
-    /** @brief Removes an actor from the world. Auto-defers during the parallel phase. */
-    void DestroyActor ( ActorID InId );
+    /**
+     * @brief Constructs during this control operation, then activates at the next serial commit.
+     * @details The ID is reserved immediately but routing and BeginPlay stay closed until activation.
+     */
+    template <typename ActorType, typename... Args>
+    [[nodiscard]] TExpected<FActorRef, EActorSpawnError> TrySpawnActorDeferred ( Args &&...InArgs ) noexcept;
 
-    /** @brief Broadcasts a message to all actors. Auto-defers during parallel phase. */
-    void Broadcast ( const FMessage &InMessage );
+    /** @brief Legacy destroy adapter. */
+    void DestroyActor ( ActorID InId ) noexcept;
 
-    /** @brief Core loop: Ticks logic and processes all mailboxes in parallel */
-    void Tick ( Float64 InDeltaTime );
+    /** @brief Requests logical destruction, deferring it when called from an actor task. */
+    [[nodiscard]] TExpected<void, EActorDestroyError> TryDestroyActor ( ActorID InId ) noexcept;
 
-    /** @returns True while the parallel phase is active. */
+    /** @brief Legacy broadcast adapter. */
+    void Broadcast ( const FMessage &InMessage ) noexcept;
+
+    /** @brief Broadcasts now or through one bounded canonical deferred command. */
+    [[nodiscard]] TExpected<void, EActorSendError> TryBroadcast ( const FMessage &InMessage ) noexcept;
+
+    /** @brief Legacy tick adapter that discards the structured result. */
+    void Tick ( Float64 InDeltaTime ) noexcept;
+
+    /** @brief Runs fixed steps, PreUpdate, Update, PostUpdate, then merges actor outboxes. */
+    [[nodiscard]] TExpected<FWorldTickResult, EWorldTickError> TryTick ( Float64 InDeltaTime ) noexcept;
+
+    /** @brief Runs exactly one explicit fixed step, independently from the variable accumulator. */
+    [[nodiscard]] TExpected<FWorldTickResult, EWorldTickError> TryFixedTick ( Float64 InDeltaTime ) noexcept;
+
+    /** @returns True while an actor phase is active on the executor. */
     [[nodiscard]] Bool IsInParallelPhase () const noexcept;
+
+    /** @brief Returns the most recently completed phase token. */
+    [[nodiscard]] FWorldPhaseCompletion GetLastPhaseCompletion () const noexcept;
 
 public:
 
-    /** Maximum messages an actor can process per tick to prevent "Long Tail" latency */
     static constexpr UInt32 MaxMessagesPerTick = 100U;
 
 private:
 
-    void ApplyDeferredCommands () noexcept;
-    void DestroyActorImpl ( ActorID InId ) noexcept;
+    struct FDeferredSpawnCommand
+    {
+        TSharedPtr<AActor> Actor;
+    };
+
+    struct FDeferredDestroyCommand
+    {
+        ActorID Target = InvalidActorID;
+    };
+
+    struct FDeferredBroadcastCommand
+    {
+        FMessage Message;
+    };
+
+    using FDeferredCommandPayload = TVariant<FDeferredSpawnCommand, FDeferredDestroyCommand, FDeferredBroadcastCommand>;
+
+    struct FDeferredCommand
+    {
+        ActorID Sender        = InvalidActorID;
+        UInt64 SenderSequence = 0ULL;
+        ActorID Target        = InvalidActorID;
+        FDeferredCommandPayload Payload;
+    };
+
+    [[nodiscard]] TExpected<void, EActorSpawnError> InsertSpawnedActor ( const TSharedPtr<AActor> &InActor ) noexcept;
+    [[nodiscard]] Bool QueueDeferredCommand ( ActorID InTarget, FDeferredCommandPayload &&InPayload ) noexcept;
+    [[nodiscard]] TExpected<void, EActorDestroyError> DestroyActorImpl ( ActorID InId ) noexcept;
+    [[nodiscard]] TExpected<FWorldPhaseCompletion, EWorldTickError>
+    RunPhase ( TSpan<AActor *const> InActors, EActorTickPhase InPhase, UInt64 InFixedStepIndex, Float64 InDeltaTime ) noexcept;
+    [[nodiscard]] TExpected<void, EWorldTickError>
+    RunFixedStep ( UInt64 InFixedStepIndex, Float64 InDeltaTime, FWorldTickResult &OutResult ) noexcept;
+    [[nodiscard]] Bool MergeEmissions ( TSpan<AActor *const> InActors, FWorldTickResult &OutResult ) noexcept;
+
+    Bool ApplyDeferredCommands () noexcept;
+    void SortActorsIfNeeded () noexcept;
+    void ShutdownActors () noexcept;
 
 private:
 
-    /**
-     * @struct FDeferredCommand
-     * @brief Represents a command to be executed during the deferred phase.
-     */
-    struct FDeferredCommand
-    {
-        /** Non-zero when this command owns an actor slot that must be released if never executed. */
-        ActorID OwnedId = 0ULL;
-        /** The function to execute when this command is processed. */
-        TFunction<void( FWorld & )> Execute;
-    };
+    FWorldDesc Desc;
+    TUniquePtr<FWorldExecutor> Executor;
 
     TMap<ActorID, TSharedPtr<AActor>> Actors;
     TVector<TSharedPtr<AActor>> ActiveActors;
 
     mutable HAL::FPlatformMutex DeferredMutex;
     TVector<FDeferredCommand> DeferredCommands;
+    TVector<FDeferredCommand> DeferredCommandBatch;
+    UInt64 NextExternalCommandSequence = 0ULL;
 
-    Bool bNeedsSorting    = false;
-    Bool bInParallelPhase = false;
+    TVector<AActor *> PhaseActors;
+    TVector<AActor *> VariableActors;
+    TVector<FActorEmission> MergedEmissions;
+
+    FWorldPhaseCompletion LastPhase;
+    Float64 FixedAccumulator = 0.0;
+    UInt64 FrameIndex        = 0ULL;
+    Bool bNeedsSorting       = false;
+    Bool bInParallelPhase    = false;
+    Bool bShuttingDown       = false;
 };
 
 namespace Internal
 {
 
-    /** @brief Registry exhausted; caller gets a null-owner shared ref. */
-    [[noreturn]] inline void TerminateOnRegistryExhaustion ();
+    /** @brief Legacy adapters retain their historical fatal failure contract. */
+    [[noreturn]] inline void TerminateOnSpawnFailure ( EActorSpawnError InError ) noexcept;
 
 } // namespace Internal
 
