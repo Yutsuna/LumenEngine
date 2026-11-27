@@ -7,7 +7,7 @@
 #include <Actor/ActorRegistry.hpp>
 #include <Actor/ActorTypes.hpp>
 
-#include <Templates/Map.hpp>
+#include <Templates/Array.hpp>
 #include <Templates/Pair.hpp>
 
 #include <HAL/LockGuard.hpp>
@@ -16,82 +16,49 @@
 
 #include <Logging/Logger.hpp>
 
-/**
- * Private
- */
-
 namespace
 {
 
 static_assert( Lumen::TAtomic<Lumen::UInt64>::is_always_lock_free, "TAtomic<UInt64> must be lock-free" );
 
-/**
- * @struct FSlot
- * @brief A slot in the actor registry.
- */
 struct alignas( 64 ) FActorSlot
 {
     Lumen::TAtomic<Lumen::UInt64> State   = { 0ULL };
     Lumen::TAtomic<Lumen::AActor *> Actor = { nullptr };
+    Lumen::TAtomic<Lumen::Bool> Routable  = { false };
     Lumen::UInt32 NextFree                = 0U;
 };
 
-/**
- * @struct FChunk
- * @brief A chunk of actor slots in the actor registry.
- */
 struct FActorChunk
 {
-    static constexpr Lumen::UInt32 ChunkBits = 10U;                   /** 10 bits per slot */
-    static constexpr Lumen::UInt32 ChunkSize = 1U << ChunkBits;       /** 1024 slots per chunk */
-    static constexpr Lumen::UInt32 ChunkMask = ChunkSize - 1U;        /** 1023 */
-    static constexpr Lumen::UInt32 MaxChunks = 1U << 14U;             /** 16K chunks */
-    static constexpr Lumen::UInt32 MaxSlots  = ChunkSize * MaxChunks; /** 16M live actors */
+    static constexpr Lumen::UInt32 ChunkBits = 10U;
+    static constexpr Lumen::UInt32 ChunkSize = 1U << ChunkBits;
+    static constexpr Lumen::UInt32 ChunkMask = ChunkSize - 1U;
+    static constexpr Lumen::UInt32 MaxChunks = 1U << 14U;
+    static constexpr Lumen::UInt32 MaxSlots  = ChunkSize * MaxChunks;
 
     FActorSlot Slots[ChunkSize];
 };
 
-/**
- * @struct FActorRegistryState
- * @brief The state of the actor registry.
- */
 struct FActorRegistryState
 {
     Lumen::HAL::FPlatformSpinLockMutex Lock;
-    Lumen::UInt32 NextSlot                                       = 1U; /** slot 0  is InvalidActorID */
-    Lumen::UInt32 FreeHead                                       = 0U; /** 0 = empty */
+    Lumen::UInt32 NextSlot                                       = 1U;
+    Lumen::UInt32 FreeHead                                       = 0U;
     Lumen::TAtomic<FActorChunk *> Chunks[FActorChunk::MaxChunks] = {};
 
-    /**
-     * @brief Releases every lazily allocated chunk at process exit.
-     * @note  INFO: The state owns its chunks, so teardown belongs to the state
-     *        itself: no entry-point (tests, benchmarks, runtime) has to know
-     *        about the allocation. Must not log — the Logger may be gone by
-     *        then. After this runs the registry fails soft: FindSlot() yields
-     *        nullptr, so stray Unregister/EnqueueMessage calls are harmless.
-     */
     ~FActorRegistryState () noexcept
     {
         for ( Lumen::UInt32 ChunkIndex = 0U; ChunkIndex < FActorChunk::MaxChunks; ++ChunkIndex )
         {
-            ReleaseChunk( ChunkIndex );
+            if ( FActorChunk *const Chunk = Chunks[ChunkIndex].load( std::memory_order_acquire ) )
+            {
+                delete Chunk;
+                Chunks[ChunkIndex].store( nullptr, std::memory_order_relaxed );
+            }
         }
     }
 
-    void ReleaseChunk ( const Lumen::UInt32 ChunkIndex ) noexcept
-    {
-        if ( FActorChunk *const Chunk = Chunks[ChunkIndex].load( std::memory_order_acquire ) ) [[likely]]
-        {
-            delete Chunk;
-            Chunks[ChunkIndex].store( nullptr, std::memory_order_relaxed );
-        }
-    }
-
-    /**
-     * @brief Finds a slot in the registry by slot index.
-     * @param InSlotIndex The slot index to find.
-     * @return A pointer to the slot, or nullptr if the slot is not found.
-     */
     [[nodiscard]] FActorSlot *FindSlot ( const Lumen::UInt32 InSlotIndex ) noexcept
     {
         const Lumen::UInt32 ChunkIndex = InSlotIndex >> FActorChunk::ChunkBits;
@@ -105,20 +72,12 @@ struct FActorRegistryState
         return Chunk != nullptr ? &Chunk->Slots[InSlotIndex & FActorChunk::ChunkMask] : nullptr;
     }
 
-    /**
-     * @brief Acquires a slot in the registry.
-     * @return The slot index, or 0 if no slot could be acquired.
-     */
     [[nodiscard]] Lumen::UInt32 AcquireSlot () noexcept
     {
         Lumen::HAL::TLockGuard<Lumen::HAL::FPlatformSpinLockMutex> Guard( Lock );
 
         if ( const Lumen::UInt32 Recycled = FreeHead; Recycled != 0U )
         {
-            /**
-             * INFO: The cycled index always originates from a live chunk,
-             *       but FindSlot() cannot prove it to the compiler.
-             */
             FActorSlot *const RecycledSlot = FindSlot( Recycled );
             if ( RecycledSlot == nullptr ) [[unlikely]]
             {
@@ -152,22 +111,63 @@ struct FActorRegistryState
     }
 };
 
+struct FDeadLetterDiagnostics
+{
+    Lumen::HAL::FPlatformSpinLockMutex Lock;
+    Lumen::TArray<Lumen::FDeadLetterRecord, Lumen::Internal::FActorRegistry::DeadLetterCapacity> Records = {};
+    Lumen::UInt64 TotalRecorded                                                                          = 0ULL;
+};
+
 [[nodiscard]] Lumen::UInt32 GenerationOf ( const FActorSlot &InSlot, const std::memory_order InOrder ) noexcept
 {
     return static_cast<Lumen::UInt32>( InSlot.State.load( InOrder ) );
 }
 
 constinit FActorRegistryState GRegistry;
+constinit FDeadLetterDiagnostics GDeadLetterDiagnostics;
 constinit Lumen::TAtomic<Lumen::UInt64> GDeadLetters{ 0ULL };
+constinit Lumen::TArray<Lumen::TAtomic<Lumen::UInt64>, static_cast<Lumen::USize>( Lumen::EActorSendError::Count )>
+    GDeadLettersByReason = {};
 
 constexpr Lumen::UInt64 GenerationMask = 0xFFFFFFFFULL;
 constexpr Lumen::UInt64 ReaderUnit     = 1ULL << 32U;
 
-} // namespace
+void RetireSlot ( const Lumen::ActorID InId, FActorSlot &InSlot, const Lumen::Bool bRequireUnbound ) noexcept
+{
+    if ( GenerationOf( InSlot, std::memory_order_relaxed ) != Lumen::ActorIdGeneration( InId ) )
+    {
+        return;
+    }
 
-/**
- * Public
- */
+    if ( bRequireUnbound and InSlot.Actor.load( std::memory_order_relaxed ) != nullptr )
+    {
+        return;
+    }
+
+    InSlot.Routable.store( false, std::memory_order_release );
+
+    Lumen::UInt64 OldState = InSlot.State.load( std::memory_order_relaxed );
+    Lumen::UInt64 NewState = 0ULL;
+
+    do
+    {
+        NewState = ( OldState & ~GenerationMask ) | ( ( OldState + 1ULL ) & GenerationMask );
+    } while (
+        not InSlot.State.compare_exchange_weak( OldState, NewState, std::memory_order_acq_rel, std::memory_order_relaxed ) );
+
+    while ( ( InSlot.State.load( std::memory_order_acquire ) >> 32U ) != 0ULL )
+    {
+        Lumen::HAL::CpuRelax();
+    }
+
+    InSlot.Actor.store( nullptr, std::memory_order_release );
+
+    Lumen::HAL::TLockGuard<Lumen::HAL::FPlatformSpinLockMutex> Guard( GRegistry.Lock );
+    InSlot.NextFree    = GRegistry.FreeHead;
+    GRegistry.FreeHead = Lumen::ActorIdSlotIndex( InId );
+}
+
+} // namespace
 
 Lumen::ActorID Lumen::Internal::FActorRegistry::AllocateId () noexcept
 {
@@ -179,7 +179,6 @@ Lumen::ActorID Lumen::Internal::FActorRegistry::AllocateId () noexcept
         return InvalidActorID;
     }
 
-    /** INFO: Bumped at release time so the ID carries the generation of the next occupant. */
     return MakeActorId( SlotIndex, GenerationOf( *GRegistry.FindSlot( SlotIndex ), std::memory_order_relaxed ) );
 }
 
@@ -188,149 +187,223 @@ Lumen::UInt64 Lumen::Internal::FActorRegistry::GetDeadLetterCount () noexcept
     return GDeadLetters.load( std::memory_order_relaxed );
 }
 
-void Lumen::Internal::FActorRegistry::Register ( AActor *InActor ) noexcept
+Lumen::UInt64 Lumen::Internal::FActorRegistry::GetDeadLetterCount ( const EActorSendError InReason ) noexcept
+{
+    const USize ReasonIndex = static_cast<USize>( InReason );
+    if ( ReasonIndex >= GDeadLettersByReason.size() )
+    {
+        return 0ULL;
+    }
+    return GDeadLettersByReason[ReasonIndex].load( std::memory_order_relaxed );
+}
+
+Lumen::USize Lumen::Internal::FActorRegistry::GetDeadLetterRecordCount () noexcept
+{
+    HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( GDeadLetterDiagnostics.Lock );
+    return static_cast<USize>( GDeadLetterDiagnostics.TotalRecorded < DeadLetterCapacity ? GDeadLetterDiagnostics.TotalRecorded
+                                                                                         : DeadLetterCapacity );
+}
+
+Lumen::UInt64 Lumen::Internal::FActorRegistry::GetDroppedDeadLetterRecordCount () noexcept
+{
+    HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( GDeadLetterDiagnostics.Lock );
+    return GDeadLetterDiagnostics.TotalRecorded > DeadLetterCapacity ? GDeadLetterDiagnostics.TotalRecorded - DeadLetterCapacity
+                                                                     : 0ULL;
+}
+
+Lumen::USize Lumen::Internal::FActorRegistry::ReadDeadLetters ( const TSpan<FDeadLetterRecord> OutRecords ) noexcept
+{
+    HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( GDeadLetterDiagnostics.Lock );
+
+    const UInt64 Retained =
+        GDeadLetterDiagnostics.TotalRecorded < DeadLetterCapacity ? GDeadLetterDiagnostics.TotalRecorded : DeadLetterCapacity;
+    const UInt64 FirstAvailable = GDeadLetterDiagnostics.TotalRecorded - Retained;
+    const UInt64 FirstRequested = GDeadLetterDiagnostics.TotalRecorded > OutRecords.size()
+                                      ? GDeadLetterDiagnostics.TotalRecorded - OutRecords.size()
+                                      : 0ULL;
+    const UInt64 FirstSequence  = FirstRequested > FirstAvailable ? FirstRequested : FirstAvailable;
+    const USize CopyCount       = static_cast<USize>( GDeadLetterDiagnostics.TotalRecorded - FirstSequence );
+
+    for ( USize Index = 0ULL; Index < CopyCount; ++Index )
+    {
+        OutRecords[Index] = GDeadLetterDiagnostics.Records[( FirstSequence + Index ) % DeadLetterCapacity];
+    }
+    return CopyCount;
+}
+
+Lumen::Bool Lumen::Internal::FActorRegistry::Register ( AActor *const InActor ) noexcept
 {
     if ( InActor == nullptr ) [[unlikely]]
     {
-        LUMEN_LOG_WARNING( LogActor, "FActorRegistry::Register: Actor is null." );
+        return false;
+    }
+
+    const ActorID Id       = InActor->GetId();
+    FActorSlot *const Slot = GRegistry.FindSlot( ActorIdSlotIndex( Id ) );
+
+    if ( Slot == nullptr or GenerationOf( *Slot, std::memory_order_relaxed ) != ActorIdGeneration( Id ) ) [[unlikely]]
+    {
+        return false;
+    }
+
+    AActor *Expected = nullptr;
+    if ( not Slot->Actor.compare_exchange_strong( Expected, InActor, std::memory_order_release, std::memory_order_relaxed ) )
+        [[unlikely]]
+    {
+        return false;
+    }
+
+    Slot->Routable.store( true, std::memory_order_release );
+    return true;
+}
+
+void Lumen::Internal::FActorRegistry::OpenRouting ( AActor *const InActor ) noexcept
+{
+    if ( InActor == nullptr )
+    {
+        return;
+    }
+
+    FActorSlot *const Slot = GRegistry.FindSlot( ActorIdSlotIndex( InActor->GetId() ) );
+    if ( Slot != nullptr and Slot->Actor.load( std::memory_order_acquire ) == InActor )
+    {
+        Slot->Routable.store( true, std::memory_order_release );
+    }
+}
+
+void Lumen::Internal::FActorRegistry::CloseRouting ( AActor *const InActor ) noexcept
+{
+    if ( InActor == nullptr )
+    {
+        return;
+    }
+
+    FActorSlot *const Slot = GRegistry.FindSlot( ActorIdSlotIndex( InActor->GetId() ) );
+    if ( Slot != nullptr and Slot->Actor.load( std::memory_order_acquire ) == InActor )
+    {
+        Slot->Routable.store( false, std::memory_order_release );
+    }
+}
+
+void Lumen::Internal::FActorRegistry::Unregister ( AActor *const InActor ) noexcept
+{
+    if ( InActor == nullptr ) [[unlikely]]
+    {
         return;
     }
 
     const ActorID Id       = InActor->GetId();
     FActorSlot *const Slot = GRegistry.FindSlot( ActorIdSlotIndex( Id ) );
 
-    if ( Slot == nullptr ) [[unlikely]]
-    {
-        LUMEN_LOG_ERROR( LogActor,
-                         "FActorRegistry::Register: ActorID '{}' maps to an unallocated chunk (was AllocateId() called?).", Id );
-        return;
-    }
-
-    if ( GenerationOf( *Slot, std::memory_order_relaxed ) != ActorIdGeneration( Id ) ) [[unlikely]]
-    {
-        LUMEN_LOG_ERROR( LogActor, "FActorRegistry::Register: ActorID '{}' generation mismatch.", Id );
-        return;
-    }
-
-    AActor *Expected = nullptr;
-
-    if ( not Slot->Actor.compare_exchange_strong( Expected, InActor, std::memory_order_release, std::memory_order_relaxed ) )
-        [[unlikely]]
-    {
-        LUMEN_LOG_ERROR( LogActor, "FActorRegistry::Register: ActorID '{}' already registered.", Id );
-    }
-}
-
-void Lumen::Internal::FActorRegistry::Unregister ( AActor *InActor ) noexcept
-{
-    if ( InActor == nullptr ) [[unlikely]]
-    {
-        LUMEN_LOG_WARNING( LogActor, "FActorRegistry::Unregister: Actor is null." );
-        return;
-    }
-
-    const UInt32 SlotIndex = ActorIdSlotIndex( InActor->GetId() );
-    FActorSlot *const Slot = GRegistry.FindSlot( SlotIndex );
-
-    /** INFO: Only the registered owner retires a slot; a rejected duplicate must not. */
     if ( Slot == nullptr or Slot->Actor.load( std::memory_order_relaxed ) != InActor )
     {
         return;
     }
 
-    UInt64 OldState = Slot->State.load( std::memory_order_relaxed );
-    UInt64 NewState = 0ULL;
-
-    do
-    {
-        NewState = ( OldState & ~GenerationMask ) | ( ( OldState + 1ULL ) & GenerationMask );
-    } while ( not Slot->State.compare_exchange_weak( OldState, NewState, std::memory_order_acq_rel, std::memory_order_relaxed ) );
-
-    while ( ( Slot->State.load( std::memory_order_acquire ) >> 32U ) != 0ULL )
-    {
-        HAL::CpuRelax();
-    }
-
-    Slot->Actor.store( nullptr, std::memory_order_release );
-
-    HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( GRegistry.Lock );
-    Slot->NextFree     = GRegistry.FreeHead;
-    GRegistry.FreeHead = SlotIndex;
+    RetireSlot( Id, *Slot, false );
 }
 
-void Lumen::Internal::FActorRegistry::EnqueueMessage ( ActorID InId, const FMessage &InMessage ) noexcept
+void Lumen::Internal::FActorRegistry::EnqueueMessage ( const ActorID InId, const FMessage &InMessage ) noexcept
 {
-    FActorSlot *const Slot = GRegistry.FindSlot( ActorIdSlotIndex( InId ) );
-    if ( Slot == nullptr ) [[unlikely]]
-    {
-        /** INFO: Id 0 is the canonical invalid ID and is documented as not dead-lettered. */
-        if ( InId != InvalidActorID )
-        {
-            GDeadLetters.fetch_add( 1ULL, std::memory_order_relaxed );
-        }
-        return;
-    }
-
-    const UInt32 Generation = ActorIdGeneration( InId );
-
-    /** INFO: Keep stale senders from pinning a retiring slot. */
-    if ( GenerationOf( *Slot, std::memory_order_relaxed ) != Generation ) [[unlikely]]
-    {
-        GDeadLetters.fetch_add( 1ULL, std::memory_order_relaxed );
-        LUMEN_LOG_WARNING( LogActor, "FActorRegistry::EnqueueMessage: ActorID '{}' generation mismatch.", InId );
-        return;
-    }
-
-    Bool Delivered = false;
-
-    /** INFO: Pin + generation check in one RMW operation. */
-    const UInt64 Previous = Slot->State.fetch_add( ReaderUnit, std::memory_order_acquire );
-    if ( static_cast<UInt32>( Previous ) == Generation ) [[likely]]
-    {
-        if ( AActor *const Target = Slot->Actor.load( std::memory_order_acquire ) ) [[likely]]
-        {
-            Delivered = Target->EnqueueMessage( InMessage );
-        }
-    }
-
-    /** INFO: Unpin after message dispatch. */
-    Slot->State.fetch_sub( ReaderUnit, std::memory_order_release );
-
-    if ( not Delivered ) [[unlikely]]
-    {
-        GDeadLetters.fetch_add( 1ULL, std::memory_order_relaxed );
-    }
+    static_cast<void>( TryEnqueueMessage( InId, InMessage ) );
 }
 
-void Lumen::Internal::FActorRegistry::ReleaseId ( ActorID InId ) noexcept
+Lumen::TExpected<void, Lumen::EActorSendError> Lumen::Internal::FActorRegistry::TryEnqueueMessage (
+    const ActorID InId, const FMessage &InMessage, const UInt64 InFrameIndex, const UInt64 InSenderSequence ) noexcept
 {
-    if ( InId == InvalidActorID ) [[unlikely]]
+    if ( InId == InvalidActorID )
+    {
+        return MakeUnexpected( EActorSendError::InvalidActor );
+    }
+
+    EActorSendError Failure = EActorSendError::UnknownActor;
+    FActorSlot *const Slot  = GRegistry.FindSlot( ActorIdSlotIndex( InId ) );
+
+    if ( Slot != nullptr )
+    {
+        const UInt32 Generation = ActorIdGeneration( InId );
+        if ( GenerationOf( *Slot, std::memory_order_relaxed ) != Generation )
+        {
+            Failure = EActorSendError::StaleActor;
+        }
+        else
+        {
+            const UInt64 Previous = Slot->State.fetch_add( ReaderUnit, std::memory_order_acquire );
+            if ( static_cast<UInt32>( Previous ) == Generation )
+            {
+                AActor *const Target = Slot->Actor.load( std::memory_order_acquire );
+                if ( Target == nullptr )
+                {
+                    Failure = EActorSendError::UnknownActor;
+                }
+                else if ( not Slot->Routable.load( std::memory_order_acquire ) )
+                {
+                    Failure = EActorSendError::ActorRetiring;
+                }
+                else if ( Target->EnqueueMessage( InMessage ) )
+                {
+                    Slot->State.fetch_sub( ReaderUnit, std::memory_order_release );
+                    return {};
+                }
+                else if ( Target->GetLifecycle() != EActorLifecycle::Active or
+                          not Slot->Routable.load( std::memory_order_acquire ) )
+                {
+                    Failure = EActorSendError::ActorRetiring;
+                }
+                else
+                {
+                    Failure = EActorSendError::MailboxFull;
+                }
+            }
+            else
+            {
+                Failure = EActorSendError::StaleActor;
+            }
+
+            Slot->State.fetch_sub( ReaderUnit, std::memory_order_release );
+        }
+    }
+
+    RecordDeadLetter( Failure, InId, InMessage, InFrameIndex, InSenderSequence );
+    return MakeUnexpected( Failure );
+}
+
+void Lumen::Internal::FActorRegistry::RecordDeadLetter ( const EActorSendError InReason,
+                                                         const ActorID InTarget,
+                                                         const FMessage &InMessage,
+                                                         const UInt64 InFrameIndex,
+                                                         const UInt64 InSenderSequence ) noexcept
+{
+    const USize ReasonIndex = static_cast<USize>( InReason );
+    if ( InTarget == InvalidActorID or ReasonIndex >= GDeadLettersByReason.size() )
+    {
+        return;
+    }
+
+    GDeadLetters.fetch_add( 1ULL, std::memory_order_relaxed );
+    GDeadLettersByReason[ReasonIndex].fetch_add( 1ULL, std::memory_order_relaxed );
+
+    HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( GDeadLetterDiagnostics.Lock );
+    const USize RecordIndex                     = static_cast<USize>( GDeadLetterDiagnostics.TotalRecorded % DeadLetterCapacity );
+    GDeadLetterDiagnostics.Records[RecordIndex] = FDeadLetterRecord{ .Target         = InTarget,
+                                                                     .Sender         = InMessage.Sender,
+                                                                     .FrameIndex     = InFrameIndex,
+                                                                     .SenderSequence = InSenderSequence,
+                                                                     .Type           = InMessage.Type,
+                                                                     .Reason         = InReason };
+    ++GDeadLetterDiagnostics.TotalRecorded;
+}
+
+void Lumen::Internal::FActorRegistry::ReleaseId ( const ActorID InId ) noexcept
+{
+    if ( InId == InvalidActorID )
     {
         return;
     }
 
     FActorSlot *const Slot = GRegistry.FindSlot( ActorIdSlotIndex( InId ) );
-    if ( Slot == nullptr ) [[unlikely]]
+    if ( Slot != nullptr )
     {
-        return;
+        RetireSlot( InId, *Slot, true );
     }
-
-    UInt64 OldState = Slot->State.load( std::memory_order_relaxed );
-    UInt64 NewState = 0ULL;
-
-    do
-    {
-        NewState = ( OldState & ~GenerationMask ) | ( ( OldState + 1ULL ) & GenerationMask );
-    } while ( not Slot->State.compare_exchange_weak( OldState, NewState, std::memory_order_acq_rel, std::memory_order_relaxed ) );
-
-    while ( ( Slot->State.load( std::memory_order_acquire ) >> 32U ) != 0ULL )
-    {
-        HAL::CpuRelax();
-    }
-
-    Slot->Actor.store( nullptr, std::memory_order_release );
-
-    HAL::TLockGuard<HAL::FPlatformSpinLockMutex> Guard( GRegistry.Lock );
-    Slot->NextFree     = GRegistry.FreeHead;
-    GRegistry.FreeHead = ActorIdSlotIndex( InId );
 }

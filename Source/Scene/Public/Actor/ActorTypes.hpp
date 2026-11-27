@@ -7,11 +7,13 @@
 
 #include <SceneExport.hpp>
 
+#include <Actor/ActorLifecycle.hpp>
 #include <Core/CoreTypes.hpp>
 
 #include <Concepts/SameAs.hpp>
 #include <Concepts/TriviallyCopyable.hpp>
 
+#include <Templates/Expected.hpp>
 #include <Templates/Hash.hpp>
 
 #include <Logging/LoggingCategory.hpp>
@@ -121,6 +123,9 @@ public:
      * @param InMessage The message to deliver.
      */
     void EnqueueMessage ( const FMessage &InMessage ) const noexcept;
+
+    /** @brief Enqueues a message and reports why delivery was rejected. */
+    [[nodiscard]] TExpected<void, EActorSendError> TryEnqueueMessage ( const FMessage &InMessage ) const noexcept;
 
     /** Comparison Operators */
     auto operator<=>( const FActorRef & ) const = default;

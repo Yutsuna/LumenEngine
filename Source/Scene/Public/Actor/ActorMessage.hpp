@@ -30,7 +30,7 @@ struct alignas( 64 ) SCENE_EXPORT FMessage
 
     ActorID Sender     = 0ULL;
     UInt32 Type        = 0U;
-    UInt16 PayloadSize = 0U; //<< sizeof(PayloadType) when Make<T> was used, 0 otherwise
+    UInt16 PayloadSize = 0U; /** sizeof(PayloadType) when Make<T> was used, 0 otherwise */
     UInt16 Flags       = 0U;
 
     /** INFO: mutable because std::start_lifetime_as<const T> requires a const pointer as an asm output */
