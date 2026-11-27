@@ -6,11 +6,16 @@
 #pragma once
 
 #include <Core/CoreTypes.hpp>
+#include <Core/NonCopyable.hpp>
+#include <Core/NonMovable.hpp>
 #include <SceneExport.hpp>
 
 #include <Actor/ActorTypes.hpp>
 
+#include <Memory/Span.hpp>
+
 #include <Templates/AtomicBitset.hpp>
+#include <Templates/Expected.hpp>
 #include <Templates/Map.hpp>
 #include <Templates/Vector.hpp>
 
@@ -34,17 +39,53 @@ enum class ESpatialComponentType : UInt8
     Count
 };
 
-/**
- * @struct FSpatialRegistryData
- * @brief SoA storage for actor spatial state.
- */
-struct SCENE_EXPORT FSpatialRegistryData
+/** @enum ESpatialRegistryError @brief Structured failures rejected before a spatial entity is registered. */
+enum class ESpatialRegistryError : UInt8
 {
+    CapacityExceeded,
+};
+
+/** @struct FSpatialRegistryCapacities @brief Fixed entity capacities reserved in all three snapshot slots. */
+struct SCENE_EXPORT FSpatialRegistryCapacities final
+{
+    USize EntityCapacity = 0ULL;
+
+    constexpr Bool operator==( const FSpatialRegistryCapacities & ) const noexcept = default;
+};
+
+/**
+ * @struct FSpatialSnapshotView
+ * @brief Immutable view of one published spatial snapshot.
+ * @details Spans expire at the reader's next successful SwapReadBuffers call and must never be retained beyond that point.
+ */
+struct SCENE_EXPORT FSpatialSnapshotView final
+{
+    TSpan<const ActorID> EntityIDs;
+    TSpan<const Maths::FMat4x4f> Transforms;
+};
+
+/**
+ * @struct FSpatialRegistryStorage
+ * @brief Owning, pre-reserved storage behind one spatial snapshot slot.
+ * @details This is registry implementation surface made visible for slot layout; consumers only receive FSpatialSnapshotView.
+ */
+struct SCENE_EXPORT FSpatialRegistryStorage final : public FNonCopyable, public FNonMovable
+{
+    FSpatialRegistryStorage () noexcept  = default;
+    ~FSpatialRegistryStorage () noexcept = default;
+
+private:
+
+    void Reserve ( const FSpatialRegistryCapacities &InCapacities ) noexcept;
+    void Reset () noexcept;
+    [[nodiscard]] FSpatialSnapshotView GetView () const noexcept;
+
+private:
+
     TVector<ActorID> EntityIDs;
     TVector<Maths::FMat4x4f> Transforms;
-    TMap<ActorID, USize> IDToIndex;
 
-    using FMapIterator = TMap<ActorID, USize>::const_iterator;
+    friend class FSpatialRegistry;
 };
 
 /**
@@ -55,16 +96,25 @@ class SCENE_EXPORT FSpatialRegistry final : public FNonCopyable
 {
 public:
 
-    /** @brief Gets the singleton instance of the spatial registry. */
+    /** @brief Legacy singleton with world-default capacity, for callers not yet migrated to an injected registry. */
+    FSpatialRegistry () noexcept;
+
+    /** @brief Creates a registry whose three snapshot slots are reserved for InCapacities. */
+    explicit FSpatialRegistry ( const FSpatialRegistryCapacities &InCapacities ) noexcept;
+
+    /** @brief Legacy global access; new owners should hold their own FSpatialRegistry instance. */
     static FSpatialRegistry &Get () noexcept;
 
 public:
 
-    /** @brief Registers a new spatial entity in the registry. */
-    void RegisterSpatialEntity ( ActorID InId );
+    /** @brief Legacy infallible adapter; registrations rejected by capacity are recorded and dropped. */
+    void RegisterSpatialEntity ( ActorID InId ) noexcept;
+
+    /** @brief Registers a spatial entity or returns a structured capacity failure. */
+    [[nodiscard]] TExpected<void, ESpatialRegistryError> TryRegisterSpatialEntity ( ActorID InId ) noexcept;
 
     /** @brief Unregisters a spatial entity from the registry. */
-    void UnregisterSpatialEntity ( ActorID InId );
+    void UnregisterSpatialEntity ( ActorID InId ) noexcept;
 
     /**
      * @brief Updates the transform of a spatial entity. (Thread-safe)
@@ -73,18 +123,31 @@ public:
      */
     void UpdateTransform ( ActorID InId, const Maths::FMat4x4f &InTransform ) noexcept;
 
-    /** @brief Publishes the current state of the registry. */
+    /** @brief Publishes the current state of the registry without allocating. */
     void Publish () noexcept;
 
     /** @brief Swaps the read buffers. */
     void SwapReadBuffers () noexcept;
 
-    /** @brief Gets a read-only snapshot of the current registry state. */
-    [[nodiscard]] const FSpatialRegistryData &GetReadSnapshot () const noexcept;
+    /** @brief Gets an immutable view of the current published snapshot. */
+    [[nodiscard]] FSpatialSnapshotView GetReadSnapshot () const noexcept;
+
+    /** @return The capacities reserved in all three slots. */
+    [[nodiscard]] FSpatialRegistryCapacities GetCapacities () const noexcept;
+
+    /** @return Sequence of the newest publication, or zero before the first one. */
+    [[nodiscard]] UInt64 GetLastPublishedSequence () const noexcept;
+
+    /** @return Sequence most recently promoted by the reader, or zero before the first swap. */
+    [[nodiscard]] UInt64 GetLastConsumedSequence () const noexcept;
+
+    /** @return Number of publications coalesced without ever being consumed. */
+    [[nodiscard]] UInt64 GetDroppedSnapshotCount () const noexcept;
+
+    /** @return Number of registrations rejected because the reserved capacity was exhausted. */
+    [[nodiscard]] UInt64 GetDroppedRegistrationCount () const noexcept;
 
 private:
-
-    FSpatialRegistry () noexcept = default;
 
     /** @brief Mark a component dirty across all TripleBuffer slots */
     void MarkComponentDirty ( USize InIndex, ESpatialComponentType InComponent ) noexcept;
@@ -92,11 +155,14 @@ private:
     /** @brief Resizes the delta trackers and flags structural changes across all TripleBuffer slots */
     void ResizeTrackersAndFlagStructuralChange () noexcept;
 
-private:
+    struct FWorkingData
+    {
+        TVector<ActorID> EntityIDs;
+        TVector<Maths::FMat4x4f> Transforms;
+        TMap<ActorID, USize> IDToIndex;
 
-    mutable HAL::FPlatformSharedMutex RegistryMutex;
-    FSpatialRegistryData WorkingData;
-    Thread::TTripleBuffer<FSpatialRegistryData> SnapshotBuffer;
+        using FMapIterator = TMap<ActorID, USize>::const_iterator;
+    };
 
     /**
      * @struct FDeltaTracker
@@ -115,10 +181,22 @@ private:
         void ClearAll () noexcept;
     };
 
+private:
+
+    mutable HAL::FPlatformSharedMutex RegistryMutex;
+    FSpatialRegistryCapacities Capacities;
+    FWorkingData WorkingData;
+    FSpatialRegistryStorage Slots[Thread::TripleBufferCount];
+    Thread::TTripleBuffer<FSpatialRegistryStorage> SnapshotBuffer;
     FDeltaTracker DeltaTrackers[Thread::TripleBufferCount];
 
     /** @brief One bitset per component. UpdateTransform marks here (1 atomic RMW). */
     FAtomicBitset Pending[static_cast<USize>( ESpatialComponentType::Count )];
+
+    TAtomic<UInt64> LastPublishedSequence{ 0ULL };
+    TAtomic<UInt64> LastConsumedSequence{ 0ULL };
+    TAtomic<UInt64> DroppedSnapshotCount{ 0ULL };
+    TAtomic<UInt64> DroppedRegistrationCount{ 0ULL };
 };
 
 } // namespace Lumen

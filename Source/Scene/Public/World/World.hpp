@@ -23,6 +23,7 @@
 #include <Actor/ActorEmitContext.hpp>
 #include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
+#include <World/WorldSpatialRegistry.hpp>
 #include <World/WorldTypes.hpp>
 
 namespace Lumen
@@ -88,6 +89,9 @@ public:
     /** @brief Returns the most recently completed phase token. */
     [[nodiscard]] FWorldPhaseCompletion GetLastPhaseCompletion () const noexcept;
 
+    /** @brief Returns this world's owned spatial registry. */
+    [[nodiscard]] FSpatialRegistry &GetSpatialRegistry () noexcept;
+
 public:
 
     static constexpr UInt32 MaxMessagesPerTick = 100U;
@@ -135,6 +139,7 @@ private:
 private:
 
     FWorldDesc Desc;
+    FSpatialRegistry Registry;
     TUniquePtr<FWorldExecutor> Executor;
 
     TMap<ActorID, TSharedPtr<AActor>> Actors;

@@ -46,7 +46,8 @@ Lumen::FWorld::FWorld () noexcept : FWorld( FWorldDesc{} )
 }
 
 Lumen::FWorld::FWorld ( const FWorldDesc &InDesc ) noexcept
-    : Desc( InDesc ), Executor( MakeUnique<FWorldExecutor>( InDesc.WorkerCount, InDesc.MaxActors ) )
+    : Desc( InDesc ), Registry( FSpatialRegistryCapacities{ .EntityCapacity = InDesc.MaxActors } ),
+      Executor( MakeUnique<FWorldExecutor>( InDesc.WorkerCount, InDesc.MaxActors ) )
 {
     Actors.reserve( Desc.MaxActors );
     ActiveActors.reserve( Desc.MaxActors );
@@ -247,7 +248,7 @@ Lumen::TExpected<Lumen::FWorldTickResult, Lumen::EWorldTickError> Lumen::FWorld:
         FirstError.Emplace( EWorldTickError::EmissionCapacityExceeded );
     }
 
-    FSpatialRegistry::Get().Publish();
+    Registry.Publish();
 
     if ( FirstError )
     {
@@ -275,7 +276,7 @@ Lumen::FWorld::TryFixedTick ( const Float64 InDeltaTime ) noexcept
         return MakeUnexpected( StepResult.Error() );
     }
 
-    FSpatialRegistry::Get().Publish();
+    Registry.Publish();
     return Result;
 }
 
@@ -287,6 +288,11 @@ Lumen::Bool Lumen::FWorld::IsInParallelPhase () const noexcept
 Lumen::FWorldPhaseCompletion Lumen::FWorld::GetLastPhaseCompletion () const noexcept
 {
     return LastPhase;
+}
+
+Lumen::FSpatialRegistry &Lumen::FWorld::GetSpatialRegistry () noexcept
+{
+    return Registry;
 }
 
 Lumen::TExpected<void, Lumen::EActorSpawnError> Lumen::FWorld::InsertSpawnedActor ( const TSharedPtr<AActor> &InActor ) noexcept
@@ -359,7 +365,7 @@ Lumen::TExpected<void, Lumen::EActorDestroyError> Lumen::FWorld::DestroyActorImp
     }
 
     Actor->MarkPendingKill();
-    FSpatialRegistry::Get().UnregisterSpatialEntity( InId );
+    Registry.UnregisterSpatialEntity( InId );
 
     Actors.erase( ActorIterator );
     for ( auto ActiveIterator = ActiveActors.begin(); ActiveIterator != ActiveActors.end(); ++ActiveIterator )
@@ -544,7 +550,7 @@ void Lumen::FWorld::ShutdownActors () noexcept
 
     for ( const TSharedPtr<AActor> &Actor : ActiveActors )
     {
-        FSpatialRegistry::Get().UnregisterSpatialEntity( Actor->GetId() );
+        Registry.UnregisterSpatialEntity( Actor->GetId() );
         Actor->MarkPendingKill();
         Actor->EndPlay();
     }
