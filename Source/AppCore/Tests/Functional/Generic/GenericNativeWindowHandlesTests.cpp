@@ -3,12 +3,12 @@
  * @brief Functional coverage for portable native-window handle values.
  */
 
+#include <Concepts/TriviallyCopyable.hpp>
+
 #include <Generic/GenericWindow.hpp>
 #include <Linux/LinuxWindow.hpp>
 
 #include <Tests/UnitTest.hpp>
-
-#include <type_traits>
 
 namespace Lumen
 {
@@ -16,7 +16,7 @@ namespace Lumen
 namespace
 {
 
-    static_assert( std::is_trivially_copyable_v<FNativeWindowHandles> );
+    static_assert( Concepts::CTriviallyCopyable<FNativeWindowHandles> );
 
     LUMEN_TEST( GenericNativeWindowHandles, DefaultValueIsEmpty )
     {
