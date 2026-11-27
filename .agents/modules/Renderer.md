@@ -23,10 +23,12 @@
 ## Execution contract
 
 - `FRenderExecutor` owns one `FThread`, one bounded Core `TMPSCQueue` of POD
-  commands, and a single-reader status triple buffer. `Enqueue` is safe from
-  concurrent producers and returns `QueueFull` at capacity; `RequestStop`
-  drains already queued commands before the thread exits. After `Initialize`,
-  neither enqueue nor dispatch allocates.
+  commands, and a single-reader status triple buffer. `Enqueue`, `RequestStop`
+  and `Join` share one mutex so no producer can push into a queue that is being
+  released; acceptance returns `QueueFull` at capacity and `NotRunning` once
+  stop is requested. `RequestStop` clears `IsRunning` immediately, drains
+  already queued commands, and `Join` publishes the final status including
+  rejections. After `Initialize`, neither enqueue nor dispatch allocates.
 - `FRenderer` is the sole `IRenderCommandHandler`. It is initialized with a
   portable `IRHIDevice`, a `FRenderSnapshotStream` injected by composition, an
   extent and a command capacity; no backend factory is accepted. It owns the
@@ -40,8 +42,10 @@
   retained past the next reader swap. `DeviceLost`/`DeviceClosed` and RHI
   failures are reported through the status without partial presentation.
 - `FNonCopyable` is not used as a base for move-only graph types; those types
-  delete copy explicitly and default move, matching the compile-time contract
-  exercised by the compiler.
+  delete copy explicitly and default move. `FRenderGraphContext` takes ownership
+  of a moved `FCompiledRenderGraph`, so its bindings and barriers cannot outlive
+  the compiled metadata; transient binding also checks the materialized RHI
+  descriptor against the declared resource descriptor.
 
 ## Testing and benchmarks
 
