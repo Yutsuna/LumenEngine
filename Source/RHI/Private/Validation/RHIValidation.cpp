@@ -24,7 +24,7 @@ Lumen::RHI::WrapRHIDevice ( const TSharedRef<IRHIDevice> &InDevice, const FRHIVa
 
 Lumen::RHI::IRHIObject *Lumen::RHI::UnwrapRHIObject ( IRHIObject *InObject ) noexcept
 {
-    IRHIObject *Current = InObject;
+    IRHIObject *Current = InObject; /** NOLINT(misc-const-correctness) */
     while ( Current != nullptr )
     {
         const auto *Validation = dynamic_cast<const IRHIValidationObject *>( Current );

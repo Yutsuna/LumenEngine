@@ -20,12 +20,13 @@ Lumen::RHI::FRHIValidationUploadAllocator::~FRHIValidationUploadAllocator () noe
 LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationUploadAllocator )
 
 Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>
-Lumen::RHI::FRHIValidationUploadAllocator::WrapBuffer ( TSharedRef<IRHIBuffer> InBuffer ) noexcept
+Lumen::RHI::FRHIValidationUploadAllocator::WrapBuffer ( TSharedRef<IRHIBuffer> InBuffer ) noexcept /** NOLINT */
 {
     if ( Buffer and UnwrapRHIObject( Buffer->Get() ) == InBuffer.Get() )
     {
         return *Buffer;
     }
+
     TSharedRef<IRHIBuffer> Wrapped = MakeShared<FRHIValidationBuffer>( InBuffer, State );
     Buffer.Emplace( Wrapped );
     return Wrapped;
@@ -61,7 +62,7 @@ Lumen::RHI::FRHIValidationReadbackAllocator::~FRHIValidationReadbackAllocator ()
 LUMEN_RHI_VALIDATION_OBJECT_FORWARDERS( FRHIValidationReadbackAllocator )
 
 Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>
-Lumen::RHI::FRHIValidationReadbackAllocator::WrapBuffer ( TSharedRef<IRHIBuffer> InBuffer ) noexcept
+Lumen::RHI::FRHIValidationReadbackAllocator::WrapBuffer ( TSharedRef<IRHIBuffer> InBuffer ) noexcept /** NOLINT */
 {
     if ( Buffer and UnwrapRHIObject( Buffer->Get() ) == InBuffer.Get() )
     {

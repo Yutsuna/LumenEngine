@@ -47,7 +47,7 @@ namespace RHI
         TransientResources = 1U << 6U,
         All                = ObjectLifetime | ResourceStates | Bindings | Commands | Queues | Presentation | TransientResources
     };
-    LUMEN_ENUM_FLAGS( ERHIValidationFlags );
+    LUMEN_ENUM_FLAGS( ERHIValidationFlags ); /** NOLINT */
 
     /**
      * @struct FRHIValidationDesc

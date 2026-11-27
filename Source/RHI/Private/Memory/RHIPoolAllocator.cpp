@@ -14,17 +14,19 @@
  */
 
 Lumen::RHI::FRHIPoolAllocator::FRHIPoolAllocator ( const UInt64 InSlotSize, const UInt32 InSlotCount ) noexcept
-    : SlotSize( 0ULL ), Slots( MakeUnique<FIndiceHeapAllocator>( 0U ) )
+    : Slots( MakeUnique<FIndiceHeapAllocator>( 0U ) )
 {
     if ( not RHIIsPowerOfTwo( InSlotSize ) )
     {
         return;
     }
+
     const TOptional<UInt64> Capacity = RHICheckedMultiply( InSlotSize, static_cast<UInt64>( InSlotCount ) );
     if ( not Capacity )
     {
         return;
     }
+
     SlotSize       = InSlotSize;
     Stats.Capacity = *Capacity;
     Slots          = MakeUnique<FIndiceHeapAllocator>( InSlotCount );

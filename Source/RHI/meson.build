@@ -21,6 +21,7 @@ RHIConformanceSources = files(
     'Tests/Validation/RHIValidationConformanceTests.cpp',
 )
 RHIConformanceIncludeDirectories = include_directories('Tests')
+RHIPrivateIncludeDirectories = include_directories('Private')
 
 RHINullTestSupportSources = files(
     'Tests/Bindings/NullBindings.cpp',

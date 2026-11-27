@@ -80,7 +80,7 @@ void Lumen::RHI::FRHIValidationState::Untrack ( IRHIObject &InObject ) noexcept
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationState::ValidateObject ( const IRHIObject &InObject,
                                                                            const ERHIValidationObjectKind InKind ) const noexcept
 {
-    HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
     return CheckObject( Objects, InObject, InKind );
 }
 
@@ -107,7 +107,7 @@ Lumen::Bool Lumen::RHI::FRHIValidationState::Contains ( const IRHIObject &InObje
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InObject );
 
-    HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
 
     const TMap<UInt64, FEntry>::const_iterator Found = Objects.find( Unwrapped->GetId().GetValue() );
 
@@ -116,7 +116,7 @@ Lumen::Bool Lumen::RHI::FRHIValidationState::Contains ( const IRHIObject &InObje
 
 Lumen::USize Lumen::RHI::FRHIValidationState::GetLiveObjectCount () const noexcept
 {
-    HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
     return Objects.size();
 }
 
@@ -124,7 +124,7 @@ Lumen::TOptional<Lumen::RHI::ERHIResourceState>
 Lumen::RHI::FRHIValidationState::GetResourceState ( const IRHIResource &InResource ) const noexcept
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InResource );
-    HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
     const TMap<UInt64, FEntry>::const_iterator Found = Objects.find( Unwrapped->GetId().GetValue() );
 
     if ( Found == Objects.end() or Found->second.States.empty() )
@@ -146,7 +146,7 @@ Lumen::TOptional<Lumen::RHI::ERHIResourceState> Lumen::RHI::FRHIValidationState:
     const IRHITexture &InTexture, const UInt32 InMip, const UInt32 InLayer ) const noexcept
 {
     const IRHIObject *Unwrapped = UnwrapRHIObject( &InTexture );
-    HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+    const HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
     const TMap<UInt64, FEntry>::const_iterator Found = Objects.find( Unwrapped->GetId().GetValue() );
     if ( Found == Objects.end() or Found->second.Kind != ERHIValidationObjectKind::Texture or
          InMip >= InTexture.GetDesc().MipCount or InLayer >= InTexture.GetDesc().LayerCount )
@@ -278,6 +278,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationState::ValidateTextureIn ( TM
     return {};
 }
 
+/** NOLINTNEXTLINE(readability-convert-member-functions-to-static) */
 void Lumen::RHI::FRHIValidationState::ApplyBuffer ( TMap<UInt64, FEntry> &InObjects,
                                                     const FRHIBufferTransition &InTransition ) const noexcept
 {
@@ -286,7 +287,7 @@ void Lumen::RHI::FRHIValidationState::ApplyBuffer ( TMap<UInt64, FEntry> &InObje
         return;
     }
 
-    IRHIBuffer &Buffer                         = *UnwrapRHI( InTransition.Buffer.Get() );
+    const IRHIBuffer &Buffer                   = *UnwrapRHI( InTransition.Buffer.Get() );
     const TMap<UInt64, FEntry>::iterator Found = InObjects.find( Buffer.GetId().GetValue() );
     if ( Found != InObjects.end() and not Found->second.States.empty() )
     {
@@ -295,6 +296,7 @@ void Lumen::RHI::FRHIValidationState::ApplyBuffer ( TMap<UInt64, FEntry> &InObje
     }
 }
 
+/** NOLINTNEXTLINE(readability-convert-member-functions-to-static) */
 void Lumen::RHI::FRHIValidationState::ApplyTexture ( TMap<UInt64, FEntry> &InObjects,
                                                      const FRHITextureTransition &InTransition ) const noexcept
 {
@@ -302,12 +304,14 @@ void Lumen::RHI::FRHIValidationState::ApplyTexture ( TMap<UInt64, FEntry> &InObj
     {
         return;
     }
-    IRHITexture &Texture                       = *UnwrapRHI( InTransition.Texture.Get() );
+
+    const IRHITexture &Texture                 = *UnwrapRHI( InTransition.Texture.Get() );
     const TMap<UInt64, FEntry>::iterator Found = InObjects.find( Texture.GetId().GetValue() );
     if ( Found == InObjects.end() )
     {
         return;
     }
+
     FEntry &Entry      = Found->second;
     const USize Stride = static_cast<USize>( Texture.GetDesc().LayerCount );
     for ( UInt32 Mip = InTransition.Range.BaseMip; Mip < InTransition.Range.BaseMip + InTransition.Range.MipCount; ++Mip )
@@ -331,7 +335,7 @@ Lumen::RHI::FRHIValidationState::ValidateTransitions ( const TSpan<const FRHITra
 {
     TMap<UInt64, FEntry> Speculative;
     {
-        HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
+        const HAL::TSharedLock<HAL::FPlatformSharedMutex> Lock( Mutex );
         Speculative = Objects;
     }
     for ( const FRHITransition &Transition : InTransitions )

@@ -208,30 +208,37 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationBindingSet::Write ( const TSp
 
     for ( FRHIBindingWrite Write : InWrites )
     {
-        std::visit( [] ( auto &Payload )
+        try
         {
-            if constexpr ( requires { Payload.Buffer; } )
+            std::visit( [] ( auto &Payload )
             {
-                Payload.Buffer = UnwrapRHIShared( Payload.Buffer );
-            }
-            else if constexpr ( requires {
-                                    Payload.View;
-                                    Payload.Sampler;
-                                } )
-            {
-                Payload.View    = UnwrapRHIShared( Payload.View );
-                Payload.Sampler = UnwrapRHIShared( Payload.Sampler );
-            }
-            else if constexpr ( requires { Payload.View; } )
-            {
-                Payload.View = UnwrapRHIShared( Payload.View );
-            }
-            else
-            {
-                Payload.Sampler = UnwrapRHIShared( Payload.Sampler );
-            }
-        }, Write.Resource );
-        Unwrapped.push_back( std::move( Write ) );
+                if constexpr ( requires { Payload.Buffer; } )
+                {
+                    Payload.Buffer = UnwrapRHIShared( Payload.Buffer );
+                }
+                else if constexpr ( requires {
+                                        Payload.View;
+                                        Payload.Sampler;
+                                    } )
+                {
+                    Payload.View    = UnwrapRHIShared( Payload.View );
+                    Payload.Sampler = UnwrapRHIShared( Payload.Sampler );
+                }
+                else if constexpr ( requires { Payload.View; } )
+                {
+                    Payload.View = UnwrapRHIShared( Payload.View );
+                }
+                else
+                {
+                    Payload.Sampler = UnwrapRHIShared( Payload.Sampler );
+                }
+            }, Write.Resource );
+            Unwrapped.push_back( std::move( Write ) );
+        }
+        catch ( ... )
+        {
+            return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Failed to unwrap binding resource" ) );
+        }
     }
     return Underlying->Write( Unwrapped );
 }
