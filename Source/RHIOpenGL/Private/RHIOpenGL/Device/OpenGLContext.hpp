@@ -85,6 +85,14 @@ namespace RHIOpenGL
 
         ~FOpenGLContext () noexcept;
 
+        /**
+         * @brief Stops the executor and retires deferred releases on it.
+         * @details Idempotent. Drain and shutdown are posted before the stop is published so
+         *          every accepted task remains observable by the worker. After this returns,
+         *          ExecuteOnGLThread/InvokeOnGLThread fail fast with DeviceLost.
+         */
+        void Shutdown () noexcept;
+
         /** @return Resolved OpenGL 4.6 entry points for the worker context. */
         [[nodiscard]] const FGLDispatchTable &GetDispatch () const noexcept;
 
@@ -120,8 +128,10 @@ namespace RHIOpenGL
 
         /**
          * @brief Retires a GL-thread release when the tracked timeline completes.
-         * @details Must never be called under one of the six ranked locks. The release
-         *          callback contains native GL calls and always runs on the executor.
+         * @details Must never be called under one of the six ranked locks. When the required
+         *          value is already reached the release runs synchronously on the executor;
+         *          otherwise it is queued and retired by the worker after fence completion.
+         *          The callback contains native GL calls and always runs on the executor.
          */
         [[nodiscard]] RHI::FRHIExpected DeferRelease ( RHI::FRHITimelineValue InRequired, TFunction<void()> InRelease ) noexcept;
 
@@ -162,9 +172,13 @@ namespace RHIOpenGL
         TAtomic<Bool> bResetReported{ false };
 
         FThread WorkerThread;
+        /** @brief Published by the worker at startup; safe to read from any thread during shutdown. */
+        TAtomic<FThread::FId> ExecutorThreadId;
         HAL::FPlatformMutex QueueMutex;
         FConditionVariable Wake;
         TQueue<TFunction<void()>> Tasks;
+        /** @brief Published under QueueMutex before stop; rejects new invokes atomically. */
+        TAtomic<Bool> bStopping{ false };
         TOptional<RHI::FRHIError> InitError;
         Bool bReady = false;
 
