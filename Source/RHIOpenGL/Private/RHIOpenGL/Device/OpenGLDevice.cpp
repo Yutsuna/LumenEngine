@@ -119,6 +119,9 @@ Lumen::RHIOpenGL::FOpenGLDevice::~FOpenGLDevice () noexcept
     {
         Context->MarkClosed();
     }
+    /* Stop and join while this device still owns the context: otherwise the final
+     * reference can be released on the executor itself and destroy it mid-replay. */
+    Context->GetExecutor()->Shutdown();
     SetStatus( RHI::ERHIDeviceStatus::Closed );
 }
 
