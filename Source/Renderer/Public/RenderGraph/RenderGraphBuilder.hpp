@@ -58,6 +58,9 @@ public:
 
     [[nodiscard]] TExpected<FCompiledRenderGraph, FRenderError> Compile () && noexcept;
 
+    /** @brief Reuses reserved arenas for one more frame; invalidates every previously issued handle. */
+    void Reset () noexcept;
+
 private:
 
     [[nodiscard]] FRenderExpected ValidatePass ( FRenderPassHandle InPass ) const noexcept;

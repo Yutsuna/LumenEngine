@@ -4,6 +4,7 @@
  */
 
 #include <RenderGraph/RenderGraphContext.hpp>
+#include <RenderGraph/RenderGraphTransition.hpp>
 
 #include <utility>
 
@@ -118,51 +119,12 @@ Lumen::FRenderGraphContext::ResolveTransition ( const USize InTransitionIndex ) 
     LUMEN_EXPECT( Resource, Graph.GetResource( Transition.Resource ) );
     const FRenderResourceBinding &Binding = Bindings[Transition.Resource.Index];
 
-    RHI::FRHIExpected Validation;
-    if ( std::holds_alternative<RHI::FRHIBufferDesc>( Resource->Desc.Creation ) )
+    TExpected<RHI::FRHITransition, FRenderError> RHITransition =
+        MakeBoundTransition( Transition.Resource, Resource->Desc, Binding, Transition.Range, Transition.Before, Transition.After,
+                             Transition.SourceQueue, Transition.DestinationQueue, ERenderErrorCode::InvalidTransition );
+    if ( not RHITransition ) [[unlikely]]
     {
-        if ( not std::holds_alternative<TSharedPtr<RHI::IRHIBuffer>>( Binding.Resource ) )
-        {
-            return TUnexpected<FRenderError>( MakeBindingError( ERenderErrorCode::ResourceTypeMismatch, Transition.Resource ) );
-        }
-        RHI::FRHIBufferTransition BufferTransition;
-        BufferTransition.Buffer           = std::get<TSharedPtr<RHI::IRHIBuffer>>( Binding.Resource );
-        BufferTransition.Before           = Transition.Before;
-        BufferTransition.After            = Transition.After;
-        BufferTransition.SourceQueue      = Transition.SourceQueue;
-        BufferTransition.DestinationQueue = Transition.DestinationQueue;
-        if ( not BufferTransition.Buffer )
-        {
-            return TUnexpected<FRenderError>(
-                MakeBindingError( ERenderErrorCode::TransientResourceNotBound, Transition.Resource ) );
-        }
-        Validation = BufferTransition.Validate();
-        if ( not Validation )
-        {
-            return TUnexpected<FRenderError>( MakeBindingError( ERenderErrorCode::InvalidTransition, Transition.Resource ) );
-        }
-        return RHI::FRHITransition( BufferTransition );
+        return MakeUnexpected( std::move( RHITransition ).Error() );
     }
-
-    if ( not std::holds_alternative<TSharedPtr<RHI::IRHITexture>>( Binding.Resource ) )
-    {
-        return TUnexpected<FRenderError>( MakeBindingError( ERenderErrorCode::ResourceTypeMismatch, Transition.Resource ) );
-    }
-    RHI::FRHITextureTransition TextureTransition;
-    TextureTransition.Texture          = std::get<TSharedPtr<RHI::IRHITexture>>( Binding.Resource );
-    TextureTransition.Range            = Transition.Range;
-    TextureTransition.Before           = Transition.Before;
-    TextureTransition.After            = Transition.After;
-    TextureTransition.SourceQueue      = Transition.SourceQueue;
-    TextureTransition.DestinationQueue = Transition.DestinationQueue;
-    if ( not TextureTransition.Texture )
-    {
-        return TUnexpected<FRenderError>( MakeBindingError( ERenderErrorCode::TransientResourceNotBound, Transition.Resource ) );
-    }
-    Validation = TextureTransition.Validate();
-    if ( not Validation )
-    {
-        return TUnexpected<FRenderError>( MakeBindingError( ERenderErrorCode::InvalidTransition, Transition.Resource ) );
-    }
-    return RHI::FRHITransition( TextureTransition );
+    return std::move( *RHITransition );
 }

@@ -35,6 +35,9 @@ public:
 
     [[nodiscard]] const FRenderGraphCapacities &GetCapacities () const noexcept;
 
+    /** @brief Clears recorded declarations while retaining every reserved arena for the next frame. */
+    void Reset () noexcept;
+
 private:
 
     struct FAccessNode

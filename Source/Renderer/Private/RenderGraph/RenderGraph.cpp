@@ -30,3 +30,27 @@ const Lumen::FRenderGraphCapacities &Lumen::FRenderGraph::GetCapacities () const
 {
     return Capacities;
 }
+
+void Lumen::FRenderGraph::Reset () noexcept
+{
+    Passes.clear();
+    Resources.clear();
+    AccessNodes.clear();
+
+    /** INFO: resize() is safe after a moved-from graph: it restores the fixed compiler scratch size without growing. */
+    ResourceStates.assign( Capacities.ResourceCount, FResourceCompilerState{} );
+    PassSegmentIndices.assign( Capacities.PassCount, InvalidRenderQueueSegmentIndex );
+
+    TopologicalOrder.clear();
+    ExecutionOrder.clear();
+    ReadyHeap.clear();
+    CullingStack.clear();
+
+    Transitions.clear();
+    QueueSegments.clear();
+    QueueDependencies.clear();
+    TransientBatch.Requests.clear();
+    TransientRequestMap.clear();
+
+    NextResourceGeneration = 1U;
+}

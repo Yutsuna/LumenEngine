@@ -7,6 +7,9 @@
 
 #include <RenderGraph/RenderGraphCompiler.hpp>
 
+#include <Algo/Any.hpp>
+#include <Algo/Find.hpp>
+
 #include <utility>
 
 /**
@@ -212,21 +215,21 @@ Lumen::FRenderExpected Lumen::FRenderGraphBuilder::AddAccess ( const FRenderPass
 
     FRenderPass &Pass = Graph.Passes[InPass.Ordinal];
 
-    for ( const FRenderResourceAccess &Access : Pass.Reads )
+    if ( Algo::AnyOf( Pass.Reads, [InResource] ( const FRenderResourceAccess &InAccess ) noexcept
     {
-        if ( Access.Resource == InResource )
-        {
-            return MakeRenderError( ERenderErrorCode::InvalidAccess, InPass.Ordinal, InResource.Index );
-        }
+        return InAccess.Resource == InResource;
+    } ) )
+    {
+        return MakeRenderError( ERenderErrorCode::InvalidAccess, InPass.Ordinal, InResource.Index );
     }
 
-    for ( const FRenderResourceAccess &Access : Pass.Writes )
+    if ( Algo::AnyOf( Pass.Writes, [InResource] ( const FRenderResourceAccess &InAccess ) noexcept
     {
-        if ( Access.Resource == InResource )
-        {
-            return MakeRenderError( bWrite ? ERenderErrorCode::AmbiguousWrite : ERenderErrorCode::InvalidAccess, InPass.Ordinal,
-                                    InResource.Index );
-        }
+        return InAccess.Resource == InResource;
+    } ) )
+    {
+        return MakeRenderError( bWrite ? ERenderErrorCode::AmbiguousWrite : ERenderErrorCode::InvalidAccess, InPass.Ordinal,
+                                InResource.Index );
     }
 
     TVector<FRenderResourceAccess> &Accesses = bWrite ? Pass.Writes : Pass.Reads;
@@ -268,12 +271,9 @@ Lumen::FRenderExpected Lumen::FRenderGraphBuilder::AddDependency ( const FRender
 
     FRenderPass &Before = Graph.Passes[InBefore.Ordinal];
     FRenderPass &After  = Graph.Passes[InAfter.Ordinal];
-    for ( const UInt32 Dependency : Before.Dependents )
+    if ( Algo::Find( Before.Dependents, InAfter.Ordinal ) != nullptr )
     {
-        if ( Dependency == InAfter.Ordinal )
-        {
-            return {};
-        }
+        return {};
     }
     if ( Before.Dependents.size() >= Graph.Capacities.DependencyCountPerPass or
          After.Dependencies.size() >= Graph.Capacities.DependencyCountPerPass )
@@ -301,4 +301,10 @@ Lumen::TExpected<Lumen::FCompiledRenderGraph, Lumen::FRenderError> Lumen::FRende
     }
     bCompiled = true;
     return FRenderGraphCompiler::Compile( std::move( Graph ) );
+}
+
+void Lumen::FRenderGraphBuilder::Reset () noexcept
+{
+    Graph.Reset();
+    bCompiled = false;
 }

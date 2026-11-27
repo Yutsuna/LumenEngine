@@ -3,9 +3,12 @@
  * @brief Implements deterministic DAG, culling, lifetime, barrier, and queue planning.
  */
 
-#include "Algo/ForEach.hpp"
 #include <RenderGraph/RenderGraphCompiler.hpp>
+#include <RenderGraph/RenderGraphTransition.hpp>
 
+#include <Algo/Any.hpp>
+#include <Algo/Find.hpp>
+#include <Algo/ForEach.hpp>
 #include <Algo/Sort.hpp>
 #include <Templates/Array.hpp>
 
@@ -100,12 +103,9 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::AddDependency ( FRenderGraph
 
     FRenderPass &Before = InGraph.Passes[InBefore];
     FRenderPass &After  = InGraph.Passes[InAfter];
-    for ( const Lumen::UInt32 Dependent : Before.Dependents )
+    if ( Algo::Find( Before.Dependents, InAfter ) != nullptr )
     {
-        if ( Dependent == InAfter )
-        {
-            return {};
-        }
+        return {};
     }
     if ( Before.Dependents.size() >= InGraph.Capacities.DependencyCountPerPass or
          After.Dependencies.size() >= InGraph.Capacities.DependencyCountPerPass )
@@ -120,10 +120,10 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::AddDependency ( FRenderGraph
 Lumen::FRenderExpected Lumen::FRenderGraphCompiler::BuildResourceDependencies ( FRenderGraph &InGraph ) noexcept
 {
     InGraph.AccessNodes.clear();
-    for ( FRenderGraph::FResourceCompilerState &State : InGraph.ResourceStates )
+    Algo::ForEach( InGraph.ResourceStates, [] ( FRenderGraph::FResourceCompilerState &InState ) noexcept
     {
-        State = FRenderGraph::FResourceCompilerState{};
-    }
+        InState = FRenderGraph::FResourceCompilerState{};
+    } );
 
     for ( FRenderPass &Pass : InGraph.Passes )
     {
@@ -287,11 +287,11 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::TopologicalSort ( FRenderGra
 Lumen::FRenderExpected Lumen::FRenderGraphCompiler::CullPasses ( FRenderGraph &InGraph ) noexcept
 {
     InGraph.CullingStack.clear();
-    for ( FRenderPass &Pass : InGraph.Passes )
+    Algo::ForEach( InGraph.Passes, [&InGraph] ( FRenderPass &InPass ) noexcept
     {
-        InGraph.PassStates[Pass.Ordinal].bActive = false;
-        Pass.bActive                             = false;
-    }
+        InGraph.PassStates[InPass.Ordinal].bActive = false;
+        InPass.bActive                             = false;
+    } );
 
     auto KeepPass = [&InGraph] ( const UInt32 InOrdinal )
     {
@@ -353,12 +353,12 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::BuildLifetimes ( FRenderGrap
 {
     InGraph.TransientBatch.Requests.clear();
     InGraph.TransientRequestMap.clear();
-    for ( FRenderResource &Resource : InGraph.Resources )
+    Algo::ForEach( InGraph.Resources, [] ( FRenderResource &InResource ) noexcept
     {
-        Resource.bActive               = false;
-        Resource.Lifetime              = RHI::FRHIResourceLifetime{};
-        Resource.TransientRequestIndex = InvalidRenderResourceIndex;
-    }
+        InResource.bActive               = false;
+        InResource.Lifetime              = RHI::FRHIResourceLifetime{};
+        InResource.TransientRequestIndex = InvalidRenderResourceIndex;
+    } );
 
     for ( USize Position = 0U; Position < InGraph.ExecutionOrder.size(); ++Position )
     {
@@ -419,12 +419,12 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::AddQueueDependency ( FRender
     {
         return {};
     }
-    for ( const FRenderQueueDependency &Dependency : InGraph.QueueDependencies )
+    if ( Algo::AnyOf( InGraph.QueueDependencies, [InSource, InDestination] ( const FRenderQueueDependency &InDependency ) noexcept
     {
-        if ( Dependency.SourceSegmentIndex == InSource and Dependency.DestinationSegmentIndex == InDestination )
-        {
-            return {};
-        }
+        return InDependency.SourceSegmentIndex == InSource and InDependency.DestinationSegmentIndex == InDestination;
+    } ) )
+    {
+        return {};
     }
     if ( InGraph.QueueDependencies.size() >= InGraph.Capacities.QueueDependencyCount )
     {
@@ -499,11 +499,11 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::BuildQueueSegments ( FRender
         }
         return InLeft.SourceSegmentIndex < InRight.SourceSegmentIndex;
     } );
-    for ( FRenderQueueSegment &Segment : InGraph.QueueSegments )
+    Algo::ForEach( InGraph.QueueSegments, [] ( FRenderQueueSegment &InSegment ) noexcept
     {
-        Segment.FirstDependency = 0U;
-        Segment.DependencyCount = 0U;
-    }
+        InSegment.FirstDependency = 0U;
+        InSegment.DependencyCount = 0U;
+    } );
     for ( USize Index = 0U; Index < InGraph.QueueDependencies.size(); ++Index )
     {
         const FRenderQueueDependency &Dependency = InGraph.QueueDependencies[Index];
@@ -575,33 +575,14 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::EmitTransition ( FRenderGrap
 
     if ( InResource.bImported )
     {
-        RHI::FRHITransition RHITransition = RHI::FRHIBufferTransition{};
-        if ( std::holds_alternative<RHI::FRHIBufferDesc>( InResource.Desc.Creation ) )
-        {
-            RHI::FRHIBufferTransition BufferTransition;
-            BufferTransition.Buffer           = std::get<TSharedPtr<RHI::IRHIBuffer>>( InResource.Binding.Resource );
-            BufferTransition.Before           = InBefore;
-            BufferTransition.After            = InAfter;
-            BufferTransition.SourceQueue      = InSourceQueue;
-            BufferTransition.DestinationQueue = InDestinationQueue;
-            RHITransition                     = BufferTransition;
-        }
-        else
-        {
-            RHI::FRHITextureTransition TextureTransition;
-            TextureTransition.Texture          = std::get<TSharedPtr<RHI::IRHITexture>>( InResource.Binding.Resource );
-            TextureTransition.Range            = InResource.Range;
-            TextureTransition.Before           = InBefore;
-            TextureTransition.After            = InAfter;
-            TextureTransition.SourceQueue      = InSourceQueue;
-            TextureTransition.DestinationQueue = InDestinationQueue;
-            RHITransition                      = TextureTransition;
-        }
-        if ( not RHI::ValidateRHITransition( RHITransition ) )
+        TExpected<RHI::FRHITransition, FRenderError> RHITransition =
+            MakeBoundTransition( InResource.Handle, InResource.Desc, InResource.Binding, InResource.Range, InBefore, InAfter,
+                                 InSourceQueue, InDestinationQueue, ERenderErrorCode::InvalidTransition );
+        if ( not RHITransition ) [[unlikely]]
         {
             return MakeCompileError( ERenderErrorCode::InvalidTransition, RecordPass, ResourceIndex );
         }
-        Transition.RHITransition.Emplace( std::move( RHITransition ) );
+        Transition.RHITransition.Emplace( std::move( *RHITransition ) );
     }
     InGraph.Transitions.push_back( std::move( Transition ) );
     return {};
