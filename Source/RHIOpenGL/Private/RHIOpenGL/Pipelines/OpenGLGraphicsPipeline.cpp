@@ -265,11 +265,12 @@ const Lumen::RHI::FRHIGraphicsPipelineDesc &Lumen::RHIOpenGL::FOpenGLGraphicsPip
     return Desc;
 }
 
-Lumen::RHIOpenGL::FOpenGLPipelineLayout *Lumen::RHIOpenGL::FOpenGLGraphicsPipeline::GetNativeLayout () const noexcept
+Lumen::TOptional<Lumen::RHIOpenGL::FOpenGLPipelineLayout *>
+Lumen::RHIOpenGL::FOpenGLGraphicsPipeline::GetNativeLayout () const noexcept
 {
     if ( not Desc.Layout )
     {
-        return nullptr;
+        return {};
     }
-    return RHI::TryUnwrapRHIBackend<FOpenGLPipelineLayout>( RHI::UnwrapRHIShared( Desc.Layout ).Get() ).ValueOr( nullptr );
+    return RHI::TryUnwrapRHIBackend<FOpenGLPipelineLayout>( RHI::UnwrapRHIShared( Desc.Layout ).Get() );
 }

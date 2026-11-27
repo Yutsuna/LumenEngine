@@ -17,6 +17,8 @@
 #include <RHIOpenGL/Loader/GLSpec.hpp>
 #include <RHIOpenGL/Types/OpenGLObject.hpp>
 
+#include <Templates/Optional.hpp>
+
 namespace Lumen
 {
 
@@ -55,8 +57,8 @@ namespace RHIOpenGL
         /** @return The linked native program object. */
         [[nodiscard]] GLuint GetProgram () const noexcept;
 
-        /** @return The native pipeline layout, or null when the layout is foreign. */
-        [[nodiscard]] FOpenGLPipelineLayout *GetNativeLayout () const noexcept;
+        /** @return The native pipeline layout, or empty when the layout is foreign. */
+        [[nodiscard]] TOptional<FOpenGLPipelineLayout *> GetNativeLayout () const noexcept;
 
     private:
 
