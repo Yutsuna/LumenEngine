@@ -18,6 +18,7 @@
 #include <RHI/Memory/IRHITransientResourceAllocator.hpp>
 
 #include <RHIOpenGL/Device/OpenGLDeviceContext.hpp>
+#include <RHIOpenGL/Loader/GLSpec.hpp>
 #include <RHIOpenGL/Types/OpenGLObject.hpp>
 
 #include <Templates/Function.hpp>
@@ -29,6 +30,20 @@ namespace Lumen
 
 namespace RHIOpenGL
 {
+
+    /**
+     * @brief Decides whether a defragmentation move must be staged through a scratch buffer.
+     * @details Overlapping source/destination ranges are hazardous only within the same native
+     *          GL buffer. Distinct heaps own distinct buffers and can be copied directly even
+     *          when their heap-relative offsets happen to coincide.
+     * @return True when the copy needs a scratch buffer.
+     */
+    [[nodiscard]] Bool NeedsScratchCopy ( GLuint InSourceBuffer,
+                                          GLuint InDestinationBuffer,
+                                          UInt64 InSourceOffset,
+                                          UInt64 InSourceSize,
+                                          UInt64 InDestinationOffset,
+                                          UInt64 InDestinationSize ) noexcept;
 
     /**
      * @class FOpenGLBufferPool

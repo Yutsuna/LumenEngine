@@ -64,7 +64,26 @@ Lumen::TOptional<Lumen::RHIOpenGL::FOpenGLHeap *> GetValidatedHeap ( const Lumen
     return Heap;
 }
 
+/** @brief One replay-ready copy decision, built once during pre-validation. */
+struct FOpenGLDefragCopy
+{
+    Lumen::RHIOpenGL::GLuint SourceBuffer      = 0U;
+    Lumen::RHIOpenGL::GLuint DestinationBuffer = 0U;
+    Lumen::Bool bScratch                       = false;
+};
+
 } // namespace
+
+Lumen::Bool Lumen::RHIOpenGL::NeedsScratchCopy ( const GLuint InSourceBuffer,
+                                                 const GLuint InDestinationBuffer,
+                                                 const UInt64 InSourceOffset,
+                                                 const UInt64 InSourceSize,
+                                                 const UInt64 InDestinationOffset,
+                                                 const UInt64 InDestinationSize ) noexcept
+{
+    return InSourceBuffer == InDestinationBuffer and
+           RHI::RHIRangesOverlap( InSourceOffset, InSourceSize, InDestinationOffset, InDestinationSize );
+}
 
 /**
  * Public
@@ -367,6 +386,8 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLDefragmenter::Execute ( const 
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Defragmenter::Execute" ) );
     LUMEN_TRY_EXPECT_ERROR( InPlan.Validate() );
 
+    TVector<FOpenGLDefragCopy> Copies;
+    Copies.reserve( InPlan.Moves.size() );
     Bool bNeedsScratch = false;
     UInt64 ScratchSize = 0ULL;
     for ( const RHI::FRHIDefragMove &Move : InPlan.Moves )
@@ -382,7 +403,13 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLDefragmenter::Execute ( const 
         {
             return TUnexpected( RHI::MakeRHIInvalidMemory( "Defrag move references a foreign or invalid heap." ) );
         }
-        if ( RHI::RHIRangesOverlap( Move.Source.Offset, Move.Source.Size, Move.Destination.Offset, Move.Destination.Size ) )
+        FOpenGLDefragCopy Copy;
+        Copy.SourceBuffer      = ( *Source )->GetBuffer();
+        Copy.DestinationBuffer = ( *Destination )->GetBuffer();
+        Copy.bScratch = NeedsScratchCopy( Copy.SourceBuffer, Copy.DestinationBuffer, Move.Source.Offset, Move.Source.Size,
+                                          Move.Destination.Offset, Move.Destination.Size );
+        Copies.push_back( Copy );
+        if ( Copy.bScratch )
         {
             bNeedsScratch = true;
             ScratchSize   = Maths::Max( ScratchSize, Move.Source.Size );
@@ -416,21 +443,22 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLDefragmenter::Execute ( const 
             }
         }
 
-        for ( const RHI::FRHIDefragMove &Move : InPlan.Moves )
+        for ( USize Index = 0U; Index < InPlan.Moves.size(); ++Index )
         {
-            const GLuint SourceBuffer      = ( *GetValidatedHeap( *Context, Move.Source ) )->GetBuffer();
-            const GLuint DestinationBuffer = ( *GetValidatedHeap( *Context, Move.Destination ) )->GetBuffer();
-            const GLsizeiptr Size          = static_cast<GLsizeiptr>( Move.Source.Size );
-            if ( bNeedsScratch and
-                 RHI::RHIRangesOverlap( Move.Source.Offset, Move.Source.Size, Move.Destination.Offset, Move.Destination.Size ) )
+            const RHI::FRHIDefragMove &Move = InPlan.Moves[Index];
+            const FOpenGLDefragCopy &Copy   = Copies[Index];
+            const GLsizeiptr Size           = static_cast<GLsizeiptr>( Move.Source.Size );
+            if ( Copy.bScratch )
             {
-                Dispatch.CopyNamedBufferSubData( SourceBuffer, Scratch, static_cast<GLintptr>( Move.Source.Offset ), 0LL, Size );
-                Dispatch.CopyNamedBufferSubData( Scratch, DestinationBuffer, 0LL,
+                Dispatch.CopyNamedBufferSubData( Copy.SourceBuffer, Scratch, static_cast<GLintptr>( Move.Source.Offset ), 0LL,
+                                                 Size );
+                Dispatch.CopyNamedBufferSubData( Scratch, Copy.DestinationBuffer, 0LL,
                                                  static_cast<GLintptr>( Move.Destination.Offset ), Size );
             }
             else
             {
-                Dispatch.CopyNamedBufferSubData( SourceBuffer, DestinationBuffer, static_cast<GLintptr>( Move.Source.Offset ),
+                Dispatch.CopyNamedBufferSubData( Copy.SourceBuffer, Copy.DestinationBuffer,
+                                                 static_cast<GLintptr>( Move.Source.Offset ),
                                                  static_cast<GLintptr>( Move.Destination.Offset ), Size );
             }
         }
