@@ -2,6 +2,7 @@
  * @file RHIScopedDebugRegion.hpp
  * @brief Declares a RAII command-list debug region.
  */
+
 #pragma once
 
 #include <Core/CoreTypes.hpp>

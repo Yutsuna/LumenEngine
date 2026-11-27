@@ -2,6 +2,7 @@
  * @file RHICheckedMath.inl
  * @brief Inline overflow-checked arithmetic.
  */
+
 #pragma once
 
 #include <RHI/Utilities/RHICheckedMath.hpp>
