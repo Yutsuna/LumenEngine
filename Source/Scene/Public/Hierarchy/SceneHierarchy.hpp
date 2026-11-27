@@ -157,6 +157,9 @@ public:
     /** @return A complete, immutable-until-next-publication view sorted by ascending ActorID. */
     [[nodiscard]] TSpan<const FSceneHierarchyTransformRecord> GetPublishedTransforms () const noexcept;
 
+    /** @brief Copies currently registered node IDs into a caller-owned span; returns the count written. */
+    [[nodiscard]] USize GetRegisteredActorIds ( TSpan<ActorID> OutActorIds ) const noexcept;
+
     /** @return Working depth of a registered node, or an empty optional for an unknown actor. */
     [[nodiscard]] TOptional<USize> GetDepth ( ActorID InActorId ) const noexcept;
 

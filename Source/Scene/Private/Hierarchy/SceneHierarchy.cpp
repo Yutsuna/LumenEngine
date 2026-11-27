@@ -422,6 +422,16 @@ Lumen::TSpan<const Lumen::FSceneHierarchyTransformRecord> Lumen::FSceneHierarchy
     return { PublishedTransforms.Get(), PublishedTransformCount };
 }
 
+Lumen::USize Lumen::FSceneHierarchy::GetRegisteredActorIds ( const TSpan<ActorID> OutActorIds ) const noexcept
+{
+    USize Written = 0ULL;
+    for ( USize Index = 0ULL; Index < NodeCount and Written < OutActorIds.size(); ++Index )
+    {
+        OutActorIds[Written++] = Nodes[Index].Id;
+    }
+    return Written;
+}
+
 Lumen::TOptional<Lumen::USize> Lumen::FSceneHierarchy::GetDepth ( const ActorID InActorId ) const noexcept
 {
     const USize NodeIndex = FindNodeIndex( InActorId );

@@ -75,6 +75,7 @@ enum class EActorDestroyError : UInt8
     UnknownActor,
     ActorRetiring,
     DeferredQueueFull,
+    PartitionJournalFull,
     WorldClosed,
 };
 
