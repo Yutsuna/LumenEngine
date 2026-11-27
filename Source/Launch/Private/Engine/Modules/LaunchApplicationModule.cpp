@@ -99,6 +99,14 @@ void Lumen::Launch::FLaunchMessageHandler::OnQuit () noexcept
     FLaunchEngineLoop::RequestExit();
 }
 
+void Lumen::Launch::FLaunchMessageHandler::OnKeyDown ( const EKeys::Type InKey, const Bool LUMEN_UNUSED bIsRepeated ) noexcept
+{
+    if ( InKey == EKeys::Escape )
+    {
+        FLaunchEngineLoop::RequestExit();
+    }
+}
+
 /**
  * FLaunchApplicationModule
  */
