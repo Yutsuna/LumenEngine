@@ -6,8 +6,13 @@
 #include <Launch/LaunchModuleStack.hpp>
 
 #include <Logging/Logger.hpp>
+#include <Algo/ForEach.hpp>
 
 #include <utility>
+
+/**
+ * Private
+ */
 
 namespace
 {
@@ -16,9 +21,12 @@ LUMEN_LOG_DEFINE_CATEGORY( LogLaunchModuleStack, "LaunchModuleStack" )
 
 }
 
-namespace Lumen
-{
-Launch::FLaunchModuleStack::FLaunchModuleStack ( FLaunchModuleStack &&Other ) noexcept
+
+/**
+ * Public
+ */
+
+Lumen::Launch::FLaunchModuleStack::FLaunchModuleStack ( FLaunchModuleStack &&Other ) noexcept
     : Modules( std::move( Other.Modules ) ), FixedTickList( std::move( Other.FixedTickList ) ),
       TickList( std::move( Other.TickList ) )
 {
@@ -27,12 +35,12 @@ Launch::FLaunchModuleStack::FLaunchModuleStack ( FLaunchModuleStack &&Other ) no
     Other.TickList.clear();
 }
 
-Launch::FLaunchModuleStack::~FLaunchModuleStack () noexcept
+Lumen::Launch::FLaunchModuleStack::~FLaunchModuleStack () noexcept
 {
     ShutdownAll();
 }
 
-Launch::TLaunchResult<void> Launch::FLaunchModuleStack::StartAll ( const TSpan<const FModuleDescriptor> InDescriptors,
+Lumen::Launch::TLaunchResult<void> Lumen::Launch::FLaunchModuleStack::StartAll ( const TSpan<const FModuleDescriptor> InDescriptors,
                                                                    const FLaunchEngineConfig &InConfig ) noexcept
 {
     /** Reserve once: the push_back calls below can no longer allocate. */
@@ -83,7 +91,7 @@ Launch::TLaunchResult<void> Launch::FLaunchModuleStack::StartAll ( const TSpan<c
     return {};
 }
 
-void Launch::FLaunchModuleStack::ShutdownAll () noexcept
+void Lumen::Launch::FLaunchModuleStack::ShutdownAll () noexcept
 {
     FixedTickList.clear();
     TickList.clear();
@@ -95,21 +103,19 @@ void Launch::FLaunchModuleStack::ShutdownAll () noexcept
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void Launch::FLaunchModuleStack::FixedTick ( const Float64 InFixedDeltaSeconds ) noexcept
+void Lumen::Launch::FLaunchModuleStack::FixedTick ( const Float64 InFixedDeltaSeconds ) noexcept
 {
-    for ( IEngineModule *const Module : FixedTickList )
+    Algo::ForEach( FixedTickList, [InFixedDeltaSeconds](IEngineModule *const Module)
     {
         Module->FixedTick( InFixedDeltaSeconds );
-    }
+    });
 }
 
 // ReSharper disable once CppMemberFunctionMayBeConst
-void Launch::FLaunchModuleStack::Tick ( const Float64 InDeltaSeconds, const Float64 InAlpha ) noexcept
+void Lumen::Launch::FLaunchModuleStack::Tick ( const Float64 InDeltaSeconds, const Float64 InAlpha ) noexcept
 {
-    for ( IEngineModule *const Module : TickList )
+    Algo::ForEach( TickList, [InDeltaSeconds, InAlpha](IEngineModule *const Module)
     {
         Module->Tick( InDeltaSeconds, InAlpha );
-    }
+    });
 }
-
-} // namespace Lumen
