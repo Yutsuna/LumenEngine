@@ -5,30 +5,30 @@
 
 #include <Application.hpp>
 
-#include <Logging/Logger.hpp>
+#include <MessageHandler.hpp>
+
+namespace Lumen
+{
 
 /**
  * Registration
  */
 
-LUMEN_REGISTER_MODULE( Lumen::FLuminaApplication )
-
-/**
- * Private
- */
-
-namespace
-{
-
-LUMEN_LOG_DEFINE_CATEGORY( LogLumina, "Lumina" );
-
-} // namespace
+LUMEN_REGISTER_MODULE( FLuminaApplication )
+const FLogCategory LogLumina{ "Lumina" };
 
 /**
  * Public
  */
 
-Lumen::FLuminaApplication::FLuminaApplication () noexcept
+FLuminaApplication::FLuminaApplication ( const Launch::TModuleContext<FLuminaApplication> &InContext ) noexcept
 {
+    if ( Launch::FLaunchApplicationModule *const ApplicationModule = InContext.Find<Launch::FLaunchApplicationModule>() )
+    {
+        MessageHandlerGuard = ApplicationModule->PushMessageHandler<FLuminaMessageHandler>();
+    }
+
     LUMEN_LOG_VERY_VERBOSE( LogLumina, "FLuminaApplication constructed" );
 }
+
+} // namespace Lumen
