@@ -7,110 +7,151 @@
 
 #include <SceneExport.hpp>
 
+#include <Actor/ActorLifecycle.hpp>
 #include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
 
+#include <Templates/Expected.hpp>
 #include <Templates/Optional.hpp>
 
 #include <Core/NonCopyable.hpp>
 #include <Core/NonMovable.hpp>
 
-#include <Thread/SPMCQueue.hpp>
+#include <Memory/UniquePtr.hpp>
+
+#include <Thread/MPSCQueue.hpp>
 
 namespace Lumen
 {
 
+/** @brief Capacity used when a mailbox is constructed without an explicit descriptor. */
+inline constexpr SCENE_EXPORT USize DefaultMailboxCapacity = 32ULL;
+
+/**
+ * @enum EActorMailboxError
+ * @brief Structured failures of mailbox capacity control operations.
+ */
+enum class EActorMailboxError : UInt8
+{
+    InvalidCapacity,
+    OutOfMemory,
+    NotInitialized,
+};
+
+/**
+ * @struct FMailBoxDesc
+ * @brief Fixed capacity descriptor of an actor mailbox.
+ * @details The capacity is allocated by the constructor or by Reserve. It never grows on a message path.
+ */
+struct SCENE_EXPORT FMailBoxDesc
+{
+    USize Capacity = DefaultMailboxCapacity;
+};
+
 /**
  * @class FMailBox
- * @brief Wait-free MPSC (multi-producer, single-consumer) mailbox.
-
- * @details Implements the Dmitry Vyukov intrusive MPSC queue with an internal
- *          lock-free free-list to prevent per-message allocation bottlenecks.
+ * @brief Bounded wait-free MPSC (multi-producer, single-consumer) actor mailbox.
+ *
+ * @details Storage is provided by Core's Thread::TMPSCQueue<T>, whose nodes are allocated once by construction
+ *          or by Reserve. Afterwards Push/TryPush/Pop/RecycleHead never allocate or release storage: a full
+ *          mailbox returns a structured failure and preserves every accepted message. Producers run lock-free;
+ *          the single consumer can briefly yield inside the Core free-list when a producer is preempted between
+ *          claiming and publishing a recycled slot. Per-producer FIFO and linearization order are preserved;
+ *          concurrent producers still have no deterministic total order.
  */
 class SCENE_EXPORT FMailBox final : public FNonCopyable, public FNonMovable
 {
-private:
-
-    /**
-     * @struct FNode
-     * @brief Intrusive linked-list node for the Vyukov MPSC queue.
-     */
-    struct alignas( 64 ) FNode
-    {
-        TAtomic<FNode *> Next = { nullptr };
-        TOptional<FMessage> Message;
-    };
-
 public:
 
+    /** @brief Constructs a mailbox with DefaultMailboxCapacity slots. */
     FMailBox () noexcept;
-    ~FMailBox () noexcept;
+
+    /** @brief Constructs a mailbox with the capacity from InDesc. */
+    explicit FMailBox ( const FMailBoxDesc &InDesc ) noexcept;
+
+    ~FMailBox () noexcept = default;
 
 public:
 
     /**
-     * @brief Enqueues a message. Safe to call from any thread simultaneously.
+     * @brief Enqueues a message, keeping the legacy boolean contract.
      * @param InMessage The message to send.
-     * @return True if the message was successfully enqueued, false otherwise.
+     * @return True when the message was accepted, false when the mailbox is full or uninitialized.
+     * @note A rejection increments the saturation counter and is logged; use TryPush for structured handling.
      */
     Bool Push ( const FMessage &InMessage ) noexcept;
 
     /**
-     * @brief Attempts to dequeue the front message.
-     * @return The message if one is available, TOptional<FMessage>{} otherwise.
+     * @brief Enqueues a message with a structured saturation result.
+     * @param InMessage The message to send.
+     * @return Success, or EActorSendError::MailboxFull without modifying the mailbox or InMessage.
+     * @note Safe for concurrent producers; a full mailbox leaves all previously accepted messages intact.
+     */
+    [[nodiscard]] TExpected<void, EActorSendError> TryPush ( const FMessage &InMessage ) noexcept;
+
+    /**
+     * @brief Attempts to dequeue the front message eligible for the current tick.
+     * @return The message, or an empty optional when none is eligible or available.
      * @note Must be called from a single consumer thread only.
      */
     [[nodiscard]] TOptional<FMessage> Pop () noexcept;
 
     /**
-     * @brief Pre-allocates nodes in the free-list pool.
-     * @param InCapacity The number of nodes to pre-allocate.
-     * @note Should be called from the consumer thread or during initialization.
+     * @brief Initializes or enlarges the bounded storage. Serial control operation.
+     * @param InCapacity Exact number of message slots; must be greater than zero.
+     * @return Success when the mailbox can hold at least InCapacity messages, or a structured failure.
+     * @note A smaller or equal existing capacity is a no-op. Enlarging transfers pending messages and must not
+     *       race with any producer or consumer.
      */
-    void Reserve ( USize InCapacity ) noexcept;
+    [[nodiscard]] TExpected<void, EActorMailboxError> Reserve ( USize InCapacity ) noexcept;
 
     /**
-     * @brief Freezes the tick boundary at the current tail.
+     * @brief Freezes the tick boundary at the number of messages already accepted.
      * @note Consumer-only. Called by FWorld::Tick before the parallel phase.
+     * @note A producer preempted between publishing its node and publishing the accepted counter can have that
+     *       message deferred by one additional fence. This is the same transient-gap caveat as the underlying
+     *       MPSC queue: no message is lost or reordered, and the boundary remains a conservative serial point.
      */
     void BeginTick () noexcept;
 
     /**
-     * @brief Clears the tick boundary. Pop resumes processing all nodes.
+     * @brief Clears the tick boundary. Pop resumes processing all accepted messages.
      * @note Consumer-only. Called by FWorld::Tick after the parallel phase.
      */
     void EndTick () noexcept;
 
     /**
-     * @brief Returns true if no messages are pending.
+     * @brief Returns true when no message is currently visible in the queue.
      * @note May transiently return true during a producer gap. Single-consumer only.
      */
     [[nodiscard]] Bool IsEmpty () const noexcept;
 
+    /** @return The exact number of message slots, or zero when storage could not be allocated. */
+    [[nodiscard]] USize GetCapacity () const noexcept;
+
+    /** @return The number of messages rejected since construction. */
+    [[nodiscard]] UInt64 GetSaturationCount () const noexcept;
+
+    /** @return The number of messages currently accepted but not yet consumed. */
+    [[nodiscard]] USize GetPendingCount () const noexcept;
+
 private:
 
-    /**
-     * @brief Retires a previously consumed head node.
-     * Resets its message and returns it to the free pool, or deletes it if the pool is full.
-     */
-    void RecycleHead ( FNode *InOldHead ) noexcept;
+    /** @brief Sentinel stored in Boundary when no tick fence is active. */
+    static constexpr USize NoBoundary = ~USize( 0ULL );
+
+    [[nodiscard]] TExpected<void, EActorMailboxError> Initialize ( USize InCapacity ) noexcept;
 
 private:
 
-    /** @brief Lock-free pool of nodes to eliminate dynamic allocations in hot paths. */
-    alignas( 64 ) Thread::TSPMCQueue<FNode *> FreeNodes;
+    TUniquePtr<Thread::TMPSCQueue<FMessage>> Queue;
 
-    /** @brief Stub sentinel — Head always points to the node *before* the first real message. */
-    alignas( 64 ) FNode Stub = {};
+    alignas( 64 ) TAtomic<USize> AcceptedCount    = { 0ULL };
+    alignas( 64 ) TAtomic<USize> Boundary         = { NoBoundary };
+    alignas( 64 ) TAtomic<UInt64> SaturationCount = { 0ULL };
 
-    /** @brief Head: the node whose Next holds the next message to consume. Consumer-owned. */
-    alignas( 64 ) FNode *Head = nullptr;
-
-    /** @brief Tail: last node inserted. Written by producers via atomic exchange. */
-    alignas( 64 ) TAtomic<FNode *> Tail = { nullptr };
-
-    /** @brief Last node enqueued before the parallel phase; nullptr = no fence. */
-    FNode *Boundary = nullptr;
+    /** @brief Consumer-only cursor; equals the number of messages removed from the underlying queue. */
+    USize ConsumedCount = 0ULL;
 
 }; // class FMailBox
 
