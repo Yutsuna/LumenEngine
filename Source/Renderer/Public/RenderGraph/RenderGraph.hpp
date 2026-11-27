@@ -7,7 +7,6 @@
 
 #include <RendererExport.hpp>
 
-#include <Core/NonCopyable.hpp>
 #include <RHI/Memory/RHITransientBatch.hpp>
 #include <RenderGraph/RenderGraphTypes.hpp>
 
@@ -22,9 +21,12 @@ class FCompiledRenderGraph;
  * @brief Move-only arenas shared by the builder and the consuming compilation.
  * @details Instances are created and mutated through FRenderGraphBuilder.
  */
-class RENDERER_EXPORT FRenderGraph final : public FNonCopyable
+class RENDERER_EXPORT FRenderGraph final
 {
 public:
+
+    FRenderGraph ( const FRenderGraph & ) noexcept           = delete;
+    FRenderGraph &operator=( const FRenderGraph & ) noexcept = delete;
 
     explicit FRenderGraph ( const FRenderGraphCapacities &InCapacities ) noexcept;
     FRenderGraph ( FRenderGraph && ) noexcept           = default;

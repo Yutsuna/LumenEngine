@@ -19,14 +19,20 @@ class FCompiledRenderGraph;
  * @details No container grows beyond FRenderGraphCapacities. Handles are graph-scoped
  *          and compilation consumes the builder.
  */
-class RENDERER_EXPORT FRenderGraphBuilder final : public FNonCopyable
+class RENDERER_EXPORT FRenderGraphBuilder final
 {
 public:
 
     explicit FRenderGraphBuilder ( const FRenderGraphCapacities &InCapacities ) noexcept;
+
+    FRenderGraphBuilder ( const FRenderGraphBuilder & ) noexcept           = delete;
+    FRenderGraphBuilder &operator=( const FRenderGraphBuilder & ) noexcept = delete;
+
     FRenderGraphBuilder ( FRenderGraphBuilder && ) noexcept           = default;
     FRenderGraphBuilder &operator=( FRenderGraphBuilder && ) noexcept = default;
     ~FRenderGraphBuilder () noexcept                                  = default;
+
+public:
 
     [[nodiscard]] TExpected<FRenderResourceHandle, FRenderError> CreateTransient ( const FRenderResourceDesc &InDesc ) noexcept;
 

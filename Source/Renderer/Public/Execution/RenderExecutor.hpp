@@ -25,13 +25,19 @@ namespace Thread
     template <typename Type> class TMPSCQueue;
 }
 
-/** @struct FRenderExecutorDesc */
+/**
+ * @struct FRenderExecutorDesc
+ * @brief Bounded command capacity reserved once at executor startup.
+ */
 struct FRenderExecutorDesc
 {
     USize CommandCapacity = 64ULL;
 };
 
-/** @enum ERenderExecutorError */
+/**
+ * @enum ERenderExecutorError
+ * @brief Structured startup and enqueue failures of the render executor.
+ */
 enum class ERenderExecutorError : UInt8
 {
     InvalidCapacity,
@@ -64,16 +70,25 @@ public:
     /** @brief Starts one render thread. The handler must outlive Stop/Join and the executor. */
     [[nodiscard]] TExpected<void, ERenderExecutorError> Start ( const FRenderExecutorDesc &InDesc,
                                                                 IRenderCommandHandler &InHandler ) noexcept;
-    /** @brief Enqueues a bounded POD command without allocating. */
+    /**
+     * @brief Enqueues a bounded POD command without allocating.
+     * @return NotRunning once stop has been requested or the executor has been joined.
+     */
     [[nodiscard]] TExpected<void, ERenderExecutorError> Enqueue ( const FRenderCommand &InCommand ) noexcept;
-    /** @brief Requests termination after already queued commands have been drained. */
+    /**
+     * @brief Requests termination after already queued commands have been drained.
+     * @details Clears IsRunning immediately so no producer can enqueue into a queue
+     *          that the worker will never drain again. Idempotent.
+     */
     void RequestStop () noexcept;
-    /** @brief Joins the render thread and releases queue storage. */
+    /** @brief Requests stop if needed, joins the worker, publishes the final status and releases queue storage. */
     void Join () noexcept;
 
+    /** @return True only while the executor still accepts commands. */
     [[nodiscard]] Bool IsRunning () const noexcept;
     /** @brief Promotes the latest status. Only one reader thread may call this function. */
     void SwapStatusBuffers () noexcept;
+    /** @brief Reads the currently promoted, immutable status snapshot. */
     [[nodiscard]] const FRenderFrameStatus &GetStatus () const noexcept;
 
 private:
@@ -81,6 +96,7 @@ private:
     void Run ( FStopToken InStopToken ) noexcept;
     void SignalWork () noexcept;
     void PublishStatus () noexcept;
+    void PublishStatusLocked () noexcept;
 
 private:
 
@@ -91,10 +107,15 @@ private:
     HAL::FPlatformMutex WakeMutex;
     FConditionVariable WakeCondition;
     Bool bWorkAvailable = false;
-    Bool bStopRequested = false;
+    TAtomic<Bool> bStopRequested{ false };
 
     TAtomic<Bool> bRunning{ false };
+    /** @brief Producers currently inside Enqueue; Join waits for zero before releasing queue storage. */
+    TAtomic<USize> ActiveProducers{ 0ULL };
     TAtomic<UInt64> RejectedCommandCount{ 0ULL };
+
+    /** @brief Serializes every mutation and publication of WorkingStatus, including from rejecting producers. */
+    HAL::FPlatformMutex StatusMutex;
     FRenderFrameStatus WorkingStatus{};
     Thread::TTripleBuffer<FRenderFrameStatus> StatusBuffer;
 };

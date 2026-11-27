@@ -13,18 +13,26 @@ namespace Lumen
 {
 
 /** @class FRenderGraphContext
- * @brief Binds allocator-produced transients once, outside draw and dispatch records.
- * @details The context does not allocate memory, create RHI resources, record command
- *          lists, or own IRHITransientResourceAllocator. It only retains binding fronts.
+ * @brief Owns one compiled graph and binds allocator-produced transients outside draw and dispatch records.
+ * @details The context does not create RHI resources, record command lists, or own
+ *          IRHITransientResourceAllocator. It moves the compiled plan in, so bindings and
+ *          barriers can never outlive their metadata; it only adds binding fronts.
  */
-class RENDERER_EXPORT FRenderGraphContext final : public FNonCopyable
+class RENDERER_EXPORT FRenderGraphContext final
 {
 public:
 
-    explicit FRenderGraphContext ( const FCompiledRenderGraph &InGraph ) noexcept;
+    /** @brief Takes ownership of a compiled graph; pass an rvalue so no temporary can dangle. */
+    explicit FRenderGraphContext ( FCompiledRenderGraph &&InGraph ) noexcept;
+
+    FRenderGraphContext ( const FRenderGraphContext & ) noexcept           = delete;
+    FRenderGraphContext &operator=( const FRenderGraphContext & ) noexcept = delete;
+
     FRenderGraphContext ( FRenderGraphContext && ) noexcept           = default;
     FRenderGraphContext &operator=( FRenderGraphContext && ) noexcept = default;
     ~FRenderGraphContext () noexcept                                  = default;
+
+public:
 
     [[nodiscard]] FRenderExpected BindTransient ( FRenderResourceHandle InResource,
                                                   TSharedRef<RHI::IRHIBuffer> InBuffer ) noexcept;
@@ -37,7 +45,7 @@ public:
 
 private:
 
-    const FCompiledRenderGraph *Graph;
+    FCompiledRenderGraph Graph;
     TVector<FRenderResourceBinding> Bindings;
 };
 

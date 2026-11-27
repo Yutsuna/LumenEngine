@@ -31,7 +31,8 @@ inline constexpr UInt32 InvalidRenderPassOrdinal       = 0xFFFFFFFFU;
 inline constexpr UInt32 InvalidRenderResourceIndex     = 0xFFFFFFFFU;
 inline constexpr UInt32 InvalidRenderQueueSegmentIndex = 0xFFFFFFFFU;
 
-/** @struct FRenderPassHandle
+/**
+ * @struct FRenderPassHandle
  * @brief Stable declaration ordinal of one pass in a graph.
  */
 struct FRenderPassHandle
@@ -46,7 +47,8 @@ struct FRenderPassHandle
     friend constexpr auto operator<=>( const FRenderPassHandle &, const FRenderPassHandle & ) = default;
 };
 
-/** @struct FRenderResourceHandle
+/**
+ * @struct FRenderResourceHandle
  * @brief Graph-scoped index and generation identifying one declared resource.
  */
 struct FRenderResourceHandle
@@ -62,7 +64,8 @@ struct FRenderResourceHandle
     friend constexpr auto operator<=>( const FRenderResourceHandle &, const FRenderResourceHandle & ) = default;
 };
 
-/** @struct FRenderGraphCapacities
+/**
+ * @struct FRenderGraphCapacities
  * @brief Hard capacities reserved once when declaration starts.
  */
 struct FRenderGraphCapacities
@@ -76,7 +79,8 @@ struct FRenderGraphCapacities
     USize QueueDependencyCount   = 0U;
 };
 
-/** @struct FRenderPassDesc
+/**
+ * @struct FRenderPassDesc
  * @brief Execution properties declared before accesses are appended.
  */
 struct FRenderPassDesc
@@ -85,7 +89,8 @@ struct FRenderPassDesc
     Bool bHasSideEffects     = false;
 };
 
-/** @struct FRenderResourceAccess
+/**
+ * @struct FRenderResourceAccess
  * @brief One whole-resource read or write in a requested RHI state.
  */
 struct FRenderResourceAccess
@@ -94,7 +99,8 @@ struct FRenderResourceAccess
     RHI::ERHIResourceState State = RHI::ERHIResourceState::Undefined;
 };
 
-/** @struct FRenderPass
+/**
+ * @struct FRenderPass
  * @brief Immutable compiled view of a pass and its declaration-order adjacency.
  */
 struct FRenderPass
@@ -109,7 +115,8 @@ struct FRenderPass
     Bool bActive               = false;
 };
 
-/** @struct FRenderResourceDesc
+/**
+ * @struct FRenderResourceDesc
  * @brief Backend-neutral creation description and memory requirements of a transient.
  */
 struct FRenderResourceDesc
@@ -118,7 +125,8 @@ struct FRenderResourceDesc
     RHI::FRHIResourceRequirements Requirements;
 };
 
-/** @struct FRenderImportedResourceDesc
+/**
+ * @struct FRenderImportedResourceDesc
  * @brief Ownership states at graph entry and exit for an imported resource.
  */
 struct FRenderImportedResourceDesc
@@ -129,7 +137,8 @@ struct FRenderImportedResourceDesc
     RHI::ERHIQueueType FinalQueue       = RHI::ERHIQueueType::Graphics;
 };
 
-/** @struct FRenderResourceBinding
+/**
+ * @struct FRenderResourceBinding
  * @brief Strong RHI possession front for an import or a materialized transient.
  */
 struct FRenderResourceBinding
@@ -141,7 +150,8 @@ struct FRenderResourceBinding
     RHI::ERHIQueueType FinalQueue       = RHI::ERHIQueueType::Count;
 };
 
-/** @struct FRenderResource
+/**
+ * @struct FRenderResource
  * @brief Compiled resource metadata, half-open lifetime, and optional import possession.
  */
 struct FRenderResource
@@ -157,7 +167,8 @@ struct FRenderResource
     Bool bActive                 = false;
 };
 
-/** @enum ERenderTransitionRecordPoint
+/**
+ * @enum ERenderTransitionRecordPoint
  * @brief Position of a barrier relative to its recording pass.
  */
 enum class ERenderTransitionRecordPoint : UInt8
@@ -166,7 +177,8 @@ enum class ERenderTransitionRecordPoint : UInt8
     AfterPass,
 };
 
-/** @struct FRenderTransition
+/**
+ * @struct FRenderTransition
  * @brief Canonical barrier metadata; imports also carry their materialized RHI descriptor.
  */
 struct FRenderTransition
@@ -190,7 +202,8 @@ struct FRenderTransition
     }
 };
 
-/** @struct FRenderQueueSegment
+/**
+ * @struct FRenderQueueSegment
  * @brief Maximal topological range recorded into one command list for one queue.
  */
 struct FRenderQueueSegment
@@ -203,7 +216,8 @@ struct FRenderQueueSegment
     UInt64 SignalValue       = 0ULL;
 };
 
-/** @struct FRenderQueueDependency
+/**
+ * @struct FRenderQueueDependency
  * @brief Timeline-ready edge between two queue segments.
  */
 struct FRenderQueueDependency
@@ -213,10 +227,12 @@ struct FRenderQueueDependency
     UInt64 WaitValue               = 0ULL;
 };
 
-/** @enum ERenderErrorCode
- * @brief Stable render graph declaration, compilation, and binding failures.
+/**
+ * @enum ERenderErrorCode
+ * @brief Stable render graph declaration, compilation, and binding failur
+ s.
  */
-enum class ERenderErrorCode : UInt16
+enum class ERenderErrorCode : UInt16 /** NOLINT */
 {
     CapacityExceeded,
     InvalidResourceHandle,
@@ -240,7 +256,8 @@ enum class ERenderErrorCode : UInt16
     GraphAlreadyCompiled,
 };
 
-/** @struct FRenderError
+/**
+ * @struct FRenderError
  * @brief Non-allocating structured error with stable graph coordinates.
  */
 struct FRenderError

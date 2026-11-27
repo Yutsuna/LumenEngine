@@ -12,7 +12,10 @@
 namespace Lumen
 {
 
-/** @enum ERenderCommandType */
+/**
+ * @enum ERenderCommandType
+ * @brief Bounded set of commands accepted by the render executor.
+ */
 enum class ERenderCommandType : UInt8
 {
     RenderLatest,
@@ -21,14 +24,20 @@ enum class ERenderCommandType : UInt8
     Shutdown,
 };
 
-/** @struct FRenderFrameRequest */
+/**
+ * @struct FRenderFrameRequest
+ * @brief Frame index paired with the latest published snapshot sequence.
+ */
 struct FRenderFrameRequest
 {
     UInt64 FrameIndex       = 0ULL;
     UInt64 SnapshotSequence = 0ULL;
 };
 
-/** @struct FRenderCommand */
+/**
+ * @struct FRenderCommand
+ * @brief Trivially copyable render request, resize or control command.
+ */
 struct FRenderCommand
 {
     ERenderCommandType Type = ERenderCommandType::RenderLatest;
@@ -59,7 +68,10 @@ struct FRenderCommand
     }
 };
 
-/** @enum ERenderFrameResult */
+/**
+ * @enum ERenderFrameResult
+ * @brief Observable outcome of one consumed frame command.
+ */
 enum class ERenderFrameResult : UInt8
 {
     Idle,
@@ -76,7 +88,10 @@ enum class ERenderFrameResult : UInt8
     Shutdown,
 };
 
-/** @struct FRenderFrameStatus */
+/**
+ * @struct FRenderFrameStatus
+ * @brief Latest-only, single-reader frame counters and completion result.
+ */
 struct FRenderFrameStatus
 {
     ERenderFrameResult Result    = ERenderFrameResult::Idle;

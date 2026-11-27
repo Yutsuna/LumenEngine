@@ -18,13 +18,18 @@ namespace Lumen
  * @details Execution positions index ExecutionOrder; segment pass ranges are half-open
  *          positions in that same array. No native or backend object is created here.
  */
-class RENDERER_EXPORT FCompiledRenderGraph final : public FNonCopyable
+class RENDERER_EXPORT FCompiledRenderGraph final
 {
 public:
+
+    FCompiledRenderGraph ( const FCompiledRenderGraph & ) noexcept           = delete;
+    FCompiledRenderGraph &operator=( const FCompiledRenderGraph & ) noexcept = delete;
 
     FCompiledRenderGraph ( FCompiledRenderGraph && ) noexcept           = default;
     FCompiledRenderGraph &operator=( FCompiledRenderGraph && ) noexcept = default;
     ~FCompiledRenderGraph () noexcept                                   = default;
+
+public:
 
     [[nodiscard]] TSpan<const FRenderPass> GetPasses () const noexcept;
     [[nodiscard]] TSpan<const FRenderResource> GetResources () const noexcept;
