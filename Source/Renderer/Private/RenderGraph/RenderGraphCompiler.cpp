@@ -3,6 +3,7 @@
  * @brief Implements deterministic DAG, culling, lifetime, barrier, and queue planning.
  */
 
+#include "Algo/ForEach.hpp"
 #include <RenderGraph/RenderGraphCompiler.hpp>
 
 #include <Algo/Sort.hpp>
@@ -13,25 +14,23 @@
 namespace
 {
 
-using Lumen::UInt32;
-using Lumen::USize;
-
-Lumen::TUnexpected<Lumen::FRenderError> MakeCompileError ( const Lumen::ERenderErrorCode InCode,
-                                                           const UInt32 InPass        = Lumen::InvalidRenderPassOrdinal,
-                                                           const UInt32 InResource    = Lumen::InvalidRenderResourceIndex,
-                                                           const UInt32 InRelatedPass = Lumen::InvalidRenderPassOrdinal ) noexcept
+inline Lumen::TUnexpected<Lumen::FRenderError>
+MakeCompileError ( const Lumen::ERenderErrorCode InCode,
+                   const Lumen::UInt32 InPass        = Lumen::InvalidRenderPassOrdinal,
+                   const Lumen::UInt32 InResource    = Lumen::InvalidRenderResourceIndex,
+                   const Lumen::UInt32 InRelatedPass = Lumen::InvalidRenderPassOrdinal ) noexcept
 {
     return Lumen::TUnexpected<Lumen::FRenderError>( Lumen::FRenderError{
         .Code = InCode, .PassOrdinal = InPass, .ResourceIndex = InResource, .RelatedPassOrdinal = InRelatedPass } );
 }
 
-void PushReady ( Lumen::TVector<UInt32> &InHeap, const UInt32 InOrdinal )
+void PushReady ( Lumen::TVector<Lumen::UInt32> &InHeap, const Lumen::UInt32 InOrdinal )
 {
     InHeap.push_back( InOrdinal );
-    USize ChildIndex = InHeap.size() - 1U;
+    Lumen::USize ChildIndex = InHeap.size() - 1U;
     while ( ChildIndex > 0U )
     {
-        const USize ParentIndex = ( ChildIndex - 1U ) / 2U;
+        const Lumen::USize ParentIndex = ( ChildIndex - 1U ) / 2U;
         if ( InHeap[ParentIndex] <= InOrdinal )
         {
             break;
@@ -42,27 +41,27 @@ void PushReady ( Lumen::TVector<UInt32> &InHeap, const UInt32 InOrdinal )
     InHeap[ChildIndex] = InOrdinal;
 }
 
-UInt32 PopReady ( Lumen::TVector<UInt32> &InHeap )
+Lumen::UInt32 PopReady ( Lumen::TVector<Lumen::UInt32> &InHeap )
 {
-    const UInt32 Result = InHeap.front();
-    const UInt32 Tail   = InHeap.back();
+    const Lumen::UInt32 Result = InHeap.front();
+    const Lumen::UInt32 Tail   = InHeap.back();
     InHeap.pop_back();
     if ( InHeap.empty() )
     {
         return Result;
     }
 
-    USize ParentIndex = 0U;
-    const USize Count = InHeap.size();
+    Lumen::USize ParentIndex = 0U;
+    const Lumen::USize Count = InHeap.size();
     while ( true )
     {
-        const USize LeftChild = ( ParentIndex * 2U ) + 1U;
+        const Lumen::USize LeftChild = ( ParentIndex * 2U ) + 1U;
         if ( LeftChild >= Count )
         {
             break;
         }
-        const USize RightChild    = LeftChild + 1U;
-        const USize SmallestChild = RightChild < Count and InHeap[RightChild] < InHeap[LeftChild] ? RightChild : LeftChild;
+        const Lumen::USize RightChild    = LeftChild + 1U;
+        const Lumen::USize SmallestChild = RightChild < Count and InHeap[RightChild] < InHeap[LeftChild] ? RightChild : LeftChild;
         if ( InHeap[SmallestChild] >= Tail )
         {
             break;
@@ -90,8 +89,9 @@ Lumen::FRenderGraphCompiler::Compile ( FRenderGraph &&InGraph ) noexcept
     return FCompiledRenderGraph( std::move( Graph ) );
 }
 
-Lumen::FRenderExpected
-Lumen::FRenderGraphCompiler::AddDependency ( FRenderGraph &InGraph, const UInt32 InBefore, const UInt32 InAfter ) noexcept
+Lumen::FRenderExpected Lumen::FRenderGraphCompiler::AddDependency ( FRenderGraph &InGraph,
+                                                                    const Lumen::UInt32 InBefore,
+                                                                    const Lumen::UInt32 InAfter ) noexcept
 {
     if ( InBefore == InAfter )
     {
@@ -100,7 +100,7 @@ Lumen::FRenderGraphCompiler::AddDependency ( FRenderGraph &InGraph, const UInt32
 
     FRenderPass &Before = InGraph.Passes[InBefore];
     FRenderPass &After  = InGraph.Passes[InAfter];
-    for ( const UInt32 Dependent : Before.Dependents )
+    for ( const Lumen::UInt32 Dependent : Before.Dependents )
     {
         if ( Dependent == InAfter )
         {
@@ -130,11 +130,11 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::BuildResourceDependencies ( 
         auto ProcessAccess = [&InGraph, &Pass] ( const FRenderResourceAccess &InAccess,
                                                  const Bool bWrite ) noexcept -> FRenderExpected
         {
-            const UInt32 ResourceIndex                          = InAccess.Resource.Index;
+            const Lumen::UInt32 ResourceIndex                   = InAccess.Resource.Index;
             FRenderResource &Resource                           = InGraph.Resources[ResourceIndex];
             FRenderGraph::FResourceCompilerState &ResourceState = InGraph.ResourceStates[ResourceIndex];
-            const UInt32 PreviousIndex                          = ResourceState.LastAccess;
-            const UInt32 OldFirstIndex                          = ResourceState.FirstAccess;
+            const Lumen::UInt32 PreviousIndex                   = ResourceState.LastAccess;
+            const Lumen::UInt32 OldFirstIndex                   = ResourceState.FirstAccess;
 
             UInt32 LastWriteIndex = InvalidRenderResourceIndex;
             for ( UInt32 AccessIndex = PreviousIndex; AccessIndex != InvalidRenderResourceIndex;
@@ -223,7 +223,7 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::TopologicalSort ( FRenderGra
     TVector<UInt32> &Output = bActiveOnly ? InGraph.ExecutionOrder : InGraph.TopologicalOrder;
     Output.clear();
     InGraph.ReadyHeap.clear();
-    USize ExpectedCount = 0U;
+    Lumen::USize ExpectedCount = 0U;
 
     for ( FRenderPass &Pass : InGraph.Passes )
     {
@@ -539,8 +539,13 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::EmitTransition ( FRenderGrap
         return MakeCompileError( ERenderErrorCode::UnsupportedQueueTransfer, InDestinationPass, ResourceIndex, InSourcePass );
     }
 
-    const Bool bRecordsBeforeDestination = InDestinationPass != InvalidRenderPassOrdinal and InSourceQueue == InDestinationQueue;
-    const UInt32 RecordPass              = bRecordsBeforeDestination ? InDestinationPass : InSourcePass;
+    /**
+     * INFO: A first access to an imported resource has no source pass to record into; its acquire barrier belongs in the
+     *       destination command list even when the queue changes.
+     */
+    const Bool bRecordsBeforeDestination = InDestinationPass != InvalidRenderPassOrdinal and
+                                           ( InSourceQueue == InDestinationQueue or InSourcePass == InvalidRenderPassOrdinal );
+    const UInt32 RecordPass = bRecordsBeforeDestination ? InDestinationPass : InSourcePass;
     if ( RecordPass == InvalidRenderPassOrdinal or RecordPass >= InGraph.Passes.size() )
     {
         return MakeCompileError( ERenderErrorCode::InvalidInitialQueue, InDestinationPass, ResourceIndex, InSourcePass );
@@ -627,7 +632,9 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::BuildTransitions ( FRenderGr
             const RHI::ERHIQueueType SourceQueue = State.bBarrierInitialized ? State.BarrierQueue : Pass.Desc.Queue;
             const UInt32 SourcePass              = State.LastBarrierPass;
 
-            if ( Resource.bImported and SourcePass == InvalidRenderPassOrdinal and SourceQueue != Pass.Desc.Queue )
+            /** INFO: An initial queue change is legal only with a state change, which the RHI barrier can represent. */
+            if ( Resource.bImported and SourcePass == InvalidRenderPassOrdinal and SourceQueue != Pass.Desc.Queue and
+                 Before == InAccess.State )
             {
                 return MakeCompileError( ERenderErrorCode::InvalidInitialQueue, Pass.Ordinal, InAccess.Resource.Index );
             }
