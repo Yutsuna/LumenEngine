@@ -23,7 +23,7 @@ Lumen::RHI::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noe
 {
     LUMEN_EXPECT( _, InDesc.Validate() );
 
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     UInt64 Start = Cursor;
 
     for ( UInt32 Attempt = 0U; Attempt < 2U; ++Attempt )
@@ -68,7 +68,7 @@ Lumen::RHI::FRHIRingAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noe
 
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHIRingAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
     for ( USize Index = 0U; Index < Active.size(); ++Index )
     {
@@ -84,7 +84,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIRingAllocator::Free ( const FRHIAllocat
 
 void Lumen::RHI::FRHIRingAllocator::Reset () noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Active.clear();
     Cursor     = 0ULL;
     Stats.Used = 0ULL;
@@ -92,6 +92,6 @@ void Lumen::RHI::FRHIRingAllocator::Reset () noexcept
 
 Lumen::RHI::FRHIAllocatorStats Lumen::RHI::FRHIRingAllocator::GetStats () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Stats;
 }

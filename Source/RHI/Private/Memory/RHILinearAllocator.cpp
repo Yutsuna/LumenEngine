@@ -23,7 +23,7 @@ Lumen::RHI::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) n
 {
     LUMEN_EXPECT( _, InDesc.Validate() );
 
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const TOptional<UInt64> Offset = RHIAlignUp( Current, InDesc.Alignment );
     if ( not Offset )
     {
@@ -57,13 +57,13 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHILinearAllocator::Free ( const FRHIAlloc
 
 void Lumen::RHI::FRHILinearAllocator::Reset () noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Current    = 0ULL;
     Stats.Used = 0ULL;
 }
 
 Lumen::RHI::FRHIAllocatorStats Lumen::RHI::FRHILinearAllocator::GetStats () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Stats;
 }

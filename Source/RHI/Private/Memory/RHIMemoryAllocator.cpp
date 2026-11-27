@@ -5,17 +5,23 @@
 
 #include <RHI/Memory/RHIMemoryAllocator.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIMemoryAllocator::FRHIMemoryAllocator ( IRHIAllocator &InAllocator, FRHIMemoryBudget &InBudget ) noexcept
     : Allocator( &InAllocator ), Budget( &InBudget )
 {
     /* */
 }
 
+/** NOLINTNEXTLINE(readability-convert-member-functions-to-static) */
 void Lumen::RHI::FRHIMemoryAllocator::RegisterObserver ( IRHIAllocationObserver &InObserver ) noexcept
 {
     GetRHIAllocationObserverRegistry().Register( InObserver );
 }
 
+/** NOLINTNEXTLINE(readability-convert-member-functions-to-static) */
 void Lumen::RHI::FRHIMemoryAllocator::UnregisterObserver ( IRHIAllocationObserver &InObserver ) noexcept
 {
     GetRHIAllocationObserverRegistry().Unregister( InObserver );
