@@ -4,7 +4,7 @@
   (`vulkan-loader`, `vulkan-headers`, validation layers and `vulkan-tools`
   provided by the Nix devshell). White-box tests reuse the implementation objects
   statically without exporting private symbols from the shared library.
-- **Status:** built; V2 native module/device/queue code is present, and the V3a
+- **Status:** built; native module/device/queue code is present, and the
   memory/resources layer is implemented. Vulkan 1.4 is required for the loader,
   instance and adapters. `Source/RHIVulkan/{Private,Public,Tests}` contain the
   backend scaffolding, handle wrappers, RHI-to-Vulkan type mappings, checked
@@ -15,11 +15,11 @@
   renderer code yet.
 - **Tests:** the standard test runner builds 89 backend-local tests covering
   native-free utilities, synthetic negotiation, real module/device/queue
-  integration, and the V3a heap/staging/resource/pool/transient/defrag paths.
+  integration, and the heap/staging/resource/pool/transient/defrag paths.
   No shared-conformance factory or custom driver-policy runner is currently
   wired into the module. Submission, presentation, native shader modules,
-  pipelines and queries remain absent. Native defragmenter `Execute` is an
-  explicit `Unsupported` boundary until the V4 command milestone.
+  pipelines and queries remain absent. Native defragmenter `Execute` remains an
+  explicit `Unsupported` boundary until copy commands are implemented.
 - **Shaders:** shader build tools are available in the devshell, but there is no
   shader-generation target or generated shader artifact in the module. No
   Python script or runtime Python dependency is used.

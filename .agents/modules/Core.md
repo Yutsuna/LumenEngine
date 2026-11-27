@@ -65,6 +65,7 @@ variables, atomic bitsets, locks, the HAL and the algorithms.
 | `HAL/PlatformFutex.hpp` (+ `Linux/`, `MacOS/`, `Windows/`) | `HAL::FPlatformFutex::{Wait, WaitFor, WakeOne, WakeAll}` | address-based wait/wake under condition variables |
 | `HAL/PlatformThread.hpp` (+ `Unix/`, `Windows/`) | `HAL::FPlatformThread` with `FId`, `FNativeHandle` | low-level native thread backend (prefer `FThread`) |
 | `HAL/PlatformTime.hpp` | `HAL::FPlatformTime::{Seconds, NowNanoseconds, Sleep}` | timing and sleeping |
+| `Thread/MPSCQueue.hpp` | `Lumen::Thread::TMPSCQueue<T>`, `EMPSCQueueError::{InvalidCapacity,AlreadyInitialized,NotInitialized,OutOfMemory,QueueFull}` | bounded preallocated multi-producer/single-consumer queue; `Initialize` is serial and allocates all nodes once, `Push`/`Pop`/recycle never allocate or release |
 | `Thread/SPMCQueue.hpp` | `Lumen::Thread::TSPMCQueue<T>` | lock-free bounded single-producer/multi-consumer queue (e.g. free lists) |
 | `Thread/TripleBuffer.hpp` | `Lumen::Thread::TTripleBuffer<T>` | lock-free latest-snapshot publish/swap of state |
 

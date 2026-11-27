@@ -8,6 +8,7 @@
 #if defined( LUMEN_PLATFORM_LINUX )
 
     #include <Logging/Logger.hpp>
+    #include <String/StringView.hpp>
 
     #include <Templates/Unexpected.hpp>
 
@@ -42,7 +43,7 @@ inline SDL_WindowFlags GetSDLWindowFlags ( const Lumen::TSharedRef<Lumen::FGener
         break;
     }
 
-    case Lumen::EWindowMode::Fullscreen: /// NOLINT(bugprone-branch-clone)
+    case Lumen::EWindowMode::Fullscreen: /** NOLINT(bugprone-branch-clone) */
     {
         WindowFlags = static_cast<SDL_WindowFlags>( WindowFlags | SDL_WINDOW_FULLSCREEN );
         break;
@@ -75,7 +76,7 @@ Lumen::FLinuxWindow::~FLinuxWindow () noexcept
 
 Lumen::TSharedRef<Lumen::FLinuxWindow> Lumen::FLinuxWindow::Make () noexcept
 {
-    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new)
+    /** NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) */
     return MakeShareable<FLinuxWindow>( new FLinuxWindow() );
 }
 
@@ -216,6 +217,66 @@ SDL_WindowID Lumen::FLinuxWindow::GetOSWindowID () const noexcept
 SDL_Window *Lumen::FLinuxWindow::GetOSWindowHandle () const noexcept
 {
     return WindowHandle;
+}
+
+Lumen::TOptional<Lumen::FNativeWindowHandles> Lumen::FLinuxWindow::GetNativeHandles () const noexcept
+{
+    if ( WindowHandle == nullptr )
+    {
+        return {};
+    }
+
+    const AnsiChar *const DriverName  = SDL_GetCurrentVideoDriver();
+    const SDL_PropertiesID Properties = SDL_GetWindowProperties( WindowHandle );
+    if ( DriverName == nullptr or Properties == 0 )
+    {
+        return {};
+    }
+
+    Int32 PixelWidth  = 0;
+    Int32 PixelHeight = 0;
+    if ( not SDL_GetWindowSizeInPixels( WindowHandle, &PixelWidth, &PixelHeight ) or PixelWidth <= 0 or PixelHeight <= 0 )
+    {
+        return {};
+    }
+
+    FNativeWindowHandles Handles;
+    Handles.Width  = static_cast<UInt32>( PixelWidth );
+    Handles.Height = static_cast<UInt32>( PixelHeight );
+
+    const FStringView Driver( DriverName );
+    if ( Driver == "x11" )
+    {
+        const Int64 NativeWindow =
+            static_cast<Int64>( SDL_GetNumberProperty( Properties, SDL_PROP_WINDOW_X11_WINDOW_NUMBER, 0 ) );
+        Handles.NativeDisplay =
+            reinterpret_cast<UPtr>( SDL_GetPointerProperty( Properties, SDL_PROP_WINDOW_X11_DISPLAY_POINTER, nullptr ) );
+        if ( NativeWindow <= 0 or Handles.NativeDisplay == 0U )
+        {
+            return {};
+        }
+        Handles.WindowSystem = ENativeWindowSystem::X11;
+        Handles.NativeWindow = static_cast<UPtr>( NativeWindow );
+        return TOptional<FNativeWindowHandles>( Handles );
+    }
+
+    if ( Driver == "wayland" )
+    {
+        Handles.NativeDisplay =
+            reinterpret_cast<UPtr>( SDL_GetPointerProperty( Properties, SDL_PROP_WINDOW_WAYLAND_DISPLAY_POINTER, nullptr ) );
+        Handles.NativeWindow =
+            reinterpret_cast<UPtr>( SDL_GetPointerProperty( Properties, SDL_PROP_WINDOW_WAYLAND_SURFACE_POINTER, nullptr ) );
+        Handles.NativeWindowAttachment =
+            reinterpret_cast<UPtr>( SDL_GetPointerProperty( Properties, SDL_PROP_WINDOW_WAYLAND_EGL_WINDOW_POINTER, nullptr ) );
+        if ( Handles.NativeWindow == 0U or Handles.NativeDisplay == 0U )
+        {
+            return {};
+        }
+        Handles.WindowSystem = ENativeWindowSystem::Wayland;
+        return TOptional<FNativeWindowHandles>( Handles );
+    }
+
+    return {};
 }
 
 Lumen::Bool Lumen::FLinuxWindow::IsForegroundWindow () const noexcept

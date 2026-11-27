@@ -111,6 +111,9 @@ public:
     /** @return The SDL Window Handle pointer */
     [[nodiscard]] SDL_Window *GetOSWindowHandle () const noexcept;
 
+    /** @return Non-owning X11 or Wayland handles queried from SDL on the calling main thread. */
+    [[nodiscard]] TOptional<FNativeWindowHandles> GetNativeHandles () const noexcept override;
+
 private:
 
     FLinuxWindow () noexcept = default;

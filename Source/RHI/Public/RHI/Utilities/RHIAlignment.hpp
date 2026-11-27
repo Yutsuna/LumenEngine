@@ -2,6 +2,7 @@
  * @file RHIAlignment.hpp
  * @brief Declares checked power-of-two alignment helpers.
  */
+
 #pragma once
 
 #include <Core/CoreTypes.hpp>

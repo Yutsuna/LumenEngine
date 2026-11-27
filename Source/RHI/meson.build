@@ -21,6 +21,28 @@ RHIConformanceSources = files(
     'Tests/Validation/RHIValidationConformanceTests.cpp',
 )
 RHIConformanceIncludeDirectories = include_directories('Tests')
+RHIPrivateIncludeDirectories = include_directories('Private')
+
+RHINullTestSupportSources = files(
+    'Tests/Bindings/NullBindings.cpp',
+    'Tests/Caches/NullCaches.cpp',
+    'Tests/Commands/NullCommands.cpp',
+    'Tests/Debug/RecordingDebugSink.cpp',
+    'Tests/Device/NullConformanceDeviceFactory.cpp',
+    'Tests/Device/NullDevice.cpp',
+    'Tests/Device/NullFaultPlan.cpp',
+    'Tests/Device/RHIConformanceDeviceFactory.cpp',
+    'Tests/Memory/NullMemory.cpp',
+    'Tests/Module/NullModule.cpp',
+    'Tests/Pipelines/NullPipelines.cpp',
+    'Tests/Presentation/NullPresentation.cpp',
+    'Tests/Presentation/NullSurfaceBridge.cpp',
+    'Tests/Queries/NullQueries.cpp',
+    'Tests/Queue/NullQueue.cpp',
+    'Tests/Resources/NullResources.cpp',
+    'Tests/Shaders/NullShaders.cpp',
+    'Tests/Synchronization/NullSynchronization.cpp',
+)
 
 ModuleDefinition = {
     'Name' : 'RHI',

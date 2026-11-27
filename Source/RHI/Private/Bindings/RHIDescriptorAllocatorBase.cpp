@@ -36,7 +36,7 @@ Lumen::RHI::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexc
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Descriptor count is zero" ) );
     }
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
     /** NOTE: Algo::ForEachUntil does not fit here — the allocation is both probe and result. */
     for ( FPool &Pool : Pools )
@@ -88,7 +88,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const F
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidBinding( "Invalid descriptor range" ) );
     }
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Bool bActive = false;
 
     for ( USize Index = 0U; Index < Active.size(); ++Index )
@@ -123,7 +123,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const F
 
 void Lumen::RHI::FRHIDescriptorAllocatorBase::Reset () noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
     ReleasePools();
     Pools.clear();

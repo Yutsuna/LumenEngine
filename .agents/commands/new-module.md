@@ -15,8 +15,11 @@ description: Scaffold a new Source module, wire it into the build, and prepare i
    order** (a module can only depend on modules earlier in the list, see
    `modules/Launch.md` note about boot order vs compile order).
 3. Fill the generated `ModuleDefinition` in `Source/<Name>/meson.build`:
-   set `Type` (`SharedLibrary` by default) and `Depends`; add `'ExternalDeps'`
-   for pkg-config libraries (see `Source/AppCore/meson.build` SDL3 example).
+   set `Type` (`SharedLibrary` in the generated scaffold; the generic machinery
+   falls back to `StaticLibrary`) and `Depends`; add `'ExternalDeps'` for
+   pkg-config libraries (see `Source/AppCore/meson.build` SDL3 example). The
+   full key table and the target each `Type` produces are in
+   `skills/meson-build-customization.md`.
 4. Create `Tests/` (auto-discovered) and/or `Benchmarks/` once there is code;
    suites register themselves via `LUMEN_TEST` / `LUMEN_BENCHMARK`
    (`rules/testing.md`).
@@ -26,6 +29,8 @@ description: Scaffold a new Source module, wire it into the build, and prepare i
 6. If the module must boot at runtime (engine module), also register it in
    `Launch`'s module stack / `Source/Launch/Public/Engine/Modules/` —
    compiling it is not booting it.
-7. Reconfigure: `meson setup Build --reconfigure`. New module names must not
+7. Reconfigure: `meson setup Build --reconfigure` on an existing tree (a
+   fresh tree is configured without it — `rules/build.md:53-55`). New module
+   names must not
    collide with tags: the PR scope will pick up `Source/<Name>` automatically
    (`workflows/git-workflow.md`).

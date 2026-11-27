@@ -52,7 +52,7 @@ void Lumen::RHI::FRHIValidationSwapchain::RebuildImages () noexcept
     {
         Underlying->GetImage( Index ).Inspect( [this, &NewImages] ( const TSharedRef<IRHITexture> &InImage ) noexcept
         {
-            NewImages.push_back( MakeShared<FRHIValidationTexture>( InImage, State ) );
+            NewImages.emplace_back( MakeShared<FRHIValidationTexture>( InImage, State ) );
         } );
     }
     Images = std::move( NewImages );

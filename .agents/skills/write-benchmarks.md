@@ -8,6 +8,9 @@ description: Author and run Lumen benchmarks with LUMEN_BENCHMARK macros correct
 1. Location: `Source/<Module>/Benchmarks/<Topic>/**.cpp` — compiled into the
    single `<Module>Benchmarks` binary (like tests, one `main` added from
    `Meson/BenchRunner.cpp`; only add `Main.cpp` if you truly need a custom one).
+   The Meson keys that discover these sources and register `benchmark()`
+   (`Benchmarks`, `ExtraBenchmark*`, `BenchmarkTestDependency`, `timeout : 0`)
+   are in `skills/meson-build-customization.md`.
 2. Register via the in-house macros (`Source/Core/Public/Benchmarks/Benchmark.hpp`):
    - `LUMEN_BENCHMARK( Suite, Name )`,
    - `LUMEN_BENCHMARK_ARGS( Suite, Name, Args... )`,

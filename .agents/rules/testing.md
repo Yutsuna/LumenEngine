@@ -22,8 +22,10 @@ will be wrong.
   `LUMEN_CHECK_HAS_VALUE`, `LUMEN_CHECK_HAS_ERROR`.
 - Layout: `Source/<Module>/Tests/{Functional,Integration}/<Topic>/…`,
   mirroring `Public/` topics. Test code follows `rules/coding-style.md`
-  (namespace `Lumen`, or `Lumen::RHI` in the RHI module where test helpers
-  live in `Lumen::RHI::Tests`, `F/E/T/b` names, precise variable names).
+  (open `namespace Lumen { }` in `Tests/` `.cpp` files, RHI tests included —
+  never the shortened `namespace Lumen::RHI { }`; qualify RHI symbols
+  explicitly with `Lumen::RHI::`, as required by `rules/coding-style.md`),
+  `F/E/T/b` names, precise variable names).
 - Every `*.cpp` under `Tests/` compiles into the **single** `<Module>Tests`
   binary; a default `main` (`Meson/TestRunner.cpp`) is appended unless
   `Tests/Main.cpp` or `TestMain.cpp` exists. Never put a `main()` in test files.
@@ -33,8 +35,12 @@ will be wrong.
   use that for white-box tests instead of exporting more symbols. For a shared
   module, tests link the same implementation objects statically through
   `GlobalTestModules`; production consumers still use the shared library through
-  `GlobalModules`, and no additional symbols are exported.
-- Core is auto-linked into every benchmark target even when not in `Depends`;
+  `GlobalModules`, and no additional symbols are exported. The
+  `ModuleDefinition` keys behind this wiring are in
+  `skills/meson-build-customization.md`.
+- Core is auto-linked into benchmarks under the guards in
+  `Source/Meson/Benchmarks/meson.build:67-70` (non-Core module, Core present,
+  not already in `Depends`);
   test targets list `Core` in their `Depends` explicitly.
 
 ## Running
@@ -46,7 +52,8 @@ meson test -C Build --suite Scene            # one module
 ```
 
 Binaries land under `Build/Source/Meson/Tests/`. New test files need
-`meson setup Build --reconfigure` (see `rules/build.md`).
+`meson setup Build --reconfigure` on an existing tree (fresh trees are
+configured without it — `rules/build.md:35-55`).
 
 ## Benchmarks
 

@@ -5,6 +5,7 @@
 
 #include <Engine/LaunchEngineConfig.hpp>
 #include <Engine/LaunchEngineConfigParser.hpp>
+#include <Engine/LaunchEngineModule.hpp>
 
 #include <Launch/LaunchError.hpp>
 
@@ -19,7 +20,9 @@
 #include <cmath>
 #include <type_traits>
 
+#if not defined( LUMEN_CLANG_TIDY )
 static_assert( LUMEN_HAS_REFLECTION == 1, "LaunchEngineConfigParser requires C++26 static reflection." );
+#endif
 
 namespace Lumen
 {
@@ -38,14 +41,14 @@ namespace
         TArray<AnsiChar, 32> Buffer{};
         USize Length = 0;
 
-        [[nodiscard]] FStringView View () const noexcept
+        FStringView View () const noexcept
         {
             return FStringView{ Buffer.data(), Length };
         }
     };
 
     /** @brief "MaxFrameTime" -> "maxframetime", "bHeadless" -> "headless". */
-    [[nodiscard]] FOptionKey ToOptionKey ( const std::string_view InName, const Bool bIsBool ) noexcept
+    FOptionKey ToOptionKey ( const std::string_view InName, const Bool bIsBool ) noexcept
     {
         FOptionKey Key;
 
@@ -74,7 +77,7 @@ namespace
         } );
     }
 
-    [[nodiscard]] Bool IsKnownOption ( const FStringView InName ) noexcept
+    Bool IsKnownOption ( const FStringView InName ) noexcept
     {
         if ( EqualsIgnoreCase( InName, "help" ) )
         {
@@ -87,10 +90,27 @@ namespace
         {
             bKnown = bKnown or EqualsIgnoreCase( InName, InKey.View() );
         } );
-        return bKnown;
+
+        if ( bKnown )
+        {
+            return true;
+        }
+
+        for ( const Launch::FModuleDescriptor *Desc = Launch::GetRegisteredModuleHead(); Desc != nullptr; Desc = Desc->Next )
+        {
+            for ( const FStringView ModuleOption : Desc->CliOptions )
+            {
+                if ( EqualsIgnoreCase( InName, ModuleOption ) )
+                {
+                    return true;
+                }
+            }
+        }
+
+        return false;
     }
 
-    [[nodiscard]] Launch::TLaunchResult<void> ValidateOptions ( const Launch::FCommandLine &InCommandLine ) noexcept
+    Launch::TLaunchResult<void> ValidateOptions ( const Launch::FCommandLine &InCommandLine ) noexcept
     {
         Launch::TLaunchResult<void> Result{};
         InCommandLine.ForEachOption( [&Result] ( const AnsiChar *const Raw, const FStringView Option ) noexcept
@@ -114,14 +134,14 @@ namespace
         return Result;
     }
 
-    [[nodiscard]] constexpr TUnexpected<Launch::FLaunchError> InvalidConfig ( const FStringView InMessage ) noexcept
+    constexpr TUnexpected<Launch::FLaunchError> InvalidConfig ( const FStringView InMessage ) noexcept
     {
         return Launch::LaunchFailure( Launch::ELaunchStage::PreInit, Launch::ELaunchErrorCode::InvalidConfiguration, InMessage );
     }
 
     /** @brief Bind each member Bool -> -switch, arithmetic -> -key=value. */
-    [[nodiscard]] Launch::TLaunchResult<Launch::FLaunchEngineConfig>
-    BindOptions ( const Launch::FCommandLine &InCommandLine, const Launch::FLaunchEngineConfig &InDefaults ) noexcept
+    Launch::TLaunchResult<Launch::FLaunchEngineConfig> BindOptions ( const Launch::FCommandLine &InCommandLine,
+                                                                     const Launch::FLaunchEngineConfig &InDefaults ) noexcept
     {
         Launch::FLaunchEngineConfig Config = InDefaults;
         Launch::TLaunchResult<void> Result{};
@@ -175,6 +195,14 @@ namespace
                 LUMEN_LOG_DISPLAY( LogEngineConfigParser, "  -{}=<{}>", InKey.View(), Meta::TypeName<FValue>() );
             }
         } );
+
+        for ( const Launch::FModuleDescriptor *Desc = Launch::GetRegisteredModuleHead(); Desc != nullptr; Desc = Desc->Next )
+        {
+            for ( const FStringView ModuleOption : Desc->CliOptions )
+            {
+                LUMEN_LOG_DISPLAY( LogEngineConfigParser, "  -{} [{}]", ModuleOption, Desc->Name );
+            }
+        }
     }
 
 } // namespace

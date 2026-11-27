@@ -2,6 +2,7 @@
  * @file RHIAlignment.inl
  * @brief Inline alignment and range helpers.
  */
+
 #pragma once
 
 #include <RHI/Utilities/RHIAlignment.hpp>

@@ -20,4 +20,5 @@ project(
 
 add_project_arguments('-freflection', language : 'cpp')
 
-subdir('Source/')
+subdir('Source')
+subdir('Examples')

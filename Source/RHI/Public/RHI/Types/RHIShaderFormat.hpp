@@ -36,6 +36,7 @@ namespace RHI
 
     /** @return True when InFormat names a defined enumerator. */
     [[nodiscard]] RHI_EXPORT Bool IsKnownRHIShaderFormat ( ERHIShaderFormat InFormat ) noexcept;
+
 } // namespace RHI
 
 } // namespace Lumen

@@ -17,6 +17,7 @@ endif
 
 ModuleNames += [
     'Scene',
+    'Renderer',
     'AppCore',
     'Launch',
     # TODO: add validators before including Vulkan:

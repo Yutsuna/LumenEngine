@@ -6,6 +6,7 @@
 #pragma once
 
 #include <Engine/LaunchEngineModule.hpp>
+#include <Engine/Modules/LaunchApplicationModule.hpp>
 
 #include <Memory/SharedPtr.hpp>
 
@@ -19,10 +20,21 @@ namespace Launch
 
     /**
      * @class FLaunchWindowModule
-     * @brief Owns the main OS window. Dies before the Application module.
+     * @brief Owns the main OS window. Guaranteed to start after and shut down before FLaunchApplicationModule.
      */
-    class FLaunchWindowModule final : public IEngineModule
+    class LAUNCH_EXPORT FLaunchWindowModule final : public IEngineModule
     {
+    public:
+
+        using FRequires = TModuleList<FLaunchApplicationModule>;
+
+    public:
+
+        [[nodiscard]] static Bool IsEnabled ( const FLaunchEngineConfig &InConfig ) noexcept;
+
+        [[nodiscard]] static TLaunchResult<TUniquePtr<FLaunchWindowModule>>
+        Create ( const TModuleContext<FLaunchWindowModule> &InContext ) noexcept;
+
     public:
 
         explicit FLaunchWindowModule ( TSharedPtr<FGenericWindow> InWindow ) noexcept;
@@ -30,15 +42,12 @@ namespace Launch
 
     public:
 
-        [[nodiscard]] FStringView GetName () const noexcept override;
+        [[nodiscard]] const TSharedPtr<FGenericWindow> &GetWindow () const noexcept;
 
     private:
 
         TSharedPtr<FGenericWindow> Window;
     };
-
-    /** @brief Factory registered in GetEngineModules(). Headless yields a no-op module. */
-    [[nodiscard]] TLaunchResult<TUniquePtr<IEngineModule>> MakeWindowModule ( const FLaunchEngineConfig &InConfig ) noexcept;
 
 } // namespace Launch
 

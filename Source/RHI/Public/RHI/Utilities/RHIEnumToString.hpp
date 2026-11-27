@@ -2,6 +2,7 @@
  * @file RHIEnumToString.hpp
  * @brief Declares stable textual names for RHI enums.
  */
+
 #pragma once
 
 #include <RHI/Caches/RHIObjectCache.hpp>

@@ -66,6 +66,11 @@ public:
         return TickCount;
     }
 
+    void ReserveMailbox ( const USize InCapacity )
+    {
+        LUMEN_CHECK_HAS_VALUE( GetMailbox().Reserve( InCapacity ) );
+    }
+
 private:
 
     TVector<UInt32> ReceivedTypes;
@@ -214,33 +219,24 @@ LUMEN_TEST( FWorld_SpawnActor, SharesOwnershipWithWorld )
     LUMEN_CHECK_EQ( SpawnedRef.GetSharedReferenceCount(), 3ULL );
 }
 
-LUMEN_TEST( FWorld_SpawnActor, ActorOutlivesWorldUntilReferencesRelease )
+LUMEN_TEST( FWorld_SpawnActor, ExternalReferenceKeepsOnlyRetiredStorageAlive )
 {
-    /**
-     * INFO: The world holds actors through shared ownership; destroying the
-     *       world releases its reference only, keeping the actor processable.
-     */
     const TSharedRef<FWorldTestActor> FloatingActor = [] () -> TSharedRef<FWorldTestActor>
     {
         FWorld World;
-
         const TSharedRef<FWorldTestActor> Spawned = World.SpawnActor<FWorldTestActor>();
-
         Spawned->EnqueueMessage( FMessage::Make( 7U, 0ULL ) );
-
         LUMEN_CHECK_EQ( Spawned.GetSharedReferenceCount(), 3ULL );
-
         return Spawned;
     }();
 
     LUMEN_CHECK_EQ( FloatingActor.GetSharedReferenceCount(), 1ULL );
+    LUMEN_CHECK_TRUE( FloatingActor->GetLifecycle() == EActorLifecycle::Retired );
+    LUMEN_CHECK_FALSE( FloatingActor->EnqueueMessage( FMessage::Make( 8U, 0ULL ) ) );
 
     FloatingActor->RunFrame( 0.0, 0U );
-
-    const TVector<UInt32> &Received = FloatingActor->GetReceivedTypes();
-
-    LUMEN_CHECK_EQ( Received.size(), 1ULL );
-    LUMEN_CHECK_EQ( Received[0], 7U );
+    LUMEN_CHECK_EQ( FloatingActor->GetReceivedTypes().size(), 0ULL );
+    LUMEN_CHECK_EQ( FloatingActor->GetTickCount(), 0U );
 }
 
 LUMEN_TEST( FWorld_SpawnActor, ForwardsCustomConstructorArguments )
@@ -320,6 +316,7 @@ LUMEN_TEST( FWorld_Tick, ThrottlesMailboxThroughputPerActor )
     const TSharedRef<FWorldTestActor> Actor = World.SpawnActor<FWorldTestActor>();
 
     constexpr UInt32 PreloadedCount = 150U;
+    Actor->ReserveMailbox( static_cast<USize>( PreloadedCount ) );
 
     for ( UInt32 Index = 0U; Index < PreloadedCount; ++Index )
     {

@@ -38,7 +38,7 @@ void Lumen::RHI::FRHIValidationReporter::Report ( const ERHIValidationMessageCod
     const UInt64 Key         = ( static_cast<UInt64>( InCode ) << 32U ) ^ ObjectValue;
     if ( Desc.bDeduplicateMessages )
     {
-        HAL::TLockGuard<HAL::FPlatformMutex> Lock( Mutex );
+        const HAL::TLockGuard<HAL::FPlatformMutex> Lock( Mutex );
         if ( SeenMessages.contains( Key ) )
         {
             return;

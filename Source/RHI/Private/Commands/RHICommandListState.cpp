@@ -4,6 +4,11 @@
  */
 
 #include <RHI/Commands/RHICommandListState.hpp>
+
+/**
+ * Public
+ */
+
 Lumen::Bool Lumen::RHI::CanRHITransitionCommandList ( const ERHICommandListState InFrom,
                                                       const ERHICommandListState InTo ) noexcept
 {
@@ -24,6 +29,7 @@ Lumen::Bool Lumen::RHI::CanRHITransitionCommandList ( const ERHICommandListState
         return false;
     }
 }
+
 Lumen::RHI::FRHIExpected Lumen::RHI::RHITransitionCommandList ( ERHICommandListState &InOutState,
                                                                 const ERHICommandListState InTo ) noexcept
 {

@@ -9,6 +9,8 @@
 #include <RHI/Memory/RHIAllocation.hpp>
 #include <Templates/Vector.hpp>
 
+#include <Algo/Any.hpp>
+
 namespace Lumen
 {
 
@@ -47,12 +49,12 @@ namespace RHI
         /** @brief Adds an observer unless it is already registered. */
         void Register ( IRHIAllocationObserver &InObserver ) noexcept
         {
-            for ( IRHIAllocationObserver *Observer : Observers )
+            if ( Algo::AnyOf( Observers, [&InObserver] ( const IRHIAllocationObserver *Observer ) noexcept -> Bool
             {
-                if ( Observer == &InObserver )
-                {
-                    return;
-                }
+                return Observer == &InObserver;
+            } ) )
+            {
+                return;
             }
             Observers.push_back( &InObserver );
         }

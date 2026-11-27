@@ -15,6 +15,8 @@
 
 #include <HAL/PlatformTime.hpp>
 
+#include <utility>
+
 namespace Lumen
 {
 
@@ -51,9 +53,11 @@ Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit 
     return ParseEngineConfig( InCommandLine )
         .Transform( [&InCommandLine] ( FLaunchEngineConfig &&InConfig ) noexcept -> FPreInitState
     {
+        /** NOLINTNEXTLINE(hicpp-move-const-arg,performance-move-const-arg) */
         const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move( InConfig ) };
 
-        LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}", Meta::SerializeToJSON( InConfig ) );
+        LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}",
+                           Meta::SerializeToJSON( PreInitState.Config ) );
 
         return PreInitState;
     } );
@@ -61,11 +65,14 @@ Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit 
 
 Launch::TLaunchResult<Launch::FInitState> Launch::FLaunchEngineLoop::Init ( FPreInitState &&InPreInitState ) noexcept
 {
+    /** NOLINTNEXTLINE(hicpp-move-const-arg,performance-move-const-arg) */
+    const FPreInitState PreInitState = std::move( InPreInitState );
+
     FInitState State;
-    State.Config = InPreInitState.Config;
+    State.Config = PreInitState.Config;
 
     LUMEN_LOG_INFO( LogEngineLoop, "Initializing engine modules..." );
-    LUMEN_EXPECT( Started, State.Modules.StartAll( GetEngineModules(), State.Config ) );
+    LUMEN_EXPECT( Started, State.Modules.StartAll( State.Config, PreInitState.CommandLine ) );
     LUMEN_LOG_INFO( LogEngineLoop, "{} module(s) started", State.Modules.Num() );
 
     return State;
@@ -96,7 +103,7 @@ Launch::TLaunchResult<Launch::FRunSummary> Launch::FLaunchEngineLoop::Run ( FIni
         Limiter.Wait();
     }
 
-    const FRunSummary RunSummary{
+    const FRunSummary RunSummary = {
         .FrameCount     = FrameCount,
         .ElapsedSeconds = Clock.ElapsedSeconds(),
         .bInterrupted   = IsExitRequested(),

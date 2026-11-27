@@ -2,17 +2,25 @@
  * @file RHIValidationDevice.cpp
  * @brief Implements root device forwarding and child decoration.
  */
+
 #include "RHIValidationDevice.hpp"
 #include "RHIValidationMemory.hpp"
-#include <HAL/LockGuard.hpp>
+
 #include <RHI/Memory/RHIAllocation.hpp>
 #include <RHI/Pipelines/RHIPipelineLayoutDesc.hpp>
 #include <RHI/Validation/RHIValidation.hpp>
+
+#include <HAL/LockGuard.hpp>
+
+/**
+ * Public
+ */
 
 Lumen::RHI::FRHIValidationDevice::FRHIValidationDevice ( TSharedRef<IRHIDevice> InUnderlying,
                                                          TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
 {
+    /* */
 }
 
 Lumen::RHI::FRHIValidationDevice::~FRHIValidationDevice () noexcept
@@ -47,20 +55,22 @@ Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIQueue>, Lumen::RHI::FRHIError
 Lumen::RHI::FRHIValidationDevice::GetQueue ( const ERHIQueueType InType, const UInt32 InIndex ) noexcept
 {
     return Underlying->GetQueue( InType, InIndex )
-        .AndThen( [this] ( TSharedRef<IRHIQueue> &&InQueue ) noexcept -> TExpected<TSharedRef<IRHIQueue>, FRHIError>
+        .AndThen( [this] ( TSharedRef<IRHIQueue> &&InQueue ) noexcept -> TExpected<TSharedRef<IRHIQueue>, FRHIError> /** NOLINT */
     {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( QueueMutex );
-        IRHIObject *BackendQueue = UnwrapRHIObject( InQueue.Get() );
+        const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( QueueMutex );
+        const IRHIObject *BackendQueue = UnwrapRHIObject( InQueue.Get() );
+
         for ( const TSharedRef<IRHIQueue> &Queue : Queues )
         {
             if ( UnwrapRHIObject( Queue.Get() ) == BackendQueue )
             {
-                return TExpected<TSharedRef<IRHIQueue>, FRHIError>( Queue );
+                return { Queue };
             }
         }
-        const TSharedRef<IRHIQueue> Wrapped = MakeShared<FRHIValidationQueue>( InQueue, State );
+
+        TSharedRef<IRHIQueue> Wrapped = MakeShared<FRHIValidationQueue>( InQueue, State ); /** NOLINT */
         Queues.push_back( Wrapped );
-        return TExpected<TSharedRef<IRHIQueue>, FRHIError>( Wrapped );
+        return { Wrapped };
     } );
 }
 
@@ -89,9 +99,10 @@ Lumen::RHI::FRHIValidationDevice::CreatePlacedBuffer ( const FRHIBufferDesc &InD
     return State->ValidateObject( *InHeap, ERHIValidationObjectKind::Heap )
         .AndThen( [this, &InDesc, &InHeap, &InAllocation] () noexcept -> TExpected<TSharedRef<IRHIBuffer>, FRHIError>
     {
-        TSharedRef<IRHIHeap> UnwrappedHeap = UnwrapRHIShared( InHeap );
-        FRHIAllocation UnwrappedAllocation = InAllocation;
-        UnwrappedAllocation.Heap           = UnwrappedHeap.Get();
+        const TSharedRef<IRHIHeap> UnwrappedHeap = UnwrapRHIShared( InHeap );
+        FRHIAllocation UnwrappedAllocation       = InAllocation;
+        UnwrappedAllocation.Heap                 = UnwrappedHeap.Get();
+
         return Underlying->CreatePlacedBuffer( InDesc, UnwrappedHeap, UnwrappedAllocation )
             .Transform( [this] ( TSharedRef<IRHIBuffer> &&InBuffer ) noexcept -> TSharedRef<IRHIBuffer>
         {
@@ -122,12 +133,14 @@ Lumen::RHI::FRHIValidationDevice::CreatePlacedTexture ( const FRHITextureDesc &I
                                                      "Placed texture allocation does not identify the supplied heap", this )
                                            .Error() );
     }
+
     return State->ValidateObject( *InHeap, ERHIValidationObjectKind::Heap )
         .AndThen( [this, &InDesc, &InHeap, &InAllocation] () noexcept -> TExpected<TSharedRef<IRHITexture>, FRHIError>
     {
-        TSharedRef<IRHIHeap> UnwrappedHeap = UnwrapRHIShared( InHeap );
-        FRHIAllocation UnwrappedAllocation = InAllocation;
-        UnwrappedAllocation.Heap           = UnwrappedHeap.Get();
+        const TSharedRef<IRHIHeap> UnwrappedHeap = UnwrapRHIShared( InHeap );
+        FRHIAllocation UnwrappedAllocation       = InAllocation;
+        UnwrappedAllocation.Heap                 = UnwrappedHeap.Get();
+
         return Underlying->CreatePlacedTexture( InDesc, UnwrappedHeap, UnwrappedAllocation )
             .Transform( [this] ( TSharedRef<IRHITexture> &&InTexture ) noexcept -> TSharedRef<IRHITexture>
         {
@@ -266,15 +279,13 @@ Lumen::RHI::FRHIValidationDevice::CreatePipelineLayout ( const FRHIPipelineLayou
     FRHIPipelineLayoutDesc Unwrapped;
     Unwrapped.InlineConstants = InDesc.InlineConstants;
     Unwrapped.BindingLayouts.reserve( InDesc.BindingLayouts.size() );
+
     for ( const TSharedRef<IRHIBindingLayout> &Layout : InDesc.BindingLayouts )
     {
-        const FRHIExpected Owned = State->ValidateObject( *Layout, ERHIValidationObjectKind::BindingLayout );
-        if ( not Owned )
-        {
-            return TUnexpected<FRHIError>( Owned.Error() );
-        }
+        LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Layout, ERHIValidationObjectKind::BindingLayout ) );
         Unwrapped.BindingLayouts.push_back( UnwrapRHIShared( Layout ) );
     }
+
     return Underlying->CreatePipelineLayout( Unwrapped );
 }
 

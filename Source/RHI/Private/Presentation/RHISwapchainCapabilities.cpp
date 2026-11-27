@@ -5,6 +5,8 @@
 
 #include <RHI/Presentation/RHISwapchainCapabilities.hpp>
 
+#include <Algo/Any.hpp>
+
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHISwapchainCapabilities::Validate () const noexcept
 {
     if ( Formats.empty() or ColorSpaces.empty() or PresentModes.empty() or not MinExtent.IsValid() or not MaxExtent.IsValid() or
@@ -20,32 +22,27 @@ Lumen::Bool Lumen::RHI::FRHISwapchainCapabilities::Supports ( const ERHIFormat I
                                                               const ERHIColorSpace InColorSpace,
                                                               const ERHIPresentMode InPresentMode ) const noexcept
 {
-    Bool bHasFormat      = false;
-    Bool bHasColorSpace  = false;
-    Bool bHasPresentMode = false;
-    for ( const ERHIFormat Format : Formats )
+    return Algo::AnyOf( Formats,
+                        [InFormat] ( const ERHIFormat Format )
     {
-        bHasFormat = bHasFormat or Format == InFormat;
-    }
-    for ( const ERHIColorSpace ColorSpace : ColorSpaces )
+        return Format == InFormat;
+    } ) and
+           Algo::AnyOf( ColorSpaces,
+                        [InColorSpace] ( const ERHIColorSpace ColorSpace )
     {
-        bHasColorSpace = bHasColorSpace or ColorSpace == InColorSpace;
-    }
-    for ( const ERHIPresentMode PresentMode : PresentModes )
+        return ColorSpace == InColorSpace;
+    } ) and
+           Algo::AnyOf( PresentModes, [InPresentMode] ( const ERHIPresentMode PresentMode )
     {
-        bHasPresentMode = bHasPresentMode or PresentMode == InPresentMode;
-    }
-    return bHasFormat and bHasColorSpace and bHasPresentMode;
+        return PresentMode == InPresentMode;
+    } );
 }
 
 Lumen::RHI::FRHIExtent3D Lumen::RHI::FRHISwapchainCapabilities::ClampExtent ( const FRHIExtent3D &InExtent ) const noexcept
 {
-    FRHIExtent3D Result = InExtent;
-    Result.Width        = Result.Width < MinExtent.Width ? MinExtent.Width : Result.Width;
-    Result.Width        = Result.Width > MaxExtent.Width ? MaxExtent.Width : Result.Width;
-    Result.Height       = Result.Height < MinExtent.Height ? MinExtent.Height : Result.Height;
-    Result.Height       = Result.Height > MaxExtent.Height ? MaxExtent.Height : Result.Height;
-    Result.Depth        = Result.Depth < MinExtent.Depth ? MinExtent.Depth : Result.Depth;
-    Result.Depth        = Result.Depth > MaxExtent.Depth ? MaxExtent.Depth : Result.Depth;
-    return Result;
+    return {
+        Maths::Clamp( InExtent.Width, MinExtent.Width, MaxExtent.Width ),
+        Maths::Clamp( InExtent.Height, MinExtent.Height, MaxExtent.Height ),
+        Maths::Clamp( InExtent.Depth, MinExtent.Depth, MaxExtent.Depth ),
+    };
 }

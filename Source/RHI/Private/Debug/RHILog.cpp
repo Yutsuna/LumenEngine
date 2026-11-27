@@ -19,9 +19,9 @@ Lumen::ELogVerbosity::Type Lumen::RHI::ToRHILogVerbosity ( const ERHIDebugSeveri
         return ELogVerbosity::Info;
     case ERHIDebugSeverity::Warning:
         return ELogVerbosity::Warning;
-    case ERHIDebugSeverity::Error:
+    case ERHIDebugSeverity::Error: /** NOLINT(bugprone-branch-clone) */
         return ELogVerbosity::Error;
-    case ERHIDebugSeverity::Fatal:
+    case ERHIDebugSeverity::Fatal: /** NOLINT(bugprone-branch-clone) */
         return ELogVerbosity::Error;
     default:
         return ELogVerbosity::Info;

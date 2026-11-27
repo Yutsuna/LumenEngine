@@ -11,10 +11,10 @@
  * Public
  */
 
-Lumen::RHI::FRHIDeviceBase::FRHIDeviceBase ( const FRHICapabilities InCapabilities,
+Lumen::RHI::FRHIDeviceBase::FRHIDeviceBase ( FRHICapabilities InCapabilities,
                                              const FRHILimits InLimits,
                                              const UInt64 InBackendTypeTag ) noexcept
-    : Identity( FRHIObjectId{ 1ULL }, InBackendTypeTag ), Capabilities( InCapabilities ), Limits( InLimits ),
+    : Identity( FRHIObjectId{ 1ULL }, InBackendTypeTag ), Capabilities( std::move( InCapabilities ) ), Limits( InLimits ),
       Status( ERHIDeviceStatus::Ready ), Registry( MakeShared<FObjectRegistry>() )
 {
     /* */
@@ -62,7 +62,7 @@ Lumen::RHI::ERHIDeviceStatus Lumen::RHI::FRHIDeviceBase::GetStatus () const noex
 
 Lumen::USize Lumen::RHI::FRHIDeviceBase::GetTrackedObjectCount () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
     return Registry->Objects.size();
 }
 
@@ -83,7 +83,7 @@ Lumen::RHI::FRHIObjectId Lumen::RHI::FRHIDeviceBase::NextObjectId () noexcept
 
 void Lumen::RHI::FRHIDeviceBase::UntrackObject ( IRHIObject &InObject ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
     for ( USize Index = 0U; Index < Registry->Objects.size(); ++Index )
     {
         if ( Registry->Objects[Index] == &InObject )
@@ -114,12 +114,12 @@ Lumen::RHI::FRHIDeviceBase::GetUnavailableError ( const FStringView InOperation 
 void Lumen::RHI::FRHIDeviceBase::TrackObject ( IRHIObject &InObject, FRHIObjectBase &InBase ) noexcept
 {
     {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
+        const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
         Registry->Objects.emplace_back( &InObject );
     }
     InBase.SetDestructionCallback( [Registry = Registry, &InObject]
     {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
+        const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
         for ( USize Index = 0U; Index < Registry->Objects.size(); ++Index )
         {
             if ( Registry->Objects[Index] == &InObject )

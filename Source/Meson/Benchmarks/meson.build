@@ -33,6 +33,8 @@ foreach ModuleDefinition : ModuleDefinitions
         endforeach
     endif
 
+    BenchmarkSources += ModuleDefinition.get('ExtraBenchmarkSources', [])
+
     if BenchmarkSources.length() > 0
         HasCustomBenchmarkMain = FileSystem.is_file(BenchmarksPath / 'Main.cpp')\
 or FileSystem.is_file(BenchmarksPath / 'BenchmarkMain.cpp')
@@ -53,8 +55,14 @@ or FileSystem.is_file(BenchmarksPath / 'BenchmarkMain.cpp')
         if FileSystem.is_dir(RelPrivatePath)
             BenchmarkIncludeDirectories += include_directories(RelPrivatePath)
         endif
+        BenchmarkIncludeDirectories += ModuleDefinition.get('ExtraBenchmarkIncludeDirectories', [])
 
-        BenchmarkDependencies = [GlobalModules.get(ModuleName)]
+        if ModuleDefinition.get('BenchmarkTestDependency', false)
+            BenchmarkDependencies = [GlobalTestModules.get(ModuleName)]
+        else
+            BenchmarkDependencies = [GlobalModules.get(ModuleName)]
+        endif
+        BenchmarkDependencies += ModuleDefinition.get('ExtraBenchmarkDependencies', [])
 
         if ModuleName != 'Core' and GlobalModules.has_key('Core')\
 and not ModuleDependencies.contains('Core')

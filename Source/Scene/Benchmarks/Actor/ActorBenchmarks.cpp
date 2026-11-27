@@ -13,11 +13,28 @@
 
 #include <Messages/EngineMessageTypes.hpp>
 
+#include <Templates/Expected.hpp>
+
+#include <Logging/Logger.hpp>
+
+#include <exception>
+
 namespace
 {
 
 /** @brief Delta time used for every simulated frame. */
 constexpr Lumen::Float64 FrameDeltaTime = 0.016;
+
+[[nodiscard]] Lumen::ActorID AllocateActorIdForBenchmark ()
+{
+    const Lumen::TExpected<Lumen::ActorID, Lumen::EActorSpawnError> Result = Lumen::Internal::FActorRegistry::AllocateId();
+    if ( not Result ) [[unlikely]]
+    {
+        LUMEN_LOG_ERROR( Lumen::LogActor, "Actor benchmark setup failed: actor registry exhausted." );
+        std::terminate();
+    }
+    return *Result;
+}
 
 /**
  * @class FBenchActor
@@ -44,7 +61,11 @@ public:
     /** @brief Exposes the protected mailbox reservation for benchmark setup. */
     void ReserveMailbox ( const Lumen::USize InCapacity ) noexcept
     {
-        GetMailbox().Reserve( InCapacity );
+        const auto Result = GetMailbox().Reserve( InCapacity );
+        if ( not Result.HasValue() ) [[unlikely]]
+        {
+            Lumen::Benchmarks::DoNotOptimize( Result );
+        }
     }
 
     [[nodiscard]] Lumen::UInt32 GetProcessedMessageCount () const noexcept
@@ -72,7 +93,7 @@ LUMEN_BENCHMARK_ARGS( AActor, RunFrameProcessMessages, 1, 16, 100 )
     const Lumen::UInt32 MessageCount = static_cast<Lumen::UInt32>( State.GetArgument() );
     State.SetItemsPerIteration( MessageCount );
 
-    FBenchActor Actor{ Lumen::Internal::FActorRegistry::AllocateId() };
+    FBenchActor Actor{ AllocateActorIdForBenchmark() };
     Actor.ReserveMailbox( MessageCount );
 
     const Lumen::FMessage Message = Lumen::FMessage::Make( Lumen::EEngineMessage::Tick, Lumen::InvalidActorID,
@@ -104,7 +125,7 @@ LUMEN_BENCHMARK( FActorRegistry, AllocateReleaseId )
 {
     for ( auto _ : State )
     {
-        const Lumen::ActorID NewId = Lumen::Internal::FActorRegistry::AllocateId();
+        const Lumen::ActorID NewId = AllocateActorIdForBenchmark();
         Lumen::Benchmarks::DoNotOptimize( NewId );
         Lumen::Internal::FActorRegistry::ReleaseId( NewId );
     }
