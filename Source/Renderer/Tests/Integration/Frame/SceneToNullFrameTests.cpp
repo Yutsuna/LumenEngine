@@ -90,6 +90,11 @@ LUMEN_INTEGRATION_TEST( FRenderer_NullSlice, CompletesOneThousandFramesWithoutLe
         .SnapshotStream  = &World.GetRenderSnapshotStream(),
         .Extent          = { 16U, 16U, 1U },
         .CommandCapacity = 64ULL,
+        .Swapchain       = {},
+        .Shaders         = {},
+        .ProxyCapacity   = 256ULL,
+        .AssetCapacity   = 64ULL,
+        .Readback        = {},
     };
     LUMEN_CHECK_HAS_VALUE( Renderer.Start( Desc ) );
     if ( not Renderer.IsRunning() )
@@ -137,6 +142,11 @@ LUMEN_INTEGRATION_TEST( FRenderer_NullSlice, ValidationOnReportsDeviceLossAndShu
         .SnapshotStream  = &World.GetRenderSnapshotStream(),
         .Extent          = { 16U, 16U, 1U },
         .CommandCapacity = 16ULL,
+        .Swapchain       = {},
+        .Shaders         = {},
+        .ProxyCapacity   = 256ULL,
+        .AssetCapacity   = 64ULL,
+        .Readback        = {},
     };
     LUMEN_CHECK_HAS_VALUE( Renderer.Start( Desc ) );
     if ( not Renderer.IsRunning() )
