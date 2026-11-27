@@ -52,9 +52,10 @@ Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit 
         .Transform( [&InCommandLine] ( FLaunchEngineConfig &&InConfig ) noexcept -> FPreInitState
     {
         /** NOLINTNEXTLINE(hicpp-move-const-arg,performance-move-const-arg) */
-        const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move(InConfig) };
+        const FPreInitState PreInitState = { .CommandLine = InCommandLine, .Config = std::move( InConfig ) };
 
-        LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}", Meta::SerializeToJSON( PreInitState.Config ) );
+        LUMEN_LOG_DISPLAY( LogEngineLoop, "Launching engine with config:" LUMEN_NEWLINE "{}",
+                           Meta::SerializeToJSON( PreInitState.Config ) );
 
         return PreInitState;
     } );
