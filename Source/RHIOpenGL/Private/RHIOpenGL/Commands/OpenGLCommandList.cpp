@@ -10,6 +10,9 @@
 
 #include <HAL/LockGuard.hpp>
 
+#include <Templates/Optional.hpp>
+#include <Templates/Pair.hpp>
+
 #include <RHI/Commands/RHICommandListState.hpp>
 #include <RHI/Commands/RHICopyDescs.hpp>
 #include <RHI/Commands/RHIDrawArguments.hpp>
@@ -81,11 +84,10 @@ Lumen::UInt32 RegisterQueryPool ( Lumen::TVector<Lumen::TSharedPtr<Lumen::RHI::I
 }
 
 /** @brief Resolves a descriptor slot into a deterministic per-class array index. */
-Lumen::Bool ResolveBindingClass ( const Lumen::RHIOpenGL::FOpenGLBindingLayout &InLayout,
-                                  const Lumen::UInt32 InSlot,
-                                  const Lumen::UInt32 InArrayElement,
-                                  Lumen::RHI::ERHIBindingType &OutType,
-                                  Lumen::UInt32 &OutClassIndex ) noexcept
+Lumen::TOptional<Lumen::TPair<Lumen::RHI::ERHIBindingType, Lumen::UInt32>>
+ResolveBindingClass ( const Lumen::RHIOpenGL::FOpenGLBindingLayout &InLayout,
+                      const Lumen::UInt32 InSlot,
+                      const Lumen::UInt32 InArrayElement ) noexcept
 {
     Lumen::TVector<Lumen::RHI::FRHIBindingLayoutEntry> Entries = InLayout.GetDesc().Entries;
     Lumen::Algo::Sort( Entries,
@@ -119,17 +121,16 @@ Lumen::Bool ResolveBindingClass ( const Lumen::RHIOpenGL::FOpenGLBindingLayout &
             ClassCount = &ImageCount;
             break;
         default:
-            return false;
+            return {};
         }
         if ( Entry.Slot == InSlot )
         {
-            OutType       = Entry.Type;
-            OutClassIndex = *ClassCount + InArrayElement;
-            return true;
+            return Lumen::TOptional<Lumen::TPair<Lumen::RHI::ERHIBindingType, Lumen::UInt32>>(
+                Lumen::TPair<Lumen::RHI::ERHIBindingType, Lumen::UInt32>( Entry.Type, *ClassCount + InArrayElement ) );
         }
         *ClassCount += Entry.Count;
     }
-    return false;
+    return {};
 }
 
 Lumen::RHIOpenGL::GLbitfield BarrierBitsForState ( const Lumen::RHI::ERHIResourceState InState ) noexcept
@@ -502,14 +503,14 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetPipeline ( TSh
         Program            = ( *Graphics )->GetProgram();
         VertexArray        = ( *Graphics )->GetVertexArray();
         BoundGraphics      = *Graphics;
-        BoundLayout        = ( *Graphics )->GetNativeLayout();
+        BoundLayout        = ( *Graphics )->GetNativeLayout().ValueOr( nullptr );
         BoundDynamicStates = ( *Graphics )->GetDesc().DynamicStates;
     }
     else if ( const TOptional<FOpenGLComputePipeline *> Compute =
                   RHI::TryUnwrapRHIBackend<FOpenGLComputePipeline>( InPipeline.Get() ) )
     {
         Program     = ( *Compute )->GetProgram();
-        BoundLayout = ( *Compute )->GetNativeLayout();
+        BoundLayout = ( *Compute )->GetNativeLayout().ValueOr( nullptr );
         bCompute    = true;
     }
     else
@@ -573,11 +574,16 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetBindingSet ( U
 
     for ( const RHI::FRHIBindingWrite &Write : ( *Set )->GetWrites() )
     {
-        RHI::ERHIBindingType Type     = RHI::ERHIBindingType::ReadOnlyBuffer;
-        UInt32 ClassIndex             = 0U;
-        const Bool bResolved          = ResolveBindingClass( **SetLayout, Write.Slot, Write.ArrayElement, Type, ClassIndex );
-        const FOpenGLUnitRange *Range = nullptr;
-        UInt32 MaxClassIndex          = GOpenGLMaxDescriptorsPerSet;
+        const TOptional<TPair<RHI::ERHIBindingType, UInt32>> Resolved =
+            ResolveBindingClass( **SetLayout, Write.Slot, Write.ArrayElement );
+        if ( not Resolved )
+        {
+            return TUnexpected( RHI::MakeRHIInvalidLimit( "Binding write does not fit its resolved unit range." ) );
+        }
+        const RHI::ERHIBindingType Type = Resolved->first;
+        const UInt32 ClassIndex         = Resolved->second;
+        const FOpenGLUnitRange *Range   = nullptr;
+        UInt32 MaxClassIndex            = GOpenGLMaxDescriptorsPerSet;
         switch ( Type )
         {
         case RHI::ERHIBindingType::ConstantBuffer:
@@ -598,7 +604,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetBindingSet ( U
         default:
             break;
         }
-        if ( not bResolved or Range == nullptr or ClassIndex >= Range->Count or ClassIndex >= MaxClassIndex )
+        if ( Range == nullptr or ClassIndex >= Range->Count or ClassIndex >= MaxClassIndex )
         {
             return TUnexpected( RHI::MakeRHIInvalidLimit( "Binding write does not fit its resolved unit range." ) );
         }
@@ -694,8 +700,8 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetVertexBuffer (
     {
         return TUnexpected( RHI::MakeRHIInvalidLimit( "Vertex buffer slot exceeds the device limit." ) );
     }
-    const UInt32 Stride = GetVertexBufferStride( InSlot );
-    if ( Stride == 0U )
+    const TOptional<UInt32> Stride = GetVertexBufferStride( InSlot );
+    if ( not Stride )
     {
         return TUnexpected( RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Command,
                                                       "The bound vertex layout has no buffer for this slot." ) );
@@ -713,7 +719,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLCommandList::SetVertexBuffer (
     const FOpenGLVertexBufferPayload Payload{ .Buffer = ( *Native )->GetGLBuffer(),
                                               .Offset = InOffset + ( *Native )->GetGLBufferOffset(),
                                               .Slot   = InSlot,
-                                              .Stride = Stride };
+                                              .Stride = *Stride };
     LUMEN_TRY_EXPECT_ERROR( Stream.Write( static_cast<UInt32>( EOpenGLCommandOpcode::SetVertexBuffer ), Payload ) );
     Stream.Retain( StaticCastSharedRef<RHI::IRHIObject>( InBuffer ) );
     return {};
@@ -1053,18 +1059,22 @@ Lumen::RHIOpenGL::FOpenGLCommandList::RequireDynamicState ( const RHI::ERHIDynam
     return {};
 }
 
-Lumen::UInt32 Lumen::RHIOpenGL::FOpenGLCommandList::GetVertexBufferStride ( const UInt32 InSlot ) const noexcept
+Lumen::TOptional<Lumen::UInt32> Lumen::RHIOpenGL::FOpenGLCommandList::GetVertexBufferStride ( const UInt32 InSlot ) const noexcept
 {
     if ( BoundGraphics == nullptr )
     {
-        return 0U;
+        return {};
     }
     const RHI::FRHIVertexBufferLayout *Found = Algo::FindIf(
         BoundGraphics->GetDesc().VertexLayout.Buffers, [InSlot] ( const RHI::FRHIVertexBufferLayout &InLayout ) noexcept -> Bool
     {
         return InLayout.Slot == InSlot;
     } );
-    return ( Found != nullptr ) ? Found->Stride : 0U;
+    if ( Found == nullptr )
+    {
+        return {};
+    }
+    return Lumen::TOptional<Lumen::UInt32>( Found->Stride );
 }
 
 Lumen::RHI::FRHIExpected

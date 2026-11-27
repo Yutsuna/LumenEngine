@@ -147,7 +147,7 @@ namespace RHIOpenGL
         [[nodiscard]] RHI::FRHIExpected RequireRendering () const noexcept;
         [[nodiscard]] RHI::FRHIExpected RequirePipeline ( RHI::ERHIPipelineType InType ) const noexcept;
         [[nodiscard]] RHI::FRHIExpected RequireDynamicState ( RHI::ERHIDynamicState InState ) const noexcept;
-        [[nodiscard]] UInt32 GetVertexBufferStride ( UInt32 InSlot ) const noexcept;
+        [[nodiscard]] TOptional<UInt32> GetVertexBufferStride ( UInt32 InSlot ) const noexcept;
         [[nodiscard]] RHI::FRHIExpected RecordBufferTextureTransfer ( RHI::IRHIBuffer *InBuffer,
                                                                       RHI::IRHITexture *InTexture,
                                                                       TSharedPtr<RHI::IRHIObject> InBufferRef,
