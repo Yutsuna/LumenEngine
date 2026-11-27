@@ -13,8 +13,10 @@
 namespace Lumen
 {
 
-/** @enum EWorldTickError
- * @brief Structured world execution capacity failures. */
+/**
+ * @enum EWorldTickError
+ * @brief Structured world execution capacity failures.
+ */
 enum class EWorldTickError : UInt8
 {
     ExecutorUnavailable,
@@ -24,8 +26,10 @@ enum class EWorldTickError : UInt8
     WorldCapacityExceeded,
 };
 
-/** @struct FWorldDesc
- * @brief Fixed capacities and worker configuration of a world. */
+/**
+ * @struct FWorldDesc
+ * @brief Fixed capacities and worker configuration of a world.
+ */
 struct SCENE_EXPORT FWorldDesc
 {
     UInt32 WorkerCount            = 1U;
@@ -46,8 +50,10 @@ struct SCENE_EXPORT FWorldDesc
     FRenderSnapshotCapacities RenderCapacities{};
 };
 
-/** @struct FWorldFrameContext
- * @brief Immutable context copied into each actor task. */
+/**
+ * @struct FWorldFrameContext
+ * @brief Immutable context copied into each actor task.
+ */
 struct SCENE_EXPORT FWorldFrameContext
 {
     UInt64 FrameIndex     = 0ULL;
@@ -56,8 +62,10 @@ struct SCENE_EXPORT FWorldFrameContext
     EActorTickPhase Phase = EActorTickPhase::Update;
 };
 
-/** @struct FWorldPhaseCompletion
- * @brief CPU-fence completion token for one dispatched phase. */
+/**
+ * @struct FWorldPhaseCompletion
+ * @brief CPU-fence completion token for one dispatched phase.
+ */
 struct SCENE_EXPORT FWorldPhaseCompletion
 {
     FWorldFrameContext Context;
@@ -65,8 +73,10 @@ struct SCENE_EXPORT FWorldPhaseCompletion
     Bool bCapacityError      = false;
 };
 
-/** @struct FWorldTickResult
- * @brief Observable work committed by one world tick. */
+/**
+ * @struct FWorldTickResult
+ * @brief Observable work committed by one world tick.
+ */
 struct SCENE_EXPORT FWorldTickResult
 {
     UInt64 FrameIndex         = 0ULL;

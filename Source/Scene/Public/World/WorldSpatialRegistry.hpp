@@ -39,13 +39,19 @@ enum class ESpatialComponentType : UInt8
     Count
 };
 
-/** @enum ESpatialRegistryError @brief Structured failures rejected before a spatial entity is registered. */
+/**
+ * @enum ESpatialRegistryError
+ * @brief Structured failures rejected before a spatial entity is registered.
+ */
 enum class ESpatialRegistryError : UInt8
 {
     CapacityExceeded,
 };
 
-/** @struct FSpatialRegistryCapacities @brief Fixed entity capacities reserved in all three snapshot slots. */
+/**
+ * @struct FSpatialRegistryCapacities
+ * @brief Fixed entity capacities reserved in all three snapshot slots.
+ */
 struct SCENE_EXPORT FSpatialRegistryCapacities final
 {
     USize EntityCapacity = 0ULL;

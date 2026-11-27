@@ -19,8 +19,10 @@
 namespace Lumen
 {
 
-/** @enum EWorldIngressKind
- * @brief The serial operation represented by one journal record. */
+/**
+ * @enum EWorldIngressKind
+ * @brief The serial operation represented by one journal record.
+ */
 enum class EWorldIngressKind : UInt8
 {
     Message,
@@ -28,15 +30,18 @@ enum class EWorldIngressKind : UInt8
     Destroy,
 };
 
-/** @enum EWorldIngressError
- * @brief Structured failures accepted by journal append operations. */
+/**
+ * @enum EWorldIngressError
+ * @brief Structured failures accepted by journal append operations.
+ */
 enum class EWorldIngressError : UInt8
 {
     CapacityExceeded,
     FrameOrderViolation,
 };
 
-/** @struct FWorldIngressRecord
+/**
+ * @struct FWorldIngressRecord
  * @brief Immutable external input tagged with its canonical ingress order and target frame.
  * @details `Sequence` is assigned once by the journal and is the only ordering promise.
  *          Producers run concurrently; the recorded order, not the observed thread
