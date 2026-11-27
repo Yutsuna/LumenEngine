@@ -11,6 +11,10 @@
     #include <Linux/LinuxApplication.hpp>
 #endif
 
+/**
+ * Private
+ */
+
 namespace
 {
 Lumen::TSharedPtr<Lumen::FGenericApplication> GApplication = nullptr;

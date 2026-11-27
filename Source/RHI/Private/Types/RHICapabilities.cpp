@@ -5,6 +5,12 @@
 
 #include <RHI/Types/RHICapabilities.hpp>
 
+#include <Algo/Any.hpp>
+
+/**
+ * Public
+ */
+
 Lumen::Bool Lumen::RHI::FRHICapabilities::Supports ( const ERHICapabilityFlags InRequired ) const noexcept
 {
     return ( Features & InRequired ) == InRequired;
@@ -12,24 +18,22 @@ Lumen::Bool Lumen::RHI::FRHICapabilities::Supports ( const ERHICapabilityFlags I
 
 Lumen::Bool Lumen::RHI::FRHICapabilities::Supports ( const ERHIShaderFormat InFormat ) const noexcept
 {
-    for ( const ERHIShaderFormat Format : ShaderFormats )
+    return Algo::AnyOf( ShaderFormats, [InFormat] ( const ERHIShaderFormat Format )
     {
-        if ( Format == InFormat )
-        {
-            return true;
-        }
-    }
-    return false;
+        return Format == InFormat;
+    } );
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHICapabilities::Validate () const noexcept
 {
     constexpr UInt64 KnownMask = ( 1ULL << 18U ) - 1ULL;
     const UInt64 RawFeatures   = static_cast<UInt64>( Features );
-    if ( ( RawFeatures & ~KnownMask ) != 0ULL )
+
+    if ( ( RawFeatures & ~KnownMask ) != 0ULL ) [[unlikely]]
     {
         return TUnexpected<FRHIError>( MakeRHIUnsupported( ERHIErrorCondition::Capability, "Unknown capability bits are set" ) );
     }
+
     for ( USize First = 0U; First < ShaderFormats.size(); ++First )
     {
         if ( not IsKnownRHIShaderFormat( ShaderFormats[First] ) )

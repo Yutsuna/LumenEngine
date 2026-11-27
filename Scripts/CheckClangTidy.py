@@ -26,9 +26,6 @@ class CheckClangTidy( SourceCheck ):
     ARGUMENTS = ("--quiet", "--warnings-as-errors=*")
     TRANSLATION_UNIT = ".cpp"
 
-    # Meson builds with GCC and passes -freflection project-wide. clang-tidy uses clang's driver, which
-    # does not know that flag. clangd can drop flags via CompileFlags.Remove, clang-tidy has no such key:
-    # strip them from a copy of compile_commands.json instead (see .clangd / .clang-tidy).
     INCOMPATIBLE_FLAGS: ClassVar[tuple[str, ...]] = ("-freflection",)
 
     _config: Path
@@ -82,6 +79,8 @@ class CheckClangTidy( SourceCheck ):
         self._sanitized_database(self._build, self._database_dir)
         self._database = CompilationDatabase.load(self._database_dir)
 
+        if "Tests" not in Path(arguments.source_dir).parts:
+            arguments.exclude = [*arguments.exclude, "**/Tests/**"]
         source_dir = workspace.root / arguments.source_dir
         self._header_filter = HeaderFilter(workspace, source_dir).pattern
         headers = SourceTree(workspace, source_dir, GLOBAL_HEADER_EXTENSIONS, arguments.exclude)

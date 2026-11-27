@@ -14,7 +14,7 @@ Lumen::Float64 Lumen::RHI::FRHICacheStats::GetHitRate () const noexcept
 
 void Lumen::RHI::FRHICacheStatsTracker::OnLookup ( const Bool bHit ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bHit )
     {
         ++Stats.Hits;
@@ -27,7 +27,7 @@ void Lumen::RHI::FRHICacheStatsTracker::OnLookup ( const Bool bHit ) noexcept
 
 void Lumen::RHI::FRHICacheStatsTracker::OnInsert ( const UInt64 InBytes ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     ++Stats.Insertions;
     ++Stats.EntryCount;
     Stats.Bytes += InBytes;
@@ -35,7 +35,7 @@ void Lumen::RHI::FRHICacheStatsTracker::OnInsert ( const UInt64 InBytes ) noexce
 
 void Lumen::RHI::FRHICacheStatsTracker::OnEvict ( const UInt64 InBytes ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     ++Stats.Evictions;
     Stats.EntryCount = Stats.EntryCount == 0ULL ? 0ULL : Stats.EntryCount - 1ULL;
     Stats.Bytes      = InBytes <= Stats.Bytes ? Stats.Bytes - InBytes : 0ULL;
@@ -43,19 +43,19 @@ void Lumen::RHI::FRHICacheStatsTracker::OnEvict ( const UInt64 InBytes ) noexcep
 
 void Lumen::RHI::FRHICacheStatsTracker::OnRemove ( const UInt64 InBytes ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Stats.EntryCount = Stats.EntryCount == 0ULL ? 0ULL : Stats.EntryCount - 1ULL;
     Stats.Bytes      = InBytes <= Stats.Bytes ? Stats.Bytes - InBytes : 0ULL;
 }
 
 void Lumen::RHI::FRHICacheStatsTracker::Reset () noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Stats = {};
 }
 
 Lumen::RHI::FRHICacheStats Lumen::RHI::FRHICacheStatsTracker::Snapshot () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Stats;
 }

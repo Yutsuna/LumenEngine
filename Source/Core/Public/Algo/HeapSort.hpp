@@ -33,7 +33,7 @@ namespace Algo
         void SiftDown ( TIterator InFirst,
                         std::iter_difference_t<TIterator> InHole,
                         std::iter_difference_t<TIterator> InCount,
-                        std::iter_value_t<TIterator> InValue,
+                        std::iter_value_t<TIterator> &&InValue,
                         TPredicate &InPredicate ) noexcept;
 
     } // namespace Internal

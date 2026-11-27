@@ -26,6 +26,7 @@ Lumen::RHI::FRHITlsfAllocator::FRHITlsfAllocator ( const UInt64 InCapacity ) noe
         InsertFreeRange( { .Offset = 0ULL, .Size = InCapacity } );
     }
 }
+
 void Lumen::RHI::FRHITlsfAllocator::GetBucket ( const UInt64 InSize, USize &OutFirst, USize &OutSecond ) noexcept
 {
     const UInt32 Bits  = InSize == 0ULL ? 0U : static_cast<UInt32>( std::bit_width( InSize ) );
@@ -33,6 +34,7 @@ void Lumen::RHI::FRHITlsfAllocator::GetBucket ( const UInt64 InSize, USize &OutF
     const UInt32 Shift = OutFirst > 4U ? static_cast<UInt32>( OutFirst - 4U ) : 0U;
     OutSecond          = static_cast<USize>( ( InSize >> Shift ) & 0xFULL );
 }
+
 void Lumen::RHI::FRHITlsfAllocator::InsertFreeRange ( const FFreeRange InRange ) noexcept
 {
     if ( InRange.Size == 0ULL )
@@ -52,7 +54,7 @@ Lumen::RHI::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noe
 {
     LUMEN_EXPECT( _, InDesc.Validate() );
 
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     USize First  = 0U;
     USize Second = 0U;
 
@@ -98,7 +100,7 @@ Lumen::RHI::FRHITlsfAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noe
 
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHITlsfAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Bool bFound = false;
 
     for ( USize Index = 0U; Index < ActiveAllocations.size(); ++Index )
@@ -159,12 +161,12 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHITlsfAllocator::Free ( const FRHIAllocat
 
 void Lumen::RHI::FRHITlsfAllocator::Reset () noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
-    for ( auto &List : Buckets )
+    Algo::ForEach( Buckets, [] ( TVector<FFreeRange> &List )
     {
         List.clear();
-    }
+    } );
     ActiveAllocations.clear();
     if ( Capacity > 0ULL )
     {
@@ -175,6 +177,6 @@ void Lumen::RHI::FRHITlsfAllocator::Reset () noexcept
 
 Lumen::RHI::FRHIAllocatorStats Lumen::RHI::FRHITlsfAllocator::GetStats () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Stats;
 }

@@ -24,7 +24,7 @@ namespace RHI
      * @enum ERHIErrorCode
      * @brief Stable high-level failure codes.
      */
-    enum class ERHIErrorCode : UInt16
+    enum class ERHIErrorCode : UInt16 /** NOLINT */
     {
         InvalidArgument,
         InvalidState,
@@ -46,7 +46,7 @@ namespace RHI
      * @enum ERHIErrorCondition
      * @brief Subsystem or condition that caused a failure.
      */
-    enum class ERHIErrorCondition : UInt16
+    enum class ERHIErrorCondition : UInt16 /** NOLINT */
     {
         None,
         Capability,

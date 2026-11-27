@@ -2,6 +2,7 @@
  * @file RHIScopedDebugRegion.inl
  * @brief Inline RAII implementation for command debug regions.
  */
+
 #pragma once
 
 #include <RHI/Commands/IRHICommandList.hpp>

@@ -17,7 +17,7 @@ namespace RHI
      * @enum ERHIDynamicState
      * @brief Dynamic viewport/scissor/blend/depth states.
      */
-    enum class ERHIDynamicState : UInt32
+    enum class ERHIDynamicState : UInt32 /** NOLINT */
     {
         None             = 0U,
         Viewport         = 1U << 0U,

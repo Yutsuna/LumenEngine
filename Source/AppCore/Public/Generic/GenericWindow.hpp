@@ -7,9 +7,11 @@
 
 #include <AppCoreExport.hpp>
 
+#include <Generic/GenericNativeWindowHandles.hpp>
 #include <Generic/GenericWindowDescription.hpp>
 
 #include <Memory/SharedPtr.hpp>
+#include <Templates/Optional.hpp>
 
 namespace Lumen
 {
@@ -103,6 +105,14 @@ public:
 
     /** @brief Gets the OS Window position */
     [[nodiscard]] virtual Maths::FVec2i GetWindowPosition () const noexcept;
+
+    /**
+     * @brief Returns non-owning native handles for composition with a rendering backend.
+     * @details Must be called on the main thread. The returned value never extends the native
+     *          window's lifetime and must be queried again after platform window transitions.
+     * @return Native handles, or empty when the window or its window system cannot provide them.
+     */
+    [[nodiscard]] virtual TOptional<FNativeWindowHandles> GetNativeHandles () const noexcept;
 
 protected:
 

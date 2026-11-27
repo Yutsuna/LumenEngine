@@ -94,7 +94,7 @@ LUMEN_TEST( FSpatialRegistry_Register, PublishesEntityWithInitialTransform )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
+    const FSpatialSnapshotView Snapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 1ULL );
     LUMEN_CHECK_EQ( Snapshot.EntityIDs[0], EntityId );
@@ -116,7 +116,7 @@ LUMEN_TEST( FSpatialRegistry_Register, IgnoresDuplicateRegistrations )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
+    const FSpatialSnapshotView Snapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 1ULL );
     LUMEN_CHECK_EQ( Snapshot.EntityIDs[0], EntityId );
@@ -140,7 +140,7 @@ LUMEN_TEST( FSpatialRegistry_Register, KeepsRegistrationOrder )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
+    const FSpatialSnapshotView Snapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 3ULL );
     LUMEN_CHECK_EQ( Snapshot.EntityIDs[0], FirstId );
@@ -172,7 +172,7 @@ LUMEN_TEST( FSpatialRegistry_UpdateTransform, RoundTripsPublishedValue )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
+    const FSpatialSnapshotView Snapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 1ULL );
     LUMEN_CHECK_TRUE( Snapshot.Transforms[0] == TargetTransform );
@@ -196,7 +196,7 @@ LUMEN_TEST( FSpatialRegistry_UpdateTransform, UnknownEntityIsHarmless )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
+    const FSpatialSnapshotView Snapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 1ULL );
     LUMEN_CHECK_TRUE( Snapshot.Transforms[0] == Maths::FMat4x4f::Identity() );
@@ -241,7 +241,7 @@ LUMEN_TEST( FSpatialRegistry_Unregister, ShiftsTailIntoVacantIndex )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
+    const FSpatialSnapshotView Snapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 2ULL );
     LUMEN_CHECK_EQ( Snapshot.EntityIDs[0], TailId );
@@ -254,7 +254,7 @@ LUMEN_TEST( FSpatialRegistry_Unregister, ShiftsTailIntoVacantIndex )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const FSpatialRegistryData &TailSnapshot = Session.Registry.GetReadSnapshot();
+    const FSpatialSnapshotView TailSnapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( TailSnapshot.EntityIDs.size(), 1ULL );
     LUMEN_CHECK_EQ( TailSnapshot.EntityIDs[0], MidId );
@@ -339,7 +339,7 @@ LUMEN_TEST( FSpatialRegistry_Snapshot, LaterPublishesSurpassEarlierOnes )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
+    const FSpatialSnapshotView Snapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 2ULL );
     LUMEN_CHECK_EQ( Snapshot.EntityIDs[0], FirstId );
@@ -403,7 +403,7 @@ LUMEN_TEST( FSpatialRegistry_Threading, UpdatesAndPublishesConcurrently )
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
+    const FSpatialSnapshotView Snapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 3ULL );
 
@@ -493,7 +493,7 @@ LUMEN_TEST( FSpatialRegistry_UpdateTransform, ConcurrentSameEntityWritesSerializ
     Session.Registry.Publish();
     Session.Registry.SwapReadBuffers();
 
-    const FSpatialRegistryData &Snapshot = Session.Registry.GetReadSnapshot();
+    const FSpatialSnapshotView Snapshot = Session.Registry.GetReadSnapshot();
 
     LUMEN_CHECK_EQ( Snapshot.EntityIDs.size(), 1ULL );
     LUMEN_CHECK_EQ( Snapshot.EntityIDs[0], EntityId );
@@ -513,6 +513,54 @@ LUMEN_TEST( FSpatialRegistry_UpdateTransform, ConcurrentSameEntityWritesSerializ
     LUMEN_CHECK_TRUE( bMatched );
 
     Session.Cleanup();
+}
+
+/**
+ * Capacity
+ */
+
+LUMEN_TEST( FSpatialRegistry_Capacity, RejectsRegistrationBeyondReservedCapacity )
+{
+    FSpatialRegistry Registry( FSpatialRegistryCapacities{ .EntityCapacity = 2ULL } );
+
+    LUMEN_CHECK_EQ( Registry.GetCapacities().EntityCapacity, 2ULL );
+    LUMEN_CHECK_HAS_VALUE( Registry.TryRegisterSpatialEntity( 9101ULL ) );
+    LUMEN_CHECK_HAS_VALUE( Registry.TryRegisterSpatialEntity( 9102ULL ) );
+
+    const TExpected<void, ESpatialRegistryError> Overflow = Registry.TryRegisterSpatialEntity( 9103ULL );
+    LUMEN_CHECK_HAS_ERROR( Overflow );
+    LUMEN_CHECK_EQ( Overflow.Error(), ESpatialRegistryError::CapacityExceeded );
+    LUMEN_CHECK_EQ( Registry.GetDroppedRegistrationCount(), 1ULL );
+
+    Registry.Publish();
+    Registry.SwapReadBuffers();
+
+    LUMEN_CHECK_EQ( Registry.GetReadSnapshot().EntityIDs.size(), 2ULL );
+}
+
+LUMEN_TEST( FSpatialRegistry_View, PublishIsNoexceptAndSpansExpireAtSwap )
+{
+    FSpatialRegistry Registry( FSpatialRegistryCapacities{ .EntityCapacity = 2ULL } );
+
+    static_assert( noexcept( Registry.Publish() ) );
+
+    LUMEN_CHECK_HAS_VALUE( Registry.TryRegisterSpatialEntity( 9111ULL ) );
+    Registry.Publish();
+    Registry.SwapReadBuffers();
+
+    const FSpatialSnapshotView View = Registry.GetReadSnapshot();
+    LUMEN_CHECK_EQ( View.EntityIDs.size(), 1ULL );
+
+    LUMEN_CHECK_HAS_VALUE( Registry.TryRegisterSpatialEntity( 9112ULL ) );
+    Registry.Publish();
+
+    /** INFO: The held view still points at the previously published slot. */
+    LUMEN_CHECK_EQ( View.EntityIDs.size(), 1ULL );
+
+    Registry.SwapReadBuffers();
+    LUMEN_CHECK_EQ( Registry.GetReadSnapshot().EntityIDs.size(), 2ULL );
+    LUMEN_CHECK_EQ( Registry.GetLastPublishedSequence(), 2ULL );
+    LUMEN_CHECK_EQ( Registry.GetLastConsumedSequence(), 2ULL );
 }
 
 } // namespace Lumen

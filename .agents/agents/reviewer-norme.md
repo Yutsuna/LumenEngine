@@ -12,6 +12,12 @@ permissions:
   - action: websearch
     resource: "*"
     effect: deny
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
   - action: shell
     resource: "git diff*"
     effect: allow
@@ -24,9 +30,6 @@ permissions:
   - action: shell
     resource: "git status*"
     effect: allow
-  - action: shell
-    resource: "*"
-    effect: deny
 ---
 
 # Norme Reviewer
@@ -34,6 +37,15 @@ permissions:
 You review the given diff for **compliance with the written Lumen standard**.
 You are launched as a subagent by `reviewer`; you receive the diff scope and
 the modules touched.
+
+## Tooling (read-only)
+
+Use the direct tools (`read`, `glob`, `grep`, `shell`); Code Mode (`execute`
+and `tools[...]`) is disabled. Only `git diff/show/log/status` are allowed (no `workdir`); use
+`grep`/`glob`/`read` for file discovery; no pipes or `&&` chains. Use
+`git status --short` and `git log --oneline -N` when scope or staleness is
+unclear. Glob hidden directories with `hidden: true` before concluding a
+file is missing. If a tool or command is denied, report it explicitly.
 
 ## What to load first (mandatory sources of truth)
 
@@ -73,8 +85,10 @@ the modules touched.
 - Core-first violations: third-party/std utils duplicating Core inventory
   (threads, stop tokens, condition variables, mutexes/locks, containers,
   algorithms — see `rules/core-first.md § std → Core map`).
-- **Monoexcept / paradigm violations**: `try`/`throw`/`catch` in engine
-  code (allowed only inside the test framework's assert macros);
+- **Monoexcept / paradigm violations**: `throw` in non-test engine code,
+  or `try`/`catch` outside the documented containment sites
+  (`rules/coding-style.md § Error handling`: RHI validation bindings and
+  the logger; the test framework's assert macros are also allowed);
   `std::optional`/`std::expected` instead of `TOptional`/`TExpected`;
   absence/failure handled by returns of sentinel values (`-1`, `nullptr`,
   `Bool` out-params) instead of the mandated monadic paradigm

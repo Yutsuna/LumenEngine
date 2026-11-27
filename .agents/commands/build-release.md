@@ -20,11 +20,9 @@ meson setup Build-Release --buildtype=release --reconfigure
 ninja -C Build-Release
 ```
 
-Optional: link-time optimisation (`meson.options` gate, release-only):
-
-```sh
-meson setup Build-Release --buildtype=release -Denable_lto=true
-```
+`-Denable_lto=true` is currently a no-op: `meson.options:8` declares the
+option, but no meson file calls `get_option('enable_lto')` or sets `b_lto`.
+Do not present it as working LTO (`skills/meson-build-customization.md`).
 
 Notes:
 

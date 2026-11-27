@@ -61,7 +61,7 @@ namespace RHI
 
     private:
 
-        UInt64 SlotSize;
+        UInt64 SlotSize = { 0 };
 
         TUniquePtr<FIndiceHeapAllocator> Slots;
         TVector<FRHIAllocationId> ActiveAllocations;

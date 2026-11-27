@@ -17,7 +17,8 @@
 namespace Lumen
 {
 
-/** @struct FEmplaceTag
+/**
+ * @struct FEmplaceTag
  * @brief Selects direct construction from a monadic callback result.
  */
 struct FEmplaceTag

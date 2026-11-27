@@ -16,7 +16,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDeferredReleaseQueue::Enqueue ( const F
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidSynchronization( "Release callback is empty" ) );
     }
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( bShutdown )
     {
         return TUnexpected<FRHIError>(
@@ -29,7 +29,7 @@ Lumen::USize Lumen::RHI::FRHIDeferredReleaseQueue::Poll ( const FRHITimelineValu
 {
     TVector<FEntry> Ready;
     {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+        const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
         TVector<FEntry> Remaining;
         for ( auto &Entry : Entries )
         {
@@ -54,7 +54,7 @@ Lumen::USize Lumen::RHI::FRHIDeferredReleaseQueue::Drain () noexcept
 {
     TVector<FEntry> Ready;
     {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+        const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
         Ready = std::move( Entries );
         Entries.clear();
     }
@@ -67,7 +67,7 @@ Lumen::USize Lumen::RHI::FRHIDeferredReleaseQueue::Drain () noexcept
 void Lumen::RHI::FRHIDeferredReleaseQueue::Shutdown () noexcept
 {
     {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+        const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
         if ( bShutdown )
         {
             return;
@@ -78,11 +78,11 @@ void Lumen::RHI::FRHIDeferredReleaseQueue::Shutdown () noexcept
 }
 Lumen::USize Lumen::RHI::FRHIDeferredReleaseQueue::GetSize () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Entries.size();
 }
 Lumen::Bool Lumen::RHI::FRHIDeferredReleaseQueue::IsShutdown () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return bShutdown;
 }

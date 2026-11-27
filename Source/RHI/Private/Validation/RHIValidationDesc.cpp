@@ -5,6 +5,10 @@
 
 #include <RHI/Validation/RHIValidationDesc.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationDesc::Validate () const noexcept
 {
     if ( Level >= ERHIValidationLevel::Count )

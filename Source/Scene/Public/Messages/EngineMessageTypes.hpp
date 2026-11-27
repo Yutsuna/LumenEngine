@@ -54,32 +54,32 @@ namespace EEngineMessage
 } // namespace EEngineMessage
 
 /** @brief Payload for EEngineMessage::TransformUpdate */
-struct FTransformPayload final
+struct SCENE_EXPORT FTransformPayload final
 {
     Maths::FMat4x4f NewTransform = Maths::FMat4x4f::Identity();
 };
 
 /** @brief Payload for EEngineMessage::Tick */
-struct FTickPayload final
+struct SCENE_EXPORT FTickPayload final
 {
     Float64 DeltaTime = 0.0;
 };
 
 /** @brief Payload for EEngineMessage::InputAxis */
-struct FInputAxisPayload final
+struct SCENE_EXPORT FInputAxisPayload final
 {
     UInt32 AxisId = 0;
     Float32 Value = 0.0F;
 };
 
 /** @brief Payload for EEngineMessage::SubmitDraw */
-struct FSubmitDrawPayload final
+struct SCENE_EXPORT FSubmitDrawPayload final
 {
     ActorID Id = 0ULL;
 };
 
 /** @brief Payload for EEngineMessage::SetCameraTarget */
-struct FSetCameraTargetPayload final
+struct SCENE_EXPORT FSetCameraTargetPayload final
 {
     ActorID TargetId           = 0;
     Maths::FVec3f TargetOffset = { 0.0F, 0.0F, 0.0F };

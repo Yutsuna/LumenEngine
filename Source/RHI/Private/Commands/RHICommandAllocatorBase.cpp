@@ -5,18 +5,26 @@
 
 #include <HAL/LockGuard.hpp>
 #include <RHI/Commands/RHICommandAllocatorBase.hpp>
+
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHICommandAllocatorBase::FRHICommandAllocatorBase ( const ERHIQueueType InQueueType ) noexcept
     : QueueType( InQueueType )
 {
+    /* */
 }
+
 Lumen::RHI::ERHIQueueType Lumen::RHI::FRHICommandAllocatorBase::GetQueueType () const noexcept
 {
     return QueueType;
 }
+
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHICommandAllocatorBase::Reset ( const FRHITimelineValue InCompleted ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    for ( IRHICommandList *List : Lists )
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    for ( const IRHICommandList *List : Lists )
     {
         if ( List->GetState() == ERHICommandListState::Pending and
              not IsRHICompletionReached( InCompleted, List->GetCompletion() ) )
@@ -38,14 +46,16 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHICommandAllocatorBase::Reset ( const FRH
     }
     return {};
 }
+
 void Lumen::RHI::FRHICommandAllocatorBase::RegisterList ( IRHICommandList &InList ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Lists.push_back( &InList );
 }
+
 void Lumen::RHI::FRHICommandAllocatorBase::UnregisterList ( IRHICommandList &InList ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( USize Index = 0U; Index < Lists.size(); ++Index )
     {
         if ( Lists[Index] == &InList )
@@ -55,8 +65,9 @@ void Lumen::RHI::FRHICommandAllocatorBase::UnregisterList ( IRHICommandList &InL
         }
     }
 }
+
 Lumen::USize Lumen::RHI::FRHICommandAllocatorBase::GetTrackedListCount () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     return Lists.size();
 }

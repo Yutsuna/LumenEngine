@@ -12,6 +12,10 @@
 #include <Engine/Modules/LaunchApplicationModule.hpp>
 #include <Engine/Modules/LaunchWindowModule.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::Launch::EModuleTraits Lumen::Launch::IEngineModule::GetTraits () const noexcept
 {
     return EModuleTraits::None;

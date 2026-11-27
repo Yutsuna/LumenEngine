@@ -10,5 +10,12 @@ ModuleDefinition = {
     'Private' : 'Private',
     'Public' : 'Public',
     'Tests' : 'Tests',
-    'Depends' : ['Core', 'Maths', 'RHI', 'Scene']
+    'Benchmarks' : 'Benchmarks',
+    'Depends' : ['Core', 'Maths', 'RHI', 'Scene'],
+    'ExtraTestSources' : RHINullTestSupportSources,
+    'ExtraTestIncludeDirectories' : [ RHIConformanceIncludeDirectories, RHIPrivateIncludeDirectories ],
+
+    'ExtraBenchmarkSources' : RHINullTestSupportSources,
+    'ExtraBenchmarkIncludeDirectories' : [ RHIConformanceIncludeDirectories, RHIPrivateIncludeDirectories ],
+    'BenchmarkTestDependency' : true,
 }

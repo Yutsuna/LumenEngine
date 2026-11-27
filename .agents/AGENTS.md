@@ -16,11 +16,12 @@ to `.agents/`; an explicit `.agents/` prefix is equally valid.
 | `rules/core-first.md` | any new function/class/utility — check Core before writing |
 | `rules/build.md` | configuring, compiling, running tests/benchmarks |
 | `rules/testing.md` | adding or running tests or benchmarks |
+| `rules/replication.md` | working on M9 Scene replication — fixed arbitrages, wire contract, World integration, canonical replay |
 | `workflows/git-workflow.md` | creating commits or PRs |
 | `modules/<Module>.md` | working in `Source/<Module>/` (status, links, inventory) |
 | `agents/` | agent definitions — `reviewer` orchestrator + `reviewer-safety`/`reviewer-norme` subagents, `documentation` auditor of the `.agents/` corpus, and `test-writer` for unit-test authoring (definitions in `agents/*.md`) |
 | `commands/` | ready-made recipes: `build-debug`, `build-release`, `test`, `review`, `new-module` |
-| `skills/` | procedural guides: `core-abstractions`, `debug-sanitizer`, `write-benchmarks`, `nix-workflow` |
+| `skills/` | procedural guides: `core-abstractions`, `debug-sanitizer`, `write-benchmarks`, `nix-workflow`, `meson-build-customization` (declarative Meson mechanics: `ModuleDefinition` keys, target types) |
 
 ## Modules
 
@@ -29,11 +30,11 @@ to `.agents/`; an explicit `.agents/` prefix is equally valid.
 | `Core` | built (shared library) | `modules/Core.md` |
 | `Maths` | built (shared library) | `modules/Maths.md` |
 | `RHI` | built (shared library; Null + validation backends) | `modules/RHI.md` |
+| `RHIOpenGL` | built on Linux (OpenGL 4.6 backend; full conformance matrix) | `modules/RHIOpenGL.md` |
 | `Scene` | built (shared library) | `modules/Scene.md` |
+| `Renderer` | built (shared library; execution facade + render graph sources) | `modules/Renderer.md` |
 | `AppCore` | built (shared library) | `modules/AppCore.md` |
 | `Launch` | built (executable entry point) | `modules/Launch.md` |
-| `Renderer` | **not built** (empty stub, absent from `ModuleNames`) | `modules/Renderer.md` |
-| `RHIOpenGL` | built on Linux (OpenGL 4.6 backend; full conformance matrix) | `modules/RHIOpenGL.md` |
 | `RHIVulkan` | built (shared library, listed in `ModuleNames`; do not depend on it from production renderer code yet) | `modules/RHIVulkan.md` |
 
 A module is compiled only if listed in `ModuleNames` (`Source/meson.build`) and
@@ -50,7 +51,9 @@ has a `meson.build` in its `Source/` directory.
   `.opencode` are symbolic links to it: never edit files through those paths;
   all agent-documentation changes must be made directly under `.agents/`.
 - All commands run inside the Nix devshell (`.envrc`/`direnv`), e.g.
-  `meson compile -C Build`. `Build/` is gitignored.
+  `meson compile -C Build`. The root `.gitignore` covers `Build/` and
+  `Build-Release/` only: `Build-TSAN/` is not listed there, but its own
+  `Build-TSAN/.gitignore` (`*`) ignores it, so it does not appear in `git status`.
 - Prefer the Lumen Core library over `std` (threads, locks, stop tokens,
   condition variables, containers, algorithms…). Use `std` only when Core has
   no equivalent yet — see `rules/core-first.md`.

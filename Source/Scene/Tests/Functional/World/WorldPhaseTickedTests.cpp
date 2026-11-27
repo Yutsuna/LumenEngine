@@ -135,9 +135,8 @@ LUMEN_TEST( FWorld_PhasedTick, DestroyFromReceiveIsDeferred )
      * INFO: The probe never fires because the actor was removed from
      *       ActiveActors by ApplyDeferredCommands before the parallel phase
      *       of Tick 2 — RunFrame is never called on it again.
-     *       Victim's TSharedRef keeps the object alive, so ~AActor (and
-     *       therefore the registry slot retirement) has not happened; the
-     *       contract being tested is "no longer ticked", not "freed".
+     *       Victim's TSharedRef keeps only its C++ storage alive. ApplyDeferredCommands
+     *       has already closed routing and retired the logical actor before the phase.
      */
     LUMEN_CHECK_EQ( Victim->GetProbeCount(), 0U );
 }
@@ -166,8 +165,9 @@ LUMEN_TEST( FWorld_DeferredSpawn, DestroyedWorldReleasesUnappliedIds )
 
     for ( UInt32 Probe = 0U; Probe < 256U and not bFound; ++Probe )
     {
-        const ActorID Probed = Internal::FActorRegistry::AllocateId();
-        LUMEN_CHECK_NOT_EQ( Probed, InvalidActorID );
+        const TExpected<ActorID, EActorSpawnError> ProbedResult = Internal::FActorRegistry::AllocateId();
+        LUMEN_CHECK_HAS_VALUE( ProbedResult );
+        const ActorID Probed = *ProbedResult;
 
         if ( ActorIdSlotIndex( Probed ) == ActorIdSlotIndex( DeferredId ) )
         {

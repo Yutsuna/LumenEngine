@@ -4,12 +4,17 @@
  */
 
 #include "RHIDefragmenter.hpp"
-#include <Algo/Sort.hpp>
 #include <RHI/Memory/IRHIAllocationObserver.hpp>
 #include <RHI/Types/RHITimeline.hpp>
 #include <RHI/Utilities/RHIAlignment.hpp>
 #include <RHI/Utilities/RHICheckedMath.hpp>
+
+#include <Algo/Sort.hpp>
 #include <Templates/Hash.hpp>
+
+/**
+ * Public
+ */
 
 Lumen::RHI::FRHIDefragmenter::FRHIDefragmenter ( const FRHIObjectId InId ) noexcept
     : Identity( InId, FHash::TypeHash<FRHIDefragmenter>() )
@@ -75,7 +80,8 @@ Lumen::RHI::FRHIDefragmenter::BuildPlan ( const TSpan<const FRHIAllocation> InAl
         Destination.Offset         = *AlignedOffset;
         if ( Destination.Offset != Allocation.Offset )
         {
-            Plan.Moves.push_back( FRHIDefragMove{ Allocation, Destination, FRHITimelineValue{ 1ULL } } );
+            Plan.Moves.push_back(
+                FRHIDefragMove{ .Source = Allocation, .Destination = Destination, .Completion = FRHITimelineValue{ 1ULL } } );
         }
         Cursor = *End;
     }

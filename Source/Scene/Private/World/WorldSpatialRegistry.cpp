@@ -1,9 +1,35 @@
 /**
- * @file SpatialRegistry.cpp
+ * @file WorldSpatialRegistry.cpp
  * @brief Implementation of the FSpatialRegistry class.
  */
 
 #include <World/WorldSpatialRegistry.hpp>
+
+#include <World/WorldTypes.hpp>
+
+#include <Templates/Unexpected.hpp>
+
+/**
+ * FSpatialRegistryStorage
+ */
+
+void Lumen::FSpatialRegistryStorage::Reserve ( const FSpatialRegistryCapacities &InCapacities ) noexcept
+{
+    EntityIDs.reserve( InCapacities.EntityCapacity );
+    Transforms.reserve( InCapacities.EntityCapacity );
+}
+
+void Lumen::FSpatialRegistryStorage::Reset () noexcept
+{
+    EntityIDs.clear();
+    Transforms.clear();
+}
+
+Lumen::FSpatialSnapshotView Lumen::FSpatialRegistryStorage::GetView () const noexcept
+{
+    return FSpatialSnapshotView{ .EntityIDs  = TSpan<const ActorID>{ EntityIDs.data(), EntityIDs.size() },
+                                 .Transforms = TSpan<const Maths::FMat4x4f>{ Transforms.data(), Transforms.size() } };
+}
 
 /**
  * FDeltaTracker
@@ -33,6 +59,28 @@ void Lumen::FSpatialRegistry::FDeltaTracker::ClearAll () noexcept
  * Public
  */
 
+Lumen::FSpatialRegistry::FSpatialRegistry () noexcept
+    : FSpatialRegistry( FSpatialRegistryCapacities{ .EntityCapacity = FWorldDesc{}.MaxActors } )
+{
+    /** Empty */
+}
+
+Lumen::FSpatialRegistry::FSpatialRegistry ( const FSpatialRegistryCapacities &InCapacities ) noexcept
+    : Capacities( InCapacities ), Slots{}, SnapshotBuffer( Slots )
+{
+    for ( FSpatialRegistryStorage &Slot : Slots )
+    {
+        Slot.Reserve( Capacities );
+    }
+
+    WorkingData.EntityIDs.reserve( Capacities.EntityCapacity );
+    WorkingData.Transforms.reserve( Capacities.EntityCapacity );
+    WorkingData.IDToIndex.reserve( Capacities.EntityCapacity );
+
+    /** INFO: The array-backed triple buffer starts dirty; all three empty slots are equivalent and fully reserved. */
+    SnapshotBuffer.SwapReadBuffers();
+}
+
 Lumen::FSpatialRegistry &Lumen::FSpatialRegistry::Get () noexcept
 {
     static FSpatialRegistry Instance;
@@ -40,13 +88,25 @@ Lumen::FSpatialRegistry &Lumen::FSpatialRegistry::Get () noexcept
     return Instance;
 }
 
-void Lumen::FSpatialRegistry::RegisterSpatialEntity ( ActorID InId )
+void Lumen::FSpatialRegistry::RegisterSpatialEntity ( const ActorID InId ) noexcept
+{
+    static_cast<void>( TryRegisterSpatialEntity( InId ) );
+}
+
+Lumen::TExpected<void, Lumen::ESpatialRegistryError>
+Lumen::FSpatialRegistry::TryRegisterSpatialEntity ( const ActorID InId ) noexcept
 {
     HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( RegistryMutex );
 
     if ( WorkingData.IDToIndex.contains( InId ) )
     {
-        return;
+        return {};
+    }
+
+    if ( WorkingData.EntityIDs.size() >= Capacities.EntityCapacity ) [[unlikely]]
+    {
+        DroppedRegistrationCount.fetch_add( 1ULL, std::memory_order_relaxed );
+        return MakeUnexpected( ESpatialRegistryError::CapacityExceeded );
     }
 
     const USize NewIndex = WorkingData.EntityIDs.size();
@@ -56,12 +116,13 @@ void Lumen::FSpatialRegistry::RegisterSpatialEntity ( ActorID InId )
     WorkingData.IDToIndex.emplace( InId, NewIndex );
 
     ResizeTrackersAndFlagStructuralChange();
+    return {};
 }
 
-void Lumen::FSpatialRegistry::UnregisterSpatialEntity ( ActorID InId )
+void Lumen::FSpatialRegistry::UnregisterSpatialEntity ( const ActorID InId ) noexcept
 {
     HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( RegistryMutex );
-    const FSpatialRegistryData::FMapIterator It = WorkingData.IDToIndex.find( InId );
+    const FWorkingData::FMapIterator It = WorkingData.IDToIndex.find( InId );
 
     if ( It == WorkingData.IDToIndex.end() )
     {
@@ -87,10 +148,10 @@ void Lumen::FSpatialRegistry::UnregisterSpatialEntity ( ActorID InId )
     ResizeTrackersAndFlagStructuralChange();
 }
 
-void Lumen::FSpatialRegistry::UpdateTransform ( ActorID InId, const Maths::FMat4x4f &InTransform ) noexcept
+void Lumen::FSpatialRegistry::UpdateTransform ( const ActorID InId, const Maths::FMat4x4f &InTransform ) noexcept
 {
     HAL::TSharedUniqueLock<HAL::FPlatformSharedMutex> Lock( RegistryMutex );
-    const FSpatialRegistryData::FMapIterator It = WorkingData.IDToIndex.find( InId );
+    const FWorkingData::FMapIterator It = WorkingData.IDToIndex.find( InId );
 
     if ( It != WorkingData.IDToIndex.end() )
     {
@@ -121,37 +182,98 @@ void Lumen::FSpatialRegistry::Publish () noexcept
         } );
     }
 
-    SnapshotBuffer.WriteBuffer( [this] ( FSpatialRegistryData &OutData ) noexcept -> void
+    SnapshotBuffer.WriteBuffer( [this] ( FSpatialRegistryStorage &OutStorage ) noexcept -> void
     {
-        /** INFO: Identify which of the 3 buffers we are currently writing to */
-        const USize BufferIdx  = static_cast<USize>( &OutData - SnapshotBuffer.GetBuffers() );
+        /** INFO: Identify which of the 3 slots we are currently writing to */
+        const USize BufferIdx  = static_cast<USize>( &OutStorage - SnapshotBuffer.GetBuffers() );
         FDeltaTracker &Tracker = DeltaTrackers[BufferIdx];
 
         if ( Tracker.bMetadataDirty )
         {
-            OutData                = WorkingData;
+            /** INFO: Every slot was reserved at construction, so these appends never allocate. */
+            OutStorage.Reset();
+            for ( const ActorID EntityId : WorkingData.EntityIDs )
+            {
+                OutStorage.EntityIDs.emplace_back( EntityId );
+            }
+            for ( const Maths::FMat4x4f &Transform : WorkingData.Transforms )
+            {
+                OutStorage.Transforms.emplace_back( Transform );
+            }
+
             Tracker.bMetadataDirty = false;
             Tracker.ClearAll();
             return;
         }
 
-        /** INFO: Granular Sync: Only copy what changed for THIS buffer instance */
+        /** INFO: Granular Sync: Only copy what changed for THIS slot instance */
         Tracker.ComponentDirtyStates[static_cast<USize>( ESpatialComponentType::Transform )].ForEachSetBitAndClear(
             [&] ( const USize Index ) noexcept -> void
         {
-            OutData.Transforms[Index] = WorkingData.Transforms[Index];
+            OutStorage.Transforms[Index] = WorkingData.Transforms[Index];
         } );
     } );
+
+    LastPublishedSequence.fetch_add( 1ULL, std::memory_order_release );
 }
 
 void Lumen::FSpatialRegistry::SwapReadBuffers () noexcept
 {
+    if ( not SnapshotBuffer.IsDirty() )
+    {
+        return;
+    }
+
     SnapshotBuffer.SwapReadBuffers();
+
+    const UInt64 Published = LastPublishedSequence.load( std::memory_order_acquire );
+    const UInt64 Consumed  = LastConsumedSequence.load( std::memory_order_relaxed );
+
+    if ( Published > Consumed )
+    {
+        if ( Published - Consumed > 1ULL )
+        {
+            DroppedSnapshotCount.fetch_add( Published - Consumed - 1ULL, std::memory_order_relaxed );
+        }
+        LastConsumedSequence.store( Published, std::memory_order_release );
+    }
 }
 
-const Lumen::FSpatialRegistryData &Lumen::FSpatialRegistry::GetReadSnapshot () const noexcept
+Lumen::FSpatialSnapshotView Lumen::FSpatialRegistry::GetReadSnapshot () const noexcept
 {
-    return SnapshotBuffer.ReadBuffer();
+    return SnapshotBuffer.ReadBuffer().GetView();
+}
+
+Lumen::FSpatialCommittedView Lumen::FSpatialRegistry::GetCommittedView () const noexcept
+{
+    return FSpatialCommittedView{
+        .EntityIDs  = TSpan<const ActorID>{ WorkingData.EntityIDs.data(), WorkingData.EntityIDs.size() },
+        .Transforms = TSpan<const Maths::FMat4x4f>{ WorkingData.Transforms.data(), WorkingData.Transforms.size() } };
+}
+
+Lumen::FSpatialRegistryCapacities Lumen::FSpatialRegistry::GetCapacities () const noexcept
+{
+    return Capacities;
+}
+
+Lumen::UInt64 Lumen::FSpatialRegistry::GetLastPublishedSequence () const noexcept
+{
+    return LastPublishedSequence.load( std::memory_order_acquire );
+}
+
+Lumen::UInt64 Lumen::FSpatialRegistry::GetLastConsumedSequence () const noexcept
+{
+    return LastConsumedSequence.load( std::memory_order_acquire );
+}
+
+Lumen::UInt64 Lumen::FSpatialRegistry::GetDroppedSnapshotCount () const noexcept
+{
+    return DroppedSnapshotCount.load( std::memory_order_relaxed );
+}
+
+Lumen::UInt64 Lumen::FSpatialRegistry::GetDroppedRegistrationCount () const noexcept
+{
+    return DroppedRegistrationCount.load( std::memory_order_relaxed );
 }
 
 /**
@@ -167,15 +289,15 @@ void Lumen::FSpatialRegistry::ResizeTrackersAndFlagStructuralChange () noexcept
 {
     const USize EntityCount = WorkingData.EntityIDs.size();
 
-    /** INFO: every buffer needs a full copy on the next Publish */
-    for ( USize BufferIdx = 0U; BufferIdx < 3U; ++BufferIdx )
+    /** INFO: every slot needs a full copy on the next Publish */
+    for ( USize BufferIdx = 0U; BufferIdx < Thread::TripleBufferCount; ++BufferIdx )
     {
         DeltaTrackers[BufferIdx].bMetadataDirty = true;
         DeltaTrackers[BufferIdx].Resize( EntityCount );
     }
 
     /** INFO: Pending must cover the new entity range for future updates. */
-    for ( USize CompIdx = 0U; CompIdx < Thread::TripleBufferCount; ++CompIdx )
+    for ( USize CompIdx = 0U; CompIdx < static_cast<USize>( ESpatialComponentType::Count ); ++CompIdx )
     {
         Pending[CompIdx].Resize( EntityCount );
     }

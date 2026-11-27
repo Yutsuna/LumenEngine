@@ -18,7 +18,7 @@ namespace RHI
      * @enum ERHIResourceState
      * @brief Resource access states used by barriers.
      */
-    enum class ERHIResourceState : UInt32
+    enum class ERHIResourceState : UInt32 /** NOLINT */
     {
         Undefined          = 0U,
         Common             = 1U << 0U,

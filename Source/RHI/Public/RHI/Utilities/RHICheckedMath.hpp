@@ -2,6 +2,7 @@
  * @file RHICheckedMath.hpp
  * @brief Declares overflow-checked integer arithmetic.
  */
+
 #pragma once
 
 #include <Core/CoreTypes.hpp>

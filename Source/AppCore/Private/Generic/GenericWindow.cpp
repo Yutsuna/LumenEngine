@@ -134,3 +134,8 @@ Lumen::Maths::FVec2i Lumen::FGenericWindow::GetWindowPosition () const noexcept
 {
     return Description.IsValid() ? Description->Position : Maths::FVec2i( 0, 0 );
 }
+
+Lumen::TOptional<Lumen::FNativeWindowHandles> Lumen::FGenericWindow::GetNativeHandles () const noexcept
+{
+    return {};
+}

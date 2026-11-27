@@ -32,3 +32,8 @@ void Lumen::FActorRef::EnqueueMessage ( const FMessage &InMessage ) const noexce
 {
     Lumen::Internal::FActorRegistry::EnqueueMessage( Id, InMessage );
 }
+
+Lumen::TExpected<void, Lumen::EActorSendError> Lumen::FActorRef::TryEnqueueMessage ( const FMessage &InMessage ) const noexcept
+{
+    return Lumen::Internal::FActorRegistry::TryEnqueueMessage( Id, InMessage );
+}

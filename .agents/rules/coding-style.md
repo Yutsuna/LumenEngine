@@ -25,10 +25,15 @@ hack, and prefer reusing Core (`rules/core-first.md`).
 
 ## Error handling: noexcept by definition
 
-- **Lumen is `noexcept` by definition — zero exceptions.** Engine code
-  (`.hpp`/`.inl`/`.cpp`, non-test) must never `throw` and never `catch`:
-  no exceptions are tolerated as a control flow, by paradigm, safety, and
-  performance (no unwinding paths, optimiser-friendly).
+- **Lumen is `noexcept` by definition — zero exceptions thrown.** Engine code
+  (`.hpp`/`.inl`/`.cpp`, non-test) must never `throw`: no exceptions are
+  tolerated as a control flow, by paradigm, safety, and performance (no
+  unwinding paths, optimiser-friendly). `try`/`catch` are confined to
+  boundaries that translate a throwing std call into a structured error — RHI
+  binding/transition validation (`Source/RHI/Private/Validation/RHIValidationBindings.cpp`,
+  `Source/RHI/Private/Bindings/RHIBindingWrite.cpp`,
+  `Source/RHI/Private/Commands/RHITransition.cpp`) — or report console output
+  failure (`Source/Core/Private/Logging/Logger.cpp`).
   Constructor / destructor / virtual overrides are all `noexcept`
   (`AActor::Receive`, `AActor::~AActor` are the canonical pattern).
 - Absence of a value is **`TOptional<T>`**; failure is
@@ -39,7 +44,7 @@ hack, and prefer reusing Core (`rules/core-first.md`).
 - Do not call std APIs defined to throw (`std::vector` growth producing
   `bad_alloc`, `std::format` on unbuffered failure paths, `std::stoi`…);
   prefer the Core equivalents that return `TOptional`/`TExpected` instead.
-- The sole exception (literally) is the **test framework** :
+- The sole `throw` site (literally) is the **test framework**:
   `LUMEN_CHECK*` macros `throw FUnitTestAssertionFailure`, which the test
   runner catches/reports. Only test code may throw.
 

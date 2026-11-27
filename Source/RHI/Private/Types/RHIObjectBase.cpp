@@ -27,12 +27,12 @@ void Lumen::RHI::FRHIObjectBase::SetDestructionCallback ( TFunction<void()> InCa
 
 Lumen::FString Lumen::RHI::FRHIObjectBase::GetDebugName () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( DebugNameMutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( DebugNameMutex );
     return DebugName;
 }
 
 void Lumen::RHI::FRHIObjectBase::SetDebugName ( const FStringView InName ) noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( DebugNameMutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( DebugNameMutex );
     DebugName = InName;
 }

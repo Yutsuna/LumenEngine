@@ -17,7 +17,7 @@ namespace RHI
      * @enum ERHIResourceUsage
      * @brief Operations a resource may be used for.
      */
-    enum class ERHIResourceUsage : UInt32
+    enum class ERHIResourceUsage : UInt32 /** NOLINT */
     {
         None             = 0U,
         CopySource       = 1U << 0U,

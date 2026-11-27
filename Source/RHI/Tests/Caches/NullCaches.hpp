@@ -20,7 +20,10 @@ namespace RHI
     namespace Tests
     {
 
-        /** @struct FNullPipelineCacheKeyHasher @brief Content hasher for complete pipeline keys. */
+        /**
+         * @struct FNullPipelineCacheKeyHasher
+         * @brief Content hasher for complete pipeline keys.
+         */
         struct FNullPipelineCacheKeyHasher
         {
             [[nodiscard]] USize operator()( const FRHIPipelineCacheKey &InKey ) const noexcept;

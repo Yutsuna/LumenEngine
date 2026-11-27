@@ -5,14 +5,26 @@
 
 #include <RHI/Commands/RHIDrawArguments.hpp>
 #include <RHI/Utilities/RHICheckedMath.hpp>
+
+/**
+ * Private
+ */
+
 namespace
 {
+
 Lumen::RHI::FRHIExpected InvalidArguments ( Lumen::FStringView InMessage ) noexcept
 {
     return Lumen::TUnexpected<Lumen::RHI::FRHIError>(
         Lumen::RHI::MakeRHIInvalidArgument( Lumen::RHI::ERHIErrorCondition::Command, InMessage ) );
 }
+
 } // namespace
+
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDrawArguments::Validate () const noexcept
 {
     if ( VertexCount == 0U or InstanceCount == 0U )
@@ -21,6 +33,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDrawArguments::Validate () const noexce
     }
     return {};
 }
+
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDrawIndexedArguments::Validate () const noexcept
 {
     if ( IndexCount == 0U or InstanceCount == 0U )
@@ -29,6 +42,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDrawIndexedArguments::Validate () const
     }
     return {};
 }
+
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDispatchArguments::Validate ( const UInt32 InMaximumPerDimension ) const noexcept
 {
     if ( GroupCountX == 0U or GroupCountY == 0U or GroupCountZ == 0U or GroupCountX > InMaximumPerDimension or
@@ -38,6 +52,7 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDispatchArguments::Validate ( const UIn
     }
     return {};
 }
+
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHIIndirectArguments::Validate ( const UInt64 InBufferSize,
                                                                        const UInt32 InMinimumStride ) const noexcept
 {
@@ -45,10 +60,12 @@ Lumen::RHI::FRHIExpected Lumen::RHI::FRHIIndirectArguments::Validate ( const UIn
     {
         return InvalidArguments( "Indirect arguments have invalid count, stride, or alignment" );
     }
+
     const TOptional<UInt64> CommandsSize = RHICheckedMultiply( static_cast<UInt64>( Count - 1U ), static_cast<UInt64>( Stride ) );
     const TOptional<UInt64> RequiredSize =
         CommandsSize ? RHICheckedAdd( *CommandsSize, static_cast<UInt64>( InMinimumStride ) ) : TOptional<UInt64>{};
     const TOptional<UInt64> End = RequiredSize ? RHICheckedAdd( Offset, *RequiredSize ) : TOptional<UInt64>{};
+
     if ( not End or *End > InBufferSize )
     {
         return InvalidArguments( "Indirect arguments exceed the buffer" );

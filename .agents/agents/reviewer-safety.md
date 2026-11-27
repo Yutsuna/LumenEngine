@@ -12,6 +12,12 @@ permissions:
   - action: websearch
     resource: "*"
     effect: deny
+  - action: execute
+    resource: "*"
+    effect: deny
+  - action: shell
+    resource: "*"
+    effect: deny
   - action: shell
     resource: "git diff*"
     effect: allow
@@ -24,9 +30,6 @@ permissions:
   - action: shell
     resource: "git status*"
     effect: allow
-  - action: shell
-    resource: "*"
-    effect: deny
 ---
 
 # Safety Reviewer
@@ -35,6 +38,15 @@ You review the given diff for **correctness and safety defects only**. You
 are launched as a subagent by `reviewer`; you receive the diff scope (refs
 or files) and the list of modules touched, but you may fetch the diff
 yourself with `git diff`.
+
+## Tooling (read-only)
+
+Use the direct tools (`read`, `glob`, `grep`, `shell`); Code Mode (`execute`
+and `tools[...]`) is disabled. Only `git diff/show/log/status` are allowed (no `workdir`); use
+`grep`/`glob`/`read` for file discovery; no pipes or `&&` chains. Use
+`git status --short` and `git log --oneline -N` when scope or staleness is
+unclear. Glob hidden directories with `hidden: true` before concluding a
+file is missing. If a tool or command is denied, report it explicitly.
 
 ## What to load first
 
@@ -54,10 +66,12 @@ yourself with `git diff`.
   temporaries), use-after-`std::move`-equivalent, raw `new`/`delete`,
   ownership escaping shared APIs, missing `UniquePtr`/`SharedPtr`.
 - **Error-handling contracts**: code that ignores `TOptional`/expected-style
-  results it should check; **any `throw`, `catch`, or `try` in non-test
-  engine code — Lumen is `noexcept` by definition, zero exceptions are
-  tolerated** (`rules/core-first.md § TOptional/TExpected/Monadic`,
-  `rules/coding-style.md § Error handling`); error paths that skip
+  results it should check; **any `throw`, or any `try`/`catch` outside the
+  documented containment sites** (Lumen is `noexcept` by definition:
+  non-test engine code never throws; `try`/`catch` is confined to the
+  explicit validation/logging boundaries listed in
+  `rules/coding-style.md § Error handling` — e.g. RHI validation bindings)
+  (`rules/core-first.md § TOptional/TExpected/Monadic`); error paths that skip
   shutdown/initialisation pairs (e.g. `FLogger::Shutdown`); unwrapping a
   `TOptional`/`TExpected` with an assumed-value access instead of a
   monadic `Transform`/`AndThen`/`OrElse` pipeline where the failure path is

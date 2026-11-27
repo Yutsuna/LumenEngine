@@ -6,7 +6,6 @@
 
 #include <Core/CoreTypes.hpp>
 #include <RHIExport.hpp>
-#include <compare>
 
 namespace Lumen
 {

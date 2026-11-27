@@ -3,6 +3,12 @@
 # Source/Launch meson entry-point
 #}
 
+PlatformDepends = []
+
+if OSName == 'linux'
+    PlatformDepends += ['RHIOpenGL']
+endif
+
 ModuleDefinition = {
     'Name' : 'Launch',
     'Type' : 'Executable',
@@ -10,5 +16,5 @@ ModuleDefinition = {
     'Private' : 'Private',
     'Public' : 'Public',
     'Tests' : 'Tests',
-    'Depends' : ['Core', 'AppCore']
+    'Depends' : ['Core', 'AppCore', 'Scene', 'RHI', 'Renderer'] + PlatformDepends
 }

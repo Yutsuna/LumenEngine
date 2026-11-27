@@ -14,10 +14,13 @@ form to write instead. A file path after "After" points to an existing usage
 in the repository — open it for the surrounding context. Naming, typedefs and
 type conventions are those of `rules/coding-style.md`.
 
-Why bother: these are hand-written Core types, not `std` aliases. Optimisation
-lands in Core, so every call site using them improves at once. Bespoke
-sentinels, loops and `if (!Result) return ...` ladders are rewritten module by
-module with these types.
+Why bother: use the Lumen names throughout. Some of these types are
+hand-written in Core (`TOptional`, `TExpected`, `FMonadic`, `Algo`), while
+others (`TVector`, `TMap`, `TSpan`, …) are currently aliases over `std`; the
+Lumen name is mandatory either way (`rules/core-first.md`, `modules/Core.md`),
+so call sites stay consistent when an alias is replaced by a real
+implementation. Optimisation lands in Core, so every call site using them
+improves at once.
 
 ---
 
