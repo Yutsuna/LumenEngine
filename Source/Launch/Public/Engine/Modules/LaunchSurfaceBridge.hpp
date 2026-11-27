@@ -5,6 +5,8 @@
 
 #pragma once
 
+#include <LaunchExport.hpp>
+
 #include <Generic/GenericNativeWindowHandles.hpp>
 
 #include <Memory/SharedPtr.hpp>
@@ -32,19 +34,19 @@ namespace Launch
      * @param InExtent Initial drawable extent carried into the descriptor.
      * @return The backend-local descriptor, or nothing when the handles are not usable.
      */
-    [[nodiscard]] TOptional<RHIOpenGL::FOpenGLNativeWindowDesc>
+    [[nodiscard]] LAUNCH_EXPORT TOptional<RHIOpenGL::FOpenGLNativeWindowDesc>
     MakeOpenGLNativeWindowDesc ( const FNativeWindowHandles &InHandles, const RHI::FRHIExtent3D &InExtent ) noexcept;
 
     /**
      * @brief Creates an RHI surface bridge from portable native window handles.
      * @details The mapping failure is reported as an invalid presentation error. Any error from the
-     *          OpenGL factory is propagated unchanged: the current device uses a surfaceless EGL
-     *          context, so even coherent window handles are rejected as Unsupported.
+     *          OpenGL factory is propagated unchanged. The caller must create the module and device
+     *          with the same native-window descriptor before attaching this bridge to a swapchain.
      * @param InHandles Portable, non-owning native window handles.
      * @param InExtent Initial drawable extent for the surface.
      * @return A surface bridge or a structured RHI error.
      */
-    [[nodiscard]] TExpected<TSharedRef<RHI::IRHISurfaceBridge>, RHI::FRHIError>
+    [[nodiscard]] LAUNCH_EXPORT TExpected<TSharedRef<RHI::IRHISurfaceBridge>, RHI::FRHIError>
     CreateSurfaceBridge ( const FNativeWindowHandles &InHandles, const RHI::FRHIExtent3D &InExtent ) noexcept;
 
 } // namespace Launch

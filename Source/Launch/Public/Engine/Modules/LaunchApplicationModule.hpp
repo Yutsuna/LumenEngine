@@ -63,6 +63,7 @@ namespace Launch
 
         void OnRequestExit () noexcept override;
         void OnQuit () noexcept override;
+        void OnKeyDown ( EKeys::Type InKey, Bool bIsRepeated ) noexcept override;
     };
 
     /**
