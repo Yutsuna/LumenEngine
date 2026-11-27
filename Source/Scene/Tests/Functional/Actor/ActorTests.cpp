@@ -20,6 +20,18 @@
 namespace Lumen
 {
 
+namespace
+{
+
+    [[nodiscard]] ActorID AllocateActorIdForTest ()
+    {
+        const TExpected<ActorID, EActorSpawnError> Result = Internal::FActorRegistry::AllocateId();
+        LUMEN_CHECK_HAS_VALUE( Result );
+        return *Result;
+    }
+
+} // namespace
+
 /**
  * Test actor fixtures
  */
@@ -105,7 +117,7 @@ struct FInvalidActor
 
 LUMEN_TEST( AActor_Construct, AssignsProvidedId )
 {
-    const ActorID ActorId = Internal::FActorRegistry::AllocateId();
+    const ActorID ActorId = AllocateActorIdForTest();
 
     const FTestActor Actor( ActorId );
 
@@ -114,7 +126,7 @@ LUMEN_TEST( AActor_Construct, AssignsProvidedId )
 
 LUMEN_TEST( AActor_Construct, GetRefMatchesActorId )
 {
-    const ActorID ActorId = Internal::FActorRegistry::AllocateId();
+    const ActorID ActorId = AllocateActorIdForTest();
 
     const FTestActor Actor( ActorId );
     const FActorRef ActorRef = Actor.GetRef();
@@ -133,8 +145,8 @@ LUMEN_TEST( AActor_TypeID, UniqueAcrossActorTypes )
      * INFO: LUMEN_ACTOR_BODY binds GetTypeID to the compile-time registry of
      *       each concrete actor type.
      */
-    const FTestActor Actor( Internal::FActorRegistry::AllocateId() );
-    const FAltTestActor AltActor( Internal::FActorRegistry::AllocateId() );
+    const FTestActor Actor( AllocateActorIdForTest() );
+    const FAltTestActor AltActor( AllocateActorIdForTest() );
 
     LUMEN_CHECK_NOT_EQ( Actor.GetTypeID(), 0ULL );
     LUMEN_CHECK_NOT_EQ( AltActor.GetTypeID(), 0ULL );
@@ -143,8 +155,8 @@ LUMEN_TEST( AActor_TypeID, UniqueAcrossActorTypes )
 
 LUMEN_TEST( AActor_TypeID, StableAcrossSameTypeInstances )
 {
-    const FTestActor FirstActor( Internal::FActorRegistry::AllocateId() );
-    const FTestActor SecondActor( Internal::FActorRegistry::AllocateId() );
+    const FTestActor FirstActor( AllocateActorIdForTest() );
+    const FTestActor SecondActor( AllocateActorIdForTest() );
 
     LUMEN_CHECK_EQ( FirstActor.GetTypeID(), SecondActor.GetTypeID() );
 }
@@ -166,7 +178,7 @@ LUMEN_TEST( AActor_TypeID, NegativeRegistryContract )
 
 LUMEN_TEST( AActor_RunFrame, DeliversAndTicksWithoutExceptionBoundary )
 {
-    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+    FTestActor Actor( AllocateActorIdForTest() );
 
     for ( UInt32 Index = 0U; Index < 8U; ++Index )
     {
@@ -189,7 +201,7 @@ LUMEN_TEST( AActor_MailboxProcessing, DeliversEveryPendingMessageInOrder )
      *       of the tick: it processes the mailbox with an explicit budget (0 =
      *       all pending messages) before invoking the default no-op OnTick.
      */
-    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+    FTestActor Actor( AllocateActorIdForTest() );
 
     for ( UInt32 Index = 0U; Index < 16U; ++Index )
     {
@@ -211,7 +223,7 @@ LUMEN_TEST( AActor_MailboxProcessing, DeliversEveryPendingMessageInOrder )
 
 LUMEN_TEST( AActor_MailboxProcessing, HonorsPartialBudgetThenResumes )
 {
-    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+    FTestActor Actor( AllocateActorIdForTest() );
 
     for ( UInt32 Index = 0U; Index < 10U; ++Index )
     {
@@ -240,7 +252,7 @@ LUMEN_TEST( AActor_MailboxProcessing, HonorsPartialBudgetThenResumes )
 
 LUMEN_TEST( AActor_MailboxProcessing, EmptyMailboxProcessesNothing )
 {
-    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+    FTestActor Actor( AllocateActorIdForTest() );
 
     Actor.RunFrame( 0.0, 0U );
     Actor.RunFrame( 0.0, 3U );
@@ -250,7 +262,7 @@ LUMEN_TEST( AActor_MailboxProcessing, EmptyMailboxProcessesNothing )
 
 LUMEN_TEST( AActor_MailboxProcessing, DeliversTypedPayload )
 {
-    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+    FTestActor Actor( AllocateActorIdForTest() );
 
     constexpr FTickPayload SourcePayload{ .DeltaTime = 33.3 };
     constexpr UInt32 TickType = static_cast<UInt32>( EEngineMessage::Tick );
@@ -272,7 +284,7 @@ LUMEN_TEST( AActor_MailboxProcessing, DeliversTypedPayload )
 
 LUMEN_TEST( AActor_MailboxQueuing, QueuedCopyDetachesFromSource )
 {
-    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+    FTestActor Actor( AllocateActorIdForTest() );
 
     FMessage Mutable = FMessage::Make( 11U, 22ULL, 44 );
 
@@ -295,7 +307,7 @@ LUMEN_TEST( AActor_MailboxQueuing, QueuedCopyDetachesFromSource )
 
 LUMEN_TEST( AActor_MailboxQueuing, ReserveHandlesBurstWithoutAllocation )
 {
-    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+    FTestActor Actor( AllocateActorIdForTest() );
 
     Actor.ReserveMailbox( 64ULL );
 
@@ -315,7 +327,7 @@ LUMEN_TEST( AActor_MailboxQueuing, ReserveHandlesBurstWithoutAllocation )
 
 LUMEN_TEST( AActor_Lifetime, DestructionWithPendingMessagesIsSound )
 {
-    const ActorID ActorId = Internal::FActorRegistry::AllocateId();
+    const ActorID ActorId = AllocateActorIdForTest();
 
     {
         FTestActor Actor( ActorId );
@@ -329,7 +341,7 @@ LUMEN_TEST( AActor_Lifetime, DestructionWithPendingMessagesIsSound )
      *       ID can never be respawned as-is: a fresh allocation hands back the same
      *       slot carrying the bumped generation.
      */
-    const ActorID RebornId = Internal::FActorRegistry::AllocateId();
+    const ActorID RebornId = AllocateActorIdForTest();
 
     FTestActor RebornActor( RebornId );
 
@@ -369,7 +381,7 @@ LUMEN_TEST( AActor_Threading, MultipleProducersEnqueueToSingleActor )
      * INFO: EnqueueMessage routes into the MPSC mailbox, so any number of
      *       producers may push simultaneously without loss.
      */
-    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+    FTestActor Actor( AllocateActorIdForTest() );
     TAtomic<UInt32> PushedCount = 0;
 
     constexpr UInt32 ThreadsCount        = 4U;
@@ -408,7 +420,7 @@ LUMEN_TEST( AActor_Threading, MultipleProducersEnqueueToSingleActor )
 
 LUMEN_TEST( AActor_EnqueueMessage, ReturnsTrueOnSuccess )
 {
-    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+    FTestActor Actor( AllocateActorIdForTest() );
 
     LUMEN_CHECK_TRUE( Actor.EnqueueMessage( FMessage::Make( 1U, 0ULL ) ) );
     LUMEN_CHECK_TRUE( Actor.EnqueueMessage( FMessage::Make( 2U, 0ULL ) ) );
@@ -416,7 +428,7 @@ LUMEN_TEST( AActor_EnqueueMessage, ReturnsTrueOnSuccess )
 
 LUMEN_TEST( AActor_EnqueueMessage, ReturnsTrueAcrossManyPushes )
 {
-    FTestActor Actor( Internal::FActorRegistry::AllocateId() );
+    FTestActor Actor( AllocateActorIdForTest() );
 
     for ( UInt32 Index = 0U; Index < 256U; ++Index )
     {

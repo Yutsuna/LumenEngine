@@ -12,13 +12,29 @@
 #include <Benchmarks/BenchmarkOptimizer.hpp>
 
 #include <Maths/Matrix.hpp>
+#include <Templates/Expected.hpp>
 #include <Templates/Vector.hpp>
+
+#include <Logging/Logger.hpp>
+
+#include <exception>
 
 namespace
 {
 
 /** @brief Background entity population shared by every benchmark here (power of two). */
 constexpr Lumen::USize EntityCount = 1024U;
+
+[[nodiscard]] Lumen::ActorID AllocateActorIdForBenchmark ()
+{
+    const Lumen::TExpected<Lumen::ActorID, Lumen::EActorSpawnError> Result = Lumen::Internal::FActorRegistry::AllocateId();
+    if ( not Result ) [[unlikely]]
+    {
+        LUMEN_LOG_ERROR( Lumen::LogActor, "Spatial registry benchmark setup failed: actor registry exhausted." );
+        std::terminate();
+    }
+    return *Result;
+}
 
 /** @brief Allocates Count unique IDs and registers them as spatial entities. */
 void RegisterEntities ( Lumen::TVector<Lumen::ActorID> &OutEntityIds, const Lumen::USize Count )
@@ -27,7 +43,7 @@ void RegisterEntities ( Lumen::TVector<Lumen::ActorID> &OutEntityIds, const Lume
 
     for ( Lumen::USize EntityIndex = 0U; EntityIndex < Count; ++EntityIndex )
     {
-        const Lumen::ActorID NewEntityId = Lumen::Internal::FActorRegistry::AllocateId();
+        const Lumen::ActorID NewEntityId = AllocateActorIdForBenchmark();
         OutEntityIds.push_back( NewEntityId );
 
         Lumen::FSpatialRegistry::Get().RegisterSpatialEntity( NewEntityId );
@@ -139,7 +155,7 @@ LUMEN_BENCHMARK( FSpatialRegistry, RegisterUnregisterEntity )
     Lumen::TVector<Lumen::ActorID> EntityIds;
     RegisterEntities( EntityIds, EntityCount );
 
-    const Lumen::ActorID ProbeEntityId = Lumen::Internal::FActorRegistry::AllocateId();
+    const Lumen::ActorID ProbeEntityId = AllocateActorIdForBenchmark();
 
     for ( auto _ : State )
     {

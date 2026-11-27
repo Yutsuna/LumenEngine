@@ -14,6 +14,18 @@
 namespace Lumen
 {
 
+namespace
+{
+
+    [[nodiscard]] ActorID AllocateActorIdForTest ()
+    {
+        const TExpected<ActorID, EActorSpawnError> Result = Internal::FActorRegistry::AllocateId();
+        LUMEN_CHECK_HAS_VALUE( Result );
+        return *Result;
+    }
+
+} // namespace
+
 /**
  * Test actor fixture
  */
@@ -63,7 +75,7 @@ LUMEN_TEST( FActorRef_Construct, DefaultRefIsInvalid )
 
 LUMEN_TEST( FActorRef_Construct, FromExplicitIdIsValid )
 {
-    const ActorID ActorId = Internal::FActorRegistry::AllocateId();
+    const ActorID ActorId = AllocateActorIdForTest();
 
     const FActorRef Ref( ActorId );
 
@@ -81,7 +93,7 @@ LUMEN_TEST( FActorRef_Construct, FromNullActorIsInvalid )
 
 LUMEN_TEST( FActorRef_Construct, FromLiveActorCapturesItsId )
 {
-    FRefProbeActor Actor( Internal::FActorRegistry::AllocateId() );
+    FRefProbeActor Actor( AllocateActorIdForTest() );
 
     const FActorRef Ref( &Actor );
 
@@ -122,8 +134,8 @@ LUMEN_TEST( FActorRef_Copy, KeepsCopiedIdentity )
 
 LUMEN_TEST( FActorRef_Routing, DeadReferenceDropsMessages )
 {
-    const ActorID ActorId     = Internal::FActorRegistry::AllocateId();
-    const ActorID BystanderId = Internal::FActorRegistry::AllocateId();
+    const ActorID ActorId     = AllocateActorIdForTest();
+    const ActorID BystanderId = AllocateActorIdForTest();
 
     FActorRef DyingRef;
     {
@@ -146,7 +158,7 @@ LUMEN_TEST( FActorRef_Routing, UnknownIdIsSilentlyDiscarded )
 {
     const ActorID UnknownId = 3999ULL;
 
-    FRefProbeActor BystanderActor( Internal::FActorRegistry::AllocateId() );
+    FRefProbeActor BystanderActor( AllocateActorIdForTest() );
     const FActorRef UnknownRef( UnknownId );
 
     UnknownRef.EnqueueMessage( FMessage::Make( 7U, 0ULL ) );

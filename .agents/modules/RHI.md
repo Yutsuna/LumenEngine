@@ -259,8 +259,10 @@ scenarios. Its no-argument `CreateDevice()` follows a configurable default
 validation policy, while `CreateDevice(bool)` remains explicit. Conformance
 translation units use only that factory and public RHI interfaces;
 `Lumen::RHI::Tests::GetRHIConformanceDeviceFactory()` supplies the Null factory.
-`RHIConformanceSources` in `Source/RHI/meson.build` is the explicit portable
-manifest; backend targets consume it through the generic Meson
+`RHINullTestSupportSources` in `Source/RHI/meson.build` lets other module test
+binaries reuse the deterministic Null implementation without moving it into
+production sources. `RHIConformanceSources` in `Source/RHI/meson.build` is the
+explicit portable manifest; backend targets consume it through the generic Meson
 `ExtraTestSources`/`ExtraTestIncludeDirectories`/`ExtraTestDependencies` keys.
 Core scenarios are mandatory; optional scenarios run only when the corresponding
 capability and adapter queue family are advertised. Conformance checks functional
