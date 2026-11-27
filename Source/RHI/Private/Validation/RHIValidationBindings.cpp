@@ -8,6 +8,8 @@
 #include <RHI/Resources/IRHITextureView.hpp>
 #include <RHI/Validation/RHIValidation.hpp>
 
+#include <Algo/Find.hpp>
+
 #include <variant>
 
 /**
@@ -56,15 +58,11 @@ Lumen::TSharedRef<Lumen::RHI::IRHIBindingLayout> Lumen::RHI::FRHIValidationBindi
 Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &InWrite ) const noexcept
 {
     const TSharedPtr<FRHIValidationReporter> &Reporter = State->GetReporter();
-    const FRHIBindingLayoutEntry *Entry                = nullptr;
-    for ( const FRHIBindingLayoutEntry &Candidate : Layout->GetDesc().Entries )
+    const FRHIBindingLayoutEntry *Entry =
+        Algo::FindIf( Layout->GetDesc().Entries, [&InWrite] ( const FRHIBindingLayoutEntry &Candidate ) noexcept
     {
-        if ( Candidate.Slot == InWrite.Slot )
-        {
-            Entry = &Candidate;
-            break;
-        }
-    }
+        return Candidate.Slot == InWrite.Slot;
+    } );
     if ( Entry == nullptr )
     {
         return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
