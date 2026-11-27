@@ -18,6 +18,17 @@
 namespace Lumen
 {
 
+/**
+ * @enum EWindowGraphicsApi
+ * @brief Selects the graphics API for which the native window must be created.
+ */
+enum class EWindowGraphicsApi : UInt8
+{
+    None,
+    OpenGL,
+    Vulkan
+};
+
 namespace EWindowMode
 {
 
@@ -90,6 +101,8 @@ struct APPCORE_EXPORT FGenericWindowDescription
     Maths::FVec2i Size = Maths::FVec2i( DefaultWindowWidth, DefaultWindowHeight );
     /** Initial window mode */
     EWindowMode::Type WindowMode = EWindowMode::Windowed;
+    /** Graphics API required from the native window */
+    EWindowGraphicsApi GraphicsApi = EWindowGraphicsApi::None;
     /** Is the window resizable by the user */
     Bool bIsResizable = true;
     /** Is the window initially visible on screen */

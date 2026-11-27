@@ -111,10 +111,18 @@ public:
     /** @return The SDL Window Handle pointer */
     [[nodiscard]] SDL_Window *GetOSWindowHandle () const noexcept;
 
+    /** @return The current drawable size in pixels. */
+    [[nodiscard]] Maths::FVec2i GetWindowSize () const noexcept override;
+
+    /** @return The current window position in screen coordinates. */
+    [[nodiscard]] Maths::FVec2i GetWindowPosition () const noexcept override;
+
     /** @return Non-owning X11 or Wayland handles queried from SDL on the calling main thread. */
     [[nodiscard]] TOptional<FNativeWindowHandles> GetNativeHandles () const noexcept override;
 
 private:
+
+    friend class FLinuxApplication;
 
     FLinuxWindow () noexcept = default;
 
