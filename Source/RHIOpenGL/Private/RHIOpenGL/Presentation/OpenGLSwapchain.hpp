@@ -88,7 +88,7 @@ namespace RHIOpenGL
         };
 
         [[nodiscard]] RHI::FRHIExpected RebuildImages () noexcept;
-        [[nodiscard]] RHI::FRHIExpected PresentToBridge () noexcept;
+        [[nodiscard]] RHI::FRHIExpected PresentToBridge ( RHI::IRHITexture &InImage ) noexcept;
 
     private:
 
@@ -99,8 +99,9 @@ namespace RHIOpenGL
         RHI::FRHISwapchainCapabilities Capabilities;
         TVector<FSlot> Slots;
         UInt32 Cursor    = 0U;
-        Bool bOutOfDate  = false;
-        Bool bSuboptimal = false;
+        Bool bOutOfDate             = false;
+        Bool bSuboptimal            = false;
+        GLuint PresentationFramebuffer = 0U;
         mutable HAL::FPlatformRecursiveSharedMutex Mutex;
     };
 

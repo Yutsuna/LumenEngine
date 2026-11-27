@@ -9,6 +9,7 @@
 #include <Core/NonCopyable.hpp>
 
 #include <RHIOpenGL/Platform/IOpenGLPlatformContext.hpp>
+#include <RHIOpenGL/RHIOpenGLSurfaceBridge.hpp>
 
 namespace Lumen
 {
@@ -28,8 +29,16 @@ namespace RHIOpenGL
         ~FEGLPlatformContext () noexcept override;
 
         [[nodiscard]] TExpected<void, RHI::FRHIError> Initialize ( Bool bEnableDebug ) noexcept override;
+        [[nodiscard]] TExpected<void, RHI::FRHIError>
+        Initialize ( Bool bEnableDebug, const FOpenGLNativeWindowDesc *InNativeWindow ) noexcept;
         [[nodiscard]] TExpected<void, RHI::FRHIError> MakeCurrent () noexcept override;
         [[nodiscard]] TOptional<UPtr> ResolveProcedure ( FStringView InName ) const noexcept override;
+
+        /** @brief Creates a native window surface on the current EGL display and config. */
+        [[nodiscard]] TExpected<EGLSurface, RHI::FRHIError> CreateWindowSurface () noexcept;
+        void DestroyWindowSurface ( EGLSurface InSurface ) noexcept;
+        [[nodiscard]] TExpected<void, RHI::FRHIError> MakeSurfaceCurrent ( EGLSurface InSurface ) noexcept;
+        [[nodiscard]] TExpected<void, RHI::FRHIError> SwapBuffers ( EGLSurface InSurface, Int32 InSwapInterval ) noexcept;
 
         void Shutdown () noexcept override;
 
@@ -52,14 +61,19 @@ namespace RHIOpenGL
         TEGLCreateContext CreateContextProc          = nullptr;
         TEGLDestroyContext DestroyContextProc        = nullptr;
         TEGLCreatePbufferSurface CreatePbuffer       = nullptr;
+        TEGLCreateWindowSurface CreateWindow         = nullptr;
         TEGLDestroySurface DestroySurfaceProc        = nullptr;
         TEGLMakeCurrent MakeCurrentProc              = nullptr;
+        TEGLSwapInterval SwapIntervalProc            = nullptr;
+        TEGLSwapBuffers SwapBuffersProc              = nullptr;
         TEGLQueryString QueryStringProc              = nullptr;
         TEGLGetError GetErrorProc                    = nullptr;
 
         EGLDisplay Display = 0U;
+        EGLConfig Config   = 0U;
         EGLContext Context = 0U;
         EGLSurface Surface = 0U;
+        TOptional<FOpenGLNativeWindowDesc> NativeWindow;
     };
 
 } // namespace RHIOpenGL

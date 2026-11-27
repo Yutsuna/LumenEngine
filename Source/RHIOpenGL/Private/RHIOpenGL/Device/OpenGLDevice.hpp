@@ -32,7 +32,9 @@ namespace RHIOpenGL
 
         /** @brief Negotiates the adapter contract, creates the GL executor and queues. */
         [[nodiscard]] static TExpected<TSharedRef<RHI::IRHIDevice>, RHI::FRHIError>
-        Create ( const RHI::FRHIAdapterInfo &InAdapter, const RHI::FRHIDeviceDesc &InDesc ) noexcept;
+        Create ( const RHI::FRHIAdapterInfo &InAdapter,
+                 const RHI::FRHIDeviceDesc &InDesc,
+                 const FOpenGLNativeWindowDesc *InNativeWindow = nullptr ) noexcept;
 
         /** @brief Constructs the device from shared execution state. */
         FOpenGLDevice ( TSharedRef<FOpenGLDeviceContext> InContext ) noexcept;

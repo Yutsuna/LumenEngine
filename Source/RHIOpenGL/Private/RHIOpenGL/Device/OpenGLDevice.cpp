@@ -81,9 +81,11 @@ namespace
  */
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDevice>, Lumen::RHI::FRHIError>
-Lumen::RHIOpenGL::FOpenGLDevice::Create ( const RHI::FRHIAdapterInfo &InAdapter, const RHI::FRHIDeviceDesc &InDesc ) noexcept
+Lumen::RHIOpenGL::FOpenGLDevice::Create ( const RHI::FRHIAdapterInfo &InAdapter,
+                                          const RHI::FRHIDeviceDesc &InDesc,
+                                          const FOpenGLNativeWindowDesc *InNativeWindow ) noexcept
 {
-    LUMEN_EXPECT( Context, FOpenGLDeviceContext::Create( InAdapter, InDesc.bEnableDebug, InDesc.DebugSink ) );
+    LUMEN_EXPECT( Context, FOpenGLDeviceContext::Create( InAdapter, InDesc.bEnableDebug, InDesc.DebugSink, InNativeWindow ) );
 
     TSharedRef<FOpenGLDevice> Device = MakeShared<FOpenGLDevice>( static_cast<TSharedRef<FOpenGLDeviceContext> &&>( Context ) );
     Algo::ForEach( InDesc.Queues, [&Device] ( const RHI::FRHIQueueRequest &InRequest ) noexcept

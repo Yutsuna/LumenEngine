@@ -56,7 +56,10 @@ namespace RHIOpenGL
 
         /** @brief Creates the worker context from a probed adapter descriptor. */
         [[nodiscard]] static TExpected<TSharedRef<FOpenGLDeviceContext>, RHI::FRHIError>
-        Create ( const RHI::FRHIAdapterInfo &InAdapter, Bool bEnableDebug, RHI::IRHIDebugSink *InDebugSink ) noexcept;
+        Create ( const RHI::FRHIAdapterInfo &InAdapter,
+                 Bool bEnableDebug,
+                 RHI::IRHIDebugSink *InDebugSink,
+                 const FOpenGLNativeWindowDesc *InNativeWindow = nullptr ) noexcept;
 
     public:
 

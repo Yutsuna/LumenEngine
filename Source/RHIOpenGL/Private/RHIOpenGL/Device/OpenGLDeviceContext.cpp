@@ -38,9 +38,10 @@ void RaiseStatusToLost ( Lumen::TAtomic<Lumen::RHI::ERHIDeviceStatus> &InStatus 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHIOpenGL::FOpenGLDeviceContext>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLDeviceContext::Create ( const RHI::FRHIAdapterInfo &InAdapter,
                                                  const Bool bEnableDebug,
-                                                 RHI::IRHIDebugSink *InDebugSink ) noexcept
+                                                 RHI::IRHIDebugSink *InDebugSink,
+                                                 const FOpenGLNativeWindowDesc *InNativeWindow ) noexcept
 {
-    LUMEN_EXPECT( Context, FOpenGLContext::Create( bEnableDebug ) );
+    LUMEN_EXPECT( Context, FOpenGLContext::Create( bEnableDebug, InNativeWindow ) );
     Context->SetDebugSink( InDebugSink );
 
     FOpenGLNativeLimits NativeLimits;

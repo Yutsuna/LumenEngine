@@ -49,13 +49,11 @@ namespace RHIOpenGL
 
     /**
      * @brief Creates a surface bridge from non-owning native window handles.
-     * @details The current OpenGL device creates its context on a surfaceless EGLDisplay before a
-     *          window is known. EGL cannot share that context with a surface on a different display,
-     *          so a coherent window descriptor currently returns Unsupported instead of creating a
-     *          second context or incompatible native objects. Wayland also requires
-     *          NativeWindowAttachment to carry its native EGL window.
-     * @return A surface bridge, an invalid-argument error for incoherent handles, or Unsupported
-     *         while native-display device initialization is unavailable.
+     * @details The returned bridge starts detached and is attached to the device GL Executor when
+     *          its first swapchain is created. The module and device must receive the same native
+     *          descriptor so probing, context creation and presentation share one EGLDisplay.
+     *          Wayland requires NativeWindowAttachment to carry its native EGL window.
+     * @return A detached surface bridge or an invalid-argument error for incoherent handles.
      */
     [[nodiscard]] RHIOPENGL_EXPORT TExpected<TSharedRef<RHI::IRHISurfaceBridge>, RHI::FRHIError>
     CreateRHIOpenGLSurfaceBridge ( const FOpenGLNativeWindowDesc &InDesc ) noexcept;

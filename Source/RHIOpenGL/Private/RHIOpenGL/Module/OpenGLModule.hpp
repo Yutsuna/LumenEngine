@@ -9,6 +9,8 @@
 #include <Core/NonMovable.hpp>
 
 #include <RHI/Module/IRHIModule.hpp>
+#include <RHIOpenGL/RHIOpenGLSurfaceBridge.hpp>
+#include <Templates/Optional.hpp>
 
 namespace Lumen
 {
@@ -25,10 +27,12 @@ namespace RHIOpenGL
     public:
 
         FOpenGLModule () noexcept           = default;
+        explicit FOpenGLModule ( const FOpenGLNativeWindowDesc &InNativeWindow ) noexcept;
         ~FOpenGLModule () noexcept override = default;
 
         /** @brief Creates an OpenGL RHI module instance. */
-        [[nodiscard]] static TExpected<TSharedRef<RHI::IRHIModule>, RHI::FRHIError> Create () noexcept;
+        [[nodiscard]] static TExpected<TSharedRef<RHI::IRHIModule>, RHI::FRHIError>
+        Create ( const FOpenGLNativeWindowDesc *InNativeWindow = nullptr ) noexcept;
 
         [[nodiscard]] RHI::FRHIApiVersion GetApiVersion () const noexcept override;
 
@@ -36,6 +40,9 @@ namespace RHIOpenGL
 
         [[nodiscard]] TExpected<TSharedRef<RHI::IRHIDevice>, RHI::FRHIError>
         CreateDevice ( const RHI::FRHIDeviceDesc &InDesc ) noexcept override;
+
+    private:
+        TOptional<FOpenGLNativeWindowDesc> NativeWindow;
     };
 
 } // namespace RHIOpenGL
