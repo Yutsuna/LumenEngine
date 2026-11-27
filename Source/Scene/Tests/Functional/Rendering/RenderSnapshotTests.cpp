@@ -14,7 +14,7 @@ namespace Lumen
 namespace
 {
 
-    [[nodiscard]] FRenderSnapshotCapacities MakeCapacities ( const USize InCount ) noexcept
+    FRenderSnapshotCapacities MakeCapacities ( const USize InCount ) noexcept
     {
         return FRenderSnapshotCapacities{
             .TransformCapacity = InCount,
@@ -24,7 +24,7 @@ namespace
         };
     }
 
-    [[nodiscard]] FRenderTransformRecord MakeTransform ( const UInt64 InProxyId, const Float32 InOffset = 0.0F ) noexcept
+    FRenderTransformRecord MakeTransform ( const UInt64 InProxyId, const Float32 InOffset = 0.0F ) noexcept
     {
         return FRenderTransformRecord{
             .ProxyId        = FRenderProxyId{ InProxyId },
@@ -34,7 +34,7 @@ namespace
         };
     }
 
-    [[nodiscard]] FRenderMeshRecord MakeMesh ( const UInt64 InProxyId, const USize InTransformIndex ) noexcept
+    FRenderMeshRecord MakeMesh ( const UInt64 InProxyId, const USize InTransformIndex ) noexcept
     {
         return FRenderMeshRecord{
             .ProxyId         = FRenderProxyId{ InProxyId },
@@ -45,7 +45,7 @@ namespace
         };
     }
 
-    [[nodiscard]] FRenderCameraRecord MakeCamera ( const UInt64 InProxyId, const Bool bActive = false ) noexcept
+    FRenderCameraRecord MakeCamera ( const UInt64 InProxyId, const Bool bActive = false ) noexcept
     {
         return FRenderCameraRecord{
             .ProxyId = FRenderProxyId{ InProxyId },
@@ -53,17 +53,17 @@ namespace
         };
     }
 
-    [[nodiscard]] FRenderLightRecord MakeLight ( const UInt64 InProxyId ) noexcept
+    FRenderLightRecord MakeLight ( const UInt64 InProxyId ) noexcept
     {
         return FRenderLightRecord{
             .ProxyId   = FRenderProxyId{ InProxyId },
             .Type      = ERenderLightType::Point,
             .Intensity = static_cast<Float32>( InProxyId ),
+            .Position  = {},
         };
     }
 
-    template <typename RecordType>
-    [[nodiscard]] TSpan<const RecordType> MakeSpan ( const TVector<RecordType> &InRecords ) noexcept
+    template <typename RecordType> TSpan<const RecordType> MakeSpan ( const TVector<RecordType> &InRecords ) noexcept
     {
         return TSpan<const RecordType>{ InRecords.data(), InRecords.size() };
     }

@@ -19,7 +19,8 @@ namespace Lumen
 namespace
 {
 
-    /** @struct FLifecycleProbe
+    /**
+     * @struct FLifecycleProbe
      * @brief Atomic observations collected by a lifecycle actor.
      */
     struct FLifecycleProbe

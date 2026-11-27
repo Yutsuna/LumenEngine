@@ -19,7 +19,8 @@ namespace Lumen
 namespace
 {
 
-    /** @struct FPhaseTrace
+    /**
+     * @struct FPhaseTrace
      * @brief Atomic phase tickets recorded by one actor per phase.
      */
     struct FPhaseTrace
