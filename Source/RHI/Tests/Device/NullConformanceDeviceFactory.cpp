@@ -38,6 +38,16 @@ Lumen::RHI::Tests::FNullConformanceDeviceFactory::CreateDevice ( const Bool bEna
     return WrapRHIDevice( *Device );
 }
 
+void Lumen::RHI::Tests::FNullConformanceDeviceFactory::SetDefaultValidation ( const Bool bEnableValidation ) noexcept
+{
+    bDefaultValidation = bEnableValidation;
+}
+
+Lumen::Bool Lumen::RHI::Tests::FNullConformanceDeviceFactory::GetDefaultValidation () const noexcept
+{
+    return bDefaultValidation;
+}
+
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIShader>, Lumen::RHI::FRHIError>
 Lumen::RHI::Tests::FNullConformanceDeviceFactory::CreateShader ( IRHIDevice &InDevice,
                                                                  const ERHIShaderStage InStage ) const noexcept

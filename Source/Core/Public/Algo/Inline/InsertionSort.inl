@@ -27,7 +27,7 @@ void Lumen::Algo::InsertionSort ( TIterator InFirst, TIterator InLast, TPredicat
         if ( InPredicate( *Current, *InFirst ) )
         {
             /** INFO: Shift the whole prefix in one move_backward */
-            FValue Value = std::move( *Current );
+            const FValue Value = std::move( *Current );
             std::move_backward( InFirst, Current, Current + 1 );
             *InFirst = std::move( Value );
         }
@@ -50,7 +50,7 @@ template <typename TRangeType, typename TPredicate>
     requires Lumen::Concepts::CSortableRange<TRangeType, TPredicate>
 void Lumen::Algo::InsertionSort ( TRangeType &&InRange, TPredicate InPredicate ) noexcept
 {
-    InsertionSort( std::ranges::begin( InRange ), std::ranges::end( InRange ), InPredicate );
+    InsertionSort( Begin( InRange ), End( InRange ), InPredicate );
 }
 
 /**
@@ -62,7 +62,7 @@ void Lumen::Algo::Internal::UnguardedLinearInsert ( TIterator InLast, TPredicate
 {
     using FValue = std::iter_value_t<TIterator>;
 
-    FValue Value       = std::move( *InLast );
+    const FValue Value = std::move( *InLast );
     TIterator Previous = InLast - 1;
 
     while ( Invoke( InPredicate, Value, *Previous ) )

@@ -5,16 +5,24 @@
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 
 #include <Concepts/ConvertibleTo.hpp>
+#include <Concepts/IsVoid.hpp>
 #include <Concepts/SameAs.hpp>
-#include <Templates/Invoke.hpp>
 
-#include <functional>
+#include <Templates/Invoke.hpp>
 
 namespace Lumen
 {
+
+/** @struct FEmplaceTag
+ * @brief Selects direct construction from a monadic callback result.
+ */
+struct FEmplaceTag
+{
+};
 
 namespace Concepts
 {
@@ -59,6 +67,9 @@ namespace Concepts
         { Out::MonadicEmplace( std::declval<Func>(), std::declval<Array>() ) } -> CSameAs<Out>;
     };
 
+    template <class Self>
+    concept CHasConsumeHook = requires( Self &&Container ) { std::forward<Self>( Container ).MonadicConsume(); };
+
 } // namespace Concepts
 
 namespace MonadicInternal
@@ -69,7 +80,7 @@ namespace MonadicInternal
     template <class Self> using TConstElementRef = const std::remove_reference_t<TValueRef<Self>> &;
 
     /** @brief True if `*Self` has type `void` (i.e. `TExpected<void, E>`). */
-    template <class Self> inline constexpr Bool CIsVoidValue = std::is_void_v<std::remove_cvref_t<TValueRef<Self>>>;
+    template <class Self> inline constexpr Bool CIsVoidValue = Concepts::CIsVoid<std::remove_cvref_t<TValueRef<Self>>>;
 
     namespace Internal
     {
@@ -92,7 +103,7 @@ namespace MonadicInternal
     {
         if constexpr ( Concepts::CHasValueMember<MonadicType> )
         {
-            return noexcept( static_cast<Bool>( std::declval<const MonadicType &>().HasValue() ) );
+            return noexcept( std::declval<const MonadicType &>().HasValue() );
         }
         else
         {
@@ -138,6 +149,24 @@ namespace MonadicInternal
             static_assert( not Concepts::CHasError<Source>,
                            "This container holds an error : define `static Out MonadicFail( Source && )` to propagate it." );
             return Out();
+        }
+    }
+
+    template <class Self>
+    inline constexpr Bool bNothrowConsume = []
+    {
+        if constexpr ( Concepts::CHasConsumeHook<Self> )
+        {
+            return noexcept( std::declval<Self>().MonadicConsume() );
+        }
+        return true;
+    }();
+
+    template <class Self> constexpr void Consume ( Self &&Container ) noexcept( bNothrowConsume<Self> )
+    {
+        if constexpr ( Concepts::CHasConsumeHook<Self> )
+        {
+            std::forward<Self>( Container ).MonadicConsume();
         }
     }
 
@@ -205,7 +234,8 @@ namespace MonadicInternal
 
     template <class Self, class Func>
         requires( not Concepts::CHasError<Self> )
-    constexpr decltype( auto ) InvokeRecover ( Self &&, Func &&InFunc ) noexcept( std::is_nothrow_invocable_v<Func> )
+    constexpr decltype( auto ) InvokeRecover ( Self LUMEN_UNUSED &&InContainer,
+                                               Func &&InFunc ) noexcept( std::is_nothrow_invocable_v<Func> )
     {
         return Invoke( std::forward<Func>( InFunc ) );
     }

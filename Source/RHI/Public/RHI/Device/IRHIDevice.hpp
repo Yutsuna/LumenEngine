@@ -46,6 +46,7 @@ namespace RHI
     class IRHIQueryPool;
     struct FRHIBufferDesc;
     struct FRHITextureDesc;
+    struct FRHIAllocation;
     struct FRHITextureViewDesc;
     struct FRHISamplerDesc;
     struct FRHIHeapDesc;
@@ -84,7 +85,7 @@ namespace RHI
         [[nodiscard]] virtual ERHIDeviceStatus GetStatus () const noexcept = 0;
 
         /** @brief Waits for all queues to become idle. */
-        [[nodiscard]] virtual TExpected<void, FRHIError> WaitIdle () noexcept = 0;
+        [[nodiscard]] virtual FRHIExpected WaitIdle () noexcept = 0;
 
         /** @brief Gets a previously requested queue. */
         [[nodiscard]] virtual TExpected<TSharedRef<IRHIQueue>, FRHIError> GetQueue ( ERHIQueueType InType,
@@ -98,6 +99,10 @@ namespace RHI
         [[nodiscard]] virtual TExpected<TSharedRef<IRHIBuffer>, FRHIError>
         CreateBuffer ( const FRHIBufferDesc &InDesc ) noexcept = 0;
 
+        /** @brief Creates a buffer at InAllocation.Offset and retains InHeap. */
+        [[nodiscard]] virtual TExpected<TSharedRef<IRHIBuffer>, FRHIError> CreatePlacedBuffer (
+            const FRHIBufferDesc &InDesc, TSharedRef<IRHIHeap> InHeap, const FRHIAllocation &InAllocation ) noexcept = 0;
+
         /**
          * @brief Creates a texture owned by the caller.
          * @param InDesc Immutable texture description.
@@ -105,6 +110,10 @@ namespace RHI
          */
         [[nodiscard]] virtual TExpected<TSharedRef<IRHITexture>, FRHIError>
         CreateTexture ( const FRHITextureDesc &InDesc ) noexcept = 0;
+
+        /** @brief Creates a texture at InAllocation.Offset and retains InHeap. */
+        [[nodiscard]] virtual TExpected<TSharedRef<IRHITexture>, FRHIError> CreatePlacedTexture (
+            const FRHITextureDesc &InDesc, TSharedRef<IRHIHeap> InHeap, const FRHIAllocation &InAllocation ) noexcept = 0;
 
         /**
          * @brief Creates a texture view owned by the caller.

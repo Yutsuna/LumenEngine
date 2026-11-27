@@ -4,8 +4,8 @@
  */
 
 #include <Device/NullDevice.hpp>
-#include <Device/RHICapabilityGate.hpp>
 #include <Module/NullModule.hpp>
+#include <RHI/Device/RHIBackendSupport.hpp>
 
 /**
  * Public
@@ -18,7 +18,7 @@ Lumen::RHI::Tests::FNullModule::FNullModule ( FNullDeviceDesc InDesc ) noexcept 
 
 Lumen::RHI::FRHIApiVersion Lumen::RHI::Tests::FNullModule::GetApiVersion () const noexcept
 {
-    return {};
+    return { .Major = 1U, .Minor = 1U, .Patch = 0U };
 }
 
 Lumen::TExpected<Lumen::TVector<Lumen::RHI::FRHIAdapterInfo>, Lumen::RHI::FRHIError>
@@ -32,7 +32,7 @@ Lumen::RHI::Tests::FNullModule::CreateDevice ( const FRHIDeviceDesc &InDesc ) no
 {
     return CheckRHICapabilityGate( Desc.Adapter, InDesc )
         .OrElse(
-            [] ( const FRHIError &InError ) noexcept -> TExpected<void, FRHIError>
+            [] ( const FRHIError &InError ) noexcept -> FRHIExpected
     {
         return TUnexpected<FRHIError>( InError );
     } )

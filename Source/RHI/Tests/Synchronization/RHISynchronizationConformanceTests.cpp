@@ -28,7 +28,7 @@ namespace RHI
             {
                 ++Destroyed;
             };
-            const TExpected<void, FRHIError> Enqueued = Releases.Enqueue( { 3ULL }, IncrementDestroyed );
+            const FRHIExpected Enqueued = Releases.Enqueue( { 3ULL }, IncrementDestroyed );
             LUMEN_CHECK_TRUE( Enqueued.HasValue() );
             LUMEN_CHECK_EQ( Releases.Poll( { Semaphore->GetValue() } ), 0U );
             LUMEN_CHECK_TRUE( Semaphore->Signal( 3ULL ).HasValue() );
@@ -48,7 +48,7 @@ namespace RHI
             LUMEN_CHECK_TRUE( ( *Binary )->Signal( 1ULL ).HasValue() );
             LUMEN_CHECK_TRUE( ( *Binary )->Wait( 1ULL, 0.0 ).HasValue() );
             LUMEN_CHECK_EQ( ( *Binary )->GetValue(), 0ULL );
-            const TExpected<void, FRHIError> BinaryTimeout = ( *Binary )->Wait( 1ULL, 0.0 );
+            const FRHIExpected BinaryTimeout = ( *Binary )->Wait( 1ULL, 0.0 );
             LUMEN_CHECK_HAS_ERROR( BinaryTimeout );
             LUMEN_CHECK_EQ( BinaryTimeout.Error().Code, ERHIErrorCode::Timeout );
 
@@ -65,10 +65,10 @@ namespace RHI
             LUMEN_CHECK_TRUE( Timeline.HasValue() );
             LUMEN_CHECK_TRUE( ( *Timeline )->Signal( 3ULL ).HasValue() );
             LUMEN_CHECK_TRUE( ( *Timeline )->Wait( 3ULL, 0.0 ).HasValue() );
-            const TExpected<void, FRHIError> Regression = ( *Timeline )->Signal( 2ULL );
+            const FRHIExpected Regression = ( *Timeline )->Signal( 2ULL );
             LUMEN_CHECK_HAS_ERROR( Regression );
             LUMEN_CHECK_EQ( Regression.Error().Code, ERHIErrorCode::InvalidState );
-            const TExpected<void, FRHIError> Timeout = ( *Timeline )->Wait( 4ULL, 0.0 );
+            const FRHIExpected Timeout = ( *Timeline )->Wait( 4ULL, 0.0 );
             LUMEN_CHECK_HAS_ERROR( Timeout );
             LUMEN_CHECK_EQ( Timeout.Error().Code, ERHIErrorCode::Timeout );
         }
@@ -87,7 +87,7 @@ namespace RHI
             LUMEN_CHECK_EQ( Destroyed, 1U );
             LUMEN_CHECK_EQ( Releases.GetSize(), 0U );
             LUMEN_CHECK_EQ( Releases.Poll( { 99ULL } ), 0U );
-            const TExpected<void, FRHIError> Enqueued = Releases.Enqueue( {}, IncrementDestroyed );
+            const FRHIExpected Enqueued = Releases.Enqueue( {}, IncrementDestroyed );
             LUMEN_CHECK_HAS_ERROR( Enqueued );
             LUMEN_CHECK_EQ( Enqueued.Error().Code, ERHIErrorCode::InvalidState );
             LUMEN_CHECK_EQ( Releases.Drain(), 0U );

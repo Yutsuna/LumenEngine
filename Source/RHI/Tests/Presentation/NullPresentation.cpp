@@ -32,9 +32,9 @@ Lumen::RHI::Tests::FNullSwapchain::FNullSwapchain ( const FRHISwapchainDesc &InD
 {
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullSwapchain )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullSwapchain )
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain::Initialize () noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullSwapchain::Initialize () noexcept
 {
     return RebuildImages();
 }
@@ -110,13 +110,13 @@ Lumen::RHI::Tests::FNullSwapchain::AcquireNextImage () noexcept
     }
     if ( PresentSemaphores[Selected]->GetValue() != 0ULL )
     {
-        const TExpected<void, FRHIError> Reclaimed = PresentSemaphores[Selected]->Wait( 1ULL, 0.0 );
+        const FRHIExpected Reclaimed = PresentSemaphores[Selected]->Wait( 1ULL, 0.0 );
         if ( not Reclaimed )
         {
             return TUnexpected<FRHIError>( Reclaimed.Error() );
         }
     }
-    const TExpected<void, FRHIError> Signaled = AcquireSemaphores[Selected]->Signal( 1ULL );
+    const FRHIExpected Signaled = AcquireSemaphores[Selected]->Signal( 1ULL );
     if ( not Signaled )
     {
         return TUnexpected<FRHIError>( Signaled.Error() );
@@ -133,8 +133,9 @@ Lumen::RHI::Tests::FNullSwapchain::AcquireNextImage () noexcept
     return Result;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain::Present (
-    IRHIQueue &InQueue, const FRHIAcquiredImage &InImage, IRHISemaphore *InRenderComplete ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullSwapchain::Present ( IRHIQueue &InQueue,
+                                                                      const FRHIAcquiredImage &InImage,
+                                                                      IRHISemaphore *InRenderComplete ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( Device->GetStatus() != ERHIDeviceStatus::Ready )
@@ -172,7 +173,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain:
         {
             return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Render-complete semaphore must be binary" ) );
         }
-        const TExpected<void, FRHIError> Waited = InRenderComplete->Wait( 1ULL, 0.0 );
+        const FRHIExpected Waited = InRenderComplete->Wait( 1ULL, 0.0 );
         if ( not Waited )
         {
             return Waited;
@@ -180,13 +181,13 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain:
     }
     if ( AcquireSemaphores[Index]->GetValue() != 0ULL )
     {
-        const TExpected<void, FRHIError> Consumed = AcquireSemaphores[Index]->Wait( 1ULL, 0.0 );
+        const FRHIExpected Consumed = AcquireSemaphores[Index]->Wait( 1ULL, 0.0 );
         if ( not Consumed )
         {
             return Consumed;
         }
     }
-    const TExpected<void, FRHIError> Signaled = PresentSemaphores[Index]->Signal( 1ULL );
+    const FRHIExpected Signaled = PresentSemaphores[Index]->Signal( 1ULL );
     if ( not Signaled )
     {
         return Signaled;
@@ -196,7 +197,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain:
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( Device->GetStatus() != ERHIDeviceStatus::Ready )
@@ -220,17 +221,17 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain:
                                                       "Cannot resize while an image is acquired" ) );
         }
     }
-    FRHISwapchainDesc NewDesc              = Desc;
-    NewDesc.Extent                         = InExtent;
-    NewDesc.Surface.InitialExtent          = InExtent;
-    const TExpected<void, FRHIError> Valid = NewDesc.Validate( Capabilities );
+    FRHISwapchainDesc NewDesc     = Desc;
+    NewDesc.Extent                = InExtent;
+    NewDesc.Surface.InitialExtent = InExtent;
+    const FRHIExpected Valid      = NewDesc.Validate( Capabilities );
     if ( not Valid )
     {
         return Valid;
     }
-    const FRHISwapchainDesc PreviousDesc     = Desc;
-    Desc                                     = NewDesc;
-    const TExpected<void, FRHIError> Rebuilt = RebuildImages();
+    const FRHISwapchainDesc PreviousDesc = Desc;
+    Desc                                 = NewDesc;
+    const FRHIExpected Rebuilt           = RebuildImages();
     if ( not Rebuilt )
     {
         Desc = PreviousDesc;
@@ -261,7 +262,7 @@ Lumen::UInt64 Lumen::RHI::Tests::FNullSwapchain::GetPresentCount () const noexce
     return PresentCount;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSwapchain::RebuildImages () noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullSwapchain::RebuildImages () noexcept
 {
     TVector<TSharedRef<IRHITexture>> NewImages;
     TVector<TSharedRef<IRHISemaphore>> NewAcquireSemaphores;

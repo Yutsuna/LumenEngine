@@ -60,7 +60,7 @@ namespace RHI
         TVector<FRHIVertexBufferLayout> Buffers;
         TVector<FRHIVertexAttribute> Attributes;
         /** @return Success for unique locations/slots and referenced buffers. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
         /** @return Stable content hash. */
         [[nodiscard]] UInt64 GetHash () const noexcept;
     };

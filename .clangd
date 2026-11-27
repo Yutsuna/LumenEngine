@@ -1,3 +1,7 @@
+# Meson passes GCC's -freflection project-wide; clang-based tools cannot parse it.
+# This Remove list is also mirrored by INCOMPATIBLE_FLAGS in Scripts/CheckClangTidy.py,
+# which strips the same flags from compile_commands.json for clang-tidy (its config
+# file has no CompileFlags key). Keep both lists in sync.
 Diagnostics:
   Suppress:
     - "pp_file_not_found"

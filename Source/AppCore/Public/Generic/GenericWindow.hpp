@@ -1,6 +1,6 @@
 /**
- * AppCore/Generic/GenericWindow.hpp
- * Declaration of the FGenericWindow class for cross-platform window management.
+ * @file GenericWindow.hpp
+ * @brief Declaration of the FGenericWindow class for cross-platform window management.
  */
 
 #pragma once
@@ -14,6 +14,10 @@
 namespace Lumen
 {
 
+/**
+ * @class FGenericWindow
+ * @brief Platform-independent interface for an OS window.
+ */
 class APPCORE_EXPORT FGenericWindow
 {
 
@@ -44,16 +48,16 @@ public:
     virtual void SetWindowMode ( EWindowMode::Type InWindowMode ) noexcept;
 
     /** @return The current window mode */
-    virtual EWindowMode::Type GetWindowMode () const noexcept;
+    [[nodiscard]] virtual EWindowMode::Type GetWindowMode () const noexcept;
 
     /** @return True if the window is maximized */
-    virtual Bool IsMaximized () const noexcept;
+    [[nodiscard]] virtual Bool IsMaximized () const noexcept;
 
     /** @return True if the window is minimized */
-    virtual Bool IsMinimized () const noexcept;
+    [[nodiscard]] virtual Bool IsMinimized () const noexcept;
 
     /** @return True if the window is visible on screen */
-    virtual Bool IsVisible () const noexcept;
+    [[nodiscard]] virtual Bool IsVisible () const noexcept;
 
     /** @brief Let the OS know that a window has taken focus */
     virtual void SetWindowFocus () noexcept;
@@ -65,22 +69,22 @@ public:
     virtual void SetOpacity ( Float32 InOpacity ) noexcept;
 
     /**
-     * / @brief Enables or disable  the window's ability to accept input
+     * @brief Enables or disables the window's ability to accept input
      * @param bEnable true to enable input, false to disable it.
      */
     virtual void EnableInput ( Bool bEnable ) noexcept;
 
     /** @return True if the native window exists underneath the coordinates */
-    virtual Bool IsPointInWindow ( Int32 InX, Int32 InY ) const noexcept;
+    [[nodiscard]] virtual Bool IsPointInWindow ( Int32 InX, Int32 InY ) const noexcept;
 
     /** @brief Gets the OS Window border size */
-    virtual Int32 GetOSWindowBorderSize () const noexcept;
+    [[nodiscard]] virtual Int32 GetOSWindowBorderSize () const noexcept;
 
     /** @brief Gets the  OS Window title bar size */
-    virtual Int32 GetOSWindowTitleBarSize () const noexcept;
+    [[nodiscard]] virtual Int32 GetOSWindowTitleBarSize () const noexcept;
 
     /** @return True if the window is in foreground */
-    virtual Bool IsForegroundWindow () const noexcept;
+    [[nodiscard]] virtual Bool IsForegroundWindow () const noexcept;
 
     /**
      * @brief Sets the window text-title
@@ -89,16 +93,16 @@ public:
     virtual void SetWindowTitle ( const AnsiChar *InText ) noexcept;
 
     /** @brief Gets the OS Window width */
-    virtual Int32 GetWindowWidth () const noexcept;
+    [[nodiscard]] virtual Int32 GetWindowWidth () const noexcept;
 
     /** @brief Gets the OS Window height */
-    virtual Int32 GetWindowHeight () const noexcept;
+    [[nodiscard]] virtual Int32 GetWindowHeight () const noexcept;
 
     /** @brief Gets the OS Window size */
-    virtual Maths::FVec2i GetWindowSize () const noexcept;
+    [[nodiscard]] virtual Maths::FVec2i GetWindowSize () const noexcept;
 
     /** @brief Gets the OS Window position */
-    virtual Maths::FVec2i GetWindowPosition () const noexcept;
+    [[nodiscard]] virtual Maths::FVec2i GetWindowPosition () const noexcept;
 
 protected:
 

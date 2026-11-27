@@ -4,9 +4,14 @@
  */
 
 #include <HAL/LockGuard.hpp>
+
 #include <RHI/Memory/RHILinearAllocator.hpp>
 #include <RHI/Utilities/RHIAlignment.hpp>
 #include <RHI/Utilities/RHICheckedMath.hpp>
+
+/**
+ * Public
+ */
 
 Lumen::RHI::FRHILinearAllocator::FRHILinearAllocator ( const UInt64 InCapacity ) noexcept : Capacity( InCapacity )
 {
@@ -16,10 +21,8 @@ Lumen::RHI::FRHILinearAllocator::FRHILinearAllocator ( const UInt64 InCapacity )
 Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
 Lumen::RHI::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
-    {
-        return TUnexpected<FRHIError>( Valid.Error() );
-    }
+    LUMEN_EXPECT( _, InDesc.Validate() );
+
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     const TOptional<UInt64> Offset = RHIAlignUp( Current, InDesc.Alignment );
     if ( not Offset )
@@ -43,8 +46,7 @@ Lumen::RHI::FRHILinearAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) n
                            .Heap        = nullptr };
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHILinearAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHILinearAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
 {
     if ( not InAllocation.IsValid() )
     {

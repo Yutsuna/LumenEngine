@@ -6,7 +6,11 @@
 #include <RHI/Memory/RHIAllocationDesc.hpp>
 #include <RHI/Utilities/RHIAlignment.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIAllocationDesc::Validate () const noexcept
+/**
+ * Public
+ */
+
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIAllocationDesc::Validate () const noexcept
 {
     if ( Size == 0ULL or not RHIIsPowerOfTwo( Alignment ) )
     {

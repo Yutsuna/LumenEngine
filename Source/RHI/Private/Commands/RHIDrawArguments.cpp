@@ -7,13 +7,13 @@
 #include <RHI/Utilities/RHICheckedMath.hpp>
 namespace
 {
-Lumen::TExpected<void, Lumen::RHI::FRHIError> InvalidArguments ( Lumen::FStringView InMessage ) noexcept
+Lumen::RHI::FRHIExpected InvalidArguments ( Lumen::FStringView InMessage ) noexcept
 {
     return Lumen::TUnexpected<Lumen::RHI::FRHIError>(
         Lumen::RHI::MakeRHIInvalidArgument( Lumen::RHI::ERHIErrorCondition::Command, InMessage ) );
 }
 } // namespace
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDrawArguments::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDrawArguments::Validate () const noexcept
 {
     if ( VertexCount == 0U or InstanceCount == 0U )
     {
@@ -21,7 +21,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDrawArguments::Val
     }
     return {};
 }
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDrawIndexedArguments::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDrawIndexedArguments::Validate () const noexcept
 {
     if ( IndexCount == 0U or InstanceCount == 0U )
     {
@@ -29,8 +29,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDrawIndexedArgumen
     }
     return {};
 }
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIDispatchArguments::Validate ( const UInt32 InMaximumPerDimension ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDispatchArguments::Validate ( const UInt32 InMaximumPerDimension ) const noexcept
 {
     if ( GroupCountX == 0U or GroupCountY == 0U or GroupCountZ == 0U or GroupCountX > InMaximumPerDimension or
          GroupCountY > InMaximumPerDimension or GroupCountZ > InMaximumPerDimension )
@@ -39,8 +38,8 @@ Lumen::RHI::FRHIDispatchArguments::Validate ( const UInt32 InMaximumPerDimension
     }
     return {};
 }
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIIndirectArguments::Validate ( const UInt64 InBufferSize, const UInt32 InMinimumStride ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIIndirectArguments::Validate ( const UInt64 InBufferSize,
+                                                                       const UInt32 InMinimumStride ) const noexcept
 {
     if ( Count == 0U or InMinimumStride == 0U or Stride < InMinimumStride or Stride % 4U != 0U or Offset % 4ULL != 0ULL )
     {

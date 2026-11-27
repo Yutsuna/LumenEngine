@@ -16,6 +16,8 @@ namespace Lumen
 namespace RHI
 {
 
+    class IRHIDebugSink;
+
     /**
      * @struct FRHIQueueRequest
      * @brief Requests InCount queues of one class.
@@ -36,9 +38,11 @@ namespace RHI
         FRHICapabilities RequiredCapabilities;
         TVector<FRHIQueueRequest> Queues = { FRHIQueueRequest{} };
         Bool bEnableDebug                = false;
+        /** NOTE: Non-owning; a supplied sink must outlive device and native callback teardown. */
+        IRHIDebugSink *DebugSink = nullptr;
 
         /** @return Success when queue requests are nonzero and not duplicated. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

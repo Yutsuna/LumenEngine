@@ -24,8 +24,8 @@ Lumen::Bool Lumen::RHI::CanRHITransitionCommandList ( const ERHICommandListState
         return false;
     }
 }
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::RHITransitionCommandList ( ERHICommandListState &InOutState,
-                                                                                     const ERHICommandListState InTo ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::RHITransitionCommandList ( ERHICommandListState &InOutState,
+                                                                const ERHICommandListState InTo ) noexcept
 {
     if ( not CanRHITransitionCommandList( InOutState, InTo ) )
     {

@@ -9,7 +9,9 @@
 #include <CoreExport.hpp>
 
 #if not defined( LUMEN_PLATFORM_LINUX )
-    #error "LinuxFutex.hpp is only available on Linux."
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "LinuxFutex.hpp is only available on Linux."
+    #endif
 #else
 
 namespace Lumen

@@ -8,7 +8,9 @@
 #include <Core/CoreDefinitions.hpp>
 
 #if not defined( LUMEN_PLATFORM_UNIX )
-    #error "FUnixSpinLockMutex.hpp is only available on Unix platforms."
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "FUnixSpinLockMutex.hpp is only available on Unix platforms."
+    #endif
 #else
 
     #include <Core/CoreTypes.hpp>
@@ -41,7 +43,7 @@ namespace HAL
         /** @brief Number of CpuRelax() iterations before the waiter starts yielding its time slice. */
         static constexpr UInt32 GMaxRelaxSpins = 64U;
 
-        FAtomicFlag Flag{};
+        FAtomicFlag Flag;
     };
 
 } // namespace HAL

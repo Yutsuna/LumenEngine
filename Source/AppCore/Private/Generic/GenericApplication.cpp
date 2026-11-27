@@ -7,6 +7,8 @@
 #include <Generic/GenericApplicationMessageHandler.hpp>
 #include <Generic/GenericWindow.hpp>
 
+Lumen::TSharedPtr<Lumen::FGenericApplication> Lumen::GPlatformApplication;
+
 /**
  * public
  */
@@ -27,8 +29,9 @@ Lumen::TSharedPtr<Lumen::FGenericApplicationMessageHandler> Lumen::FGenericAppli
     return MessageHandler;
 }
 
-Lumen::TSharedRef<Lumen::FGenericWindow> Lumen::FGenericApplication::MakeWindow ()
+Lumen::TSharedRef<Lumen::FGenericWindow> Lumen::FGenericApplication::MakeWindow () noexcept
 {
+    // NOLINTNEXTLINE(bugprone-unhandled-exception-at-new)
     return MakeShareable( new FGenericWindow() );
 }
 

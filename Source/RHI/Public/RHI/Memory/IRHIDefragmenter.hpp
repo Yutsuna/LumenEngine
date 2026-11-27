@@ -30,7 +30,7 @@ namespace RHI
         [[nodiscard]] virtual TExpected<FRHIDefragPlan, FRHIError>
         BuildPlan ( TSpan<const FRHIAllocation> InAllocations ) noexcept = 0;
         /** @brief Schedules a previously validated plan. */
-        [[nodiscard]] virtual TExpected<void, FRHIError> Execute ( const FRHIDefragPlan &InPlan ) noexcept = 0;
+        [[nodiscard]] virtual FRHIExpected Execute ( const FRHIDefragPlan &InPlan ) noexcept = 0;
     };
 } // namespace RHI
 

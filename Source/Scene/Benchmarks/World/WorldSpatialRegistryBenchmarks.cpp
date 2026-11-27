@@ -47,10 +47,8 @@ void ReleaseEntities ( const Lumen::TVector<Lumen::ActorID> &EntityIds )
 /** @brief Builds one identity transform per entity (untimed setup helper). */
 [[nodiscard]] Lumen::TVector<Lumen::Maths::FMat4x4f> MakeTransforms ( const Lumen::USize Count )
 {
-    return Lumen::TVector<Lumen::Maths::FMat4x4f>( Count, Lumen::Maths::FMat4x4f::Identity() );
+    return Lumen::TVector<Lumen::Maths::FMat4x4f>{ static_cast<Lumen::Float32>( Count ), Lumen::Maths::FMat4x4f::Identity() };
 }
-
-} // namespace
 
 /**
  * Micro
@@ -152,3 +150,5 @@ LUMEN_BENCHMARK( FSpatialRegistry, RegisterUnregisterEntity )
     Lumen::Internal::FActorRegistry::ReleaseId( ProbeEntityId );
     ReleaseEntities( EntityIds );
 }
+
+} // namespace

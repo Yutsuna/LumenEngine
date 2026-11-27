@@ -17,7 +17,7 @@ Lumen::RHI::Tests::FNullShader::FNullShader ( const FRHIShaderDesc &InDesc, cons
     Desc.Bytecode = TSpan<const Byte>( OwnedBytecode.data(), OwnedBytecode.size() );
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullShader )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullShader )
 const Lumen::RHI::FRHIShaderDesc &Lumen::RHI::Tests::FNullShader::GetDesc () const noexcept
 {
     return Desc;

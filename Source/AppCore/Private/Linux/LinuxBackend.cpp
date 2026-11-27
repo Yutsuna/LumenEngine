@@ -15,10 +15,10 @@
 namespace
 {
 
-Lumen::Bool GInitializedSDL = false;
+Lumen::TAtomic<Lumen::Bool> GInitializedSDL{ false };
 const Lumen::FLogCategory LogLinuxBackend( "LinuxBackend" );
 
-void FlushEventQueue () noexcept
+inline void FlushEventQueue () noexcept
 {
     SDL_Event Event;
     while ( SDL_PollEvent( &Event ) )
@@ -31,39 +31,39 @@ void FlushEventQueue () noexcept
 
 Lumen::Bool Lumen::FLinuxBackend::InitializeSDL () noexcept
 {
-    if ( GInitializedSDL )
+    if ( GInitializedSDL.load( std::memory_order_relaxed ) ) [[likely]]
     {
         return true;
     }
-    if ( not SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS ) )
+    if ( not SDL_Init( SDL_INIT_VIDEO | SDL_INIT_EVENTS ) ) [[unlikely]]
     {
         return false;
     }
 
     SDL_EnableScreenSaver();
-    GInitializedSDL = true;
+    GInitializedSDL.store( true, std::memory_order_release );
     return true;
 }
 
 void Lumen::FLinuxBackend::ShutdownSDL () noexcept
 {
-
-    if ( GInitializedSDL )
+    if ( GInitializedSDL.load( std::memory_order_relaxed ) ) [[likely]]
     {
         SDL_Quit();
-        GInitializedSDL = false;
+        GInitializedSDL.store( false, std::memory_order_release );
     }
 }
 
 void Lumen::FLinuxBackend::PumpSDLMessagesQueue () noexcept
 {
-    if ( not GInitializedSDL )
+    if ( not GInitializedSDL.load( std::memory_order_relaxed ) ) [[unlikely]]
     {
         LUMEN_LOG_WARNING( LogLinuxBackend, "Attempted to pump messages without SDL being initialized." );
         return;
     }
 
-    if ( GLinuxApplication == nullptr )
+    Lumen::FLinuxApplication *const Application = GLinuxApplication.load( std::memory_order_acquire );
+    if ( Application == nullptr ) [[unlikely]]
     {
         FlushEventQueue();
         LUMEN_LOG_WARNING( LogLinuxBackend, "Attempted to pump messages without a valid Linux Application instance." );
@@ -73,7 +73,7 @@ void Lumen::FLinuxBackend::PumpSDLMessagesQueue () noexcept
     SDL_Event Event;
     while ( SDL_PollEvent( &Event ) )
     {
-        GLinuxApplication->AddPendingEvent( Event );
+        Application->AddPendingEvent( Event );
     }
 }
 

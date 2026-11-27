@@ -6,6 +6,10 @@
 #include "RHIValidationTransientResourceAllocator.hpp"
 #include <RHI/Utilities/RHIAlignment.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIValidationTransientResourceAllocator::FRHIValidationTransientResourceAllocator (
     TSharedRef<IRHITransientResourceAllocator> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
@@ -46,7 +50,7 @@ Lumen::RHI::FRHIValidationTransientResourceAllocator::Allocate ( const FRHITrans
     }
     if ( bValidate )
     {
-        const TExpected<void, FRHIError> DescValid = InBatch.Validate();
+        const FRHIExpected DescValid = InBatch.Validate();
         if ( not DescValid )
         {
             return TUnexpected<FRHIError>( State->GetReporter()

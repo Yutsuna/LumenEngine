@@ -69,6 +69,9 @@ hack, and prefer reusing Core (`rules/core-first.md`).
   symbols; Core/Maths symbols such as `TExpected` or `FString` stay `Lumen::`).
   Internal helpers go in an anonymous namespace (`namespace { ... }`), not
   `static` — that is the idiomatic C++ form and is friendlier to the linker.
+  **Exception:** `.cpp` sources under `Tests/` and benchmark sources open
+  `namespace Lumen { }` (RHI tests included) — never the shortened
+  `namespace Lumen::RHI { }` form.
 
 ## Comments
 
@@ -85,6 +88,10 @@ hack, and prefer reusing Core (`rules/core-first.md`).
 
 ## Formatting
 
+- Format with `Scripts/CheckClangFormat.py`: `python3 Scripts/CheckClangFormat.py`
+  checks `Source/` and fails on drift; `python3 Scripts/CheckClangFormat.py --fix`
+  reformats files in place — commit the result. It runs in parallel, skips
+  files already known valid, and reads `.clang-format`.
 - Enforced by `.clang-format` (LLVM-based): Allman braces, 4-space indent,
   column limit 130, aligned consecutive assignments, **spaces inside
   parentheses** and before parameter lists: `Run ( const Int32 Argc )`.

@@ -8,9 +8,6 @@
 #include <HAL/LockGuard.hpp>
 #include <HAL/PlatformMutex.hpp>
 
-#include <bit>
-#include <cassert>
-
 /**
  * Bitmap helpers.
  */
@@ -53,7 +50,7 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceAllocator::Allocate ( c
         return {};
     }
 
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
     /** INFO: First-fit search through the sorted free ranges. */
     USize RangeIndex = 0U;
@@ -75,8 +72,8 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceAllocator::Allocate ( c
         return {};
     }
 
-    FIndiceAllocatorRange &Range = Ranges[RangeIndex];
-    FIndiceAllocation Allocation = { Range.First, InNumDescriptors };
+    FIndiceAllocatorRange &Range       = Ranges[RangeIndex];
+    const FIndiceAllocation Allocation = { Range.First, InNumDescriptors };
 
     Range.First += InNumDescriptors;
 
@@ -105,7 +102,7 @@ void Lumen::FIndiceAllocator::Free ( FIndiceAllocation InAllocation ) noexcept
     const UInt32 FreeFirst = InAllocation.Start;
     const UInt32 FreeLast  = InAllocation.Start + InAllocation.Count - 1U;
 
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
     /**
      * INFO: Locate the first free range that is not strictly before the released range.
@@ -158,7 +155,7 @@ void Lumen::FIndiceAllocator::Free ( FIndiceAllocation InAllocation ) noexcept
 
 Lumen::TOptional<Lumen::FIndiceAllocatorRange> Lumen::FIndiceAllocator::TryGetAllocatedRange () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
     if ( Capacity == 0U )
     {
@@ -200,7 +197,7 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceHeapAllocator::Allocate
         return {};
     }
 
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
     /** INFO: Avoid bitmap traversal when there is insufficient free capacity. */
     if ( InNumIndices > Capacity - Allocated )
@@ -397,13 +394,13 @@ void Lumen::FIndiceHeapAllocator::Free ( FIndiceAllocation InAllocation ) noexce
         return;
     }
 
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
     /**
      * INFO: Free requires a valid, currently allocated range.
      *       This assertion catches incorrect allocation ownership in debug builds.
      */
-    assert( Allocated >= InAllocation.Count );
+    LUMEN_ASSERT( Allocated >= InAllocation.Count );
 
     const UInt32 FreedWord = InAllocation.Start / BitsPerWord;
 
@@ -415,16 +412,13 @@ void Lumen::FIndiceHeapAllocator::Free ( FIndiceAllocation InAllocation ) noexce
         const UInt32 BitIndex = InAllocation.Start % BitsPerWord;
         const UInt64 Mask     = 1ULL << BitIndex;
 
-        assert( ( Bitmap[FreedWord] & Mask ) != 0ULL );
+        LUMEN_ASSERT( ( Bitmap[FreedWord] & Mask ) != 0ULL );
 
         Bitmap[FreedWord] &= ~Mask;
 
         --Allocated;
 
-        if ( FreedWord < FirstHint )
-        {
-            FirstHint = FreedWord;
-        }
+        FirstHint = std::min( FreedWord, FirstHint );
 
         return;
     }
@@ -444,7 +438,7 @@ void Lumen::FIndiceHeapAllocator::Free ( FIndiceAllocation InAllocation ) noexce
 
         const UInt64 Mask = NOnes( Take ) << BitIndex;
 
-        assert( ( Bitmap[WordIndex] & Mask ) == Mask );
+        LUMEN_ASSERT( ( Bitmap[WordIndex] & Mask ) == Mask );
 
         Bitmap[WordIndex] &= ~Mask;
 
@@ -455,15 +449,12 @@ void Lumen::FIndiceHeapAllocator::Free ( FIndiceAllocation InAllocation ) noexce
     Allocated -= InAllocation.Count;
 
     /** INFO: The released range may introduce free bits before the current hint. */
-    if ( FreedWord < FirstHint )
-    {
-        FirstHint = FreedWord;
-    }
+    FirstHint = std::min( FreedWord, FirstHint );
 }
 
 Lumen::UInt32 Lumen::FIndiceHeapAllocator::GetAllocatedCount () const noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+    const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
     return Allocated;
 }

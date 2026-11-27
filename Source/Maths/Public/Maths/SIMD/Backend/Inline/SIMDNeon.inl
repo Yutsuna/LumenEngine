@@ -7,6 +7,8 @@
 
 #include <Maths/SIMD/Backend/SIMDNeon.hpp>
 
+#if defined( LUMEN_ARCH_ARM64 )
+
 namespace Lumen
 {
 
@@ -45,3 +47,5 @@ namespace Maths
 } // namespace Maths
 
 } // namespace Lumen
+
+#endif

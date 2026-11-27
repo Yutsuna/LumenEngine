@@ -16,8 +16,7 @@
 template <typename PayloadType>
     requires Lumen::Concepts::CTriviallyCopyable<PayloadType>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHICommandStream::Write ( const UInt32 InOpcode,
-                                                                                     const PayloadType &InPayload ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHICommandStream::Write ( const UInt32 InOpcode, const PayloadType &InPayload ) noexcept
 {
     const Byte *Bytes = reinterpret_cast<const Byte *>( std::addressof( InPayload ) );
     return WritePayload( InOpcode, TSpan<const Byte>( Bytes, sizeof( PayloadType ) ) );

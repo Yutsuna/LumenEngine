@@ -32,7 +32,7 @@ namespace RHI
             LUMEN_CHECK_TRUE( Pipeline.HasValue() );
             TExpected<TSharedRef<IRHIPipelineCache>, FRHIError> Cache = ( *Device )->CreatePipelineCache( {} );
             LUMEN_CHECK_TRUE( Cache.HasValue() );
-            const FRHIPipelineCompatibility &Key = ( *Pipeline )->GetCompatibility();
+            const FRHIPipelineCacheKey Key = MakeRHIComputePipelineCacheKey( PipelineDesc, ( *Cache )->GetDesc().BackendVersion );
             LUMEN_CHECK_FALSE( ( *Cache )->Find( Key ).HasValue() );
             LUMEN_CHECK_TRUE( ( *Cache )->Insert( Key, *Pipeline ).HasValue() );
             const TOptional<TSharedPtr<IRHIPipeline>> Found = ( *Cache )->Find( Key );

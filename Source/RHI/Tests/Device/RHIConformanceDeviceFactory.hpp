@@ -33,9 +33,15 @@ namespace RHI
 
             /** @return The backend module used for adapter discovery. */
             [[nodiscard]] virtual TSharedRef<IRHIModule> GetModule () const noexcept = 0;
-            /** @brief Creates a device, optionally enclosed by validation. */
+            /** @brief Creates a device using the configurable default validation policy. */
+            [[nodiscard]] TExpected<TSharedRef<IRHIDevice>, FRHIError> CreateDevice () noexcept;
+            /** @brief Creates a device with an explicit validation policy. */
             [[nodiscard]] virtual TExpected<TSharedRef<IRHIDevice>, FRHIError>
-            CreateDevice ( Bool bEnableValidation = false ) noexcept = 0;
+            CreateDevice ( Bool bEnableValidation ) noexcept = 0;
+            /** @brief Sets the validation policy used by the no-argument CreateDevice overload. */
+            virtual void SetDefaultValidation ( Bool bEnableValidation ) noexcept = 0;
+            /** @return The current default validation policy. */
+            [[nodiscard]] virtual Bool GetDefaultValidation () const noexcept = 0;
             /** @brief Creates a valid backend shader for portable pipeline scenarios. */
             [[nodiscard]] virtual TExpected<TSharedRef<IRHIShader>, FRHIError>
             CreateShader ( IRHIDevice &InDevice, ERHIShaderStage InStage ) const noexcept = 0;
@@ -50,6 +56,14 @@ namespace RHI
 
         /** @return The factory linked into the current backend test binary. */
         [[nodiscard]] IRHIConformanceDeviceFactory &GetRHIConformanceDeviceFactory () noexcept;
+
+        /** @return True when an advertised adapter exposes at least one queue of InQueueType. */
+        [[nodiscard]] TExpected<Bool, FRHIError> HasRHIConformanceQueueFamily ( ERHIQueueType InQueueType ) noexcept;
+
+        /** @return True for the expected native error or a validation rejection with the same condition. */
+        [[nodiscard]] Bool HasRHIConformanceError ( const FRHIError &InError,
+                                                    ERHIErrorCode InExpectedCode,
+                                                    ERHIErrorCondition InExpectedCondition ) noexcept;
 
     } // namespace Tests
 

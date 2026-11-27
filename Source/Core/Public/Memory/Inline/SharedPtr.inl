@@ -7,10 +7,9 @@
 
 #include <Memory/SharedPtr.hpp>
 
-#include <cassert>
-
 namespace Lumen
 {
+
 template <typename Type> TSharedPtr<Type>::TSharedPtr() noexcept : Object( nullptr ), Controller( nullptr )
 {
     /** Empty */
@@ -24,11 +23,11 @@ template <typename Type> TSharedPtr<Type>::TSharedPtr( NullPtrType ) noexcept : 
 template <typename Type>
 template <typename OtherType>
     requires Concepts::CConvertibleTo<OtherType *, Type *>
-TSharedPtr<Type>::TSharedPtr( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy ) noexcept : Object( Proxy.Object )
+TSharedPtr<Type>::TSharedPtr( const Internal::TRawPtrProxy<OtherType> &Proxy ) noexcept : Object( Proxy.Object )
 {
     if ( Proxy.Object )
     {
-        Controller = SharedPtrInternal::NewDefaultReferenceController<OtherType>( Proxy.Object );
+        Controller = Internal::NewDefaultReferenceController<OtherType>( Proxy.Object );
     }
     else
     {
@@ -92,13 +91,13 @@ template <typename Type> TSharedPtr<Type> &TSharedPtr<Type>::operator=( const TS
 
 template <typename Type> Type &TSharedPtr<Type>::operator*() const noexcept
 {
-    assert( IsValid() );
+    LUMEN_ASSERT( IsValid() );
     return *Object;
 }
 
 template <typename Type> Type *TSharedPtr<Type>::operator->() const noexcept
 {
-    assert( IsValid() );
+    LUMEN_ASSERT( IsValid() );
     return Object;
 }
 
@@ -140,23 +139,22 @@ template <typename Type> void TSharedPtr<Type>::Release () noexcept
 // NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename ObjectType, typename... Arguments> TSharedRef<ObjectType> MakeShared ( Arguments &&...InArgs ) noexcept
 {
-    SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *Controller =
-        SharedPtrInternal::NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
-    return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(),
-                                      static_cast<SharedPtrInternal::FReferenceController *>( Controller ) );
+    Internal::TIntrusiveReferenceController<ObjectType> *Controller =
+        Internal::NewIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
+    return MakeSharedRef<ObjectType>( Controller->GetObjectPtr(), static_cast<Internal::FReferenceController *>( Controller ) );
 }
 
-template <typename ObjectType> SharedPtrInternal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject ) noexcept
+template <typename ObjectType> Internal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject ) noexcept
 {
-    return SharedPtrInternal::TRawPtrProxy<ObjectType>( InObject );
+    return Internal::TRawPtrProxy<ObjectType>( InObject );
 }
 
 /**
  * Static Casts
  */
 
-// NOLINTNEXTLINE(misc-use-anonymous-namespace)
 template <typename CastToType, typename CastFromType>
+/** NOLINTNEXTLINE(misc-use-anonymous-namespace,misc-use-internal-linkage) */
 TSharedPtr<CastToType> StaticCastSharedPtr ( const TSharedPtr<CastFromType> &InSharedPtr ) noexcept
 {
     if ( InSharedPtr.IsValid() )
@@ -167,4 +165,5 @@ TSharedPtr<CastToType> StaticCastSharedPtr ( const TSharedPtr<CastFromType> &InS
 
     return TSharedPtr<CastToType>();
 }
+
 } // namespace Lumen

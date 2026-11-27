@@ -6,6 +6,7 @@
 #pragma once
 
 #include <Core/EnumFlags.hpp>
+
 #include <RHI/Debug/RHIDebugMessage.hpp>
 #include <RHI/Types/RHIError.hpp>
 #include <RHIExport.hpp>
@@ -18,7 +19,10 @@ namespace RHI
 
     class IRHIDebugSink;
 
-    /** @enum ERHIValidationLevel @brief Enables no validation, essential checks, or every requested check. */
+    /**
+     * @enum ERHIValidationLevel
+     * @brief Enables no validation, essential checks, or every requested check.
+     */
     enum class ERHIValidationLevel : UInt8
     {
         Disabled,
@@ -27,7 +31,10 @@ namespace RHI
         Count
     };
 
-    /** @enum ERHIValidationFlags @brief Independent validation domains that can be enabled selectively. */
+    /**
+     * @enum ERHIValidationFlags
+     * @brief Independent validation domains that can be enabled selectively.
+     */
     enum class ERHIValidationFlags : UInt32
     {
         None               = 0U,
@@ -42,7 +49,10 @@ namespace RHI
     };
     LUMEN_ENUM_FLAGS( ERHIValidationFlags );
 
-    /** @struct FRHIValidationDesc @brief Configuration retained by a validation decorator tree. */
+    /**
+     * @struct FRHIValidationDesc
+     * @brief Configuration retained by a validation decorator tree.
+     */
     struct RHI_EXPORT FRHIValidationDesc
     {
         ERHIValidationLevel Level         = ERHIValidationLevel::Full;
@@ -53,7 +63,7 @@ namespace RHI
         Bool bDeduplicateMessages         = true;
 
         /** @return Success when the level, flags, and severity are representable. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
         /** @return True when a domain is enabled by both the level and flags. */
         [[nodiscard]] Bool IsEnabled ( ERHIValidationFlags InDomain ) const noexcept;
     };

@@ -8,7 +8,6 @@
 #include <Templates/AtomicBitset.hpp>
 
 #include <bit>
-#include <cassert>
 
 Lumen::FAtomicBitset::FAtomicBitset ( USize InNumBits )
 {
@@ -17,7 +16,7 @@ Lumen::FAtomicBitset::FAtomicBitset ( USize InNumBits )
 
 void Lumen::FAtomicBitset::Set ( USize InIndex ) noexcept
 {
-    assert( InIndex < NumBits );
+    LUMEN_ASSERT( InIndex < NumBits );
 
     const USize BlockIndex = InIndex / BitsPerBlock;
     const USize BitOffset  = InIndex % BitsPerBlock;
@@ -30,7 +29,7 @@ void Lumen::FAtomicBitset::Set ( USize InIndex ) noexcept
 
 void Lumen::FAtomicBitset::Clear ( USize InIndex ) noexcept
 {
-    assert( InIndex < NumBits );
+    LUMEN_ASSERT( InIndex < NumBits );
 
     const USize BlockIndex = InIndex / BitsPerBlock;
     const USize BitOffset  = InIndex % BitsPerBlock;
@@ -41,7 +40,7 @@ void Lumen::FAtomicBitset::Clear ( USize InIndex ) noexcept
 
 Lumen::Bool Lumen::FAtomicBitset::Test ( USize InIndex ) const noexcept
 {
-    assert( InIndex < NumBits );
+    LUMEN_ASSERT( InIndex < NumBits );
 
     const USize BlockIndex = InIndex / BitsPerBlock;
     const USize BitOffset  = InIndex % BitsPerBlock;

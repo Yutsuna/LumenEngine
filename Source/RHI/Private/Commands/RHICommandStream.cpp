@@ -19,8 +19,8 @@ Lumen::RHI::FRHICommandStream::FRHICommandStream ( const USize InChunkCapacity )
     : ChunkCapacity( InChunkCapacity < 256U ? 256U : InChunkCapacity )
 {
 }
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHICommandStream::WritePayload ( const UInt32 InOpcode, const TSpan<const Byte> InPayload ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHICommandStream::WritePayload ( const UInt32 InOpcode,
+                                                                       const TSpan<const Byte> InPayload ) noexcept
 {
     const TOptional<UInt32> PayloadSize = RHICheckedCast<UInt32>( InPayload.size() );
     if ( not PayloadSize )

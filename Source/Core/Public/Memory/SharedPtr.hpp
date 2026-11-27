@@ -5,7 +5,10 @@
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
+
 #include <Concepts/ConvertibleTo.hpp>
+#include <Concepts/IsVoid.hpp>
 #include <Core/CoreTypes.hpp>
 
 namespace Lumen
@@ -13,7 +16,7 @@ namespace Lumen
 template <typename Type> class TSharedRef;
 template <typename Type> class TSharedPtr;
 
-namespace SharedPtrInternal
+namespace Internal
 {
     /**
      * @struct FReferenceController
@@ -44,7 +47,7 @@ namespace SharedPtrInternal
     public:
 
         /** @brief Properly aligned storage for the managed object */
-        alignas( Type ) Byte Storage[sizeof( Type )];
+        alignas( Type ) Byte Storage[sizeof( Type )]{};
 
         /** @brief Constructs the managed object in place with forwarded arguments. */
         template <typename... Arguments> explicit TIntrusiveReferenceController( Arguments &&...InArgs ) noexcept;
@@ -102,7 +105,7 @@ namespace SharedPtrInternal
      * @return A pointer to the newly created TIntrusiveReferenceController instance.
      */
     template <typename Type, typename... Arguments>
-    SharedPtrInternal::TIntrusiveReferenceController<Type> *NewIntrusiveReferenceController ( Arguments &&...InArgs ) noexcept;
+    Internal::TIntrusiveReferenceController<Type> *NewIntrusiveReferenceController ( Arguments &&...InArgs ) noexcept;
 
     /**
      * @brief Creates a new TDefaultReferenceController instance for the given object.
@@ -111,8 +114,8 @@ namespace SharedPtrInternal
      * @return A pointer to othe newly created TDefaultReferenceController.
      */
     template <typename Type>
-    SharedPtrInternal::TDefaultReferenceController<Type> *NewDefaultReferenceController ( Type *InObject ) noexcept;
-} // namespace SharedPtrInternal
+    Internal::TDefaultReferenceController<Type> *NewDefaultReferenceController ( Type *InObject ) noexcept;
+} // namespace Internal
 
 /**
  * @class TSharedRef
@@ -121,7 +124,7 @@ namespace SharedPtrInternal
  */
 template <typename Type> class TSharedRef final
 {
-    static_assert( not std::is_void_v<Type>, "TSharedRef<void> is not supported. Use a base class pointer." );
+    static_assert( not Concepts::CIsVoid<Type>, "TSharedRef<void> is not supported. Use a base class pointer." );
 
 public:
 
@@ -134,7 +137,7 @@ public:
     /** @brief Proxy Constructor: Allows implicit conversion from MakeShareable to TSharedRef */
     template <typename OtherType>
         requires Concepts::CConvertibleTo<OtherType *, Type *>
-    TSharedRef( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy ) noexcept;
+    TSharedRef( const Internal::TRawPtrProxy<OtherType> &Proxy ) noexcept;
 
     /** @brief Upcast Constructor: Allows conversion from derived to base types */
     template <typename OtherType>
@@ -171,7 +174,7 @@ public:
 private:
 
     /** @brief Private Constructor called by MakeSharedRef */
-    TSharedRef ( Type *InObject, SharedPtrInternal::FReferenceController *InController ) noexcept;
+    TSharedRef ( Type *InObject, Internal::FReferenceController *InController ) noexcept;
 
     /** @brief Releases the current reference. */
     void Release () noexcept;
@@ -179,7 +182,7 @@ private:
 private:
 
     Type *Object;
-    SharedPtrInternal::FReferenceController *Controller;
+    Internal::FReferenceController *Controller;
 
 private:
 
@@ -189,8 +192,7 @@ private:
 
     /** @brief Friend helpers */
     template <typename ObjectType>
-    friend TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject,
-                                                  SharedPtrInternal::FReferenceController *InController ) noexcept;
+    friend TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, Internal::FReferenceController *InController ) noexcept;
     template <typename CastToType, typename CastFromType>
     friend TSharedRef<CastToType> StaticCastSharedRef ( const TSharedRef<CastFromType> &InSharedRef ) noexcept;
 };
@@ -224,7 +226,7 @@ public:
     /** @brief Proxy Constructor: Allows implicit conversion from MakeShareable to TSharedPtr */
     template <typename OtherType>
         requires Concepts::CConvertibleTo<OtherType *, Type *>
-    TSharedPtr( const SharedPtrInternal::TRawPtrProxy<OtherType> &Proxy ) noexcept;
+    TSharedPtr( const Internal::TRawPtrProxy<OtherType> &Proxy ) noexcept;
 
     /** @brief Destructor */
     ~TSharedPtr () noexcept;
@@ -239,7 +241,7 @@ public:
     Type &operator*() const noexcept;
     Type *operator->() const noexcept;
     Type *Get () const noexcept;
-    Bool IsValid () const noexcept;
+    [[nodiscard]] Bool IsValid () const noexcept;
     explicit operator Bool () const noexcept;
 
     /** @brief Resets the pointer to null. */
@@ -268,7 +270,7 @@ private:
 private:
 
     Type *Object;
-    SharedPtrInternal::FReferenceController *Controller;
+    Internal::FReferenceController *Controller;
 };
 
 /**
@@ -278,7 +280,7 @@ private:
  * @return A TSharedRef managing the given object and reference controller.
  */
 template <typename ObjectType>
-TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, SharedPtrInternal::FReferenceController *InController ) noexcept;
+TSharedRef<ObjectType> MakeSharedRef ( ObjectType *InObject, Internal::FReferenceController *InController ) noexcept;
 
 /**
  * @brief Creates a new TSharedRef instance with the given arguments.
@@ -292,7 +294,7 @@ template <typename ObjectType, typename... Arguments> TSharedRef<ObjectType> Mak
  * @param InObject Pointer to the object to create a proxy for.
  * @return A TRawPtrProxy managing the given object.
  */
-template <typename ObjectType> SharedPtrInternal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject ) noexcept;
+template <typename ObjectType> Internal::TRawPtrProxy<ObjectType> MakeShareable ( ObjectType *InObject ) noexcept;
 } // namespace Lumen
 
 #include "Inline/SharedPtr.inl"

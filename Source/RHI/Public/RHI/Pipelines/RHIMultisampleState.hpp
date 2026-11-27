@@ -26,7 +26,7 @@ namespace RHI
         Bool bAlphaToCoverage = false;
 
         /** @return Success for a supported power-of-two count and nonzero mask. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

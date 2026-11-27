@@ -61,7 +61,7 @@ namespace RHI
         Float32 DepthBiasSlope    = 0.0F;
 
         /** @return Success for defined enum values and finite bias. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

@@ -6,7 +6,9 @@
 
 #include <Core/CoreTypes.hpp>
 #include <Templates/Optional.hpp>
-#include <limits>
+
+#include <Concepts/IsIntegral.hpp>
+
 #include <type_traits>
 
 namespace Lumen
@@ -32,7 +34,7 @@ namespace RHI
 
     /** @return InValue converted to the destination type when representable. */
     template <typename DestinationType, typename SourceType>
-        requires std::is_integral_v<DestinationType> and std::is_integral_v<SourceType>
+        requires Concepts::CIsIntegral<DestinationType> and Concepts::CIsIntegral<SourceType>
     [[nodiscard]] constexpr TOptional<DestinationType> RHICheckedCast ( SourceType InValue ) noexcept;
 
 } // namespace RHI

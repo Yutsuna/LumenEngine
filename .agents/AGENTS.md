@@ -7,7 +7,8 @@ module per directory under `Source/`.
 ## Read on demand
 
 Load the rule file for the area you are touching **before** editing, and
-treat it as mandatory. Do not preload everything.
+treat it as mandatory. Do not preload everything. Document paths are relative
+to `.agents/`; an explicit `.agents/` prefix is equally valid.
 
 | File | Read when… |
 | --- | --- |
@@ -17,9 +18,9 @@ treat it as mandatory. Do not preload everything.
 | `rules/testing.md` | adding or running tests or benchmarks |
 | `workflows/git-workflow.md` | creating commits or PRs |
 | `modules/<Module>.md` | working in `Source/<Module>/` (status, links, inventory) |
-| `agents/` | agent definitions — `reviewer` orchestrator + `reviewer-safety`/`reviewer-norme` subagents, and `documentation` auditor of the `.agents/` corpus (definitions in `agents/*.md`) |
+| `agents/` | agent definitions — `reviewer` orchestrator + `reviewer-safety`/`reviewer-norme` subagents, `documentation` auditor of the `.agents/` corpus, and `test-writer` for unit-test authoring (definitions in `agents/*.md`) |
 | `commands/` | ready-made recipes: `build-debug`, `build-release`, `test`, `review`, `new-module` |
-| `skills/` | procedural guides: `debug-sanitizer`, `write-benchmarks`, `nix-workflow` |
+| `skills/` | procedural guides: `core-abstractions`, `debug-sanitizer`, `write-benchmarks`, `nix-workflow` |
 
 ## Modules
 
@@ -31,13 +32,23 @@ treat it as mandatory. Do not preload everything.
 | `Scene` | built (shared library) | `modules/Scene.md` |
 | `AppCore` | built (shared library) | `modules/AppCore.md` |
 | `Launch` | built (executable entry point) | `modules/Launch.md` |
-| `Renderer`, `RHIOpenGL`, `RHIVulkan` | **not built yet** (empty stubs, absent from `ModuleNames`) | `modules/Renderer.md`, `modules/RHIOpenGL.md`, `modules/RHIVulkan.md` |
+| `Renderer` | **not built** (empty stub, absent from `ModuleNames`) | `modules/Renderer.md` |
+| `RHIOpenGL` | built on Linux (OpenGL 4.6 backend; full conformance matrix) | `modules/RHIOpenGL.md` |
+| `RHIVulkan` | built (shared library, listed in `ModuleNames`; do not depend on it from production renderer code yet) | `modules/RHIVulkan.md` |
 
 A module is compiled only if listed in `ModuleNames` (`Source/meson.build`) and
 has a `meson.build` in its `Source/` directory.
 
 ## Fast facts (always apply)
 
+- Three build trees exist and **all three must compile at the end of every
+  task** — a task is not done until each one builds cleanly:
+  1. `Build` — Debug, ASan+UBSan (`b_sanitize=address,undefined`)
+  2. `Build-Release` — Release, `-O3`
+  3. `Build-TSAN` — Debug, TSan (`b_sanitize=thread`)
+- `.agents/` is the canonical agent-documentation directory. `.kimi-code` and
+  `.opencode` are symbolic links to it: never edit files through those paths;
+  all agent-documentation changes must be made directly under `.agents/`.
 - All commands run inside the Nix devshell (`.envrc`/`direnv`), e.g.
   `meson compile -C Build`. `Build/` is gitignored.
 - Prefer the Lumen Core library over `std` (threads, locks, stop tokens,

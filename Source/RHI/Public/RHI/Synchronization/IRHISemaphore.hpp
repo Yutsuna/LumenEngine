@@ -33,9 +33,9 @@ namespace RHI
          */
         [[nodiscard]] virtual UInt64 GetValue () const noexcept = 0;
         /** @brief Timeline signals never regress; binary signals use one. */
-        virtual TExpected<void, FRHIError> Signal ( UInt64 InValue ) noexcept = 0;
+        virtual FRHIExpected Signal ( UInt64 InValue ) noexcept = 0;
         /** @brief Waits for a timeline value, or consumes a signaled binary semaphore. */
-        virtual TExpected<void, FRHIError> Wait ( UInt64 InValue, Float64 InTimeoutSeconds ) noexcept = 0;
+        virtual FRHIExpected Wait ( UInt64 InValue, Float64 InTimeoutSeconds ) noexcept = 0;
     };
 } // namespace RHI
 

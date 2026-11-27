@@ -31,10 +31,10 @@ namespace RHI
         /** @brief Makes every result unavailable; the caller must externally order this with GPU use. */
         virtual void Reset () noexcept = 0;
         /** @brief Copies completed results, failing if a requested query is unavailable at InCompleted. */
-        [[nodiscard]] virtual TExpected<void, FRHIError> ReadResults ( UInt32 InFirstQuery,
-                                                                       UInt32 InQueryCount,
-                                                                       TSpan<UInt64> InDestination,
-                                                                       FRHITimelineValue InCompleted ) const noexcept = 0;
+        [[nodiscard]] virtual FRHIExpected ReadResults ( UInt32 InFirstQuery,
+                                                         UInt32 InQueryCount,
+                                                         TSpan<UInt64> InDestination,
+                                                         FRHITimelineValue InCompleted ) const noexcept = 0;
     };
 
 } // namespace RHI

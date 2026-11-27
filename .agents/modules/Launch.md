@@ -19,7 +19,9 @@ Private: `Main.cpp`, `ModuleStack.cpp`, engine implementation.
 - Module boot order lives in `ModuleStack` / `Engine/Modules` — when adding
   a new engine module to the stack, register it there; adding the module to
   `ModuleNames` only compiles it, it does not boot it.
-- `LaunchError` is the process-level error wrapper (exit codes: use the
-  project convention of **84** for failure paths consistent with tests).
+- `LaunchError` is the process-level error wrapper; `ToExitCode()` maps each
+  `ELaunchErrorCode` to its stable numeric value (1–6), used as the process
+  exit code. **84** (`LUMEN_EXIT_FAILURE`) applies to test/benchmark runners
+  only; in `GuardedMain` it is the `ValueOr` fallback.
 - Keep `Main.cpp` minimal; all engine behaviour belongs in the loop/engine
   classes so it stays testable.

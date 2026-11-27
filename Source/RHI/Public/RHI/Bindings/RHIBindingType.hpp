@@ -4,12 +4,15 @@
  */
 
 #pragma once
+
 #include <Core/CoreTypes.hpp>
+
 namespace Lumen
 {
 
 namespace RHI
 {
+
     /**
      * @enum ERHIBindingType
      * @brief Portable descriptor classes.
@@ -24,6 +27,7 @@ namespace RHI
         Sampler,
         CombinedTextureSampler
     };
+
 } // namespace RHI
 
 } // namespace Lumen

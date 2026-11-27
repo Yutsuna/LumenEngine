@@ -57,8 +57,6 @@ private:
     Lumen::UInt32 ProcessedMessageCount = 0U;
 };
 
-} // namespace
-
 /**
  * Micro
  */
@@ -111,3 +109,5 @@ LUMEN_BENCHMARK( FActorRegistry, AllocateReleaseId )
         Lumen::Internal::FActorRegistry::ReleaseId( NewId );
     }
 }
+
+} // namespace

@@ -12,7 +12,7 @@ Lumen::Bool AreQueuesValid ( const Lumen::RHI::ERHIQueueType InSource, const Lum
     return InSource < Lumen::RHI::ERHIQueueType::Count and InDestination < Lumen::RHI::ERHIQueueType::Count;
 }
 } // namespace
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBufferTransition::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBufferTransition::Validate () const noexcept
 {
     if ( not Buffer or not IsValidRHIResourceTransition( Before, After ) or not AreQueuesValid( SourceQueue, DestinationQueue ) )
     {
@@ -20,7 +20,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBufferTransition::
     }
     return {};
 }
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHITextureTransition::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHITextureTransition::Validate () const noexcept
 {
     if ( not Texture or not Range.IsContainedIn( Texture->GetDesc().MipCount, Texture->GetDesc().LayerCount ) or
          not IsValidRHIResourceTransition( Before, After ) or not AreQueuesValid( SourceQueue, DestinationQueue ) )
@@ -29,7 +29,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHITextureTransition:
     }
     return {};
 }
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::ValidateRHITransition ( const FRHITransition &InTransition ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::ValidateRHITransition ( const FRHITransition &InTransition ) noexcept
 {
     return std::visit( [] ( const auto &Transition )
     {

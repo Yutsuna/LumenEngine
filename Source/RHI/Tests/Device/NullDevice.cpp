@@ -24,6 +24,47 @@
 #include <Synchronization/NullSynchronization.hpp>
 #include <Templates/Hash.hpp>
 
+namespace
+{
+
+Lumen::RHI::FRHIExpected ValidateNullPlacement ( const Lumen::RHI::FRHIResourceRequirements &InRequirements,
+                                                 const Lumen::RHI::ERHIMemoryClass InMemoryClass,
+                                                 const Lumen::TSharedRef<Lumen::RHI::IRHIHeap> &InHeap,
+                                                 const Lumen::RHI::FRHIAllocation &InAllocation,
+                                                 const Lumen::RHI::FRHIObjectId InOwnerId ) noexcept
+{
+    using namespace Lumen;
+    using namespace Lumen::RHI;
+
+    if ( not InAllocation.IsValid() or InAllocation.Heap != InHeap.Get() )
+    {
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Placed resource allocation does not identify the supplied heap" ) );
+    }
+    const TOptional<Tests::FNullHeap *> NullHeap = TryRHIBackendCast<Tests::FNullHeap>( static_cast<IRHIObject &>( *InHeap ) );
+    if ( not NullHeap or ( *NullHeap )->GetOwnerId() != InOwnerId )
+    {
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Placed resource heap belongs to another device" ) );
+    }
+    const FRHIHeapDesc &HeapDesc = ( *NullHeap )->GetDesc();
+    if ( InAllocation.MemoryClass != InMemoryClass or HeapDesc.MemoryClass != InMemoryClass )
+    {
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Placed resource memory classes do not match" ) );
+    }
+    if ( InRequirements.Alignment == 0ULL or InAllocation.Alignment < InRequirements.Alignment or
+         InAllocation.Offset % InRequirements.Alignment != 0ULL )
+    {
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Placed resource alignment is insufficient" ) );
+    }
+    if ( InAllocation.Size < InRequirements.Size or InAllocation.Offset > HeapDesc.Size or
+         InAllocation.Size > HeapDesc.Size - InAllocation.Offset )
+    {
+        return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Placed resource range exceeds its heap or allocation" ) );
+    }
+    return {};
+}
+
+} // namespace
+
 /**
  * Public
  */
@@ -61,7 +102,8 @@ Lumen::RHI::Tests::FNullDeviceDesc::FNullDeviceDesc () noexcept
                                     ERHICapabilityFlags::TimestampQueries | ERHICapabilityFlags::OcclusionQueries |
                                     ERHICapabilityFlags::PipelineStatistics | ERHICapabilityFlags::AsyncCompute |
                                     ERHICapabilityFlags::Presentation | ERHICapabilityFlags::AnisotropicFiltering;
-    Adapter.QueueFamilies = {
+    Adapter.Capabilities.ShaderFormats = { ERHIShaderFormat::Null };
+    Adapter.QueueFamilies              = {
         { .Type = ERHIQueueType::Graphics, .Count = 2U, .bSupportsPresentation = true, .bSupportsTimestamps = true },
         { .Type = ERHIQueueType::Compute, .Count = 1U, .bSupportsTimestamps = true },
         { .Type = ERHIQueueType::Copy, .Count = 1U },
@@ -95,7 +137,7 @@ Lumen::TOptional<Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullDevice::CheckOpe
     return Desc.FaultPlan ? Desc.FaultPlan->ShouldFail( InOperation ) : TOptional<FRHIError>{};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullDevice::WaitIdle () noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullDevice::WaitIdle () noexcept
 {
     if ( TOptional<FRHIError> Error = CheckOperation( "WaitIdle" ) )
     {
@@ -103,7 +145,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullDevice::Wa
     }
     for ( const auto &Queue : Queues )
     {
-        const TExpected<void, FRHIError> Result = Queue->WaitIdle();
+        const FRHIExpected Result = Queue->WaitIdle();
         if ( not Result )
         {
             return Result;
@@ -140,7 +182,7 @@ Lumen::RHI::Tests::FNullDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) no
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -153,6 +195,36 @@ Lumen::RHI::Tests::FNullDevice::CreateBuffer ( const FRHIBufferDesc &InDesc ) no
     TrackObject( *Result );
     return Result;
 }
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreatePlacedBuffer ( const FRHIBufferDesc &InDesc,
+                                                     TSharedRef<IRHIHeap> InHeap,
+                                                     const FRHIAllocation &InAllocation ) noexcept
+{
+    if ( TOptional<FRHIError> Error = CheckOperation( "CreatePlacedBuffer" ) )
+    {
+        return TUnexpected<FRHIError>( *Error );
+    }
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
+    {
+        return TUnexpected<FRHIError>( Valid.Error() );
+    }
+    if ( InDesc.Size > GetLimits().MaxBufferSize )
+    {
+        return TUnexpected<FRHIError>(
+            MakeRHIUnsupported( ERHIErrorCondition::Limit, "Buffer exceeds the published size limit" ) );
+    }
+    const FRHIResourceRequirements Requirements{
+        .Size = InDesc.Size, .Alignment = 16ULL, .PreferredMemoryClass = TOptional<ERHIMemoryClass>( InDesc.MemoryClass ) };
+    const FRHIExpected Placement = ValidateNullPlacement( Requirements, InDesc.MemoryClass, InHeap, InAllocation, GetId() );
+    if ( not Placement )
+    {
+        return TUnexpected<FRHIError>( Placement.Error() );
+    }
+    TSharedRef<FNullBuffer> Result = MakeShared<FNullBuffer>( InDesc, NextObjectId(), InHeap, InAllocation );
+    TrackObject( *Result );
+    return Result;
+}
+
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
 Lumen::RHI::Tests::FNullDevice::CreateTexture ( const FRHITextureDesc &InDesc ) noexcept
 {
@@ -160,7 +232,7 @@ Lumen::RHI::Tests::FNullDevice::CreateTexture ( const FRHITextureDesc &InDesc ) 
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -183,6 +255,44 @@ Lumen::RHI::Tests::FNullDevice::CreateTexture ( const FRHITextureDesc &InDesc ) 
     TrackObject( *Result );
     return Result;
 }
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
+Lumen::RHI::Tests::FNullDevice::CreatePlacedTexture ( const FRHITextureDesc &InDesc,
+                                                      TSharedRef<IRHIHeap> InHeap,
+                                                      const FRHIAllocation &InAllocation ) noexcept
+{
+    if ( TOptional<FRHIError> Error = CheckOperation( "CreatePlacedTexture" ) )
+    {
+        return TUnexpected<FRHIError>( *Error );
+    }
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
+    {
+        return TUnexpected<FRHIError>( Valid.Error() );
+    }
+    if ( InDesc.Extent.Width > GetLimits().MaxTextureDimension2D or InDesc.Extent.Height > GetLimits().MaxTextureDimension2D or
+         InDesc.Extent.Depth > GetLimits().MaxTextureDimension3D or InDesc.LayerCount > GetLimits().MaxTextureArrayLayers )
+    {
+        return TUnexpected<FRHIError>(
+            MakeRHIUnsupported( ERHIErrorCondition::Limit, "Texture exceeds a published dimension limit" ) );
+    }
+    const TExpected<FRHICopyFootprint, FRHIError> Footprint =
+        ComputeRHICopyFootprint( InDesc.Format, InDesc.Extent, 0ULL, GetLimits().MinTextureRowAlignment );
+    if ( not Footprint )
+    {
+        return TUnexpected<FRHIError>( Footprint.Error() );
+    }
+    FRHIResourceRequirements Requirements{
+        .Size = Footprint->TotalSize, .Alignment = GetLimits().MinTextureRowAlignment, .PreferredMemoryClass = {} };
+    Requirements.PreferredMemoryClass.Emplace( InDesc.MemoryClass );
+    const FRHIExpected Placement = ValidateNullPlacement( Requirements, InDesc.MemoryClass, InHeap, InAllocation, GetId() );
+    if ( not Placement )
+    {
+        return TUnexpected<FRHIError>( Placement.Error() );
+    }
+    TSharedRef<FNullTexture> Result = MakeShared<FNullTexture>( InDesc, Requirements, NextObjectId(), InHeap, InAllocation );
+    TrackObject( *Result );
+    return Result;
+}
+
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITextureView>, Lumen::RHI::FRHIError>
 Lumen::RHI::Tests::FNullDevice::CreateTextureView ( const FRHITextureViewDesc &InDesc ) noexcept
 {
@@ -190,7 +300,7 @@ Lumen::RHI::Tests::FNullDevice::CreateTextureView ( const FRHITextureViewDesc &I
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -205,7 +315,7 @@ Lumen::RHI::Tests::FNullDevice::CreateSampler ( const FRHISamplerDesc &InDesc ) 
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -220,11 +330,11 @@ Lumen::RHI::Tests::FNullDevice::CreateHeap ( const FRHIHeapDesc &InDesc ) noexce
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
-    TSharedRef<FNullHeap> Result = MakeShared<FNullHeap>( InDesc, NextObjectId() );
+    TSharedRef<FNullHeap> Result = MakeShared<FNullHeap>( InDesc, NextObjectId(), GetId() );
     TrackObject( *Result );
     return Result;
 }
@@ -250,7 +360,12 @@ Lumen::RHI::Tests::FNullDevice::CreateUploadAllocator ( const UInt64 InCapacity 
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Upload capacity is zero" ) );
     }
-    TSharedRef<FRHIUploadAllocator> Result = MakeShared<FRHIUploadAllocator>( InCapacity, NextObjectId() );
+    const FRHIBufferDesc BufferDesc{
+        .Size = InCapacity, .Usage = ERHIResourceUsage::CopySource, .MemoryClass = ERHIMemoryClass::Upload };
+    TSharedRef<FNullBuffer> Buffer = MakeShared<FNullBuffer>( BufferDesc, NextObjectId() );
+    TrackObject( *Buffer );
+    TSharedRef<FRHIUploadAllocator> Result =
+        MakeShared<FRHIUploadAllocator>( StaticCastSharedRef<IRHIBuffer>( Buffer ), NextObjectId() );
     TrackObject( *Result );
     return Result;
 }
@@ -265,7 +380,12 @@ Lumen::RHI::Tests::FNullDevice::CreateReadbackAllocator ( const UInt64 InCapacit
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Readback capacity is zero" ) );
     }
-    TSharedRef<FRHIReadbackAllocator> Result = MakeShared<FRHIReadbackAllocator>( InCapacity, NextObjectId() );
+    const FRHIBufferDesc BufferDesc{
+        .Size = InCapacity, .Usage = ERHIResourceUsage::CopyDestination, .MemoryClass = ERHIMemoryClass::Readback };
+    TSharedRef<FNullBuffer> Buffer = MakeShared<FNullBuffer>( BufferDesc, NextObjectId() );
+    TrackObject( *Buffer );
+    TSharedRef<FRHIReadbackAllocator> Result =
+        MakeShared<FRHIReadbackAllocator>( StaticCastSharedRef<IRHIBuffer>( Buffer ), NextObjectId() );
     TrackObject( *Result );
     return Result;
 }
@@ -298,7 +418,7 @@ Lumen::RHI::Tests::FNullDevice::CreateBindingLayout ( const FRHIBindingLayoutDes
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -332,7 +452,7 @@ Lumen::RHI::Tests::FNullDevice::CreateDescriptorAllocator ( const FRHIDescriptor
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -348,9 +468,13 @@ Lumen::RHI::Tests::FNullDevice::CreateShader ( const FRHIShaderDesc &InDesc ) no
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
+    }
+    if ( not GetCapabilities().Supports( InDesc.Format ) )
+    {
+        return TUnexpected<FRHIError>( MakeRHIUnsupported( ERHIErrorCondition::Shader, "Shader format was not negotiated" ) );
     }
     TSharedRef<FNullShader> Result = MakeShared<FNullShader>( InDesc, NextObjectId() );
     TrackObject( *Result );
@@ -363,7 +487,7 @@ Lumen::RHI::Tests::FNullDevice::CreatePipelineLayout ( const FRHIPipelineLayoutD
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -378,7 +502,7 @@ Lumen::RHI::Tests::FNullDevice::CreateGraphicsPipeline ( const FRHIGraphicsPipel
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -402,7 +526,7 @@ Lumen::RHI::Tests::FNullDevice::CreateComputePipeline ( const FRHIComputePipelin
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -422,12 +546,12 @@ Lumen::RHI::Tests::FNullDevice::CreatePipelineCache ( const FRHIPipelineCacheDes
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
     TSharedRef<FNullPipelineCache> Result = MakeShared<FNullPipelineCache>( InDesc, Desc.FaultPlan, NextObjectId() );
-    if ( const TExpected<void, FRHIError> Initialized = Result->Initialize(); not Initialized )
+    if ( const FRHIExpected Initialized = Result->Initialize(); not Initialized )
     {
         return TUnexpected<FRHIError>( Initialized.Error() );
     }
@@ -474,7 +598,7 @@ Lumen::RHI::Tests::FNullDevice::CreateSemaphore ( const FRHISemaphoreDesc &InDes
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
@@ -501,13 +625,13 @@ Lumen::RHI::Tests::FNullDevice::CreateSwapchain ( const FRHISwapchainDesc &InDes
             MakeRHIUnsupported( ERHIErrorCondition::Presentation, "Presentation was not negotiated" ) );
     }
     const FRHISwapchainCapabilities SurfaceCapabilities = MakeNullSwapchainCapabilities();
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate( SurfaceCapabilities ); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate( SurfaceCapabilities ); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }
     TSharedRef<FNullSwapchain> Result =
         MakeShared<FNullSwapchain>( InDesc, SurfaceCapabilities, *this, Desc.FaultPlan, NextObjectId() );
-    if ( const TExpected<void, FRHIError> Initialized = Result->Initialize(); not Initialized )
+    if ( const FRHIExpected Initialized = Result->Initialize(); not Initialized )
     {
         return TUnexpected<FRHIError>( Initialized.Error() );
     }
@@ -521,7 +645,7 @@ Lumen::RHI::Tests::FNullDevice::CreateQueryPool ( const FRHIQueryPoolDesc &InDes
     {
         return TUnexpected<FRHIError>( *Error );
     }
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
+    if ( const FRHIExpected Valid = InDesc.Validate(); not Valid )
     {
         return TUnexpected<FRHIError>( Valid.Error() );
     }

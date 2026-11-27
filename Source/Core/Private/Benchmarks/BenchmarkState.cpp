@@ -37,7 +37,7 @@ Lumen::Benchmarks::FBenchmarkState::FIterator &Lumen::Benchmarks::FBenchmarkStat
     return *this;
 }
 
-Lumen::Bool Lumen::Benchmarks::FBenchmarkState::FIterator::operator!=( std::default_sentinel_t ) const noexcept
+Lumen::Bool Lumen::Benchmarks::FBenchmarkState::FIterator::operator!=( std::default_sentinel_t LUMEN_UNUSED InTag ) const noexcept
 {
     return Remaining != 0;
 }
@@ -47,21 +47,22 @@ Lumen::Bool Lumen::Benchmarks::FBenchmarkState::FIterator::operator!=( std::defa
  */
 
 Lumen::Benchmarks::FBenchmarkState::FBenchmarkState ( const UInt64 InIterations, TOptional<Int64> InArgument ) noexcept
-    : Iterations{ InIterations }, Argument{ std::move( InArgument ) }
+    : Iterations{ InIterations }, Argument{ InArgument }
 {
     /**
      *
      */
 }
 
-Lumen::Benchmarks::FBenchmarkState::FIterator
-Lumen::Benchmarks::FBenchmarkState::begin () noexcept /// NOLINT(readability-identifier-naming)
+/** NOLINTNEXTLINE(readability-identifier-naming) */
+Lumen::Benchmarks::FBenchmarkState::FIterator Lumen::Benchmarks::FBenchmarkState::begin () noexcept
 {
     StartTimer();
     return FIterator{ *this, Iterations };
 }
 
-std::default_sentinel_t Lumen::Benchmarks::FBenchmarkState::end () const noexcept /// NOLINT(readability-identifier-naming)
+/** NOLINTNEXTLINE(readability-convert-member-functions-to-static,readability-identifier-naming) */
+std::default_sentinel_t Lumen::Benchmarks::FBenchmarkState::end () const noexcept
 {
     return {};
 }

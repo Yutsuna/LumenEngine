@@ -4,7 +4,7 @@
  */
 
 #include <RHI/Pipelines/RHIBlendState.hpp>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBlendState::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBlendState::Validate () const noexcept
 {
     for ( const auto &Attachment : Attachments )
     {

@@ -7,6 +7,7 @@
 
 #include "RHIValidationState.hpp"
 #include <RHI/Bindings/IRHIBindingSet.hpp>
+#include <RHI/Types/RHIError.hpp>
 
 namespace Lumen
 {
@@ -24,13 +25,23 @@ namespace RHI
 
         FRHIValidationBindingLayout ( TSharedRef<IRHIBindingLayout> InUnderlying,
                                       TSharedPtr<FRHIValidationState> InState ) noexcept;
+
         ~FRHIValidationBindingLayout () noexcept override;
+
+    public:
+
         [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+
         [[nodiscard]] FString GetDebugName () const noexcept override;
+
         void SetDebugName ( FStringView InName ) noexcept override;
+
         [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+
         [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+
         [[nodiscard]] const FRHIBindingLayoutDesc &GetDesc () const noexcept override;
 
     private:
@@ -50,21 +61,34 @@ namespace RHI
         FRHIValidationBindingSet ( TSharedRef<IRHIBindingSet> InUnderlying,
                                    TSharedRef<IRHIBindingLayout> InLayout,
                                    TSharedPtr<FRHIValidationState> InState ) noexcept;
+
         ~FRHIValidationBindingSet () noexcept override;
+
+    public:
+
         [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+
         [[nodiscard]] FString GetDebugName () const noexcept override;
+
         void SetDebugName ( FStringView InName ) noexcept override;
+
         [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+
         [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+
         [[nodiscard]] TSharedRef<IRHIBindingLayout> GetLayout () const noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> Write ( TSpan<const FRHIBindingWrite> InWrites ) noexcept override;
+
+        [[nodiscard]] FRHIExpected Write ( TSpan<const FRHIBindingWrite> InWrites ) noexcept override;
+
         [[nodiscard]] Bool IsDirty () const noexcept override;
+
         void ClearDirty () noexcept override;
 
     private:
 
-        [[nodiscard]] TExpected<void, FRHIError> ValidateWrite ( const FRHIBindingWrite &InWrite ) const noexcept;
+        [[nodiscard]] FRHIExpected ValidateWrite ( const FRHIBindingWrite &InWrite ) const noexcept;
 
     private:
 

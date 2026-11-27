@@ -37,9 +37,9 @@ namespace RHI
         TSharedPtr<IRHISwapchain> OldSwapchain;
 
         /** @return Success when the descriptor is internally coherent. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
         /** @return Success when every requested value is supported by InCapabilities. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate ( const FRHISwapchainCapabilities &InCapabilities ) const noexcept;
+        [[nodiscard]] FRHIExpected Validate ( const FRHISwapchainCapabilities &InCapabilities ) const noexcept;
     };
 
 } // namespace RHI

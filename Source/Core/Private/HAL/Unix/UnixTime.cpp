@@ -30,10 +30,12 @@ void Lumen::HAL::FUnixTime::Sleep ( const Float64 Duration ) noexcept
     const Float64 FloatNanonSec = static_cast<Float64>( NanosecondsPerSecond );
     Int64 Nanoseconds           = static_cast<Int64>( ( Clamped - static_cast<Float64>( Whole ) ) * FloatNanonSec );
 
+    /** NOLINTBEGIN(readability-use-std-min-max) */
     if ( Nanoseconds > MaxNanoseconds )
     {
         Nanoseconds = MaxNanoseconds;
     }
+    /** NOLINTEND(readability-use-std-min-max) */
 
     timespec Request = {};
     Request.tv_sec   = Whole;

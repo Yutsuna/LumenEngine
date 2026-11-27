@@ -5,6 +5,10 @@
 
 #include <Logging/LoggingCategory.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::FLogCategory::FLogCategory ( const AnsiChar *const InCategoryName, const ELogVerbosity::Type InDefaultVerbosity ) noexcept
     : CategoryName( InCategoryName ), DefaultVerbosity( InDefaultVerbosity )
 {
@@ -13,12 +17,6 @@ Lumen::FLogCategory::FLogCategory ( const AnsiChar *const InCategoryName, const 
 
 Lumen::FLogCategory::FLogCategory ( const FStringView InCategoryName, const ELogVerbosity::Type InDefaultVerbosity ) noexcept
     : CategoryName( InCategoryName ), DefaultVerbosity( InDefaultVerbosity )
-{
-    /** Empty */
-}
-
-Lumen::FLogCategory::FLogCategory ( const FString &InCategoryName, const ELogVerbosity::Type InDefaultVerbosity ) noexcept
-    : CategoryName( std::move( InCategoryName ) ), DefaultVerbosity( InDefaultVerbosity )
 {
     /** Empty */
 }

@@ -8,6 +8,12 @@
 #include <HAL/PlatformAtomic.hpp>
 #include <HAL/Windows/WindowsSpinLockMutex.hpp>
 
+#if not defined( LUMEN_PLATFORM_WINDOWS )
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "WindowsSpinLockMutex.inl is only supported on Windows"
+    #endif
+#else
+
 /**
  * Public
  */
@@ -47,3 +53,5 @@ Lumen::Bool Lumen::HAL::FWindowsSpinLockMutex::TryLock () noexcept
 {
     return not Flag.test_and_set( std::memory_order::acquire );
 }
+
+#endif

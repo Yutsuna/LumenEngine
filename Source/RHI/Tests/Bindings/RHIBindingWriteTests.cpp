@@ -47,6 +47,12 @@ namespace RHI
             LUMEN_CHECK_TRUE( Sampler.HasValue() );
             Write.Resource = FRHISamplerBinding{ .Sampler = *Sampler };
             LUMEN_CHECK_TRUE( Write.Validate().HasValue() );
+            Write.Resource = FRHICombinedTextureSamplerBinding{ .View = *View, .Sampler = *Sampler };
+            LUMEN_CHECK_TRUE( Write.Validate().HasValue() );
+            Write.Resource = FRHICombinedTextureSamplerBinding{ .View = *View, .Sampler = {} };
+            LUMEN_CHECK_HAS_ERROR( Write.Validate() );
+            Write.Resource = FRHICombinedTextureSamplerBinding{ .View = {}, .Sampler = *Sampler };
+            LUMEN_CHECK_HAS_ERROR( Write.Validate() );
             Write.Resource = FRHISamplerBinding{};
             LUMEN_CHECK_HAS_ERROR( Write.Validate() );
         }

@@ -8,8 +8,8 @@
 #include <Device/NullFaultPlan.hpp>
 #include <HAL/PlatformMutex.hpp>
 #include <RHI/Queue/IRHIQueue.hpp>
+#include <RHI/Types/RHIObjectForward.hpp>
 #include <Templates/ConditionVariable.hpp>
-#include <Types/RHIObjectForward.hpp>
 
 namespace Lumen
 {
@@ -35,9 +35,9 @@ namespace RHI
             LUMEN_RHI_OBJECT_DECLARATIONS;
             ERHIQueueType GetType () const noexcept override;
             FRHITimelineValue GetCompletedValue () const noexcept override;
-            TExpected<void, FRHIError> Submit ( const FRHISubmitDesc &InDesc ) noexcept override;
-            TExpected<void, FRHIError> WaitIdle () noexcept override;
-            TExpected<void, FRHIError> Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept override;
+            FRHIExpected Submit ( const FRHISubmitDesc &InDesc ) noexcept override;
+            FRHIExpected WaitIdle () noexcept override;
+            FRHIExpected Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept override;
             void MarkLost () noexcept;
             [[nodiscard]] UInt64 GetSubmitCount () const noexcept;
 

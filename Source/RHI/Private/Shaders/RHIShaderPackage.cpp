@@ -4,19 +4,27 @@
  */
 
 #include <RHI/Shaders/RHIShaderPackage.hpp>
+
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIShaderDesc Lumen::RHI::FRHIShaderPackageEntry::GetDesc () const noexcept
 {
-    return FRHIShaderDesc{ TSpan<const Byte>( Bytecode.data(), Bytecode.size() ), Stage, EntryPoint, Format, Reflection };
+    return FRHIShaderDesc{ .Bytecode   = TSpan<const Byte>( Bytecode.data(), Bytecode.size() ),
+                           .Stage      = Stage,
+                           .EntryPoint = EntryPoint,
+                           .Format     = Format,
+                           .Reflection = Reflection };
 }
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIShaderPackage::AddEntry ( FRHIShaderPackageEntry InEntry ) noexcept
+
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIShaderPackage::AddEntry ( FRHIShaderPackageEntry InEntry ) noexcept
 {
-    if ( const TExpected<void, FRHIError> Valid = InEntry.GetDesc().Validate(); not Valid )
-    {
-        return TUnexpected<FRHIError>( Valid.Error() );
-    }
+    LUMEN_EXPECT( _, InEntry.GetDesc().Validate() );
     Entries.push_back( std::move( InEntry ) );
     return {};
 }
+
 Lumen::TOptional<Lumen::RHI::FRHIShaderDesc> Lumen::RHI::FRHIShaderPackage::Find ( const ERHIShaderStage InStage,
                                                                                    const FStringView InEntryPoint ) const noexcept
 {

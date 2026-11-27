@@ -72,7 +72,7 @@ namespace Tests
         /** @brief Fills OutRecords with random keys in [0, InKeyRange); Extra holds the original index. */
         void FillRecords ( TVector<FSortRecord> &OutRecords, USize InCount, UInt64 InKeyRange, UInt64 InSeed );
 
-        /** @brief Checks the sorter on one (size, shape) case against std::ranges::sort. */
+        /** @brief Checks the sorter on one (size, shape) case against std::sort. */
         void CheckSorterOnShape ( const FIntSorter &InSorter, USize InCount, ESortShape InShape, Bool bDescending = false );
 
         /** @brief Checks the sorter on every shape for every size of SortTestSizes up to InMaxCount. */

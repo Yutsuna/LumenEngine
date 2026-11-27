@@ -4,20 +4,16 @@
  */
 #include <RHI/Module/RHIAdapterInfo.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIAdapterInfo::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIAdapterInfo::Validate () const noexcept
 {
     if ( AdapterId == 0ULL or Name.empty() or BackendName.empty() or QueueFamilies.empty() )
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidDevice( "Adapter requires identity and at least one queue family" ) );
     }
-    if ( not Capabilities.Validate() )
-    {
-        return TUnexpected<FRHIError>( Capabilities.Validate().Error() );
-    }
-    if ( not Limits.Validate() )
-    {
-        return TUnexpected<FRHIError>( Limits.Validate().Error() );
-    }
+
+    LUMEN_EXPECT( ValidateCapabilities, Capabilities.Validate() );
+    LUMEN_EXPECT( ValidateLimits, Limits.Validate() );
+
     for ( const FRHIQueueFamilyInfo &Family : QueueFamilies )
     {
         if ( Family.Count == 0U or Family.Type >= ERHIQueueType::Count )

@@ -1,6 +1,6 @@
 ---
 name: Documentation Auditor
-description: Audits the .agents/ corpus for integrity, coherence and staleness — index, rules, module docs, agent definitions, commands, skills (read-only)
+description: Audits the .agents/ corpus for integrity, coherence and staleness — index, rules, module docs, agent definitions, commands, skills, workflows (read-only)
 mode: all
 permissions:
   - action: edit
@@ -68,17 +68,22 @@ read-only — you produce a findings report, you fix nothing.
    - `reviewer`'s subagent allow-list references agent IDs that exist;
    - `mode` (`all` vs `subagent`) matches the dispatch graph: exactly one
      top-level agent per chain, subagents are `mode: subagent`.
-5. **Command/skill cross-references** — every `.agents/commands/*.md` and
-   `.agents/skills/*.md` must reference only paths/scripts that exist
-   (`Scripts/NewModule.py`, `Scripts/CheckPullRequest.py`, meson targets,
-   binaries under `Build/Source/Meson/…`, …), and must not restate a rule
-   in a way that diverges from its source file.
+5. **Command/skill/workflow cross-references** — every `.agents/commands/*.md`,
+   `.agents/skills/*.md` and `.agents/workflows/*.md` must reference only
+   paths/scripts that exist (`Scripts/NewModule.py`, `Scripts/CheckClangFormat.py`,
+   `Scripts/CheckPullRequest.py`, `.github/workflows/…`, meson targets, binaries
+   under `Build/Source/Meson/…`, …), and must not restate a rule in a way that
+   diverges from its source file.
 6. **Rule internal consistency** — for `.agents/rules/*.md`:
    - cross-references (e.g. `rules/core-first.md` → `modules/Core.md`)
-     resolve;
-   - no two rules contradict each other (exit code 84 vs 1, prefix table
-     vs examples, `noexcept` vs allowed throw sites, file-split rules vs
-     `.inl` locations, namespace rules vs examples);
+     resolve, with a consistent relative-path convention;
+   - no two rules or agent docs contradict each other (exit code 84 vs 1,
+     prefix table vs examples, `noexcept` vs allowed throw sites, file-split
+     rules vs `.inl` locations, namespace rules vs test/benchmark examples);
+   - rule ownership is not duplicated: `coding-style.md` owns style,
+     `core-first.md` owns the std → Core map and concepts, `modules/Core.md`
+     is the inventory, `skills/*.md` are how/when cookbooks with no
+     adoption-status meta-commentary;
    - factual toolchain claims match `Meson/Native.ini`, `meson.build`,
      `meson.options`, `Nix/deps.nix`, `Nix/shell.nix`, `Nix/package.nix`.
 7. **Fast facts** — verify every hard-coded fact in `AGENTS.md` against
@@ -87,7 +92,7 @@ read-only — you produce a findings report, you fix nothing.
    `Build/` in `.gitignore`, devshell invocation in CI.
 8. **Staleness** — where a doc makes a claim about "recent commits" or
    "currently", check `git log` for newer commits that invalidate it; mark
-   those `stale-suspect` unless the code clearly contradicts the doc.
+   those `stale-suspect` when the code does not clearly confirm the doc.
 9. **Report.**
 
 ## Output

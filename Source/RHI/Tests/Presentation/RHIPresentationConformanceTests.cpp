@@ -56,8 +56,8 @@ namespace RHI
             const TExpected<TSharedRef<IRHITexture>, FRHIError> InvalidImage =
                 ( *Swapchain )->GetImage( ( *Swapchain )->GetImageCount() );
             LUMEN_CHECK_HAS_ERROR( InvalidImage );
-            LUMEN_CHECK_EQ( InvalidImage.Error().Code, ERHIErrorCode::InvalidArgument );
-            LUMEN_CHECK_EQ( InvalidImage.Error().Condition, ERHIErrorCondition::Presentation );
+            LUMEN_CHECK_TRUE( Tests::HasRHIConformanceError( InvalidImage.Error(), ERHIErrorCode::InvalidArgument,
+                                                             ERHIErrorCondition::Presentation ) );
 
             TVector<FRHIAcquiredImage> AcquiredImages;
             for ( UInt32 Index = 0U; Index < ( *Swapchain )->GetImageCount(); ++Index )
@@ -68,16 +68,25 @@ namespace RHI
             }
             const TExpected<FRHIAcquiredImage, FRHIError> Exhausted = ( *Swapchain )->AcquireNextImage();
             LUMEN_CHECK_HAS_ERROR( Exhausted );
-            LUMEN_CHECK_EQ( Exhausted.Error().Code, ERHIErrorCode::InvalidState );
-            const TExpected<void, FRHIError> InvalidResize = ( *Swapchain )->Resize( { 640U, 400U, 1U } );
+            LUMEN_CHECK_TRUE( Tests::HasRHIConformanceError( Exhausted.Error(), ERHIErrorCode::InvalidState,
+                                                             ERHIErrorCondition::Presentation ) );
+            const FRHIExpected InvalidResize = ( *Swapchain )->Resize( { 640U, 400U, 1U } );
             LUMEN_CHECK_HAS_ERROR( InvalidResize );
             LUMEN_CHECK_EQ( InvalidResize.Error().Condition, ERHIErrorCondition::Presentation );
 
-            const TSharedRef<IRHIQueue> Queue = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+            const TSharedRef<IRHIQueue> Queue        = *( *Device )->GetQueue( ERHIQueueType::Graphics, 0U );
+            const TExpected<Bool, FRHIError> HasCopy = Tests::HasRHIConformanceQueueFamily( ERHIQueueType::Copy );
+            LUMEN_CHECK_TRUE( HasCopy.HasValue() );
+            if ( *HasCopy )
+            {
+                const TSharedRef<IRHIQueue> WrongQueue = *( *Device )->GetQueue( ERHIQueueType::Copy, 0U );
+                LUMEN_CHECK_HAS_ERROR( ( *Swapchain )->Present( *WrongQueue, AcquiredImages[0], nullptr ) );
+            }
             LUMEN_CHECK_TRUE( ( *Swapchain )->Present( *Queue, AcquiredImages[0], nullptr ).HasValue() );
-            const TExpected<void, FRHIError> Stale = ( *Swapchain )->Present( *Queue, AcquiredImages[0], nullptr );
+            const FRHIExpected Stale = ( *Swapchain )->Present( *Queue, AcquiredImages[0], nullptr );
             LUMEN_CHECK_HAS_ERROR( Stale );
-            LUMEN_CHECK_EQ( Stale.Error().Code, ERHIErrorCode::InvalidState );
+            LUMEN_CHECK_TRUE(
+                Tests::HasRHIConformanceError( Stale.Error(), ERHIErrorCode::InvalidState, ERHIErrorCondition::Presentation ) );
             for ( USize Index = 1U; Index < AcquiredImages.size(); ++Index )
             {
                 LUMEN_CHECK_TRUE( ( *Swapchain )->Present( *Queue, AcquiredImages[Index], nullptr ).HasValue() );

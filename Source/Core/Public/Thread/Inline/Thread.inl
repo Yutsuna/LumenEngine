@@ -7,6 +7,7 @@
 
 #include <Thread/Thread.hpp>
 
+#include <Core/CoreDefinitions.hpp>
 #include <Memory/UniquePtr.hpp>
 #include <Templates/Invoke.hpp>
 
@@ -57,7 +58,7 @@ namespace Internal
             RunSequence( std::index_sequence_for<TArgs...>{} );
         }
 
-        template <USize... Indices> void RunSequence ( std::index_sequence<Indices...> ) noexcept
+        template <USize... Indices> void RunSequence ( std::index_sequence<Indices...> LUMEN_UNUSED InSequence ) noexcept
         {
             if constexpr ( Concepts::CIsInvocable<TFunction, FStopToken, TArgs...> )
             {

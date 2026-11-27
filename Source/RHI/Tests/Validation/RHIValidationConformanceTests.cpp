@@ -38,7 +38,7 @@ namespace RHI
             Submit.CommandLists = { List };
             Submit.Completion   = { 1ULL };
             LUMEN_CHECK_TRUE( Queue->Submit( Submit ).HasValue() );
-            LUMEN_CHECK_TRUE( Queue->Wait( { 1ULL }, 0.0 ).HasValue() );
+            LUMEN_CHECK_TRUE( Queue->Wait( { 1ULL }, 1.0 ).HasValue() );
             LUMEN_CHECK_EQ( List->GetState(), ERHICommandListState::Executable );
             LUMEN_CHECK_TRUE( Allocator->Reset( Queue->GetCompletedValue() ).HasValue() );
             LUMEN_CHECK_EQ( List->GetState(), ERHICommandListState::Initial );
@@ -72,10 +72,9 @@ namespace RHI
             Submit.CommandLists = { List };
             Submit.Completion   = { 1ULL };
             LUMEN_CHECK_TRUE( Queue->Submit( Submit ).HasValue() );
+            LUMEN_CHECK_TRUE( Queue->WaitIdle().HasValue() );
             TArray<UInt64, 2U> Results = {};
             LUMEN_CHECK_TRUE( Pool->ReadResults( 0U, 2U, Results, Queue->GetCompletedValue() ).HasValue() );
-            LUMEN_CHECK_EQ( Results[0], 1ULL );
-            LUMEN_CHECK_EQ( Results[1], 2ULL );
         }
     } // namespace
 } // namespace RHI

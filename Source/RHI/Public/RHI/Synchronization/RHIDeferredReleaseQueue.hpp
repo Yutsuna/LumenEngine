@@ -33,7 +33,7 @@ namespace RHI
         ~FRHIDeferredReleaseQueue () noexcept;
 
         /** @brief Takes ownership of a callback until completion or Drain. */
-        TExpected<void, FRHIError> Enqueue ( FRHITimelineValue InRequired, TFunction<void()> InRelease ) noexcept;
+        FRHIExpected Enqueue ( FRHITimelineValue InRequired, TFunction<void()> InRelease ) noexcept;
 
         /** @brief Invokes completed callbacks outside the queue lock and returns their count. */
         USize Poll ( FRHITimelineValue InCompleted ) noexcept;

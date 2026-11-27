@@ -8,7 +8,10 @@
 #include <Templates/Invoke.hpp>
 #include <Templates/StopToken.hpp>
 
+#include <Concepts/SameAs.hpp>
+
 #include <new>
+#include <type_traits>
 #include <utility>
 
 /**
@@ -26,6 +29,7 @@ namespace Internal
     public:
 
         template <typename TForwardedCallback>
+            requires( not Concepts::CIsSame<std::remove_cvref_t<TForwardedCallback>, TCallbackNode> )
         explicit TCallbackNode( TForwardedCallback &&InCallback ) noexcept
             : Callback( std::forward<TForwardedCallback>( InCallback ) )
         {

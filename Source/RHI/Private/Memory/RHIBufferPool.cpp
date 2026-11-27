@@ -3,10 +3,15 @@
  * @brief Implements device-backed buffer acquisition and safe retention.
  */
 
-#include "RHIBufferPool.hpp"
+#include <Memory/RHIBufferPool.hpp>
+
 #include <RHI/Resources/IRHIBuffer.hpp>
 #include <RHI/Types/RHITimeline.hpp>
 #include <Templates/Hash.hpp>
+
+/**
+ * Private
+ */
 
 namespace
 {
@@ -35,14 +40,12 @@ Lumen::RHI::FRHIBufferPool::FRHIBufferPool ( IRHIDevice &InDevice, const FRHIObj
     /* */
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( FRHIBufferPool )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI, FRHIBufferPool )
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
 Lumen::RHI::FRHIBufferPool::Acquire ( const FRHIBufferDesc &InDesc ) noexcept
 {
-    if ( const TExpected<void, FRHIError> Valid = InDesc.Validate(); not Valid )
-    {
-        return TUnexpected<FRHIError>( Valid.Error() );
-    }
+    LUMEN_EXPECT( _, InDesc.Validate() );
+
     for ( USize Index = 0U; Index < Released.size(); ++Index )
     {
         const FEntry &Entry = Released[Index];
@@ -57,8 +60,8 @@ Lumen::RHI::FRHIBufferPool::Acquire ( const FRHIBufferDesc &InDesc ) noexcept
     return Device->CreateBuffer( InDesc );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIBufferPool::Release ( TSharedRef<IRHIBuffer> InBuffer, const FRHITimelineValue InCompletion ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBufferPool::Release ( TSharedRef<IRHIBuffer> InBuffer,
+                                                               const FRHITimelineValue InCompletion ) noexcept
 {
     Released.push_back( FEntry{ .Buffer = std::move( InBuffer ), .Completion = InCompletion } );
     return {};

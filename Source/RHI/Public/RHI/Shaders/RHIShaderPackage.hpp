@@ -35,7 +35,7 @@ namespace RHI
     public:
 
         /** @brief Validates and appends an entry. */
-        [[nodiscard]] TExpected<void, FRHIError> AddEntry ( FRHIShaderPackageEntry InEntry ) noexcept;
+        [[nodiscard]] FRHIExpected AddEntry ( FRHIShaderPackageEntry InEntry ) noexcept;
         /** @return First entry matching stage and entry point. */
         [[nodiscard]] TOptional<FRHIShaderDesc> Find ( ERHIShaderStage InStage, FStringView InEntryPoint ) const noexcept;
         /** @return All package entries. */

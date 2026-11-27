@@ -57,12 +57,15 @@ namespace Algo
      */
 
     template <class TRangeType, class TPredicate>
+        requires Internal::CPointerReturnRange<TRangeType>
     [[nodiscard]] constexpr Internal::TRangeElementPtr<TRangeType> FindIf ( TRangeType &&InRange, TPredicate &&InPredicate );
 
     template <class TRangeType, class TValue>
+        requires Internal::CPointerReturnRange<TRangeType>
     [[nodiscard]] constexpr Internal::TRangeElementPtr<TRangeType> Find ( TRangeType &&InRange, const TValue &InValue );
 
     template <class TRangeType, class TPredicate>
+        requires Internal::CPointerReturnRange<TRangeType>
     [[nodiscard]] constexpr Internal::TRangeElementPtr<TRangeType> FindIfNot ( TRangeType &&InRange, TPredicate &&InPredicate );
 
     /**

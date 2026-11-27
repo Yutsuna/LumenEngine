@@ -5,11 +5,17 @@
 
 #pragma once
 
-#include <HAL/PlatformAtomic.hpp>
+#if not defined( LUMEN_PLATFORM_UNIX )
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "FUnixSpinLockMutex.hpp is only available on Unix platforms."
+    #endif
+#else
 
-#include <HAL/Unix/UnixSpinLockMutex.hpp>
+    #include <HAL/PlatformAtomic.hpp>
 
-#include <sched.h>
+    #include <HAL/Unix/UnixSpinLockMutex.hpp>
+
+    #include <sched.h>
 
 /**
  * Public
@@ -51,3 +57,5 @@ Lumen::Bool Lumen::HAL::FUnixSpinLockMutex::IsLocked () const noexcept
 {
     return Flag.test( std::memory_order::relaxed );
 }
+
+#endif

@@ -69,7 +69,7 @@ namespace Internal
         TAtomic<ECallbackStatus> Status = { ECallbackStatus::Finished };
         FCallbackNode *Previous         = nullptr;
         FCallbackNode *Next             = nullptr;
-        HAL::FPlatformThread::FId ExecutingThread{};
+        HAL::FPlatformThread::FId ExecutingThread;
     };
 
 } // namespace Internal

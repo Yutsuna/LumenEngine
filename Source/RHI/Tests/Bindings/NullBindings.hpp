@@ -4,10 +4,10 @@
  */
 
 #pragma once
-#include "Types/RHIObjectForward.hpp"
 #include <HAL/PlatformMutex.hpp>
 #include <RHI/Bindings/IRHIBindingSet.hpp>
 #include <RHI/Bindings/RHIDescriptorAllocatorBase.hpp>
+#include <RHI/Types/RHIObjectForward.hpp>
 
 namespace Lumen
 {
@@ -47,7 +47,7 @@ namespace RHI
             FNullBindingSet ( TSharedRef<IRHIBindingLayout> InLayout, FRHIObjectId InId ) noexcept;
             LUMEN_RHI_OBJECT_DECLARATIONS;
             TSharedRef<IRHIBindingLayout> GetLayout () const noexcept override;
-            TExpected<void, FRHIError> Write ( TSpan<const FRHIBindingWrite> InWrites ) noexcept override;
+            FRHIExpected Write ( TSpan<const FRHIBindingWrite> InWrites ) noexcept override;
             Bool IsDirty () const noexcept override;
             void ClearDirty () noexcept override;
 

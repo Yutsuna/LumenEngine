@@ -7,8 +7,11 @@
 #include "Pipelines/NullPipelines.hpp"
 #include "Queries/NullQueries.hpp"
 #include "Resources/NullResources.hpp"
+#include <RHI/Pipelines/RHIInlineConstantRange.hpp>
 #include <RHI/Utilities/RHIScopedDebugRegion.hpp>
+#include <Templates/Array.hpp>
 #include <Tests/UnitTest.hpp>
+#include <cstring>
 
 namespace Lumen
 {
@@ -78,6 +81,35 @@ namespace RHI
             LUMEN_CHECK_TRUE( List.End().HasValue() );
             LUMEN_CHECK_TRUE( List.Reset().HasValue() );
             LUMEN_CHECK_EQ( List.GetStream().GetRetainedCount(), 0U );
+        }
+
+        LUMEN_TEST( NullCommands, CopiesInlineConstantBytesIntoTheCommandStream )
+        {
+            TSharedRef<Tests::FNullCommandAllocator> Allocator =
+                MakeShared<Tests::FNullCommandAllocator>( ERHIQueueType::Compute, FRHIObjectId{ 1ULL } );
+            Tests::FNullCommandList List( Allocator, FRHIObjectId{ 2ULL } );
+            TSharedRef<Tests::FNullPipeline> Pipeline =
+                MakeShared<Tests::FNullPipeline>( ERHIPipelineType::Compute, FRHIPipelineCompatibility{}, FRHIObjectId{ 3ULL } );
+            LUMEN_CHECK_TRUE( List.Begin().HasValue() );
+            LUMEN_CHECK_TRUE( List.SetPipeline( Pipeline ).HasValue() );
+
+            TArray<Byte, 4U> Values = { Byte{ 1U }, Byte{ 2U }, Byte{ 3U }, Byte{ 4U } };
+            LUMEN_CHECK_TRUE( List.SetInlineConstants( ERHIShaderStage::Compute, 0U, Values ).HasValue() );
+            Values[0] = Byte{ 9U };
+            LUMEN_CHECK_HAS_ERROR( List.SetInlineConstants( ERHIShaderStage::Compute, 2U, Values ) );
+            LUMEN_CHECK_HAS_ERROR( List.SetInlineConstants( ERHIShaderStage::Compute, 0U, {} ) );
+
+            const TExpected<FRHICommandView, FRHIError> Command = List.GetStream().Read( 1U );
+            LUMEN_CHECK_TRUE( Command.HasValue() );
+            LUMEN_CHECK_EQ( Command->Opcode, static_cast<UInt32>( Tests::ERHINullCommandOpcode::SetInlineConstants ) );
+            LUMEN_CHECK_EQ( Command->Payload.size(), sizeof( FRHIInlineConstantCommand ) + 4U );
+            FRHIInlineConstantCommand Record;
+            std::memcpy( std::addressof( Record ), Command->Payload.data(), sizeof( Record ) );
+            LUMEN_CHECK_EQ( Record.Stages, ERHIShaderStage::Compute );
+            LUMEN_CHECK_EQ( Record.Offset, 0U );
+            LUMEN_CHECK_EQ( Record.Size, 4U );
+            LUMEN_CHECK_EQ( static_cast<UInt32>( Command->Payload[sizeof( Record )] ), 1U );
+            LUMEN_CHECK_TRUE( List.End().HasValue() );
         }
 
     } // namespace

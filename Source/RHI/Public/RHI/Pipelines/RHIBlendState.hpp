@@ -64,7 +64,7 @@ namespace RHI
     {
         TVector<FRHIBlendAttachmentState> Attachments;
         /** @return Success when each attachment has a valid mask and enum values. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
 

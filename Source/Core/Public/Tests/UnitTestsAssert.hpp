@@ -13,7 +13,9 @@
 #include <Tests/UnitTestAssertionFailure.hpp>
 #include <Tests/UnitTestTypes.hpp>
 
-#include <concepts>
+#include <Concepts/IsIntegral.hpp>
+#include <Concepts/SameAs.hpp>
+
 #include <format>
 #include <source_location>
 #include <type_traits>
@@ -45,6 +47,26 @@ namespace Tests
     }
 
     /**
+     * @brief Compares two values for equality, using a sign-safe comparison when both are integers.
+     * @details std::cmp_equal avoids the signed/unsigned promotion pitfalls of operator== and is -Wsign-compare clean,
+     *          which matters when comparing C flag typedefs (uint32_t) with enum bit constants (int), e.g. Vulkan's.
+     */
+    template <typename TLeft, typename TRight> [[nodiscard]] constexpr Bool AreEqual ( const TLeft &Left, const TRight &Right )
+    {
+        if constexpr ( Concepts::CIsIntegral<std::remove_cvref_t<TLeft>> and
+                       Concepts::CIsIntegral<std::remove_cvref_t<TRight>> and
+                       not Concepts::CIsSame<std::remove_cvref_t<TLeft>, Bool> and
+                       not Concepts::CIsSame<std::remove_cvref_t<TRight>, Bool> )
+        {
+            return std::cmp_equal( Left, Right );
+        }
+        else
+        {
+            return Left == Right;
+        }
+    }
+
+    /**
      * @brief Asserts that two expressions are equal.
      */
     template <typename TLeft, typename TRight>
@@ -54,7 +76,7 @@ namespace Tests
                        const FStringView RightExpression,
                        const std::source_location Location = std::source_location::current() )
     {
-        if ( not( Left == Right ) ) [[unlikely]]
+        if ( not AreEqual( Left, Right ) ) [[unlikely]]
         {
             if constexpr ( CFormattableOrEnum<TLeft> and CFormattableOrEnum<TRight> )
             {
@@ -81,7 +103,7 @@ namespace Tests
                           const FStringView RightExpression,
                           const std::source_location Location = std::source_location::current() )
     {
-        if ( Left == Right ) [[unlikely]]
+        if ( AreEqual( Left, Right ) ) [[unlikely]]
         {
             if constexpr ( CFormattableOrEnum<TLeft> and CFormattableOrEnum<TRight> )
             {

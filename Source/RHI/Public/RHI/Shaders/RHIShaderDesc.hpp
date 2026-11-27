@@ -4,9 +4,9 @@
  */
 #pragma once
 #include <Memory/Span.hpp>
-#include <RHI/Shaders/RHIShaderFormat.hpp>
 #include <RHI/Shaders/RHIShaderReflection.hpp>
 #include <RHI/Types/RHIError.hpp>
+#include <RHI/Types/RHIShaderFormat.hpp>
 #include <RHI/Types/RHIShaderStage.hpp>
 #include <RHIExport.hpp>
 #include <String/String.hpp>
@@ -27,7 +27,7 @@ namespace RHI
         ERHIShaderFormat Format = ERHIShaderFormat::Null;
         FRHIShaderReflection Reflection;
         /** @return Success for a single stage, nonempty entry, and valid reflection. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
 

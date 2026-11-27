@@ -49,7 +49,7 @@ public:
 
 public:
 
-    virtual TSharedRef<FGenericWindow> MakeWindow ();
+    [[nodiscard]] virtual TSharedRef<FGenericWindow> MakeWindow () noexcept;
 
 protected:
 

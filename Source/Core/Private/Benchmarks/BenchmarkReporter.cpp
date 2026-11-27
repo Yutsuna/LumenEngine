@@ -29,6 +29,14 @@ namespace Benchmarks
     namespace
     {
 
+        /**
+         * @brief Format with a runtime-checked format string.
+         */
+        template <typename... Args> [[nodiscard]] FString FormatRuntime ( FStringView InFormat, Args &&...InArgs )
+        {
+            return std::vformat( InFormat, std::make_format_args( InArgs... ) );
+        }
+
         [[nodiscard]] FString FormatDuration ( const Float64 Nanoseconds )
         {
             if ( Nanoseconds < 1.0E3 )
@@ -139,9 +147,9 @@ namespace Benchmarks
 
         NameColumnWidth = std::max<USize>( Info.LongestNameLength, 9 );
 
-        FLogger::Flush( std::format( "{:<{}}  {:>12}  {:>12}  {:>7}  {:>22}  {}" LUMEN_NEWLINE, "Benchmark", NameColumnWidth,
-                                     "Median/op", "Min/op", "CV", "Iterations x Samples", "Throughput" ) );
-        FLogger::Flush( std::format( "{:-<{}}" LUMEN_NEWLINE, "", NameColumnWidth + 80 ) );
+        FLogger::Flush( FormatRuntime( "{:<{}}  {:>12}  {:>12}  {:>7}  {:>22}  {}" LUMEN_NEWLINE, "Benchmark", NameColumnWidth,
+                                       "Median/op", "Min/op", "CV", "Iterations x Samples", "Throughput" ) );
+        FLogger::Flush( FormatRuntime( "{:-<{}}" LUMEN_NEWLINE, "", NameColumnWidth + 80 ) );
     }
 
     void FConsoleBenchmarkReporter::OnBenchmarkFinished ( const FBenchmarkResult &Result )
@@ -151,16 +159,16 @@ namespace Benchmarks
         if ( not Result.Succeeded() )
         {
             const FString Failure = Result.Failure.ValueOr( "unknown failure" );
-            FLogger::Flush( std::format( "{:<{}}  FAILED: {}" LUMEN_NEWLINE, Name, NameColumnWidth, Failure ) );
+            FLogger::Flush( FormatRuntime( "{:<{}}  FAILED: {}" LUMEN_NEWLINE, Name, NameColumnWidth, Failure ) );
             return;
         }
 
         const FBenchmarkStatistics &Stats = Result.NanosecondsPerIteration;
 
-        FLogger::Flush( std::format( "{:<{}}  {:>12}  {:>12}  {:>6.1f}%  {:>22}  {}" LUMEN_NEWLINE, Name, NameColumnWidth,
-                                     FormatDuration( Stats.Median ), FormatDuration( Stats.Min ), Stats.CoefficientOfVariation,
-                                     std::format( "{} x {}", Result.IterationsPerSample, Result.SampleCount ),
-                                     FormatThroughput( Result ) ) );
+        FLogger::Flush( FormatRuntime( "{:<{}}  {:>12}  {:>12}  {:>6.1f}%  {:>22}  {}" LUMEN_NEWLINE, Name, NameColumnWidth,
+                                       FormatDuration( Stats.Median ), FormatDuration( Stats.Min ), Stats.CoefficientOfVariation,
+                                       FormatRuntime( "{} x {}", Result.IterationsPerSample, Result.SampleCount ),
+                                       FormatThroughput( Result ) ) );
     }
 
     void FConsoleBenchmarkReporter::OnRunFinished ( const FBenchmarkRunSummary &Summary )

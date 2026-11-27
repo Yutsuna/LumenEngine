@@ -4,7 +4,7 @@
  */
 
 #include <RHI/Pipelines/RHIVertexLayout.hpp>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIVertexLayout::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIVertexLayout::Validate () const noexcept
 {
     for ( USize First = 0U; First < Attributes.size(); ++First )
     {

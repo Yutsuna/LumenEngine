@@ -7,8 +7,10 @@
 
 #include <Core/CoreDefinitions.hpp>
 
-#if not defined( LUMEN_PLATFROM_WINDOWS )
-    #error "WindowsMutex.hpp is only available on Windows platforms."
+#if not defined( LUMEN_PLATFORM_WINDOWS )
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "WindowsSharedMutex.hpp is only supported on Windows"
+    #endif
 #else
 
     #include <Core/CoreTypes.hpp>

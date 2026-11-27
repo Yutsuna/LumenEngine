@@ -2,6 +2,7 @@
  * @file RHIDescriptorAllocatorBase.hpp
  * @brief Declares the backend-neutral descriptor allocator implementation.
  */
+
 #pragma once
 
 #include <RHIExport.hpp>
@@ -48,7 +49,7 @@ namespace RHI
          * @param InAllocation Range previously returned by Allocate.
          * @return Success, or InvalidArgument when the range is foreign or already free.
          */
-        TExpected<void, FRHIError> Free ( FRHIDescriptorAllocation InAllocation ) noexcept override;
+        FRHIExpected Free ( FRHIDescriptorAllocation InAllocation ) noexcept override;
 
         /**
          * @brief Reclaims all descriptor slots; callers must ensure no GPU work still uses them.
@@ -77,6 +78,7 @@ namespace RHI
         TVector<FRHIDescriptorAllocation> Active;
         mutable HAL::FPlatformRecursiveSharedMutex Mutex;
     };
+
 } // namespace RHI
 
 } // namespace Lumen

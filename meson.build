@@ -13,6 +13,7 @@ project(
         'c_std=c23',
         'default_library=shared',
         'warning_level=0',
+        'b_ndebug=if-release',
     ],
     meson_version : '>=1.10',
 )

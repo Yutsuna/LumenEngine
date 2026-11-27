@@ -9,8 +9,8 @@ Lumen::RHI::FRHIDeferredReleaseQueue::~FRHIDeferredReleaseQueue () noexcept
 {
     Shutdown();
 }
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIDeferredReleaseQueue::Enqueue ( const FRHITimelineValue InRequired, TFunction<void()> InRelease ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDeferredReleaseQueue::Enqueue ( const FRHITimelineValue InRequired,
+                                                                         TFunction<void()> InRelease ) noexcept
 {
     if ( not InRelease )
     {

@@ -5,39 +5,43 @@
 
 #include <Generic/GenericWindow.hpp>
 
+/**
+ * Public
+ */
+
 void Lumen::FGenericWindow::Clear () noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 void Lumen::FGenericWindow::Destroy () noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 void Lumen::FGenericWindow::Show () noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 void Lumen::FGenericWindow::Minimize () noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 void Lumen::FGenericWindow::Maximize () noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 void Lumen::FGenericWindow::Hide () noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 void Lumen::FGenericWindow::SetWindowMode ( const EWindowMode::Type LUMEN_UNUSED InWindowMode ) noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 Lumen::EWindowMode::Type Lumen::FGenericWindow::GetWindowMode () const noexcept
@@ -57,22 +61,22 @@ Lumen::Bool Lumen::FGenericWindow::IsMinimized () const noexcept
 
 Lumen::Bool Lumen::FGenericWindow::IsVisible () const noexcept
 {
-    return Description->bIsVisible;
+    return Description.IsValid() and Description->bIsVisible;
 }
 
 void Lumen::FGenericWindow::SetWindowFocus () noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 void Lumen::FGenericWindow::SetOpacity ( const Float32 LUMEN_UNUSED InOpacity ) noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 void Lumen::FGenericWindow::EnableInput ( Bool LUMEN_UNUSED bEnable ) noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 Lumen::Bool Lumen::FGenericWindow::IsPointInWindow ( const Int32 InX, const Int32 InY ) const noexcept
@@ -108,25 +112,25 @@ Lumen::Bool Lumen::FGenericWindow::IsForegroundWindow () const noexcept
 
 void Lumen::FGenericWindow::SetWindowTitle ( const AnsiChar LUMEN_UNUSED *const InText ) noexcept
 {
-    /** NOTE: "To be implemented by children */
+    /** NOTE: To be implemented by children */
 }
 
 Lumen::Int32 Lumen::FGenericWindow::GetWindowWidth () const noexcept
 {
-    return Description->Size.Width;
+    return Description.IsValid() ? Description->Size.Width : 0;
 }
 
 Lumen::Int32 Lumen::FGenericWindow::GetWindowHeight () const noexcept
 {
-    return Description->Size.Height;
+    return Description.IsValid() ? Description->Size.Height : 0;
 }
 
 Lumen::Maths::FVec2i Lumen::FGenericWindow::GetWindowSize () const noexcept
 {
-    return Description->Size;
+    return Description.IsValid() ? Description->Size : Maths::FVec2i( 0, 0 );
 }
 
 Lumen::Maths::FVec2i Lumen::FGenericWindow::GetWindowPosition () const noexcept
 {
-    return Description->Position;
+    return Description.IsValid() ? Description->Position : Maths::FVec2i( 0, 0 );
 }

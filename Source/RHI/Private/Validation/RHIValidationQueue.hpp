@@ -23,18 +23,32 @@ namespace RHI
     public:
 
         FRHIValidationQueue ( TSharedRef<IRHIQueue> InUnderlying, TSharedPtr<FRHIValidationState> InState ) noexcept;
+
         ~FRHIValidationQueue () noexcept override;
+
+    public:
+
         [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+
         [[nodiscard]] FString GetDebugName () const noexcept override;
+
         void SetDebugName ( FStringView InName ) noexcept override;
+
         [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+
         [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+
         [[nodiscard]] ERHIQueueType GetType () const noexcept override;
+
         [[nodiscard]] FRHITimelineValue GetCompletedValue () const noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> Submit ( const FRHISubmitDesc &InDesc ) noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> WaitIdle () noexcept override;
-        [[nodiscard]] TExpected<void, FRHIError> Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept override;
+
+        [[nodiscard]] FRHIExpected Submit ( const FRHISubmitDesc &InDesc ) noexcept override;
+
+        [[nodiscard]] FRHIExpected WaitIdle () noexcept override;
+
+        [[nodiscard]] FRHIExpected Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept override;
 
     private:
 

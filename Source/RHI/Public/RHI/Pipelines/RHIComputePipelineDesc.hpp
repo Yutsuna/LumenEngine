@@ -24,7 +24,7 @@ namespace RHI
         TSharedPtr<IRHIShader> Shader;
         TSharedPtr<IRHIPipelineLayout> Layout;
         /** @return Success for nonnull compute shader and layout. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
 

@@ -5,7 +5,11 @@
 
 #pragma once
 
+#include <AppCoreExport.hpp>
+
 #include <Core/CoreTypes.hpp>
+
+#include <Meta/Reflection.hpp>
 
 #include <String/String.hpp>
 
@@ -34,9 +38,15 @@ namespace EWindowMode
 
     /**
      * @brief Convert a window mode enum value to its string representation.
+     * @return The reflected enumerator name ("<unknown>" for out-of-range values), or the explicit
+     *         mapping when reflection is unavailable.
      */
-    static constexpr const AnsiChar *ToString ( const Type InWindowMode )
+    [[nodiscard]] static constexpr FStringView ToString ( const Type InWindowMode ) noexcept
     {
+#if LUMEN_HAS_REFLECTION
+        return Meta::EnumName( InWindowMode );
+#else
+        /** INFO: Reflection is unavailable; fall back to the explicit mapping. */
         switch ( InWindowMode )
         {
         case Fullscreen:
@@ -48,6 +58,7 @@ namespace EWindowMode
         default:
             return "Unknown";
         }
+#endif
     }
 
 } // namespace EWindowMode
@@ -66,9 +77,10 @@ namespace /// NOLINT(cert-dcl59-cpp)
 } // namespace
 
 /**
+ * @struct FGenericWindowDescription
  * @brief Structure describing the properties of a generic window.
  */
-struct FGenericWindowDescription
+struct APPCORE_EXPORT FGenericWindowDescription
 {
     /** Title of the window */
     FString Title = FString{ DefaultWindowTitle };

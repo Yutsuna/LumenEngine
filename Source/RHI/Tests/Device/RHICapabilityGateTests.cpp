@@ -73,6 +73,14 @@ namespace RHI
         LUMEN_CHECK_TRUE( Module.CreateDevice( FRHIDeviceDesc{} ).HasValue() );
     }
 
+    LUMEN_TEST( RHICapabilityGate, RejectsUnavailableShaderFormat )
+    {
+        Tests::FNullModule Module;
+        FRHIDeviceDesc Request;
+        Request.RequiredCapabilities.ShaderFormats = { ERHIShaderFormat::Source };
+        LUMEN_CHECK_HAS_ERROR( Module.CreateDevice( Request ) );
+    }
+
 } // namespace RHI
 
 } // namespace Lumen

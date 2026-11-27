@@ -15,7 +15,7 @@
 namespace
 {
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> InvalidCopy ( Lumen::FStringView InMessage ) noexcept
+Lumen::RHI::FRHIExpected InvalidCopy ( Lumen::FStringView InMessage ) noexcept
 {
     return Lumen::TUnexpected<Lumen::RHI::FRHIError>(
         Lumen::RHI::MakeRHIInvalidArgument( Lumen::RHI::ERHIErrorCondition::Command, InMessage ) );
@@ -33,7 +33,7 @@ Lumen::Bool IsAspectValid ( const Lumen::RHI::FRHIFormatInfo &InInfo, const Lume
  * Public
  */
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBufferCopy::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBufferCopy::Validate () const noexcept
 {
     if ( Size == 0ULL or not RHICheckedAdd( SourceOffset, Size ) or not RHICheckedAdd( DestinationOffset, Size ) )
     {
@@ -42,11 +42,11 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBufferCopy::Valida
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBufferCopy::Validate ( const UInt64 InSourceSize,
-                                                                                     const UInt64 InDestinationSize,
-                                                                                     const Bool bSameBuffer ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBufferCopy::Validate ( const UInt64 InSourceSize,
+                                                                const UInt64 InDestinationSize,
+                                                                const Bool bSameBuffer ) const noexcept
 {
-    return Validate().AndThen( [this, InSourceSize, InDestinationSize, bSameBuffer] () noexcept -> TExpected<void, FRHIError>
+    return Validate().AndThen( [this, InSourceSize, InDestinationSize, bSameBuffer] () noexcept -> FRHIExpected
     {
         if ( SourceOffset + Size > InSourceSize or DestinationOffset + Size > InDestinationSize or
              ( bSameBuffer and RHIRangesOverlap( SourceOffset, Size, DestinationOffset, Size ) ) )
@@ -57,7 +57,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBufferCopy::Valida
     } );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHITextureCopy::Validate ( const ERHIFormat InFormat ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHITextureCopy::Validate ( const ERHIFormat InFormat ) const noexcept
 {
     const TOptional<FRHIFormatInfo> Info = TryGetRHIFormatInfo( InFormat );
     if ( not Info or not IsAspectValid( *Info, Aspect ) or not SourceOffset.IsNonNegative() or
@@ -68,20 +68,21 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHITextureCopy::Valid
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIBufferTextureCopy::Validate ( const ERHIFormat InFormat ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBufferTextureCopy::Validate ( const ERHIFormat InFormat ) const noexcept
 {
     const TOptional<FRHIFormatInfo> Info = TryGetRHIFormatInfo( InFormat );
     if ( not Info or not IsAspectValid( *Info, Aspect ) or not TextureOffset.IsNonNegative() or not Extent.IsValid() )
     {
         return InvalidCopy( "Buffer-texture copy has invalid offsets, extent, or aspects" );
     }
+
     return ComputeRHICopyFootprint( InFormat, Extent, BufferOffset )
-        .AndThen( [this] ( const FRHICopyFootprint &InFootprint ) noexcept -> TExpected<void, FRHIError>
+        .AndThen( [this] ( const FRHICopyFootprint &InFootprint ) noexcept -> FRHIExpected
     {
         const UInt64 EffectiveRowPitch = RowPitch == 0ULL ? InFootprint.RowPitch : RowPitch;
         const TOptional<UInt64> MinimumSlicePitch =
             RHICheckedMultiply( EffectiveRowPitch, static_cast<UInt64>( InFootprint.RowCount ) );
+
         UInt64 EffectiveSlicePitch = SlicePitch;
 
         if ( SlicePitch == 0ULL and MinimumSlicePitch )

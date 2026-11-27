@@ -2,7 +2,7 @@
 # Source/Meson/Tests/meson.build
 # Discovers and registers each module's test suite.
 #
-# Reads  : ModuleDefinitions, GlobalModules, PublicIncludes, ALL_WARNINGS
+# Reads  : ModuleDefinitions, GlobalModules, GlobalTestModules, PublicIncludes, ALL_WARNINGS
 # Writes : (nothing; only registers `test()` targets)
 #}
 
@@ -13,7 +13,6 @@ endif
 foreach ModuleDefinition : ModuleDefinitions
     ModuleName = ModuleDefinition.get('Name')
     ModuleSourceDirRel = ModuleDefinition.get('SourceDirRel')
-    ModuleDependencies = ModuleDefinition.get('Depends', [])
 
     ModulePath = SourceRoot / ModuleSourceDirRel
     PrivatePath = ModulePath / ModuleDefinition.get('Private', 'Private')
@@ -33,6 +32,8 @@ foreach ModuleDefinition : ModuleDefinitions
             endif
         endforeach
     endif
+
+    TestSources += ModuleDefinition.get('ExtraTestSources', [])
 
     if TestSources.length() > 0
         HasCustomTestMain = FileSystem.is_file(TestsPath / 'Main.cpp')\
@@ -54,13 +55,11 @@ or FileSystem.is_file(TestsPath / 'TestMain.cpp')
         if FileSystem.is_dir(RelPrivatePath)
             TestIncludeDirectories += include_directories(RelPrivatePath)
         endif
+        TestIncludeDirectories += ModuleDefinition.get('ExtraTestIncludeDirectories', [])
 
-        TestDependencies = [GlobalModules.get(ModuleName)]
-
-        if ModuleName != 'Core' and GlobalModules.has_key('Core')\
-and not ModuleDependencies.contains('Core')
-            TestDependencies += GlobalModules.get('Core')
-        endif
+        TestDependencies = [GlobalTestModules.get(ModuleName)]
+        TestDependencies += ModuleDefinition.get('ExtraTestDependencies', [])
+        TestEnvironment = ModuleDefinition.get('TestEnvironment', [])
 
         CompileArguments = ALL_WARNINGS
 
@@ -79,6 +78,7 @@ and not ModuleDependencies.contains('Core')
             TestTarget,
             workdir : meson.project_source_root(),
             suite : ModuleName,
+            env : TestEnvironment,
         )
     endif
 endforeach

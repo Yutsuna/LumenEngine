@@ -9,7 +9,9 @@
 #include <CoreExport.hpp>
 
 #if not defined( LUMEN_PLATFORM_MACOS )
-    #error "MacOSFutex.hpp is only available on MacOS."
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "MacOSFutex.hpp is only available on MacOS."
+    #endif
 #else
 
 namespace Lumen

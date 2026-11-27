@@ -5,6 +5,7 @@
 
 #include <Device/NullDevice.hpp>
 #include <Presentation/NullPresentation.hpp>
+#include <Presentation/NullSurfaceBridge.hpp>
 #include <RHI/Device/RHIBackendCast.hpp>
 #include <RHI/Queue/IRHIQueue.hpp>
 #include <RHI/Resources/IRHITexture.hpp>
@@ -75,10 +76,43 @@ namespace RHI
             FRHISemaphoreDesc SemaphoreDesc;
             SemaphoreDesc.Type                       = ERHISemaphoreType::Binary;
             const TSharedRef<IRHISemaphore> Complete = *Device.CreateSemaphore( SemaphoreDesc );
-            const TExpected<void, FRHIError> Timeout = Swapchain->Present( *Queue, Acquired, Complete.Get() );
+            const FRHIExpected Timeout               = Swapchain->Present( *Queue, Acquired, Complete.Get() );
             LUMEN_CHECK_TRUE( Timeout.Error().Code == ERHIErrorCode::Timeout );
             LUMEN_CHECK_TRUE( Complete->Signal( 1ULL ).HasValue() );
             LUMEN_CHECK_TRUE( Swapchain->Present( *Queue, Acquired, Complete.Get() ).HasValue() );
+        }
+
+        LUMEN_TEST( NullPresentation, SwapchainRetainsItsNativeSurfaceBridge )
+        {
+            Tests::FNullDevice Device;
+            const TSharedRef<IRHISwapchain> Swapchain = [&Device]
+            {
+                FRHISwapchainDesc Desc = MakeDesc();
+                Desc.Surface.Type      = ERHISurfaceType::Window;
+                Desc.Surface.Bridge =
+                    TSharedPtr<IRHISurfaceBridge>( MakeShared<Tests::FNullSurfaceBridge>( FRHIExtent3D{ 640U, 480U, 1U } ) );
+                TExpected<TSharedRef<IRHISwapchain>, FRHIError> Result = Device.CreateSwapchain( Desc );
+                LUMEN_CHECK_TRUE( Result.HasValue() );
+                return *Result;
+            }();
+            LUMEN_CHECK_TRUE( Swapchain->GetDesc().Surface.Bridge.IsValid() );
+            TExpected<FRHIExtent3D, FRHIError> Extent = Swapchain->GetDesc().Surface.Bridge->GetExtent();
+            LUMEN_CHECK_TRUE( Extent.HasValue() );
+            LUMEN_CHECK_EQ( Extent->Width, 640U );
+        }
+
+        LUMEN_TEST( NullPresentation, ReportsInjectedSuboptimalState )
+        {
+            Tests::FNullDevice Device;
+            const TSharedRef<IRHISwapchain> Swapchain = *Device.CreateSwapchain( MakeDesc() );
+            TOptional<TSharedPtr<Tests::FNullSwapchain>> NullSwapchain =
+                TryRHIBackendCast<Tests::FNullSwapchain>( StaticCastSharedRef<IRHIObject>( Swapchain ) );
+            LUMEN_CHECK_TRUE( NullSwapchain.HasValue() );
+            ( *NullSwapchain )->MarkSuboptimal();
+            const FRHIAcquiredImage Acquired = *Swapchain->AcquireNextImage();
+            LUMEN_CHECK_TRUE( Acquired.bSuboptimal );
+            const TSharedRef<IRHIQueue> Queue = *Device.GetQueue( ERHIQueueType::Graphics, 0U );
+            LUMEN_CHECK_TRUE( Swapchain->Present( *Queue, Acquired, nullptr ).HasValue() );
         }
 
     } // namespace

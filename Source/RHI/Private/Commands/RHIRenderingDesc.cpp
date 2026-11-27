@@ -8,8 +8,7 @@
 
 #include <variant>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIRenderingAttachment::Validate ( const Bool bDepthStencil ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIRenderingAttachment::Validate ( const Bool bDepthStencil ) const noexcept
 {
     const TSharedPtr<IRHITexture> Texture = View ? View->GetTexture() : TSharedPtr<IRHITexture>{};
     if ( not Texture or LoadOp > ERHIRenderingLoadOp::DontCare or StoreOp > ERHIRenderingStoreOp::DontCare )
@@ -34,7 +33,7 @@ Lumen::RHI::FRHIRenderingAttachment::Validate ( const Bool bDepthStencil ) const
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIRenderingDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIRenderingDesc::Validate () const noexcept
 {
     if ( not Area.IsValid() or ( ColorAttachments.empty() and not DepthStencilAttachment.View ) )
     {
@@ -44,19 +43,12 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIRenderingDesc::Val
 
     for ( const FRHIRenderingAttachment &Attachment : ColorAttachments )
     {
-        const Lumen::TExpected<void, Lumen::RHI::FRHIError> Valid = Attachment.Validate( false );
-        if ( not Valid )
-        {
-            return Valid;
-        }
-    }
+        LUMEN_TRY_EXPECT_ERROR( Attachment.Validate( false ) );
+    };
+
     if ( DepthStencilAttachment.View )
     {
-        const Lumen::TExpected<void, Lumen::RHI::FRHIError> Valid = DepthStencilAttachment.Validate( true );
-        if ( not Valid )
-        {
-            return Valid;
-        }
+        LUMEN_TRY_EXPECT_ERROR( DepthStencilAttachment.Validate( true ) );
     }
 
     const FRHIRenderingAttachment *First  = ColorAttachments.empty() ? &DepthStencilAttachment : ColorAttachments.data();

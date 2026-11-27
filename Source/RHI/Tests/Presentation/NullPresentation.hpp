@@ -7,7 +7,7 @@
 #include <Device/NullFaultPlan.hpp>
 #include <HAL/PlatformMutex.hpp>
 #include <RHI/Presentation/IRHISwapchain.hpp>
-#include <Types/RHIObjectForward.hpp>
+#include <RHI/Types/RHIObjectForward.hpp>
 
 namespace Lumen
 {
@@ -39,15 +39,15 @@ namespace RHI
             LUMEN_RHI_OBJECT_DECLARATIONS;
 
             /** @brief Creates the initial images and binary semaphores. */
-            [[nodiscard]] TExpected<void, FRHIError> Initialize () noexcept;
+            [[nodiscard]] FRHIExpected Initialize () noexcept;
             const FRHISwapchainDesc &GetDesc () const noexcept override;
             const FRHISwapchainCapabilities &GetCapabilities () const noexcept override;
             UInt32 GetImageCount () const noexcept override;
             TExpected<TSharedRef<IRHITexture>, FRHIError> GetImage ( UInt32 InIndex ) const noexcept override;
             TExpected<FRHIAcquiredImage, FRHIError> AcquireNextImage () noexcept override;
-            TExpected<void, FRHIError>
+            FRHIExpected
             Present ( IRHIQueue &InQueue, const FRHIAcquiredImage &InImage, IRHISemaphore *InRenderComplete ) noexcept override;
-            TExpected<void, FRHIError> Resize ( const FRHIExtent3D &InExtent ) noexcept override;
+            FRHIExpected Resize ( const FRHIExtent3D &InExtent ) noexcept override;
 
             void MarkOutOfDate () noexcept;
             void MarkSuboptimal () noexcept;
@@ -55,7 +55,7 @@ namespace RHI
 
         private:
 
-            [[nodiscard]] TExpected<void, FRHIError> RebuildImages () noexcept;
+            [[nodiscard]] FRHIExpected RebuildImages () noexcept;
 
         private:
 

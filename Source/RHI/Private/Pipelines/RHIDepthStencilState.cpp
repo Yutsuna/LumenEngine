@@ -4,7 +4,7 @@
  */
 
 #include <RHI/Pipelines/RHIDepthStencilState.hpp>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDepthStencilState::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDepthStencilState::Validate () const noexcept
 {
     if ( DepthCompare > ERHICompareFunction::Always or Front.Compare > ERHICompareFunction::Always or
          Back.Compare > ERHICompareFunction::Always or Front.FailOp > ERHIStencilOp::DecrementWrap or

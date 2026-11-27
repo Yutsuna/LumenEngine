@@ -32,8 +32,7 @@ namespace RHI
     [[nodiscard]] RHI_EXPORT Bool CanRHITransitionCommandList ( ERHICommandListState InFrom, ERHICommandListState InTo ) noexcept;
 
     /** @brief Applies a legal transition or returns InvalidState without modifying InOutState. */
-    RHI_EXPORT TExpected<void, FRHIError> RHITransitionCommandList ( ERHICommandListState &InOutState,
-                                                                     ERHICommandListState InTo ) noexcept;
+    RHI_EXPORT FRHIExpected RHITransitionCommandList ( ERHICommandListState &InOutState, ERHICommandListState InTo ) noexcept;
 
 } // namespace RHI
 

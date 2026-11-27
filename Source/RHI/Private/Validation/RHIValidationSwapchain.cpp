@@ -8,6 +8,10 @@
 #include <RHI/Synchronization/IRHISemaphore.hpp>
 #include <RHI/Validation/RHIValidation.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIValidationSwapchain::FRHIValidationSwapchain ( TSharedRef<IRHISwapchain> InUnderlying,
                                                                TSharedPtr<FRHIValidationState> InState ) noexcept
     : Underlying( std::move( InUnderlying ) ), State( std::move( InState ) )
@@ -110,13 +114,14 @@ Lumen::RHI::FRHIValidationSwapchain::AcquireNextImage () noexcept
     } );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationSwapchain::Present (
-    IRHIQueue &InQueue, const FRHIAcquiredImage &InImage, IRHISemaphore *InRenderComplete ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationSwapchain::Present ( IRHIQueue &InQueue,
+                                                                        const FRHIAcquiredImage &InImage,
+                                                                        IRHISemaphore *InRenderComplete ) noexcept
 {
     const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Presentation );
     if ( bValidate )
     {
-        const TExpected<void, FRHIError> Owned = State->ValidateObject( InQueue, ERHIValidationObjectKind::Queue );
+        const FRHIExpected Owned = State->ValidateObject( InQueue, ERHIValidationObjectKind::Queue );
         if ( not Owned )
         {
             return Owned;
@@ -140,8 +145,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIValidationSwapchai
     } );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIValidationSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationSwapchain::Resize ( const FRHIExtent3D &InExtent ) noexcept
 {
     if ( State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Presentation ) )
     {

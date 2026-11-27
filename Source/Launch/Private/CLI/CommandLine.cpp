@@ -36,7 +36,7 @@ TSpan<const AnsiChar *const> Launch::FCommandLine::GetArguments () const noexcep
 
 Bool Launch::FCommandLine::HasSwitch ( const FStringView InName ) const noexcept
 {
-    return std::ranges::any_of( Arguments, [InName] ( const AnsiChar *const Raw ) noexcept -> Bool
+    return Algo::AnyOf( Arguments, [InName] ( const AnsiChar *const Raw ) noexcept -> Bool
     {
         if ( const FStringView Option = AsOption( Raw ); not Option.empty() and EqualsIgnoreCase( Option, InName ) )
         {

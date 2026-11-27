@@ -68,7 +68,7 @@ namespace RHI
          * @param InBytes Byte size charged to occupancy.
          * @return Success, or OutOfMemory if capacity cannot be made available.
          */
-        TExpected<void, FRHIError> Store ( const KeyType &InKey, TSharedRef<ValueType> InValue, UInt64 InBytes ) noexcept;
+        FRHIExpected Store ( const KeyType &InKey, TSharedRef<ValueType> InValue, UInt64 InBytes ) noexcept;
 
         /**
          * @brief Removes the entry for a key.

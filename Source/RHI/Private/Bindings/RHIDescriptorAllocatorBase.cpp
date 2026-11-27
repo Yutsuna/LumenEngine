@@ -8,6 +8,10 @@
 #include <Algo/ForEach.hpp>
 #include <HAL/LockGuard.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIDescriptorAllocatorBase::FRHIDescriptorAllocatorBase ( const FRHIDescriptorAllocatorDesc &InDesc,
                                                                        IRHIDescriptorPoolBackend &InBackend ) noexcept
     : Desc( InDesc ), Backend( &InBackend )
@@ -57,29 +61,28 @@ Lumen::RHI::FRHIDescriptorAllocatorBase::Allocate ( const UInt32 InCount ) noexc
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Binding, "Descriptor allocator exhausted" ) );
     }
 
-    const UInt32 Remaining                         = Desc.MaximumCapacity - BaseOffset;
-    const UInt32 Requested                         = Desc.InitialCapacity < InCount ? InCount : Desc.InitialCapacity;
-    const UInt32 Capacity                          = Remaining < Requested ? Remaining : Requested;
-    const TExpected<UInt64, FRHIError> BackendPool = Backend->CreatePool( Capacity );
+    const UInt32 Remaining = Desc.MaximumCapacity - BaseOffset;
+    const UInt32 Requested = Desc.InitialCapacity < InCount ? InCount : Desc.InitialCapacity;
+    const UInt32 Capacity  = Remaining < Requested ? Remaining : Requested;
 
-    if ( not BackendPool )
-    {
-        return TUnexpected<FRHIError>( BackendPool.Error() );
-    }
-    Pools.push_back(
-        FPool{ .BaseOffset = BaseOffset, .BackendPool = *BackendPool, .Indices = MakeUnique<FIndiceAllocator>( Capacity ) } );
+    LUMEN_EXPECT( BackendPool, Backend->CreatePool( Capacity ) );
+
+    FPool Pool = { .BaseOffset = BaseOffset, .BackendPool = BackendPool, .Indices = MakeUnique<FIndiceAllocator>( Capacity ) };
+    Pools.push_back( std::move( Pool ) );
+
     const TOptional<FIndiceAllocation> Allocation = Pools.back().Indices->Allocate( InCount );
     if ( not Allocation )
     {
         return TUnexpected<FRHIError>( MakeRHIOutOfMemory( ERHIErrorCondition::Binding, "Descriptor pool growth failed" ) );
     }
+
     const FRHIDescriptorAllocation Result{ .Offset = BaseOffset + Allocation->Start, .Count = Allocation->Count };
     Active.push_back( Result );
+
     return Result;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllocation ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation InAllocation ) noexcept
 {
     if ( InAllocation.Count == 0U )
     {
@@ -87,6 +90,7 @@ Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation I
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     Bool bActive = false;
+
     for ( USize Index = 0U; Index < Active.size(); ++Index )
     {
         if ( Active[Index].Offset == InAllocation.Offset and Active[Index].Count == InAllocation.Count )
@@ -120,6 +124,7 @@ Lumen::RHI::FRHIDescriptorAllocatorBase::Free ( const FRHIDescriptorAllocation I
 void Lumen::RHI::FRHIDescriptorAllocatorBase::Reset () noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
+
     ReleasePools();
     Pools.clear();
     Active.clear();

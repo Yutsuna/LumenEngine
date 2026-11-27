@@ -1,35 +1,39 @@
 /**
  * @file RHIReadbackAllocator.cpp
- * @brief Implements mapped readback ring allocation.
+ * @brief Implements mapped readback ring allocation over an RHI buffer.
  */
 
 #include "RHIReadbackAllocator.hpp"
+
+#include <Templates/Expected.hpp>
 #include <Templates/Hash.hpp>
 
-Lumen::RHI::FRHIReadbackAllocator::FRHIReadbackAllocator ( const UInt64 InCapacity, const FRHIObjectId InId ) noexcept
-    : Identity( InId, FHash::TypeHash<FRHIReadbackAllocator>() ), Ring( InCapacity ),
-      Storage( MakeUnique<Byte[]>( static_cast<USize>( InCapacity ) ) ), Capacity( static_cast<USize>( InCapacity ) )
+/**
+ * Public
+ */
+
+Lumen::RHI::FRHIReadbackAllocator::FRHIReadbackAllocator ( TSharedRef<IRHIBuffer> InBuffer, const FRHIObjectId InId ) noexcept
+    : Identity( InId, FHash::TypeHash<FRHIReadbackAllocator>() ), Buffer( std::move( InBuffer ) ), Ring( Buffer->GetDesc().Size ),
+      Capacity( static_cast<USize>( Buffer->GetDesc().Size ) )
 {
     /* */
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( FRHIReadbackAllocator )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI, FRHIReadbackAllocator )
+
 Lumen::TExpected<Lumen::RHI::FRHIAllocation, Lumen::RHI::FRHIError>
 Lumen::RHI::FRHIReadbackAllocator::Allocate ( const FRHIAllocationDesc &InDesc ) noexcept
 {
-    FRHIAllocationDesc ReadbackDesc             = InDesc;
-    ReadbackDesc.MemoryClass                    = ERHIMemoryClass::Readback;
-    TExpected<FRHIAllocation, FRHIError> Result = Ring.Allocate( ReadbackDesc );
-    if ( not Result )
-    {
-        return Result;
-    }
-    IssuedIds.emplace( Result->Id.GetValue(), Result->Id );
+    FRHIAllocationDesc ReadbackDesc = InDesc;
+    ReadbackDesc.MemoryClass        = ERHIMemoryClass::Readback;
+
+    LUMEN_EXPECT( Result, Ring.Allocate( ReadbackDesc ) );
+    IssuedIds.emplace( Result.Id.GetValue(), Result.Id );
     return Result;
 }
 
-Lumen::TExpected<Lumen::RHI::FRHIReadbackAllocation, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIReadbackAllocator::Map ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::RHI::FRHIExpected
+Lumen::RHI::FRHIReadbackAllocator::ValidateAllocation ( const FRHIAllocation &InAllocation ) const noexcept
 {
     if ( not InAllocation.IsValid() )
     {
@@ -47,19 +51,33 @@ Lumen::RHI::FRHIReadbackAllocator::Map ( const FRHIAllocation &InAllocation ) no
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Readback range exceeds storage" ) );
     }
-    return FRHIReadbackAllocation{ .Allocation = InAllocation,
-                                   .MappedData = TSpan<const Byte>( Storage.Get() + static_cast<USize>( InAllocation.Offset ),
-                                                                    static_cast<USize>( InAllocation.Size ) ) };
+    return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIReadbackAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+Lumen::TExpected<Lumen::RHI::FRHIReadbackAllocation, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIReadbackAllocator::Map ( const FRHIAllocation &InAllocation ) noexcept
 {
-    TExpected<void, FRHIError> Result = Ring.Free( InAllocation );
-    if ( not Result )
+    LUMEN_EXPECT( _, ValidateAllocation( InAllocation ) );
+
+    return Buffer->Map( InAllocation.Offset, InAllocation.Size )
+        .Transform( [&InAllocation] ( const TSpan<Byte> &InMapped ) noexcept -> FRHIReadbackAllocation
     {
-        return Result;
-    }
+        return FRHIReadbackAllocation{ .Allocation = InAllocation, .MappedData = InMapped };
+    } );
+}
+
+Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIBuffer>, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIReadbackAllocator::GetBuffer ( const FRHIAllocation &InAllocation ) noexcept
+{
+    LUMEN_EXPECT( _, ValidateAllocation( InAllocation ) );
+
+    return Buffer;
+}
+
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIReadbackAllocator::Free ( const FRHIAllocation &InAllocation ) noexcept
+{
+    LUMEN_EXPECT( _, Ring.Free( InAllocation ) );
+
     IssuedIds.erase( InAllocation.Id.GetValue() );
     return {};
 }

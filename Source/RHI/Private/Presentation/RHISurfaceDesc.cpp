@@ -5,10 +5,10 @@
 
 #include <RHI/Presentation/RHISurfaceDesc.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHISurfaceDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHISurfaceDesc::Validate () const noexcept
 {
     if ( Type == ERHISurfaceType::None or Type >= ERHISurfaceType::Count or NativeWindow == 0U or not InitialExtent.IsValid() or
-         ( bRequiresDisplay and NativeDisplay == 0U ) )
+         ( bRequiresDisplay and NativeDisplay == 0U ) or ( Type == ERHISurfaceType::Window and not Bridge ) )
     {
         return TUnexpected<FRHIError>( MakeRHIInvalidPresentation( "Invalid surface payload or initial extent" ) );
     }

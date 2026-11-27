@@ -33,7 +33,7 @@ namespace RHI
             LUMEN_CHECK_HAS_ERROR( Semaphore.Signal( 1ULL ) );
             LUMEN_CHECK_TRUE( Semaphore.Signal( 3ULL ).HasValue() );
             LUMEN_CHECK_TRUE( Semaphore.Wait( 3ULL, 0.0 ).HasValue() );
-            TExpected<void, FRHIError> Timeout = Semaphore.Wait( 4ULL, 0.0 );
+            FRHIExpected Timeout = Semaphore.Wait( 4ULL, 0.0 );
             LUMEN_CHECK_HAS_ERROR( Timeout );
             LUMEN_CHECK_EQ( Timeout.Error().Code, ERHIErrorCode::Timeout );
         }

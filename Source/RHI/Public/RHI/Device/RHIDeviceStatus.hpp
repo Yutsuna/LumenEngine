@@ -2,6 +2,7 @@
  * @file RHIDeviceStatus.hpp
  * @brief Defines device lifetime and loss states.
  */
+
 #pragma once
 
 #include <Core/CoreTypes.hpp>

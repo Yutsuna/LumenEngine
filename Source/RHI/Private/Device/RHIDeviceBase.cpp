@@ -7,12 +7,17 @@
 #include <RHI/Device/RHIDeviceBase.hpp>
 #include <Templates/Hash.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIDeviceBase::FRHIDeviceBase ( const FRHICapabilities InCapabilities,
                                              const FRHILimits InLimits,
                                              const UInt64 InBackendTypeTag ) noexcept
     : Identity( FRHIObjectId{ 1ULL }, InBackendTypeTag ), Capabilities( InCapabilities ), Limits( InLimits ),
       Status( ERHIDeviceStatus::Ready ), Registry( MakeShared<FObjectRegistry>() )
 {
+    /* */
 }
 
 Lumen::RHI::FRHIDeviceBase::~FRHIDeviceBase () noexcept
@@ -67,33 +72,13 @@ void Lumen::RHI::FRHIDeviceBase::SetStatus ( const ERHIDeviceStatus InStatus ) n
     while ( static_cast<UInt8>( InStatus ) > static_cast<UInt8>( Current ) and
             not Status.compare_exchange_weak( Current, InStatus, std::memory_order_acq_rel ) )
     {
+        /* */
     }
 }
 
 Lumen::RHI::FRHIObjectId Lumen::RHI::FRHIDeviceBase::NextObjectId () noexcept
 {
     return Identifiers.Next<FRHIObjectIdTag>();
-}
-
-void Lumen::RHI::FRHIDeviceBase::TrackObject ( IRHIObject &InObject, FRHIObjectBase &InBase ) noexcept
-{
-    {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
-        Registry->Objects.emplace_back( &InObject );
-    }
-    InBase.SetDestructionCallback( [Registry = Registry, &InObject]
-    {
-        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
-        for ( USize Index = 0U; Index < Registry->Objects.size(); ++Index )
-        {
-            if ( Registry->Objects[Index] == &InObject )
-            {
-                Registry->Objects[Index] = Registry->Objects.back();
-                Registry->Objects.pop_back();
-                return;
-            }
-        }
-    } );
 }
 
 void Lumen::RHI::FRHIDeviceBase::UntrackObject ( IRHIObject &InObject ) noexcept
@@ -120,4 +105,29 @@ Lumen::RHI::FRHIDeviceBase::GetUnavailableError ( const FStringView InOperation 
     }
     const ERHIErrorCode Code = Current == ERHIDeviceStatus::Lost ? ERHIErrorCode::DeviceLost : ERHIErrorCode::DeviceClosed;
     return TOptional<FRHIError>( FRHIError( Code, ERHIErrorCondition::Device, InOperation ) );
+}
+
+/**
+ * Private
+ */
+
+void Lumen::RHI::FRHIDeviceBase::TrackObject ( IRHIObject &InObject, FRHIObjectBase &InBase ) noexcept
+{
+    {
+        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
+        Registry->Objects.emplace_back( &InObject );
+    }
+    InBase.SetDestructionCallback( [Registry = Registry, &InObject]
+    {
+        HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Registry->Mutex );
+        for ( USize Index = 0U; Index < Registry->Objects.size(); ++Index )
+        {
+            if ( Registry->Objects[Index] == &InObject )
+            {
+                Registry->Objects[Index] = Registry->Objects.back();
+                Registry->Objects.pop_back();
+                return;
+            }
+        }
+    } );
 }

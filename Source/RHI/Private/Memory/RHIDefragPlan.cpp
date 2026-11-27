@@ -6,7 +6,7 @@
 #include <RHI/Memory/RHIDefragPlan.hpp>
 #include <RHI/Utilities/RHIAlignment.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDefragPlan::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDefragPlan::Validate () const noexcept
 {
     for ( USize First = 0U; First < Moves.size(); ++First )
     {
@@ -19,7 +19,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDefragPlan::Valida
         {
             const FRHIAllocation &Left  = Moves[First].Destination;
             const FRHIAllocation &Right = Moves[Second].Destination;
-            if ( RHIRangesOverlap( Left.Offset, Left.Size, Right.Offset, Right.Size ) )
+            if ( Left.Heap == Right.Heap and RHIRangesOverlap( Left.Offset, Left.Size, Right.Offset, Right.Size ) )
             {
                 return TUnexpected<FRHIError>( MakeRHIInvalidMemory( "Defragmentation destinations overlap" ) );
             }

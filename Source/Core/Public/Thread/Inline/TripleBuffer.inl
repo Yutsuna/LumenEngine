@@ -40,9 +40,9 @@ constexpr Lumen::Thread::Internal::FBufferFlag::Type Lumen::Thread::Internal::FB
                                                                                                   FBufferFlag::Type TempIndex,
                                                                                                   Bool bIsDirty ) noexcept
 {
-    assert( ReaderIndex < 3 and "ReaderIndex must designate one of the 3 triple-buffer slots [0, 2]" );
-    assert( WriterIndex < 3 and "WriterIndex must designate one of the 3 triple-buffer slots [0, 2]" );
-    assert( TempIndex < 3 and "TempIndex must designate one of the 3 triple-buffer slots [0, 2]" );
+    LUMEN_ASSERT( ReaderIndex < 3 );
+    LUMEN_ASSERT( WriterIndex < 3 );
+    LUMEN_ASSERT( TempIndex < 3 );
 
     const FBufferFlag::Type ReaderBit = ReaderIndex << ReaderShift;
     const FBufferFlag::Type WriterBit = WriterIndex << WriterShift;
@@ -88,7 +88,7 @@ Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer( BufferType ( &InBuffers
       /**
        *
        */
-      BufferFlags( ( Internal::FBufferFlag::Type::Initial | Internal::FBufferFlag::Type::Dirty ) )
+      BufferFlags( Internal::FBufferFlag::Type::InitialDirty )
 {
     /** Empty */
 }
@@ -138,7 +138,7 @@ template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::Sw
 
 template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( const BufferType &InData )
 {
-    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
+    const HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -152,7 +152,7 @@ template <typename BufferType>
 void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( BufferType &&InData ) noexcept(
     std::is_nothrow_move_assignable_v<BufferType> )
 {
-    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
+    const HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -167,7 +167,7 @@ template <typename Callable>
     requires Lumen::Concepts::CIsInvocable<Callable, BufferType &>
 void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( Callable &&InEditor )
 {
-    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
+    const HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
 
     const Internal::FBufferFlag::Type CurrentFlags = BufferFlags.load( std::memory_order_relaxed );
     const Internal::FBufferFlag::Type WriterIndex  = Internal::FBufferFlag::GetWriterIndex( CurrentFlags );
@@ -180,7 +180,7 @@ void Lumen::Thread::TTripleBuffer<BufferType>::WriteBuffer ( Callable &&InEditor
 
 template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::SwapWriteBuffers () noexcept
 {
-    HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
+    const HAL::TLockGuard<HAL::FPlatformMutex> LockGuard{ WriteMutex };
     PublishWrite();
 }
 
@@ -230,5 +230,6 @@ template <typename BufferType> void Lumen::Thread::TTripleBuffer<BufferType>::Pu
     while ( not BufferFlags.compare_exchange_weak( CurrentFlags, SwapWriteWithTempFlags( CurrentFlags ),
                                                    std::memory_order_acq_rel, std::memory_order_relaxed ) )
     {
+        /* */
     }
 }

@@ -44,12 +44,12 @@ namespace RHI
         explicit FRHICommandStream ( USize InChunkCapacity = 4096U ) noexcept;
 
         /** @brief Appends a raw payload; a command never crosses a chunk boundary. */
-        TExpected<void, FRHIError> WritePayload ( UInt32 InOpcode, TSpan<const Byte> InPayload ) noexcept;
+        FRHIExpected WritePayload ( UInt32 InOpcode, TSpan<const Byte> InPayload ) noexcept;
 
         /** @brief Appends one trivially copyable payload. */
         template <typename PayloadType>
             requires Concepts::CTriviallyCopyable<PayloadType>
-        TExpected<void, FRHIError> Write ( UInt32 InOpcode, const PayloadType &InPayload ) noexcept;
+        FRHIExpected Write ( UInt32 InOpcode, const PayloadType &InPayload ) noexcept;
 
         /** @brief Reads and validates one command by index. */
         [[nodiscard]] TExpected<FRHICommandView, FRHIError> Read ( USize InIndex ) const noexcept;

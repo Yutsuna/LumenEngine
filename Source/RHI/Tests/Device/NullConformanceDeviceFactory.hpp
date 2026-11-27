@@ -28,7 +28,10 @@ namespace RHI
             /** @brief Uses default Null capabilities, or the supplied adapter/fault configuration. */
             explicit FNullConformanceDeviceFactory ( FNullDeviceDesc InDesc = {} ) noexcept;
             TSharedRef<IRHIModule> GetModule () const noexcept override;
-            TExpected<TSharedRef<IRHIDevice>, FRHIError> CreateDevice ( Bool bEnableValidation = false ) noexcept override;
+            using IRHIConformanceDeviceFactory::CreateDevice;
+            TExpected<TSharedRef<IRHIDevice>, FRHIError> CreateDevice ( Bool bEnableValidation ) noexcept override;
+            void SetDefaultValidation ( Bool bEnableValidation ) noexcept override;
+            [[nodiscard]] Bool GetDefaultValidation () const noexcept override;
             TExpected<TSharedRef<IRHIShader>, FRHIError> CreateShader ( IRHIDevice &InDevice,
                                                                         ERHIShaderStage InStage ) const noexcept override;
             TExpected<TSharedRef<IRHISwapchain>, FRHIError>
@@ -40,6 +43,7 @@ namespace RHI
         private:
 
             FNullDeviceDesc Desc;
+            Bool bDefaultValidation = false;
         };
 
     } // namespace Tests

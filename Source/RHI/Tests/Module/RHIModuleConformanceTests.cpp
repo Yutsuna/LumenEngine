@@ -21,6 +21,8 @@ namespace RHI
         {
             const TSharedRef<IRHIModule> Module = Tests::GetRHIConformanceDeviceFactory().GetModule();
             LUMEN_CHECK_EQ( Module->GetApiVersion().Major, 1U );
+            LUMEN_CHECK_EQ( Module->GetApiVersion().Minor, 1U );
+            LUMEN_CHECK_EQ( Module->GetApiVersion().Patch, 0U );
 
             const TExpected<TVector<FRHIAdapterInfo>, FRHIError> Adapters = Module->EnumerateAdapters();
             LUMEN_CHECK_TRUE( Adapters.HasValue() );

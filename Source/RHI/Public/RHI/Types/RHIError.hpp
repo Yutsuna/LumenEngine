@@ -171,6 +171,11 @@ namespace RHI
     [[nodiscard]] LUMEN_FORCE_INLINE RHI_EXPORT FRHIError MakeRHIBackendFailure ( const Lumen::RHI::ERHIErrorCondition Condition,
                                                                                   const Lumen::FStringView InMessage ) noexcept;
 
+    /**
+     * @alias Lumen::RHI::FRHIExpected
+     */
+    using FRHIExpected = TExpected<void, FRHIError>;
+
 } // namespace RHI
 
 } // namespace Lumen

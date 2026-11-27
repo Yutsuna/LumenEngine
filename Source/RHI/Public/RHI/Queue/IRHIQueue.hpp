@@ -52,14 +52,14 @@ namespace RHI
          *         InDesc fails validation, Unsupported for a negotiated-out feature,
          *         or DeviceLost / DeviceClosed after device loss or closure.
          */
-        virtual TExpected<void, FRHIError> Submit ( const FRHISubmitDesc &InDesc ) noexcept = 0;
+        virtual FRHIExpected Submit ( const FRHISubmitDesc &InDesc ) noexcept = 0;
 
         /**
          * @brief Blocks until all work submitted to this queue has completed.
          * @return Success when the queue is idle, or DeviceLost / DeviceClosed if
          *         the device is no longer usable. Polling and cleanup stay available.
          */
-        virtual TExpected<void, FRHIError> WaitIdle () noexcept = 0;
+        virtual FRHIExpected WaitIdle () noexcept = 0;
 
         /**
          * @brief Waits until a timeline value is reached or a timeout elapses.
@@ -69,7 +69,7 @@ namespace RHI
          *         InvalidArgument for a negative timeout, or DeviceLost / DeviceClosed
          *         if the device is lost while waiting.
          */
-        virtual TExpected<void, FRHIError> Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept = 0;
+        virtual FRHIExpected Wait ( FRHITimelineValue InValue, Float64 InTimeoutSeconds ) noexcept = 0;
     };
 
 } // namespace RHI

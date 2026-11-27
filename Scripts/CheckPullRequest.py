@@ -55,7 +55,7 @@ def _report_invalid_title( title: str, reason: str ) -> int:
                 "",
                 "**Required format:** `<PRType>(<PRScope>): <IssueNumber> <Description>`",
                 "",
-                "- `PRType` ∈ Chore / Fix / Feat / Refactor / CI / Test / Style / BREAKING",
+                "- `PRType` ∈ Chore / Fix / Feat / Refactor / CI / Test / Style / Story / Epic / Theme / BREAKING",
                 "- `PRScope` ∈ Top-level directory names under `Source/`, or `Lumen`",
                 "- `IssueNumber` Format like `#123`, must be the associated Issue number",
                 "- `Description` First character must be uppercase",

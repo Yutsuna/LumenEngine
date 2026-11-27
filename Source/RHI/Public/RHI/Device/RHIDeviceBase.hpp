@@ -8,6 +8,7 @@
 #include <RHI/Device/IRHIDevice.hpp>
 #include <RHI/Types/RHIObjectBase.hpp>
 #include <RHIExport.hpp>
+
 #include <Templates/Vector.hpp>
 
 namespace Lumen
@@ -25,36 +26,43 @@ namespace RHI
     public:
 
         ~FRHIDeviceBase () noexcept override;
+
         /**
          * @brief Returns the device identifier.
          * @return The stable identifier.
          */
         [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+
         /**
          * @brief Returns a copy of the debug name.
          * @return The current debug name.
          */
         [[nodiscard]] FString GetDebugName () const noexcept override;
+
         /**
          * @brief Sets the debug name under the object lock.
          * @param InName Name copied into owned storage.
          */
         void SetDebugName ( FStringView InName ) noexcept override;
+
         /**
          * @brief Returns the concrete backend type tag.
          * @return The tag used by backend casts.
          */
         [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+
         /**
          * @brief Returns the negotiated capabilities.
          * @return Immutable capabilities owned by the device.
          */
         [[nodiscard]] const FRHICapabilities &GetCapabilities () const noexcept override;
+
         /**
          * @brief Returns the negotiated limits.
          * @return Immutable limits owned by the device.
          */
         [[nodiscard]] const FRHILimits &GetLimits () const noexcept override;
+
         /**
          * @brief Returns the current device status.
          * @return Ready, lost or closed status.
@@ -68,24 +76,24 @@ namespace RHI
 
         /** @brief Initializes negotiated values and the concrete backend tag. */
         FRHIDeviceBase ( FRHICapabilities InCapabilities, FRHILimits InLimits, UInt64 InBackendTypeTag ) noexcept;
+
         /** @brief Changes status monotonically from ready to lost/closed. */
         void SetStatus ( ERHIDeviceStatus InStatus ) noexcept;
+
         /** @return A fresh generic identifier for a child object. */
         [[nodiscard]] FRHIObjectId NextObjectId () noexcept;
+
         /** @brief Adds a live child and registers its destruction notification. */
-        template <typename ObjectType>
-            requires requires( ObjectType &Object ) { Object.GetRHIObjectBase(); }
-        void TrackObject ( ObjectType &InObject ) noexcept
-        {
-            TrackObject( static_cast<IRHIObject &>( InObject ), InObject.GetRHIObjectBase() );
-        }
+        template <typename TObjectType>
+            requires requires( TObjectType &Object ) { Object.GetRHIObjectBase(); }
+        void TrackObject ( TObjectType &InObject ) noexcept;
+
         /** @brief Adds an object directly derived from FRHIObjectBase. */
-        void TrackObject ( FRHIObjectBase &InObject ) noexcept
-        {
-            TrackObject( static_cast<IRHIObject &>( InObject ), InObject );
-        }
+        LUMEN_FORCE_INLINE void TrackObject ( FRHIObjectBase &InObject ) noexcept;
+
         /** @brief Removes a child during its destruction. */
         void UntrackObject ( IRHIObject &InObject ) noexcept;
+
         /** @return DeviceLost/DeviceClosed error when the device is not ready. */
         [[nodiscard]] TOptional<FRHIError> GetUnavailableError ( FStringView InOperation ) const noexcept;
 
@@ -113,3 +121,5 @@ namespace RHI
 } // namespace RHI
 
 } // namespace Lumen
+
+#include "Inline/RHIDeviceBase.inl"

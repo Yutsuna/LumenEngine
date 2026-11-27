@@ -126,13 +126,13 @@ namespace RHI
             for ( UInt32 Iteration = 0U; Iteration < 1024U; ++Iteration )
             {
                 FRHIBufferCopy Copy;
-                Copy.SourceOffset                      = Random.Next();
-                Copy.DestinationOffset                 = Random.Next();
-                Copy.Size                              = Random.Next();
-                const UInt64 SourceSize                = Random.Next();
-                const UInt64 DestinationSize           = Random.Next();
-                const Bool bSameBuffer                 = Random.Next( 2ULL ) == 0ULL;
-                const TExpected<void, FRHIError> Valid = Copy.Validate( SourceSize, DestinationSize, bSameBuffer );
+                Copy.SourceOffset            = Random.Next();
+                Copy.DestinationOffset       = Random.Next();
+                Copy.Size                    = Random.Next();
+                const UInt64 SourceSize      = Random.Next();
+                const UInt64 DestinationSize = Random.Next();
+                const Bool bSameBuffer       = Random.Next( 2ULL ) == 0ULL;
+                const FRHIExpected Valid     = Copy.Validate( SourceSize, DestinationSize, bSameBuffer );
                 if ( not Valid )
                 {
                     LUMEN_CHECK_EQ( Valid.Error().Code, ERHIErrorCode::InvalidArgument );
@@ -145,7 +145,7 @@ namespace RHI
                 Entry.Count  = static_cast<UInt32>( Random.Next() );
                 Entry.Stages = static_cast<ERHIShaderStage>( Random.Next( 64ULL ) );
                 Layout.Entries.push_back( Entry );
-                const TExpected<void, FRHIError> LayoutValid = Layout.Validate();
+                const FRHIExpected LayoutValid = Layout.Validate();
                 LUMEN_CHECK_EQ( LayoutValid.HasValue(), Entry.Count != 0U and Entry.Stages != ERHIShaderStage::None );
                 if ( LayoutValid )
                 {

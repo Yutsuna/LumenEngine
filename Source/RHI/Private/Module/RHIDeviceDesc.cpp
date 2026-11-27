@@ -4,7 +4,7 @@
  */
 #include <RHI/Module/RHIDeviceDesc.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDeviceDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDeviceDesc::Validate () const noexcept
 {
     if ( Queues.empty() )
     {

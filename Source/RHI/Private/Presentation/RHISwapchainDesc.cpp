@@ -5,9 +5,13 @@
 
 #include <RHI/Presentation/RHISwapchainDesc.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHISwapchainDesc::Validate () const noexcept
+/**
+ * Public
+ */
+
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHISwapchainDesc::Validate () const noexcept
 {
-    return Surface.Validate().AndThen( [this] () noexcept -> TExpected<void, FRHIError>
+    return Surface.Validate().AndThen( [this] () noexcept -> FRHIExpected
     {
         if ( Format == ERHIFormat::Unknown or Format >= ERHIFormat::Count or ColorSpace >= ERHIColorSpace::Count or
              PresentMode >= ERHIPresentMode::Count or not Extent.IsValid() or ImageCount < 2U or
@@ -21,16 +25,16 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHISwapchainDesc::Val
     } );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
+Lumen::RHI::FRHIExpected
 Lumen::RHI::FRHISwapchainDesc::Validate ( const FRHISwapchainCapabilities &InCapabilities ) const noexcept
 {
     return Validate()
         .AndThen(
-            [&InCapabilities] () noexcept -> TExpected<void, FRHIError>
+            [&InCapabilities] () noexcept -> FRHIExpected
     {
         return InCapabilities.Validate();
     } )
-        .AndThen( [this, &InCapabilities] () noexcept -> TExpected<void, FRHIError>
+        .AndThen( [this, &InCapabilities] () noexcept -> FRHIExpected
     {
         if ( not InCapabilities.Supports( Format, ColorSpace, PresentMode ) or ImageCount < InCapabilities.MinImageCount or
              ImageCount > InCapabilities.MaxImageCount or Extent.Width < InCapabilities.MinExtent.Width or

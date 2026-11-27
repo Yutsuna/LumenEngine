@@ -29,7 +29,7 @@ namespace RHI
             FRHIDefragPlan Invalid;
             Invalid.Moves.push_back( { .Source = Source, .Destination = {} } );
             LUMEN_CHECK_HAS_ERROR( Invalid.Validate() );
-            const TExpected<void, FRHIError> Executed = Defragmenter->Execute( Invalid );
+            const FRHIExpected Executed = Defragmenter->Execute( Invalid );
             LUMEN_CHECK_HAS_ERROR( Executed );
             LUMEN_CHECK_EQ( Executed.Error().Code, ERHIErrorCode::ValidationFailed );
             LUMEN_CHECK_TRUE( Sink.ContainsCode( static_cast<UInt32>( ERHIValidationMessageCode::InvalidDefragPlan ) ) );

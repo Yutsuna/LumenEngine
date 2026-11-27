@@ -8,11 +8,12 @@
 
 #include <Core/CoreTypes.hpp>
 #include <Memory/SharedPtr.hpp>
+
 #include <RHI/Module/RHIAdapterInfo.hpp>
 #include <RHI/Module/RHIDeviceDesc.hpp>
+
 #include <Templates/Expected.hpp>
 #include <Templates/Vector.hpp>
-#include <compare>
 
 namespace Lumen
 {

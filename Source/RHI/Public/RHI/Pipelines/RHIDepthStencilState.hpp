@@ -57,7 +57,7 @@ namespace RHI
         FRHIStencilState Front;
         FRHIStencilState Back;
         /** @return Success for defined enum values. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

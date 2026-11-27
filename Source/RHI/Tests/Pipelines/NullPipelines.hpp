@@ -5,7 +5,7 @@
 
 #pragma once
 
-#include <Types/RHIObjectForward.hpp>
+#include <RHI/Types/RHIObjectForward.hpp>
 
 #include <RHI/Pipelines/IRHIPipeline.hpp>
 #include <RHI/Pipelines/IRHIPipelineLayout.hpp>

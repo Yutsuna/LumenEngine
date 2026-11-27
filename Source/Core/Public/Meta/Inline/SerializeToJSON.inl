@@ -5,9 +5,12 @@
 
 #pragma once
 
-#include <Concepts/IsStringLike.hpp>
+#include <Algo/Range.hpp>
 #include <Meta/SerializeToJSON.hpp>
 #include <Templates/Variant.hpp>
+
+#include <Concepts/IsIntegral.hpp>
+#include <Concepts/IsStringLike.hpp>
 
 #include <cmath>
 #include <format>
@@ -87,7 +90,7 @@ void Lumen::Meta::Detail::WriteJSONValue ( FString &Out, const TValue &Value, co
             Out.append( "null" );
         }
     }
-    else if constexpr ( std::is_integral_v<Bare> )
+    else if constexpr ( Concepts::CIsIntegral<Bare> )
     {
         std::format_to( std::back_inserter( Out ), "{}", Value );
     }
@@ -149,7 +152,7 @@ void Lumen::Meta::Detail::WriteJSONValue ( FString &Out, const TValue &Value, co
             Out.push_back( '}' );
         }
     }
-    else if constexpr ( std::ranges::input_range<const Bare> )
+    else if constexpr ( Concepts::CInputRange<const Bare> )
     {
         Out.push_back( '[' );
         Bool bFirst = true;

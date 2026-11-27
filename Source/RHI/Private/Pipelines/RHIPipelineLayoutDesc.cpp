@@ -5,7 +5,7 @@
 
 #include <RHI/Pipelines/RHIPipelineLayoutDesc.hpp>
 #include <RHI/Utilities/RHICheckedMath.hpp>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIPipelineLayoutDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIPipelineLayoutDesc::Validate () const noexcept
 {
     for ( USize First = 0U; First < InlineConstants.size(); ++First )
     {

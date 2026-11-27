@@ -7,9 +7,10 @@
 
 #include <Core/CoreDefinitions.hpp>
 
-// TODO inverse
-#if defined( LUMEN_PLATFORM_WINDOWS )
-    #error "WindowsTime.hpp is only supported on Windows"
+#if not defined( LUMEN_PLATFORM_WINDOWS )
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "WindowsTime.hpp is only supported on Windows"
+    #endif
 #else
 
 extern "C"

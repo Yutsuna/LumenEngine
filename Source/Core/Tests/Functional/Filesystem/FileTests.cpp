@@ -3,37 +3,21 @@
  * @brief Unit tests for the FFile filesystem facade.
  */
 
+#include "FilesystemTestHelper.hpp"
+
 #include <Filesystem/Directory.hpp>
 #include <Filesystem/File.hpp>
 #include <Filesystem/Path.hpp>
 #include <Tests/UnitTest.hpp>
 
+/**
+ * Private
+ */
+
 namespace
 {
-Lumen::Filesystem::FPath GetTestPath ( const Lumen::AnsiChar *InName )
-{
-    return Lumen::Filesystem::FPath( "LumenFilesystemTests" ) / Lumen::FStringView( InName );
-}
 
-struct FScopedTestDir
-{
-    Lumen::Filesystem::FPath Path;
-
-    explicit FScopedTestDir ( const Lumen::AnsiChar *InName, Lumen::Bool bCreate = true ) : Path( GetTestPath( InName ) )
-    {
-        Lumen::Filesystem::FDirectory::Delete( Path, true );
-        if ( bCreate )
-        {
-            Lumen::Filesystem::FDirectory::CreateDirectories( Path );
-        }
-    }
-
-    ~FScopedTestDir ()
-    {
-        Lumen::Filesystem::FDirectory::Delete( Path, true );
-    }
-};
-} // namespace
+using Lumen::Tests::FScopedTestDir;
 
 /**
  * FFile::Exists
@@ -41,14 +25,14 @@ struct FScopedTestDir
 
 LUMEN_TEST( FFile_Exists, ReturnsFalseForMissingFile )
 {
-    FScopedTestDir Guard( "FFile_Exists_Missing", true );
+    const FScopedTestDir Guard( "FFile_Exists_Missing", true );
     const auto FilePath = Guard.Path / "missing.txt";
     LUMEN_CHECK_FALSE( Lumen::Filesystem::FFile::Exists( FilePath ) );
 }
 
 LUMEN_TEST( FFile_Exists, ReturnsTrueForExistingFile )
 {
-    FScopedTestDir Guard( "FFile_Exists_Existing", true );
+    const FScopedTestDir Guard( "FFile_Exists_Existing", true );
     const auto FilePath    = Guard.Path / "existing.txt";
     const auto WriteResult = Lumen::Filesystem::FFile::WriteAllText( FilePath, "content" );
     LUMEN_CHECK_HAS_VALUE( WriteResult );
@@ -61,7 +45,7 @@ LUMEN_TEST( FFile_Exists, ReturnsTrueForExistingFile )
 
 LUMEN_TEST( FFile_WriteAllText, WritesNewFile )
 {
-    FScopedTestDir Guard( "FFile_WriteAllText_New", true );
+    const FScopedTestDir Guard( "FFile_WriteAllText_New", true );
     const auto FilePath = Guard.Path / "new.txt";
     const auto Result   = Lumen::Filesystem::FFile::WriteAllText( FilePath, "Hello, World!" );
     LUMEN_CHECK_HAS_VALUE( Result );
@@ -74,7 +58,7 @@ LUMEN_TEST( FFile_WriteAllText, WritesNewFile )
 
 LUMEN_TEST( FFile_WriteAllText, OverwritesExistingFile )
 {
-    FScopedTestDir Guard( "FFile_WriteAllText_Overwrite", true );
+    const FScopedTestDir Guard( "FFile_WriteAllText_Overwrite", true );
     const auto FilePath = Guard.Path / "overwrite.txt";
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "old" );
     const auto Result = Lumen::Filesystem::FFile::WriteAllText( FilePath, "new" );
@@ -86,7 +70,7 @@ LUMEN_TEST( FFile_WriteAllText, OverwritesExistingFile )
 
 LUMEN_TEST( FFile_WriteAllText, FailsWhenParentDirectoryMissing )
 {
-    FScopedTestDir Guard( "FFile_WriteAllText_MissingParent", false );
+    const FScopedTestDir Guard( "FFile_WriteAllText_MissingParent", false );
     const auto FilePath = Guard.Path / "file.txt";
     const auto Result   = Lumen::Filesystem::FFile::WriteAllText( FilePath, "data" );
     LUMEN_CHECK_HAS_ERROR( Result );
@@ -94,7 +78,7 @@ LUMEN_TEST( FFile_WriteAllText, FailsWhenParentDirectoryMissing )
 
 LUMEN_TEST( FFile_WriteAllText, WritesEmptyFile )
 {
-    FScopedTestDir Guard( "FFile_WriteAllText_Empty", true );
+    const FScopedTestDir Guard( "FFile_WriteAllText_Empty", true );
     const auto FilePath = Guard.Path / "empty.txt";
     const auto Result   = Lumen::Filesystem::FFile::WriteAllText( FilePath, "" );
     LUMEN_CHECK_HAS_VALUE( Result );
@@ -105,7 +89,7 @@ LUMEN_TEST( FFile_WriteAllText, WritesEmptyFile )
 
 LUMEN_TEST( FFile_ReadAllText, ReadsExistingFile )
 {
-    FScopedTestDir Guard( "FFile_ReadAllText_Existing", true );
+    const FScopedTestDir Guard( "FFile_ReadAllText_Existing", true );
     const auto FilePath = Guard.Path / "read.txt";
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "readme" );
     const auto Result = Lumen::Filesystem::FFile::ReadAllText( FilePath );
@@ -115,7 +99,7 @@ LUMEN_TEST( FFile_ReadAllText, ReadsExistingFile )
 
 LUMEN_TEST( FFile_ReadAllText, FailsForMissingFile )
 {
-    FScopedTestDir Guard( "FFile_ReadAllText_Missing", true );
+    const FScopedTestDir Guard( "FFile_ReadAllText_Missing", true );
     const auto FilePath = Guard.Path / "missing.txt";
     const auto Result   = Lumen::Filesystem::FFile::ReadAllText( FilePath );
     LUMEN_CHECK_HAS_ERROR( Result );
@@ -123,7 +107,7 @@ LUMEN_TEST( FFile_ReadAllText, FailsForMissingFile )
 
 LUMEN_TEST( FFile_ReadAllText, ReturnsEmptyForEmptyFile )
 {
-    FScopedTestDir Guard( "FFile_ReadAllText_Empty", true );
+    const FScopedTestDir Guard( "FFile_ReadAllText_Empty", true );
     const auto FilePath = Guard.Path / "empty.txt";
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "" );
     const auto Result = Lumen::Filesystem::FFile::ReadAllText( FilePath );
@@ -137,7 +121,7 @@ LUMEN_TEST( FFile_ReadAllText, ReturnsEmptyForEmptyFile )
 
 LUMEN_TEST( FFile_WriteAllBytes, WritesBytes )
 {
-    FScopedTestDir Guard( "FFile_WriteAllBytes_Success", true );
+    const FScopedTestDir Guard( "FFile_WriteAllBytes_Success", true );
     const auto FilePath      = Guard.Path / "bytes.bin";
     const Lumen::Byte Data[] = { 0x01, 0x02, 0x03, 0x04 };
     const Lumen::TSpan<const Lumen::Byte> Span( Data, 4 );
@@ -157,7 +141,7 @@ LUMEN_TEST( FFile_WriteAllBytes, WritesBytes )
 
 LUMEN_TEST( FFile_WriteAllBytes, WritesEmptyBytes )
 {
-    FScopedTestDir Guard( "FFile_WriteAllBytes_Empty", true );
+    const FScopedTestDir Guard( "FFile_WriteAllBytes_Empty", true );
     const auto FilePath                             = Guard.Path / "empty.bin";
     const Lumen::TSpan<const Lumen::Byte> EmptySpan = {};
     const auto Result                               = Lumen::Filesystem::FFile::WriteAllBytes( FilePath, EmptySpan );
@@ -169,7 +153,7 @@ LUMEN_TEST( FFile_WriteAllBytes, WritesEmptyBytes )
 
 LUMEN_TEST( FFile_ReadAllBytes, ReadsBytes )
 {
-    FScopedTestDir Guard( "FFile_ReadAllBytes_Success", true );
+    const FScopedTestDir Guard( "FFile_ReadAllBytes_Success", true );
     const auto FilePath      = Guard.Path / "bytes.bin";
     const Lumen::Byte Data[] = { 0xAA, 0xBB, 0xCC };
     const Lumen::TSpan<const Lumen::Byte> Span( Data, 3 );
@@ -186,7 +170,7 @@ LUMEN_TEST( FFile_ReadAllBytes, ReadsBytes )
 
 LUMEN_TEST( FFile_ReadAllBytes, FailsForMissingFile )
 {
-    FScopedTestDir Guard( "FFile_ReadAllBytes_Missing", true );
+    const FScopedTestDir Guard( "FFile_ReadAllBytes_Missing", true );
     const auto FilePath = Guard.Path / "missing.bin";
     const auto Result   = Lumen::Filesystem::FFile::ReadAllBytes( FilePath );
     LUMEN_CHECK_HAS_ERROR( Result );
@@ -194,7 +178,7 @@ LUMEN_TEST( FFile_ReadAllBytes, FailsForMissingFile )
 
 LUMEN_TEST( FFile_ReadAllBytes, ReturnsEmptyForEmptyFile )
 {
-    FScopedTestDir Guard( "FFile_ReadAllBytes_Empty", true );
+    const FScopedTestDir Guard( "FFile_ReadAllBytes_Empty", true );
     const auto FilePath = Guard.Path / "empty.bin";
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "" );
     const auto Result = Lumen::Filesystem::FFile::ReadAllBytes( FilePath );
@@ -208,7 +192,7 @@ LUMEN_TEST( FFile_ReadAllBytes, ReturnsEmptyForEmptyFile )
 
 LUMEN_TEST( FFile_Delete, DeletesExistingFile )
 {
-    FScopedTestDir Guard( "FFile_Delete_Existing", true );
+    const FScopedTestDir Guard( "FFile_Delete_Existing", true );
     const auto FilePath = Guard.Path / "delete.txt";
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "data" );
     const auto Result = Lumen::Filesystem::FFile::Delete( FilePath );
@@ -218,7 +202,7 @@ LUMEN_TEST( FFile_Delete, DeletesExistingFile )
 
 LUMEN_TEST( FFile_Delete, FailsForMissingFile )
 {
-    FScopedTestDir Guard( "FFile_Delete_Missing", true );
+    const FScopedTestDir Guard( "FFile_Delete_Missing", true );
     const auto FilePath = Guard.Path / "missing.txt";
     const auto Result   = Lumen::Filesystem::FFile::Delete( FilePath );
     LUMEN_CHECK_HAS_ERROR( Result );
@@ -230,7 +214,7 @@ LUMEN_TEST( FFile_Delete, FailsForMissingFile )
 
 LUMEN_TEST( FFile_Copy, CopiesFile )
 {
-    FScopedTestDir Guard( "FFile_Copy_Success", true );
+    const FScopedTestDir Guard( "FFile_Copy_Success", true );
     const auto Source = Guard.Path / "source.txt";
     const auto Dest   = Guard.Path / "dest.txt";
     Lumen::Filesystem::FFile::WriteAllText( Source, "copy me" );
@@ -244,7 +228,7 @@ LUMEN_TEST( FFile_Copy, CopiesFile )
 
 LUMEN_TEST( FFile_Copy, FailsWhenDestinationExistsAndNoOverwrite )
 {
-    FScopedTestDir Guard( "FFile_Copy_NoOverwrite", true );
+    const FScopedTestDir Guard( "FFile_Copy_NoOverwrite", true );
     const auto Source = Guard.Path / "source.txt";
     const auto Dest   = Guard.Path / "dest.txt";
     Lumen::Filesystem::FFile::WriteAllText( Source, "source" );
@@ -255,7 +239,7 @@ LUMEN_TEST( FFile_Copy, FailsWhenDestinationExistsAndNoOverwrite )
 
 LUMEN_TEST( FFile_Copy, OverwritesWhenDestinationExistsAndOverwriteTrue )
 {
-    FScopedTestDir Guard( "FFile_Copy_Overwrite", true );
+    const FScopedTestDir Guard( "FFile_Copy_Overwrite", true );
     const auto Source = Guard.Path / "source.txt";
     const auto Dest   = Guard.Path / "dest.txt";
     Lumen::Filesystem::FFile::WriteAllText( Source, "new content" );
@@ -269,7 +253,7 @@ LUMEN_TEST( FFile_Copy, OverwritesWhenDestinationExistsAndOverwriteTrue )
 
 LUMEN_TEST( FFile_Copy, FailsWhenSourceMissing )
 {
-    FScopedTestDir Guard( "FFile_Copy_MissingSource", true );
+    const FScopedTestDir Guard( "FFile_Copy_MissingSource", true );
     const auto Source = Guard.Path / "missing.txt";
     const auto Dest   = Guard.Path / "dest.txt";
     const auto Result = Lumen::Filesystem::FFile::Copy( Source, Dest );
@@ -282,7 +266,7 @@ LUMEN_TEST( FFile_Copy, FailsWhenSourceMissing )
 
 LUMEN_TEST( FFile_Move, MovesFile )
 {
-    FScopedTestDir Guard( "FFile_Move_Success", true );
+    const FScopedTestDir Guard( "FFile_Move_Success", true );
     const auto Source = Guard.Path / "source.txt";
     const auto Dest   = Guard.Path / "dest.txt";
     Lumen::Filesystem::FFile::WriteAllText( Source, "move me" );
@@ -297,7 +281,7 @@ LUMEN_TEST( FFile_Move, MovesFile )
 
 LUMEN_TEST( FFile_Move, FailsWhenDestinationExistsAndNoOverwrite )
 {
-    FScopedTestDir Guard( "FFile_Move_NoOverwrite", true );
+    const FScopedTestDir Guard( "FFile_Move_NoOverwrite", true );
     const auto Source = Guard.Path / "source.txt";
     const auto Dest   = Guard.Path / "dest.txt";
     Lumen::Filesystem::FFile::WriteAllText( Source, "source" );
@@ -310,7 +294,7 @@ LUMEN_TEST( FFile_Move, FailsWhenDestinationExistsAndNoOverwrite )
 
 LUMEN_TEST( FFile_Move, OverwritesWhenDestinationExistsAndOverwriteTrue )
 {
-    FScopedTestDir Guard( "FFile_Move_Overwrite", true );
+    const FScopedTestDir Guard( "FFile_Move_Overwrite", true );
     const auto Source = Guard.Path / "source.txt";
     const auto Dest   = Guard.Path / "dest.txt";
     Lumen::Filesystem::FFile::WriteAllText( Source, "new content" );
@@ -325,7 +309,7 @@ LUMEN_TEST( FFile_Move, OverwritesWhenDestinationExistsAndOverwriteTrue )
 
 LUMEN_TEST( FFile_Move, FailsWhenSourceMissing )
 {
-    FScopedTestDir Guard( "FFile_Move_MissingSource", true );
+    const FScopedTestDir Guard( "FFile_Move_MissingSource", true );
     const auto Source = Guard.Path / "missing.txt";
     const auto Dest   = Guard.Path / "dest.txt";
     const auto Result = Lumen::Filesystem::FFile::Move( Source, Dest );
@@ -338,7 +322,7 @@ LUMEN_TEST( FFile_Move, FailsWhenSourceMissing )
 
 LUMEN_TEST( FFile_GetSize, ReturnsCorrectSize )
 {
-    FScopedTestDir Guard( "FFile_GetSize_Success", true );
+    const FScopedTestDir Guard( "FFile_GetSize_Success", true );
     const auto FilePath = Guard.Path / "size.txt";
     Lumen::Filesystem::FFile::WriteAllText( FilePath, "12345" );
     const auto Result = Lumen::Filesystem::FFile::GetSize( FilePath );
@@ -348,8 +332,10 @@ LUMEN_TEST( FFile_GetSize, ReturnsCorrectSize )
 
 LUMEN_TEST( FFile_GetSize, FailsForMissingFile )
 {
-    FScopedTestDir Guard( "FFile_GetSize_Missing", true );
+    const FScopedTestDir Guard( "FFile_GetSize_Missing", true );
     const auto FilePath = Guard.Path / "missing.txt";
     const auto Result   = Lumen::Filesystem::FFile::GetSize( FilePath );
     LUMEN_CHECK_HAS_ERROR( Result );
 }
+
+} // namespace

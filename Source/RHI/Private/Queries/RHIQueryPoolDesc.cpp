@@ -27,7 +27,7 @@ Lumen::TOptional<Lumen::UInt32> Lumen::RHI::GetRHIQueryResultSize ( const ERHIQu
     } );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIQueryPoolDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIQueryPoolDesc::Validate () const noexcept
 {
     const Bool bQueueCompatible =
         QueueType == ERHIQueueType::Graphics or ( Type == ERHIQueryType::Timestamp and QueueType == ERHIQueueType::Compute );

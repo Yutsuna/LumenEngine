@@ -24,7 +24,7 @@ namespace RHI
         UInt64 Alignment            = 1ULL;
         ERHIMemoryClass MemoryClass = ERHIMemoryClass::DeviceLocal;
         /** @return Success for nonzero size and power-of-two alignment. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 } // namespace RHI
 

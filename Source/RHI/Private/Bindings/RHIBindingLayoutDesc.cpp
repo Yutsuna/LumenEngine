@@ -8,7 +8,11 @@
 
 #include <RHI/Bindings/RHIBindingLayoutDesc.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBindingLayoutDesc::Validate () const noexcept
+/**
+ * Public
+ */
+
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBindingLayoutDesc::Validate () const noexcept
 {
     for ( USize First = 0U; First < Entries.size(); ++First )
     {
@@ -37,7 +41,7 @@ Lumen::UInt64 Lumen::RHI::FRHIBindingLayoutDesc::GetHash () const noexcept
 
     UInt64 Hash = 0ULL;
 
-    Algo::ForEach( Sorted, [&Hash] ( const auto &Entry ) noexcept -> void
+    Algo::ForEach( Sorted, [&Hash] ( const FRHIBindingLayoutEntry &Entry ) noexcept -> void
     {
         Hash = RHIHashCombine( Hash, RHIHashValue( Entry.Slot ) );
         Hash = RHIHashCombine( Hash, RHIHashValue( Entry.Type ) );

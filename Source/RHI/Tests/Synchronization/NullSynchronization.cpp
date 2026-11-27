@@ -17,7 +17,7 @@ Lumen::RHI::Tests::FNullSemaphore::FNullSemaphore ( const FRHISemaphoreDesc &InD
     Identity.SetDebugName( InDesc.DebugName );
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullSemaphore )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullSemaphore )
 const Lumen::RHI::FRHISemaphoreDesc &Lumen::RHI::Tests::FNullSemaphore::GetDesc () const noexcept
 {
     return Desc;
@@ -35,7 +35,7 @@ void Lumen::RHI::Tests::FNullSemaphore::SetFailNextSignal ( const Bool bInFailNe
     SignalFaultCount = bInFailNextSignal ? 1U : 0U;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSemaphore::Signal ( const UInt64 InValue ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullSemaphore::Signal ( const UInt64 InValue ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     if ( SignalFaultCount > 0U )
@@ -55,8 +55,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSemaphore:
     return {};
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullSemaphore::Wait ( const UInt64 InValue,
-                                                                                        const Float64 InTimeoutSeconds ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullSemaphore::Wait ( const UInt64 InValue, const Float64 InTimeoutSeconds ) noexcept
 {
     if ( InTimeoutSeconds < 0.0 or ( Desc.Type == ERHISemaphoreType::Binary and InValue != 1ULL ) )
     {

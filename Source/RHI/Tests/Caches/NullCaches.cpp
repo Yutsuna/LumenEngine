@@ -17,13 +17,14 @@ namespace RHI
     namespace
     {
 
-        constexpr UInt32 PipelineCacheVersion      = 1U;
+        constexpr UInt32 PipelineCacheVersion      = 2U;
         constexpr USize PipelineCacheHeaderSize    = 24U;
-        constexpr USize PipelineCacheKeyHeaderSize = 40U;
+        constexpr USize PipelineCacheKeyHeaderSize = 48U;
 
-        UInt64 GetKeyBytes ( const FRHIPipelineCompatibility &InKey ) noexcept
+        UInt64 GetKeyBytes ( const FRHIPipelineCacheKey &InKey ) noexcept
         {
-            return static_cast<UInt64>( PipelineCacheKeyHeaderSize + InKey.ColorFormats.size() * sizeof( UInt32 ) );
+            return static_cast<UInt64>( PipelineCacheKeyHeaderSize + InKey.Compatibility.ColorFormats.size() * sizeof( UInt32 ) +
+                                        InKey.ShaderHashes.size() * sizeof( UInt64 ) );
         }
 
         void WriteU32 ( TVector<Byte> &InData, const UInt32 InValue ) noexcept
@@ -69,36 +70,46 @@ namespace RHI
             return true;
         }
 
-        void WriteKey ( TVector<Byte> &InData, const FRHIPipelineCompatibility &InKey ) noexcept
+        void WriteKey ( TVector<Byte> &InData, const FRHIPipelineCacheKey &InKey ) noexcept
         {
-            WriteU64( InData, InKey.LayoutHash );
-            WriteU32( InData, static_cast<UInt32>( InKey.DepthStencilFormat ) );
-            WriteU32( InData, static_cast<UInt32>( InKey.SampleCount ) );
-            WriteU64( InData, InKey.VertexLayoutHash );
-            WriteU32( InData, static_cast<UInt32>( InKey.ColorFormats.size() ) );
-            WriteU32( InData, 0U );
-            for ( const ERHIFormat Format : InKey.ColorFormats )
+            WriteU64( InData, InKey.BackendCacheSchemaVersion );
+            WriteU64( InData, InKey.StateHash );
+            WriteU64( InData, InKey.Compatibility.LayoutHash );
+            WriteU32( InData, static_cast<UInt32>( InKey.Compatibility.DepthStencilFormat ) );
+            WriteU32( InData, static_cast<UInt32>( InKey.Compatibility.SampleCount ) );
+            WriteU64( InData, InKey.Compatibility.VertexLayoutHash );
+            WriteU32( InData, static_cast<UInt32>( InKey.Compatibility.ColorFormats.size() ) );
+            WriteU32( InData, static_cast<UInt32>( InKey.ShaderHashes.size() ) );
+            for ( const ERHIFormat Format : InKey.Compatibility.ColorFormats )
             {
                 WriteU32( InData, static_cast<UInt32>( Format ) );
             }
+            for ( const UInt64 ShaderHash : InKey.ShaderHashes )
+            {
+                WriteU64( InData, ShaderHash );
+            }
         }
 
-        Bool ReadKey ( const TSpan<const Byte> InData, USize &InOutOffset, FRHIPipelineCompatibility &OutKey ) noexcept
+        Bool ReadKey ( const TSpan<const Byte> InData, USize &InOutOffset, FRHIPipelineCacheKey &OutKey ) noexcept
         {
             UInt32 DepthFormat = 0U;
             UInt32 SampleCount = 0U;
             UInt32 ColorCount  = 0U;
-            UInt32 Reserved    = 0U;
-            if ( not ReadU64( InData, InOutOffset, OutKey.LayoutHash ) or not ReadU32( InData, InOutOffset, DepthFormat ) or
-                 not ReadU32( InData, InOutOffset, SampleCount ) or not ReadU64( InData, InOutOffset, OutKey.VertexLayoutHash ) or
-                 not ReadU32( InData, InOutOffset, ColorCount ) or not ReadU32( InData, InOutOffset, Reserved ) or
-                 Reserved != 0U or ColorCount > 64U or DepthFormat >= static_cast<UInt32>( ERHIFormat::Count ) or
+            UInt32 ShaderCount = 0U;
+            if ( not ReadU64( InData, InOutOffset, OutKey.BackendCacheSchemaVersion ) or
+                 not ReadU64( InData, InOutOffset, OutKey.StateHash ) or
+                 not ReadU64( InData, InOutOffset, OutKey.Compatibility.LayoutHash ) or
+                 not ReadU32( InData, InOutOffset, DepthFormat ) or not ReadU32( InData, InOutOffset, SampleCount ) or
+                 not ReadU64( InData, InOutOffset, OutKey.Compatibility.VertexLayoutHash ) or
+                 not ReadU32( InData, InOutOffset, ColorCount ) or not ReadU32( InData, InOutOffset, ShaderCount ) or
+                 OutKey.BackendCacheSchemaVersion == 0ULL or ColorCount > 64U or ShaderCount > 16U or
+                 DepthFormat >= static_cast<UInt32>( ERHIFormat::Count ) or
                  ToSampleCount( static_cast<ERHISampleCount>( SampleCount ) ) == 0U )
             {
                 return false;
             }
-            OutKey.DepthStencilFormat = static_cast<ERHIFormat>( DepthFormat );
-            OutKey.SampleCount        = static_cast<ERHISampleCount>( SampleCount );
+            OutKey.Compatibility.DepthStencilFormat = static_cast<ERHIFormat>( DepthFormat );
+            OutKey.Compatibility.SampleCount        = static_cast<ERHISampleCount>( SampleCount );
             for ( UInt32 ColorIndex = 0U; ColorIndex < ColorCount; ++ColorIndex )
             {
                 UInt32 Format = 0U;
@@ -106,7 +117,16 @@ namespace RHI
                 {
                     return false;
                 }
-                OutKey.ColorFormats.push_back( static_cast<ERHIFormat>( Format ) );
+                OutKey.Compatibility.ColorFormats.push_back( static_cast<ERHIFormat>( Format ) );
+            }
+            for ( UInt32 ShaderIndex = 0U; ShaderIndex < ShaderCount; ++ShaderIndex )
+            {
+                UInt64 ShaderHash = 0ULL;
+                if ( not ReadU64( InData, InOutOffset, ShaderHash ) )
+                {
+                    return false;
+                }
+                OutKey.ShaderHashes.push_back( ShaderHash );
             }
             return true;
         }
@@ -122,8 +142,7 @@ namespace RHI
 
 } // namespace Lumen
 
-Lumen::USize
-Lumen::RHI::Tests::FNullPipelineCompatibilityHasher::operator()( const FRHIPipelineCompatibility &InKey ) const noexcept
+Lumen::USize Lumen::RHI::Tests::FNullPipelineCacheKeyHasher::operator()( const FRHIPipelineCacheKey &InKey ) const noexcept
 {
     return static_cast<USize>( InKey.GetHash() );
 }
@@ -135,9 +154,9 @@ Lumen::RHI::Tests::FNullPipelineCache::FNullPipelineCache ( const FRHIPipelineCa
 {
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullPipelineCache )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullPipelineCache )
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullPipelineCache::Initialize () noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullPipelineCache::Initialize () noexcept
 {
     const TSpan<const Byte> InitialData = Desc.InitialData;
     Desc.InitialData                    = {};
@@ -162,12 +181,12 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullPipelineCa
     {
         return TUnexpected<FRHIError>( CorruptedCacheError() );
     }
-    TVector<FRHIPipelineCompatibility> Restored;
+    TVector<FRHIPipelineCacheKey> Restored;
     UInt64 TotalBytes = 0ULL;
     for ( UInt32 EntryIndex = 0U; EntryIndex < EntryCount; ++EntryIndex )
     {
-        FRHIPipelineCompatibility Key;
-        if ( not ReadKey( InitialData, Offset, Key ) )
+        FRHIPipelineCacheKey Key;
+        if ( not ReadKey( InitialData, Offset, Key ) or Key.BackendCacheSchemaVersion != Desc.BackendVersion )
         {
             return TUnexpected<FRHIError>( CorruptedCacheError() );
         }
@@ -190,7 +209,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullPipelineCa
     {
         ++Sequence;
         FEntry Entry{ .Pipeline = {}, .Bytes = GetKeyBytes( Key ), .LastUsed = Sequence };
-        const std::pair<TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator, Bool> Inserted =
+        const std::pair<TMap<FRHIPipelineCacheKey, FEntry, FNullPipelineCacheKeyHasher>::iterator, Bool> Inserted =
             Entries.emplace( Key, std::move( Entry ) );
         if ( not Inserted.second )
         {
@@ -207,10 +226,10 @@ const Lumen::RHI::FRHIPipelineCacheDesc &Lumen::RHI::Tests::FNullPipelineCache::
 }
 
 Lumen::TOptional<Lumen::TSharedPtr<Lumen::RHI::IRHIPipeline>>
-Lumen::RHI::Tests::FNullPipelineCache::Find ( const FRHIPipelineCompatibility &InKey ) noexcept
+Lumen::RHI::Tests::FNullPipelineCache::Find ( const FRHIPipelineCacheKey &InKey ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Found = Entries.find( InKey );
+    const TMap<FRHIPipelineCacheKey, FEntry, FNullPipelineCacheKeyHasher>::iterator Found = Entries.find( InKey );
     if ( Found == Entries.end() or not Found->second.Pipeline )
     {
         Stats.OnLookup( false );
@@ -222,9 +241,8 @@ Lumen::RHI::Tests::FNullPipelineCache::Find ( const FRHIPipelineCompatibility &I
     return TOptional<TSharedPtr<IRHIPipeline>>( Found->second.Pipeline );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::Tests::FNullPipelineCache::Insert ( const FRHIPipelineCompatibility &InKey,
-                                                TSharedRef<IRHIPipeline> InPipeline ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullPipelineCache::Insert ( const FRHIPipelineCacheKey &InKey,
+                                                                         TSharedRef<IRHIPipeline> InPipeline ) noexcept
 {
     if ( FaultPlan )
     {
@@ -233,12 +251,12 @@ Lumen::RHI::Tests::FNullPipelineCache::Insert ( const FRHIPipelineCompatibility 
             return TUnexpected<FRHIError>( *Error );
         }
     }
-    if ( not( InKey == InPipeline->GetCompatibility() ) )
+    if ( InKey.BackendCacheSchemaVersion != Desc.BackendVersion or not( InKey.Compatibility == InPipeline->GetCompatibility() ) )
     {
-        return TUnexpected<FRHIError>( MakeRHIInvalidCache( "Pipeline cache key does not match the pipeline" ) );
+        return TUnexpected<FRHIError>( MakeRHIInvalidCache( "Pipeline cache key or schema does not match the cache entry" ) );
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Existing = Entries.find( InKey );
+    const TMap<FRHIPipelineCacheKey, FEntry, FNullPipelineCacheKeyHasher>::iterator Existing = Entries.find( InKey );
     if ( Existing != Entries.end() )
     {
         Stats.OnRemove( Existing->second.Bytes );
@@ -256,10 +274,10 @@ Lumen::RHI::Tests::FNullPipelineCache::Insert ( const FRHIPipelineCompatibility 
     return {};
 }
 
-void Lumen::RHI::Tests::FNullPipelineCache::Remove ( const FRHIPipelineCompatibility &InKey ) noexcept
+void Lumen::RHI::Tests::FNullPipelineCache::Remove ( const FRHIPipelineCacheKey &InKey ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    const TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Found = Entries.find( InKey );
+    const TMap<FRHIPipelineCacheKey, FEntry, FNullPipelineCacheKeyHasher>::iterator Found = Entries.find( InKey );
     if ( Found != Entries.end() )
     {
         Stats.OnRemove( Found->second.Bytes );
@@ -290,13 +308,13 @@ Lumen::RHI::Tests::FNullPipelineCache::Serialize () const noexcept
         }
     }
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    TVector<FRHIPipelineCompatibility> Keys;
+    TVector<FRHIPipelineCacheKey> Keys;
     Keys.reserve( Entries.size() );
     for ( const auto &Pair : Entries )
     {
         Keys.push_back( Pair.first );
     }
-    Algo::Sort( Keys, [] ( const FRHIPipelineCompatibility &Left, const FRHIPipelineCompatibility &Right )
+    Algo::Sort( Keys, [] ( const FRHIPipelineCacheKey &Left, const FRHIPipelineCacheKey &Right )
     {
         const UInt64 LeftHash  = Left.GetHash();
         const UInt64 RightHash = Right.GetHash();
@@ -304,23 +322,35 @@ Lumen::RHI::Tests::FNullPipelineCache::Serialize () const noexcept
         {
             return LeftHash < RightHash;
         }
-        if ( Left.LayoutHash != Right.LayoutHash )
+        if ( Left.Compatibility.LayoutHash != Right.Compatibility.LayoutHash )
         {
-            return Left.LayoutHash < Right.LayoutHash;
+            return Left.Compatibility.LayoutHash < Right.Compatibility.LayoutHash;
         }
-        if ( Left.DepthStencilFormat != Right.DepthStencilFormat )
+        if ( Left.Compatibility.DepthStencilFormat != Right.Compatibility.DepthStencilFormat )
         {
-            return Left.DepthStencilFormat < Right.DepthStencilFormat;
+            return Left.Compatibility.DepthStencilFormat < Right.Compatibility.DepthStencilFormat;
         }
-        if ( Left.SampleCount != Right.SampleCount )
+        if ( Left.Compatibility.SampleCount != Right.Compatibility.SampleCount )
         {
-            return Left.SampleCount < Right.SampleCount;
+            return Left.Compatibility.SampleCount < Right.Compatibility.SampleCount;
         }
-        if ( Left.VertexLayoutHash != Right.VertexLayoutHash )
+        if ( Left.Compatibility.VertexLayoutHash != Right.Compatibility.VertexLayoutHash )
         {
-            return Left.VertexLayoutHash < Right.VertexLayoutHash;
+            return Left.Compatibility.VertexLayoutHash < Right.Compatibility.VertexLayoutHash;
         }
-        return Left.ColorFormats < Right.ColorFormats;
+        if ( Left.Compatibility.ColorFormats != Right.Compatibility.ColorFormats )
+        {
+            return Left.Compatibility.ColorFormats < Right.Compatibility.ColorFormats;
+        }
+        if ( Left.StateHash != Right.StateHash )
+        {
+            return Left.StateHash < Right.StateHash;
+        }
+        if ( Left.BackendCacheSchemaVersion != Right.BackendCacheSchemaVersion )
+        {
+            return Left.BackendCacheSchemaVersion < Right.BackendCacheSchemaVersion;
+        }
+        return Left.ShaderHashes < Right.ShaderHashes;
     } );
     TVector<Byte> Data = { static_cast<Byte>( 'L' ), static_cast<Byte>( 'R' ), static_cast<Byte>( 'P' ),
                            static_cast<Byte>( 'C' ) };
@@ -351,8 +381,8 @@ Lumen::Bool Lumen::RHI::Tests::FNullPipelineCache::MakeRoom ( const UInt64 InByt
 
 void Lumen::RHI::Tests::FNullPipelineCache::EvictOne () noexcept
 {
-    TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Oldest = Entries.begin();
-    for ( TMap<FRHIPipelineCompatibility, FEntry, FNullPipelineCompatibilityHasher>::iterator Iterator = Entries.begin();
+    TMap<FRHIPipelineCacheKey, FEntry, FNullPipelineCacheKeyHasher>::iterator Oldest = Entries.begin();
+    for ( TMap<FRHIPipelineCacheKey, FEntry, FNullPipelineCacheKeyHasher>::iterator Iterator = Entries.begin();
           Iterator != Entries.end(); ++Iterator )
     {
         if ( Iterator->second.LastUsed < Oldest->second.LastUsed )

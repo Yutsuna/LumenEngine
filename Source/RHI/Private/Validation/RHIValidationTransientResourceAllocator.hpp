@@ -25,16 +25,28 @@ namespace RHI
 
         FRHIValidationTransientResourceAllocator ( TSharedRef<IRHITransientResourceAllocator> InUnderlying,
                                                    TSharedPtr<FRHIValidationState> InState ) noexcept;
+
         ~FRHIValidationTransientResourceAllocator () noexcept override;
+
+    public:
+
         [[nodiscard]] FRHIObjectId GetId () const noexcept override;
+
         [[nodiscard]] FString GetDebugName () const noexcept override;
+
         void SetDebugName ( FStringView InName ) noexcept override;
+
         [[nodiscard]] UInt64 GetBackendTypeTag () const noexcept override;
+
         [[nodiscard]] IRHIObject &GetValidationWrappedObject () const noexcept override;
+
         [[nodiscard]] TSharedRef<IRHIObject> GetValidationWrappedShared () const noexcept override;
+
         void BeginBatch () noexcept override;
+
         [[nodiscard]] TExpected<TVector<FRHITransientAllocation>, FRHIError>
         Allocate ( const FRHITransientBatch &InBatch ) noexcept override;
+
         void EndBatch () noexcept override;
 
     private:

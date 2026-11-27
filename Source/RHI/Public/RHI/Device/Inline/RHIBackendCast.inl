@@ -2,9 +2,14 @@
  * @file RHIBackendCast.inl
  * @brief Implements checked backend casts.
  */
+
 #pragma once
 
 #include <RHI/Device/RHIBackendCast.hpp>
+
+/**
+ * Public
+ */
 
 template <typename BackendType> Lumen::TOptional<BackendType *> Lumen::RHI::TryRHIBackendCast ( IRHIObject &InObject ) noexcept
 {

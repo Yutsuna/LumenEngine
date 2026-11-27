@@ -56,7 +56,7 @@ namespace RHI
             Desc.Completion   = { 1ULL };
 
             Timeline->SetFailNextSignal( true );
-            const TExpected<void, FRHIError> Failed = Queue.Submit( Desc );
+            const FRHIExpected Failed = Queue.Submit( Desc );
             LUMEN_CHECK_HAS_ERROR( Failed );
             LUMEN_CHECK_EQ( Failed.Error().Code, ERHIErrorCode::InvalidState );
             LUMEN_CHECK_EQ( Failed.Error().Condition, ERHIErrorCondition::Synchronization );

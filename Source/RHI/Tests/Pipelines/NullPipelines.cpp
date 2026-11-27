@@ -17,7 +17,7 @@ Lumen::RHI::Tests::FNullPipelineLayout::FNullPipelineLayout ( const FRHIPipeline
     /* */
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullPipelineLayout )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullPipelineLayout )
 const Lumen::RHI::FRHIPipelineLayoutDesc &Lumen::RHI::Tests::FNullPipelineLayout::GetDesc () const noexcept
 {
     return Desc;
@@ -41,7 +41,7 @@ Lumen::RHI::Tests::FNullPipeline::FNullPipeline ( const ERHIPipelineType InType,
     /* */
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullPipeline )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullPipeline )
 Lumen::RHI::ERHIPipelineType Lumen::RHI::Tests::FNullPipeline::GetType () const noexcept
 {
     return Type;

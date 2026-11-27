@@ -6,19 +6,20 @@
 #include "RHIValidationDevice.hpp"
 #include <RHI/Validation/RHIValidation.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIDevice>, Lumen::RHI::FRHIError>
 Lumen::RHI::WrapRHIDevice ( const TSharedRef<IRHIDevice> &InDevice, const FRHIValidationDesc &InDesc ) noexcept
 {
-    return InDesc.Validate().AndThen( [&InDevice, &InDesc] () noexcept -> TExpected<TSharedRef<IRHIDevice>, FRHIError>
+    LUMEN_TRY_EXPECT_ERROR( InDesc.Validate() );
+
+    if ( InDesc.Level == ERHIValidationLevel::Disabled )
     {
-        if ( InDesc.Level == ERHIValidationLevel::Disabled )
-        {
-            return InDevice;
-        }
-        const TSharedRef<FRHIValidationReporter> Reporter = MakeShared<FRHIValidationReporter>( InDesc );
-        const TSharedPtr<FRHIValidationState> State       = MakeShared<FRHIValidationState>( Reporter );
-        return MakeShared<FRHIValidationDevice>( InDevice, State );
-    } );
+        return InDevice;
+    }
+    return MakeShared<FRHIValidationDevice>( InDevice, FRHIValidationState::Create( InDesc ) );
 }
 
 Lumen::RHI::IRHIObject *Lumen::RHI::UnwrapRHIObject ( IRHIObject *InObject ) noexcept

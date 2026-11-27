@@ -65,12 +65,7 @@ Launch::TLaunchResult<Launch::FInitState> Launch::FLaunchEngineLoop::Init ( FPre
     State.Config = InPreInitState.Config;
 
     LUMEN_LOG_INFO( LogEngineLoop, "Initializing engine modules..." );
-
-    if ( TLaunchResult<void> Started = State.Modules.StartAll( GetEngineModules(), State.Config ); not Started ) [[unlikely]]
-    {
-        return MakeUnexpected( Started.Error() );
-    }
-
+    LUMEN_EXPECT( Started, State.Modules.StartAll( GetEngineModules(), State.Config ) );
     LUMEN_LOG_INFO( LogEngineLoop, "{} module(s) started", State.Modules.Num() );
 
     return State;

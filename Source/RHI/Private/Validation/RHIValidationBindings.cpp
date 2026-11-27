@@ -7,7 +7,12 @@
 #include <RHI/Resources/IRHISampler.hpp>
 #include <RHI/Resources/IRHITextureView.hpp>
 #include <RHI/Validation/RHIValidation.hpp>
+
 #include <variant>
+
+/**
+ * Public
+ */
 
 Lumen::RHI::FRHIValidationBindingLayout::FRHIValidationBindingLayout ( TSharedRef<IRHIBindingLayout> InUnderlying,
                                                                        TSharedPtr<FRHIValidationState> InState ) noexcept
@@ -48,8 +53,7 @@ Lumen::TSharedRef<Lumen::RHI::IRHIBindingLayout> Lumen::RHI::FRHIValidationBindi
     return Layout;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &InWrite ) const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &InWrite ) const noexcept
 {
     const TSharedPtr<FRHIValidationReporter> &Reporter = State->GetReporter();
     const FRHIBindingLayoutEntry *Entry                = nullptr;
@@ -66,12 +70,17 @@ Lumen::RHI::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &In
         return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                  "Binding slot is absent from the validated layout", this );
     }
+    if ( InWrite.ArrayElement >= Entry->Count )
+    {
+        return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                 "Binding array element exceeds the validated layout count", this );
+    }
     if ( not InWrite.Validate() )
     {
         return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                  "Binding write contains no resource", this );
     }
-    return std::visit( [this, Entry, &Reporter] ( const auto &Payload ) -> TExpected<void, FRHIError>
+    return std::visit( [this, Entry, &Reporter] ( const auto &Payload ) -> FRHIExpected
     {
         if constexpr ( requires { Payload.Buffer; } )
         {
@@ -81,16 +90,24 @@ Lumen::RHI::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &In
                 return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                          "Buffer type does not match the layout entry", this );
             }
-            const TExpected<void, FRHIError> Owned = State->ValidateObject( *Payload.Buffer, ERHIValidationObjectKind::Buffer );
-            if ( not Owned )
+
+            LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.Buffer, ERHIValidationObjectKind::Buffer ) );
+
+            const FRHIBufferDesc &Desc = Payload.Buffer->GetDesc();
+
+            ERHIResourceUsage Required = ERHIResourceUsage::None;
+            switch ( Entry->Type )
             {
-                return Owned;
+            case ERHIBindingType::ConstantBuffer:
+                Required = ERHIResourceUsage::ConstantBuffer;
+                break;
+            case ERHIBindingType::ReadWriteBuffer:
+                Required = ERHIResourceUsage::UnorderedAccess;
+                break;
+            default:
+                Required = ERHIResourceUsage::ShaderResource;
             }
-            const FRHIBufferDesc &Desc       = Payload.Buffer->GetDesc();
-            const ERHIResourceUsage Required = Entry->Type == ERHIBindingType::ConstantBuffer ? ERHIResourceUsage::ConstantBuffer
-                                               : Entry->Type == ERHIBindingType::ReadWriteBuffer
-                                                   ? ERHIResourceUsage::UnorderedAccess
-                                                   : ERHIResourceUsage::ShaderResource;
+
             if ( Payload.Offset > Desc.Size or Payload.Size > Desc.Size - Payload.Offset or
                  not HasAnyFlags( Desc.Usage, Required ) )
             {
@@ -98,20 +115,42 @@ Lumen::RHI::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &In
                                          "Buffer binding range or usage is invalid", this );
             }
         }
+        else if constexpr ( requires {
+                                Payload.View;
+                                Payload.Sampler;
+                            } )
+        {
+            if ( Entry->Type != ERHIBindingType::CombinedTextureSampler )
+            {
+                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                         "Combined resource does not match the layout entry", this );
+            }
+
+            LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.View, ERHIValidationObjectKind::TextureView ) );
+            LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.Sampler, ERHIValidationObjectKind::Sampler ) );
+
+            const TSharedPtr<IRHITexture> Texture = Payload.View->GetTexture();
+            if ( not Texture )
+            {
+                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                         "Combined texture view has no parent", this );
+            }
+            if ( not HasAnyFlags( Texture->GetUsage(), ERHIResourceUsage::ShaderResource ) )
+            {
+                return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
+                                         "Combined texture binding usage is invalid", this );
+            }
+        }
         else if constexpr ( requires { Payload.View; } )
         {
-            if ( Entry->Type != ERHIBindingType::Texture and Entry->Type != ERHIBindingType::StorageTexture and
-                 Entry->Type != ERHIBindingType::CombinedTextureSampler )
+            if ( Entry->Type != ERHIBindingType::Texture and Entry->Type != ERHIBindingType::StorageTexture )
             {
                 return Reporter->Reject( ERHIValidationMessageCode::InvalidBinding, ERHIErrorCondition::Binding,
                                          "Texture type does not match the layout entry", this );
             }
-            const TExpected<void, FRHIError> Owned =
-                State->ValidateObject( *Payload.View, ERHIValidationObjectKind::TextureView );
-            if ( not Owned )
-            {
-                return Owned;
-            }
+
+            LUMEN_TRY_EXPECT_ERROR( State->ValidateObject( *Payload.View, ERHIValidationObjectKind::TextureView ) );
+
             const TSharedPtr<IRHITexture> Texture = Payload.View->GetTexture();
             if ( not Texture )
             {
@@ -139,23 +178,19 @@ Lumen::RHI::FRHIValidationBindingSet::ValidateWrite ( const FRHIBindingWrite &In
     }, InWrite.Resource );
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIValidationBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWrites ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationBindingSet::Write ( const TSpan<const FRHIBindingWrite> InWrites ) noexcept
 {
     const Bool bValidate = State->GetReporter()->GetDesc().IsEnabled( ERHIValidationFlags::Bindings );
     if ( bValidate )
     {
         for ( const FRHIBindingWrite &Write : InWrites )
         {
-            const TExpected<void, FRHIError> Valid = ValidateWrite( Write );
-            if ( not Valid )
-            {
-                return Valid;
-            }
+            LUMEN_TRY_EXPECT_ERROR( ValidateWrite( Write ) );
         }
     }
     TVector<FRHIBindingWrite> Unwrapped;
     Unwrapped.reserve( InWrites.size() );
+
     for ( FRHIBindingWrite Write : InWrites )
     {
         std::visit( [] ( auto &Payload )
@@ -163,6 +198,14 @@ Lumen::RHI::FRHIValidationBindingSet::Write ( const TSpan<const FRHIBindingWrite
             if constexpr ( requires { Payload.Buffer; } )
             {
                 Payload.Buffer = UnwrapRHIShared( Payload.Buffer );
+            }
+            else if constexpr ( requires {
+                                    Payload.View;
+                                    Payload.Sampler;
+                                } )
+            {
+                Payload.View    = UnwrapRHIShared( Payload.View );
+                Payload.Sampler = UnwrapRHIShared( Payload.Sampler );
             }
             else if constexpr ( requires { Payload.View; } )
             {

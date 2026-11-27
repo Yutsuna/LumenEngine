@@ -17,7 +17,7 @@ Lumen::RHI::FRHIDefragmenter::FRHIDefragmenter ( const FRHIObjectId InId ) noexc
     /* */
 }
 
-LUMEN_RHI_OBJECT_FORWARDERS( FRHIDefragmenter )
+LUMEN_RHI_OBJECT_FORWARDERS( RHI, FRHIDefragmenter )
 Lumen::TExpected<Lumen::RHI::FRHIDefragPlan, Lumen::RHI::FRHIError>
 Lumen::RHI::FRHIDefragmenter::BuildPlan ( const TSpan<const FRHIAllocation> InAllocations ) noexcept
 {
@@ -87,12 +87,9 @@ Lumen::RHI::FRHIDefragmenter::BuildPlan ( const TSpan<const FRHIAllocation> InAl
     return Plan;
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIDefragmenter::Execute ( const FRHIDefragPlan &InPlan ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIDefragmenter::Execute ( const FRHIDefragPlan &InPlan ) noexcept
 {
-    if ( const TExpected<void, FRHIError> Validation = InPlan.Validate(); not Validation )
-    {
-        return TUnexpected<FRHIError>( Validation.Error() );
-    }
+    LUMEN_EXPECT( _, InPlan.Validate() );
     for ( const FRHIDefragMove &Move : InPlan.Moves )
     {
         if ( not IsRHICompletionReached( InPlan.ObservedCompletion, Move.Completion ) )

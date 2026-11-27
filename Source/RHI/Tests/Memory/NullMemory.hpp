@@ -6,7 +6,7 @@
 
 #include <Memory/UniquePtr.hpp>
 #include <RHI/Memory/IRHIHeap.hpp>
-#include <Types/RHIObjectForward.hpp>
+#include <RHI/Types/RHIObjectForward.hpp>
 
 namespace Lumen
 {
@@ -27,8 +27,9 @@ namespace RHI
 
             LUMEN_RHI_OBJECT_DECLARATIONS;
             /** @brief Creates a heap from a validated descriptor. */
-            FNullHeap ( const FRHIHeapDesc &InDesc, FRHIObjectId InId ) noexcept;
+            FNullHeap ( const FRHIHeapDesc &InDesc, FRHIObjectId InId, FRHIObjectId InOwnerId = {} ) noexcept;
             const FRHIHeapDesc &GetDesc () const noexcept override;
+            [[nodiscard]] FRHIObjectId GetOwnerId () const noexcept;
 
             TExpected<TSpan<Byte>, FRHIError> Map ( UInt64 InOffset, UInt64 InSize ) noexcept override;
             void Unmap () noexcept override
@@ -39,6 +40,7 @@ namespace RHI
         private:
 
             FRHIObjectBase Identity;
+            FRHIObjectId OwnerId;
             FRHIHeapDesc Desc;
             TUniquePtr<Byte[]> Storage;
         };

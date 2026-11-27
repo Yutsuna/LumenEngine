@@ -32,7 +32,7 @@ namespace RHI
         [[nodiscard]] virtual ERHIQueueType GetQueueType () const noexcept = 0;
 
         /** @brief Resets completed lists; pending work above InCompleted prevents recycling. */
-        virtual TExpected<void, FRHIError> Reset ( FRHITimelineValue InCompleted ) noexcept = 0;
+        virtual FRHIExpected Reset ( FRHITimelineValue InCompleted ) noexcept = 0;
     };
 
 } // namespace RHI

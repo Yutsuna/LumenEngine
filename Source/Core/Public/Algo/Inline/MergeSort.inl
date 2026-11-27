@@ -45,7 +45,7 @@ template <typename TRangeType, typename TPredicate>
     requires Lumen::Concepts::CSortableRange<TRangeType, TPredicate>
 void Lumen::Algo::MergeSort ( TRangeType &&InRange, TPredicate InPredicate ) noexcept
 {
-    MergeSort( std::ranges::begin( InRange ), std::ranges::end( InRange ), InPredicate );
+    MergeSort( Begin( InRange ), End( InRange ), InPredicate );
 }
 
 /**
@@ -53,6 +53,7 @@ void Lumen::Algo::MergeSort ( TRangeType &&InRange, TPredicate InPredicate ) noe
  */
 
 template <typename TIterator, typename TPredicate>
+/** NOLINTNEXTLINE(misc-no-recursion) */
 void Lumen::Algo::Internal::MergeSortRecurse ( TIterator InFirst,
                                                TIterator InLast,
                                                std::iter_value_t<TIterator> *InBuffer,
@@ -64,7 +65,7 @@ void Lumen::Algo::Internal::MergeSortRecurse ( TIterator InFirst,
     const FDifference Count = InLast - InFirst;
     if ( Count <= Threshold )
     {
-        /** INFO: Small chunks finish with insertion sort — stable and cache-friendly. */
+        /** INFO: Small chunks finish with insertion sort */
         InsertionSort( InFirst, InLast, InPredicate );
         return;
     }

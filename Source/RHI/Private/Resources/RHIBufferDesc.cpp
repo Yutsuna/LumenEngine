@@ -3,7 +3,7 @@
  * @brief Implements buffer descriptor validation.
  */
 #include <RHI/Resources/RHIBufferDesc.hpp>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIBufferDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIBufferDesc::Validate () const noexcept
 {
     if ( Size == 0ULL or not IsValidRHIResourceUsage( Usage ) or not IsValidRHIResourceState( InitialState ) )
     {

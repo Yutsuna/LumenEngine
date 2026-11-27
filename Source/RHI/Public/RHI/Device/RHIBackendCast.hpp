@@ -2,6 +2,7 @@
  * @file RHIBackendCast.hpp
  * @brief Declares checked casts to concrete backend objects.
  */
+
 #pragma once
 
 #include <Memory/SharedPtr.hpp>

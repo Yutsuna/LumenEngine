@@ -5,7 +5,7 @@
 
 #include <RHI/Memory/RHIHeapDesc.hpp>
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHIHeapDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIHeapDesc::Validate () const noexcept
 {
     if ( Size == 0ULL )
     {

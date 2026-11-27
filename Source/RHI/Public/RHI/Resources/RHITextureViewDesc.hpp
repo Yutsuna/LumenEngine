@@ -47,7 +47,7 @@ namespace RHI
         FRHISubresourceRange Range;
 
         /** @return Success when the parent and range are valid and the format is compatible. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

@@ -5,7 +5,13 @@
 
 #pragma once
 
-#include <HAL/Unix/UnixMutex.hpp>
+#if not defined( LUMEN_PLATFORM_UNIX )
+    #if not defined( LUMEN_CLANG_TIDY )
+        #error "UnixRecursiveMutex.hpp is only available on Unix platforms."
+    #endif
+#else
+
+    #include <HAL/Unix/UnixMutex.hpp>
 
 /**
  * Public
@@ -39,3 +45,5 @@ Lumen::Bool Lumen::HAL::FUnixMutex::TryLock () noexcept
 {
     return pthread_mutex_trylock( &Mutex ) == 0;
 }
+
+#endif

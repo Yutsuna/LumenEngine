@@ -9,19 +9,21 @@
 
 namespace Lumen
 {
-namespace SharedPtrInternal
+
+namespace Internal
 {
     template <typename ObjectType, typename... Arguments>
-    SharedPtrInternal::TIntrusiveReferenceController<ObjectType> *
-    NewIntrusiveReferenceController ( Arguments &&...InArgs ) noexcept
+    Internal::TIntrusiveReferenceController<ObjectType> *NewIntrusiveReferenceController ( Arguments &&...InArgs ) noexcept
     {
-        return new SharedPtrInternal::TIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
+        /** NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) */
+        return new Internal::TIntrusiveReferenceController<ObjectType>( std::forward<Arguments>( InArgs )... );
     }
 
     template <typename ObjectType>
-    SharedPtrInternal::TDefaultReferenceController<ObjectType> *NewDefaultReferenceController ( ObjectType *InObject ) noexcept
+    Internal::TDefaultReferenceController<ObjectType> *NewDefaultReferenceController ( ObjectType *InObject ) noexcept
     {
-        return new SharedPtrInternal::TDefaultReferenceController<ObjectType>( InObject );
+        /** NOLINTNEXTLINE(bugprone-unhandled-exception-at-new) */
+        return new Internal::TDefaultReferenceController<ObjectType>( InObject );
     }
 
     /**
@@ -77,5 +79,7 @@ namespace SharedPtrInternal
     {
         /** Empty */
     }
-} // namespace SharedPtrInternal
+
+} // namespace Internal
+
 } // namespace Lumen

@@ -6,6 +6,8 @@
 #include "Commands/NullCommands.hpp"
 #include <Queries/NullQueries.hpp>
 #include <RHI/Device/RHIBackendCast.hpp>
+#include <RHI/Pipelines/RHIInlineConstantRange.hpp>
+#include <RHI/Utilities/RHICheckedMath.hpp>
 #include <Templates/Hash.hpp>
 #include <cmath>
 #include <variant>
@@ -18,7 +20,7 @@ namespace RHI
 
     namespace
     {
-        TExpected<void, FRHIError> StateError ( FStringView InMessage ) noexcept
+        FRHIExpected StateError ( FStringView InMessage ) noexcept
         {
             return TUnexpected<FRHIError>( FRHIError( ERHIErrorCode::InvalidState, ERHIErrorCondition::Command, InMessage ) );
         }
@@ -59,7 +61,7 @@ namespace RHI
         /* */
     }
 
-    LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullCommandAllocator )
+    LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullCommandAllocator )
     Lumen::RHI::Tests::FNullCommandList::FNullCommandList ( TSharedPtr<FNullCommandAllocator> InAllocator,
                                                             const FRHIObjectId InId ) noexcept
         : Identity( InId, FHash::TypeHash<FNullCommandList>() ), Allocator( std::move( InAllocator ) )
@@ -72,7 +74,7 @@ namespace RHI
         Allocator->UnregisterList( *this );
     }
 
-    LUMEN_RHI_OBJECT_FORWARDERS( Tests::FNullCommandList )
+    LUMEN_RHI_OBJECT_FORWARDERS( RHI::Tests, FNullCommandList )
     Lumen::RHI::ERHIQueueType Lumen::RHI::Tests::FNullCommandList::GetQueueType () const noexcept
     {
         return Allocator->GetQueueType();
@@ -93,12 +95,12 @@ namespace RHI
         return Stream;
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::Begin () noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::Begin () noexcept
     {
         return RHITransitionCommandList( State, ERHICommandListState::Recording );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::End () noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::End () noexcept
     {
         if ( ActiveQueryPool != nullptr )
         {
@@ -107,7 +109,7 @@ namespace RHI
         return RHITransitionCommandList( State, ERHICommandListState::Executable );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::Reset () noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::Reset () noexcept
     {
         if ( State == ERHICommandListState::Pending )
         {
@@ -120,7 +122,7 @@ namespace RHI
         if ( State != ERHICommandListState::Initial )
         {
             return RHITransitionCommandList( State, ERHICommandListState::Initial )
-                .AndThen( [this] () noexcept -> TExpected<void, FRHIError>
+                .AndThen( [this] () noexcept -> FRHIExpected
             {
                 Stream.Clear();
                 Completion = {};
@@ -136,8 +138,7 @@ namespace RHI
         return {};
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::MarkPending ( const FRHITimelineValue InCompletion ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::MarkPending ( const FRHITimelineValue InCompletion ) noexcept
     {
         if ( not InCompletion.IsValid() )
         {
@@ -150,8 +151,7 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::MarkCompleted ( const FRHITimelineValue InCompleted ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::MarkCompleted ( const FRHITimelineValue InCompleted ) noexcept
     {
         if ( State == ERHICommandListState::Pending and not IsRHICompletionReached( InCompleted, Completion ) )
         {
@@ -164,8 +164,7 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::CheckRecording ( const Bool bAllowRendering ) const noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::CheckRecording ( const Bool bAllowRendering ) const noexcept
     {
         if ( State != ERHICommandListState::Recording and ( not bAllowRendering or State != ERHICommandListState::Rendering ) )
         {
@@ -174,7 +173,7 @@ namespace RHI
         return {};
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::CheckRendering () const noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::CheckRendering () const noexcept
     {
         if ( State != ERHICommandListState::Rendering )
         {
@@ -183,17 +182,17 @@ namespace RHI
         return {};
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
+    Lumen::RHI::FRHIExpected
     Lumen::RHI::Tests::FNullCommandList::Transition ( const TSpan<const FRHITransition> InTransitions ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
+        const FRHIExpected StateValid = CheckRecording( true );
         if ( not StateValid )
         {
             return StateValid;
         }
         for ( const auto &Transition : InTransitions )
         {
-            const TExpected<void, FRHIError> Valid = ValidateRHITransition( Transition );
+            const FRHIExpected Valid = ValidateRHITransition( Transition );
             if ( not Valid )
             {
                 return Valid;
@@ -221,8 +220,7 @@ namespace RHI
                 return TUnexpected<FRHIError>(
                     MakeRHICorrupted( ERHIErrorCondition::Command, "Transition variant has no active payload" ) );
             }
-            const TExpected<void, FRHIError> Result =
-                Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::Transition ), Record );
+            const FRHIExpected Result = Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::Transition ), Record );
             if ( not Result )
             {
                 return Result;
@@ -231,11 +229,12 @@ namespace RHI
         return {};
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::CopyBuffer (
-        TSharedRef<IRHIBuffer> InSource, TSharedRef<IRHIBuffer> InDestination, const FRHIBufferCopy &InCopy ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::CopyBuffer ( TSharedRef<IRHIBuffer> InSource,
+                                                                               TSharedRef<IRHIBuffer> InDestination,
+                                                                               const FRHIBufferCopy &InCopy ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
-        const TExpected<void, FRHIError> Valid =
+        const FRHIExpected StateValid = CheckRecording( true );
+        const FRHIExpected Valid =
             InCopy.Validate( InSource->GetDesc().Size, InDestination->GetDesc().Size, InSource.Get() == InDestination.Get() );
         if ( not StateValid )
         {
@@ -255,11 +254,12 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::CopyTexture (
-        TSharedRef<IRHITexture> InSource, TSharedRef<IRHITexture> InDestination, const FRHITextureCopy &InCopy ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::CopyTexture ( TSharedRef<IRHITexture> InSource,
+                                                                                TSharedRef<IRHITexture> InDestination,
+                                                                                const FRHITextureCopy &InCopy ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
-        const TExpected<void, FRHIError> Valid      = InCopy.Validate( InSource->GetDesc().Format );
+        const FRHIExpected StateValid = CheckRecording( true );
+        const FRHIExpected Valid      = InCopy.Validate( InSource->GetDesc().Format );
         if ( not StateValid )
         {
             return StateValid;
@@ -282,11 +282,11 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::CopyBufferToTexture (
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::CopyBufferToTexture (
         TSharedRef<IRHIBuffer> InSource, TSharedRef<IRHITexture> InDestination, const FRHIBufferTextureCopy &InCopy ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
-        const TExpected<void, FRHIError> Valid      = InCopy.Validate( InDestination->GetDesc().Format );
+        const FRHIExpected StateValid = CheckRecording( true );
+        const FRHIExpected Valid      = InCopy.Validate( InDestination->GetDesc().Format );
         if ( not StateValid )
         {
             return StateValid;
@@ -307,11 +307,11 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::CopyTextureToBuffer (
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::CopyTextureToBuffer (
         TSharedRef<IRHITexture> InSource, TSharedRef<IRHIBuffer> InDestination, const FRHIBufferTextureCopy &InCopy ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
-        const TExpected<void, FRHIError> Valid      = InCopy.Validate( InSource->GetDesc().Format );
+        const FRHIExpected StateValid = CheckRecording( true );
+        const FRHIExpected Valid      = InCopy.Validate( InSource->GetDesc().Format );
         if ( not StateValid )
         {
             return StateValid;
@@ -331,15 +331,14 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::BeginRendering ( const FRHIRenderingDesc &InDesc ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::BeginRendering ( const FRHIRenderingDesc &InDesc ) noexcept
     {
         if ( GetQueueType() != ERHIQueueType::Graphics )
         {
             return StateError( "Rendering requires a graphics command list" );
         }
-        const TExpected<void, FRHIError> StateValid = CheckRecording( false );
-        const TExpected<void, FRHIError> Valid      = InDesc.Validate();
+        const FRHIExpected StateValid = CheckRecording( false );
+        const FRHIExpected Valid      = InDesc.Validate();
         if ( not StateValid )
         {
             return StateValid;
@@ -349,7 +348,7 @@ namespace RHI
             return Valid;
         }
         return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::BeginRendering ), InDesc.Area )
-            .AndThen( [this, &InDesc] () noexcept -> TExpected<void, FRHIError>
+            .AndThen( [this, &InDesc] () noexcept -> FRHIExpected
         {
             for ( const FRHIRenderingAttachment &Attachment : InDesc.ColorAttachments )
             {
@@ -363,24 +362,23 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::EndRendering () noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::EndRendering () noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
+        const FRHIExpected StateValid = CheckRendering();
         if ( not StateValid )
         {
             return StateValid;
         }
         return Stream.WritePayload( static_cast<UInt32>( ERHINullCommandOpcode::EndRendering ), {} )
-            .AndThen( [this] () noexcept -> TExpected<void, FRHIError>
+            .AndThen( [this] () noexcept -> FRHIExpected
         {
             return RHITransitionCommandList( State, ERHICommandListState::Recording );
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::SetPipeline ( TSharedRef<IRHIPipeline> InPipeline ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::SetPipeline ( TSharedRef<IRHIPipeline> InPipeline ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
+        const FRHIExpected StateValid = CheckRecording( true );
         if ( not StateValid )
         {
             return StateValid;
@@ -393,10 +391,10 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::SetBindingSet ( const UInt32 InIndex, TSharedRef<IRHIBindingSet> InSet ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::SetBindingSet ( const UInt32 InIndex,
+                                                                                  TSharedRef<IRHIBindingSet> InSet ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
+        const FRHIExpected StateValid = CheckRecording( true );
         if ( not StateValid )
         {
             return StateValid;
@@ -407,10 +405,48 @@ namespace RHI
             Stream.Retain( InSet );
         } );
     }
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::SetVertexBuffer (
-        const UInt32 InSlot, TSharedRef<IRHIBuffer> InBuffer, const UInt64 InOffset ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::SetInlineConstants ( const ERHIShaderStage InStages,
+                                                                                       const UInt32 InOffset,
+                                                                                       const TSpan<const Byte> InValues ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
+        const FRHIExpected StateValid = CheckRecording( true );
+        if ( not StateValid )
+        {
+            return StateValid;
+        }
+        if ( not BoundPipeline )
+        {
+            return StateError( "Inline constants require a bound pipeline" );
+        }
+        const FRHIExpected Valid = ValidateRHIInlineConstantWrite( InStages, InOffset, InValues.size() );
+        if ( not Valid )
+        {
+            return Valid;
+        }
+
+        const TOptional<USize> PayloadSize = RHICheckedAdd( sizeof( FRHIInlineConstantCommand ), InValues.size() );
+        if ( not PayloadSize )
+        {
+            return TUnexpected<FRHIError>(
+                MakeRHIInvalidArgument( ERHIErrorCondition::Command, "Inline constants are too large" ) );
+        }
+        const FRHIInlineConstantCommand Record{
+            .Stages = InStages, .Offset = InOffset, .Size = static_cast<UInt32>( InValues.size() ) };
+        const Byte *RecordBytes = reinterpret_cast<const Byte *>( std::addressof( Record ) );
+        TVector<Byte> Payload( RecordBytes, RecordBytes + sizeof( Record ) );
+        if ( not InValues.empty() )
+        {
+            Payload.insert( Payload.end(), InValues.begin(), InValues.end() );
+        }
+        return Stream.WritePayload( static_cast<UInt32>( ERHINullCommandOpcode::SetInlineConstants ),
+                                    TSpan<const Byte>( Payload.data(), Payload.size() ) );
+    }
+
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::SetVertexBuffer ( const UInt32 InSlot,
+                                                                                    TSharedRef<IRHIBuffer> InBuffer,
+                                                                                    const UInt64 InOffset ) noexcept
+    {
+        const FRHIExpected StateValid = CheckRendering();
         if ( not StateValid )
         {
             return StateValid;
@@ -431,10 +467,11 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::SetIndexBuffer (
-        TSharedRef<IRHIBuffer> InBuffer, const UInt64 InOffset, const ERHIIndexFormat InFormat ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::SetIndexBuffer ( TSharedRef<IRHIBuffer> InBuffer,
+                                                                                   const UInt64 InOffset,
+                                                                                   const ERHIIndexFormat InFormat ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
+        const FRHIExpected StateValid = CheckRendering();
         if ( not StateValid )
         {
             return StateValid;
@@ -456,11 +493,10 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::Draw ( const FRHIDrawArguments &InArguments ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::Draw ( const FRHIDrawArguments &InArguments ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
-        const TExpected<void, FRHIError> Valid      = InArguments.Validate();
+        const FRHIExpected StateValid = CheckRendering();
+        const FRHIExpected Valid      = InArguments.Validate();
         if ( not StateValid )
         {
             return StateValid;
@@ -472,11 +508,11 @@ namespace RHI
         return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::Draw ), InArguments );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
+    Lumen::RHI::FRHIExpected
     Lumen::RHI::Tests::FNullCommandList::DrawIndexed ( const FRHIDrawIndexedArguments &InArguments ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
-        const TExpected<void, FRHIError> Valid      = InArguments.Validate();
+        const FRHIExpected StateValid = CheckRendering();
+        const FRHIExpected Valid      = InArguments.Validate();
         if ( not StateValid )
         {
             return StateValid;
@@ -488,12 +524,11 @@ namespace RHI
         return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::DrawIndexed ), InArguments );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::DrawIndirect ( TSharedRef<IRHIBuffer> InArguments,
-                                                        const FRHIIndirectArguments &InDesc ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::DrawIndirect ( TSharedRef<IRHIBuffer> InArguments,
+                                                                                 const FRHIIndirectArguments &InDesc ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
-        const TExpected<void, FRHIError> Valid      = InDesc.Validate( InArguments->GetDesc().Size, sizeof( FRHIDrawArguments ) );
+        const FRHIExpected StateValid = CheckRendering();
+        const FRHIExpected Valid      = InDesc.Validate( InArguments->GetDesc().Size, sizeof( FRHIDrawArguments ) );
         if ( not StateValid )
         {
             return StateValid;
@@ -510,11 +545,10 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::Dispatch ( const FRHIDispatchArguments &InArguments ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::Dispatch ( const FRHIDispatchArguments &InArguments ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( false );
-        const TExpected<void, FRHIError> Valid      = InArguments.Validate();
+        const FRHIExpected StateValid = CheckRecording( false );
+        const FRHIExpected Valid      = InArguments.Validate();
         if ( not StateValid )
         {
             return StateValid;
@@ -526,12 +560,12 @@ namespace RHI
         return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::Dispatch ), InArguments );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
+    Lumen::RHI::FRHIExpected
     Lumen::RHI::Tests::FNullCommandList::DispatchIndirect ( TSharedRef<IRHIBuffer> InArguments,
                                                             const FRHIIndirectArguments &InDesc ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( false );
-        const TExpected<void, FRHIError> Valid = InDesc.Validate( InArguments->GetDesc().Size, sizeof( FRHIDispatchArguments ) );
+        const FRHIExpected StateValid = CheckRecording( false );
+        const FRHIExpected Valid      = InDesc.Validate( InArguments->GetDesc().Size, sizeof( FRHIDispatchArguments ) );
         if ( not StateValid )
         {
             return StateValid;
@@ -548,10 +582,9 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::SetViewport ( const FRHIViewport &InViewport ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::SetViewport ( const FRHIViewport &InViewport ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
+        const FRHIExpected StateValid = CheckRendering();
         if ( not StateValid )
         {
             return StateValid;
@@ -563,10 +596,9 @@ namespace RHI
         return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::SetViewport ), InViewport );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::SetScissor ( const FRHIRect2D &InScissor ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::SetScissor ( const FRHIRect2D &InScissor ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
+        const FRHIExpected StateValid = CheckRendering();
         if ( not StateValid )
         {
             return StateValid;
@@ -578,10 +610,9 @@ namespace RHI
         return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::SetScissor ), InScissor );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::SetBlendConstants ( const Float32 ( &InConstants )[4] ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::SetBlendConstants ( const Float32 ( &InConstants )[4] ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
+        const FRHIExpected StateValid = CheckRendering();
         if ( not StateValid )
         {
             return StateValid;
@@ -598,10 +629,10 @@ namespace RHI
         return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::SetBlendConstants ), Constants );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::SetDepthBias ( const Float32 InConstant, const Float32 InSlope ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::SetDepthBias ( const Float32 InConstant,
+                                                                                 const Float32 InSlope ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
+        const FRHIExpected StateValid = CheckRendering();
         if ( not StateValid )
         {
             return StateValid;
@@ -614,20 +645,19 @@ namespace RHI
         return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::SetDepthBias ), Values );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::SetStencilReference ( const UInt32 InReference ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::SetStencilReference ( const UInt32 InReference ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRendering();
+        const FRHIExpected StateValid = CheckRendering();
         if ( not StateValid )
         {
             return StateValid;
         }
         return Stream.Write( static_cast<UInt32>( ERHINullCommandOpcode::SetStencilReference ), InReference );
     }
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::BeginQuery ( TSharedRef<IRHIQueryPool> InPool, const UInt32 InIndex ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::BeginQuery ( TSharedRef<IRHIQueryPool> InPool,
+                                                                               const UInt32 InIndex ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
+        const FRHIExpected StateValid = CheckRecording( true );
         if ( not StateValid )
         {
             return StateValid;
@@ -638,8 +668,8 @@ namespace RHI
         {
             return StateError( "Query pool is foreign, incompatible with the queue, or another query is active" );
         }
-        FNullQueryPool *const Pool             = PoolRef->Get();
-        const TExpected<void, FRHIError> Begun = Pool->Begin( InIndex );
+        FNullQueryPool *const Pool = PoolRef->Get();
+        const FRHIExpected Begun   = Pool->Begin( InIndex );
         if ( not Begun )
         {
             return Begun;
@@ -653,10 +683,10 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::EndQuery ( TSharedRef<IRHIQueryPool> InPool, const UInt32 InIndex ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::EndQuery ( TSharedRef<IRHIQueryPool> InPool,
+                                                                             const UInt32 InIndex ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
+        const FRHIExpected StateValid = CheckRecording( true );
         if ( not StateValid )
         {
             return StateValid;
@@ -667,8 +697,8 @@ namespace RHI
         {
             return StateError( "Ending query does not match the active query" );
         }
-        FNullQueryPool *const Pool             = PoolRef->Get();
-        const TExpected<void, FRHIError> Ended = Pool->End( InIndex );
+        FNullQueryPool *const Pool = PoolRef->Get();
+        const FRHIExpected Ended   = Pool->End( InIndex );
         if ( not Ended )
         {
             return Ended;
@@ -681,10 +711,9 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError>
-    Lumen::RHI::Tests::FNullCommandList::BeginDebugRegion ( const FStringView InName ) noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::BeginDebugRegion ( const FStringView InName ) noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
+        const FRHIExpected StateValid = CheckRecording( true );
         if ( not StateValid )
         {
             return StateValid;
@@ -703,9 +732,9 @@ namespace RHI
         } );
     }
 
-    Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::Tests::FNullCommandList::EndDebugRegion () noexcept
+    Lumen::RHI::FRHIExpected Lumen::RHI::Tests::FNullCommandList::EndDebugRegion () noexcept
     {
-        const TExpected<void, FRHIError> StateValid = CheckRecording( true );
+        const FRHIExpected StateValid = CheckRecording( true );
         if ( not StateValid )
         {
             return StateValid;

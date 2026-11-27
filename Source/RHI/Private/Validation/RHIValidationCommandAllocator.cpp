@@ -5,7 +5,12 @@
 
 #include "RHIValidationCommandAllocator.hpp"
 #include "RHIValidationCommandList.hpp"
+
 #include <HAL/LockGuard.hpp>
+
+/**
+ * Public
+ */
 
 Lumen::RHI::FRHIValidationCommandAllocator::FRHIValidationCommandAllocator ( TSharedRef<IRHICommandAllocator> InUnderlying,
                                                                              TSharedPtr<FRHIValidationState> InState ) noexcept
@@ -26,8 +31,7 @@ Lumen::RHI::ERHIQueueType Lumen::RHI::FRHIValidationCommandAllocator::GetQueueTy
     return Underlying->GetQueueType();
 }
 
-Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHI::FRHIValidationCommandAllocator::Reset ( const FRHITimelineValue InCompleted ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHIValidationCommandAllocator::Reset ( const FRHITimelineValue InCompleted ) noexcept
 {
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
     for ( const FRHIValidationCommandList *List : Lists )

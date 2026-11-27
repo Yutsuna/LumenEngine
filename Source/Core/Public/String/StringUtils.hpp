@@ -8,10 +8,12 @@
 #include <Core/CoreTypes.hpp>
 #include <CoreExport.hpp>
 
+#include <Algo/Any.hpp>
+#include <Algo/Equal.hpp>
+#include <Algo/ForEach.hpp>
+
 #include <String/String.hpp>
 #include <String/StringView.hpp>
-
-#include <algorithm>
 
 namespace Lumen
 {
@@ -42,9 +44,9 @@ namespace Lumen
 /** @brief Checks if the given string view contains only space characters. */
 [[nodiscard]] constexpr CORE_EXPORT Bool IsSpace ( FStringView InStringView ) noexcept
 {
-    return std::ranges::all_of( InStringView, [] ( const AnsiChar c ) noexcept
+    return not Algo::AnyOf( InStringView, [] ( AnsiChar Char ) noexcept
     {
-        return IsSpace( c );
+        return not IsSpace( Char );
     } );
 }
 
@@ -52,7 +54,7 @@ namespace Lumen
 [[nodiscard]] constexpr CORE_EXPORT AnsiChar ToLower ( const AnsiChar InChar ) noexcept
 {
     const auto U = static_cast<UInt8>( InChar );
-    return ( static_cast<UInt8>( U - 'A' ) < 26u ) ? static_cast<AnsiChar>( U | 0x20 ) : InChar;
+    return ( static_cast<UInt8>( U - 'A' ) < 26U ) ? static_cast<AnsiChar>( U | 0x20 ) : InChar;
 }
 
 /**
@@ -64,9 +66,10 @@ namespace Lumen
     FString Result;
     Result.resize( InString.length() );
 
-    std::ranges::transform( InString, Result.begin(), [] ( const AnsiChar c ) noexcept
+    USize Index = 0;
+    Algo::ForEach( InString, [&Result, &Index] ( const AnsiChar Char ) noexcept
     {
-        return ToLower( c );
+        Result[Index++] = ToLower( Char );
     } );
 
     return Result;
@@ -75,10 +78,10 @@ namespace Lumen
 /** @brief In-place conversion to lower-case (Zero allocations). */
 constexpr CORE_EXPORT void ToLowerInline ( FString &InOutString ) noexcept
 {
-    for ( AnsiChar &Char : InOutString )
+    Algo::ForEach( InOutString, [] ( AnsiChar &Char ) noexcept
     {
         Char = ToLower( Char );
-    }
+    } );
 }
 
 /** @brief Case-insensitive comparison (Zero allocations, early exit). */
@@ -89,7 +92,7 @@ constexpr CORE_EXPORT void ToLowerInline ( FString &InOutString ) noexcept
         return false;
     }
 
-    return std::ranges::equal( InStringA, InStringB, [] ( const AnsiChar A, const AnsiChar B ) noexcept
+    return Algo::Equal( InStringA, InStringB, [] ( const AnsiChar A, const AnsiChar B ) noexcept -> Bool
     {
         return ToLower( A ) == ToLower( B );
     } );

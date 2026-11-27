@@ -4,7 +4,7 @@
  */
 #include <RHI/Resources/IRHITexture.hpp>
 #include <RHI/Resources/RHITextureViewDesc.hpp>
-Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHI::FRHITextureViewDesc::Validate () const noexcept
+Lumen::RHI::FRHIExpected Lumen::RHI::FRHITextureViewDesc::Validate () const noexcept
 {
     if ( not Texture or not Range.IsValid() )
     {

@@ -47,19 +47,21 @@ template <class TMutexType> Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TM
 }
 
 template <class TMutexType>
-Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TMutexType &InMutex, FDeferLock /* */ ) noexcept : Mutex( &InMutex )
+Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TMutexType &InMutex, FDeferLock LUMEN_UNUSED InTag ) noexcept
+    : Mutex( &InMutex )
 {
     /** Empty */
 }
 
 template <class TMutexType>
-Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TMutexType &InMutex, FTryToLock /* */ ) noexcept : Mutex( &InMutex )
+Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TMutexType &InMutex, FTryToLock LUMEN_UNUSED InTag ) noexcept
+    : Mutex( &InMutex )
 {
     static_cast<void>( TryLock() );
 }
 
 template <class TMutexType>
-Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TMutexType &InMutex, FAdoptLock /* */ ) noexcept
+Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TMutexType &InMutex, FAdoptLock LUMEN_UNUSED InTag ) noexcept
     : Mutex( &InMutex ), bIsLocked( true )
 {
     /** Empty */

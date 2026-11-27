@@ -33,7 +33,7 @@ namespace RHI
          * @brief Validates command lists, semaphore operations and completion value.
          * @return Success, or a structured FRHIError with the relevant condition.
          */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
     };
 
 } // namespace RHI

@@ -26,7 +26,7 @@ namespace RHI
         ERHIQueueType QueueType = ERHIQueueType::Graphics;
 
         /** @return Success when the type, count, and queue combination is valid. */
-        [[nodiscard]] TExpected<void, FRHIError> Validate () const noexcept;
+        [[nodiscard]] FRHIExpected Validate () const noexcept;
         /** @return Byte size of one result in this pool. */
         [[nodiscard]] UInt32 GetResultSize () const noexcept;
     };
