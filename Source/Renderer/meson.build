@@ -13,5 +13,9 @@ ModuleDefinition = {
     'Benchmarks' : 'Benchmarks',
     'Depends' : ['Core', 'Maths', 'RHI', 'Scene'],
     'ExtraTestSources' : RHINullTestSupportSources,
-    'ExtraTestIncludeDirectories' : RHIConformanceIncludeDirectories,
+    'ExtraTestIncludeDirectories' : [ RHIConformanceIncludeDirectories, RHIPrivateIncludeDirectories ],
+
+    'ExtraBenchmarkSources' : RHINullTestSupportSources,
+    'ExtraBenchmarkIncludeDirectories' : [ RHIConformanceIncludeDirectories, RHIPrivateIncludeDirectories ],
+    'BenchmarkTestDependency' : true,
 }
