@@ -12,8 +12,9 @@
   capacity descriptor, fallible `TryPush` and saturation metrics; no `new`/
   `delete` on any message path), `FMailBoxDesc`, `EActorMailboxError`,
   `DefaultMailboxCapacity` (32 slots),
-  `FMessage` (`ActorMessage.hpp`), `FActorRegistry`, `FActorRef` and `ActorID`
-  (`ActorTypes.hpp`), `EActorLifecycle`/`EActorTickPhase` and structured send,
+  `FMessage` (`ActorMessage.hpp`), `FActorRef` and `ActorID`
+  (`ActorTypes.hpp`), `Internal::FActorRegistry` (`ActorRegistry.hpp`),
+  `EActorLifecycle`/`EActorTickPhase` and structured send,
   spawn and destroy errors (`ActorLifecycle.hpp`), `FActorEmitContext`
   (`ActorEmitContext.hpp`, bounded per-actor outbox).
 - `World/` — `FWorld` (world/phases, `bInParallelPhase` parallel phasing,
@@ -38,7 +39,7 @@
 - `Hierarchy/` — `FSceneHierarchy`, `FSceneHierarchyTransformRecord`,
   `FSceneHierarchyUpdateResult` and `ESceneHierarchyError`
   (`SceneHierarchy.hpp`).
-- `Messages/` — `EngineMessageTypes` (`EEngineMessage`, payload structs).
+- `Messages/` — `EngineMessageTypes.hpp` (`EEngineMessage`, payload structs).
 - `Actor/Inline/`, `World/Inline/` — `.inl` implementations.
 
 Tests in `Source/Scene/Tests/Functional/{Actor,World,Rendering}` (mailbox/fence/push,
@@ -114,7 +115,7 @@ only — see `skills/write-benchmarks.md`.
 - Evidence: 6 new `FMailBox_Bounded` tests, including capacity N/N+1,
   saturation counts, two-fence batching, growth with pending messages and
   **1M push/pop with 0 allocations** measured by a scoped test-only global
-  allocator counter. Scene suite 140/140; Debug and TSAN clean.
+  allocator counter. Scene suite 147/147; Debug and TSAN clean.
 - Release trade-off analysed: replacing the SPMC free list with a generic
   multi-producer MPSC free ring adds a CAS on send plus one accepted-count
   atomic. Micro `PushPopMessage` moved from ~19 ns to ~32 ns and the M2
@@ -140,8 +141,9 @@ only — see `skills/write-benchmarks.md`.
   callers never need to know the canonical rank.
 - `PublishRenderSnapshot()` validates every family against its reserved
   capacity before touching scratch arrays, then publishes a **complete,
-  canonically sorted** snapshot. Capacity failures return
-  `FRenderSnapshotError::CapacityExceeded`, are observable through
+  canonically sorted** snapshot. Capacity failures return a
+  `FRenderSnapshotError` with
+  `Code == ERenderSnapshotErrorCode::CapacityExceeded`, are observable through
   `GetLastRenderError()` and leave the previous publication and reader view
   untouched. A later success clears the error.
 - The reader side is latest-only: exactly one thread calls
@@ -154,6 +156,7 @@ only — see `skills/write-benchmarks.md`.
   surviving two later publications, capacity+1 rejection, canonical order
   after scrambled registration and **zero allocations across 1000 publishes**
   measured with a scoped global allocation counter. Release extraction
-  benchmarks at 100/1k/10k proxies: idle ~30 ns, all-dirty ~7 us/~81 us/~1.6 ms,
-  structural churn ~3.6 us/~42 us/~540 us, with bytes copied reported per
-  iteration. Debug, TSAN, clang-format and all three builds are clean.
+  benchmarks at reserved capacities 100/1k/10k: idle (empty publication)
+  ~30 ns, all-dirty ~7 us/~81 us/~1.6 ms at 100/1k/10k proxies, structural
+  churn ~3.6 us/~42 us/~540 us, with bytes copied reported per iteration.
+  Debug, TSAN, clang-format and all three builds are clean.
