@@ -17,7 +17,7 @@ namespace RHI
      * @enum ERHIShaderStage
      * @brief Shader stage bits used by shaders and bindings.
      */
-    enum class ERHIShaderStage : UInt32
+    enum class ERHIShaderStage : UInt32 /** NOLINT */
     {
         None          = 0U,
         Vertex        = 1U << 0U,

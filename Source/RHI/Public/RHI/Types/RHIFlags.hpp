@@ -17,7 +17,7 @@ namespace RHI
      * @enum ERHIObjectFlags
      * @brief Portable flags shared by creatable objects.
      */
-    enum class ERHIObjectFlags : UInt32
+    enum class ERHIObjectFlags : UInt32 /** NOLINT */
     {
         None                 = 0U,
         Shared               = 1U << 0U,

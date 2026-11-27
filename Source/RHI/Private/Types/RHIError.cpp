@@ -5,12 +5,17 @@
 
 #include <RHI/Types/RHIError.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::RHI::FRHIError::FRHIError ( const ERHIErrorCode InCode,
                                    const ERHIErrorCondition InCondition,
                                    const FStringView InMessage,
                                    const TOptional<Int64> InNativeCode ) noexcept
     : Code( InCode ), Condition( InCondition ), Message( InMessage ), NativeCode( InNativeCode )
 {
+    /* */
 }
 
 Lumen::RHI::FRHIError Lumen::RHI::FRHIError::WithContext ( const FStringView InOperation ) const noexcept
@@ -18,5 +23,5 @@ Lumen::RHI::FRHIError Lumen::RHI::FRHIError::WithContext ( const FStringView InO
     FString Context( InOperation );
     Context += ": ";
     Context += Message;
-    return FRHIError( Code, Condition, Context, NativeCode );
+    return { Code, Condition, Context, NativeCode };
 }

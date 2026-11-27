@@ -16,7 +16,7 @@ namespace RHI
      * @enum ERHIFormat
      * @brief Backend-independent texel and vertex formats.
      */
-    enum class ERHIFormat : UInt16
+    enum class ERHIFormat : UInt16 /** NOLINT */
     {
         Unknown = 0,
         R8Unorm,

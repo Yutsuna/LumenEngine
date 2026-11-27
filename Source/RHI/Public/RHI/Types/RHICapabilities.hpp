@@ -21,7 +21,7 @@ namespace RHI
      * @enum ERHICapabilityFlags
      * @brief Optional features a backend may advertise.
      */
-    enum class ERHICapabilityFlags : UInt64
+    enum class ERHICapabilityFlags : UInt64 /** NOLINT */
     {
         None                      = 0ULL,
         DynamicRendering          = 1ULL << 0U,
