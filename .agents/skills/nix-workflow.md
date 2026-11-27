@@ -20,8 +20,8 @@ Nix/shell.nix        — mkShell wrapping deps with dev env hooks
   `package.nix` and `shell.nix` both `import` it. Never add a dependency
   directly to the flake or to shell/package files.
 - Choose the right list in `deps.nix`:
-  - `nativeBuildInputs` — build-time tools (gcc16, meson, ninja, pkg-config,
-    shaderc, spirv-tools, spirv-cross; `mold`, `mesa` behind
+  - `nativeBuildInputs` — build-time tools (gcc16, ccache, meson, ninja, pkg-config,
+    shaderc, spirv-cross, spirv-tools; `mold`, `mesa`, `libglvnd` behind
     `lib.optionals … isLinux`).
   - `buildInputs` — runtime libs (sdl3, vulkan-loader, vulkan-headers).
   - `devInputs` — dev-only tools, present in the devshell but NOT in the
@@ -48,7 +48,9 @@ Nix/shell.nix        — mkShell wrapping deps with dev env hooks
 - `src = pkgs.lib.cleanSource ../.` — gitignored junk is cleaned, but keep
   new stray directories out of the source tree anyway.
 - The meson/ninja inputs bring the standard Meson/Nix build hooks; the
-  package-level knobs are the `meson.options` fields (e.g. `-Denable_lto`).
+  package-level knobs are the `meson.options` fields (`enable_testing`,
+  `enable_benchmarking`, `enable_lto`). `enable_lto` is declared but not
+  consumed by any meson file yet — see `skills/meson-build-customization.md`.
 
 ## Commands
 
@@ -65,7 +67,9 @@ meson test -C Build   # CI-style, non-interactive
 2. If a module consumes it via pkg-config, wire the meson side too:
    `dependency('...')` in that module's `ModuleDefinition` under
    `'ExternalDeps'` (see `Source/AppCore/meson.build` SDL3 example) —
-   nix buildInputs and meson `dependency()` must match names.
+   nix buildInputs and meson `dependency()` must match names. The optional
+   / required dependency patterns and the full key table are in
+   `skills/meson-build-customization.md`.
 3. `direnv reload` (or re-enter `nix develop`) so LD_LIBRARY_PATH/hooks pick
    the change; `nix build` only if you need the package/result.
 4. If it's a runtime lib consumed by an executable, verify with the

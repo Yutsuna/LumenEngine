@@ -35,7 +35,9 @@ meson test -C Build SceneTests              # one named test target
 **Gotcha — reconfigure after source changes:** `Private/`, `Tests/`, and
 `Benchmarks/` sources are discovered by `find` at configure time
 (`Source/Meson/{Private,Tests,Benchmarks}/meson.build`). After adding,
-deleting, or renaming any `.cpp`, reconfigure.
+deleting, or renaming any `.cpp`, reconfigure. How those declarations are
+written (module keys, target types, discovery) is documented in
+`skills/meson-build-customization.md`.
 
 **Prefer reconfiguring via `Scripts/BuildMeson.bash`.** It reconfigures all
 three build trees in one shot with the correct settings (`--native-file`,
@@ -48,7 +50,9 @@ Scripts/BuildMeson.bash
 The script runs `meson setup ... --reconfigure` for `Build`, `Build-Release`,
 and `Build-TSAN` in parallel. Only fall back to a manual reconfigure (e.g.
 `meson setup Build --reconfigure`) when you intentionally want to touch a
-single tree or need different flags.
+single tree or need different flags. On a **fresh, unconfigured** tree, drop
+`--reconfigure` (it errors there — `commands/build-debug.md:20-21`); configure
+once, then use the script for later reconfigures.
 
 ## Toolchain (do not assume defaults)
 
@@ -60,7 +64,9 @@ single tree or need different flags.
 - clangd cannot parse reflection code; `.clangd` strips `-freflection` for
   tooling. Don't "fix" that config by adding it back.
 - `meson.options`: `enable_testing`, `enable_benchmarking` (default true),
-  `enable_lto` (release buildtype only, default false).
+  `enable_lto` (declared, release-oriented, default false — but **no meson
+  file consumes it yet**, so `-Denable_lto` currently changes nothing; see
+  `skills/meson-build-customization.md`).
 - The project default is `b_ndebug=if-release`: `LUMEN_ASSERT` traps in Debug
   and compiles out in Release. Keep Debug assertion-enabled when testing
   preconditions.
@@ -80,3 +86,5 @@ silence a glibc `_FORTIFY_SOURCE` warning.
 
 Any target built outside the module system will not receive these flags:
 put everything through module definitions (`Source/Meson/`).
+See `skills/meson-build-customization.md` for the declarative wiring that
+applies them.

@@ -2,7 +2,7 @@
 
 - **Type:** Executable (`Source/Launch/meson.build`), depends on `Core`,
   `AppCore`, `Scene`, `RHI`, `Renderer`. Produces the `Launch` binary
-  (`Build/Source/Launch/Launch`).
+  (`Build/Source/Meson/Private/Launch`, where the `executable()` is declared).
 - **Status:** built. Entry point of the engine.
 
 ## Public surface (`Source/Launch/Public/`)

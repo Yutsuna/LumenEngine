@@ -35,8 +35,12 @@ will be wrong.
   use that for white-box tests instead of exporting more symbols. For a shared
   module, tests link the same implementation objects statically through
   `GlobalTestModules`; production consumers still use the shared library through
-  `GlobalModules`, and no additional symbols are exported.
-- Core is auto-linked into every benchmark target even when not in `Depends`;
+  `GlobalModules`, and no additional symbols are exported. The
+  `ModuleDefinition` keys behind this wiring are in
+  `skills/meson-build-customization.md`.
+- Core is auto-linked into benchmarks under the guards in
+  `Source/Meson/Benchmarks/meson.build:67-70` (non-Core module, Core present,
+  not already in `Depends`);
   test targets list `Core` in their `Depends` explicitly.
 
 ## Running
@@ -48,7 +52,8 @@ meson test -C Build --suite Scene            # one module
 ```
 
 Binaries land under `Build/Source/Meson/Tests/`. New test files need
-`meson setup Build --reconfigure` (see `rules/build.md`).
+`meson setup Build --reconfigure` on an existing tree (fresh trees are
+configured without it — `rules/build.md:35-55`).
 
 ## Benchmarks
 

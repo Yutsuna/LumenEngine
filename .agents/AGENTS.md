@@ -22,7 +22,7 @@ to `.agents/`; an explicit `.agents/` prefix is equally valid.
 | `modules/<Module>.md` | working in `Source/<Module>/` (status, links, inventory) |
 | `agents/` | agent definitions — `reviewer` orchestrator + `reviewer-safety`/`reviewer-norme` subagents, `documentation` auditor of the `.agents/` corpus, and `test-writer` for unit-test authoring (definitions in `agents/*.md`) |
 | `commands/` | ready-made recipes: `build-debug`, `build-release`, `test`, `review`, `new-module` |
-| `skills/` | procedural guides: `core-abstractions`, `debug-sanitizer`, `write-benchmarks`, `nix-workflow` |
+| `skills/` | procedural guides: `core-abstractions`, `debug-sanitizer`, `write-benchmarks`, `nix-workflow`, `meson-build-customization` (declarative Meson mechanics: `ModuleDefinition` keys, target types) |
 
 ## Modules
 
