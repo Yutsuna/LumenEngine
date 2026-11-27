@@ -38,11 +38,13 @@
   surface the renderer consumes.
 - `Hierarchy/` — `FSceneHierarchy`, `FSceneHierarchyTransformRecord`,
   `FSceneHierarchyUpdateResult` and `ESceneHierarchyError`
-  (`SceneHierarchy.hpp`).
+  (`SceneHierarchy.hpp`, `Inline/SceneHierarchy.inl`). Level iteration is exposed
+  through `GetDepth`, `GetLevelStarts`, `GetLevelOrderedTransforms` and an
+  allocation-free `ForEachLevel` visitor.
 - `Messages/` — `EngineMessageTypes.hpp` (`EEngineMessage`, payload structs).
 - `Actor/Inline/`, `World/Inline/` — `.inl` implementations.
 
-Tests in `Source/Scene/Tests/Functional/{Actor,World,Rendering}` (mailbox/fence/push,
+Tests in `Source/Scene/Tests/Functional/{Actor,World,Rendering,Hierarchy}` (mailbox/fence/push,
 bounded mailbox capacity/saturation/fence/1M-allocation-free push-pop,
 actor message/ref/registry dead-letter, world phases, spatial registry,
 lifecycle hooks, bounded capacities, ingress journal capacity/sequence/
@@ -56,7 +58,7 @@ publication).
 
 Benchmarks in `Source/Scene/Benchmarks/` (`SceneBenchmarks` binary, suites
 `FMailBox`, `AActor`, `FActorRegistry`, `FWorld`, `FWorldExecutor`,
-`FSpatialRegistry`, `FWorldRenderExtraction`):
+`FSpatialRegistry`, `FWorldRenderExtraction`, `FSceneHierarchy`):
 `Actor/ActorMailboxBenchmarks.cpp` (push/pop, structured TryPush, batch drain,
 preallocated saturation, MPSC contention), `Actor/ActorBenchmarks.cpp`
 (RunFrame, ID alloc),
@@ -160,3 +162,45 @@ only — see `skills/write-benchmarks.md`.
   ~30 ns, all-dirty ~7 us/~81 us/~1.6 ms at 100/1k/10k proxies, structural
   churn ~3.6 us/~42 us/~540 us, with bytes copied reported per iteration.
   Debug, TSAN, clang-format and all three builds are clean.
+
+## M8 — Spatial hierarchy (contract and evidence)
+
+- `FSceneHierarchy` already existed as a committed, bounded, weak-ID component;
+  M8 **integrates, validates and hardens** it rather than creating it. Nodes hold
+  only `ActorID` parent/sibling links, local/world matrices, depth and dirty bits:
+  no `AActor *`, no `TSharedPtr` parent-child cycle, no renderer type.
+- `FWorldDesc::HierarchyCapacity` (default `0`) reserves the hierarchy once at
+  construction. Zero keeps the M0-M7 behaviour unchanged. Registration is
+  **opt-in** through `FWorld::TryRegisterHierarchyActor`; `TryHierarchyAttach`,
+  `TryHierarchyDetach` and `TrySetHierarchyLocalTransform` validate at apply time
+  and route through `FDeferredCommandPayload` inside an actor phase. The four new
+  command alternatives are appended so existing `Payload.index()` values and the
+  canonical `(Sender, SenderSequence, Target, index)` ordering stay stable.
+- A stale parent ID is rejected with `ESceneHierarchyError::StaleParent` by
+  checking the full generational `ActorID` against `FWorld::Actors`; no public
+  registry generation API was added. Queue saturation returns
+  `ESceneHierarchyError::DeferredQueueFull` with no mutation.
+- Default destruction policy detaches children: `DestroyActorImpl` calls
+  `Hierarchy.Unregister`, direct children become roots and keep their current
+  world transform as their local transform. Recursive subtree destruction is not
+  implicit and remains a separate explicit command if ever needed.
+- Exactly one **serial** `Hierarchy.UpdateWorld()` pass runs after the last phase
+  fence and before `Registry.Publish()` in both `TryTick` and `TryFixedTick`.
+  Workers never write the hierarchy. Published records are copied into
+  `FSpatialRegistry` through `UpdateTransform`; `PublishRenderSnapshot()` and
+  `FRenderTransformRecord` are unchanged, so the renderer boundary is untouched.
+  `ForEachLevel` uses a counting-sort level view rebuilt in place, without
+  allocation and with ActorID order inside each level.
+- Evidence: 14 new tests under `Tests/Functional/Hierarchy/` and
+  `Tests/Integration/Rendering/HierarchyTransformPublicationTests.cpp` cover
+  capacity+1, self/unknown/cyclic parents with strong guarantee, detach and
+  unregister semantics, canonical level views, deferred application on the next
+  tick, stale parents, saturated queues, and complete-snapshot publication with
+  removal visible after skipped publishes. Replay digests are computed over
+  canonical ranks and matrix bits (never absolute generational IDs or addresses)
+  across 3 literal seeds × 32 runs × 1/2/4 workers; 0 allocation after reserve.
+- Release benchmarks: `Hierarchy/{Chain,WideTree,LeafUpdates,Publish,StructuralChurn}`
+  at 100/1k/10k, and `Renderer/Benchmarks/Frame/HierarchyExtractionBenchmarks.cpp`
+  for frame cost bounded by published records (100/1k/10k). The existing AoS node
+  layout was kept: the measurements are dominated by the parent-first traversal,
+  so an SoA rewrite showed no justification. JSON reports are kept in `TEMP/`.

@@ -75,6 +75,13 @@ on failure.
 - **EGL process lifetime:** the EGL library handle and default display are
   cached for the process — repeated per-device `eglInitialize`/`eglTerminate`
   cycles exhaust Mesa's display slots in long conformance runs.
+- **Backend limits at M7:** the device still creates a surfaceless EGL context,
+  so `CreateRHIOpenGLSurfaceBridge` rejects coherent native-window handles with
+  `Unsupported`. `FOpenGLSwapchain::Present` delegates to a caller bridge and
+  has no blit into a window-visible framebuffer. Windowed OpenGL presentation
+  therefore needs native-display device initialization before it can be
+  claimed. Conformance covers headless draw/dispatch and Null-surface rings;
+  it does not verify pixel values from the texture-to-buffer readback path.
 - **Build/verification:** reconfigure all three trees when adding a `.cpp`
   (`Scripts/BuildMeson.bash`); `Build`, `Build-Release` and `Build-TSAN` must all
   compile, and `RHIOpenGLTests` must pass with TSan clean and

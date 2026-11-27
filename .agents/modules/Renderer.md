@@ -19,6 +19,11 @@
   `FRenderGraphCompiler` (private), `FCompiledRenderGraph`,
   `FRenderGraphContext`, graph value types and `FRenderError`. Graph
   declaration and compilation create no native or backend object.
+- `Frame/` — `FRenderProxyRegistry`, `FRenderProxyEntry`, `FRenderProxyStats`,
+  `FRenderAssetRegistry`, `FRenderGeometryAsset`, `FRenderGeometryAssetDesc`,
+  `FRenderShaderSet` and `FRenderFrameReadbackDesc`. Proxies and assets are
+  owned only by the render thread; composition supplies portable shader bytes
+  and geometry, never a backend type.
 
 ## Execution contract
 
@@ -44,6 +49,25 @@
   `FRenderFrameStatus`. Snap spans are copied into plain values and never
   retained past the next reader swap. `DeviceLost`/`DeviceClosed` and RHI
   failures are reported through the status without partial presentation.
+- With a supplied `FRenderShaderSet` and registered geometry, the frame adds an
+  opaque forward pass: the active camera with the lowest proxy ID supplies
+  view/projection inline constants, visible proxies issue indexed draws against
+  sorted, device-owned geometry, and clear values still come from the snapshot
+  sequence. Empty shader bytecode preserves the historical clear-only slice.
+- `FRenderProxyRegistry::Sync` validates and canonicalizes the whole mesh
+  snapshot by proxy ID, skips invalid records, rejects overflow before mutation
+  and never retains snapshot spans. `FRenderAssetRegistry::Register` copies
+  CPU geometry through one upload allocation, records the copy on the graphics
+  queue and waits for completion before the render thread starts. The frame
+  timeline therefore resumes from the queue's completed value after those
+  control-time submissions.
+- Presentation is opt-in through a portable `IRHISwapchain` in `FRendererDesc`.
+  The frame acquires an image, waits on its binary acquire semaphore in the
+  submission, signals a binary render-complete semaphore, presents on the
+  graphics queue and records `Presented`. `OutOfDate` triggers one `Resize`
+  retry; `bSuboptimal` is observable and never silently dropped. Headless
+  frames use an offscreen render target and an optional bounded readback whose
+  span is valid until the next consumed frame.
 - `FNonCopyable` is not used as a base for move-only graph types; those types
   delete copy explicitly and default move. `FRenderGraphContext` takes ownership
   of a moved `FCompiledRenderGraph`, so its bindings and barriers cannot outlive
@@ -102,10 +126,17 @@
   placement, placed-resource binding, resolved transitions, submission,
   timeline-gated release, command-allocator recycling, validation and injected
   `FNullFaultPlan` failure.
+- `Tests/Integration/Frame/FirstImageNullTests.cpp` covers indexed quad draws,
+  readback after timeline completion, acquire→submit→present ordering, proxy
+  retirement across skipped snapshots, validation-on graph barriers and device
+  loss before presentation.
 - `Benchmarks/Execution/` measures steady-state enqueue and the full CPU clear
   frame at 16/64/256 extents. `Benchmarks/RenderGraph/` measures graph
   declaration plus compilation and aliased transient placement at 10/100/1000
-  passes. No GPU timing is reported.
+  passes. `Benchmarks/Frame/` measures proxy diffing, deterministic graph
+  planning and the whole opaque Null frame at 100/1000/10000 proxies. The
+  opaque frame number includes render-thread handoff latency; no GPU timing is
+  reported.
 
 ## Notes for agents
 
@@ -115,6 +146,11 @@
 - `FRHITransientBatch::Validate()` only validates individual requests; live-range
   non-overlap is a property of the allocator placement and is asserted by the
   aliasing and fuzz tests rather than by the batch itself.
+- `FRenderGraphBuilder::Reset` reuses reserved arenas across frames; a frame
+  re-imports its target, declares one side-effect pass, compiles and resolves
+  the compiled barriers at their recorded points. No arena grows after `Start`.
+- Run `RequestRender` only after publishing a snapshot with a nonzero WorldId.
+  A zero WorldId is reported as `Idle` and no target is acquired or presented.
 - Snapshot sequences start at one. `FWorld` always publishes with a nonzero
   `WorldId`: an explicit nonzero `FWorldDesc::WorldId` is preserved, otherwise
   a process-wide counter starting at 1 is used. The renderer treats a zero
@@ -124,6 +160,15 @@
 - A queue submits its command list and itself transitions the list to
   `Pending`; the renderer must hand over an `Executable` list and recycle the
   allocator only after the previous completion is reached.
+- Scene snapshots carry opaque `FRenderAssetId` values only. Geometry and
+  shader bytes are supplied by composition through `RegisterGeometry` and
+  `FRendererDesc::Shaders`; the renderer never loads assets, translates shader
+  language or includes a concrete backend.
+- Windowed OpenGL presentation is not available yet: `CreateRHIOpenGLSurfaceBridge`
+  returns `Unsupported` because the device uses a surfaceless EGL context.
+  Presentation is therefore exercised through the portable swapchain contract
+  on the Null backend; a separate OpenGL pixel-readback reference remains a
+  known gap and must not be claimed as verified.
 - Runtime boot composition belongs to `Launch`; adding this module to
   `ModuleNames` compiles it but does not register an engine module. Backend
   selection is a composition concern and must not be introduced here.
