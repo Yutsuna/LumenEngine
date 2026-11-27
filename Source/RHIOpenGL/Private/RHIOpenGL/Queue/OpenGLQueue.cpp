@@ -202,9 +202,10 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
         return Result;
     };
     FOpenGLWaitState *Wait = Context->GetWaitState();
-    Packet.OnComplete      = [Wait, RetiredValue, Lists, InDesc] () noexcept
+    /* Mark the lists before publishing: a waiter woken by the condition variable must
+     * never observe a still-Pending command list. */
+    Packet.OnComplete = [Wait, RetiredValue, Lists, InDesc] () noexcept
     {
-        PublishQueueCompletion( *Wait, *RetiredValue, InDesc.Completion.Value );
         Algo::ForEach( Lists,
                        [] ( const TSharedRef<RHI::IRHICommandList> &InCommandList ) noexcept -> Bool
         {
@@ -214,10 +215,10 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
             const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *InCommandList );
             ( void )( *Native )->MarkCompleted( InDesc.Completion );
         } );
+        PublishQueueCompletion( *Wait, *RetiredValue, InDesc.Completion.Value );
     };
-    Packet.OnFailure = [Wait, RetiredValue, Lists, InDesc] ( RHI::FRHIError ) noexcept
+    Packet.OnFailure = [Wait, RetiredValue, Lists, InDesc] ( const RHI::FRHIError & ) noexcept
     {
-        PublishQueueCompletion( *Wait, *RetiredValue, InDesc.Completion.Value );
         Algo::ForEach( Lists,
                        [] ( const TSharedRef<RHI::IRHICommandList> &InCommandList ) noexcept -> Bool
         {
@@ -227,6 +228,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLQueue::Submit ( const RHI::FRH
             const TOptional<FOpenGLCommandList *> Native = RHI::TryRHIBackendCast<FOpenGLCommandList>( *InCommandList );
             ( void )( *Native )->MarkCompleted( InDesc.Completion );
         } );
+        PublishQueueCompletion( *Wait, *RetiredValue, InDesc.Completion.Value );
     };
 
     LUMEN_TRY_EXPECT_ERROR( Context->GetExecutor()->Submit( static_cast<FOpenGLSubmission &&>( Packet ) ) );

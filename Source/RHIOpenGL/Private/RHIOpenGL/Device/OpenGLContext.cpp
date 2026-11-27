@@ -15,6 +15,7 @@
 
 #include <RHI/Types/RHIError.hpp>
 
+#include <RHIOpenGL/Device/OpenGLFenceStatus.hpp>
 #include <RHIOpenGL/Loader/GLLoader.hpp>
 #include <RHIOpenGL/Synchronization/OpenGLSemaphore.hpp>
 
@@ -362,6 +363,49 @@ void Lumen::RHIOpenGL::FOpenGLContext::PollResetStatus () noexcept
     MarkDeviceLost();
 }
 
+void Lumen::RHIOpenGL::FOpenGLContext::RetireSubmission ( FOpenGLSubmission &&InSubmission,
+                                                          const RHI::FRHIExpected &InResult ) noexcept
+{
+    LUMEN_ASSERT( IsExecutorThread() );
+
+    /** M4.2: publish query results before the queue completion value becomes visible. */
+    PollPendingQueries();
+
+    /* Advance before the callback: a waiter released by OnComplete/OnFailure may destroy
+     * retained objects, and DeferRelease then sees the value already reached. */
+    const UInt64 Value = InSubmission.Completion.Value;
+    if ( Value > CompletedTimeline.load() )
+    {
+        CompletedTimeline.store( Value );
+    }
+    ( void )DeferredReleases.Poll( RHI::FRHITimelineValue{ CompletedTimeline.load() } );
+
+    if ( InResult )
+    {
+        Algo::ForEach( InSubmission.Signals,
+                       [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept -> Bool
+        {
+            return static_cast<Bool>( InSignal.first );
+        }, [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept
+        {
+            ( void )InSignal.first->Signal( InSignal.second );
+        } );
+        if ( InSubmission.OnComplete )
+        {
+            InSubmission.OnComplete();
+        }
+    }
+    else
+    {
+        EmitDebugMessage( RHI::FRHIDebugMessage( RHI::ERHIDebugSeverity::Error, RHI::ERHIDebugCategory::General, 0U,
+                                                 InResult.Error().Message ) );
+        if ( InSubmission.OnFailure )
+        {
+            InSubmission.OnFailure( InResult.Error() );
+        }
+    }
+}
+
 void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
 {
     {
@@ -389,12 +433,9 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
             const RHI::FRHIExpected Replayed = Ready.Replay ? Ready.Replay() : RHI::FRHIExpected{};
             if ( not Replayed )
             {
-                EmitDebugMessage( RHI::FRHIDebugMessage( RHI::ERHIDebugSeverity::Error, RHI::ERHIDebugCategory::General, 0U,
-                                                         Replayed.Error().Message ) );
-                if ( Ready.OnFailure )
-                {
-                    Ready.OnFailure( Replayed.Error() );
-                }
+                /* D7: a failed replay is terminal. No fence, no signals, no OnComplete. */
+                RetireSubmission( static_cast<FOpenGLSubmission &&>( Ready ), Replayed );
+                continue;
             }
 
             GLsync Sync = Dispatch.FenceSync != nullptr ? Dispatch.FenceSync( GlSyncGpuCommandsComplete, 0U ) : nullptr;
@@ -404,25 +445,8 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
             }
             if ( Sync == nullptr )
             {
-                PollPendingQueries();
-                Algo::ForEach( Ready.Signals,
-                               [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept -> Bool
-                {
-                    return static_cast<Bool>( InSignal.first );
-                }, [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept
-                {
-                    ( void )InSignal.first->Signal( InSignal.second );
-                } );
-                if ( Ready.OnComplete )
-                {
-                    Ready.OnComplete();
-                }
-                const UInt64 NoFenceValue = Ready.Completion.Value;
-                if ( NoFenceValue > CompletedTimeline.load() )
-                {
-                    CompletedTimeline.store( NoFenceValue );
-                }
-                ( void )DeferredReleases.Poll( RHI::FRHITimelineValue{ CompletedTimeline.load() } );
+                /* FenceSync is a required entry point; this is an unreachable fallback. */
+                RetireSubmission( static_cast<FOpenGLSubmission &&>( Ready ), RHI::FRHIExpected{} );
             }
             else
             {
@@ -440,9 +464,10 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
 
     for ( USize Index = 0U; Index < ActiveFences.size(); )
     {
-        FActiveFence &Fence = ActiveFences[Index];
-        const GLenum Status = Dispatch.ClientWaitSync( Fence.Sync, GlSyncFlushCommandsBit, 0ULL );
-        if ( Status == GlSyncTimeoutExpired )
+        FActiveFence &Fence               = ActiveFences[Index];
+        const GLenum Status               = Dispatch.ClientWaitSync( Fence.Sync, GlSyncFlushCommandsBit, 0ULL );
+        const EFenceWaitStatus WaitStatus = ClassifyFenceWaitStatus( Status );
+        if ( WaitStatus == EFenceWaitStatus::Timeout )
         {
             ++Index;
             continue;
@@ -454,26 +479,20 @@ void Lumen::RHIOpenGL::FOpenGLContext::StepScheduler () noexcept
         FOpenGLSubmission Completed = static_cast<FOpenGLSubmission &&>( Fence.Submission );
         ActiveFences.erase( ActiveFences.begin() + static_cast<ISize>( Index ) );
 
-        /** M4.2: publish query results before the queue completion value becomes visible. */
-        PollPendingQueries();
-        Algo::ForEach( Completed.Signals,
-                       [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept -> Bool
+        if ( WaitStatus == EFenceWaitStatus::Failed )
         {
-            return static_cast<Bool>( InSignal.first );
-        }, [] ( const TPair<TSharedPtr<RHI::IRHISemaphore>, UInt64> &InSignal ) noexcept
-        {
-            ( void )InSignal.first->Signal( InSignal.second );
-        } );
-        if ( Completed.OnComplete )
-        {
-            Completed.OnComplete();
+            /* glClientWaitSync failed (or returned an unknown result): drain the sticky
+             * native error so it cannot poison the next replay's GetError() check. */
+            const GLenum NativeError = Dispatch.GetError != nullptr ? Dispatch.GetError() : GlNoError;
+            EmitDebugMessage( RHI::FRHIDebugMessage( RHI::ERHIDebugSeverity::Error, RHI::ERHIDebugCategory::General,
+                                                     static_cast<UInt32>( NativeError ),
+                                                     "glClientWaitSync did not report fence completion." ) );
+            RetireSubmission(
+                static_cast<FOpenGLSubmission &&>( Completed ),
+                TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Queue, "OpenGL fence wait failed." ) ) );
+            continue;
         }
-        const UInt64 Value = Completed.Completion.Value;
-        if ( Value > CompletedTimeline.load() )
-        {
-            CompletedTimeline.store( Value );
-        }
-        ( void )DeferredReleases.Poll( RHI::FRHITimelineValue{ CompletedTimeline.load() } );
+        RetireSubmission( static_cast<FOpenGLSubmission &&>( Completed ), RHI::FRHIExpected{} );
     }
 }
 

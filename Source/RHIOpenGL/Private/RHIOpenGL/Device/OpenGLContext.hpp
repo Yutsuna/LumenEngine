@@ -164,6 +164,14 @@ namespace RHIOpenGL
         /** @brief Fails every unfinished submission; executor thread only. */
         void FailAllSubmissions () noexcept;
 
+        /**
+         * @brief Publishes exactly one terminal callback for a retired submission.
+         * @details Executor thread only. Success signals the output semaphores and calls
+         *          OnComplete; failure calls OnFailure and never signals. The executor
+         *          timeline and the deferred-release queue advance on both paths.
+         */
+        void RetireSubmission ( FOpenGLSubmission &&InSubmission, const RHI::FRHIExpected &InResult ) noexcept;
+
     private:
 
         Bool bEnableDebug = false;

@@ -206,13 +206,12 @@ namespace RHIOpenGL
     inline constexpr GLenum GlQueryResultAvailable = 0x8867U;
     inline constexpr GLenum GlPackRowLength        = 0x0D02U;
 
-    /** INFO: Sync objects and client wait results (core 4.6). */
+    /** INFO: Sync objects and client wait results (core 4.6); values match glcorearb.h. */
     inline constexpr GLenum GlSyncGpuCommandsComplete  = 0x9117U;
-    inline constexpr GLenum GlSyncFlushedCommands      = 0x9118U;
-    inline constexpr GLenum GlSyncConditionSatisfied   = 0x9119U;
+    inline constexpr GLenum GlSyncConditionSatisfied   = 0x911CU;
     inline constexpr GLenum GlSyncAlreadySignaled      = 0x911AU;
     inline constexpr GLenum GlSyncTimeoutExpired       = 0x911BU;
-    inline constexpr GLenum GlSyncWaitFailed           = 0x911CU;
+    inline constexpr GLenum GlSyncWaitFailed           = 0x911DU;
     inline constexpr GLbitfield GlSyncFlushCommandsBit = 0x00000001U;
 
     /** INFO: KHR_debug message routing (core 4.6). */
