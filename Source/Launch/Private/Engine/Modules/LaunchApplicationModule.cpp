@@ -14,7 +14,6 @@
     #include <Linux/LinuxApplication.hpp>
 #endif
 
-#include <cstddef>
 #include <utility>
 
 /**
@@ -215,7 +214,7 @@ void Lumen::Launch::FLaunchApplicationModule::PopMessageHandler ( const Internal
         if ( HandlerStack[EntryIndex].Get() == InToken )
         {
             const Bool bWasTop = ( EntryIndex + 1 == HandlerStack.size() );
-            HandlerStack.erase( HandlerStack.begin() + static_cast<std::ptrdiff_t>( EntryIndex ) );
+            HandlerStack.erase( HandlerStack.begin() + static_cast<ISize>( EntryIndex ) );
 
             if ( bWasTop and Application.IsValid() and not HandlerStack.empty() )
             {
