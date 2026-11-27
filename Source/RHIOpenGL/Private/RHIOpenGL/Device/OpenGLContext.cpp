@@ -86,12 +86,37 @@ Lumen::RHIOpenGL::FOpenGLContext::Create ( const Bool bEnableDebug ) noexcept
 
 Lumen::RHIOpenGL::FOpenGLContext::~FOpenGLContext () noexcept
 {
+    Shutdown();
+}
+
+void Lumen::RHIOpenGL::FOpenGLContext::Shutdown () noexcept
+{
+    if ( bStopping.load() )
+    {
+        return;
+    }
+
+    /* Post the drain before publishing the stop: InvokeOnGLThread rejects work once
+     * bStopping is visible, and the worker must execute this task to release GL handles. */
+    if ( WorkerThread.IsJoinable() )
+    {
+        ( void )ExecuteOnGLThread( [this] () noexcept
+        {
+            DeferredReleases.Shutdown();
+        } );
+    }
+    {
+        HAL::TLockGuard Lock( QueueMutex );
+        bStopping.store( true );
+    }
     ( void )WorkerThread.RequestStop();
     Wake.NotifyAll();
-    WorkerThread.Join();
-    /* The worker drains deferred releases on the GL thread before shutting down
-     * the native context; Shutdown() here only closes the queue to later Enqueues. */
-    DeferredReleases.Shutdown();
+
+    /* A self-destruction cannot join its own worker; the loop exits after the task. */
+    if ( WorkerThread.IsJoinable() and not IsExecutorThread() )
+    {
+        WorkerThread.Join();
+    }
 }
 
 const Lumen::RHIOpenGL::FGLDispatchTable &Lumen::RHIOpenGL::FOpenGLContext::GetDispatch () const noexcept
@@ -111,7 +136,7 @@ Lumen::RHIOpenGL::FOpenGLWaitState *Lumen::RHIOpenGL::FOpenGLContext::GetWaitSta
 
 Lumen::Bool Lumen::RHIOpenGL::FOpenGLContext::IsExecutorThread () const noexcept
 {
-    return WorkerThread.IsJoinable() and FThread::GetCurrentId() == WorkerThread.GetId();
+    return ExecutorThreadId.load() == FThread::GetCurrentId();
 }
 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::ExecuteOnGLThread ( TFunction<void()> InTask ) noexcept
@@ -127,14 +152,16 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::ExecuteOnGLThread ( T
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::InvokeOnGLThread ( TFunction<void()> InTask ) noexcept
 {
     LUMEN_ASSERT( not IsExecutorThread() );
-    if ( not WorkerThread.IsJoinable() )
-    {
-        return TUnexpected( RHI::MakeRHIDeviceLost( RHI::ERHIErrorCondition::Device, "OpenGL executor is stopped." ) );
-    }
-
     TSharedRef<FTaskLatch> Latch = MakeTaskLatch();
     {
         HAL::TLockGuard Lock( QueueMutex );
+        /* Publishing the stop and enqueueing share QueueMutex, so no accepted task can be
+         * stranded by the worker's exit check. */
+        if ( bStopping.load() )
+        {
+            return TUnexpected(
+                RHI::MakeRHIDeviceLost( RHI::ERHIErrorCondition::Device, "OpenGL executor is stopping or stopped." ) );
+        }
         Tasks.push( [Task = static_cast<TFunction<void()> &&>( InTask ), Latch] () noexcept
         {
             Task();
@@ -212,8 +239,10 @@ void Lumen::RHIOpenGL::FOpenGLContext::EmitDebugMessage ( RHI::FRHIDebugMessage 
 Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::DeferRelease ( const RHI::FRHITimelineValue InRequired,
                                                                           TFunction<void()> InRelease ) noexcept
 {
-    /* Always retire through the queue: Poll()/Drain() run on the executor, so the
-     * native GL calls stay on the GL thread even when the value is already complete. */
+    if ( RHI::IsRHICompletionReached( RHI::FRHITimelineValue{ CompletedTimeline.load() }, InRequired ) )
+    {
+        return ExecuteOnGLThread( static_cast<TFunction<void()> &&>( InRelease ) );
+    }
     return DeferredReleases.Enqueue( InRequired, static_cast<TFunction<void()> &&>( InRelease ) );
 }
 
@@ -501,6 +530,7 @@ void Lumen::RHIOpenGL::FOpenGLContext::FailAllSubmissions () noexcept
 
 void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) noexcept
 {
+    ExecutorThreadId.store( FThread::GetCurrentId() );
     const TExpected<void, RHI::FRHIError> Initialized = NativeContext.Initialize( bEnableDebug );
     if ( not Initialized )
     {
@@ -569,7 +599,13 @@ void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) n
             HAL::TLockGuard Lock( SchedulerMutex );
             bPending = not Pending.empty();
         }
-        if ( InStopToken.StopRequested() and not Task and not bPending and Blocked.empty() and ActiveFences.empty() )
+        Bool bTasksQueued = false;
+        {
+            HAL::TLockGuard Lock( QueueMutex );
+            bTasksQueued = not Tasks.empty();
+        }
+        if ( InStopToken.StopRequested() and not Task and not bTasksQueued and not bPending and Blocked.empty() and
+             ActiveFences.empty() )
         {
             break;
         }
