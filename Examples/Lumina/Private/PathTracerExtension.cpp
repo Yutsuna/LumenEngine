@@ -7,7 +7,7 @@
 
 #include <Filesystem/File.hpp>
 #include <LogLumina.hpp>
-#include <OrbitCamera.hpp>
+#include <Maths/Macros.hpp>
 
 #include <RHI/Bindings/IRHIBindingSet.hpp>
 #include <RHI/Commands/IRHICommandList.hpp>
@@ -23,7 +23,6 @@
 #include <RHI/Types/RHIShaderFormat.hpp>
 #include <RHI/Types/RHIShaderStage.hpp>
 
-#include <cmath>
 #include <utility>
 
 namespace
@@ -142,11 +141,6 @@ CreateView ( Lumen::RHI::IRHIDevice &InDevice, const Lumen::TSharedRef<Lumen::RH
         .Resource = Lumen::RHI::FRHICombinedTextureSamplerBinding{ .View = InView, .Sampler = InSampler },
     };
     return InSet.Write( Lumen::TSpan<const Lumen::RHI::FRHIBindingWrite>( &Write, 1U ) );
-}
-
-[[nodiscard]] Lumen::Maths::FVec3f CameraForward ( const Lumen::Maths::FVec3f &InPosition ) noexcept
-{
-    return ( Lumen::Maths::FVec3f( 0.0F, 1.05F, 0.0F ) - InPosition ).Normalize();
 }
 
 } // namespace
@@ -432,10 +426,24 @@ Lumen::FLuminaPathTracerExtension::Record ( const FRenderFrameExtensionContext &
         return MakeUnexpected( LuminaError( RHI::ERHIErrorCondition::Command, "The active Lumina camera has no transform." ) );
     }
 
-    const Maths::FVec3f CameraPosition( CameraTransform->WorldTransform[3].X,
-                                        CameraTransform->WorldTransform[3].Y,
-                                        CameraTransform->WorldTransform[3].Z );
-    if ( not bHasCamera or CameraPosition != LastCameraPosition )
+    const Maths::FMat4x4f &WorldTransform = CameraTransform->WorldTransform;
+    const Maths::FVec3f CameraPosition( WorldTransform[3].X, WorldTransform[3].Y, WorldTransform[3].Z );
+
+    /**
+     * INFO: LookAt stores R = Up x Forward in column 0, while PathTrace.frag builds rays with
+     *       Forward + Right * ndc.x + Up * ndc.y. That shader basis is left-handed, so Right is -R.
+     */
+    const Maths::FVec3f Forward( WorldTransform[2].X, WorldTransform[2].Y, WorldTransform[2].Z );
+    const Maths::FVec3f Up( WorldTransform[1].X, WorldTransform[1].Y, WorldTransform[1].Z );
+    const Maths::FVec3f Right( -WorldTransform[0].X, -WorldTransform[0].Y, -WorldTransform[0].Z );
+
+    /** INFO: Perspective stores +/- 1 / tan(fov / 2) in [1][1]; the magnitude is what the shader needs. */
+    const Float32 ProjectionScale = ActiveCamera->Projection[1].Data[1];
+    const Float32 TanHalfFov      = ProjectionScale != 0.0F ? 1.0F / Maths::Abs( ProjectionScale ) : 1.0F;
+
+    /** INFO: A rotation-only look-at or a FOV change must restart accumulation just like a translation does. */
+    if ( not bHasCamera or CameraPosition != LastCameraPosition or Forward != LastCameraForward or
+         TanHalfFov != LastTanHalfFov )
     {
         SampleCount = 0ULL;
         PingPong    = 0U;
@@ -445,18 +453,14 @@ Lumen::FLuminaPathTracerExtension::Record ( const FRenderFrameExtensionContext &
         LUMEN_LOG_INFO( LogLumina, "Initial path-traced camera position: ({}, {}, {}).", CameraPosition.X, CameraPosition.Y,
                         CameraPosition.Z );
     }
-    bHasCamera          = true;
-    LastCameraPosition  = CameraPosition;
-    PendingWriteIndex   = 1U - PingPong;
+    bHasCamera         = true;
+    LastCameraPosition = CameraPosition;
+    LastCameraForward  = Forward;
+    LastTanHalfFov     = TanHalfFov;
+    PendingWriteIndex  = 1U - PingPong;
     const UInt32 ReadIndex  = PingPong;
     const UInt32 WriteIndex = PendingWriteIndex;
     InContext.Status.ExtensionFrameCount = SampleCount;
-
-    const Maths::FVec3f Forward = CameraForward( CameraPosition );
-    const Maths::FVec3f Right   = Forward.Cross( Maths::FVec3f( 0.0F, 1.0F, 0.0F ) ).Normalize();
-    const Maths::FVec3f Up      = Right.Cross( Forward ).Normalize();
-    constexpr Float32 Pi        = 3.14159265358979323846F;
-    const Float32 TanHalfFov    = std::tan( LuminaCameraFieldOfViewDegrees * Pi / 360.0F );
     const FPathTraceConstants PathConstants{
         .ResolutionFrame = Maths::FVec4f( static_cast<Float32>( AccumulationExtent.Width ),
                                           static_cast<Float32>( AccumulationExtent.Height ),

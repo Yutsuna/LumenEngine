@@ -263,7 +263,7 @@ public:
     constexpr decltype( auto ) operator*( this auto &&Self ) noexcept
     {
         LUMEN_ASSERT( Self.bHasValue );
-        return ( std::forward<decltype( Self )>( Self ).Val );
+        return ( std::forward<decltype( Self )>( Self ).Val ); /** NOLINT(readability-redundant-parentheses) */
     }
 
     /** @brief Arrow operator. Undefined behavior if the expected holds an error. */
@@ -277,7 +277,7 @@ public:
     constexpr decltype( auto ) Error ( this auto &&Self ) noexcept
     {
         LUMEN_ASSERT( Self.bHasValue == false );
-        return ( std::forward<decltype( Self )>( Self ).Err );
+        return ( std::forward<decltype( Self )>( Self ).Err ); /** NOLINT(readability-redundant-parentheses) */
     }
 
     /** @brief Monadic hook */
@@ -494,7 +494,7 @@ public:
     constexpr decltype( auto ) Error ( this auto &&Self ) noexcept
     {
         LUMEN_ASSERT( Self.bHasValue == false );
-        return ( std::forward<decltype( Self )>( Self ).Err );
+        return ( std::forward<decltype( Self )>( Self ).Err ); /** NOLINT(readability-redundant-parentheses) */
     }
 
     template <class Src>

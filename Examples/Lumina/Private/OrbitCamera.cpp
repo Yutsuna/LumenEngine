@@ -14,7 +14,7 @@ Lumen::ApplyOrbitDrag ( const FOrbitCameraState &InState, const Float32 InDeltaX
 {
     constexpr Float32 Sensitivity = 0.0055F;
     constexpr Float32 MinPitch    = 0.04F;
-    constexpr Float32 MaxPitch    = 3.14159265358979323846F * 0.47F;
+    constexpr Float32 MaxPitch    = Maths::Pi<Float32> * 0.47F;
 
     FOrbitCameraState Result = InState;
     Result.Yaw               = InState.Yaw - InDeltaX * Sensitivity;

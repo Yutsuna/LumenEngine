@@ -7,8 +7,6 @@
 
 #include <Core/CoreTypes.hpp>
 
-#include <cstddef>
-
 namespace Lumen
 {
 
@@ -17,7 +15,7 @@ extern TAtomic<UInt64> GTrackedAllocations;
 extern TAtomic<Bool> bTrackingAllocations;
 
 /** @brief Test-only allocator front end used by the single set of global operator overrides. */
-[[nodiscard]] void *TrackedAllocate ( std::size_t InSize, std::size_t InAlignment ) noexcept;
+[[nodiscard]] void *TrackedAllocate ( USize InSize, USize InAlignment ) noexcept;
 
 /** @class FAllocationTrackingScope
  * @brief Captures an allocation baseline and exposes the delta observed until destruction.

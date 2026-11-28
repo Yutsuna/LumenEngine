@@ -13,9 +13,9 @@
 #include <Rendering/RenderRecords.hpp>
 #include <Rendering/RenderSnapshotView.hpp>
 
+#include <Templates/Array.hpp>
 #include <Tests/UnitTest.hpp>
 
-#include <array>
 #include <bit>
 
 namespace Lumen
@@ -24,9 +24,9 @@ namespace Lumen
 namespace
 {
 
-    [[nodiscard]] std::array<UInt32, 16ULL> MatrixBits ( const Maths::FMat4x4f &InMatrix ) noexcept
+    [[nodiscard]] TArray<UInt32, 16ULL> MatrixBits ( const Maths::FMat4x4f &InMatrix ) noexcept
     {
-        return std::bit_cast<std::array<UInt32, 16ULL>>( InMatrix );
+        return std::bit_cast<TArray<UInt32, 16ULL>>( InMatrix );
     }
 
     [[nodiscard]] FWorldDesc MakePublicationDesc () noexcept

@@ -14,7 +14,7 @@
 namespace Lumen
 {
 
-class ALuminaCameraActor;
+class ACameraActor;
 class FGenericWindow;
 class FRenderer;
 class FWorld;
@@ -53,7 +53,7 @@ private:
 private:
     FWorldIngressJournal IngressJournal;
     TUniquePtr<FWorld> World;
-    TSharedPtr<ALuminaCameraActor> CameraActor;
+    TSharedPtr<ACameraActor> CameraActor;
     ActorID Camera = InvalidActorID;
     TSharedPtr<RHI::IRHIModule> RHIModule;
     TSharedPtr<RHI::IRHIDevice> Device;

@@ -5,11 +5,11 @@
 
 #include <MessageHandler.hpp>
 
-#include <CameraActor.hpp>
 #include <Execution/Renderer.hpp>
 #include <Engine/Modules/LaunchApplicationModule.hpp>
 #include <Generic/GenericWindow.hpp>
 #include <LogLumina.hpp>
+#include <Messages/EngineMessageTypes.hpp>
 #include <World/World.hpp>
 
 #include <utility>
@@ -48,9 +48,30 @@ void Lumen::FLuminaMessageHandler::SendCameraMessage ( const FMessage &InMessage
     }
 }
 
+void Lumen::FLuminaMessageHandler::PublishCameraPose () noexcept
+{
+    const FOrbitCameraBasis Basis = ComputeOrbitCamera( State );
+    const FCameraLookAtPayload LookAt{ .Eye    = Basis.Position,
+                                       .Target = State.Target,
+                                       .Up     = Basis.Up };
+    SendCameraMessage(
+        FMessage::Make( static_cast<UInt32>( EEngineMessage::CameraSetLookAt ), InvalidActorID, LookAt ) );
+}
+
+void Lumen::FLuminaMessageHandler::PublishCameraParams ( const Float32 InAspectRatio ) noexcept
+{
+    const FCameraParamsPayload Params{ .FieldOfViewDegrees = LuminaCameraFieldOfViewDegrees,
+                                       .AspectRatio        = InAspectRatio,
+                                       .NearPlane          = 0.1F,
+                                       .FarPlane           = 1000.0F };
+    SendCameraMessage(
+        FMessage::Make( static_cast<UInt32>( EEngineMessage::CameraSetParams ), InvalidActorID, Params ) );
+}
+
 void Lumen::FLuminaMessageHandler::ResetCamera () noexcept
 {
-    SendCameraMessage( FMessage::Make( static_cast<UInt32>( ELuminaCameraMessage::ResetCamera ), InvalidActorID ) );
+    State = FOrbitCameraState{};
+    PublishCameraPose();
 }
 
 void Lumen::FLuminaMessageHandler::OnRequestExit () noexcept
@@ -95,6 +116,7 @@ void Lumen::FLuminaMessageHandler::OnWindowResized ( const TSharedRef<FGenericWi
         {
             LUMEN_LOG_WARNING( LogLumina, "The renderer rejected a native resize request." );
         }
+        PublishCameraParams( static_cast<Float32>( Size.X ) / static_cast<Float32>( Size.Y ) );
     }
     if ( NextHandler.IsValid() )
     {
@@ -150,10 +172,12 @@ void Lumen::FLuminaMessageHandler::OnMouseMove ( const Int32 InX, const Int32 In
 {
     if ( bDragging )
     {
-        const FLuminaOrbitDragMessage Drag{ static_cast<Float32>( InX - LastX ), static_cast<Float32>( InY - LastY ) };
-        if ( Drag.DeltaX != 0.0F or Drag.DeltaY != 0.0F )
+        const Float32 DeltaX = static_cast<Float32>( InX - LastX );
+        const Float32 DeltaY = static_cast<Float32>( InY - LastY );
+        if ( DeltaX != 0.0F or DeltaY != 0.0F )
         {
-            SendCameraMessage( FMessage::Make( static_cast<UInt32>( ELuminaCameraMessage::OrbitDrag ), InvalidActorID, Drag ) );
+            State = ApplyOrbitDrag( State, DeltaX, DeltaY );
+            PublishCameraPose();
         }
     }
     LastX = InX;
@@ -166,8 +190,8 @@ void Lumen::FLuminaMessageHandler::OnMouseMove ( const Int32 InX, const Int32 In
 
 void Lumen::FLuminaMessageHandler::OnMouseWheel ( const Int32 InDelta ) noexcept
 {
-    const FLuminaOrbitZoomMessage Zoom{ static_cast<Float32>( InDelta ) };
-    SendCameraMessage( FMessage::Make( static_cast<UInt32>( ELuminaCameraMessage::OrbitZoom ), InvalidActorID, Zoom ) );
+    State = ApplyOrbitZoom( State, static_cast<Float32>( InDelta ) );
+    PublishCameraPose();
     if ( NextHandler.IsValid() )
     {
         NextHandler->OnMouseWheel( InDelta );

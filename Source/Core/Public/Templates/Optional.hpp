@@ -228,7 +228,7 @@ public:
     constexpr decltype( auto ) operator*( this auto &&Self ) noexcept
     {
         LUMEN_ASSERT( Self.bHasValue );
-        return ( std::forward<decltype( Self )>( Self ).Value );
+        return ( std::forward<decltype( Self )>( Self ).Value ); /** NOLINT(readability-redundant-parentheses) */
     }
 
     constexpr auto *operator->( this auto &&Self ) noexcept

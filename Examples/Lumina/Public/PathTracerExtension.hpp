@@ -105,6 +105,8 @@ private:
     TArray<RHI::ERHIResourceState, 2U> PendingAccumulationStates{};
     TArray<RHI::ERHIResourceState, 2U> PendingBloomStates{};
     Maths::FVec3f LastCameraPosition;
+    Maths::FVec3f LastCameraForward;
+    Float32 LastTanHalfFov   = 0.0F;
     UInt64 SampleCount       = 0ULL;
     UInt32 PingPong          = 0U;
     UInt32 PendingWriteIndex = 0U;

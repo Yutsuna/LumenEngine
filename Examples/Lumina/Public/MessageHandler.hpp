@@ -5,6 +5,7 @@
 #pragma once
 
 #include <Generic/GenericApplicationMessageHandler.hpp>
+#include <OrbitCamera.hpp>
 #include <World/WorldIngressJournal.hpp>
 
 namespace Lumen
@@ -45,6 +46,8 @@ public:
 
 private:
     void SendCameraMessage ( const FMessage &InMessage ) noexcept;
+    void PublishCameraPose () noexcept;
+    void PublishCameraParams ( Float32 InAspectRatio ) noexcept;
     void ResetCamera () noexcept;
 
 private:
@@ -56,6 +59,7 @@ private:
     Int32 LastX                           = 0;
     Int32 LastY                           = 0;
     Bool bDragging                        = false;
+    FOrbitCameraState State;
 };
 
 [[nodiscard]] Launch::FScopedMessageHandler

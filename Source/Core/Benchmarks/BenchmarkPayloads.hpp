@@ -39,9 +39,11 @@ namespace Benchmarks
         /** @brief Fills the buffer from Seed so payloads are distinct and opaque. */
         explicit FHeavyPayload ( const Int32 InSeed ) noexcept : Value( InSeed )
         {
-            for ( USize ElementIndex = 0U; ElementIndex < Buffer.size(); ++ElementIndex )
+            Int32 Offset = 0;
+            for ( auto &Element : Buffer )
             {
-                Buffer[ElementIndex] = InSeed + static_cast<Int32>( ElementIndex );
+                Element = InSeed + Offset;
+                ++Offset;
             }
         }
 

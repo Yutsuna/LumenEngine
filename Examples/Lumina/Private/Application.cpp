@@ -6,11 +6,13 @@
 #include "Templates/Expected.hpp"
 #include <Application.hpp>
 
-#include <CameraActor.hpp>
+#include <Camera/CameraActor.hpp>
 #include <Execution/Renderer.hpp>
 #include <Generic/GenericWindow.hpp>
 #include <LogLumina.hpp>
 #include <MessageHandler.hpp>
+#include <Messages/EngineMessageTypes.hpp>
+#include <OrbitCamera.hpp>
 #include <PathTracerExtension.hpp>
 
 #include <Engine/Modules/LaunchSurfaceBridge.hpp>
@@ -21,6 +23,8 @@
 #include <RHI/Presentation/IRHISwapchain.hpp>
 #include <RHI/Presentation/RHISwapchainDesc.hpp>
 #include <World/World.hpp>
+
+#include <Maths/Macros.hpp>
 
 #include <charconv>
 
@@ -83,10 +87,33 @@ Lumen::FLuminaApplication::Initialize ( const Launch::TModuleContext<FLuminaAppl
     } );
     World->SetIngressJournal( &IngressJournal );
 
-    auto SpawnedCamera = World->TrySpawnActor<ALuminaCameraActor>( World->GetSpatialRegistry() );
+    Maths::FVec2i InitialSize{ 1280, 720 };
+    if ( Window.IsValid() )
+    {
+        InitialSize = Window->GetWindowSize();
+        if ( InitialSize.X <= 0 or InitialSize.Y <= 0 )
+        {
+            return LuminaFailure( "Lumina received an invalid native window extent" );
+        }
+    }
+    const Float32 InitialAspect = static_cast<Float32>( InitialSize.X ) / static_cast<Float32>( InitialSize.Y );
+
+    const FOrbitCameraState InitialState{};
+    const FOrbitCameraBasis InitialBasis = ComputeOrbitCamera( InitialState );
+    const FCameraComponentDesc CameraDesc{
+        .View       = Maths::FMat4x4f::LookAt( InitialBasis.Position, InitialState.Target, InitialBasis.Up ),
+        .Projection = Maths::FMat4x4f::Perspective( LuminaCameraFieldOfViewDegrees * Maths::DegToRad<Float32>,
+                                                   InitialAspect, 0.1F, 1000.0F ),
+        .NearPlane  = 0.1F,
+        .FarPlane   = 1000.0F,
+        .Flags      = ERenderCameraFlags::Active,
+    };
+
+    auto SpawnedCamera =
+        World->TrySpawnActor<ACameraActor>( World->GetSpatialRegistry(), World->GetCameraRegistry() );
     if ( not SpawnedCamera )
     {
-        return LuminaFailure( "Lumina could not spawn its orbital camera actor" );
+        return LuminaFailure( "Lumina could not spawn its generic camera actor" );
     }
     CameraActor = *SpawnedCamera;
     Camera      = CameraActor->GetId();
@@ -94,27 +121,26 @@ Lumen::FLuminaApplication::Initialize ( const Launch::TModuleContext<FLuminaAppl
     {
         return LuminaFailure( "Lumina could not register its camera transform" );
     }
-    CameraActor->PublishTransform();
-    World->GetRenderContent().Cameras.push_back( FRenderCameraRecord{
-        .ProxyId = FRenderProxyId( Camera ),
-        .Flags   = ERenderCameraFlags::Active,
-    } );
+    if ( not World->TryAddCameraComponent( Camera, CameraDesc ) )
+    {
+        return LuminaFailure( "Lumina could not register its camera component" );
+    }
+
+    const FCameraLookAtPayload InitialLookAt{ .Eye    = InitialBasis.Position,
+                                              .Target = InitialState.Target,
+                                              .Up     = InitialBasis.Up };
+    CameraActor->Receive(
+        FMessage::Make( static_cast<UInt32>( EEngineMessage::CameraSetLookAt ), InvalidActorID, InitialLookAt ) );
     if ( not World->PublishRenderSnapshot() )
     {
         return LuminaFailure( "Lumina could not publish its initial camera snapshot" );
     }
 
-    RHI::FRHIExtent3D Extent{ 1280U, 720U, 1U };
+    const RHI::FRHIExtent3D Extent{ static_cast<UInt32>( InitialSize.X ), static_cast<UInt32>( InitialSize.Y ), 1U };
     TOptional<FNativeWindowHandles> NativeHandles;
     TOptional<RHIOpenGL::FOpenGLNativeWindowDesc> NativeWindow;
     if ( Window.IsValid() )
     {
-        const Maths::FVec2i Size = Window->GetWindowSize();
-        if ( Size.X <= 0 or Size.Y <= 0 )
-        {
-            return LuminaFailure( "Lumina received an invalid native window extent" );
-        }
-        Extent = { static_cast<UInt32>( Size.X ), static_cast<UInt32>( Size.Y ), 1U };
         NativeHandles = Window->GetNativeHandles();
         if ( not NativeHandles )
         {
@@ -229,7 +255,8 @@ Lumen::FLuminaApplication::Initialize ( const Launch::TModuleContext<FLuminaAppl
         {
             return LuminaFailure( "Lumina lost its application dependency during startup" );
         }
-        MessageHandlerGuard = InstallLuminaMessageHandler( *ApplicationModule, *World, IngressJournal, Camera, *Renderer );
+        MessageHandlerGuard =
+            InstallLuminaMessageHandler( *ApplicationModule, *World, IngressJournal, Camera, *Renderer );
     }
 
     LUMEN_LOG_INFO( LogLumina, "Lumina path tracer started on '{}'.", SelectedAdapter->Name );

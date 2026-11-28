@@ -92,7 +92,7 @@ void Lumen::Algo::Internal::SiftDown ( TIterator InFirst,
     }
 
     /** INFO: Even count: the last internal node has a single child. */
-    if ( ( InCount & 1 ) == 0 and Child == ( InCount - 2 ) / 2 )
+    if ( ( InCount & 1 ) == 0 and Child == ( InCount - 2 ) / 2 ) /** NOLINT */
     {
         Child                 = ( 2 * Child ) + 1;
         *( InFirst + InHole ) = std::move( *( InFirst + Child ) );

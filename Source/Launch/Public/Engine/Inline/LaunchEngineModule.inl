@@ -77,7 +77,7 @@ namespace Launch
             requires requires { typename TModule::FRequires; }
         struct TGetRequires<TModule>
         {
-            using Type = typename TModule::FRequires;
+            using Type = TModule::FRequires;
         };
 
         template <typename TModule> struct TGetOptionalRequires
@@ -88,7 +88,7 @@ namespace Launch
             requires requires { typename TModule::FOptionalRequires; }
         struct TGetOptionalRequires<TModule>
         {
-            using Type = typename TModule::FOptionalRequires;
+            using Type = TModule::FOptionalRequires;
         };
 
         template <typename TModule> struct TGetBefore
@@ -99,7 +99,7 @@ namespace Launch
             requires requires { typename TModule::FBefore; }
         struct TGetBefore<TModule>
         {
-            using Type = typename TModule::FBefore;
+            using Type = TModule::FBefore;
         };
 
         template <typename TModule> struct TGetProvides
@@ -110,7 +110,7 @@ namespace Launch
             requires requires { typename TModule::FProvides; }
         struct TGetProvides<TModule>
         {
-            using Type = typename TModule::FProvides;
+            using Type = TModule::FProvides;
         };
 
         template <typename TModule, typename TService> [[nodiscard]] void *UpcastService ( IEngineModule *const InBase ) noexcept
@@ -294,7 +294,7 @@ namespace Launch
 
     template <typename TModule> template <typename TDep> TDep &TModuleContext<TModule>::Get () const noexcept
     {
-        using FRequires = typename Internal::TGetRequires<TModule>::Type;
+        using FRequires = Internal::TGetRequires<TModule>::Type;
         static_assert( Internal::TListContainsV<TDep, FRequires>,
                        "Declare TDep in TModule::FRequires before calling InContext.Get<TDep>()." );
 
@@ -304,8 +304,8 @@ namespace Launch
 
     template <typename TModule> template <typename TDep> TDep *TModuleContext<TModule>::Find () const noexcept
     {
-        using FRequires = typename Internal::TGetRequires<TModule>::Type;
-        using FOptional = typename Internal::TGetOptionalRequires<TModule>::Type;
+        using FRequires = Internal::TGetRequires<TModule>::Type;
+        using FOptional = Internal::TGetOptionalRequires<TModule>::Type;
         static_assert( Internal::TListContainsV<TDep, FRequires> or Internal::TListContainsV<TDep, FOptional>,
                        "Declare TDep in FRequires or FOptionalRequires before calling InContext.Find<TDep>()." );
 

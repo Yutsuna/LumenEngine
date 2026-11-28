@@ -36,6 +36,10 @@ extern "C"
 namespace Lumen
 {
 
+/**
+ * Private
+ */
+
 namespace
 {
 
@@ -112,7 +116,7 @@ namespace
      * @brief ANSI color for a verbosity level. Kept local to the logger: it is a console
      *        presentation detail, not metadata about the ELogVerbosity enum itself.
      */
-    [[nodiscard]] static constexpr const AnsiChar *ColorForVerbosity ( const ELogVerbosity::Type InVerbosity ) noexcept
+    [[nodiscard]] constexpr const AnsiChar *ColorForVerbosity ( const ELogVerbosity::Type InVerbosity ) noexcept
     {
         switch ( InVerbosity )
         {
@@ -135,6 +139,10 @@ namespace
     }
 
 } // namespace
+
+/**
+ * Public
+ */
 
 FLogger &FLogger::GetInstance () noexcept
 {
