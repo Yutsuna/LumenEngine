@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <RendererExport.hpp>
-
 #include <RenderGraph/RenderGraph.hpp>
 
 namespace Lumen
@@ -19,7 +17,7 @@ class FCompiledRenderGraph;
  * @details No container grows beyond FRenderGraphCapacities. Handles are graph-scoped
  *          and compilation consumes the builder.
  */
-class RENDERER_EXPORT FRenderGraphBuilder final
+class FRenderGraphBuilder final
 {
 public:
 

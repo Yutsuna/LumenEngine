@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <RendererExport.hpp>
-
 #include <Core/CoreTypes.hpp>
 
 #include <Memory/SharedPtr.hpp>

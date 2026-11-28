@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <RendererExport.hpp>
-
 #include <RenderGraph/CompiledRenderGraph.hpp>
 
 namespace Lumen
@@ -18,7 +16,7 @@ namespace Lumen
  *          IRHITransientResourceAllocator. It moves the compiled plan in, so bindings and
  *          barriers can never outlive their metadata; it only adds binding fronts.
  */
-class RENDERER_EXPORT FRenderGraphContext final
+class FRenderGraphContext final
 {
 public:
 
