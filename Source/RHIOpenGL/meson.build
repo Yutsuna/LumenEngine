@@ -14,6 +14,13 @@ foreach DependencyName : [ 'gl', 'egl' ]
     endif
 endforeach
 
+if host_machine.system() == 'windows'
+    # WGL resolves pixel formats, windows and buffer swaps through GDI/USER32.
+    OpenGLCompiler = meson.get_compiler('cpp')
+    OpenGLDependencies += OpenGLCompiler.find_library('gdi32', required : true)
+    OpenGLDependencies += OpenGLCompiler.find_library('user32', required : true)
+endif
+
 ModuleDefinition = {
     'Name' : 'RHIOpenGL',
     'Type' : 'SharedLibrary',
