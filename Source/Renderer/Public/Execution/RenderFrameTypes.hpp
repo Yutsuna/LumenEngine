@@ -110,7 +110,6 @@ struct FRenderFrameStatus
     UInt64 DrawCallCount         = 0ULL;
     UInt64 ProxyCount            = 0ULL;
     UInt64 ReadbackByteCount     = 0ULL;
-    /** Extension-defined monotonic work count; Lumina uses it for committed path-traced samples. */
     UInt64 ExtensionFrameCount = 0ULL;
 };
 
