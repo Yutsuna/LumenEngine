@@ -7,10 +7,27 @@
 
 #include <Concepts/TriviallyCopyable.hpp>
 #include <Core/CoreTypes.hpp>
-#include <RHI/Types/RHIExtent.hpp>
 
 namespace Lumen
 {
+
+/**
+ * @struct FRenderExtent3D
+ * @brief Backend-neutral render target extent. No RHI type crosses this boundary.
+ */
+struct FRenderExtent3D final
+{
+    UInt32 Width  = 1U;
+    UInt32 Height = 1U;
+    UInt32 Depth  = 1U;
+
+    [[nodiscard]] constexpr Bool IsValid () const noexcept
+    {
+        return Width > 0U and Height > 0U and Depth > 0U;
+    }
+
+    friend constexpr auto operator<=>( const FRenderExtent3D &, const FRenderExtent3D & ) = default;
+};
 
 /**
  * @enum ERenderCommandType
@@ -42,7 +59,7 @@ struct FRenderCommand
 {
     ERenderCommandType Type = ERenderCommandType::RenderLatest;
     FRenderFrameRequest Frame{};
-    RHI::FRHIExtent3D Extent{};
+    FRenderExtent3D Extent{};
 
     [[nodiscard]] static constexpr FRenderCommand MakeRender ( const FRenderFrameRequest InRequest ) noexcept
     {
@@ -52,7 +69,7 @@ struct FRenderCommand
         return Command;
     }
 
-    [[nodiscard]] static constexpr FRenderCommand MakeResize ( const RHI::FRHIExtent3D InExtent ) noexcept
+    [[nodiscard]] static constexpr FRenderCommand MakeResize ( const FRenderExtent3D InExtent ) noexcept
     {
         FRenderCommand Command;
         Command.Type   = ERenderCommandType::Resize;
@@ -113,6 +130,7 @@ struct FRenderFrameStatus
     UInt64 ExtensionFrameCount   = 0ULL;
 };
 
+static_assert( Concepts::CTriviallyCopyable<FRenderExtent3D> );
 static_assert( Concepts::CTriviallyCopyable<FRenderFrameRequest> );
 static_assert( Concepts::CTriviallyCopyable<FRenderCommand> );
 static_assert( Concepts::CTriviallyCopyable<FRenderFrameStatus> );

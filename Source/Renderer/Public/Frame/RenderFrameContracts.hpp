@@ -11,28 +11,35 @@
 
 #include <String/String.hpp>
 
-#include <RHI/Types/RHIShaderFormat.hpp>
-
 #include <Templates/Vector.hpp>
 
 namespace Lumen
 {
 
 /**
+ * @enum ERenderShaderFormat
+ * @brief Backend-neutral shader input format. The private backend selects the concrete RHI format.
+ */
+enum class ERenderShaderFormat : UInt8
+{
+    Null,
+    Source,
+    Bytecode,
+};
+
+/**
  * @struct FRenderShaderSet
  * @brief Portable shader bytes for the opaque forward pass; no backend object is carried.
- * @details Empty bytecode disables the forward pass and keeps the clear-only slice. The bytes are
- *          interpreted by the selected RHI backend through the negotiated ERHIShaderFormat; this
- *          module never translates, compiles or inspects shader language text.
+ * @details Empty bytecode disables the forward pass and keeps the clear-only slice.
  */
 struct RENDERER_EXPORT FRenderShaderSet final
 {
     TVector<Byte> VertexBytecode;
     TVector<Byte> PixelBytecode;
-    FString VertexEntryPoint     = "Main";
-    FString PixelEntryPoint      = "Main";
-    RHI::ERHIShaderFormat Format = RHI::ERHIShaderFormat::Null;
-    UInt32 InlineConstantBytes   = 128U;
+    FString VertexEntryPoint   = "Main";
+    FString PixelEntryPoint    = "Main";
+    ERenderShaderFormat Format = ERenderShaderFormat::Null;
+    UInt32 InlineConstantBytes = 128U;
 };
 
 /**
