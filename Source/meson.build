@@ -11,18 +11,13 @@ ModuleNames = [
     'RHI',
 ]
 
-if host_machine.system() == 'linux'
-    ModuleNames += [ 'RHIOpenGL' ]
-endif
-
 ModuleNames += [
     'Scene',
     'Renderer',
     'AppCore',
     'Launch',
-    # TODO: add validators before including Vulkan:
-    # if the OS has Vulkan support, include it
-    'RHIVulkan',
+    'RHIOpenGL'
+    #'RHIVulkan',
 ]
 
 ModuleDefinitions = []

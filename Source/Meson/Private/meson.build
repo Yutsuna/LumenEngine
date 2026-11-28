@@ -29,12 +29,25 @@ foreach ModuleDefinition : ModuleDefinitions
     PrivateSources = []
 
     if FileSystem.is_dir(PrivatePath)
-        FindResult = run_command(
-            'find', PrivatePath,
-            '-type', 'f', '(', '-name', '*.cpp', '-o', '-name', '*.c', ')',
+        FindResult = run_command( 'python3', '-c',
+'''
+import sys
+from pathlib import Path
+for p in Path(sys.argv[1]).rglob("*"):
+    if p.suffix in (".c", ".cpp"):
+        print(p.as_posix())
+''',
+            PrivatePath,
             check : false,
         )
+        if FindResult.returncode() != 0
+            error(
+                'Could not list sources for module @0@: @1@'
+                .format(ModuleName, FindResult.stderr().strip())
+            )
+        endif
         foreach FilePath : FindResult.stdout().strip().split('\n')
+            FilePath = FilePath.strip()
             if FilePath != ''
                 PrivateSources += files(FilePath)
             endif

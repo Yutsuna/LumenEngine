@@ -25,13 +25,26 @@ foreach ExampleName : ExampleNames
 
     ExampleSources = []
 
-    if FileSystem.is_dir(ExampleDirRel / ExamplePrivateDirectory)
-        FindResult = run_command(
-            'find', ExamplePrivatePath,
-            '-type', 'f', '(', '-name', '*.cpp', '-o', '-name', '*.c', ')',
+    if FileSystem.is_dir(ExamplePrivatePath)
+        FindResult = run_command( 'python3', '-c',
+'''
+import sys
+from pathlib import Path
+for p in Path(sys.argv[1]).rglob("*"):
+    if p.suffix in (".c", ".cpp"):
+        print(p.as_posix())
+''',
+            ExamplePrivatePath,
             check : false,
         )
+        if FindResult.returncode() != 0
+            error(
+                'Could not list sources for example @0@: @1@'
+                .format(ExampleName, FindResult.stderr().strip())
+            )
+        endif
         foreach FilePath : FindResult.stdout().strip().split('\n')
+            FilePath = FilePath.strip()
             if FilePath != ''
                 ExampleSources += files(FilePath)
             endif
