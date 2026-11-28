@@ -19,5 +19,11 @@ project(
 
 add_project_arguments('-freflection', language : 'cpp')
 
+# MinGW-w64 keeps WaitOnAddress/WakeByAddress* in libsynchronization, and GCC 14+
+# keeps std::print's terminal helpers in libstdc++exp. Both are implicit on MSVC/Linux.
+if host_machine.system() == 'windows'
+    add_project_link_arguments('-lsynchronization', '-lstdc++exp', language : 'cpp')
+endif
+
 subdir('Source')
 subdir('Examples')
