@@ -24,12 +24,17 @@ Lumen::Launch::MakeOpenGLNativeWindowDesc ( const FNativeWindowHandles &InHandle
     case ENativeWindowSystem::Wayland:
         WindowSystem = RHIOpenGL::EOpenGLNativeWindowSystem::Wayland;
         break;
+    case ENativeWindowSystem::Win32:
+        WindowSystem = RHIOpenGL::EOpenGLNativeWindowSystem::Win32;
+        break;
     case ENativeWindowSystem::Unknown:
     default:
         return {};
     }
 
-    if ( InHandles.NativeWindow == 0U or InHandles.NativeDisplay == 0U )
+    /** INFO: Win32 derives its device context from the window handle, so NativeDisplay may be zero. */
+    if ( InHandles.NativeWindow == 0U or
+         ( WindowSystem != RHIOpenGL::EOpenGLNativeWindowSystem::Win32 and InHandles.NativeDisplay == 0U ) )
     {
         return {};
     }

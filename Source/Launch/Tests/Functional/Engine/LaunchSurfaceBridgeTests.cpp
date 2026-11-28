@@ -74,6 +74,22 @@ namespace
         LUMEN_CHECK_EQ( Desc->NativeWindowAttachment, 0U );
     }
 
+    LUMEN_TEST( FLaunchSurfaceBridge, MakeOpenGLNativeWindowDescWin32CopiesHandlesAndExtent )
+    {
+        FNativeWindowHandles Handles = MakeHandles( ENativeWindowSystem::Win32 );
+        Handles.NativeDisplay        = 0U;
+        const RHI::FRHIExtent3D Extent{ 320U, 200U, 1U };
+        const auto Desc = Launch::MakeOpenGLNativeWindowDesc( Handles, Extent );
+
+        LUMEN_CHECK_HAS_VALUE( Desc );
+        LUMEN_CHECK_EQ( Desc->WindowSystem, RHIOpenGL::EOpenGLNativeWindowSystem::Win32 );
+        LUMEN_CHECK_EQ( Desc->NativeWindow, 101U );
+        LUMEN_CHECK_EQ( Desc->NativeDisplay, 0U );
+        LUMEN_CHECK_EQ( Desc->NativeWindowAttachment, 0U );
+        LUMEN_CHECK_EQ( Desc->Extent.Width, 320U );
+        LUMEN_CHECK_EQ( Desc->Extent.Height, 200U );
+    }
+
     LUMEN_TEST( FLaunchSurfaceBridge, MakeOpenGLNativeWindowDescUnknownReturnsNoValue )
     {
         const auto Desc = Launch::MakeOpenGLNativeWindowDesc( MakeHandles( ENativeWindowSystem::Unknown ),
@@ -127,6 +143,20 @@ namespace
         LUMEN_CHECK_HAS_VALUE( Extent );
         LUMEN_CHECK_EQ( Extent->Width, 640U );
         LUMEN_CHECK_EQ( Extent->Height, 480U );
+    }
+
+    LUMEN_TEST( FLaunchSurfaceBridge, CreateSurfaceBridgeWin32CreatesBridge )
+    {
+        FNativeWindowHandles Handles = MakeHandles( ENativeWindowSystem::Win32 );
+        Handles.NativeDisplay        = 0U;
+
+        const auto Bridge = Launch::CreateSurfaceBridge( Handles, RHI::FRHIExtent3D{ 320U, 200U, 1U } );
+
+        LUMEN_CHECK_HAS_VALUE( Bridge );
+        const auto Extent = Bridge->Get()->GetExtent();
+        LUMEN_CHECK_HAS_VALUE( Extent );
+        LUMEN_CHECK_EQ( Extent->Width, 320U );
+        LUMEN_CHECK_EQ( Extent->Height, 200U );
     }
 
     LUMEN_TEST( FLaunchSurfaceBridge, CreateSurfaceBridgeWaylandWithoutAttachment )
