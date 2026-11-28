@@ -43,7 +43,7 @@ template <typename TResource> inline LPCWSTR ToWideResource ( const TResource In
 /** @brief Translates a Win32 Virtual-Key code and lParam flags into the corresponding Lumen key. */
 inline Lumen::EKeys::Type TranslateWin32VirtualKeyToEKeys ( const WPARAM InVirtualKey, const LPARAM InLParam ) noexcept
 {
-    const Lumen::Bool bIsExtended = ( InLParam & ( static_cast<LPARAM>( 1 ) << 24 ) ) != 0;
+    const Lumen::Bool bIsExtended = ( InLParam & ( static_cast<LPARAM>( 1 ) << 24 ) ) != 0; /** NOLINT */
     const UINT ScanCode           = static_cast<UINT>( ( static_cast<Lumen::UPtr>( InLParam ) >> 16U ) & 0xFFU );
 
     switch ( InVirtualKey )
@@ -496,7 +496,7 @@ HINSTANCE Lumen::FWindowsApplication::GetOSInstanceHandle () const noexcept
     return InstanceHandle;
 }
 
-LRESULT Lumen::FWindowsApplication::ProcessMessage ( const HWND InWindowHandle,
+LRESULT Lumen::FWindowsApplication::ProcessMessage ( HWND InWindowHandle,
                                                      const UINT InMessage,
                                                      const WPARAM InWParam,
                                                      const LPARAM InLParam ) noexcept
@@ -552,7 +552,7 @@ LRESULT Lumen::FWindowsApplication::ProcessMessage ( const HWND InWindowHandle,
     case WM_SYSKEYDOWN:
     {
         const EKeys::Type KeyType = TranslateWin32VirtualKeyToEKeys( InWParam, InLParam );
-        const Bool bIsRepeated    = ( InLParam & ( static_cast<LPARAM>( 1 ) << 30 ) ) != 0;
+        const Bool bIsRepeated    = ( InLParam & ( static_cast<LPARAM>( 1 ) << 30 ) ) != 0; /** NOLINT */
         MessageHandler->OnKeyDown( KeyType, bIsRepeated );
         if ( InMessage == WM_SYSKEYDOWN )
         {
@@ -666,13 +666,14 @@ LRESULT Lumen::FWindowsApplication::ProcessMessage ( const HWND InWindowHandle,
  * Private
  */
 
-LRESULT CALLBACK Lumen::FWindowsApplication::AppWndProc ( const HWND InWindowHandle,
+LRESULT CALLBACK Lumen::FWindowsApplication::AppWndProc ( HWND InWindowHandle,
                                                           const UINT InMessage,
                                                           const WPARAM InWParam,
                                                           const LPARAM InLParam ) noexcept
 {
     if ( InMessage == WM_NCCREATE )
     {
+        /** NOLINTNEXTLINE(performance-no-int-to-ptr) */
         const auto *const CreateStruct = reinterpret_cast<const CREATESTRUCTW *>( InLParam );
         if ( CreateStruct != nullptr and CreateStruct->lpCreateParams != nullptr )
         {
@@ -681,6 +682,7 @@ LRESULT CALLBACK Lumen::FWindowsApplication::AppWndProc ( const HWND InWindowHan
         return DefWindowProcW( InWindowHandle, InMessage, InWParam, InLParam );
     }
 
+    /** NOLINTNEXTLINE(performance-no-int-to-ptr) */
     auto *const RawWindow = reinterpret_cast<FWindowsWindow *>( GetWindowLongPtrW( InWindowHandle, GWLP_USERDATA ) );
     if ( InMessage == WM_NCDESTROY )
     {
@@ -757,7 +759,7 @@ Lumen::Bool Lumen::FWindowsApplication::EnsureWindowClassRegistered () noexcept
 }
 
 Lumen::TOptional<Lumen::TSharedRef<Lumen::FWindowsWindow>>
-Lumen::FWindowsApplication::FindWindowByHandle ( const HWND InWindowHandle ) const noexcept
+Lumen::FWindowsApplication::FindWindowByHandle ( HWND InWindowHandle ) const noexcept
 {
     if ( InWindowHandle == nullptr )
     {

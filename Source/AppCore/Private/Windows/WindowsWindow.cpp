@@ -58,8 +58,8 @@ inline DWORD GetWindowedStyle ( const Lumen::Bool bIsResizable ) noexcept
 /** @brief Retrieves the monitor rectangle covering a target point, falling back to the primary screen. */
 inline RECT GetMonitorRectFromPoint ( const Lumen::Int32 InX, const Lumen::Int32 InY ) noexcept
 {
-    const POINT Anchor{ static_cast<LONG>( InX ), static_cast<LONG>( InY ) };
-    const HMONITOR Monitor = MonitorFromPoint( Anchor, MONITOR_DEFAULTTONEAREST );
+    const POINT Anchor{ .x = static_cast<LONG>( InX ), .y = static_cast<LONG>( InY ) };
+    HMONITOR Monitor = MonitorFromPoint( Anchor, MONITOR_DEFAULTTONEAREST );
     MONITORINFO MonitorInfo{};
     MonitorInfo.cbSize = sizeof( MONITORINFO );
     if ( Monitor != nullptr and GetMonitorInfoW( Monitor, &MonitorInfo ) != FALSE )
@@ -67,13 +67,13 @@ inline RECT GetMonitorRectFromPoint ( const Lumen::Int32 InX, const Lumen::Int32
         return MonitorInfo.rcMonitor;
     }
 
-    return RECT{ 0, 0, GetSystemMetrics( SM_CXSCREEN ), GetSystemMetrics( SM_CYSCREEN ) };
+    return { .left = 0, .top = 0, .right = GetSystemMetrics( SM_CXSCREEN ), .bottom = GetSystemMetrics( SM_CYSCREEN ) };
 }
 
 /** @brief Retrieves the monitor rectangle hosting the given window, falling back to the primary screen. */
-inline RECT GetMonitorRectFromWindow ( const HWND InWindowHandle ) noexcept
+inline RECT GetMonitorRectFromWindow ( HWND InWindowHandle ) noexcept
 {
-    const HMONITOR Monitor = MonitorFromWindow( InWindowHandle, MONITOR_DEFAULTTONEAREST );
+    HMONITOR Monitor = MonitorFromWindow( InWindowHandle, MONITOR_DEFAULTTONEAREST );
     MONITORINFO MonitorInfo{};
     MonitorInfo.cbSize = sizeof( MONITORINFO );
     if ( Monitor != nullptr and GetMonitorInfoW( Monitor, &MonitorInfo ) != FALSE )
@@ -81,7 +81,7 @@ inline RECT GetMonitorRectFromWindow ( const HWND InWindowHandle ) noexcept
         return MonitorInfo.rcMonitor;
     }
 
-    return RECT{ 0, 0, GetSystemMetrics( SM_CXSCREEN ), GetSystemMetrics( SM_CYSCREEN ) };
+    return { .left = 0, .top = 0, .right = GetSystemMetrics( SM_CXSCREEN ), .bottom = GetSystemMetrics( SM_CYSCREEN ) };
 }
 
 } // namespace
@@ -107,9 +107,9 @@ Lumen::FWindowsWindow::Initialize ( FWindowsApplication *InApplication,
                                     const TSharedPtr<FGenericWindow> &InParentWindow,
                                     const Bool bShowImmediately ) noexcept
 {
-    const HINSTANCE ResolvedInstance = ( InApplication != nullptr and InApplication->GetOSInstanceHandle() != nullptr )
-                                           ? InApplication->GetOSInstanceHandle()
-                                           : GetModuleHandleW( nullptr );
+    HINSTANCE ResolvedInstance = ( InApplication != nullptr and InApplication->GetOSInstanceHandle() != nullptr )
+                                     ? InApplication->GetOSInstanceHandle()
+                                     : GetModuleHandleW( nullptr );
 
     HWND ParentHWND = nullptr;
     if ( InParentWindow.IsValid() )
@@ -131,7 +131,12 @@ Lumen::FWindowsWindow::Initialize ( FWindowsApplication *InApplication,
     if ( InDescription->WindowMode == EWindowMode::Windowed )
     {
         WindowStyle = GetWindowedStyle( InDescription->bIsResizable );
-        RECT AdjustedRect{ 0, 0, static_cast<LONG>( InDescription->Size.X ), static_cast<LONG>( InDescription->Size.Y ) };
+        RECT AdjustedRect{
+            .left   = 0,
+            .top    = 0,
+            .right  = static_cast<LONG>( InDescription->Size.X ),
+            .bottom = static_cast<LONG>( InDescription->Size.Y ),
+        };
         if ( AdjustWindowRectEx( &AdjustedRect, WindowStyle, FALSE, WindowExStyle ) != FALSE )
         {
             OuterWidth  = static_cast<Int32>( AdjustedRect.right - AdjustedRect.left );
@@ -155,7 +160,7 @@ Lumen::FWindowsWindow::Initialize ( FWindowsApplication *InApplication,
     CurrentWindowMode  = InDescription->WindowMode;
 
     const std::wstring WideTitle = Utf8ToWide( InDescription->Title.c_str() );
-    const HWND CreatedHandle =
+    HWND CreatedHandle =
         CreateWindowExW( WindowExStyle, GetWindowClassName(), WideTitle.c_str(), WindowStyle, static_cast<int>( WindowPosX ),
                          static_cast<int>( WindowPosY ), static_cast<int>( OuterWidth ), static_cast<int>( OuterHeight ),
                          ParentHWND, nullptr, ResolvedInstance, this );
@@ -187,8 +192,8 @@ void Lumen::FWindowsWindow::Destroy () noexcept
 {
     if ( WindowHandle != nullptr )
     {
-        const HWND HandleToDestroy = WindowHandle;
-        WindowHandle               = nullptr;
+        HWND HandleToDestroy = WindowHandle;
+        WindowHandle         = nullptr;
         DestroyWindow( HandleToDestroy );
     }
 }
@@ -293,12 +298,17 @@ void Lumen::FWindowsWindow::SetWindowMode ( const EWindowMode::Type InWindowMode
             const DWORD CurrentExStyle = static_cast<DWORD>( GetWindowLongPtrW( WindowHandle, GWL_EXSTYLE ) );
             SetWindowLongPtrW( WindowHandle, GWL_STYLE, static_cast<LONG_PTR>( TargetStyle ) );
 
-            const Int32 PosX         = Description.IsValid() ? Description->Position.X : DefaultWindowPosX;
-            const Int32 PosY         = Description.IsValid() ? Description->Position.Y : DefaultWindowPosY;
-            const Int32 ClientWidth  = Description.IsValid() ? Description->Size.X : DefaultWindowWidth;
-            const Int32 ClientHeight = Description.IsValid() ? Description->Size.Y : DefaultWindowHeight;
+            const Int32 PosX         = Description.IsValid() ? Description->Position.X : Internal::DefaultWindowPosX;
+            const Int32 PosY         = Description.IsValid() ? Description->Position.Y : Internal::DefaultWindowPosY;
+            const Int32 ClientWidth  = Description.IsValid() ? Description->Size.X : Internal::DefaultWindowWidth;
+            const Int32 ClientHeight = Description.IsValid() ? Description->Size.Y : Internal::DefaultWindowHeight;
 
-            RECT AdjustedRect{ 0, 0, static_cast<LONG>( ClientWidth ), static_cast<LONG>( ClientHeight ) };
+            RECT AdjustedRect{
+                .left   = 0,
+                .top    = 0,
+                .right  = static_cast<LONG>( ClientWidth ),
+                .bottom = static_cast<LONG>( ClientHeight ),
+            };
             AdjustWindowRectEx( &AdjustedRect, TargetStyle, FALSE, CurrentExStyle );
 
             SetWindowPos( WindowHandle, HWND_NOTOPMOST, static_cast<int>( PosX ), static_cast<int>( PosY ),
@@ -353,21 +363,21 @@ void Lumen::FWindowsWindow::SetOpacity ( const Float32 InOpacity ) noexcept
         return;
     }
 
-    const Float32 ClampedOpacity = ( InOpacity < 0.0F ) ? 0.0F : ( ( InOpacity > 1.0F ) ? 1.0F : InOpacity );
+    const Float32 ClampedOpacity = ( InOpacity < 0.0F ) ? 0.0F : ( ( InOpacity > 1.0F ) ? 1.0F : InOpacity ); /** NOLINT */
     const BYTE Alpha             = static_cast<BYTE>( ClampedOpacity * 255.0F );
     const LONG_PTR ExStyle       = GetWindowLongPtrW( WindowHandle, GWL_EXSTYLE );
 
     if ( Alpha < 255U )
     {
-        if ( ( ExStyle & WS_EX_LAYERED ) == 0 )
+        if ( ( ExStyle & WS_EX_LAYERED ) == 0 ) /** NOLINT */
         {
-            SetWindowLongPtrW( WindowHandle, GWL_EXSTYLE, ExStyle | WS_EX_LAYERED );
+            SetWindowLongPtrW( WindowHandle, GWL_EXSTYLE, ExStyle | WS_EX_LAYERED ); /** NOLINT */
         }
         SetLayeredWindowAttributes( WindowHandle, 0U, Alpha, LWA_ALPHA );
     }
-    else if ( ( ExStyle & WS_EX_LAYERED ) != 0 )
+    else if ( ( ExStyle & WS_EX_LAYERED ) != 0 ) /** NOLINT */
     {
-        SetWindowLongPtrW( WindowHandle, GWL_EXSTYLE, ExStyle & ~static_cast<LONG_PTR>( WS_EX_LAYERED ) );
+        SetWindowLongPtrW( WindowHandle, GWL_EXSTYLE, ExStyle & ~static_cast<LONG_PTR>( WS_EX_LAYERED ) ); /** NOLINT */
     }
 }
 
@@ -388,7 +398,7 @@ Lumen::Int32 Lumen::FWindowsWindow::GetOSWindowBorderSize () const noexcept
 
     const DWORD Style   = static_cast<DWORD>( GetWindowLongPtrW( WindowHandle, GWL_STYLE ) );
     const DWORD ExStyle = static_cast<DWORD>( GetWindowLongPtrW( WindowHandle, GWL_EXSTYLE ) );
-    RECT BorderRect{ 0, 0, 0, 0 };
+    RECT BorderRect{ .left = 0, .top = 0, .right = 0, .bottom = 0 };
     if ( AdjustWindowRectEx( &BorderRect, Style, FALSE, ExStyle ) == FALSE )
     {
         return 0;
@@ -411,7 +421,7 @@ Lumen::Int32 Lumen::FWindowsWindow::GetOSWindowTitleBarSize () const noexcept
     }
 
     const DWORD ExStyle = static_cast<DWORD>( GetWindowLongPtrW( WindowHandle, GWL_EXSTYLE ) );
-    RECT BorderRect{ 0, 0, 0, 0 };
+    RECT BorderRect{ .left = 0, .top = 0, .right = 0, .bottom = 0 };
     if ( AdjustWindowRectEx( &BorderRect, Style, FALSE, ExStyle ) == FALSE )
     {
         return 0;
@@ -491,9 +501,10 @@ Lumen::TOptional<Lumen::FNativeWindowHandles> Lumen::FWindowsWindow::GetNativeHa
         return {};
     }
 
-    const HINSTANCE ResolvedInstance = ( InstanceHandle != nullptr )
-                                           ? InstanceHandle
-                                           : reinterpret_cast<HINSTANCE>( GetWindowLongPtrW( WindowHandle, GWLP_HINSTANCE ) );
+    HINSTANCE ResolvedInstance =
+        ( InstanceHandle != nullptr )
+            ? InstanceHandle
+            : reinterpret_cast<HINSTANCE>( GetWindowLongPtrW( WindowHandle, GWLP_HINSTANCE ) ); /** NOLINT */
 
     FNativeWindowHandles Handles;
     Handles.WindowSystem           = ENativeWindowSystem::Win32;

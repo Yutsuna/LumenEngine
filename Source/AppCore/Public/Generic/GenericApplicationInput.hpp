@@ -25,7 +25,7 @@ namespace EMouseButton
         Right   = 2,
         Button4 = 3,
         Button5 = 4,
-        Invalid = 255
+        Invalid = 255,
     };
 
 } // namespace EMouseButton
@@ -40,10 +40,10 @@ namespace EModifierKey
     enum Type : UInt32 /** NOLINT(performance-enum-size) */
     {
         None    = 0,
-        Shift   = 1 << 0,
-        Control = 1 << 1,
-        Alt     = 1 << 2,
-        Command = 1 << 3,
+        Shift   = 1 << 0, /** NOLINT */
+        Control = 1 << 1, /** NOLINT */
+        Alt     = 1 << 2, /** NOLINT */
+        Command = 1 << 3, /** NOLINT */
     };
 
 } // namespace EModifierKey
@@ -330,7 +330,7 @@ namespace EKeys
         Call,
         EndCall,
         LeftTab,
-        MultiKeyCompose
+        MultiKeyCompose,
     };
 
 } // namespace EKeys

@@ -19,7 +19,7 @@ enum class ENativeWindowSystem : UInt8
     Unknown,
     X11,
     Wayland,
-    Win32
+    Win32,
 };
 
 /**

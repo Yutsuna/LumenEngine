@@ -26,7 +26,7 @@ enum class EWindowGraphicsApi : UInt8
 {
     None,
     OpenGL,
-    Vulkan
+    Vulkan,
 };
 
 namespace EWindowMode
@@ -44,7 +44,7 @@ namespace EWindowMode
         /** Standard windowed mode */
         Windowed,
         /** Number of window modes */
-        NumWindowModes
+        NumWindowModes,
     };
 
     /**
@@ -74,7 +74,7 @@ namespace EWindowMode
 
 } // namespace EWindowMode
 
-namespace /// NOLINT(cert-dcl59-cpp)
+namespace Internal
 {
 
     constexpr const AnsiChar *const DefaultWindowTitle = "Lumen Engine";
@@ -85,7 +85,7 @@ namespace /// NOLINT(cert-dcl59-cpp)
     constexpr Int32 DefaultWindowPosX = 100;
     constexpr Int32 DefaultWindowPosY = 100;
 
-} // namespace
+} // namespace Internal
 
 /**
  * @struct FGenericWindowDescription
@@ -94,11 +94,11 @@ namespace /// NOLINT(cert-dcl59-cpp)
 struct APPCORE_EXPORT FGenericWindowDescription
 {
     /** Title of the window */
-    FString Title = FString{ DefaultWindowTitle };
+    FString Title = FString{ Internal::DefaultWindowTitle };
     /** Initial position of the window on screen */
-    Maths::FVec2i Position = Maths::FVec2i( DefaultWindowPosX, DefaultWindowPosY );
+    Maths::FVec2i Position = Maths::FVec2i( Internal::DefaultWindowPosX, Internal::DefaultWindowPosY );
     /** Initial size of the window */
-    Maths::FVec2i Size = Maths::FVec2i( DefaultWindowWidth, DefaultWindowHeight );
+    Maths::FVec2i Size = Maths::FVec2i( Internal::DefaultWindowWidth, Internal::DefaultWindowHeight );
     /** Initial window mode */
     EWindowMode::Type WindowMode = EWindowMode::Windowed;
     /** Graphics API required from the native window */
