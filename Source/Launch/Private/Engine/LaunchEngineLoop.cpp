@@ -13,12 +13,17 @@
 
 #include <Logging/Logger.hpp>
 
+#include <HAL/PlatformSignal.hpp>
 #include <HAL/PlatformTime.hpp>
 
 #include <utility>
 
 namespace Lumen
 {
+
+    /**
+     * Private
+     */
 
 namespace
 {
@@ -42,10 +47,14 @@ namespace
 
 } // namespace
 
+/**
+ * Public
+ */
+
 Launch::TLaunchResult<Launch::FPreInitState> Launch::FLaunchEngineLoop::PreInit ( const FCommandLine &InCommandLine ) noexcept
 {
     /** INFO: Initialize the clock epoch now so that no later measurement pays for its lazy initialization. */
-    ( void )HAL::FPlatformTime::Seconds();
+    static_cast<void>(HAL::FPlatformTime::Seconds());
 
     LUMEN_LOG_VERBOSE( LogEngineLoop, "Starting '{}' ({} arguments)", InCommandLine.GetProgramName(),
                        InCommandLine.GetArguments().size() );
@@ -90,8 +99,19 @@ Launch::TLaunchResult<Launch::FRunSummary> Launch::FLaunchEngineLoop::Run ( FIni
     FFrameLimiter Limiter( Config.MaxFPS );
     UInt64 FrameCount = 0;
 
-    while ( not IsExitRequested() ) [[likely]]
+    while ( true ) [[likely]]
     {
+        /**
+         * INFO: OS signal handlers only record a pending bit. Deliver the callbacks on the game
+         *       thread once per frame so RequestExit() from SIGINT/SIGTERM is observed by the loop.
+         */
+        HAL::FPlatformSignal::Dispatch();
+
+        if ( IsExitRequested() ) [[unlikely]]
+        {
+            break;
+        }
+
         RunEngineState( State, Config, Clock );
 
         ++FrameCount;

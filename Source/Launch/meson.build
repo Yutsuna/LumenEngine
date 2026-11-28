@@ -10,6 +10,6 @@ ModuleDefinition = {
     'Private' : 'Private',
     'Public' : 'Public',
     'Tests' : 'Tests',
-    'Depends' : ['Core', 'AppCore', 'Scene', 'RHI', 'Renderer', 'RHIOpenGL'],
+    'Depends' : ['Core', 'AppCore', 'Scene', 'Renderer'],
     'TestsExcludeFiles' : ['Main.cpp'],
 }
