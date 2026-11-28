@@ -3,6 +3,7 @@
  * @brief Implements Lumina startup, native presentation and the per-frame world/render handoff.
  */
 
+#include "Templates/Expected.hpp"
 #include <Application.hpp>
 
 #include <CameraActor.hpp>
@@ -22,7 +23,6 @@
 #include <World/World.hpp>
 
 #include <charconv>
-#include <utility>
 
 namespace
 {
@@ -51,11 +51,8 @@ Lumen::Launch::TLaunchResult<Lumen::TUniquePtr<Lumen::FLuminaApplication>>
 Lumen::FLuminaApplication::Create ( const Launch::TModuleContext<FLuminaApplication> &InContext ) noexcept
 {
     TUniquePtr<FLuminaApplication> Application = MakeUnique<FLuminaApplication>();
-    const Launch::TLaunchResult<void> Initialized = Application->Initialize( InContext );
-    if ( not Initialized )
-    {
-        return MakeUnexpected( Initialized.Error() );
-    }
+
+    LUMEN_TRY_EXPECT_ERROR(Application->Initialize( InContext ));
     return Application;
 }
 
