@@ -15,8 +15,10 @@ ModuleNames += [
     'Scene',
     'Renderer',
     'AppCore',
-    'Launch',
-    'RHIOpenGL'
+    # RHIOpenGL must be built before Launch: Launch's public surface bridge header
+    # exposes RHIOpenGL::FOpenGLNativeWindowDesc and depends on that module.
+    'RHIOpenGL',
+    'Launch'
     #'RHIVulkan',
 ]
 
