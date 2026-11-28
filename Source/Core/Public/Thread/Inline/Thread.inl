@@ -24,7 +24,7 @@ namespace Internal
      * @class TThreadData
      * @brief Holds the data for a thread, including the callable and arguments.
      */
-    template <typename TFunction, typename... TArgs> class TThreadData final
+    template <typename TFunction, typename... TArgs> class TThreadData final /** NOLINT */
     {
     public:
 

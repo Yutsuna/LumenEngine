@@ -5,36 +5,39 @@
 
 #pragma once
 
+#include "Core/CoreDefinitions.hpp"
 #include <Filesystem/Path.hpp>
 
 #include <utility>
 
-namespace Lumen
-{
-inline Filesystem::FPath::FPath ( const FStringView InPath ) noexcept : PathString( InPath )
+/**
+ * Public
+ */
+
+inline Lumen::Filesystem::FPath::FPath ( const FStringView InPath ) noexcept : PathString( InPath )
 {
     Normalize();
 }
 
-inline Filesystem::FPath::FPath ( FString InPath ) noexcept : PathString( std::move( InPath ) )
+inline Lumen::Filesystem::FPath::FPath ( FString InPath ) noexcept : PathString( std::move( InPath ) )
 {
     Normalize();
 }
 
-inline Filesystem::FPath::FPath ( const AnsiChar *InPath ) noexcept : PathString( ( InPath != nullptr ) ? InPath : "" )
+inline Lumen::Filesystem::FPath::FPath ( const AnsiChar *InPath ) noexcept : PathString( ( InPath != nullptr ) ? InPath : "" )
 {
     Normalize();
 }
 
-inline void Filesystem::FPath::Normalize () noexcept
+inline void Lumen::Filesystem::FPath::Normalize () noexcept
 {
     if ( PathString.empty() )
     {
         return;
     }
 
-    USize WriteIndex = 0U;
-    Bool bSlash      = false;
+    auto WriteIt = PathString.begin();
+    Bool bSlash  = false;
 
     for ( const AnsiChar Character : PathString )
     {
@@ -44,11 +47,11 @@ inline void Filesystem::FPath::Normalize () noexcept
             continue;
         }
 
-        PathString[WriteIndex] = bNextSlash ? '/' : Character;
-        ++WriteIndex;
+        *WriteIt = bNextSlash ? '/' : Character;
+        ++WriteIt;
         bSlash = bNextSlash;
     }
-    PathString.resize( WriteIndex );
+    PathString.erase( WriteIt, PathString.end() );
 
     if ( PathString.size() > 1 and PathString.back() == '/' )
     {
@@ -56,7 +59,7 @@ inline void Filesystem::FPath::Normalize () noexcept
     }
 }
 
-inline FStringView Filesystem::FPath::GetExtension () const noexcept
+inline Lumen::FStringView Lumen::Filesystem::FPath::GetExtension () const noexcept
 {
     const FStringView Filename = GetFilename();
     const USize DotPosition    = Filename.find_last_of( '.' );
@@ -69,7 +72,7 @@ inline FStringView Filesystem::FPath::GetExtension () const noexcept
     return Filename.substr( DotPosition + 1 );
 }
 
-inline FStringView Filesystem::FPath::GetFilename () const noexcept
+inline Lumen::FStringView Lumen::Filesystem::FPath::GetFilename () const noexcept
 {
     const USize SlashPosition = PathString.find_last_of( '/' );
 
@@ -81,7 +84,7 @@ inline FStringView Filesystem::FPath::GetFilename () const noexcept
     return FStringView( PathString ).substr( SlashPosition + 1 );
 }
 
-inline FStringView Filesystem::FPath::GetStem () const noexcept
+inline Lumen::FStringView Lumen::Filesystem::FPath::GetStem () const noexcept
 {
     const FStringView Filename = GetFilename();
     const USize DotPosition    = Filename.find_last_of( '.' );
@@ -94,7 +97,7 @@ inline FStringView Filesystem::FPath::GetStem () const noexcept
     return Filename.substr( 0, DotPosition );
 }
 
-inline Filesystem::FPath Filesystem::FPath::GetParent () const noexcept
+inline Lumen::Filesystem::FPath Lumen::Filesystem::FPath::GetParent () const noexcept
 {
     if ( PathString.empty() )
     {
@@ -110,13 +113,13 @@ inline Filesystem::FPath Filesystem::FPath::GetParent () const noexcept
 
     if ( SlashPosition == 0 )
     {
-        return Filesystem::FPath( FStringView( PathString ).substr( 0, 1 ) );
+        return Lumen::Filesystem::FPath( FStringView( PathString ).substr( 0, 1 ) );
     }
 
-    return Filesystem::FPath( FStringView( PathString ).substr( 0, SlashPosition ) );
+    return Lumen::Filesystem::FPath( FStringView( PathString ).substr( 0, SlashPosition ) );
 }
 
-inline Bool Filesystem::FPath::HasExtension () const noexcept
+inline Lumen::Bool Lumen::Filesystem::FPath::HasExtension () const noexcept
 {
     const FStringView Filename = GetFilename();
     const USize DotPosition    = Filename.find_last_of( '.' );
@@ -124,27 +127,27 @@ inline Bool Filesystem::FPath::HasExtension () const noexcept
     return DotPosition != FStringView::npos and DotPosition > 0;
 }
 
-inline Bool Filesystem::FPath::IsRelative () const noexcept
+inline Lumen::Bool Lumen::Filesystem::FPath::IsRelative () const noexcept
 {
     return not IsAbsolute();
 }
 
-inline Bool Filesystem::FPath::IsAbsolute () const noexcept
+inline Lumen::Bool Lumen::Filesystem::FPath::IsAbsolute () const noexcept
 {
     return not PathString.empty() and PathString.front() == '/';
 }
 
-inline Bool Filesystem::FPath::IsEmpty () const noexcept
+inline Lumen::Bool Lumen::Filesystem::FPath::IsEmpty () const noexcept
 {
     return PathString.empty();
 }
 
-inline void Filesystem::FPath::Clear () noexcept
+inline void Lumen::Filesystem::FPath::Clear () noexcept
 {
     PathString.clear();
 }
 
-inline Filesystem::FPath &Filesystem::FPath::Append ( FStringView InPart ) noexcept
+inline Lumen::Filesystem::FPath &Lumen::Filesystem::FPath::Append ( FStringView InPart ) noexcept
 {
     if ( PathString.empty() )
     {
@@ -160,28 +163,27 @@ inline Filesystem::FPath &Filesystem::FPath::Append ( FStringView InPart ) noexc
     return *this;
 }
 
-inline Filesystem::FPath &Filesystem::FPath::operator/=( FStringView InPart ) noexcept
+inline Lumen::Filesystem::FPath &Lumen::Filesystem::FPath::operator/=( FStringView InPart ) noexcept
 {
     return Append( InPart );
 }
 
-inline Bool Filesystem::FPath::operator==( const Filesystem::FPath &InOther ) const noexcept
+inline Lumen::Bool Lumen::Filesystem::FPath::operator==( const Filesystem::FPath &InOther ) const noexcept
 {
     return PathString == InOther.PathString;
 }
 
-inline auto Filesystem::FPath::operator<=>( const Filesystem::FPath &InOther ) const noexcept
+inline auto Lumen::Filesystem::FPath::operator<=>( const Filesystem::FPath &InOther ) const noexcept
 {
     return PathString <=> InOther.PathString;
 }
 
-inline const FString &Filesystem::FPath::ToString () const noexcept
+inline const Lumen::FString &Lumen::Filesystem::FPath::ToString () const noexcept
 {
     return PathString;
 }
 
-inline const AnsiChar *Filesystem::FPath::ToCString () const noexcept
+inline const Lumen::AnsiChar *Lumen::Filesystem::FPath::ToCString () const noexcept
 {
     return PathString.c_str();
 }
-} // namespace Lumen

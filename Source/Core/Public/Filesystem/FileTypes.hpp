@@ -22,9 +22,9 @@ namespace Filesystem
     enum class EFileAccess : UInt8
     {
         None      = 0,
-        Read      = 1 << 0,
-        Write     = 1 << 1,
-        ReadWrite = Read | Write,
+        Read      = 1 << 0,       /** NOLINT */
+        Write     = 1 << 1,       /** NOLINT */
+        ReadWrite = Read | Write, /** NOLINT */
     };
 
     LUMEN_ENUM_FLAGS( EFileAccess )

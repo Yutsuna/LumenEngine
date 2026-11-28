@@ -60,7 +60,7 @@ namespace Meta
      *          nested aggregates -> objects.
      */
     template <CReflected TObject>
-    [[nodiscard]] FString SerializeToJSON ( const TObject &Object, const FJSONOptions &Options = {} )
+    [[nodiscard]] FString SerializeToJSON ( const TObject &Object, const FJSONOptions &Options = {} ) /* NOLINT */
     {
 #if LUMEN_HAS_REFLECTION
         FString Out;
@@ -69,7 +69,7 @@ namespace Meta
 #else
         static_cast<void>( Object );
         static_cast<void>( Options );
-        return FString{};
+        return FString{}; /* NOLINT */
 #endif
     }
 

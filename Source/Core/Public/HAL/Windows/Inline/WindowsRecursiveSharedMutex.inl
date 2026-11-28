@@ -17,7 +17,7 @@
  * Public
  */
 
-Lumen::HAL::FWindowsRecursiveSharedMutex::FWindowsRecursiveSharedMutex () noexcept
+Lumen::HAL::FWindowsRecursiveSharedMutex::FWindowsRecursiveSharedMutex () noexcept : Mutex{}
 {
     static_cast<void>( InitializeCriticalSectionAndSpinCount( &Mutex, GSpinCount ) );
 }

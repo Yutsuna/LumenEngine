@@ -54,7 +54,7 @@ namespace Lumen
 [[nodiscard]] constexpr CORE_EXPORT AnsiChar ToLower ( const AnsiChar InChar ) noexcept
 {
     const auto U = static_cast<UInt8>( InChar );
-    return ( static_cast<UInt8>( U - 'A' ) < 26U ) ? static_cast<AnsiChar>( U | 0x20 ) : InChar;
+    return ( static_cast<UInt8>( U - 'A' ) < 26U ) ? static_cast<AnsiChar>( U | 0x20 ) : InChar; /** NOLINT */
 }
 
 /**
@@ -66,10 +66,11 @@ namespace Lumen
     FString Result;
     Result.resize( InString.length() );
 
-    USize Index = 0;
-    Algo::ForEach( InString, [&Result, &Index] ( const AnsiChar Char ) noexcept
+    FString::iterator WriteIt = Result.begin();
+    Algo::ForEach( InString, [&WriteIt] ( const AnsiChar Char ) noexcept
     {
-        Result[Index++] = ToLower( Char );
+        *WriteIt = ToLower( Char );
+        ++WriteIt;
     } );
 
     return Result;

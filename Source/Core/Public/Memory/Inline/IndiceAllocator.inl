@@ -66,7 +66,7 @@ Lumen::FIndiceHeapAllocator::FIndiceHeapAllocator ( UInt32 InCapacity ) noexcept
 
     if ( ValidBits != 0U )
     {
-        Bitmap[NumWords - 1U] = ~( ( 1ULL << ValidBits ) - 1ULL );
+        Bitmap.at( NumWords - 1U ) = ~( ( 1ULL << ValidBits ) - 1ULL );
     }
 }
 

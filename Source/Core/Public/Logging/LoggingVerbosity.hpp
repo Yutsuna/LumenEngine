@@ -31,10 +31,7 @@ namespace ELogVerbosity
         VeryVerbose,
     };
 
-    /**
-     * @brief The textual name of a verbosity is obtained with Meta::EnumName( Type ), which uses
-     *        C++26 static reflection and needs no hand-maintained mapping here.
-     */
+    /** INFO: Use Meta::EnumName( Type ) for the textual name; reflection removes the need for a hand-maintained mapping. */
 
 } // namespace ELogVerbosity
 
