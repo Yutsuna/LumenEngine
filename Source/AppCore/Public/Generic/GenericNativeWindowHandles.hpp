@@ -18,15 +18,16 @@ enum class ENativeWindowSystem : UInt8
 {
     Unknown,
     X11,
-    Wayland
+    Wayland,
+    Win32
 };
 
 /**
  * @struct FNativeWindowHandles
  * @brief Non-owning native window handles and drawable size, independent of SDL and rendering APIs.
- * @details NativeWindow is an X11 window ID or a Wayland surface. NativeWindowAttachment carries
- *          the Wayland EGL window when SDL provides one; it is zero on X11. None of the values may
- *          be dereferenced or cast without selecting the corresponding ENativeWindowSystem contract.
+ * @details NativeWindow is an X11 window ID, a Wayland surface or a Win32 HWND. NativeWindowAttachment
+ *          carries the Wayland EGL window when SDL provides one; it is zero on X11 and Win32. None of
+ *          the values may be dereferenced or cast without selecting the corresponding ENativeWindowSystem contract.
  */
 struct APPCORE_EXPORT FNativeWindowHandles
 {
