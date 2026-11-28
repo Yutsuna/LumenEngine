@@ -166,7 +166,7 @@ namespace
     {
         TVector<Int32> Values = Canonical();
         const auto It         = Algo::FindIf( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
-                {
+        {
             return V == 4;
         } );
         LUMEN_CHECK_TRUE( It == Values.begin() );
@@ -177,7 +177,7 @@ namespace
     {
         TVector<Int32> Values = Canonical();
         const auto It         = Algo::FindIf( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
-                {
+        {
             return V == 15;
         } );
         LUMEN_CHECK_TRUE( It != Values.end() );
@@ -189,7 +189,7 @@ namespace
     {
         TVector<Int32> Values = Canonical();
         const auto It         = Algo::FindIf( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
-                {
+        {
             return V == 42;
         } );
         LUMEN_CHECK_TRUE( It == Values.end() - 1 );
@@ -200,7 +200,7 @@ namespace
     {
         TVector<Int32> Values = Canonical();
         const auto It         = Algo::FindIf( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
-                {
+        {
             return V > 1000;
         } );
         LUMEN_CHECK_TRUE( It == Values.end() );
@@ -217,7 +217,7 @@ namespace
     {
         TVector<Int32> Values = MakeRange( { 7, 7, 7 } );
         const auto It         = Algo::FindIf( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
-                {
+        {
             return V == 7;
         } );
         LUMEN_CHECK_TRUE( It == Values.begin() );
@@ -228,7 +228,7 @@ namespace
         TVector<Int32> Values = Canonical();
         Int32 Evaluations     = 0;
         const auto It         = Algo::FindIf( Values.begin(), Values.end(), [&Evaluations] ( const Int32 V ) noexcept
-                {
+        {
             ++Evaluations;
             return V == 15;
         } );
@@ -253,7 +253,7 @@ namespace
 
         TVector<Int32> Values = Canonical();
         const auto It         = Algo::FindIf( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
-                {
+        {
             return V == 16 ? 1 : 0;
         } );
         LUMEN_CHECK_TRUE( It != Values.end() );
@@ -264,7 +264,7 @@ namespace
     {
         const TVector<Int32> Values = Canonical();
         const auto It               = Algo::FindIf( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
-                      {
+        {
             return V == 23;
         } );
         LUMEN_CHECK_TRUE( It != Values.end() );
@@ -398,7 +398,7 @@ namespace
     {
         TVector<Int32> Values = Canonical();
         const auto Result     = Algo::FindIfOrNone( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
-            {
+        {
             return V == 16;
         } );
         LUMEN_CHECK_TRUE( Result.HasValue() );
@@ -490,7 +490,7 @@ namespace
     {
         TVector<Int32> Values = Canonical();
         const Int32 *Found    = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
-           {
+        {
             return V == 4;
         } );
         LUMEN_CHECK_TRUE( Found == Values.data() );
@@ -500,7 +500,7 @@ namespace
     {
         TVector<Int32> Values = Canonical();
         const Int32 *Found    = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
-           {
+        {
             return V == 42;
         } );
         LUMEN_CHECK_TRUE( Found == &Values.back() );
@@ -556,7 +556,7 @@ namespace
     {
         const TVector<Int32> Values = Canonical();
         const Int32 *Found          = Algo::FindIf( Values, [] ( const Int32 V ) noexcept
-                 {
+        {
             return V == 16;
         } );
         LUMEN_CHECK_TRUE( Found == &Values[3] );
@@ -588,7 +588,7 @@ namespace
         TVector<Int32> Values = Canonical();
         Int32 Evaluations     = 0;
         const Int32 *Found    = Algo::FindIf( Values, [&Evaluations] ( const Int32 V ) noexcept
-           {
+        {
             ++Evaluations;
             return V == 15;
         } );
@@ -725,7 +725,7 @@ namespace
     {
         TVector<Int32> Values = Canonical();
         const auto Result     = Algo::FindIfOrNone( Values, [] ( const Int32 V ) noexcept
-            {
+        {
             return V == 23;
         } );
         LUMEN_CHECK_TRUE( Result.HasValue() );
@@ -842,7 +842,7 @@ namespace
             return V == 16;
         } );
         const auto IterResult    = Algo::FindIf( Values.begin(), Values.end(), [] ( const Int32 V ) noexcept
-           {
+        {
             return V == 16;
         } );
 
