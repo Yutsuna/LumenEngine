@@ -56,6 +56,10 @@ for p in Path(sys.argv[1]).rglob("*"):
         include_directories(ExampleDirRel / ExamplePrivateDirectory),
     ]
     ExampleDependencies = []
+    ExampleCppArgs = ALL_WARNINGS
+    if ExampleName == 'Lumina'
+        ExampleCppArgs += '-DLUMINA_SHADER_INSTALL_DIR="' + (get_option('prefix') / LuminaShaderInstallDir) + '"'
+    endif
 
     foreach DependencyName : ExampleDefinition.get('Depends', [])
         if not GlobalModules.has_key(DependencyName)
@@ -72,7 +76,7 @@ for p in Path(sys.argv[1]).rglob("*"):
         ExampleName + 'Example', ExampleSources,
         include_directories : ExampleIncludeDirectories,
         dependencies : ExampleDependencies,
-        cpp_args : ALL_WARNINGS,
+        cpp_args : ExampleCppArgs,
         c_args : ALL_WARNINGS,
         install : true,
     )
