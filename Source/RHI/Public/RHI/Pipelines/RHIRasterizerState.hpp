@@ -44,7 +44,6 @@ namespace RHI
     {
         CounterClockwise,
         Clockwise
-
     };
 
     /**

@@ -51,7 +51,6 @@ namespace RHI
         NotEqual,
         GreaterEqual,
         Always
-
     };
 
     /**

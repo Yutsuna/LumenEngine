@@ -29,8 +29,8 @@ namespace RHI
         Amplification = 1U << 6U,
         Mesh          = 1U << 7U,
         AllGraphics   = ( 1U << 0U ) | ( 1U << 1U ) | ( 1U << 3U ) | ( 1U << 4U ) | ( 1U << 5U ) | ( 1U << 6U ) | ( 1U << 7U ),
-        All =
-            ( 1U << 0U ) | ( 1U << 1U ) | ( 1U << 2U ) | ( 1U << 3U ) | ( 1U << 4U ) | ( 1U << 5U ) | ( 1U << 6U ) | ( 1U << 7U ),
+        All           = ( 1U << 0U ) | ( 1U << 1U ) | ( 1U << 2U ) | ( 1U << 3U ) | ( 1U << 4U ) | ( 1U << 5U ) | ( 1U << 6U ) |
+            ( 1U << 7U ),
     };
 
     LUMEN_ENUM_FLAGS( ERHIShaderStage );

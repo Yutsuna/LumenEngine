@@ -30,7 +30,6 @@ namespace RHI
         Texture3D,
         TextureCube,
         Texture2DArray
-
     };
 
     /**

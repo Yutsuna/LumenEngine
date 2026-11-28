@@ -25,7 +25,6 @@ namespace RHI
     {
         Vertex,
         Instance
-
     };
 
     /**

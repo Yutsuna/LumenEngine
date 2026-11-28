@@ -92,16 +92,16 @@ Lumen::RHI::FRHILimits Lumen::RHI::Tests::MakeDefaultNullLimits () noexcept
 
 Lumen::RHI::Tests::FNullDeviceDesc::FNullDeviceDesc () noexcept
 {
-    Adapter.AdapterId             = 1ULL;
-    Adapter.Name                  = "Null Adapter";
-    Adapter.BackendName           = "Null";
-    Adapter.Type                  = ERHIAdapterType::Software;
-    Adapter.Limits                = MakeDefaultNullLimits();
-    Adapter.Capabilities.Features = ERHICapabilityFlags::DynamicRendering | ERHICapabilityFlags::TimelineSemaphores |
-                                    ERHICapabilityFlags::IndirectDraw | ERHICapabilityFlags::MultiDrawIndirect |
-                                    ERHICapabilityFlags::TimestampQueries | ERHICapabilityFlags::OcclusionQueries |
-                                    ERHICapabilityFlags::PipelineStatistics | ERHICapabilityFlags::AsyncCompute |
-                                    ERHICapabilityFlags::Presentation | ERHICapabilityFlags::AnisotropicFiltering;
+    Adapter.AdapterId                  = 1ULL;
+    Adapter.Name                       = "Null Adapter";
+    Adapter.BackendName                = "Null";
+    Adapter.Type                       = ERHIAdapterType::Software;
+    Adapter.Limits                     = MakeDefaultNullLimits();
+    Adapter.Capabilities.Features      = ERHICapabilityFlags::DynamicRendering | ERHICapabilityFlags::TimelineSemaphores |
+                                         ERHICapabilityFlags::IndirectDraw | ERHICapabilityFlags::MultiDrawIndirect |
+                                         ERHICapabilityFlags::TimestampQueries | ERHICapabilityFlags::OcclusionQueries |
+                                         ERHICapabilityFlags::PipelineStatistics | ERHICapabilityFlags::AsyncCompute |
+                                         ERHICapabilityFlags::Presentation | ERHICapabilityFlags::AnisotropicFiltering;
     Adapter.Capabilities.ShaderFormats = { ERHIShaderFormat::Null };
     Adapter.QueueFamilies              = {
         { .Type = ERHIQueueType::Graphics, .Count = 2U, .bSupportsPresentation = true, .bSupportsTimestamps = true },
