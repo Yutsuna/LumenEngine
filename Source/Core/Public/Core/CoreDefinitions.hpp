@@ -44,7 +44,6 @@
     #define LUMEN_PATH_SEPARATOR "/"
     #define LUMEN_NEWLINE "\n"
     #define LUMEN_SHARED_LIB_EXTENSION ".so"
-    #define LUMEN_UNUSED __attribute__( ( unused ) )
 
 #else
 
@@ -61,6 +60,14 @@
 #elif defined( _MSC_VER )
     #define LUMEN_COMPILER_MSVC
 
+#endif
+
+/* */
+
+#if defined( LUMEN_COMPILER_CLANG ) or defined( LUMEN_COMPILER_GCC )
+    #define LUMEN_UNUSED __attribute__( ( unused ) )
+#else
+    #define LUMEN_UNUSED
 #endif
 
 /* */
