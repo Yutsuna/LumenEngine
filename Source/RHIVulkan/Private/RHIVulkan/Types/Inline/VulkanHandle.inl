@@ -12,21 +12,21 @@
  */
 
 template <typename THandleType, typename TDeleterType>
-inline Lumen::RHIVulkan::TVulkanScopedHandle<THandleType, TDeleterType>::TVulkanScopedHandle( THandleType InHandle,
-                                                                                              TDeleterType InDeleter ) noexcept
+inline Lumen::RHIVulkan::TVulkanScopedHandle<THandleType, TDeleterType>::TVulkanScopedHandle ( THandleType InHandle,
+                                                                                               TDeleterType InDeleter ) noexcept
     : Handle( InHandle ), Deleter( static_cast<TDeleterType &&>( InDeleter ) )
 {
     /* */
 }
 
 template <typename THandleType, typename TDeleterType>
-inline Lumen::RHIVulkan::TVulkanScopedHandle<THandleType, TDeleterType>::TVulkanScopedHandle::~TVulkanScopedHandle() noexcept
+inline Lumen::RHIVulkan::TVulkanScopedHandle<THandleType, TDeleterType>::TVulkanScopedHandle::~TVulkanScopedHandle () noexcept
 {
     Reset();
 }
 
 template <typename THandleType, typename TDeleterType>
-inline Lumen::RHIVulkan::TVulkanScopedHandle<THandleType, TDeleterType>::TVulkanScopedHandle(
+inline Lumen::RHIVulkan::TVulkanScopedHandle<THandleType, TDeleterType>::TVulkanScopedHandle (
     TVulkanScopedHandle &&InOther ) noexcept
     : Handle( InOther.Handle ), Deleter( static_cast<TDeleterType &&>( InOther.Deleter ) )
 {
