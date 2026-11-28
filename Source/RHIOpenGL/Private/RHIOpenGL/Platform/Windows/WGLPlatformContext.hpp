@@ -7,20 +7,20 @@
 
 #if defined( LUMEN_PLATFORM_WINDOWS )
 
-#include <Core/CoreTypes.hpp>
-#include <Core/NonCopyable.hpp>
+    #include <Core/CoreTypes.hpp>
+    #include <Core/NonCopyable.hpp>
 
-#include <RHIOpenGL/Platform/IOpenGLPlatformContext.hpp>
-#include <RHIOpenGL/RHIOpenGLSurfaceBridge.hpp>
+    #include <RHIOpenGL/Platform/IOpenGLPlatformContext.hpp>
+    #include <RHIOpenGL/RHIOpenGLSurfaceBridge.hpp>
 
-#include <Templates/Optional.hpp>
+    #include <Templates/Optional.hpp>
 
-/* WGL entry points use the platform calling convention: __stdcall on x86, the single native convention elsewhere. */
-#if defined( _M_IX86 )
-#define LUMEN_WGL_CALL __stdcall
-#else
-#define LUMEN_WGL_CALL
-#endif
+    /* WGL entry points use the platform calling convention: __stdcall on x86, the single native convention elsewhere. */
+    #if defined( _M_IX86 )
+        #define LUMEN_WGL_CALL __stdcall
+    #else
+        #define LUMEN_WGL_CALL
+    #endif
 
 namespace Lumen
 {
@@ -34,17 +34,17 @@ namespace RHIOpenGL
     using WGLRenderContext = UPtr; ///< HGLRC
     using WGLSurface       = UPtr; ///< HDC of a native window; the WGL counterpart of an EGLSurface.
 
-    using TWGLGetProcAddress          = UPtr ( LUMEN_WGL_CALL * )( const AnsiChar * );
-    using TWGLCreateContext           = UPtr ( LUMEN_WGL_CALL * )( WGLDeviceContext );
-    using TWGLDeleteContext           = Int32 ( LUMEN_WGL_CALL * )( WGLRenderContext );
-    using TWGLMakeCurrent             = Int32 ( LUMEN_WGL_CALL * )( WGLDeviceContext, WGLRenderContext );
-    using TWGLGetCurrentContext       = UPtr ( LUMEN_WGL_CALL * )();
-    using TWGLGetCurrentDC            = UPtr ( LUMEN_WGL_CALL * )();
-    using TWGLCreateContextAttribsARB = UPtr ( LUMEN_WGL_CALL * )( WGLDeviceContext, WGLRenderContext, const Int32 * );
-    using TWGLSwapIntervalEXT         = Int32 ( LUMEN_WGL_CALL * )( Int32 );
+    using TWGLGetProcAddress          = UPtr( LUMEN_WGL_CALL * )( const AnsiChar * );
+    using TWGLCreateContext           = UPtr( LUMEN_WGL_CALL * )( WGLDeviceContext );
+    using TWGLDeleteContext           = Int32( LUMEN_WGL_CALL * )( WGLRenderContext );
+    using TWGLMakeCurrent             = Int32( LUMEN_WGL_CALL * )( WGLDeviceContext, WGLRenderContext );
+    using TWGLGetCurrentContext       = UPtr( LUMEN_WGL_CALL * )();
+    using TWGLGetCurrentDC            = UPtr( LUMEN_WGL_CALL * )();
+    using TWGLCreateContextAttribsARB = UPtr( LUMEN_WGL_CALL * )( WGLDeviceContext, WGLRenderContext, const Int32 * );
+    using TWGLSwapIntervalEXT         = Int32( LUMEN_WGL_CALL * )( Int32 );
     using TWGLGetExtensionsStringARB  = const AnsiChar *( LUMEN_WGL_CALL * )( WGLDeviceContext );
 
-#undef LUMEN_WGL_CALL
+    #undef LUMEN_WGL_CALL
 
     /**
      * @class FWGLPlatformContext
@@ -76,7 +76,8 @@ namespace RHIOpenGL
         [[nodiscard]] TExpected<WGLSurface, RHI::FRHIError> CreateWindowSurface () noexcept override;
         void DestroyWindowSurface ( WGLSurface InSurface ) noexcept override;
         [[nodiscard]] TExpected<void, RHI::FRHIError> MakeSurfaceCurrent ( WGLSurface InSurface ) noexcept override;
-        [[nodiscard]] TExpected<void, RHI::FRHIError> SwapBuffers ( WGLSurface InSurface, Int32 InSwapInterval ) noexcept override;
+        [[nodiscard]] TExpected<void, RHI::FRHIError> SwapBuffers ( WGLSurface InSurface,
+                                                                    Int32 InSwapInterval ) noexcept override;
 
         void Shutdown () noexcept override;
 
@@ -109,7 +110,7 @@ namespace RHIOpenGL
         TWGLSwapIntervalEXT SwapIntervalProc                 = nullptr;
         TWGLGetExtensionsStringARB GetExtensionsStringProc   = nullptr;
 
-        WGLWindow Window              = 0U;
+        WGLWindow Window               = 0U;
         WGLDeviceContext DeviceContext = 0U;
         WGLRenderContext Context       = 0U;
         Int32 PixelFormat              = 0;

@@ -7,18 +7,18 @@
 
 #if not defined( LUMEN_PLATFORM_WINDOWS )
 
-#include <RHIOpenGL/Platform/Linux/EGLPlatformContext.hpp>
+    #include <RHIOpenGL/Platform/Linux/EGLPlatformContext.hpp>
 
-#include <dlfcn.h>
+    #include <dlfcn.h>
 
-#include <HAL/LockGuard.hpp>
-#include <HAL/PlatformMutex.hpp>
+    #include <HAL/LockGuard.hpp>
+    #include <HAL/PlatformMutex.hpp>
 
-#include <RHI/Types/RHIError.hpp>
+    #include <RHI/Types/RHIError.hpp>
 
-#include <String/String.hpp>
-#include <Templates/Map.hpp>
-#include <Templates/Optional.hpp>
+    #include <String/String.hpp>
+    #include <Templates/Map.hpp>
+    #include <Templates/Optional.hpp>
 
 /**
  * Private
@@ -326,8 +326,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIOpenGL::FEGLPlatformCont
     return {};
 }
 
-Lumen::TExpected<Lumen::UPtr, Lumen::RHI::FRHIError>
-Lumen::RHIOpenGL::FEGLPlatformContext::CreateWindowSurface () noexcept
+Lumen::TExpected<Lumen::UPtr, Lumen::RHI::FRHIError> Lumen::RHIOpenGL::FEGLPlatformContext::CreateWindowSurface () noexcept
 {
     if ( not NativeWindow or Display == 0U or Config == 0U or CreateWindow == nullptr )
     {

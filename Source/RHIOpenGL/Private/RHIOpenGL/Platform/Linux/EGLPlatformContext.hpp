@@ -9,11 +9,11 @@
 
 #if not defined( LUMEN_PLATFORM_WINDOWS )
 
-#include <Core/CoreTypes.hpp>
-#include <Core/NonCopyable.hpp>
+    #include <Core/CoreTypes.hpp>
+    #include <Core/NonCopyable.hpp>
 
-#include <RHIOpenGL/Platform/IOpenGLPlatformContext.hpp>
-#include <RHIOpenGL/RHIOpenGLSurfaceBridge.hpp>
+    #include <RHIOpenGL/Platform/IOpenGLPlatformContext.hpp>
+    #include <RHIOpenGL/RHIOpenGLSurfaceBridge.hpp>
 
 namespace Lumen
 {

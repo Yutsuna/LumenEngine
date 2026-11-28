@@ -3,6 +3,20 @@
  * @brief Integration tests for OpenGL device creation, queues, and loss.
  */
 
+// Pull in windows.h before any engine header declares IRHIDevice::CreateSemaphore,
+// then drop the Win32 macro that would otherwise rewrite that name to
+// CreateSemaphoreA and break overrides declared by backend headers.
+#if defined( _WIN32 )
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <windows.h>
+    #undef CreateSemaphore
+#endif
+
 #include <RHI/Device/IRHIDevice.hpp>
 #include <RHI/Module/RHIDeviceDesc.hpp>
 #include <RHI/Queue/IRHIQueue.hpp>

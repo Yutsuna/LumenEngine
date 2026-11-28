@@ -15,8 +15,13 @@
 #include <RHI/Resources/RHIBufferDesc.hpp>
 
 #include <Templates/Array.hpp>
+#include <Templates/Vector.hpp>
 
 #include <Tests/UnitTest.hpp>
+
+#include <RHI/Validation/RHIValidation.hpp>
+#include <RHIOpenGL/Loader/GLSpec.hpp>
+#include <RHIOpenGL/Memory/OpenGLHeap.hpp>
 
 namespace Lumen
 {
@@ -71,6 +76,38 @@ namespace
             }
         }
         return true;
+    }
+
+    /**
+     * A persistent CPU mapping does not necessarily observe GL-side buffer copies on
+     * every driver. Verify the authoritative GL buffer contents through a synchronous
+     * readback instead of the client pointer returned by IRHIHeap::Map.
+     */
+    Bool MatchesHeapContents ( IRHIHeap &InHeap, const UInt64 InOffset, const UInt64 InSize, const Byte InValue ) noexcept
+    {
+        const TOptional<RHIOpenGL::FOpenGLHeap *> NativeHeap = RHI::TryUnwrapRHIBackend<RHIOpenGL::FOpenGLHeap>( &InHeap );
+        if ( not NativeHeap.HasValue() )
+        {
+            return false;
+        }
+        const RHIOpenGL::FGLDispatchTable &Dispatch = ( *NativeHeap )->GetDeviceContext().GetDispatch();
+        TVector<Byte> Readback;
+        Readback.resize( static_cast<USize>( InSize ) );
+        const RHI::FRHIExpected Posted =
+            ( *NativeHeap )
+                ->GetDeviceContext()
+                .GetExecutor()
+                ->ExecuteOnGLThread( [&Dispatch, &Readback, InOffset, InSize, BufferId = ( *NativeHeap )->GetBuffer()] () noexcept
+        {
+            Dispatch.BindBuffer( RHIOpenGL::GlArrayBuffer, BufferId );
+            Dispatch.GetBufferSubData( RHIOpenGL::GlArrayBuffer, static_cast<RHIOpenGL::GLintptr>( InOffset ),
+                                       static_cast<RHIOpenGL::GLsizeiptr>( InSize ), Readback.data() );
+        } );
+        if ( not Posted.HasValue() )
+        {
+            return false;
+        }
+        return Matches( TSpan<Byte>( Readback.data(), Readback.size() ), InValue );
     }
 
     LUMEN_TEST( OpenGLDefragmenter, BuildsAndExecutesCompactedHeapMoves )
@@ -138,14 +175,8 @@ namespace
         LUMEN_CHECK_EQ( Observer.Forward, 1U );
         GetRHIAllocationObserverRegistry().Unregister( Observer );
 
-        const TExpected<TSpan<Byte>, FRHIError> FirstAfter = ( *Heap )->Map( 0ULL, 512ULL );
-        LUMEN_CHECK_TRUE( FirstAfter.HasValue() );
-        LUMEN_CHECK_TRUE( Matches( *FirstAfter, Byte{ 0x11U } ) );
-        ( *Heap )->Unmap();
-        const TExpected<TSpan<Byte>, FRHIError> SecondAfter = ( *Heap )->Map( 512ULL, 512ULL );
-        LUMEN_CHECK_TRUE( SecondAfter.HasValue() );
-        LUMEN_CHECK_TRUE( Matches( *SecondAfter, Byte{ 0x22U } ) );
-        ( *Heap )->Unmap();
+        LUMEN_CHECK_TRUE( MatchesHeapContents( *Heap->Get(), 0ULL, 512ULL, Byte{ 0x11U } ) );
+        LUMEN_CHECK_TRUE( MatchesHeapContents( *Heap->Get(), 512ULL, 512ULL, Byte{ 0x22U } ) );
     }
 
     LUMEN_TEST( OpenGLDefragmenter, BuildsAndExecutesMultiHeapPlan )
@@ -212,14 +243,8 @@ namespace
         LUMEN_CHECK_EQ( Observer.Forward, 2U );
         GetRHIAllocationObserverRegistry().Unregister( Observer );
 
-        const TExpected<TSpan<Byte>, FRHIError> FirstAfter = ( *FirstHeap )->Map( 0ULL, 512ULL );
-        LUMEN_CHECK_TRUE( FirstAfter.HasValue() );
-        LUMEN_CHECK_TRUE( Matches( *FirstAfter, Byte{ 0x11U } ) );
-        ( *FirstHeap )->Unmap();
-        const TExpected<TSpan<Byte>, FRHIError> SecondAfter = ( *SecondHeap )->Map( 0ULL, 512ULL );
-        LUMEN_CHECK_TRUE( SecondAfter.HasValue() );
-        LUMEN_CHECK_TRUE( Matches( *SecondAfter, Byte{ 0x22U } ) );
-        ( *SecondHeap )->Unmap();
+        LUMEN_CHECK_TRUE( MatchesHeapContents( *FirstHeap->Get(), 0ULL, 512ULL, Byte{ 0x11U } ) );
+        LUMEN_CHECK_TRUE( MatchesHeapContents( *SecondHeap->Get(), 0ULL, 512ULL, Byte{ 0x22U } ) );
     }
 
     LUMEN_TEST( OpenGLDefragmenter, ExecutesOverlappingMoveUsingScratch )
@@ -257,10 +282,7 @@ namespace
         Executable.ObservedCompletion = FRHITimelineValue{ 1ULL };
         LUMEN_CHECK_TRUE( ( *Defragmenter )->Execute( Executable ).HasValue() );
 
-        const TExpected<TSpan<Byte>, FRHIError> DestinationSpan = ( *Heap )->Map( 0ULL, 512ULL );
-        LUMEN_CHECK_TRUE( DestinationSpan.HasValue() );
-        LUMEN_CHECK_TRUE( Matches( *DestinationSpan, Byte{ 0x33U } ) );
-        ( *Heap )->Unmap();
+        LUMEN_CHECK_TRUE( MatchesHeapContents( *Heap->Get(), 0ULL, 512ULL, Byte{ 0x33U } ) );
     }
 
     LUMEN_TEST( OpenGLDefragmenter, RejectsInvalidInputsAndUnreachedCompletion )

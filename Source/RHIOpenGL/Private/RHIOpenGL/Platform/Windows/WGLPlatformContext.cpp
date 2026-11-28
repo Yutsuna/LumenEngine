@@ -7,30 +7,30 @@
 
 #if defined( LUMEN_PLATFORM_WINDOWS )
 
-#include <RHIOpenGL/Platform/Windows/WGLPlatformContext.hpp>
+    #include <RHIOpenGL/Platform/Windows/WGLPlatformContext.hpp>
 
-#include <cstring>
+    #include <cstring>
 
-#include <HAL/LockGuard.hpp>
-#include <HAL/PlatformMutex.hpp>
+    #include <HAL/LockGuard.hpp>
+    #include <HAL/PlatformMutex.hpp>
 
-#include <RHI/Types/RHIError.hpp>
+    #include <RHI/Types/RHIError.hpp>
 
-#include <Templates/Optional.hpp>
+    #include <Templates/Optional.hpp>
 
-/* Windows.h last: its macros must not leak into the engine headers above. */
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN
-#endif
-#ifndef NOMINMAX
-#define NOMINMAX
-#endif
-#include <Windows.h>
+    /* Windows.h last: its macros must not leak into the engine headers above. */
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <Windows.h>
 
-#if defined( _MSC_VER )
-#pragma comment( lib, "user32.lib" )
-#pragma comment( lib, "gdi32.lib" )
-#endif
+    #if defined( _MSC_VER )
+        #pragma comment( lib, "user32.lib" )
+        #pragma comment( lib, "gdi32.lib" )
+    #endif
 
 /**
  * Private
@@ -53,8 +53,8 @@ constexpr const wchar_t *GWglWindowClassName = L"LumenRHIOpenGLContextWindow";
 /** @brief opengl32.dll and the helper window class are process-wide: loading or registering them per
  *         device is wasteful, and the class may only be unregistered once its last user is gone. */
 Lumen::HAL::FPlatformMutex GWglCacheMutex;
-Lumen::UPtr GCachedOpenGLLibrary   = 0U;
-Lumen::UInt32 GWindowClassUsers    = 0U;
+Lumen::UPtr GCachedOpenGLLibrary = 0U;
+Lumen::UInt32 GWindowClassUsers  = 0U;
 
 LRESULT CALLBACK WglHelperWindowProc ( HWND InWindow, UINT InMessage, WPARAM InWParam, LPARAM InLParam )
 {
@@ -123,12 +123,12 @@ inline Lumen::Bool AcquireHelperWindowClass () noexcept
     Lumen::HAL::TLockGuard CacheLock( GWglCacheMutex );
     if ( GWindowClassUsers == 0U )
     {
-        WNDCLASSEXW WindowClass    = {};
-        WindowClass.cbSize         = sizeof( WindowClass );
-        WindowClass.style          = CS_OWNDC;
-        WindowClass.lpfnWndProc    = WglHelperWindowProc;
-        WindowClass.hInstance      = GetCodeModule();
-        WindowClass.lpszClassName  = GWglWindowClassName;
+        WNDCLASSEXW WindowClass   = {};
+        WindowClass.cbSize        = sizeof( WindowClass );
+        WindowClass.style         = CS_OWNDC;
+        WindowClass.lpfnWndProc   = WglHelperWindowProc;
+        WindowClass.hInstance     = GetCodeModule();
+        WindowClass.lpszClassName = GWglWindowClassName;
 
         /* A previous Unregister can fail while a leaked window survives: the class is then still usable. */
         if ( ::RegisterClassExW( &WindowClass ) == 0 and ::GetLastError() != ERROR_CLASS_ALREADY_EXISTS )
@@ -292,8 +292,8 @@ Lumen::RHIOpenGL::FWGLPlatformContext::CreateWindowSurface () noexcept
     const HDC WindowDeviceContext = ::GetDC( WindowHandle );
     if ( WindowDeviceContext == nullptr )
     {
-        return TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Presentation,
-                                                        "GetDC failed for the native OpenGL window." ) );
+        return TUnexpected(
+            RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Presentation, "GetDC failed for the native OpenGL window." ) );
     }
 
     /* A pixel format already chosen by the host is kept: it can only be set once. If the driver finds it
@@ -417,9 +417,9 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIOpenGL::FWGLPlatformCont
     bWindowClassReference = true;
 
     /* Never shown: the window only exists to own a device context, rendering goes through FBOs. */
-    const HWND WindowHandle = ::CreateWindowExW( WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, GWglWindowClassName,
-                                                 L"Lumen OpenGL Context", WS_POPUP, 0, 0, 1, 1, nullptr, nullptr,
-                                                 GetCodeModule(), nullptr );
+    const HWND WindowHandle =
+        ::CreateWindowExW( WS_EX_TOOLWINDOW | WS_EX_NOACTIVATE, GWglWindowClassName, L"Lumen OpenGL Context", WS_POPUP, 0, 0, 1,
+                           1, nullptr, nullptr, GetCodeModule(), nullptr );
     if ( WindowHandle == nullptr )
     {
         return WglFailure( "Unable to create the hidden OpenGL helper window." );
@@ -465,8 +465,7 @@ Lumen::RHIOpenGL::FWGLPlatformContext::CreateOpenGLContext ( const Bool bEnableD
     {
         /* Zero-terminated: index 6 ends the list unless the debug flag pair is appended. */
         Int32 ContextAttributes[9] = {
-            WglContextMajorVersion, 4, WglContextMinorVersion, 6, WglContextProfileMask, WglContextCoreProfileBit,
-            0,                      0, 0 };
+            WglContextMajorVersion, 4, WglContextMinorVersion, 6, WglContextProfileMask, WglContextCoreProfileBit, 0, 0, 0 };
         if ( bEnableDebug )
         {
             ContextAttributes[6] = WglContextFlags;
@@ -492,14 +491,14 @@ Lumen::RHIOpenGL::FWGLPlatformContext::CreateOpenGLContext ( const Bool bEnableD
     }
 
     /* Presentation entry points are resolved against the final context, not the bootstrap one. */
-    SwapIntervalProc        = CastWglProcedure<TWGLSwapIntervalEXT>( NormalizeWglAddress( GetProc( "wglSwapIntervalEXT" ) ) );
-    GetExtensionsStringProc = CastWglProcedure<TWGLGetExtensionsStringARB>(
-        NormalizeWglAddress( GetProc( "wglGetExtensionsStringARB" ) ) );
+    SwapIntervalProc = CastWglProcedure<TWGLSwapIntervalEXT>( NormalizeWglAddress( GetProc( "wglSwapIntervalEXT" ) ) );
+    GetExtensionsStringProc =
+        CastWglProcedure<TWGLGetExtensionsStringARB>( NormalizeWglAddress( GetProc( "wglGetExtensionsStringARB" ) ) );
 
     if ( GetExtensionsStringProc != nullptr )
     {
         const AnsiChar *Extensions = GetExtensionsStringProc( DeviceContext );
-        bSwapControlTear = Extensions != nullptr and std::strstr( Extensions, "WGL_EXT_swap_control_tear" ) != nullptr;
+        bSwapControlTear           = Extensions != nullptr and std::strstr( Extensions, "WGL_EXT_swap_control_tear" ) != nullptr;
     }
 
     if ( NativeWindow and SwapIntervalProc == nullptr )
