@@ -20,7 +20,7 @@
 
 #include <RHIOpenGL/Loader/GLDispatchTable.hpp>
 #include <RHIOpenGL/Loader/GLSpec.hpp>
-#include <RHIOpenGL/Platform/Linux/EGLPlatformContext.hpp>
+#include <RHIOpenGL/Platform/PlatformContext.hpp>
 
 #include <Templates/ConditionVariable.hpp>
 #include <Templates/Function.hpp>
@@ -101,8 +101,8 @@ namespace RHIOpenGL
         /** @return Resolved OpenGL 4.6 entry points for the worker context. */
         [[nodiscard]] const FGLDispatchTable &GetDispatch () const noexcept;
 
-        /** @return Native EGL state; window operations must be invoked on the GL Executor. */
-        [[nodiscard]] FEGLPlatformContext &GetNativeContext () noexcept;
+        /** @return Native context; window operations must be invoked on the GL Executor. */
+        [[nodiscard]] IOpenGLPlatformContext &GetNativeContext () noexcept;
 
         /** @return Highest timeline value published by the executor after fence completion. */
         [[nodiscard]] RHI::FRHITimelineValue GetCompletedTimeline () const noexcept;
@@ -210,7 +210,7 @@ namespace RHIOpenGL
 
         Bool bEnableDebug = false;
         TOptional<FOpenGLNativeWindowDesc> NativeWindow;
-        FEGLPlatformContext NativeContext;
+        FPlatformContext NativeContext;
         FGLDispatchTable Dispatch;
         TAtomic<Bool> bResetReported{ false };
 

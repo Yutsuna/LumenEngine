@@ -3,6 +3,10 @@
  * @brief Implements headless EGL context creation on Linux.
  */
 
+#include <Core/CoreDefinitions.hpp>
+
+#if not defined( LUMEN_PLATFORM_WINDOWS )
+
 #include <RHIOpenGL/Platform/Linux/EGLPlatformContext.hpp>
 
 #include <dlfcn.h>
@@ -322,7 +326,7 @@ Lumen::TExpected<void, Lumen::RHI::FRHIError> Lumen::RHIOpenGL::FEGLPlatformCont
     return {};
 }
 
-Lumen::TExpected<Lumen::RHIOpenGL::EGLSurface, Lumen::RHI::FRHIError>
+Lumen::TExpected<Lumen::UPtr, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FEGLPlatformContext::CreateWindowSurface () noexcept
 {
     if ( not NativeWindow or Display == 0U or Config == 0U or CreateWindow == nullptr )
@@ -342,7 +346,7 @@ Lumen::RHIOpenGL::FEGLPlatformContext::CreateWindowSurface () noexcept
     return WindowSurface;
 }
 
-void Lumen::RHIOpenGL::FEGLPlatformContext::DestroyWindowSurface ( const EGLSurface InSurface ) noexcept
+void Lumen::RHIOpenGL::FEGLPlatformContext::DestroyWindowSurface ( const UPtr InSurface ) noexcept
 {
     if ( Display != 0U and InSurface != 0U and DestroySurfaceProc != nullptr )
     {
@@ -351,7 +355,7 @@ void Lumen::RHIOpenGL::FEGLPlatformContext::DestroyWindowSurface ( const EGLSurf
 }
 
 Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHIOpenGL::FEGLPlatformContext::MakeSurfaceCurrent ( const EGLSurface InSurface ) noexcept
+Lumen::RHIOpenGL::FEGLPlatformContext::MakeSurfaceCurrent ( const UPtr InSurface ) noexcept
 {
     if ( Display == 0U or Context == 0U or InSurface == 0U or MakeCurrentProc == nullptr )
     {
@@ -365,7 +369,7 @@ Lumen::RHIOpenGL::FEGLPlatformContext::MakeSurfaceCurrent ( const EGLSurface InS
 }
 
 Lumen::TExpected<void, Lumen::RHI::FRHIError>
-Lumen::RHIOpenGL::FEGLPlatformContext::SwapBuffers ( const EGLSurface InSurface, const Int32 InSwapInterval ) noexcept
+Lumen::RHIOpenGL::FEGLPlatformContext::SwapBuffers ( const UPtr InSurface, const Int32 InSwapInterval ) noexcept
 {
     if ( SwapIntervalProc == nullptr or SwapBuffersProc == nullptr )
     {
@@ -431,3 +435,5 @@ Lumen::Bool Lumen::RHIOpenGL::FEGLPlatformContext::AreEglProcedureInvalid () con
            BindAPI == nullptr or ChooseConfig == nullptr or CreateContextProc == nullptr or DestroyContextProc == nullptr or
            MakeCurrentProc == nullptr or QueryStringProc == nullptr or GetErrorProc == nullptr;
 }
+
+#endif

@@ -40,6 +40,18 @@ namespace RHIOpenGL
         /** @brief Restores the context as current on this thread. */
         [[nodiscard]] virtual TExpected<void, RHI::FRHIError> MakeCurrent () noexcept = 0;
 
+        /** @brief Creates a native presentation surface from the context's native window descriptor. */
+        [[nodiscard]] virtual TExpected<UPtr, RHI::FRHIError> CreateWindowSurface () noexcept = 0;
+
+        /** @brief Releases a native presentation surface; called on the GL thread. */
+        virtual void DestroyWindowSurface ( UPtr InSurface ) noexcept = 0;
+
+        /** @brief Makes a native presentation surface current on the GL thread. */
+        [[nodiscard]] virtual TExpected<void, RHI::FRHIError> MakeSurfaceCurrent ( UPtr InSurface ) noexcept = 0;
+
+        /** @brief Presents a native presentation surface with the requested swap interval. */
+        [[nodiscard]] virtual TExpected<void, RHI::FRHIError> SwapBuffers ( UPtr InSurface, Int32 InSwapInterval ) noexcept = 0;
+
         /** @return Address of a named OpenGL entry point, or empty when unavailable. */
         [[nodiscard]] virtual TOptional<UPtr> ResolveProcedure ( FStringView InName ) const noexcept = 0;
     };

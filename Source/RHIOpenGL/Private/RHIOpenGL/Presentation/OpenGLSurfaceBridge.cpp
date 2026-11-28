@@ -118,9 +118,14 @@ Lumen::TOptional<Lumen::UPtr> Lumen::RHIOpenGL::FOpenGLSurfaceBridge::ResolvePro
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHISurfaceBridge>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::CreateRHIOpenGLSurfaceBridge ( const FOpenGLNativeWindowDesc &InDesc ) noexcept
 {
-    if ( ( InDesc.WindowSystem != EOpenGLNativeWindowSystem::X11 and
-           InDesc.WindowSystem != EOpenGLNativeWindowSystem::Wayland ) or
-         InDesc.NativeWindow == 0U or InDesc.NativeDisplay == 0U or not InDesc.Extent.IsValid() or InDesc.Extent.Depth != 1U )
+    const Bool bKnownSystem = InDesc.WindowSystem == EOpenGLNativeWindowSystem::X11 or
+                              InDesc.WindowSystem == EOpenGLNativeWindowSystem::Wayland or
+                              InDesc.WindowSystem == EOpenGLNativeWindowSystem::Win32;
+    /* Win32 derives its device context from the window handle, so NativeDisplay is not required. */
+    const Bool bHasDisplay = InDesc.WindowSystem == EOpenGLNativeWindowSystem::Win32 or InDesc.NativeDisplay != 0U;
+
+    if ( not bKnownSystem or InDesc.NativeWindow == 0U or not bHasDisplay or not InDesc.Extent.IsValid() or
+         InDesc.Extent.Depth != 1U )
     {
         return TUnexpected( RHI::MakeRHIInvalidPresentation( "Native OpenGL window handles and extent are required." ) );
     }

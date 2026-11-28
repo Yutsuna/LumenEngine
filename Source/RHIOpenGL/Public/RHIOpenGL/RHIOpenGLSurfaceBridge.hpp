@@ -24,12 +24,14 @@ namespace RHIOpenGL
     /**
      * @enum EOpenGLNativeWindowSystem
      * @brief Window-system ABI used to interpret opaque OpenGL surface handles.
+     * @details Win32 carries an HWND in NativeWindow; NativeDisplay is unused and may be zero.
      */
     enum class EOpenGLNativeWindowSystem : UInt8
     {
         Unknown,
         X11,
-        Wayland
+        Wayland,
+        Win32
     };
 
     /**
