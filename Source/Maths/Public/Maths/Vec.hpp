@@ -31,7 +31,7 @@ namespace Maths
             }
 
             template <typename... TArgs>
-            constexpr explicit TVecData( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
+            constexpr explicit TVecData ( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
             {
                 /* */
             }
@@ -78,7 +78,7 @@ namespace Maths
             }
 
             template <typename... TArgs>
-            constexpr explicit TVecData( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
+            constexpr explicit TVecData ( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
             {
                 /* */
             }
@@ -113,7 +113,7 @@ namespace Maths
             }
 
             template <typename... TArgs>
-            constexpr explicit TVecData( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
+            constexpr explicit TVecData ( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
             {
                 /* */
             }
@@ -144,7 +144,7 @@ namespace Maths
             }
 
             template <typename... TArgs>
-            constexpr explicit TVecData( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
+            constexpr explicit TVecData ( TArgs &&...Args ) noexcept : Data{ static_cast<Type>( Args )... }
             {
                 /* */
             }
@@ -191,7 +191,7 @@ namespace Maths
          * @param Other The Vec to convert from
          * @return A new Vec with component values converted from Other
          */
-        template <typename OtherType> constexpr explicit TVec( const TVec<OtherType, Dimension> &Other ) noexcept;
+        template <typename OtherType> constexpr explicit TVec ( const TVec<OtherType, Dimension> &Other ) noexcept;
 
         template <typename... TArgs>
             requires( sizeof...( TArgs ) == Dimension and ( Lumen::Concepts::CConvertibleTo<TArgs, Type> and ... ) )
