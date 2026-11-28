@@ -39,7 +39,8 @@ namespace HAL
     {
     public:
 
-        struct FId
+        /** MinGW does not propagate the enclosing class dllexport to nested types. */
+        struct CORE_EXPORT FId
         {
             FId () noexcept = default;
             explicit FId ( DWORD InId ) noexcept;
