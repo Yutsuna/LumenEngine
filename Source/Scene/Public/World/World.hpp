@@ -24,6 +24,7 @@
 #include <Actor/ActorEmitContext.hpp>
 #include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
+#include <Camera/CameraRegistry.hpp>
 #include <Hierarchy/SceneHierarchy.hpp>
 #include <Rendering/RenderSnapshotStream.hpp>
 #include <Rendering/RenderSnapshotTypes.hpp>
@@ -114,6 +115,16 @@ public:
 
     /** @brief Returns this world's owned spatial registry. */
     [[nodiscard]] FSpatialRegistry &GetSpatialRegistry () noexcept;
+
+    /** @brief Returns this world's owned camera component registry, reserved from RenderCapacities.CameraCapacity. */
+    [[nodiscard]] FCameraComponentRegistry &GetCameraRegistry () noexcept;
+
+    /** @brief Adds a camera component for an existing actor, or returns a structured capacity/identity failure. */
+    [[nodiscard]] TExpected<void, ECameraComponentError> TryAddCameraComponent ( ActorID InActorId,
+                                                                                 const FCameraComponentDesc &InDesc ) noexcept;
+
+    /** @brief Removes the camera component of an existing actor, if any. */
+    [[nodiscard]] TExpected<void, ECameraComponentError> TryRemoveCameraComponent ( ActorID InActorId ) noexcept;
 
     /** @brief Returns this world's owned spatial hierarchy; Initialize depends on FWorldDesc::HierarchyCapacity. */
     [[nodiscard]] FSceneHierarchy &GetHierarchy () noexcept;
@@ -314,6 +325,7 @@ private:
 
     FWorldDesc Desc;
     FSpatialRegistry Registry;
+    FCameraComponentRegistry CameraRegistry;
     FSceneHierarchy Hierarchy;
     TUniquePtr<FWorldExecutor> Executor;
     TUniquePtr<FReplicationSystem> Replication;

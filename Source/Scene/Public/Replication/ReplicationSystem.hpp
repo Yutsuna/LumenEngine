@@ -146,7 +146,7 @@ private:
     void
     UpdateCursorsFromAck ( EReplicationDirection InDirection, EReplicationChannel InChannel, UInt64 InAckedSequence ) noexcept;
     void TryResolvePendingParents () noexcept;
-    Bool TryRecoverBufferedFrame ( UInt64 InExpectedSequence, FReplicationFrame &OutFrame ) noexcept;
+    [[nodiscard]] TOptional<FReplicationFrame> TryRecoverBufferedFrame ( UInt64 InExpectedSequence ) noexcept;
     void ApplyFrameToShadow ( const FReplicationFrame &InFrame, TMap<UInt64, FActorState> &InOutShadow ) noexcept;
 
 private:
