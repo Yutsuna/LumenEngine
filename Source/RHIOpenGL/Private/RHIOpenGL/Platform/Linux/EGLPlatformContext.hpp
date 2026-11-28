@@ -29,8 +29,8 @@ namespace RHIOpenGL
         ~FEGLPlatformContext () noexcept override;
 
         [[nodiscard]] TExpected<void, RHI::FRHIError> Initialize ( Bool bEnableDebug ) noexcept override;
-        [[nodiscard]] TExpected<void, RHI::FRHIError>
-        Initialize ( Bool bEnableDebug, const FOpenGLNativeWindowDesc *InNativeWindow ) noexcept;
+        [[nodiscard]] TExpected<void, RHI::FRHIError> Initialize ( Bool bEnableDebug,
+                                                                   const FOpenGLNativeWindowDesc *InNativeWindow ) noexcept;
         [[nodiscard]] TExpected<void, RHI::FRHIError> MakeCurrent () noexcept override;
         [[nodiscard]] TOptional<UPtr> ResolveProcedure ( FStringView InName ) const noexcept override;
 

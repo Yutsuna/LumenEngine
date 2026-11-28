@@ -26,7 +26,7 @@ namespace RHIOpenGL
     {
     public:
 
-        FOpenGLModule () noexcept           = default;
+        FOpenGLModule () noexcept = default;
         explicit FOpenGLModule ( const FOpenGLNativeWindowDesc &InNativeWindow ) noexcept;
         ~FOpenGLModule () noexcept override = default;
 
@@ -42,6 +42,7 @@ namespace RHIOpenGL
         CreateDevice ( const RHI::FRHIDeviceDesc &InDesc ) noexcept override;
 
     private:
+
         TOptional<FOpenGLNativeWindowDesc> NativeWindow;
     };
 

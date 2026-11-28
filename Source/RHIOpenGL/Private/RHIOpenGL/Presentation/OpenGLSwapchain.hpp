@@ -98,9 +98,9 @@ namespace RHIOpenGL
         TOptional<RHI::FRHINativeSurface> NativeSurface;
         RHI::FRHISwapchainCapabilities Capabilities;
         TVector<FSlot> Slots;
-        UInt32 Cursor    = 0U;
-        Bool bOutOfDate             = false;
-        Bool bSuboptimal            = false;
+        UInt32 Cursor                  = 0U;
+        Bool bOutOfDate                = false;
+        Bool bSuboptimal               = false;
         GLuint PresentationFramebuffer = 0U;
         mutable HAL::FPlatformRecursiveSharedMutex Mutex;
     };

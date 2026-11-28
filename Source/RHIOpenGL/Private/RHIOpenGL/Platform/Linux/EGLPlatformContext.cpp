@@ -91,8 +91,8 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug,
         return {};
     }
 
-    NativeWindow = InNativeWindow != nullptr ? TOptional<FOpenGLNativeWindowDesc>( *InNativeWindow )
-                                             : TOptional<FOpenGLNativeWindowDesc>{};
+    NativeWindow =
+        InNativeWindow != nullptr ? TOptional<FOpenGLNativeWindowDesc>( *InNativeWindow ) : TOptional<FOpenGLNativeWindowDesc>{};
 
     /* One process-wide lock covers cached handles: a single thread performs
      * dlopen/eglInitialize and publishes the result to every other device. */
@@ -120,9 +120,9 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug,
     Bool bInitializeDisplay = false;
     if ( NativeWindow )
     {
-        const auto Cached = GCachedNativeEglDisplays.find( NativeWindow->NativeDisplay );
+        const auto Cached  = GCachedNativeEglDisplays.find( NativeWindow->NativeDisplay );
         bInitializeDisplay = Cached == GCachedNativeEglDisplays.end();
-        Display = bInitializeDisplay ? GetDisplay( NativeWindow->NativeDisplay ) : Cached->second;
+        Display            = bInitializeDisplay ? GetDisplay( NativeWindow->NativeDisplay ) : Cached->second;
     }
     else
     {
@@ -153,12 +153,12 @@ Lumen::RHIOpenGL::FEGLPlatformContext::Initialize ( const Bool bEnableDebug,
         return EglFailure( "Unable to initialize the EGL display for the OpenGL API." );
     }
 
-    const EGLint SurfaceBits = NativeWindow ? ( EglWindowBit | EglPbufferBit ) : EglPbufferBit;
+    const EGLint SurfaceBits        = NativeWindow ? ( EglWindowBit | EglPbufferBit ) : EglPbufferBit;
     const EGLint ConfigAttributes[] = { EglSurfaceType, SurfaceBits, EglRenderableType, EglOpenGLBit,
-                                        EglRedSize,     8,           EglGreenSize,     8,
-                                        EglBlueSize,    8,           EglAlphaSize,     8,
+                                        EglRedSize,     8,           EglGreenSize,      8,
+                                        EglBlueSize,    8,           EglAlphaSize,      8,
                                         EglNone };
-    EGLint ConfigCount = 0;
+    EGLint ConfigCount              = 0;
     if ( ChooseConfig( Display, ConfigAttributes, &Config, 1, &ConfigCount ) == EglFalse or ConfigCount < 1 )
     {
         AbortInitialize();
@@ -277,8 +277,7 @@ void Lumen::RHIOpenGL::FEGLPlatformContext::Shutdown () noexcept
                 {
                     GCachedEglDisplay = 0U;
                 }
-                for ( auto CachedDisplay = GCachedNativeEglDisplays.begin();
-                      CachedDisplay != GCachedNativeEglDisplays.end(); )
+                for ( auto CachedDisplay = GCachedNativeEglDisplays.begin(); CachedDisplay != GCachedNativeEglDisplays.end(); )
                 {
                     if ( CachedDisplay->second == Display )
                     {
@@ -303,10 +302,10 @@ void Lumen::RHIOpenGL::FEGLPlatformContext::Shutdown () noexcept
         }
     }
 
-    bDisplayInitialized     = false;
-    Display                 = 0U;
-    Library                 = nullptr;
-    GetProc                 = nullptr;
+    bDisplayInitialized = false;
+    Display             = 0U;
+    Library             = nullptr;
+    GetProc             = nullptr;
     NativeWindow.Reset();
 }
 
@@ -329,16 +328,16 @@ Lumen::RHIOpenGL::FEGLPlatformContext::CreateWindowSurface () noexcept
     if ( not NativeWindow or Display == 0U or Config == 0U or CreateWindow == nullptr )
     {
         return TUnexpected( RHI::MakeRHIInvalidState( RHI::ERHIErrorCondition::Presentation,
-                                                     "EGL was not initialized with a native window descriptor." ) );
+                                                      "EGL was not initialized with a native window descriptor." ) );
     }
     const EGLNativeDisplayType NativeHandle = NativeWindow->WindowSystem == EOpenGLNativeWindowSystem::Wayland
                                                   ? NativeWindow->NativeWindowAttachment
                                                   : NativeWindow->NativeWindow;
-    EGLSurface WindowSurface = CreateWindow( Display, Config, NativeHandle, nullptr );
+    EGLSurface WindowSurface                = CreateWindow( Display, Config, NativeHandle, nullptr );
     if ( WindowSurface == 0U )
     {
         return TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Presentation,
-                                                       "eglCreateWindowSurface failed for the native OpenGL window." ) );
+                                                        "eglCreateWindowSurface failed for the native OpenGL window." ) );
     }
     return WindowSurface;
 }
@@ -377,7 +376,7 @@ Lumen::RHIOpenGL::FEGLPlatformContext::SwapBuffers ( const EGLSurface InSurface,
     {
         return EglFailure( "eglSwapInterval rejected the requested presentation mode." );
     }
-    const EGLBoolean Swapped = SwapBuffersProc( Display, InSurface );
+    const EGLBoolean Swapped                       = SwapBuffersProc( Display, InSurface );
     const TExpected<void, RHI::FRHIError> Restored = MakeCurrent();
     if ( Swapped == EglFalse )
     {
