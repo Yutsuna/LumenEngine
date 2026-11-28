@@ -99,18 +99,16 @@ public:
         }
         Mutex.Unlock();
 
-        if ( Observed == ECallbackStatus::Pending )
+        /**
+         * INFO: Detached by RequestStop but not executing yet: try to cancel it. On success the
+         *       executor's CAS fails and the executor releases the list reference itself.
+         *       On failure Observed is updated to the executor's state (Executing or Finished).
+         */
+        if ( Observed == ECallbackStatus::Pending and
+             InCallback.Status.compare_exchange_strong( Observed, ECallbackStatus::Finished, std::memory_order::acq_rel,
+                                                        std::memory_order::acquire ) )
         {
-            /**
-             * INFO: Detached by RequestStop but not executing yet: try to cancel it. On success the
-             *       executor's CAS fails and the executor releases the list reference itself.
-             *       On failure Observed is updated to the executor's state (Executing or Finished).
-             */
-            if ( InCallback.Status.compare_exchange_strong( Observed, ECallbackStatus::Finished, std::memory_order::acq_rel,
-                                                            std::memory_order::acquire ) )
-            {
-                return;
-            }
+            return;
         }
 
         while ( Observed == ECallbackStatus::Executing )

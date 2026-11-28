@@ -18,9 +18,11 @@ void Lumen::FAtomicBitset::Resize ( USize InNumBits )
         Blocks    = MakeUnique<TAtomic<UInt64>[]>( NewNumBlocks );
         NumBlocks = NewNumBlocks;
 
+        TAtomic<UInt64> *const BlockData = Blocks.Get();
+
         for ( USize Index = 0U; Index < NumBlocks; ++Index )
         {
-            Blocks[Index].store( 0ULL, std::memory_order_relaxed );
+            BlockData[Index].store( 0ULL, std::memory_order_relaxed );
         }
     }
     else

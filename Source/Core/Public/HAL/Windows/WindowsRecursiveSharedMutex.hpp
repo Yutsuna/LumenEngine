@@ -54,7 +54,7 @@ namespace HAL
 
         LUMEN_FORCE_INLINE void Lock () noexcept;
         LUMEN_FORCE_INLINE void Unlock () noexcept;
-        LUMEN_FORCE_INLINE [[nodiscard]] Bool TryLock () noexcept;
+        [[nodiscard]] LUMEN_FORCE_INLINE Bool TryLock () noexcept;
 
     private:
 

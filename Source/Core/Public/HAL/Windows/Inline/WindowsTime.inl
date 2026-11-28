@@ -33,7 +33,7 @@ Lumen::HAL::Internal::FWindowsSleepTimer::~FWindowsSleepTimer () noexcept
 
 Lumen::Float64 Lumen::HAL::Internal::QuerySecondsPerTick () noexcept
 {
-    static const Float64 Value = [] () noexcept
+    static const Float64 Value = [] noexcept
     {
         LARGE_INTEGER Frequency{};
         ::QueryPerformanceFrequency( &Frequency );

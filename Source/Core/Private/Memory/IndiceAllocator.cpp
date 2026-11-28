@@ -53,11 +53,12 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceAllocator::Allocate ( c
     const HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
 
     /** INFO: First-fit search through the sorted free ranges. */
-    USize RangeIndex = 0U;
+    FIndiceAllocatorRange *const RangeData = Ranges.data();
+    USize RangeIndex                       = 0U;
 
     for ( ; RangeIndex < Ranges.size(); ++RangeIndex )
     {
-        const FIndiceAllocatorRange &Range = Ranges[RangeIndex];
+        const FIndiceAllocatorRange &Range = RangeData[RangeIndex];
 
         const UInt32 AvailableCount = Range.Last - Range.First + 1U;
 
@@ -72,7 +73,7 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceAllocator::Allocate ( c
         return {};
     }
 
-    FIndiceAllocatorRange &Range       = Ranges[RangeIndex];
+    FIndiceAllocatorRange &Range       = RangeData[RangeIndex];
     const FIndiceAllocation Allocation = { Range.First, InNumDescriptors };
 
     Range.First += InNumDescriptors;
@@ -108,9 +109,10 @@ void Lumen::FIndiceAllocator::Free ( FIndiceAllocation InAllocation ) noexcept
      * INFO: Locate the first free range that is not strictly before the released range.
      *       Existing ranges are sorted and non-overlapping.
      */
-    USize MergeStart = 0U;
+    FIndiceAllocatorRange *RangeData = Ranges.data();
+    USize MergeStart                 = 0U;
 
-    while ( MergeStart < Ranges.size() and Ranges[MergeStart].Last + 1U < FreeFirst )
+    while ( MergeStart < Ranges.size() and RangeData[MergeStart].Last + 1U < FreeFirst )
     {
         ++MergeStart;
     }
@@ -124,9 +126,9 @@ void Lumen::FIndiceAllocator::Free ( FIndiceAllocation InAllocation ) noexcept
      */
     USize MergeEnd = MergeStart;
 
-    while ( MergeEnd < Ranges.size() and Ranges[MergeEnd].First <= MergedLast + 1U )
+    while ( MergeEnd < Ranges.size() and RangeData[MergeEnd].First <= MergedLast + 1U )
     {
-        const FIndiceAllocatorRange &Range = Ranges[MergeEnd];
+        const FIndiceAllocatorRange &Range = RangeData[MergeEnd];
 
         MergedFirst = Range.First < MergedFirst ? Range.First : MergedFirst;
         MergedLast  = Range.Last > MergedLast ? Range.Last : MergedLast;
@@ -143,8 +145,9 @@ void Lumen::FIndiceAllocator::Free ( FIndiceAllocation InAllocation ) noexcept
     }
 
     /** INFO: Replace the merged ranges with their union. */
-    Ranges[MergeStart].First = MergedFirst;
-    Ranges[MergeStart].Last  = MergedLast;
+    RangeData                   = Ranges.data();
+    RangeData[MergeStart].First = MergedFirst;
+    RangeData[MergeStart].Last  = MergedLast;
 
     /** INFO: Remove the additional ranges absorbed by the merge. */
     if ( MergeEnd > MergeStart + 1U )
@@ -163,7 +166,7 @@ Lumen::TOptional<Lumen::FIndiceAllocatorRange> Lumen::FIndiceAllocator::TryGetAl
     }
 
     /** INFO: No allocated indices: the entire capacity is free. */
-    if ( Ranges.size() == 1U and Ranges[0].First == 0U and Ranges[0].Last == Capacity - 1U )
+    if ( Ranges.size() == 1U and Ranges.front().First == 0U and Ranges.front().Last == Capacity - 1U )
     {
         return {};
     }
@@ -205,7 +208,8 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceHeapAllocator::Allocate
         return {};
     }
 
-    const UInt32 NumWords = static_cast<UInt32>( Bitmap.size() );
+    const UInt32 NumWords    = static_cast<UInt32>( Bitmap.size() );
+    UInt64 *const BitmapData = Bitmap.data();
 
     /** INFO: The heap is completely allocated. */
     if ( FirstHint >= NumWords )
@@ -222,7 +226,7 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceHeapAllocator::Allocate
     {
         for ( UInt32 WordIndex = FirstHint; WordIndex < NumWords; ++WordIndex )
         {
-            const UInt64 FreeBits = ~Bitmap[WordIndex];
+            const UInt64 FreeBits = ~BitmapData[WordIndex];
 
             if ( FreeBits == 0ULL )
             {
@@ -238,12 +242,12 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceHeapAllocator::Allocate
                 continue;
             }
 
-            Bitmap[WordIndex] |= ( 1ULL << BitIndex );
+            BitmapData[WordIndex] |= ( 1ULL << BitIndex );
 
             ++Allocated;
 
             /** INFO: Advance to the first word that still contains free bits. */
-            while ( FirstHint < NumWords and Bitmap[FirstHint] == ~0ULL )
+            while ( FirstHint < NumWords and BitmapData[FirstHint] == ~0ULL )
             {
                 ++FirstHint;
             }
@@ -272,7 +276,7 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceHeapAllocator::Allocate
 
     for ( UInt32 WordIndex = FirstHint; WordIndex < NumWords; ++WordIndex )
     {
-        UInt64 FreeBits = ~Bitmap[WordIndex];
+        UInt64 FreeBits = ~BitmapData[WordIndex];
 
         /** INFO: An entirely allocated word terminates any pending free sequence. */
         if ( FreeBits == 0ULL )
@@ -364,7 +368,7 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceHeapAllocator::Allocate
 
         const UInt64 Mask = NOnes( Take ) << BitIndex;
 
-        Bitmap[WordIndex] |= Mask;
+        BitmapData[WordIndex] |= Mask;
 
         Position += Take;
         Remaining -= Take;
@@ -373,7 +377,7 @@ Lumen::TOptional<Lumen::FIndiceAllocation> Lumen::FIndiceHeapAllocator::Allocate
     Allocated += InNumIndices;
 
     /** INFO: Advance FirstHint past all completely allocated words. */
-    while ( FirstHint < NumWords and Bitmap[FirstHint] == ~0ULL )
+    while ( FirstHint < NumWords and BitmapData[FirstHint] == ~0ULL )
     {
         ++FirstHint;
     }
@@ -402,7 +406,8 @@ void Lumen::FIndiceHeapAllocator::Free ( FIndiceAllocation InAllocation ) noexce
      */
     LUMEN_ASSERT( Allocated >= InAllocation.Count );
 
-    const UInt32 FreedWord = InAllocation.Start / BitsPerWord;
+    UInt64 *const BitmapData = Bitmap.data();
+    const UInt32 FreedWord   = InAllocation.Start / BitsPerWord;
 
     /**
      * Fast path: single-index release.
@@ -412,9 +417,9 @@ void Lumen::FIndiceHeapAllocator::Free ( FIndiceAllocation InAllocation ) noexce
         const UInt32 BitIndex = InAllocation.Start % BitsPerWord;
         const UInt64 Mask     = 1ULL << BitIndex;
 
-        LUMEN_ASSERT( ( Bitmap[FreedWord] & Mask ) != 0ULL );
+        LUMEN_ASSERT( ( BitmapData[FreedWord] & Mask ) != 0ULL );
 
-        Bitmap[FreedWord] &= ~Mask;
+        BitmapData[FreedWord] &= ~Mask;
 
         --Allocated;
 
@@ -438,9 +443,9 @@ void Lumen::FIndiceHeapAllocator::Free ( FIndiceAllocation InAllocation ) noexce
 
         const UInt64 Mask = NOnes( Take ) << BitIndex;
 
-        LUMEN_ASSERT( ( Bitmap[WordIndex] & Mask ) == Mask );
+        LUMEN_ASSERT( ( BitmapData[WordIndex] & Mask ) == Mask );
 
-        Bitmap[WordIndex] &= ~Mask;
+        BitmapData[WordIndex] &= ~Mask;
 
         Position += Take;
         Remaining -= Take;

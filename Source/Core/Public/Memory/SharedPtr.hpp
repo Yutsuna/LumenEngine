@@ -13,6 +13,7 @@
 
 namespace Lumen
 {
+
 template <typename Type> class TSharedRef;
 template <typename Type> class TSharedPtr;
 

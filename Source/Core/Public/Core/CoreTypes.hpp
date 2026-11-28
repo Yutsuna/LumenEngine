@@ -61,6 +61,6 @@ template <typename...> struct TVoid
     using Type = void;
 };
 
-template <typename... Ts> using TVoidT = typename TVoid<Ts...>::Type;
+template <typename... Ts> using TVoidT = TVoid<Ts...>::Type;
 
 } // namespace Lumen

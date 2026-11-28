@@ -54,7 +54,7 @@ template <typename TFunc, typename... TArgs> struct TInvokeResult : Internal::TI
  * @trait TInvokeResultT
  * @brief Alias for TInvokeResult::Type
  */
-template <typename TFunc, typename... TArgs> using TInvokeResultT = typename TInvokeResult<TFunc, TArgs...>::Type;
+template <typename TFunc, typename... TArgs> using TInvokeResultT = TInvokeResult<TFunc, TArgs...>::Type;
 
 namespace Internal
 {
