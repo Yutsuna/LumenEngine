@@ -44,7 +44,7 @@ void Lumen::FLuminaMessageHandler::SendCameraMessage ( const FMessage &InMessage
     const auto Result = Journal->AppendMessage( World->GetFrameIndex() + 1ULL, Camera, InvalidActorID, InMessage );
     if ( not Result )
     {
-        LUMEN_LOG_WARNING( LogLumina, "Camera input journal is full; the event was rejected." );
+        LUMEN_LOG_WARNING( LogLumina, "Camera input was rejected: journal error {}.", static_cast<UInt32>( Result.Error() ) );
     }
 }
 

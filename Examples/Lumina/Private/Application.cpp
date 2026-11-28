@@ -255,6 +255,14 @@ void Lumen::FLuminaApplication::Tick ( const Float64 InDeltaSeconds, const Float
         LUMEN_LOG_WARNING( LogLumina, "The Lumina world rejected a tick with error {}.", static_cast<UInt32>( Ticked.Error() ) );
         return;
     }
+
+    /**
+     * INFO: Camera messages always target `WorldFrame + 1`, so a successful tick has applied every
+     *       retained record. Clear the log to keep a continuous input stream bounded; the world
+     *       observes the generation bump and restarts its cursor on the next tick.
+     */
+    IngressJournal.Clear();
+
     const auto Requested = Renderer->RequestRender( Ticked->FrameIndex );
     if ( not Requested and Requested.Error() != ERendererError::QueueFull )
     {
