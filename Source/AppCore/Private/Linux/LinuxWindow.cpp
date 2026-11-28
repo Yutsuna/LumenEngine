@@ -86,9 +86,20 @@ Lumen::FLinuxWindow::Initialize ( FLinuxApplication *InApplication,
                                   const TSharedPtr<FGenericWindow> &InParentWindow,
                                   const Bool bShowImmediately ) noexcept
 {
-    /** TODO: make this parametrable */
-    const SDL_WindowFlags WindowBackendAPI = SDL_WINDOW_VULKAN;
-    const SDL_WindowFlags WindowFlags      = GetSDLWindowFlags( InDescription, bShowImmediately, WindowBackendAPI );
+    SDL_WindowFlags WindowBackendApi = static_cast<SDL_WindowFlags>( 0 );
+    switch ( InDescription->GraphicsApi )
+    {
+    case EWindowGraphicsApi::OpenGL:
+        WindowBackendApi = SDL_WINDOW_OPENGL;
+        break;
+    case EWindowGraphicsApi::Vulkan:
+        WindowBackendApi = SDL_WINDOW_VULKAN;
+        break;
+    case EWindowGraphicsApi::None:
+    default:
+        break;
+    }
+    const SDL_WindowFlags WindowFlags = GetSDLWindowFlags( InDescription, bShowImmediately, WindowBackendApi );
 
     WindowHandle = SDL_CreateWindow( InDescription->Title.c_str(), InDescription->Size.X, InDescription->Size.Y, WindowFlags );
 
@@ -285,9 +296,36 @@ Lumen::Bool Lumen::FLinuxWindow::IsForegroundWindow () const noexcept
     return false;
 }
 
-void Lumen::FLinuxWindow::SetWindowTitle ( LUMEN_UNUSED const AnsiChar *const InText ) noexcept
+void Lumen::FLinuxWindow::SetWindowTitle ( const AnsiChar *const InText ) noexcept
 {
-    /** TODO: Set the SDL window title. */
+    if ( WindowHandle != nullptr and InText != nullptr )
+    {
+        SDL_SetWindowTitle( WindowHandle, InText );
+        if ( Description.IsValid() )
+        {
+            Description->Title = InText;
+        }
+    }
+}
+
+Lumen::Maths::FVec2i Lumen::FLinuxWindow::GetWindowSize () const noexcept
+{
+    Maths::FVec2i Size( 0, 0 );
+    if ( WindowHandle != nullptr )
+    {
+        SDL_GetWindowSizeInPixels( WindowHandle, &Size.X, &Size.Y );
+    }
+    return Size;
+}
+
+Lumen::Maths::FVec2i Lumen::FLinuxWindow::GetWindowPosition () const noexcept
+{
+    Maths::FVec2i Position( 0, 0 );
+    if ( WindowHandle != nullptr )
+    {
+        SDL_GetWindowPosition( WindowHandle, &Position.X, &Position.Y );
+    }
+    return Position;
 }
 
 #endif

@@ -6,11 +6,11 @@
 #pragma once
 
 #include <Core/CoreTypes.hpp>
-
 #include <Concepts/SameAs.hpp>
 
+#include <Memory/Span.hpp>
+
 #include <iterator>
-#include <span>
 #include <string_view>
 #include <type_traits>
 #include <utility>
@@ -20,7 +20,7 @@ namespace Lumen
 
 template <class TRangeType> inline constexpr Bool EnableBorrowedRangeV = false;
 
-template <class TElement, USize TExtent> inline constexpr Bool EnableBorrowedRangeV<std::span<TElement, TExtent>> = true;
+template <class TElement, USize TExtent> inline constexpr Bool EnableBorrowedRangeV<TSpan<TElement, TExtent>> = true;
 
 template <class TCharacter, class TTraits>
 inline constexpr Bool EnableBorrowedRangeV<std::basic_string_view<TCharacter, TTraits>> = true;

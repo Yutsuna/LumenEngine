@@ -307,14 +307,22 @@ Lumen::RHIOpenGL::FOpenGLCommandList::Transition ( const TSpan<const RHI::FRHITr
     {
         LUMEN_TRY_EXPECT_ERROR( RHI::ValidateRHITransition( Transition ) );
         const auto *BufferTransition = std::get_if<RHI::FRHIBufferTransition>( &Transition );
-        BarrierBits |= ( BufferTransition != nullptr ) ? BarrierBitsForState( BufferTransition->After ) : GlFramebufferBarrierBit;
+        /** INFO: Framebuffer writes and subsequent texture reads are already ordered by OpenGL; only incoherent image writes
+         *        need a real barrier. Unconditional framebuffer barriers drain llvmpipe after every graphics pass. */
         if ( BufferTransition != nullptr )
         {
+            BarrierBits |= BarrierBitsForState( BufferTransition->After );
             Stream.Retain( StaticCastSharedPtr<RHI::IRHIObject>( BufferTransition->Buffer ) );
         }
         else
         {
-            Stream.Retain( StaticCastSharedPtr<RHI::IRHIObject>( std::get<RHI::FRHITextureTransition>( Transition ).Texture ) );
+            const auto &TextureTransition = std::get<RHI::FRHITextureTransition>( Transition );
+            if ( TextureTransition.Before == RHI::ERHIResourceState::UnorderedAccess or
+                 TextureTransition.After == RHI::ERHIResourceState::UnorderedAccess )
+            {
+                BarrierBits |= GlTextureFetchBarrierBit | GlShaderImageAccessBarrierBit | GlFramebufferBarrierBit;
+            }
+            Stream.Retain( StaticCastSharedPtr<RHI::IRHIObject>( TextureTransition.Texture ) );
         }
     }
     const FOpenGLTransitionPayload Payload{ .BarrierBits = BarrierBits };

@@ -95,6 +95,7 @@ LUMEN_INTEGRATION_TEST( FRenderer_NullSlice, CompletesOneThousandFramesWithoutLe
         .ProxyCapacity   = 256ULL,
         .AssetCapacity   = 64ULL,
         .Readback        = {},
+        .FrameExtension  = {},
     };
     LUMEN_CHECK_HAS_VALUE( Renderer.Start( Desc ) );
     if ( not Renderer.IsRunning() )
@@ -147,6 +148,7 @@ LUMEN_INTEGRATION_TEST( FRenderer_NullSlice, ValidationOnReportsDeviceLossAndShu
         .ProxyCapacity   = 256ULL,
         .AssetCapacity   = 64ULL,
         .Readback        = {},
+        .FrameExtension  = {},
     };
     LUMEN_CHECK_HAS_VALUE( Renderer.Start( Desc ) );
     if ( not Renderer.IsRunning() )

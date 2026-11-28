@@ -57,9 +57,19 @@ SelectOpenGLAdapter ( const Lumen::TVector<Lumen::RHI::FRHIAdapterInfo> &InAdapt
  */
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIModule>, Lumen::RHI::FRHIError>
-Lumen::RHIOpenGL::FOpenGLModule::Create () noexcept
+Lumen::RHIOpenGL::FOpenGLModule::Create ( const FOpenGLNativeWindowDesc *InNativeWindow ) noexcept
 {
+    if ( InNativeWindow != nullptr )
+    {
+        return MakeShared<FOpenGLModule>( *InNativeWindow );
+    }
     return MakeShared<FOpenGLModule>();
+}
+
+Lumen::RHIOpenGL::FOpenGLModule::FOpenGLModule ( const FOpenGLNativeWindowDesc &InNativeWindow ) noexcept
+    : NativeWindow( InNativeWindow )
+{
+    /* */
 }
 
 Lumen::RHI::FRHIApiVersion Lumen::RHIOpenGL::FOpenGLModule::GetApiVersion () const noexcept
@@ -71,7 +81,7 @@ Lumen::TExpected<Lumen::TVector<Lumen::RHI::FRHIAdapterInfo>, Lumen::RHI::FRHIEr
 Lumen::RHIOpenGL::FOpenGLModule::EnumerateAdapters () const noexcept
 {
     FEGLPlatformContext Probe;
-    LUMEN_TRY_EXPECT_ERROR( Probe.Initialize( false ) );
+    LUMEN_TRY_EXPECT_ERROR( Probe.Initialize( false, NativeWindow ? &*NativeWindow : nullptr ) );
 
     FGLDispatchTable Dispatch;
     LUMEN_TRY_EXPECT_ERROR( LoadGLDispatchTable( Dispatch, Probe ) );
@@ -111,5 +121,5 @@ Lumen::RHIOpenGL::FOpenGLModule::CreateDevice ( const RHI::FRHIDeviceDesc &InDes
         }
     }
 
-    return FOpenGLDevice::Create( *Adapter, InDesc );
+    return FOpenGLDevice::Create( *Adapter, InDesc, NativeWindow ? &*NativeWindow : nullptr );
 }

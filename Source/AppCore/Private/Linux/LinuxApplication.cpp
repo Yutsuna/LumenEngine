@@ -686,6 +686,10 @@ void Lumen::FLinuxApplication::InitializeWindow ( const TSharedRef<FGenericWindo
     }
 
     Windows.push_back( LinuxWindow );
+    if ( not MainWindow.IsValid() )
+    {
+        MainWindow = InWindow;
+    }
 }
 
 void Lumen::FLinuxApplication::Shutdown () noexcept
@@ -704,63 +708,108 @@ void Lumen::FLinuxApplication::Shutdown () noexcept
 
 void Lumen::FLinuxApplication::AddPendingEvent ( const SDL_Event &InEvent ) noexcept
 {
-    /** INFO: After Shutdown the handler is reset; never dispatch into it. */
     if ( not MessageHandler.IsValid() )
     {
         return;
     }
 
-    /** INFO: Quit is application-wide, it carries no window ID. */
     if ( InEvent.type == SDL_EVENT_QUIT )
     {
         SendQuitEvent( MessageHandler );
         return;
     }
 
-    /** INFO: Only these event types expose a windowID in the SDL_Event union. */
-    /** TODO: Forward SDL_EVENT_MOUSE_MOTION and SDL_EVENT_MOUSE_WHEEL so OnMouseMove/OnMouseWheel can fire. */
-    const Bool bIsWindowEvent = InEvent.type == SDL_EVENT_WINDOW_CLOSE_REQUESTED or InEvent.type == SDL_EVENT_KEY_DOWN or
-                                InEvent.type == SDL_EVENT_KEY_UP or InEvent.type == SDL_EVENT_MOUSE_BUTTON_DOWN or
-                                InEvent.type == SDL_EVENT_MOUSE_BUTTON_UP;
-
-    if ( not bIsWindowEvent )
+    SDL_WindowID WindowId = 0;
+    switch ( InEvent.type )
     {
+    case SDL_EVENT_KEY_DOWN:
+    case SDL_EVENT_KEY_UP:
+        WindowId = InEvent.key.windowID;
+        break;
+    case SDL_EVENT_MOUSE_MOTION:
+        WindowId = InEvent.motion.windowID;
+        break;
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+    case SDL_EVENT_MOUSE_BUTTON_UP:
+        WindowId = InEvent.button.windowID;
+        break;
+    case SDL_EVENT_MOUSE_WHEEL:
+        WindowId = InEvent.wheel.windowID;
+        break;
+    case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
+    case SDL_EVENT_WINDOW_MOVED:
+    case SDL_EVENT_WINDOW_RESIZED:
+    case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+    case SDL_EVENT_WINDOW_EXPOSED:
+    case SDL_EVENT_WINDOW_FOCUS_GAINED:
+    case SDL_EVENT_WINDOW_FOCUS_LOST:
+        WindowId = InEvent.window.windowID;
+        break;
+    default:
         return;
     }
 
-    /** TODO: Route the event to the window found here; dispatch is currently app-global. */
-    const TOptional<TSharedPtr<FLinuxWindow>> CurrentWindow = FindWindowByID( InEvent.window.windowID );
-
+    const TOptional<TSharedRef<FLinuxWindow>> CurrentWindow = FindWindowByID( WindowId );
     if ( not CurrentWindow.HasValue() )
     {
         return;
     }
 
+    const TSharedRef<FLinuxWindow> &Window = *CurrentWindow;
     switch ( InEvent.type )
     {
     case SDL_EVENT_WINDOW_CLOSE_REQUESTED:
-    {
         SendWindowCloseRequestedEvent( MessageHandler );
         break;
-    }
+    case SDL_EVENT_WINDOW_MOVED:
+        if ( Window->Description.IsValid() )
+        {
+            Window->Description->Position = Maths::FVec2i( InEvent.window.data1, InEvent.window.data2 );
+        }
+        MessageHandler->OnWindowMoved( Window );
+        break;
+    case SDL_EVENT_WINDOW_RESIZED:
+    case SDL_EVENT_WINDOW_PIXEL_SIZE_CHANGED:
+        if ( Window->Description.IsValid() )
+        {
+            Window->Description->Size = Window->GetWindowSize();
+        }
+        MessageHandler->OnWindowResized( Window );
+        break;
+    case SDL_EVENT_WINDOW_EXPOSED:
+        MessageHandler->OnOSPaint( Window );
+        break;
+    case SDL_EVENT_WINDOW_FOCUS_GAINED:
+    case SDL_EVENT_WINDOW_FOCUS_LOST:
+        MessageHandler->OnWindowActivationChanged( Window );
+        break;
     case SDL_EVENT_KEY_DOWN:
-    {
         SendKeyDownEvent( MessageHandler, InEvent.key );
         break;
-    }
     case SDL_EVENT_KEY_UP:
-    {
         SendKeyUpEvent( MessageHandler, InEvent.key );
         break;
-    }
-    case SDL_EVENT_MOUSE_BUTTON_DOWN:
-    {
-        SendMouseButtonDownEvent( MessageHandler, InEvent.button );
+    case SDL_EVENT_MOUSE_MOTION:
+        MessageHandler->OnMouseMove( static_cast<Int32>( InEvent.motion.x ), static_cast<Int32>( InEvent.motion.y ) );
         break;
-    }
+    case SDL_EVENT_MOUSE_BUTTON_DOWN:
+        SendMouseButtonDownEvent( MessageHandler, InEvent.button );
+        if ( InEvent.button.clicks >= 2U )
+        {
+            MessageHandler->OnMouseDoubleClick( TranslateSDLMouseButtonToEMouseButton( InEvent.button.button ) );
+        }
+        break;
     case SDL_EVENT_MOUSE_BUTTON_UP:
-    {
         SendMouseButtonUpEvent( MessageHandler, InEvent.button );
+        break;
+    case SDL_EVENT_MOUSE_WHEEL:
+    {
+        Float32 WheelDelta = InEvent.wheel.y;
+        if ( InEvent.wheel.direction == SDL_MOUSEWHEEL_FLIPPED )
+        {
+            WheelDelta = -WheelDelta;
+        }
+        MessageHandler->OnMouseWheel( static_cast<Int32>( WheelDelta * 100.0F ) );
         break;
     }
     default:
@@ -773,7 +822,7 @@ void Lumen::FLinuxApplication::PumpMessages ( const Float64 LUMEN_UNUSED DeltaTi
     FLinuxBackend::PumpSDLMessagesQueue();
 }
 
-Lumen::TOptional<Lumen::TSharedPtr<Lumen::FLinuxWindow>>
+Lumen::TOptional<Lumen::TSharedRef<Lumen::FLinuxWindow>>
 Lumen::FLinuxApplication::FindWindowByID ( const SDL_WindowID InWindowID ) const noexcept
 {
     return Algo::FindIfOrNone( Windows, [&] ( const TSharedRef<FLinuxWindow> &Window ) noexcept -> Bool

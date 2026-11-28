@@ -30,7 +30,7 @@ in
     vulkan-headers
   ] ++ lib.optionals bIsLinux [
     libglvnd
-    mesa.llvmpipeHook
+    mesa
   ];
 
   devInputs = with pkgs; [

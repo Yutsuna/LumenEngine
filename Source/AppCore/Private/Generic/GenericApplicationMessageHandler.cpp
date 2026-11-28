@@ -54,6 +54,11 @@ void Lumen::FGenericApplicationMessageHandler::OnMouseUp ( EMouseButton::Type LU
     /** Empty */
 }
 
+void Lumen::FGenericApplicationMessageHandler::OnMouseDoubleClick ( EMouseButton::Type LUMEN_UNUSED InMouseButton ) noexcept
+{
+    /** Empty */
+}
+
 void Lumen::FGenericApplicationMessageHandler::OnMouseMove ( Int32 LUMEN_UNUSED InX, Int32 LUMEN_UNUSED InY ) noexcept
 {
     /** Empty */

@@ -62,6 +62,9 @@ public:
     /** @brief Called when a mouse button is released */
     virtual void OnMouseUp ( EMouseButton::Type InMouseButton ) noexcept;
 
+    /** @brief Called when a mouse button is double-clicked */
+    virtual void OnMouseDoubleClick ( EMouseButton::Type InMouseButton ) noexcept;
+
     /** @brief Called when a mouse is moved */
     virtual void OnMouseMove ( Int32 InX, Int32 InY ) noexcept;
 

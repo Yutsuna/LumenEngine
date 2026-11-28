@@ -9,10 +9,12 @@
 
 #include <HAL/LockGuard.hpp>
 
+#include <RHI/Device/RHIBackendCast.hpp>
 #include <RHI/Queue/IRHIQueue.hpp>
 #include <RHI/Resources/RHITextureDesc.hpp>
 #include <RHI/Types/RHIError.hpp>
 
+#include <RHIOpenGL/Presentation/OpenGLSurfaceBridge.hpp>
 #include <RHIOpenGL/Resources/OpenGLTexture.hpp>
 
 #include <Templates/Optional.hpp>
@@ -40,6 +42,11 @@ Lumen::RHIOpenGL::FOpenGLSwapchain::Create ( TSharedRef<FOpenGLDeviceContext> In
         static_cast<TSharedRef<FOpenGLDeviceContext> &&>( InContext ), InDesc, InCapabilities, InId );
     if ( InDesc.Surface.Type == RHI::ERHISurfaceType::Window and InDesc.Surface.Bridge )
     {
+        if ( FOpenGLSurfaceBridge *const NativeBridge =
+                 dynamic_cast<FOpenGLSurfaceBridge *>( InDesc.Surface.Bridge.Get() ) )
+        {
+            NativeBridge->AttachContext( Swapchain->Context->GetExecutor() );
+        }
         LUMEN_EXPECT( Surface, InDesc.Surface.Bridge->CreateNativeSurface( InDesc.Surface.NativeWindow ) );
         Swapchain->NativeSurface = TOptional<RHI::FRHINativeSurface>( Surface );
     }
@@ -59,6 +66,14 @@ Lumen::RHIOpenGL::FOpenGLSwapchain::FOpenGLSwapchain ( TSharedRef<FOpenGLDeviceC
 
 Lumen::RHIOpenGL::FOpenGLSwapchain::~FOpenGLSwapchain () noexcept
 {
+    if ( PresentationFramebuffer != 0U )
+    {
+        const GLuint Framebuffer = PresentationFramebuffer;
+        ( void )Context->GetExecutor()->ExecuteOnGLThread( [this, Framebuffer] () noexcept
+        {
+            Context->GetDispatch().DeleteFramebuffers( 1, &Framebuffer );
+        } );
+    }
     if ( NativeSurface and Desc.Surface.Bridge )
     {
         Desc.Surface.Bridge->DestroyNativeSurface( *NativeSurface );
@@ -152,10 +167,6 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLSwapchain::Present ( RHI::IRHI
 {
     LUMEN_TRY_OPTIONAL_ERROR( Context->GetUnavailableError( "Swapchain::Present" ) );
     HAL::TLockGuard<HAL::FPlatformRecursiveSharedMutex> Lock( Mutex );
-    if ( bOutOfDate )
-    {
-        return TUnexpected( RHI::MakeRHIOutOfDate( RHI::ERHIErrorCondition::Presentation, "OpenGL swapchain is out of date." ) );
-    }
     if ( InQueue.GetType() != RHI::ERHIQueueType::Graphics or InImage.ImageIndex >= Slots.size() or not InImage.Image or
          not InImage.AcquireSemaphore or not InImage.PresentSemaphore )
     {
@@ -184,8 +195,31 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLSwapchain::Present ( RHI::IRHI
         }
     }
     const Bool bWaitAcquire = Slot.AcquireSemaphore->GetValue() >= 1ULL;
+    if ( bOutOfDate )
+    {
+        RHI::FRHIExpected Released{};
+        if ( InRenderComplete != nullptr )
+        {
+            Released = InRenderComplete->Wait( 1ULL, 0.0 );
+        }
+        if ( Released and bWaitAcquire )
+        {
+            Released = Slot.AcquireSemaphore->Wait( 1ULL, 0.0 );
+        }
+        const RHI::FRHIExpected Signaled = Slot.PresentSemaphore->Signal( 1ULL );
+        Slot.bAcquired                   = false;
+        if ( not Released )
+        {
+            return Released;
+        }
+        if ( not Signaled )
+        {
+            return Signaled;
+        }
+        return TUnexpected( RHI::MakeRHIOutOfDate( RHI::ERHIErrorCondition::Presentation, "OpenGL swapchain is out of date." ) );
+    }
 
-    LUMEN_TRY_EXPECT_ERROR( PresentToBridge() );
+    LUMEN_TRY_EXPECT_ERROR( PresentToBridge( *InImage.Image ) );
 
     if ( InRenderComplete != nullptr )
     {
@@ -229,6 +263,10 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLSwapchain::Resize ( const RHI:
     {
         bOutOfDate = false;
         Cursor     = 0U;
+        if ( FOpenGLSurfaceBridge *const NativeBridge = dynamic_cast<FOpenGLSurfaceBridge *>( Desc.Surface.Bridge.Get() ) )
+        {
+            NativeBridge->SetExtent( InExtent );
+        }
     }
     return Rebuilt;
 }
@@ -285,12 +323,81 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLSwapchain::RebuildImages () no
     return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLSwapchain::PresentToBridge () noexcept
+Lumen::RHI::FRHIExpected
+Lumen::RHIOpenGL::FOpenGLSwapchain::PresentToBridge ( RHI::IRHITexture &InImage ) noexcept
 {
     if ( Desc.Surface.Type != RHI::ERHISurfaceType::Window or not Desc.Surface.Bridge or not NativeSurface )
     {
         return {};
     }
+
+    LUMEN_TRY_EXPECT_ERROR( Desc.Surface.Bridge->MakeCurrent( *NativeSurface ) );
+
+    /**
+     * INFO: The GL blit targets framebuffer zero, which only the native EGL bridge makes drawable. A synthetic bridge has no
+     *       native drawable, so presentation is delegated to it directly without touching GL state.
+     */
+    if ( dynamic_cast<FOpenGLSurfaceBridge *>( Desc.Surface.Bridge.Get() ) != nullptr )
+    {
+        const TOptional<FOpenGLTexture *> NativeImage = RHI::TryRHIBackendCast<FOpenGLTexture>( InImage );
+        if ( not NativeImage )
+        {
+            return TUnexpected( RHI::MakeRHIInvalidPresentation( "The acquired image is not an OpenGL texture." ) );
+        }
+
+        const FGLDispatchTable &Dispatch = Context->GetDispatch();
+        const GLuint Texture             = ( *NativeImage )->GetTexture();
+        const GLint Width                = static_cast<GLint>( Desc.Extent.Width );
+        const GLint Height               = static_cast<GLint>( Desc.Extent.Height );
+        RHI::FRHIExpected Result{};
+        LUMEN_TRY_EXPECT_ERROR(
+            Context->GetExecutor()->ExecuteOnGLThread( [this, &Dispatch, Texture, Width, Height, &Result] () noexcept
+            {
+                ( void )Dispatch.GetError();
+                if ( PresentationFramebuffer == 0U )
+                {
+                    Dispatch.CreateFramebuffers( 1, &PresentationFramebuffer );
+                }
+                if ( PresentationFramebuffer == 0U )
+                {
+                    Result = TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Presentation,
+                                                                     "Unable to create the OpenGL presentation framebuffer." ) );
+                    return;
+                }
+
+                Dispatch.NamedFramebufferTexture( PresentationFramebuffer, GlColorAttachment0, Texture, 0 );
+                Dispatch.NamedFramebufferReadBuffer( PresentationFramebuffer, GlColorAttachment0 );
+                if ( Dispatch.CheckNamedFramebufferStatus( PresentationFramebuffer, GlReadFramebuffer ) != GlFramebufferComplete )
+                {
+                    Result = TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Presentation,
+                                                                     "The OpenGL presentation framebuffer is incomplete." ) );
+                    return;
+                }
+
+                Dispatch.Disable( GlFramebufferSrgb );
+                Dispatch.BindFramebuffer( GlReadFramebuffer, PresentationFramebuffer );
+                Dispatch.BindFramebuffer( GlDrawFramebuffer, 0U );
+                Dispatch.BlitFramebuffer( 0, 0, Width, Height, 0, 0, Width, Height, GlColorBufferBit, GlNearest );
+                Dispatch.BindFramebuffer( GlReadFramebuffer, 0U );
+                Dispatch.BindFramebuffer( GlDrawFramebuffer, 0U );
+                const GLenum Error = Dispatch.GetError();
+                if ( Error != GlNoError )
+                {
+                    Result = TUnexpected( RHI::MakeRHIBackendFailure(
+                        RHI::ERHIErrorCondition::Presentation,
+                        "OpenGL failed to blit the acquired image to the native window." ) );
+                }
+            } ) );
+        if ( not Result )
+        {
+            ( void )Context->GetExecutor()->ExecuteOnGLThread( [this] () noexcept
+            {
+                ( void )Context->GetExecutor()->GetNativeContext().MakeCurrent();
+            } );
+            return Result;
+        }
+    }
+
     const Int32 SwapInterval = Desc.PresentMode == RHI::ERHIPresentMode::Immediate ? 0 : 1;
     return Desc.Surface.Bridge->Present( *NativeSurface, SwapInterval );
 }

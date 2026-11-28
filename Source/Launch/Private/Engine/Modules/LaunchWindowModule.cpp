@@ -39,6 +39,8 @@ Lumen::Launch::FLaunchWindowModule::Create ( const TModuleContext<FLaunchWindowM
     /** TODO: expose -width/-height/-windowmode CLI options into FLaunchEngineConfig or module CliOptions. */
     const TSharedRef<FGenericWindow> Window                 = Application->MakeWindow();
     const TSharedRef<FGenericWindowDescription> Description = MakeShared<FGenericWindowDescription>();
+    Description->GraphicsApi                                = EWindowGraphicsApi::OpenGL;
+    Description->Title                                      = "Lumina — Path Tracer OpenGL | Samples: 0";
 
     Application->InitializeWindow( Window, Description, nullptr, true );
 

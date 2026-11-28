@@ -102,9 +102,9 @@ Lumen::TAtomic<Lumen::Bool> GForceInitFailure{ false };
  */
 
 Lumen::TExpected<Lumen::TSharedRef<Lumen::RHIOpenGL::FOpenGLContext>, Lumen::RHI::FRHIError>
-Lumen::RHIOpenGL::FOpenGLContext::Create ( const Bool bEnableDebug ) noexcept
+Lumen::RHIOpenGL::FOpenGLContext::Create ( const Bool bEnableDebug, const FOpenGLNativeWindowDesc *InNativeWindow ) noexcept
 {
-    TSharedRef<FOpenGLContext> Context = MakeShared<FOpenGLContext>( bEnableDebug );
+    TSharedRef<FOpenGLContext> Context = MakeShared<FOpenGLContext>( bEnableDebug, InNativeWindow );
     LUMEN_TRY_EXPECT_ERROR( Context->Start() );
     return Context;
 }
@@ -155,6 +155,11 @@ void Lumen::RHIOpenGL::FOpenGLContext::Shutdown () noexcept
 const Lumen::RHIOpenGL::FGLDispatchTable &Lumen::RHIOpenGL::FOpenGLContext::GetDispatch () const noexcept
 {
     return Dispatch;
+}
+
+Lumen::RHIOpenGL::FEGLPlatformContext &Lumen::RHIOpenGL::FOpenGLContext::GetNativeContext () noexcept
+{
+    return NativeContext;
 }
 
 Lumen::RHI::FRHITimelineValue Lumen::RHIOpenGL::FOpenGLContext::GetCompletedTimeline () const noexcept
@@ -308,7 +313,11 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLContext::DeferRelease ( const 
  * Private
  */
 
-Lumen::RHIOpenGL::FOpenGLContext::FOpenGLContext ( const Bool bDebugEnabled ) noexcept : bEnableDebug( bDebugEnabled )
+Lumen::RHIOpenGL::FOpenGLContext::FOpenGLContext ( const Bool bDebugEnabled,
+                                                   const FOpenGLNativeWindowDesc *InNativeWindow ) noexcept
+    : bEnableDebug( bDebugEnabled ),
+      NativeWindow( InNativeWindow != nullptr ? TOptional<FOpenGLNativeWindowDesc>( *InNativeWindow )
+                                              : TOptional<FOpenGLNativeWindowDesc>{} )
 {
     /* */
 }
@@ -635,7 +644,8 @@ void Lumen::RHIOpenGL::FOpenGLContext::Worker ( const FStopToken InStopToken ) n
     }
     else
     {
-        const TExpected<void, RHI::FRHIError> Initialized = NativeContext.Initialize( bEnableDebug );
+        const TExpected<void, RHI::FRHIError> Initialized =
+            NativeContext.Initialize( bEnableDebug, NativeWindow ? &*NativeWindow : nullptr );
         if ( not Initialized )
         {
             InitError = TOptional<RHI::FRHIError>( Initialized.Error() );

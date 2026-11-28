@@ -58,8 +58,7 @@ namespace
         }
     };
 
-    [[nodiscard]] Launch::TLaunchResult<TUniquePtr<Launch::IEngineModule>>
-    MakeTickProbeModule ( const Launch::FLaunchEngineConfig & ) noexcept
+    [[nodiscard]] Launch::FModuleResult MakeTickProbeModule ( const Launch::FModuleContext & ) noexcept
     {
         return MakeUnique<FTickProbeModule>();
     }
@@ -116,7 +115,9 @@ LUMEN_TEST( FLaunchEngineLoop_Init, SucceedsInHeadlessMode )
     const auto Result = Launch::FLaunchEngineLoop::Init( std::move( PreInitState ) );
 
     LUMEN_CHECK_HAS_VALUE( Result );
-    LUMEN_CHECK_EQ( Result->Modules.Num(), 2ULL );
+
+    /** INFO: Registered platform modules gate themselves off via IsEnabled when headless. */
+    LUMEN_CHECK_EQ( Result->Modules.Num(), 0ULL );
 }
 
 LUMEN_TEST( FLaunchEngineLoop_Run, RespectsMaxFrames )
@@ -151,11 +152,23 @@ LUMEN_TEST( FLaunchEngineLoop_Run, TicksModulesOncePerFrame )
     State.Config.MaxFrames    = 2ULL;
     State.Config.MaxFrameTime = 0.1;
 
-    static constexpr Launch::FModuleFactory Factories[] = {
-        &MakeTickProbeModule,
+    static constexpr Launch::FModuleDescriptor Descriptor{
+        .Id               = 1ULL,
+        .Name             = "TickProbe",
+        .QualifiedName    = "TickProbe",
+        .Provides         = {},
+        .Requires         = {},
+        .OptionalRequires = {},
+        .Before           = {},
+        .CliOptions       = {},
+        .TickPhase        = Launch::ETickPhase::Update,
+        .LoadPriority     = 0,
+        .IsEnabled        = nullptr,
+        .Create           = &MakeTickProbeModule,
     };
+    static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &Descriptor };
 
-    const auto Started = State.Modules.StartAll( Factories, State.Config );
+    const auto Started = State.Modules.StartAll( Descriptors, State.Config );
     LUMEN_CHECK_HAS_VALUE( Started );
 
     GTickCallCount = 0U;

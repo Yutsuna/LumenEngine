@@ -56,6 +56,7 @@ namespace RHIOpenGL
     inline constexpr EGLint EglContextOpenGLDebugBit       = 0x0002;
     inline constexpr EGLint EglSurfaceType                 = 0x3033;
     inline constexpr EGLint EglPbufferBit                  = 0x0001;
+    inline constexpr EGLint EglWindowBit                   = 0x0004;
     inline constexpr EGLint EglRenderableType              = 0x3040;
     inline constexpr EGLint EglOpenGLBit                   = 0x0008;
     inline constexpr EGLint EglRedSize                     = 0x3024;
@@ -371,8 +372,11 @@ namespace RHIOpenGL
     using TEGLCreateContext         = EGLContext ( * )( EGLDisplay, EGLConfig, EGLContext, const EGLint * );
     using TEGLDestroyContext        = EGLBoolean ( * )( EGLDisplay, EGLContext );
     using TEGLCreatePbufferSurface  = EGLSurface ( * )( EGLDisplay, EGLConfig, const EGLint * );
+    using TEGLCreateWindowSurface   = EGLSurface ( * )( EGLDisplay, EGLConfig, EGLNativeDisplayType, const EGLint * );
     using TEGLDestroySurface        = EGLBoolean ( * )( EGLDisplay, EGLSurface );
     using TEGLMakeCurrent           = EGLBoolean ( * )( EGLDisplay, EGLSurface, EGLSurface, EGLContext );
+    using TEGLSwapInterval          = EGLBoolean ( * )( EGLDisplay, EGLint );
+    using TEGLSwapBuffers           = EGLBoolean ( * )( EGLDisplay, EGLSurface );
     using TEGLQueryString           = const AnsiChar *( * )( EGLDisplay, EGLint );
     using TEGLGetError              = EGLenum ( * )();
 

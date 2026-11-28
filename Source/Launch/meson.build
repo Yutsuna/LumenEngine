@@ -17,4 +17,5 @@ ModuleDefinition = {
     'Public' : 'Public',
     'Tests' : 'Tests',
     'Depends' : ['Core', 'AppCore', 'Scene', 'RHI', 'Renderer'] + PlatformDepends,
+    'TestsExcludeFiles' : ['Main.cpp'],
 }

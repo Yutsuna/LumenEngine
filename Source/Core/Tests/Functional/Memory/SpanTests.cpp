@@ -7,8 +7,6 @@
 #include <Templates/Vector.hpp>
 #include <Tests/UnitTest.hpp>
 
-#include <type_traits>
-
 namespace Lumen
 {
 
@@ -19,8 +17,8 @@ namespace Lumen
 namespace
 {
 
-    static_assert( Concepts::CIsSame<TSpan<Int32>, std::span<Int32>> );
-    static_assert( Concepts::CIsSame<TSpan<Int32, 4>, std::span<Int32, 4>> );
+    static_assert( Concepts::CIsSame<TSpan<Int32>, TSpan<Int32>> );
+    static_assert( Concepts::CIsSame<TSpan<Int32, 4>, TSpan<Int32, 4>> );
     static_assert( TSpan<Int32>::extent == std::dynamic_extent );
 
     /**

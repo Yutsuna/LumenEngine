@@ -78,10 +78,11 @@ namespace RHIOpenGL
     public:
 
         /** @brief Constructs an unstarted context; prefer Create() for normal use. */
-        explicit FOpenGLContext ( Bool bDebugEnabled ) noexcept;
+        explicit FOpenGLContext ( Bool bDebugEnabled, const FOpenGLNativeWindowDesc *InNativeWindow = nullptr ) noexcept;
 
         /** @brief Creates the context and waits until its worker is ready. */
-        [[nodiscard]] static TExpected<TSharedRef<FOpenGLContext>, RHI::FRHIError> Create ( Bool bEnableDebug ) noexcept;
+        [[nodiscard]] static TExpected<TSharedRef<FOpenGLContext>, RHI::FRHIError>
+        Create ( Bool bEnableDebug, const FOpenGLNativeWindowDesc *InNativeWindow = nullptr ) noexcept;
 
         /** @brief Test seam: forces worker initialization to fail until explicitly cleared. */
         static void SetForcedInitFailureForTests ( Bool bForce ) noexcept;
@@ -99,6 +100,9 @@ namespace RHIOpenGL
 
         /** @return Resolved OpenGL 4.6 entry points for the worker context. */
         [[nodiscard]] const FGLDispatchTable &GetDispatch () const noexcept;
+
+        /** @return Native EGL state; window operations must be invoked on the GL Executor. */
+        [[nodiscard]] FEGLPlatformContext &GetNativeContext () noexcept;
 
         /** @return Highest timeline value published by the executor after fence completion. */
         [[nodiscard]] RHI::FRHITimelineValue GetCompletedTimeline () const noexcept;
@@ -205,6 +209,7 @@ namespace RHIOpenGL
     private:
 
         Bool bEnableDebug = false;
+        TOptional<FOpenGLNativeWindowDesc> NativeWindow;
         FEGLPlatformContext NativeContext;
         FGLDispatchTable Dispatch;
         TAtomic<Bool> bResetReported{ false };

@@ -7,6 +7,8 @@
 
 #include <Frame/RenderFrameContracts.hpp>
 
+#include <HAL/PlatformTime.hpp>
+
 #include <Device/NullFaultPlan.hpp>
 #include <Device/RHIConformanceDeviceFactory.hpp>
 #include <Presentation/NullPresentation.hpp>
@@ -82,20 +84,23 @@ namespace
 
     void RequestFrame ( FRenderer &InRenderer, const UInt64 InFrameIndex )
     {
-        for ( UInt32 Attempt = 0U; Attempt < 100000U; ++Attempt )
+        const Float64 Deadline = HAL::FPlatformTime::Seconds() + 2.0;
+        while ( HAL::FPlatformTime::Seconds() < Deadline )
         {
             if ( InRenderer.RequestRender( InFrameIndex ).HasValue() )
             {
                 return;
             }
             InRenderer.SwapStatusBuffers();
+            HAL::FPlatformTime::Sleep( 0.001 );
         }
         LUMEN_CHECK_MSG( false, "Render request was never accepted" );
     }
 
     void WaitForFrame ( FRenderer &InRenderer, const UInt64 InFrameIndex )
     {
-        for ( UInt32 Attempt = 0U; Attempt < 100000U; ++Attempt )
+        const Float64 Deadline = HAL::FPlatformTime::Seconds() + 2.0;
+        while ( HAL::FPlatformTime::Seconds() < Deadline )
         {
             InRenderer.SwapStatusBuffers();
             const FRenderFrameStatus &Status = InRenderer.GetStatus();
@@ -105,6 +110,7 @@ namespace
             {
                 return;
             }
+            HAL::FPlatformTime::Sleep( 0.001 );
         }
         LUMEN_CHECK_MSG( false, "Frame was never submitted" );
     }
@@ -126,7 +132,8 @@ namespace
                                   .ProxyCapacity   = 32ULL,
                                   .AssetCapacity   = 8ULL,
                                   .Readback        = InSwapchain ? FRenderFrameReadbackDesc{}
-                                                                 : FRenderFrameReadbackDesc{ 64ULL * 64ULL * 4ULL } };
+                                                                 : FRenderFrameReadbackDesc{ 64ULL * 64ULL * 4ULL },
+                                  .FrameExtension  = {} };
         LUMEN_CHECK_HAS_VALUE( InRenderer.Start( Desc ) );
         return InRenderer.IsRunning();
     }
