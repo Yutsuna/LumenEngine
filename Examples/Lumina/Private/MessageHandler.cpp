@@ -3,9 +3,9 @@
  * @brief Implements Lumina input journaling and native resize forwarding.
  */
 
+#include "Logging/Logger.hpp"
 #include <MessageHandler.hpp>
 
-#include <Execution/Renderer.hpp>
 #include <Engine/Modules/LaunchApplicationModule.hpp>
 #include <Generic/GenericWindow.hpp>
 #include <LogLumina.hpp>
@@ -14,23 +14,19 @@
 
 #include <utility>
 
-Lumen::Launch::FScopedMessageHandler
-Lumen::InstallLuminaMessageHandler ( Launch::FLaunchApplicationModule &InApplicationModule,
-                                     FWorld &InWorld,
-                                     FWorldIngressJournal &InJournal,
-                                     const ActorID InCamera,
-                                     FRenderer &InRenderer ) noexcept
+Lumen::Launch::FScopedMessageHandler Lumen::InstallLuminaMessageHandler ( Launch::FLaunchApplicationModule &InApplicationModule,
+                                                                          FWorld &InWorld,
+                                                                          FWorldIngressJournal &InJournal,
+                                                                          const ActorID InCamera ) noexcept
 {
-    return InApplicationModule.PushMessageHandler<FLuminaMessageHandler>( InWorld, InJournal, InCamera, InRenderer );
+    return InApplicationModule.PushMessageHandler<FLuminaMessageHandler>( InWorld, InJournal, InCamera );
 }
 
 Lumen::FLuminaMessageHandler::FLuminaMessageHandler ( TSharedPtr<FGenericApplicationMessageHandler> InNextHandler,
                                                       FWorld &InWorld,
                                                       FWorldIngressJournal &InJournal,
-                                                      const ActorID InCamera,
-                                                      FRenderer &InRenderer ) noexcept
-    : NextHandler( std::move( InNextHandler ) ), World( &InWorld ), Journal( &InJournal ), Camera( InCamera ),
-      Renderer( &InRenderer )
+                                                      const ActorID InCamera ) noexcept
+    : NextHandler( std::move( InNextHandler ) ), World( &InWorld ), Journal( &InJournal ), Camera( InCamera )
 {
     /* */
 }
@@ -51,11 +47,8 @@ void Lumen::FLuminaMessageHandler::SendCameraMessage ( const FMessage &InMessage
 void Lumen::FLuminaMessageHandler::PublishCameraPose () noexcept
 {
     const FOrbitCameraBasis Basis = ComputeOrbitCamera( State );
-    const FCameraLookAtPayload LookAt{ .Eye    = Basis.Position,
-                                       .Target = State.Target,
-                                       .Up     = Basis.Up };
-    SendCameraMessage(
-        FMessage::Make( static_cast<UInt32>( EEngineMessage::CameraSetLookAt ), InvalidActorID, LookAt ) );
+    const FCameraLookAtPayload LookAt{ .Eye = Basis.Position, .Target = State.Target, .Up = Basis.Up };
+    SendCameraMessage( FMessage::Make( static_cast<UInt32>( EEngineMessage::CameraSetLookAt ), InvalidActorID, LookAt ) );
 }
 
 void Lumen::FLuminaMessageHandler::PublishCameraParams ( const Float32 InAspectRatio ) noexcept
@@ -64,8 +57,7 @@ void Lumen::FLuminaMessageHandler::PublishCameraParams ( const Float32 InAspectR
                                        .AspectRatio        = InAspectRatio,
                                        .NearPlane          = 0.1F,
                                        .FarPlane           = 1000.0F };
-    SendCameraMessage(
-        FMessage::Make( static_cast<UInt32>( EEngineMessage::CameraSetParams ), InvalidActorID, Params ) );
+    SendCameraMessage( FMessage::Make( static_cast<UInt32>( EEngineMessage::CameraSetParams ), InvalidActorID, Params ) );
 }
 
 void Lumen::FLuminaMessageHandler::ResetCamera () noexcept
@@ -76,6 +68,7 @@ void Lumen::FLuminaMessageHandler::ResetCamera () noexcept
 
 void Lumen::FLuminaMessageHandler::OnRequestExit () noexcept
 {
+    LUMEN_LOG_VERY_VERBOSE( LogLumina, "OnRequestExit called by FLuminaMessageHandler" );
     if ( NextHandler.IsValid() )
     {
         NextHandler->OnRequestExit();
@@ -84,6 +77,7 @@ void Lumen::FLuminaMessageHandler::OnRequestExit () noexcept
 
 void Lumen::FLuminaMessageHandler::OnQuit () noexcept
 {
+    LUMEN_LOG_VERY_VERBOSE( LogLumina, "OnQuit called by FLuminaMessageHandler" );
     if ( NextHandler.IsValid() )
     {
         NextHandler->OnQuit();
@@ -109,13 +103,8 @@ void Lumen::FLuminaMessageHandler::OnWindowMoved ( const TSharedRef<FGenericWind
 void Lumen::FLuminaMessageHandler::OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow ) noexcept
 {
     const Maths::FVec2i Size = InWindow->GetWindowSize();
-    if ( Renderer != nullptr and Size.X > 0 and Size.Y > 0 )
+    if ( Size.X > 0 and Size.Y > 0 )
     {
-        const RHI::FRHIExtent3D Extent{ static_cast<UInt32>( Size.X ), static_cast<UInt32>( Size.Y ), 1U };
-        if ( not Renderer->RequestResize( Extent ) )
-        {
-            LUMEN_LOG_WARNING( LogLumina, "The renderer rejected a native resize request." );
-        }
         PublishCameraParams( static_cast<Float32>( Size.X ) / static_cast<Float32>( Size.Y ) );
     }
     if ( NextHandler.IsValid() )

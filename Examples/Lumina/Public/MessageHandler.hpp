@@ -11,7 +11,6 @@
 namespace Lumen
 {
 
-class FRenderer;
 class FWorld;
 
 namespace Launch
@@ -20,15 +19,15 @@ namespace Launch
     class FScopedMessageHandler;
 } // namespace Launch
 
-/** @class FLuminaMessageHandler @brief Decorates the engine handler with path-tracer controls and resize requests. */
+/** @class FLuminaMessageHandler @brief Decorates the engine handler with Lumina's orbit camera policy. */
 class FLuminaMessageHandler final : public FGenericApplicationMessageHandler
 {
 public:
+
     FLuminaMessageHandler ( TSharedPtr<FGenericApplicationMessageHandler> InNextHandler,
                             FWorld &InWorld,
                             FWorldIngressJournal &InJournal,
-                            ActorID InCamera,
-                            FRenderer &InRenderer ) noexcept;
+                            ActorID InCamera ) noexcept;
 
     void OnRequestExit () noexcept override;
     void OnQuit () noexcept override;
@@ -45,28 +44,27 @@ public:
     void OnKeyUp ( EKeys::Type InKey, Bool bIsRepeated ) noexcept override;
 
 private:
+
     void SendCameraMessage ( const FMessage &InMessage ) noexcept;
     void PublishCameraPose () noexcept;
     void PublishCameraParams ( Float32 InAspectRatio ) noexcept;
     void ResetCamera () noexcept;
 
 private:
+
     TSharedPtr<FGenericApplicationMessageHandler> NextHandler;
-    FWorld *World                         = nullptr;
-    FWorldIngressJournal *Journal         = nullptr;
-    ActorID Camera                        = InvalidActorID;
-    FRenderer *Renderer                   = nullptr;
-    Int32 LastX                           = 0;
-    Int32 LastY                           = 0;
-    Bool bDragging                        = false;
+    FWorld *World                 = nullptr;
+    FWorldIngressJournal *Journal = nullptr;
+    ActorID Camera                = InvalidActorID;
+    Int32 LastX                   = 0;
+    Int32 LastY                   = 0;
+    Bool bDragging                = false;
     FOrbitCameraState State;
 };
 
-[[nodiscard]] Launch::FScopedMessageHandler
-InstallLuminaMessageHandler ( Launch::FLaunchApplicationModule &InApplicationModule,
-                              FWorld &InWorld,
-                              FWorldIngressJournal &InJournal,
-                              ActorID InCamera,
-                              FRenderer &InRenderer ) noexcept;
+[[nodiscard]] Launch::FScopedMessageHandler InstallLuminaMessageHandler ( Launch::FLaunchApplicationModule &InApplicationModule,
+                                                                          FWorld &InWorld,
+                                                                          FWorldIngressJournal &InJournal,
+                                                                          ActorID InCamera ) noexcept;
 
 } // namespace Lumen

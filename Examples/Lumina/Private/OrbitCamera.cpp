@@ -41,11 +41,11 @@ Lumen::FOrbitCameraBasis Lumen::ComputeOrbitCamera ( const FOrbitCameraState &In
     const Float32 SinYaw   = std::sin( InState.Yaw );
 
     FOrbitCameraBasis Basis;
-    Basis.Position = Maths::FVec3f( InState.Target.X + InState.Distance * CosPitch * SinYaw,
-                                    InState.Target.Y + InState.Distance * SinPitch,
-                                    InState.Target.Z + InState.Distance * CosPitch * CosYaw );
-    Basis.Forward  = ( InState.Target - Basis.Position ).Normalize();
-    Basis.Right    = Basis.Forward.Cross( Maths::FVec3f( 0.0F, 1.0F, 0.0F ) ).Normalize();
-    Basis.Up       = Basis.Right.Cross( Basis.Forward ).Normalize();
+    Basis.Position =
+        Maths::FVec3f( InState.Target.X + InState.Distance * CosPitch * SinYaw, InState.Target.Y + InState.Distance * SinPitch,
+                       InState.Target.Z + InState.Distance * CosPitch * CosYaw );
+    Basis.Forward = ( InState.Target - Basis.Position ).Normalize();
+    Basis.Right   = Basis.Forward.Cross( Maths::FVec3f( 0.0F, 1.0F, 0.0F ) ).Normalize();
+    Basis.Up      = Basis.Right.Cross( Basis.Forward ).Normalize();
     return Basis;
 }
