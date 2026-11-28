@@ -22,6 +22,28 @@
 #include <cstdlib>
 #include <new>
 
+#if defined( _WIN32 )
+    #include <malloc.h>
+#endif
+
+namespace
+{
+/** @brief Releases a block with the heap API matching Lumen::TrackedAllocate. */
+void FreeTrackedAllocation ( void *const InPointer, const std::size_t InAlignment = alignof( std::max_align_t ) ) noexcept
+{
+#if defined( _WIN32 )
+    // UCRT provides _aligned_malloc instead of std::aligned_alloc. Over-aligned blocks
+    // must be released with _aligned_free; default-aligned blocks come from malloc.
+    if ( InAlignment > alignof( std::max_align_t ) )
+    {
+        _aligned_free( InPointer );
+        return;
+    }
+#endif
+    std::free( InPointer );
+}
+} // namespace
+
 Lumen::TAtomic<Lumen::UInt64> Lumen::GTrackedAllocations{ 0ULL };
 Lumen::TAtomic<Lumen::Bool> Lumen::bTrackingAllocations{ false };
 
@@ -37,8 +59,12 @@ Lumen::TAtomic<Lumen::Bool> Lumen::bTrackingAllocations{ false };
         return std::malloc( InSize );
     }
 
+#if defined( _WIN32 )
+    return _aligned_malloc( InSize, InAlignment );
+#else
     const std::size_t AlignedSize = ( ( InSize + InAlignment - 1U ) / InAlignment ) * InAlignment;
     return std::aligned_alloc( InAlignment, AlignedSize );
+#endif
 }
 
 /** INFO: Test-only global allocation hooks; engine code never replaces the global allocator. */
@@ -94,62 +120,62 @@ void *operator new[]( const std::size_t InSize, const std::align_val_t InAlignme
 
 void operator delete( void *const InPointer ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer );
 }
 
 void operator delete[]( void *const InPointer ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer );
 }
 
 void operator delete( void *const InPointer, const std::size_t ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer );
 }
 
 void operator delete[]( void *const InPointer, const std::size_t ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer );
 }
 
-void operator delete( void *const InPointer, const std::align_val_t ) noexcept
+void operator delete( void *const InPointer, const std::align_val_t InAlignment ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer, static_cast<std::size_t>( InAlignment ) );
 }
 
-void operator delete[]( void *const InPointer, const std::align_val_t ) noexcept
+void operator delete[]( void *const InPointer, const std::align_val_t InAlignment ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer, static_cast<std::size_t>( InAlignment ) );
 }
 
-void operator delete( void *const InPointer, const std::size_t, const std::align_val_t ) noexcept
+void operator delete( void *const InPointer, const std::size_t, const std::align_val_t InAlignment ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer, static_cast<std::size_t>( InAlignment ) );
 }
 
-void operator delete[]( void *const InPointer, const std::size_t, const std::align_val_t ) noexcept
+void operator delete[]( void *const InPointer, const std::size_t, const std::align_val_t InAlignment ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer, static_cast<std::size_t>( InAlignment ) );
 }
 
 void operator delete( void *const InPointer, const std::nothrow_t & ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer );
 }
 
 void operator delete[]( void *const InPointer, const std::nothrow_t & ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer );
 }
 
-void operator delete( void *const InPointer, const std::align_val_t, const std::nothrow_t & ) noexcept
+void operator delete( void *const InPointer, const std::align_val_t InAlignment, const std::nothrow_t & ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer, static_cast<std::size_t>( InAlignment ) );
 }
 
-void operator delete[]( void *const InPointer, const std::align_val_t, const std::nothrow_t & ) noexcept
+void operator delete[]( void *const InPointer, const std::align_val_t InAlignment, const std::nothrow_t & ) noexcept
 {
-    std::free( InPointer );
+    FreeTrackedAllocation( InPointer, static_cast<std::size_t>( InAlignment ) );
 }
 
 namespace Lumen
