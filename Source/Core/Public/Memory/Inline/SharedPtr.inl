@@ -10,12 +10,12 @@
 namespace Lumen
 {
 
-template <typename Type> TSharedPtr<Type>::TSharedPtr() noexcept : Object( nullptr ), Controller( nullptr )
+template <typename Type> TSharedPtr<Type>::TSharedPtr () noexcept : Object( nullptr ), Controller( nullptr )
 {
     /** Empty */
 }
 
-template <typename Type> TSharedPtr<Type>::TSharedPtr( NullPtrType ) noexcept : Object( nullptr ), Controller( nullptr )
+template <typename Type> TSharedPtr<Type>::TSharedPtr ( NullPtrType ) noexcept : Object( nullptr ), Controller( nullptr )
 {
     /** Empty */
 }
@@ -45,7 +45,7 @@ TSharedPtr<Type>::TSharedPtr( const TSharedRef<OtherType> &Other ) noexcept
 }
 
 template <typename Type>
-TSharedPtr<Type>::TSharedPtr( const TSharedPtr &Other ) noexcept : Object( Other.Object ), Controller( Other.Controller )
+TSharedPtr<Type>::TSharedPtr ( const TSharedPtr &Other ) noexcept : Object( Other.Object ), Controller( Other.Controller )
 {
     if ( Controller != nullptr )
     {
@@ -54,13 +54,13 @@ TSharedPtr<Type>::TSharedPtr( const TSharedPtr &Other ) noexcept : Object( Other
 }
 
 template <typename Type>
-TSharedPtr<Type>::TSharedPtr( TSharedPtr &&Other ) noexcept : Object( Other.Object ), Controller( Other.Controller )
+TSharedPtr<Type>::TSharedPtr ( TSharedPtr &&Other ) noexcept : Object( Other.Object ), Controller( Other.Controller )
 {
     Other.Object     = nullptr;
     Other.Controller = nullptr;
 }
 
-template <typename Type> TSharedPtr<Type>::~TSharedPtr() noexcept
+template <typename Type> TSharedPtr<Type>::~TSharedPtr () noexcept
 {
     Release();
 }

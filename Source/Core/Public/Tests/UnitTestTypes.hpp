@@ -21,7 +21,7 @@ namespace Tests
      * @enum EUnitTestKind
      * @brief Qualifies the operational scope of a test case.
      */
-    enum class CORE_EXPORT EUnitTestKind : UInt8
+    enum class EUnitTestKind : UInt8
     {
         Functional,
         Integration

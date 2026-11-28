@@ -50,7 +50,7 @@ namespace Internal
         alignas( Type ) Byte Storage[sizeof( Type )]{};
 
         /** @brief Constructs the managed object in place with forwarded arguments. */
-        template <typename... Arguments> explicit TIntrusiveReferenceController( Arguments &&...InArgs ) noexcept;
+        template <typename... Arguments> explicit TIntrusiveReferenceController ( Arguments &&...InArgs ) noexcept;
 
         /** @brief  Destroys the managed object. */
         void DestroyObject () noexcept override;

@@ -37,32 +37,33 @@ namespace Internal
 
 } // namespace Internal
 
-template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::TUniquePtr() noexcept : Object( nullptr ), DeleterInstance()
+template <typename Type, typename Deleter>
+TUniquePtr<Type, Deleter>::TUniquePtr () noexcept : Object( nullptr ), DeleterInstance()
 {
     /** Empty */
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type, Deleter>::TUniquePtr( NullPtrType ) noexcept : Object( nullptr ), DeleterInstance()
+TUniquePtr<Type, Deleter>::TUniquePtr ( NullPtrType ) noexcept : Object( nullptr ), DeleterInstance()
 {
     /** Empty */
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type, Deleter>::TUniquePtr( Type *InObject ) noexcept : Object( InObject ), DeleterInstance()
+TUniquePtr<Type, Deleter>::TUniquePtr ( Type *InObject ) noexcept : Object( InObject ), DeleterInstance()
 {
     /** Empty */
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type, Deleter>::TUniquePtr( Type *InObject, Deleter InDeleter ) noexcept
+TUniquePtr<Type, Deleter>::TUniquePtr ( Type *InObject, Deleter InDeleter ) noexcept
     : Object( InObject ), DeleterInstance( std::move( InDeleter ) )
 {
     /** Empty */
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type, Deleter>::TUniquePtr( TUniquePtr &&Other ) noexcept
+TUniquePtr<Type, Deleter>::TUniquePtr ( TUniquePtr &&Other ) noexcept
     : Object( Other.Release() ), DeleterInstance( std::move( Other ).GetDeleter() )
 {
     /** Empty */
@@ -77,7 +78,7 @@ TUniquePtr<Type, Deleter>::TUniquePtr( TUniquePtr<OtherType, OtherDeleter> &&Oth
     /** Empty */
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::~TUniquePtr() noexcept
+template <typename Type, typename Deleter> TUniquePtr<Type, Deleter>::~TUniquePtr () noexcept
 {
     Reset();
 }
@@ -167,31 +168,31 @@ template <typename Type, typename Deleter> void TUniquePtr<Type, Deleter>::Reset
  */
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type[], Deleter>::TUniquePtr() noexcept : Object( nullptr ), DeleterInstance()
+TUniquePtr<Type[], Deleter>::TUniquePtr () noexcept : Object( nullptr ), DeleterInstance()
 {
     /** Empty */
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type[], Deleter>::TUniquePtr( NullPtrType ) noexcept : Object( nullptr ), DeleterInstance()
+TUniquePtr<Type[], Deleter>::TUniquePtr ( NullPtrType ) noexcept : Object( nullptr ), DeleterInstance()
 {
     /** Empty */
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type[], Deleter>::TUniquePtr( Type *InObject ) noexcept : Object( InObject ), DeleterInstance()
+TUniquePtr<Type[], Deleter>::TUniquePtr ( Type *InObject ) noexcept : Object( InObject ), DeleterInstance()
 {
     /** Empty */
 }
 
 template <typename Type, typename Deleter>
-TUniquePtr<Type[], Deleter>::TUniquePtr( TUniquePtr &&Other ) noexcept
+TUniquePtr<Type[], Deleter>::TUniquePtr ( TUniquePtr &&Other ) noexcept
     : Object( Other.Release() ), DeleterInstance( std::move( Other ).GetDeleter() )
 {
     /** Empty */
 }
 
-template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::~TUniquePtr() noexcept
+template <typename Type, typename Deleter> TUniquePtr<Type[], Deleter>::~TUniquePtr () noexcept
 {
     Reset();
 }

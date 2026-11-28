@@ -56,7 +56,7 @@ public:
 
     /** @brief Emplace construction from a function */
     template <class Function, class Arguments>
-    constexpr TOptional( FEmplaceTag LUMEN_UNUSED InTag, Function &&Func, Arguments &&Args ) noexcept(
+    constexpr TOptional ( FEmplaceTag LUMEN_UNUSED InTag, Function &&Func, Arguments &&Args ) noexcept(
         std::is_nothrow_invocable_v<Function, Arguments> &&
         std::is_nothrow_constructible_v<ValueType, std::invoke_result_t<Function, Arguments>> )
         : Value( Invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ), bHasValue( true )

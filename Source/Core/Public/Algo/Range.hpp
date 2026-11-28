@@ -5,8 +5,8 @@
 
 #pragma once
 
-#include <Core/CoreTypes.hpp>
 #include <Concepts/SameAs.hpp>
+#include <Core/CoreTypes.hpp>
 
 #include <Memory/Span.hpp>
 

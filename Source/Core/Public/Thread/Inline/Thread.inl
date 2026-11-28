@@ -29,7 +29,7 @@ namespace Internal
     public:
 
         template <typename TForwardedFunction, typename... TForwardedArgs>
-        explicit TThreadData( FStopToken InStopToken, TForwardedFunction &&InFunction, TForwardedArgs &&...InArgs ) noexcept
+        explicit TThreadData ( FStopToken InStopToken, TForwardedFunction &&InFunction, TForwardedArgs &&...InArgs ) noexcept
             : StopToken( std::move( InStopToken ) ), Function( std::forward<TForwardedFunction>( InFunction ) ),
               Arguments( std::forward<TForwardedArgs>( InArgs )... )
         {

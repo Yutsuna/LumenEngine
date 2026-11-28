@@ -39,7 +39,7 @@ namespace Benchmarks
      * @enum EBenchmarkKind
      * @brief The scale of a benchmark.
      */
-    enum class CORE_EXPORT EBenchmarkKind : UInt8
+    enum class EBenchmarkKind : UInt8
     {
         /** Fast code (function, loop, container). Iterations are auto-calibrated. */
         Micro,

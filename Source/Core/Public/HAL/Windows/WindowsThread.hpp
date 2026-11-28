@@ -28,6 +28,9 @@ extern "C"
     #include <windows.h>
 }
 
+/* winbase.h defines Yield() as an empty legacy macro, which collides with FWindowsThread::Yield(). */
+    #undef Yield
+
 namespace Lumen
 {
 namespace HAL

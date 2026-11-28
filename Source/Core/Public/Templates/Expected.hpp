@@ -88,7 +88,7 @@ public:
 
     /** @brief Constructs the callback result directly in value storage. */
     template <class Function, class Arguments>
-    constexpr TExpected( FEmplaceTag LUMEN_UNUSED InTag, Function &&Func, Arguments &&Args ) noexcept(
+    constexpr TExpected ( FEmplaceTag LUMEN_UNUSED InTag, Function &&Func, Arguments &&Args ) noexcept(
         std::is_nothrow_invocable_v<Function, Arguments> &&
         std::is_nothrow_constructible_v<ValueType, std::invoke_result_t<Function, Arguments>> )
         : Val( Invoke( std::forward<Function>( Func ), std::forward<Arguments>( Args ) ) ), bHasValue( true )

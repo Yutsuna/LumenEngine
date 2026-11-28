@@ -11,13 +11,13 @@ namespace Lumen
 {
 
 template <typename Type>
-TSharedRef<Type>::TSharedRef( const TSharedRef &Other ) noexcept : Object( Other.Object ), Controller( Other.Controller )
+TSharedRef<Type>::TSharedRef ( const TSharedRef &Other ) noexcept : Object( Other.Object ), Controller( Other.Controller )
 {
     Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
 }
 
 template <typename Type>
-TSharedRef<Type>::TSharedRef( TSharedRef &&Other ) noexcept : Object( Other.Object ), Controller( Other.Controller )
+TSharedRef<Type>::TSharedRef ( TSharedRef &&Other ) noexcept : Object( Other.Object ), Controller( Other.Controller )
 {
     Other.Controller = nullptr;
 }
@@ -41,7 +41,7 @@ TSharedRef<Type>::TSharedRef( const TSharedRef<OtherType> &Other ) noexcept
     Controller->SharedCount.fetch_add( 1, std::memory_order_relaxed );
 }
 
-template <typename Type> TSharedRef<Type>::~TSharedRef() noexcept
+template <typename Type> TSharedRef<Type>::~TSharedRef () noexcept
 {
     Release();
 }
@@ -119,7 +119,7 @@ template <typename Type> UInt64 TSharedRef<Type>::GetSharedReferenceCount () con
 }
 
 template <typename Type>
-TSharedRef<Type>::TSharedRef( Type *InObject, Internal::FReferenceController *InController ) noexcept
+TSharedRef<Type>::TSharedRef ( Type *InObject, Internal::FReferenceController *InController ) noexcept
     : Object( InObject ), Controller( InController )
 {
     LUMEN_ASSERT( InObject != nullptr );

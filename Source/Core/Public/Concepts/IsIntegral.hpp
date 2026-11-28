@@ -5,6 +5,7 @@
 
 #pragma once
 
+#include <Core/CoreDefinitions.hpp>
 #include <Core/CoreTypes.hpp>
 
 namespace Lumen
@@ -46,8 +47,12 @@ namespace Internal
     template <> inline constexpr Bool TIsIntegralImplV<UInt32>   = true;
     template <> inline constexpr Bool TIsIntegralImplV<Int64>    = true;
     template <> inline constexpr Bool TIsIntegralImplV<UInt64>   = true;
-    template <> inline constexpr Bool TIsIntegralImplV<ISize>    = true;
-    template <> inline constexpr Bool TIsIntegralImplV<USize>    = true;
+
+/** On LLP64 (Windows), ISize/USize alias Int64/UInt64, so those specializations would be duplicates. */
+#if not defined( LUMEN_PLATFORM_WINDOWS )
+    template <> inline constexpr Bool TIsIntegralImplV<ISize> = true;
+    template <> inline constexpr Bool TIsIntegralImplV<USize> = true;
+#endif
 
 } // namespace Internal
 

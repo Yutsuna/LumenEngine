@@ -81,9 +81,9 @@ void Lumen::Algo::Internal::MoveMedianToFirst ( TIterator InFirst, TIterator InL
     {
         /** INFO: Tukey's ninther, median of three medians. */
         const FDifference Step = Count / 8;
-        Pivot                  = MedianOfThree( MedianOfThree( Low, Low + Step, Low + ( Step * 2 ), InPredicate ),
-                                                MedianOfThree( Mid - Step, Mid, Mid + Step, InPredicate ),
-                                                MedianOfThree( High - ( Step * 2 ), High - Step, High, InPredicate ), InPredicate );
+        Pivot = MedianOfThree( MedianOfThree( Low, Low + Step, Low + ( Step * 2 ), InPredicate ),
+                               MedianOfThree( Mid - Step, Mid, Mid + Step, InPredicate ),
+                               MedianOfThree( High - ( Step * 2 ), High - Step, High, InPredicate ), InPredicate );
     }
     else
     {
