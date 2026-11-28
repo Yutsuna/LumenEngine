@@ -32,7 +32,7 @@ to `.agents/`; an explicit `.agents/` prefix is equally valid.
 | `Core` | built (shared library) | `modules/Core.md` |
 | `Maths` | built (shared library) | `modules/Maths.md` |
 | `RHI` | built (shared library; Null + validation backends) | `modules/RHI.md` |
-| `RHIOpenGL` | built on Linux (OpenGL 4.6 backend; full conformance matrix) | `modules/RHIOpenGL.md` |
+| `RHIOpenGL` | built (OpenGL 4.6; EGL on Linux/macOS, WGL on Windows; full conformance matrix on Linux) | `modules/RHIOpenGL.md` |
 | `Scene` | built (shared library) | `modules/Scene.md` |
 | `Renderer` | built (shared library; execution facade + render graph sources) | `modules/Renderer.md` |
 | `AppCore` | built (shared library) | `modules/AppCore.md` |

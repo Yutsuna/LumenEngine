@@ -1,14 +1,15 @@
 # Module: RHIOpenGL
 
 - **Type:** Shared library (`Source/RHIOpenGL/meson.build`), depends on `Core`,
-  `Maths`, `RHI`. Listed in `ModuleNames` on Linux, immediately after `RHI`.
-  The `gl`/`egl` pkg-config dependencies are opportunistic: GL entry points are
-  resolved at runtime with `dlopen`/`eglGetProcAddress`, so a stale pkg-config
-  environment does not break configuration.
+  `Maths`, `RHI`. Listed in `ModuleNames` on every host OS, after `AppCore` and
+  before `Launch`. The `gl`/`egl` pkg-config dependencies are opportunistic:
+  GL entry points are resolved at runtime with `dlopen`/`eglGetProcAddress`,
+  so a stale pkg-config environment does not break configuration. On Windows,
+  `gdi32` and `user32` are added for WGL.
 - **Status:** built.
-- **Role:** Linux-only OpenGL 4.6 core RHI backend. Creates a headless EGL
-  surfaceless context (Mesa `llvmpipe` in CI) on one dedicated GL Executor
-  thread and implements the `IRHIDevice` factories on top of it.
+- **Role:** OpenGL 4.6 core RHI backend. EGL surfaceless context on Linux/macOS
+  (Mesa `llvmpipe` in CI), WGL context on Windows — both on one dedicated GL
+  Executor thread; implements the `IRHIDevice` factories on top of it.
 
 ## Public surface (`Source/RHIOpenGL/Public/`)
 
@@ -16,9 +17,9 @@
   (`RHIOPENGL_EXPORT`).
 - `RHIOpenGL/RHIOpenGLSurfaceBridge.hpp` — `CreateRHIOpenGLSurfaceBridge()`
   (`RHIOPENGL_EXPORT`) plus `FOpenGLNativeWindowDesc` and
-  `EOpenGLNativeWindowSystem`. The factory returns `Unsupported` while
-  native-display device initialization is unavailable. These are the module's
-  two exported factory functions. Concrete backend classes live in `Private/`
+  `EOpenGLNativeWindowSystem`. The factory accepts X11, Wayland and Win32
+  native handles (Win32 needs no `NativeDisplay`). These are the module's two
+  exported factory functions. Concrete backend classes live in `Private/`
   and are never exported; tests link them in through `GlobalTestModules`
   instead.
 
@@ -27,7 +28,7 @@
 | Area | Responsibility |
 | --- | --- |
 | `Loader/` | Typed GL dispatch table, GL 4.6 constants, runtime symbol resolution |
-| `Platform/Linux/` | EGL surfaceless context; library/display handles cached for the process |
+| `Platform/Linux/`, `Platform/Windows/` | EGL surfaceless context (library/display handles cached for the process); WGL context and pixel-format setup |
 | `Device/` | GL Executor and submission scheduler, capability/limit probe, device context, `IRHIDevice` factories |
 | `Module/` | `IRHIModule`, adapter enumeration, device creation |
 | `Types/` | Format, error and object-identity mapping helpers |

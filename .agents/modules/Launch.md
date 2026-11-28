@@ -29,8 +29,8 @@ Private: `Main.cpp`, `LaunchModuleStack.cpp`, engine implementation.
 - `Engine/Modules/LaunchSurfaceBridge.hpp` converts AppCore's opaque
   `FNativeWindowHandles` into the OpenGL backend's scalar native-window
   descriptor and calls the public surface-bridge factory. Launch is the only
-  module allowed to perform that conversion; the OpenGL factory still returns
-  `Unsupported` for coherent handles because the device runs on a surfaceless
-  EGL context. The error is propagated unchanged, never replaced by a mock.
+  module allowed to perform that conversion; the factory accepts X11, Wayland
+  and Win32 native handles (Win32 needs no `NativeDisplay`). Errors are
+  propagated unchanged, never replaced by a mock.
 - Keep `Main.cpp` minimal; all engine behaviour belongs in the loop/engine
   classes so it stays testable.
