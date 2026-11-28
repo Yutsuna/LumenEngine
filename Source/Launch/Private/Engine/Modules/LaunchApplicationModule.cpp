@@ -12,6 +12,8 @@
 
 #if defined( LUMEN_PLATFORM_LINUX )
     #include <Linux/LinuxApplication.hpp>
+#elif defined( LUMEN_PLATFORM_WINDOWS )
+    #include <Windows/WindowsApplication.hpp>
 #endif
 
 #include <utility>
@@ -120,19 +122,27 @@ Lumen::Launch::TLaunchResult<Lumen::TUniquePtr<Lumen::Launch::FLaunchApplication
 Lumen::Launch::FLaunchApplicationModule::Create (
     const TModuleContext<FLaunchApplicationModule> LUMEN_UNUSED &InContext ) noexcept
 {
-#if defined( LUMEN_PLATFORM_LINUX )
-    const TSharedPtr<FGenericApplication> PlatformApplication = FLinuxApplication::MakeLinuxApplication();
-    if ( not PlatformApplication.IsValid() ) [[unlikely]]
-    {
-        return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::ModuleCreationFailed,
-                              "Failed to create platform application" );
-    }
-
+#define LUMEN_CREATE_PLATFORM_APPLICATION( Backend )                                                                             \
+    const TSharedPtr<FGenericApplication> PlatformApplication = F##Backend##Application::Make##Backend##Application();           \
+    if ( not PlatformApplication.IsValid() ) [[unlikely]]                                                                        \
+    {                                                                                                                            \
+        return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::ModuleCreationFailed,                                        \
+                              "Failed to create platform application" );                                                         \
+    }                                                                                                                            \
     return MakeUnique<FLaunchApplicationModule>( PlatformApplication );
+
+#if defined( LUMEN_PLATFORM_LINUX )
+    LUMEN_CREATE_PLATFORM_APPLICATION( Linux );
+
+#elif defined( LUMEN_PLATFORM_WINDOWS )
+    LUMEN_CREATE_PLATFORM_APPLICATION( Windows );
+
 #else
     return LaunchFailure( ELaunchStage::Init, ELaunchErrorCode::ModuleCreationFailed,
                           "No platform application implementation for this target" );
 #endif
+
+#undef LUMEN_CREATE_PLATFORM_APPLICATION
 }
 
 Lumen::Launch::FLaunchApplicationModule::FLaunchApplicationModule ( TSharedPtr<FGenericApplication> InApplication ) noexcept
