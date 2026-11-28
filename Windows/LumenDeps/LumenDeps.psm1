@@ -242,8 +242,11 @@ class LumenToolchain
             return 0
         }
 
-        $shellExe = if (Get-Command -Name pwsh -ErrorAction SilentlyContinue) { 'pwsh' } else { 'powershell' }
-        $envVars  = $this.GetEnvironmentVariables($IsolatedMode)
+        $shellExe = [System.Diagnostics.Process]::GetCurrentProcess().MainModule.FileName
+
+        $envVars = $this.GetEnvironmentVariables($IsolatedMode)
+        $envVars['LUMEN_SHELL'] = '1'
+
         $previous = @{}
         $exitCode = 0
 
@@ -259,12 +262,11 @@ class LumenToolchain
             {
                 $script  = "$ShellCommand`nexit `$LASTEXITCODE"
                 $encoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($script))
-                & $shellExe -NoLogo -NoProfile -EncodedCommand $encoded
-                $exitCode = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } else { 0 }
+                $psArgs  = @('-NoLogo', '-NoProfile', '-EncodedCommand', $encoded)
             }
             else
             {
-                $initBanner = @'
+                $initScript = @'
 function global:prompt
 {
     "[Lumen:win] $(Get-Location)> "
@@ -276,10 +278,12 @@ function global:Show-LumenVersions
 }
 Write-Host "Lumen dev shell ready. Type 'exit' to leave it. (Show-LumenVersions for tool versions)" -ForegroundColor Green
 '@
-                $encoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($initBanner))
-                & $shellExe -NoLogo -NoProfile -NoExit -EncodedCommand $encoded
-                $exitCode = if ($null -ne $LASTEXITCODE) { $LASTEXITCODE } else { 0 }
+                $encoded = [Convert]::ToBase64String([System.Text.Encoding]::Unicode.GetBytes($initScript))
+                $psArgs  = @('-NoLogo', '-NoProfile', '-NoExit', '-EncodedCommand', $encoded)
             }
+
+            $proc     = Start-Process -FilePath $shellExe -ArgumentList $psArgs -NoNewWindow -Wait -PassThru
+            $exitCode = $proc.ExitCode
         }
         finally
         {
@@ -291,6 +295,7 @@ Write-Host "Lumen dev shell ready. Type 'exit' to leave it. (Show-LumenVersions 
 
         return $exitCode
     }
+
 }
 
 . (Join-Path -Path $PSScriptRoot -ChildPath 'Private/Deps.ps1')
