@@ -128,13 +128,13 @@ Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FSceneHierarchy::Unre
         return MakeUnexpected( ESceneHierarchyError::InvalidActor );
     }
 
-    const USize NodeIndex = FindNodeIndex( InActorId );
-    if ( NodeIndex == NodeCount )
+    const TOptional<USize> NodeIndex = FindNodeIndex( InActorId );
+    if ( not NodeIndex )
     {
         return MakeUnexpected( ESceneHierarchyError::UnknownActor );
     }
 
-    FNode &Node = Nodes[NodeIndex];
+    FNode &Node = Nodes[*NodeIndex];
     if ( Node.FirstChildId != InvalidActorID )
     {
         static_cast<void>( UpdateWorldTransforms() );
@@ -142,9 +142,9 @@ Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FSceneHierarchy::Unre
         ActorID ChildId = Node.FirstChildId;
         while ( ChildId != InvalidActorID )
         {
-            const USize ChildIndex = FindNodeIndex( ChildId );
-            LUMEN_ASSERT( ChildIndex < NodeCount );
-            FNode &Child              = Nodes[ChildIndex];
+            const TOptional<USize> ChildIndex = FindNodeIndex( ChildId );
+            LUMEN_ASSERT( ChildIndex.HasValue() );
+            FNode &Child              = Nodes[*ChildIndex];
             const ActorID NextChildId = Child.NextSiblingId;
 
             Child.LocalTransform = Child.WorldTransform;
@@ -160,7 +160,7 @@ Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FSceneHierarchy::Unre
 
     UnlinkNode( Node );
 
-    for ( USize Index = NodeIndex; Index + 1ULL < NodeCount; ++Index )
+    for ( USize Index = *NodeIndex; Index + 1ULL < NodeCount; ++Index )
     {
         Nodes[Index] = Nodes[Index + 1ULL];
     }
@@ -188,8 +188,8 @@ Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FSceneHierarchy::Atta
         return MakeUnexpected( ESceneHierarchyError::SelfParent );
     }
 
-    const USize NodeIndex = FindNodeIndex( InActorId );
-    if ( NodeIndex == NodeCount )
+    const TOptional<USize> NodeIndex = FindNodeIndex( InActorId );
+    if ( not NodeIndex )
     {
         return MakeUnexpected( ESceneHierarchyError::UnknownActor );
     }
@@ -199,13 +199,13 @@ Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FSceneHierarchy::Atta
         return Detach( InActorId );
     }
 
-    const USize ParentIndex = FindNodeIndex( InParentId );
-    if ( ParentIndex == NodeCount )
+    const TOptional<USize> ParentIndex = FindNodeIndex( InParentId );
+    if ( not ParentIndex )
     {
         return MakeUnexpected( ESceneHierarchyError::UnknownParent );
     }
 
-    FNode &Node = Nodes[NodeIndex];
+    FNode &Node = Nodes[*NodeIndex];
     if ( Node.ParentId == InParentId )
     {
         return {};
@@ -219,13 +219,13 @@ Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FSceneHierarchy::Atta
             return MakeUnexpected( ESceneHierarchyError::CycleDetected );
         }
 
-        const USize AncestorIndex = FindNodeIndex( AncestorId );
-        if ( AncestorIndex == NodeCount )
+        const TOptional<USize> AncestorIndex = FindNodeIndex( AncestorId );
+        if ( not AncestorIndex )
         {
             return MakeUnexpected( ESceneHierarchyError::UnknownParent );
         }
 
-        AncestorId = Nodes[AncestorIndex].ParentId;
+        AncestorId = Nodes[*AncestorIndex].ParentId;
     }
 
     if ( AncestorId != InvalidActorID )
@@ -253,15 +253,15 @@ Lumen::TExpected<void, Lumen::ESceneHierarchyError> Lumen::FSceneHierarchy::Deta
         return MakeUnexpected( ESceneHierarchyError::InvalidActor );
     }
 
-    const USize NodeIndex = FindNodeIndex( InActorId );
-    if ( NodeIndex == NodeCount )
+    const TOptional<USize> NodeIndex = FindNodeIndex( InActorId );
+    if ( not NodeIndex )
     {
         return MakeUnexpected( ESceneHierarchyError::UnknownActor );
     }
 
     static_cast<void>( UpdateWorldTransforms() );
 
-    FNode &Node = Nodes[NodeIndex];
+    FNode &Node = Nodes[*NodeIndex];
     if ( Node.ParentId == InvalidActorID )
     {
         Node.LocalTransform = Node.WorldTransform;
@@ -289,13 +289,13 @@ Lumen::FSceneHierarchy::SetLocalTransform ( const ActorID InActorId, const Maths
         return MakeUnexpected( ESceneHierarchyError::InvalidActor );
     }
 
-    const USize NodeIndex = FindNodeIndex( InActorId );
-    if ( NodeIndex == NodeCount )
+    const TOptional<USize> NodeIndex = FindNodeIndex( InActorId );
+    if ( not NodeIndex )
     {
         return MakeUnexpected( ESceneHierarchyError::UnknownActor );
     }
 
-    FNode &Node = Nodes[NodeIndex];
+    FNode &Node = Nodes[*NodeIndex];
     if ( Node.LocalTransform == InLocalTransform )
     {
         return {};
@@ -356,40 +356,40 @@ Lumen::TExpected<Lumen::FSceneHierarchyUpdateResult, Lumen::ESceneHierarchyError
 
 Lumen::TOptional<Lumen::Maths::FMat4x4f> Lumen::FSceneHierarchy::GetWorldTransform ( const ActorID InActorId ) const noexcept
 {
-    const USize NodeIndex = FindNodeIndex( InActorId );
-    if ( NodeIndex == NodeCount )
+    const TOptional<USize> NodeIndex = FindNodeIndex( InActorId );
+    if ( not NodeIndex )
     {
         return {};
     }
 
-    return TOptional<Maths::FMat4x4f>( Nodes[NodeIndex].WorldTransform );
+    return TOptional<Maths::FMat4x4f>( Nodes[*NodeIndex].WorldTransform );
 }
 
 Lumen::TOptional<Lumen::Maths::FMat4x4f> Lumen::FSceneHierarchy::GetLocalTransform ( const ActorID InActorId ) const noexcept
 {
-    const USize NodeIndex = FindNodeIndex( InActorId );
-    if ( NodeIndex == NodeCount )
+    const TOptional<USize> NodeIndex = FindNodeIndex( InActorId );
+    if ( not NodeIndex )
     {
         return {};
     }
 
-    return TOptional<Maths::FMat4x4f>( Nodes[NodeIndex].LocalTransform );
+    return TOptional<Maths::FMat4x4f>( Nodes[*NodeIndex].LocalTransform );
 }
 
 Lumen::TOptional<Lumen::ActorID> Lumen::FSceneHierarchy::GetParentId ( const ActorID InActorId ) const noexcept
 {
-    const USize NodeIndex = FindNodeIndex( InActorId );
-    if ( NodeIndex == NodeCount )
+    const TOptional<USize> NodeIndex = FindNodeIndex( InActorId );
+    if ( not NodeIndex )
     {
         return {};
     }
 
-    return TOptional<ActorID>( Nodes[NodeIndex].ParentId );
+    return TOptional<ActorID>( Nodes[*NodeIndex].ParentId );
 }
 
 Lumen::Bool Lumen::FSceneHierarchy::Contains ( const ActorID InActorId ) const noexcept
 {
-    return FindNodeIndex( InActorId ) != NodeCount;
+    return FindNodeIndex( InActorId ).HasValue();
 }
 
 Lumen::Bool Lumen::FSceneHierarchy::IsInitialized () const noexcept
@@ -434,13 +434,13 @@ Lumen::USize Lumen::FSceneHierarchy::GetRegisteredActorIds ( const TSpan<ActorID
 
 Lumen::TOptional<Lumen::USize> Lumen::FSceneHierarchy::GetDepth ( const ActorID InActorId ) const noexcept
 {
-    const USize NodeIndex = FindNodeIndex( InActorId );
-    if ( NodeIndex == NodeCount )
+    const TOptional<USize> NodeIndex = FindNodeIndex( InActorId );
+    if ( not NodeIndex )
     {
         return {};
     }
 
-    return TOptional<USize>( Nodes[NodeIndex].Depth );
+    return TOptional<USize>( Nodes[*NodeIndex].Depth );
 }
 
 Lumen::TSpan<const Lumen::USize> Lumen::FSceneHierarchy::GetLevelStarts () const noexcept
@@ -512,15 +512,19 @@ Lumen::USize Lumen::FSceneHierarchy::LowerBound ( const ActorID InActorId ) cons
     return First;
 }
 
-Lumen::USize Lumen::FSceneHierarchy::FindNodeIndex ( const ActorID InActorId ) const noexcept
+Lumen::TOptional<Lumen::USize> Lumen::FSceneHierarchy::FindNodeIndex ( const ActorID InActorId ) const noexcept
 {
     if ( InActorId == InvalidActorID )
     {
-        return NodeCount;
+        return {};
     }
 
     const USize NodeIndex = LowerBound( InActorId );
-    return NodeIndex < NodeCount and Nodes[NodeIndex].Id == InActorId ? NodeIndex : NodeCount;
+    if ( NodeIndex < NodeCount and Nodes[NodeIndex].Id == InActorId )
+    {
+        return TOptional<USize>( NodeIndex );
+    }
+    return {};
 }
 
 void Lumen::FSceneHierarchy::LinkNode ( FNode &InNode ) noexcept
@@ -530,9 +534,9 @@ void Lumen::FSceneHierarchy::LinkNode ( FNode &InNode ) noexcept
 
     if ( InNode.ParentId != InvalidActorID )
     {
-        const USize ParentIndex = FindNodeIndex( InNode.ParentId );
-        LUMEN_ASSERT( ParentIndex < NodeCount );
-        FNode &Parent = Nodes[ParentIndex];
+        const TOptional<USize> ParentIndex = FindNodeIndex( InNode.ParentId );
+        LUMEN_ASSERT( ParentIndex.HasValue() );
+        FNode &Parent = Nodes[*ParentIndex];
         FirstChildId  = &Parent.FirstChildId;
         LastChildId   = &Parent.LastChildId;
     }
@@ -549,41 +553,41 @@ void Lumen::FSceneHierarchy::LinkNode ( FNode &InNode ) noexcept
 
     if ( InNode.Id < *FirstChildId )
     {
-        const USize FirstIndex = FindNodeIndex( *FirstChildId );
-        LUMEN_ASSERT( FirstIndex < NodeCount );
-        Nodes[FirstIndex].PreviousSiblingId = InNode.Id;
-        InNode.NextSiblingId                = *FirstChildId;
-        *FirstChildId                       = InNode.Id;
+        const TOptional<USize> FirstIndex = FindNodeIndex( *FirstChildId );
+        LUMEN_ASSERT( FirstIndex.HasValue() );
+        Nodes[*FirstIndex].PreviousSiblingId = InNode.Id;
+        InNode.NextSiblingId                 = *FirstChildId;
+        *FirstChildId                        = InNode.Id;
         return;
     }
 
     if ( InNode.Id > *LastChildId )
     {
-        const USize LastIndex = FindNodeIndex( *LastChildId );
-        LUMEN_ASSERT( LastIndex < NodeCount );
-        Nodes[LastIndex].NextSiblingId = InNode.Id;
-        InNode.PreviousSiblingId       = *LastChildId;
-        *LastChildId                   = InNode.Id;
+        const TOptional<USize> LastIndex = FindNodeIndex( *LastChildId );
+        LUMEN_ASSERT( LastIndex.HasValue() );
+        Nodes[*LastIndex].NextSiblingId = InNode.Id;
+        InNode.PreviousSiblingId        = *LastChildId;
+        *LastChildId                    = InNode.Id;
         return;
     }
 
     ActorID CursorId = *FirstChildId;
     for ( USize Step = 0ULL; Step < NodeCount and CursorId != InvalidActorID; ++Step )
     {
-        const USize CursorIndex = FindNodeIndex( CursorId );
-        LUMEN_ASSERT( CursorIndex < NodeCount );
-        FNode &Cursor = Nodes[CursorIndex];
+        const TOptional<USize> CursorIndex = FindNodeIndex( CursorId );
+        LUMEN_ASSERT( CursorIndex.HasValue() );
+        FNode &Cursor = Nodes[*CursorIndex];
 
         if ( InNode.Id < Cursor.Id )
         {
-            const ActorID PreviousId  = Cursor.PreviousSiblingId;
-            const USize PreviousIndex = FindNodeIndex( PreviousId );
-            LUMEN_ASSERT( PreviousIndex < NodeCount );
+            const ActorID PreviousId             = Cursor.PreviousSiblingId;
+            const TOptional<USize> PreviousIndex = FindNodeIndex( PreviousId );
+            LUMEN_ASSERT( PreviousIndex.HasValue() );
 
-            InNode.PreviousSiblingId           = PreviousId;
-            InNode.NextSiblingId               = Cursor.Id;
-            Nodes[PreviousIndex].NextSiblingId = InNode.Id;
-            Cursor.PreviousSiblingId           = InNode.Id;
+            InNode.PreviousSiblingId            = PreviousId;
+            InNode.NextSiblingId                = Cursor.Id;
+            Nodes[*PreviousIndex].NextSiblingId = InNode.Id;
+            Cursor.PreviousSiblingId            = InNode.Id;
             return;
         }
 
@@ -600,9 +604,9 @@ void Lumen::FSceneHierarchy::UnlinkNode ( FNode &InNode ) noexcept
 
     if ( InNode.ParentId != InvalidActorID )
     {
-        const USize ParentIndex = FindNodeIndex( InNode.ParentId );
-        LUMEN_ASSERT( ParentIndex < NodeCount );
-        FNode &Parent = Nodes[ParentIndex];
+        const TOptional<USize> ParentIndex = FindNodeIndex( InNode.ParentId );
+        LUMEN_ASSERT( ParentIndex.HasValue() );
+        FNode &Parent = Nodes[*ParentIndex];
         FirstChildId  = &Parent.FirstChildId;
         LastChildId   = &Parent.LastChildId;
     }
@@ -613,9 +617,9 @@ void Lumen::FSceneHierarchy::UnlinkNode ( FNode &InNode ) noexcept
     }
     else
     {
-        const USize PreviousIndex = FindNodeIndex( InNode.PreviousSiblingId );
-        LUMEN_ASSERT( PreviousIndex < NodeCount );
-        Nodes[PreviousIndex].NextSiblingId = InNode.NextSiblingId;
+        const TOptional<USize> PreviousIndex = FindNodeIndex( InNode.PreviousSiblingId );
+        LUMEN_ASSERT( PreviousIndex.HasValue() );
+        Nodes[*PreviousIndex].NextSiblingId = InNode.NextSiblingId;
     }
 
     if ( InNode.NextSiblingId == InvalidActorID )
@@ -624,9 +628,9 @@ void Lumen::FSceneHierarchy::UnlinkNode ( FNode &InNode ) noexcept
     }
     else
     {
-        const USize NextIndex = FindNodeIndex( InNode.NextSiblingId );
-        LUMEN_ASSERT( NextIndex < NodeCount );
-        Nodes[NextIndex].PreviousSiblingId = InNode.PreviousSiblingId;
+        const TOptional<USize> NextIndex = FindNodeIndex( InNode.NextSiblingId );
+        LUMEN_ASSERT( NextIndex.HasValue() );
+        Nodes[*NextIndex].PreviousSiblingId = InNode.PreviousSiblingId;
     }
 
     InNode.ParentId          = InvalidActorID;
@@ -653,16 +657,16 @@ Lumen::USize Lumen::FSceneHierarchy::UpdateWorldTransforms () noexcept
 
     while ( CurrentId != InvalidActorID and VisitedCount < NodeCount )
     {
-        const USize CurrentIndex = FindNodeIndex( CurrentId );
-        LUMEN_ASSERT( CurrentIndex < NodeCount );
-        FNode &Node = Nodes[CurrentIndex];
+        const TOptional<USize> CurrentIndex = FindNodeIndex( CurrentId );
+        LUMEN_ASSERT( CurrentIndex.HasValue() );
+        FNode &Node = Nodes[*CurrentIndex];
 
         FNode *Parent = nullptr;
         if ( Node.ParentId != InvalidActorID )
         {
-            const USize ParentIndex = FindNodeIndex( Node.ParentId );
-            LUMEN_ASSERT( ParentIndex < NodeCount );
-            Parent = &Nodes[ParentIndex];
+            const TOptional<USize> ParentIndex = FindNodeIndex( Node.ParentId );
+            LUMEN_ASSERT( ParentIndex.HasValue() );
+            Parent = &Nodes[*ParentIndex];
         }
 
         const Bool bShouldUpdate = Node.bWorldDirty or ( Parent != nullptr and Parent->bWorldUpdated );
@@ -699,9 +703,9 @@ Lumen::USize Lumen::FSceneHierarchy::UpdateWorldTransforms () noexcept
         CurrentId        = InvalidActorID;
         while ( CursorId != InvalidActorID )
         {
-            const USize CursorIndex = FindNodeIndex( CursorId );
-            LUMEN_ASSERT( CursorIndex < NodeCount );
-            const FNode &Cursor = Nodes[CursorIndex];
+            const TOptional<USize> CursorIndex = FindNodeIndex( CursorId );
+            LUMEN_ASSERT( CursorIndex.HasValue() );
+            const FNode &Cursor = Nodes[*CursorIndex];
             if ( Cursor.NextSiblingId != InvalidActorID )
             {
                 CurrentId = Cursor.NextSiblingId;

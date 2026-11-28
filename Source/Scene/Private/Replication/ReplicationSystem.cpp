@@ -408,8 +408,8 @@ Lumen::FReplicationSystem::ProcessControlRecord ( const FReplicationRecord &InRe
     return {};
 }
 
-Lumen::Bool Lumen::FReplicationSystem::TryRecoverBufferedFrame ( const UInt64 InExpectedSequence,
-                                                                 FReplicationFrame &OutFrame ) noexcept
+Lumen::TOptional<Lumen::FReplicationFrame>
+Lumen::FReplicationSystem::TryRecoverBufferedFrame ( const UInt64 InExpectedSequence ) noexcept
 {
     for ( USize Index = 0ULL; Index < GapEntries.size(); ++Index )
     {
@@ -422,13 +422,12 @@ Lumen::Bool Lumen::FReplicationSystem::TryRecoverBufferedFrame ( const UInt64 In
             InBuilder.TryParse( { GapBytes.data() + ( Index * Config.MaxPayloadBytes ), Entry.Length } );
         if ( Parsed )
         {
-            OutFrame = *Parsed;
             GapEntries.erase( GapEntries.begin() + static_cast<ISize>( Index ) );
-            return true;
+            return TOptional<FReplicationFrame>( *Parsed );
         }
-        return false;
+        return {};
     }
-    return false;
+    return {};
 }
 
 void Lumen::FReplicationSystem::AppendAbsoluteFields ( const FWorkingActor &InActor,
@@ -667,12 +666,12 @@ Lumen::FReplicationSystem::ProcessFrame ( const FReplicationFrame &InFrame, FRep
     UInt64 Next = Cursor.LastSeenSequence + 1ULL;
     while ( true )
     {
-        FReplicationFrame Recovered;
-        if ( not TryRecoverBufferedFrame( Next, Recovered ) )
+        const TOptional<FReplicationFrame> Recovered = TryRecoverBufferedFrame( Next );
+        if ( not Recovered )
         {
             break;
         }
-        TExpected<void, EReplicationError> Buffered = ApplyStateFrame( Recovered, OutResult );
+        TExpected<void, EReplicationError> Buffered = ApplyStateFrame( *Recovered, OutResult );
         if ( not Buffered )
         {
             return Buffered;
