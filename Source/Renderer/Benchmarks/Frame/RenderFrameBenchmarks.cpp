@@ -3,6 +3,7 @@
  * @brief CPU cost of proxy synchronization, deterministic graph planning and one opaque Null frame.
  */
 
+#include <Backend/StartWithTestDevice.hpp>
 #include <Execution/Renderer.hpp>
 
 #include <Frame/RenderFrameContracts.hpp>
@@ -15,6 +16,7 @@
 #include <Rendering/RenderSnapshotStream.hpp>
 #include <Rendering/SceneExtractor.hpp>
 
+#include <RenderGraph/RenderGraphBuilder.hpp>
 #include <RenderGraph/RenderGraphContext.hpp>
 
 #include <Templates/Vector.hpp>
@@ -127,20 +129,21 @@ namespace
             Renderer.RegisterGeometry( { .Id = BenchmarkAsset, .Positions = Positions, .Indices = Indices } ).HasValue() );
         Benchmarks::DoNotOptimize( Positions.size() );
         Benchmarks::DoNotOptimize( Indices.size() );
-        const FRendererDesc Desc{ .Device          = *Device,
-                                  .SnapshotStream  = &Stream,
+        const FRendererDesc Desc{ .SnapshotStream  = &Stream,
                                   .Extent          = { 16U, 16U, 1U },
+                                  .Surface         = {},
+                                  .Backend         = {},
                                   .CommandCapacity = 64ULL,
-                                  .Swapchain       = {},
                                   .Shaders         = FRenderShaderSet{ .VertexBytecode   = { Byte{ 1U } },
                                                                        .PixelBytecode    = { Byte{ 1U } },
                                                                        .VertexEntryPoint = "Main",
                                                                        .PixelEntryPoint  = "Main",
-                                                                       .Format           = RHI::ERHIShaderFormat::Null },
+                                                                       .Format           = ERenderShaderFormat::Null },
                                   .ProxyCapacity   = ProxyCount + 1ULL,
                                   .AssetCapacity   = 1ULL,
-                                  .Readback        = {} };
-        LUMEN_ASSERT( Renderer.Start( Desc ).HasValue() );
+                                  .Readback        = {},
+                                  .Feature         = {} };
+        LUMEN_ASSERT( StartWithTestDevice( Renderer, *Device, Desc ).HasValue() );
 
         State.SetItemsPerIteration( static_cast<UInt64>( ProxyCount ) );
         UInt64 FrameIndex = 0ULL;
