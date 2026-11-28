@@ -31,6 +31,11 @@ extern "C"
 /* winbase.h defines Yield() as an empty legacy macro, which collides with FWindowsThread::Yield(). */
     #undef Yield
 
+/* winbase.h defines CreateSemaphore as CreateSemaphoreA/W, which collides with
+ * IRHIDevice::CreateSemaphore and its overrides. No Core HAL code calls the Win32
+ * function, so drop the legacy macro before any engine declaration. */
+    #undef CreateSemaphore
+
 namespace Lumen
 {
 namespace HAL
