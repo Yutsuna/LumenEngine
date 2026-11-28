@@ -48,7 +48,6 @@ namespace EEngineMessage
 
         /** Sent when a material resource has been updated (hot-reload). Payload: FMaterialUpdatedPayload */
         MaterialUpdated,
-
     };
 
 } // namespace EEngineMessage
