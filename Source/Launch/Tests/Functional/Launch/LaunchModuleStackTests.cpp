@@ -191,9 +191,10 @@ namespace
     using FCreateModule = Launch::FModuleResult ( * )( const Launch::FModuleContext & ) noexcept;
 
     /** @brief Builds a standalone descriptor; LoadPriority makes the startup order explicit in tests. */
-    [[nodiscard]] constexpr Launch::FModuleDescriptor
-    MakeDescriptor ( const Launch::FModuleId InId, const FStringView InName, const FCreateModule InCreate,
-                     const Int32 InLoadPriority = 0 ) noexcept
+    [[nodiscard]] constexpr Launch::FModuleDescriptor MakeDescriptor ( const Launch::FModuleId InId,
+                                                                       const FStringView InName,
+                                                                       const FCreateModule InCreate,
+                                                                       const Int32 InLoadPriority = 0 ) noexcept
     {
         return Launch::FModuleDescriptor{
             .Id               = InId,
@@ -224,7 +225,7 @@ LUMEN_TEST( FLaunchModuleStack_StartAll, SucceedsWithValidDescriptors )
 {
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor Descriptor = MakeDescriptor( 1ULL, "NoOp", &MakeNoOpModule );
+    static constexpr Launch::FModuleDescriptor Descriptor           = MakeDescriptor( 1ULL, "NoOp", &MakeNoOpModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &Descriptor };
 
     const auto Result = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -237,9 +238,9 @@ LUMEN_TEST( FLaunchModuleStack_StartAll, PreservesStartupOrder )
 {
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor First  = MakeDescriptor( 1ULL, "First", &MakeNoOpModule );
-    static constexpr Launch::FModuleDescriptor Second = MakeDescriptor( 2ULL, "Second", &MakeNoOpModule );
-    static constexpr Launch::FModuleDescriptor Third  = MakeDescriptor( 3ULL, "Third", &MakeNoOpModule );
+    static constexpr Launch::FModuleDescriptor First                = MakeDescriptor( 1ULL, "First", &MakeNoOpModule );
+    static constexpr Launch::FModuleDescriptor Second               = MakeDescriptor( 2ULL, "Second", &MakeNoOpModule );
+    static constexpr Launch::FModuleDescriptor Third                = MakeDescriptor( 3ULL, "Third", &MakeNoOpModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &First, &Second, &Third };
 
     const auto Result = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -252,8 +253,8 @@ LUMEN_TEST( FLaunchModuleStack_StartAll, FailsWhenFactoryReturnsError )
 {
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor NoOp    = MakeDescriptor( 1ULL, "NoOp", &MakeNoOpModule );
-    static constexpr Launch::FModuleDescriptor Failing = MakeDescriptor( 2ULL, "Failing", &MakeFailingModule );
+    static constexpr Launch::FModuleDescriptor NoOp                 = MakeDescriptor( 1ULL, "NoOp", &MakeNoOpModule );
+    static constexpr Launch::FModuleDescriptor Failing              = MakeDescriptor( 2ULL, "Failing", &MakeFailingModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &NoOp, &Failing };
 
     const auto Result = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -267,7 +268,7 @@ LUMEN_TEST( FLaunchModuleStack_StartAll, FailsWhenFactoryReturnsNull )
 {
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor Descriptor = MakeDescriptor( 1ULL, "Null", &MakeNullModule );
+    static constexpr Launch::FModuleDescriptor Descriptor           = MakeDescriptor( 1ULL, "Null", &MakeNullModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &Descriptor };
 
     const auto Result = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -281,7 +282,7 @@ LUMEN_TEST( FLaunchModuleStack_StartAll, FailsWhenDescriptorHasNoFactory )
 {
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor Descriptor = MakeDescriptor( 1ULL, "Missing", nullptr );
+    static constexpr Launch::FModuleDescriptor Descriptor           = MakeDescriptor( 1ULL, "Missing", nullptr );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &Descriptor };
 
     const auto Result = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -297,9 +298,9 @@ LUMEN_TEST( FLaunchModuleStack_FixedTick, DispatchesOnlyToFixedTickModules )
 
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor FixedTick = MakeDescriptor( 1ULL, "FixedTick", &MakeFixedTickModule );
-    static constexpr Launch::FModuleDescriptor Tick      = MakeDescriptor( 2ULL, "Tick", &MakeTickModule );
-    static constexpr Launch::FModuleDescriptor Hybrid    = MakeDescriptor( 3ULL, "Hybrid", &MakeHybridModule );
+    static constexpr Launch::FModuleDescriptor FixedTick            = MakeDescriptor( 1ULL, "FixedTick", &MakeFixedTickModule );
+    static constexpr Launch::FModuleDescriptor Tick                 = MakeDescriptor( 2ULL, "Tick", &MakeTickModule );
+    static constexpr Launch::FModuleDescriptor Hybrid               = MakeDescriptor( 3ULL, "Hybrid", &MakeHybridModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &FixedTick, &Tick, &Hybrid };
 
     const auto Started = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -319,9 +320,9 @@ LUMEN_TEST( FLaunchModuleStack_Tick, DispatchesOnlyToTickModules )
 
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor FixedTick = MakeDescriptor( 1ULL, "FixedTick", &MakeFixedTickModule );
-    static constexpr Launch::FModuleDescriptor Tick      = MakeDescriptor( 2ULL, "Tick", &MakeTickModule );
-    static constexpr Launch::FModuleDescriptor Hybrid    = MakeDescriptor( 3ULL, "Hybrid", &MakeHybridModule );
+    static constexpr Launch::FModuleDescriptor FixedTick            = MakeDescriptor( 1ULL, "FixedTick", &MakeFixedTickModule );
+    static constexpr Launch::FModuleDescriptor Tick                 = MakeDescriptor( 2ULL, "Tick", &MakeTickModule );
+    static constexpr Launch::FModuleDescriptor Hybrid               = MakeDescriptor( 3ULL, "Hybrid", &MakeHybridModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &FixedTick, &Tick, &Hybrid };
 
     const auto Started = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -344,7 +345,7 @@ LUMEN_TEST( FLaunchModuleStack_StartAll, ForwardsConfigToFactories )
     Launch::FLaunchEngineConfig Config;
     Config.FixedStep = 0.125;
 
-    static constexpr Launch::FModuleDescriptor Descriptor = MakeDescriptor( 1ULL, "Probe", &MakeConfigProbeModule );
+    static constexpr Launch::FModuleDescriptor Descriptor           = MakeDescriptor( 1ULL, "Probe", &MakeConfigProbeModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &Descriptor };
 
     const auto Started = Stack.StartAll( Descriptors, Config );
@@ -367,7 +368,7 @@ LUMEN_TEST( FLaunchModuleStack_StartAll, ReportsInitStageOnFailure )
 {
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor Descriptor = MakeDescriptor( 1ULL, "Failing", &MakeFailingModule );
+    static constexpr Launch::FModuleDescriptor Descriptor           = MakeDescriptor( 1ULL, "Failing", &MakeFailingModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &Descriptor };
 
     const auto Result = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -382,8 +383,8 @@ LUMEN_TEST( FLaunchModuleStack_StartAll, RollsBackStartedModulesWhenALaterFactor
 
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor Tracker = MakeDescriptor( 1ULL, "First", &MakeFirstTrackerModule, 0 );
-    static constexpr Launch::FModuleDescriptor Failing = MakeDescriptor( 2ULL, "Failing", &MakeFailingModule, 1 );
+    static constexpr Launch::FModuleDescriptor Tracker              = MakeDescriptor( 1ULL, "First", &MakeFirstTrackerModule, 0 );
+    static constexpr Launch::FModuleDescriptor Failing              = MakeDescriptor( 2ULL, "Failing", &MakeFailingModule, 1 );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &Tracker, &Failing };
 
     const auto Result = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -405,9 +406,9 @@ LUMEN_TEST( FLaunchModuleStack_ShutdownAll, TearsDownInReverseStartupOrder )
 
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor First  = MakeDescriptor( 1ULL, "First", &MakeFirstTrackerModule );
-    static constexpr Launch::FModuleDescriptor Second = MakeDescriptor( 2ULL, "Second", &MakeSecondTrackerModule );
-    static constexpr Launch::FModuleDescriptor Third  = MakeDescriptor( 3ULL, "Third", &MakeThirdTrackerModule );
+    static constexpr Launch::FModuleDescriptor First                = MakeDescriptor( 1ULL, "First", &MakeFirstTrackerModule );
+    static constexpr Launch::FModuleDescriptor Second               = MakeDescriptor( 2ULL, "Second", &MakeSecondTrackerModule );
+    static constexpr Launch::FModuleDescriptor Third                = MakeDescriptor( 3ULL, "Third", &MakeThirdTrackerModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &First, &Second, &Third };
 
     const auto Started = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -438,7 +439,7 @@ LUMEN_TEST( FLaunchModuleStack_ShutdownAll, IsIdempotent )
 
     Launch::FLaunchModuleStack Stack;
 
-    static constexpr Launch::FModuleDescriptor Descriptor = MakeDescriptor( 1ULL, "First", &MakeFirstTrackerModule );
+    static constexpr Launch::FModuleDescriptor Descriptor           = MakeDescriptor( 1ULL, "First", &MakeFirstTrackerModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &Descriptor };
 
     const auto Started = Stack.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );
@@ -459,8 +460,8 @@ LUMEN_TEST( FLaunchModuleStack_Move, TransfersOwnership )
 
     Launch::FLaunchModuleStack Source;
 
-    static constexpr Launch::FModuleDescriptor First  = MakeDescriptor( 1ULL, "First", &MakeFirstTrackerModule );
-    static constexpr Launch::FModuleDescriptor Second = MakeDescriptor( 2ULL, "Second", &MakeSecondTrackerModule );
+    static constexpr Launch::FModuleDescriptor First                = MakeDescriptor( 1ULL, "First", &MakeFirstTrackerModule );
+    static constexpr Launch::FModuleDescriptor Second               = MakeDescriptor( 2ULL, "Second", &MakeSecondTrackerModule );
     static constexpr const Launch::FModuleDescriptor *Descriptors[] = { &First, &Second };
 
     const auto Started = Source.StartAll( Descriptors, Launch::FLaunchEngineConfig{} );

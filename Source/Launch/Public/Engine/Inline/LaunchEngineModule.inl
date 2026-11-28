@@ -287,7 +287,7 @@ namespace Launch
     } // namespace Internal
 
     template <typename TModule>
-    TModuleContext<TModule>::TModuleContext( const FModuleContext &InInner ) noexcept : Inner( InInner )
+    TModuleContext<TModule>::TModuleContext ( const FModuleContext &InInner ) noexcept : Inner( InInner )
     {
         /** Empty */
     }
