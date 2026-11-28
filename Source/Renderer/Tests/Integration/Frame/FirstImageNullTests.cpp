@@ -3,6 +3,7 @@
  * @brief Deterministic Null coverage of proxies, the first opaque image and presentation ordering.
  */
 
+#include <Backend/StartWithTestDevice.hpp>
 #include <Execution/Renderer.hpp>
 
 #include <Frame/RenderFrameContracts.hpp>
@@ -40,7 +41,7 @@ namespace
                                  .PixelBytecode    = { Byte{ 1U } },
                                  .VertexEntryPoint = "Main",
                                  .PixelEntryPoint  = "Main",
-                                 .Format           = RHI::ERHIShaderFormat::Null };
+                                 .Format           = ERenderShaderFormat::Null };
     }
 
     [[nodiscard]] std::array<Maths::FVec3f, 4U> MakeQuadVertices () noexcept
@@ -123,18 +124,19 @@ namespace
         const auto Vertices = MakeQuadVertices();
         const auto Indices  = MakeQuadIndices();
         LUMEN_CHECK_HAS_VALUE( InRenderer.RegisterGeometry( { .Id = QuadAsset, .Positions = Vertices, .Indices = Indices } ) );
-        const FRendererDesc Desc{ .Device          = InDevice,
-                                  .SnapshotStream  = &InStream,
-                                  .Extent          = { 64U, 64U, 1U },
-                                  .CommandCapacity = 64ULL,
-                                  .Swapchain       = InSwapchain,
-                                  .Shaders         = MakeNullShaders(),
-                                  .ProxyCapacity   = 32ULL,
-                                  .AssetCapacity   = 8ULL,
-                                  .Readback =
-                                      InSwapchain ? FRenderFrameReadbackDesc{} : FRenderFrameReadbackDesc{ 64ULL * 64ULL * 4ULL },
-                                  .FrameExtension = {} };
-        LUMEN_CHECK_HAS_VALUE( InRenderer.Start( Desc ) );
+        const FRendererDesc Desc{
+            .SnapshotStream  = &InStream,
+            .Extent          = { 64U, 64U, 1U },
+            .Surface         = {},
+            .Backend         = "null",
+            .CommandCapacity = 64ULL,
+            .Shaders         = MakeNullShaders(),
+            .ProxyCapacity   = 32ULL,
+            .AssetCapacity   = 8ULL,
+            .Readback        = InSwapchain ? FRenderFrameReadbackDesc{} : FRenderFrameReadbackDesc{ 64ULL * 64ULL * 4ULL },
+            .Feature         = {},
+        };
+        LUMEN_CHECK_HAS_VALUE( StartWithTestDevice( InRenderer, InDevice, Desc, InSwapchain ) );
         return InRenderer.IsRunning();
     }
 

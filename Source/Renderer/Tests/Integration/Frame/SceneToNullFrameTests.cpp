@@ -3,6 +3,7 @@
  * @brief Scene snapshot to portable RHI clear-pass integration on the test-only Null backend.
  */
 
+#include <Backend/StartWithTestDevice.hpp>
 #include <Execution/Renderer.hpp>
 
 #include <World/World.hpp>
@@ -86,18 +87,18 @@ LUMEN_INTEGRATION_TEST( FRenderer_NullSlice, CompletesOneThousandFramesWithoutLe
     FWorld World( MakeWorldDesc( 70001ULL ) );
     FRenderer Renderer;
     const FRendererDesc Desc{
-        .Device          = *Device,
         .SnapshotStream  = &World.GetRenderSnapshotStream(),
         .Extent          = { 16U, 16U, 1U },
+        .Surface         = {},
+        .Backend         = "null",
         .CommandCapacity = 64ULL,
-        .Swapchain       = {},
         .Shaders         = {},
         .ProxyCapacity   = 256ULL,
         .AssetCapacity   = 64ULL,
         .Readback        = {},
-        .FrameExtension  = {},
+        .Feature         = {},
     };
-    LUMEN_CHECK_HAS_VALUE( Renderer.Start( Desc ) );
+    LUMEN_CHECK_HAS_VALUE( StartWithTestDevice( Renderer, *Device, Desc ) );
     if ( not Renderer.IsRunning() )
     {
         return;
@@ -139,18 +140,18 @@ LUMEN_INTEGRATION_TEST( FRenderer_NullSlice, ValidationOnReportsDeviceLossAndShu
     FWorld World( MakeWorldDesc( 70002ULL ) );
     FRenderer Renderer;
     const FRendererDesc Desc{
-        .Device          = *Device,
         .SnapshotStream  = &World.GetRenderSnapshotStream(),
         .Extent          = { 16U, 16U, 1U },
+        .Surface         = {},
+        .Backend         = "null",
         .CommandCapacity = 16ULL,
-        .Swapchain       = {},
         .Shaders         = {},
         .ProxyCapacity   = 256ULL,
         .AssetCapacity   = 64ULL,
         .Readback        = {},
-        .FrameExtension  = {},
+        .Feature         = {},
     };
-    LUMEN_CHECK_HAS_VALUE( Renderer.Start( Desc ) );
+    LUMEN_CHECK_HAS_VALUE( StartWithTestDevice( Renderer, *Device, Desc ) );
     if ( not Renderer.IsRunning() )
     {
         return;
