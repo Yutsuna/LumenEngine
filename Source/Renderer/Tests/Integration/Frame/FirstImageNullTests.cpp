@@ -131,9 +131,9 @@ namespace
                                   .Shaders         = MakeNullShaders(),
                                   .ProxyCapacity   = 32ULL,
                                   .AssetCapacity   = 8ULL,
-                                  .Readback        = InSwapchain ? FRenderFrameReadbackDesc{}
-                                                                 : FRenderFrameReadbackDesc{ 64ULL * 64ULL * 4ULL },
-                                  .FrameExtension  = {} };
+                                  .Readback =
+                                      InSwapchain ? FRenderFrameReadbackDesc{} : FRenderFrameReadbackDesc{ 64ULL * 64ULL * 4ULL },
+                                  .FrameExtension = {} };
         LUMEN_CHECK_HAS_VALUE( InRenderer.Start( Desc ) );
         return InRenderer.IsRunning();
     }

@@ -545,7 +545,7 @@ Lumen::FRenderExpected Lumen::FRenderGraphCompiler::EmitTransition ( FRenderGrap
      */
     const Bool bRecordsBeforeDestination = InDestinationPass != InvalidRenderPassOrdinal and
                                            ( InSourceQueue == InDestinationQueue or InSourcePass == InvalidRenderPassOrdinal );
-    const UInt32 RecordPass = bRecordsBeforeDestination ? InDestinationPass : InSourcePass;
+    const UInt32 RecordPass              = bRecordsBeforeDestination ? InDestinationPass : InSourcePass;
     if ( RecordPass == InvalidRenderPassOrdinal or RecordPass >= InGraph.Passes.size() )
     {
         return MakeCompileError( ERenderErrorCode::InvalidInitialQueue, InDestinationPass, ResourceIndex, InSourcePass );
