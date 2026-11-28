@@ -19,5 +19,5 @@ ModuleDefinition = {
     'SourceDir' : meson.current_source_dir(),
     'Private' : 'Private',
     'Public' : 'Public',
-    'Depends' : ['Core','Maths','Scene','AppCore','RHI','Renderer','RHIOpenGL','Launch'],
+    'Depends' : ['Core','Maths','Scene','AppCore','Renderer','Launch'],
 }

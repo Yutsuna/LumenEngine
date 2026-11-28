@@ -5,11 +5,12 @@
 
 #pragma once
 
-#include <RendererExport.hpp>
-
 #include <Frame/RenderAssetTypes.hpp>
 
+#include <Memory/SharedPtr.hpp>
 #include <Memory/Span.hpp>
+#include <RHI/Commands/RHIDrawArguments.hpp>
+#include <RHI/Resources/IRHIBuffer.hpp>
 #include <Templates/Expected.hpp>
 #include <Templates/Vector.hpp>
 
@@ -23,6 +24,21 @@ namespace RHI
 } // namespace RHI
 
 /**
+ * @struct FRenderGeometryAsset
+ * @brief Device-owned vertex and index buffers produced from a descriptor.
+ * @details Private to Renderer: only the asset registry and the forward pass consume it.
+ */
+struct FRenderGeometryAsset final
+{
+    FRenderAssetId Id;
+    TSharedRef<RHI::IRHIBuffer> VertexBuffer;
+    TSharedRef<RHI::IRHIBuffer> IndexBuffer;
+    UInt32 VertexCount               = 0U;
+    UInt32 IndexCount                = 0U;
+    RHI::ERHIIndexFormat IndexFormat = RHI::ERHIIndexFormat::Index32;
+};
+
+/**
  * @class FRenderAssetRegistry
  * @brief Creates and stores geometry buffers owned by the renderer.
  * @details Registration is a control-time operation: it stages CPU data through
@@ -30,7 +46,7 @@ namespace RHI
  *          its completion before recycling transient RHI objects. The asset
  *          array is reserved once in the constructor and stays sorted by id.
  */
-class RENDERER_EXPORT FRenderAssetRegistry final
+class FRenderAssetRegistry final
 {
 public:
 

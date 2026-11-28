@@ -3,12 +3,12 @@
  * @brief Integration coverage for custom frame recording and commit-time state.
  */
 
+#include <Backend/StartWithTestDevice.hpp>
 #include <Execution/Renderer.hpp>
 
 #include <HAL/PlatformTime.hpp>
 
 #include <Device/RHIConformanceDeviceFactory.hpp>
-#include <RHI/Commands/IRHICommandList.hpp>
 #include <RHI/Device/IRHIDevice.hpp>
 #include <Rendering/RenderSnapshotStream.hpp>
 #include <Rendering/SceneExtractor.hpp>
@@ -20,42 +20,35 @@ namespace Lumen
 namespace
 {
 
-    class FFrameExtensionProbe final : public IRenderFrameExtension
+    class FFrameExtensionProbe final : public IRenderFeature
     {
     public:
 
-        RHI::FRHIExpected Initialize ( RHI::IRHIDevice LUMEN_UNUSED &InDevice,
-                                       const RHI::FRHIExtent3D &InExtent ) noexcept override
+        FRenderExtensionExpected Initialize ( IRenderFeatureHost LUMEN_UNUSED &InHost,
+                                              const FRenderExtent3D &InExtent ) noexcept override
         {
             ++InitializeCount;
             Extent = InExtent;
             return {};
         }
 
-        RHI::FRHIExpected Resize ( const RHI::FRHIExtent3D &InExtent ) noexcept override
+        FRenderExtensionExpected Resize ( const FRenderExtent3D &InExtent ) noexcept override
         {
             ++ResizeCount;
             Extent = InExtent;
             return {};
         }
 
-        RHI::FRHIExpected Record ( const FRenderFrameExtensionContext &InContext ) noexcept override
+        FRenderExtensionExpected Record ( const FRenderFrameExtensionContext &InContext ) noexcept override
         {
             ++RecordCount;
+            static_cast<void>( InContext );
             if ( bFailRecord )
             {
-                return MakeUnexpected( RHI::MakeRHIInvalidCommand( "Injected extension record failure." ) );
+                return MakeUnexpected( FRenderExtensionError{ ERenderExtensionErrorCode::RecordFailed,
+                                                              FString( "Injected extension record failure." ) } );
             }
-
-            RHI::FRHIRenderingAttachment Attachment{};
-            Attachment.View    = InContext.TargetView;
-            Attachment.LoadOp  = RHI::ERHIRenderingLoadOp::DontCare;
-            Attachment.StoreOp = RHI::ERHIRenderingStoreOp::Store;
-            RHI::FRHIRenderingDesc Desc;
-            Desc.Area = RHI::FRHIRect2D{ 0, 0, InContext.Extent.Width, InContext.Extent.Height };
-            Desc.ColorAttachments.push_back( Attachment );
-            LUMEN_TRY_EXPECT_ERROR( InContext.CommandList.BeginRendering( Desc ) );
-            return InContext.CommandList.EndRendering();
+            return {};
         }
 
         void Commit ( const UInt64 InTimelineValue, FRenderFrameStatus &InOutStatus ) noexcept override
@@ -65,7 +58,7 @@ namespace
             InOutStatus.ExtensionFrameCount = CommitCount;
         }
 
-        RHI::FRHIExtent3D Extent{};
+        FRenderExtent3D Extent{};
         UInt64 InitializeCount = 0ULL;
         UInt64 ResizeCount     = 0ULL;
         UInt64 RecordCount     = 0ULL;
@@ -122,17 +115,17 @@ namespace
         LUMEN_CHECK_TRUE( PublishFrame( Extractor ) );
         TSharedPtr<FFrameExtensionProbe> Extension = MakeShared<FFrameExtensionProbe>();
         FRenderer Renderer;
-        const FRendererDesc Desc{ .Device          = *Device,
-                                  .SnapshotStream  = &Stream,
+        const FRendererDesc Desc{ .SnapshotStream  = &Stream,
                                   .Extent          = { 64U, 64U, 1U },
+                                  .Surface         = {},
+                                  .Backend         = "null",
                                   .CommandCapacity = 16ULL,
-                                  .Swapchain       = {},
                                   .Shaders         = {},
                                   .ProxyCapacity   = 1ULL,
                                   .AssetCapacity   = 1ULL,
                                   .Readback        = {},
-                                  .FrameExtension  = StaticCastSharedPtr<IRenderFrameExtension>( Extension ) };
-        LUMEN_CHECK_HAS_VALUE( Renderer.Start( Desc ) );
+                                  .Feature         = StaticCastSharedPtr<IRenderFeature>( Extension ) };
+        LUMEN_CHECK_HAS_VALUE( StartWithTestDevice( Renderer, *Device, Desc ) );
         RequestFrame( Renderer );
         LUMEN_CHECK_HAS_VALUE( Renderer.RequestResize( { 32U, 16U, 1U } ) );
         RequestFrame( Renderer );
@@ -165,17 +158,17 @@ namespace
         TSharedPtr<FFrameExtensionProbe> Extension = MakeShared<FFrameExtensionProbe>();
         Extension->bFailRecord                     = true;
         FRenderer Renderer;
-        const FRendererDesc Desc{ .Device          = *Device,
-                                  .SnapshotStream  = &Stream,
+        const FRendererDesc Desc{ .SnapshotStream  = &Stream,
                                   .Extent          = { 16U, 16U, 1U },
+                                  .Surface         = {},
+                                  .Backend         = "null",
                                   .CommandCapacity = 16ULL,
-                                  .Swapchain       = {},
                                   .Shaders         = {},
                                   .ProxyCapacity   = 1ULL,
                                   .AssetCapacity   = 1ULL,
                                   .Readback        = {},
-                                  .FrameExtension  = StaticCastSharedPtr<IRenderFrameExtension>( Extension ) };
-        LUMEN_CHECK_HAS_VALUE( Renderer.Start( Desc ) );
+                                  .Feature         = StaticCastSharedPtr<IRenderFeature>( Extension ) };
+        LUMEN_CHECK_HAS_VALUE( StartWithTestDevice( Renderer, *Device, Desc ) );
         RequestFrame( Renderer );
         /** INFO: Shutdown publishes its own terminal result, so observe the record failure first. */
         WaitForRecordFailure( Renderer );

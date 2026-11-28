@@ -21,7 +21,7 @@ LUMEN_TEST( FRenderCommand, MakeRenderCarriesFrameIdentity )
 
 LUMEN_TEST( FRenderCommand, MakeResizeCarriesExtent )
 {
-    constexpr RHI::FRHIExtent3D Extent{ 1920U, 1080U, 1U };
+    constexpr FRenderExtent3D Extent{ 1920U, 1080U, 1U };
     constexpr FRenderCommand Command = FRenderCommand::MakeResize( Extent );
 
     LUMEN_CHECK_EQ( Command.Type, ERenderCommandType::Resize );

@@ -9,19 +9,7 @@
 #include <LogLumina.hpp>
 #include <Maths/Macros.hpp>
 
-#include <RHI/Bindings/IRHIBindingSet.hpp>
-#include <RHI/Commands/IRHICommandList.hpp>
-#include <RHI/Device/IRHIDevice.hpp>
-#include <RHI/Pipelines/RHIGraphicsPipelineDesc.hpp>
-#include <RHI/Pipelines/RHIPipelineLayoutDesc.hpp>
-#include <RHI/Resources/IRHITexture.hpp>
-#include <RHI/Resources/IRHITextureView.hpp>
-#include <RHI/Resources/RHISamplerDesc.hpp>
-#include <RHI/Resources/RHITextureDesc.hpp>
-#include <RHI/Resources/RHITextureViewDesc.hpp>
-#include <RHI/Shaders/RHIShaderDesc.hpp>
-#include <RHI/Types/RHIShaderFormat.hpp>
-#include <RHI/Types/RHIShaderStage.hpp>
+#include <Templates/Unexpected.hpp>
 
 #include <utility>
 
@@ -46,47 +34,27 @@ struct alignas( 16 ) FPostProcessConstants
 static_assert( sizeof( FPathTraceConstants ) == 96U );
 static_assert( sizeof( FPostProcessConstants ) == 16U );
 
-[[nodiscard]] Lumen::RHI::FRHIError LuminaError ( const Lumen::RHI::ERHIErrorCondition InCondition,
-                                                  const Lumen::FStringView InMessage ) noexcept
+[[nodiscard]] Lumen::FRenderExtensionError LuminaError ( const Lumen::FStringView InMessage ) noexcept
 {
-    return Lumen::RHI::MakeRHIBackendFailure( InCondition, InMessage );
+    return { Lumen::ERenderExtensionErrorCode::RecordFailed, Lumen::FString( InMessage ) };
 }
 
-[[nodiscard]] Lumen::RHI::FRHIExpected GraphError ( const Lumen::FRenderExpected &InResult ) noexcept
+[[nodiscard]] Lumen::FRenderExtensionExpected GraphError ( const Lumen::FRenderExtensionExpected &InResult ) noexcept
 {
     if ( not InResult )
     {
-        LUMEN_LOG_ERROR( Lumen::LogLumina, "Render graph declaration error {} at pass {}, resource {}, related pass {}.",
-                         static_cast<Lumen::UInt32>( InResult.Error().Code ), InResult.Error().PassOrdinal,
-                         InResult.Error().ResourceIndex, InResult.Error().RelatedPassOrdinal );
-        return Lumen::MakeUnexpected( LuminaError( Lumen::RHI::ERHIErrorCondition::Command,
-                                                  "Lumina render graph declaration failed." ) );
+        LUMEN_LOG_ERROR( Lumen::LogLumina, "Lumina render graph declaration failed: {}", InResult.Error().Message );
+        return Lumen::MakeUnexpected( InResult.Error() );
     }
     return {};
 }
 
-template <typename TType>
-[[nodiscard]] Lumen::TExpected<TType, Lumen::RHI::FRHIError>
-GraphValue ( Lumen::TExpected<TType, Lumen::FRenderError> InResult ) noexcept
-{
-    if ( not InResult )
-    {
-        LUMEN_LOG_ERROR( Lumen::LogLumina, "Render graph value error {} at pass {}, resource {}, related pass {}.",
-                         static_cast<Lumen::UInt32>( InResult.Error().Code ), InResult.Error().PassOrdinal,
-                         InResult.Error().ResourceIndex, InResult.Error().RelatedPassOrdinal );
-        return Lumen::MakeUnexpected( LuminaError( Lumen::RHI::ERHIErrorCondition::Command,
-                                                  "Lumina render graph compilation failed." ) );
-    }
-    return std::move( *InResult );
-}
-
-[[nodiscard]] Lumen::TExpected<Lumen::FString, Lumen::RHI::FRHIError> LoadShader ( const Lumen::FStringView InFilename ) noexcept
+[[nodiscard]] Lumen::TExpected<Lumen::FString, Lumen::FRenderExtensionError>
+LoadShader ( const Lumen::FStringView InFilename ) noexcept
 {
     constexpr const Lumen::AnsiChar *Roots[] = {
-        "Examples/Lumina/Shaders",
-        "../Examples/Lumina/Shaders",
-        "../../Examples/Lumina/Shaders",
-        "../../../Examples/Lumina/Shaders",
+        "Examples/Lumina/Shaders",       "../Examples/Lumina/Shaders",
+        "../../Examples/Lumina/Shaders", "../../../Examples/Lumina/Shaders",
 #if defined( LUMINA_SHADER_INSTALL_DIR )
         LUMINA_SHADER_INSTALL_DIR,
 #endif
@@ -100,103 +68,59 @@ GraphValue ( Lumen::TExpected<TType, Lumen::FRenderError> InResult ) noexcept
             auto Source = Lumen::Filesystem::FFile::ReadAllText( Path );
             if ( not Source )
             {
-                return Lumen::MakeUnexpected( LuminaError( Lumen::RHI::ERHIErrorCondition::Shader,
-                                                          "Unable to read a Lumina shader source file." ) );
+                return Lumen::MakeUnexpected( LuminaError( "Unable to read a Lumina shader source file." ) );
             }
             return std::move( *Source );
         }
     }
-    return Lumen::MakeUnexpected( LuminaError( Lumen::RHI::ERHIErrorCondition::Shader,
-                                              "Lumina shader directory was not found." ) );
-}
-
-[[nodiscard]] Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITexture>, Lumen::RHI::FRHIError>
-CreateTexture ( Lumen::RHI::IRHIDevice &InDevice,
-                const Lumen::RHI::FRHIExtent3D &InExtent,
-                const Lumen::RHI::ERHIFormat InFormat ) noexcept
-{
-    return InDevice.CreateTexture( { .Extent = InExtent,
-                                     .Format = InFormat,
-                                     .Usage  = Lumen::RHI::ERHIResourceUsage::RenderTarget |
-                                               Lumen::RHI::ERHIResourceUsage::ShaderResource,
-                                     .InitialState = Lumen::RHI::ERHIResourceState::Common,
-                                     .OptimizedClear = {} } );
-}
-
-[[nodiscard]] Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHITextureView>, Lumen::RHI::FRHIError>
-CreateView ( Lumen::RHI::IRHIDevice &InDevice, const Lumen::TSharedRef<Lumen::RHI::IRHITexture> &InTexture ) noexcept
-{
-    Lumen::RHI::FRHITextureViewDesc Desc;
-    Desc.Texture = InTexture;
-    return InDevice.CreateTextureView( Desc );
-}
-
-[[nodiscard]] Lumen::RHI::FRHIExpected WriteOneTexture ( Lumen::RHI::IRHIBindingSet &InSet,
-                                                         const Lumen::TSharedRef<Lumen::RHI::IRHITextureView> &InView,
-                                                         const Lumen::TSharedPtr<Lumen::RHI::IRHISampler> &InSampler,
-                                                         const Lumen::UInt32 InSlot = 0U ) noexcept
-{
-    const Lumen::RHI::FRHIBindingWrite Write{
-        .Slot     = InSlot,
-        .Resource = Lumen::RHI::FRHICombinedTextureSamplerBinding{ .View = InView, .Sampler = InSampler },
-    };
-    return InSet.Write( Lumen::TSpan<const Lumen::RHI::FRHIBindingWrite>( &Write, 1U ) );
+    return Lumen::MakeUnexpected( LuminaError( "Lumina shader directory was not found." ) );
 }
 
 } // namespace
 
-Lumen::FLuminaPathTracerExtension::FLuminaPathTracerExtension ( const Bool bInSoftwareAdapter ) noexcept
-    : bSoftwareAdapter( bInSoftwareAdapter )
-{
-    AccumulationStates.fill( RHI::ERHIResourceState::Common );
-    BloomStates.fill( RHI::ERHIResourceState::Common );
-}
-
-Lumen::RHI::FRHIExtent3D
-Lumen::FLuminaPathTracerExtension::ScaleExtent ( const RHI::FRHIExtent3D &InExtent ) const noexcept
+Lumen::FRenderExtent3D Lumen::FLuminaPathTracerExtension::ScaleExtent ( const FRenderExtent3D &InExtent ) const noexcept
 {
     const UInt32 Width  = bSoftwareAdapter ? InExtent.Width / 2U : InExtent.Width;
     const UInt32 Height = bSoftwareAdapter ? InExtent.Height / 2U : InExtent.Height;
     return { Width > 0U ? Width : 1U, Height > 0U ? Height : 1U, 1U };
 }
 
-Lumen::TExpected<Lumen::TSharedRef<Lumen::RHI::IRHIPipeline>, Lumen::RHI::FRHIError>
-Lumen::FLuminaPathTracerExtension::CreatePipeline ( const FString &InFragmentSource,
-                                                    const UInt32 InInlineConstantBytes,
-                                                    TSharedRef<RHI::IRHIBindingLayout> InBindingLayout,
-                                                    const RHI::ERHIFormat InTargetFormat ) noexcept
+Lumen::TExpected<Lumen::FRenderPipelineRef, Lumen::FRenderExtensionError>
+Lumen::FLuminaPathTracerExtension::CreatePipeline ( IRenderFeatureHost &InHost,
+                                                    const FString &InFragmentSource,
+                                                    const USize InInlineConstantBytes,
+                                                    FRenderBindingLayoutRef InBindingLayout,
+                                                    const ERenderFormat InTargetFormat ) noexcept
 {
-    RHI::FRHIShaderDesc PixelDesc;
-    PixelDesc.Stage       = RHI::ERHIShaderStage::Pixel;
-    PixelDesc.Format      = RHI::ERHIShaderFormat::Source;
-    PixelDesc.EntryPoint  = "main";
-    PixelDesc.Bytecode    = TSpan<const Byte>( reinterpret_cast<const Byte *>( InFragmentSource.data() ), InFragmentSource.size() );
-    PixelDesc.Reflection.InlineConstantBytes = InInlineConstantBytes;
-    PixelDesc.Reflection.Bindings.push_back( { .Slot   = 0U,
-                                               .Kind   = RHI::ERHIShaderBindingKind::ConstantBuffer,
-                                               .Stages = RHI::ERHIShaderStage::Pixel } );
-    LUMEN_EXPECT( PixelShader, Device->CreateShader( PixelDesc ) );
+    FRenderShaderDesc PixelDesc;
+    PixelDesc.Stage      = ERenderShaderStage::Pixel;
+    PixelDesc.Format     = ERenderShaderFormat::Source;
+    PixelDesc.EntryPoint = "main";
+    PixelDesc.Bytecode = TSpan<const Byte>( reinterpret_cast<const Byte *>( InFragmentSource.data() ), InFragmentSource.size() );
+    PixelDesc.InlineConstantBytes = InInlineConstantBytes;
+    LUMEN_EXPECT( PixelShader, InHost.CreateShader( PixelDesc ) );
 
-    RHI::FRHIPipelineLayoutDesc LayoutDesc;
+    FRenderPipelineLayoutDesc LayoutDesc;
     LayoutDesc.BindingLayouts.push_back( InBindingLayout );
-    LayoutDesc.InlineConstants.push_back( { .Offset = 0U,
-                                            .Size   = InInlineConstantBytes,
-                                            .Stages = RHI::ERHIShaderStage::AllGraphics } );
-    LUMEN_EXPECT( Layout, Device->CreatePipelineLayout( LayoutDesc ) );
+    LayoutDesc.InlineConstants.push_back(
+        { .Offset = 0U, .Size = static_cast<UInt32>( InInlineConstantBytes ), .Stages = ERenderShaderStage::AllGraphics } );
+    LUMEN_EXPECT( Layout, InHost.CreatePipelineLayout( LayoutDesc ) );
 
-    RHI::FRHIGraphicsPipelineDesc PipelineDesc;
-    PipelineDesc.VertexShader = *VertexShader;
+    FRenderGraphicsPipelineDesc PipelineDesc;
+    PipelineDesc.VertexShader = VertexShader;
     PipelineDesc.PixelShader  = PixelShader;
     PipelineDesc.Layout       = Layout;
-    PipelineDesc.Topology     = RHI::ERHIPrimitiveTopology::TriangleList;
+    PipelineDesc.Topology     = ERenderPrimitiveTopology::TriangleList;
     PipelineDesc.ColorFormats.push_back( InTargetFormat );
-    return Device->CreateGraphicsPipeline( PipelineDesc );
+    return InHost.CreateGraphicsPipeline( PipelineDesc );
 }
 
-Lumen::RHI::FRHIExpected
-Lumen::FLuminaPathTracerExtension::Initialize ( RHI::IRHIDevice &InDevice, const RHI::FRHIExtent3D &InExtent ) noexcept
+Lumen::FRenderExtensionExpected Lumen::FLuminaPathTracerExtension::Initialize ( IRenderFeatureHost &InHost,
+                                                                                const FRenderExtent3D &InExtent ) noexcept
 {
-    Device = &InDevice;
+    Host             = &InHost;
+    bSoftwareAdapter = InHost.GetCapabilities().bSoftwareAdapter;
+
     LUMEN_EXPECT( LoadedVertex, LoadShader( "Fullscreen.vert" ) );
     LUMEN_EXPECT( LoadedPathTrace, LoadShader( "PathTrace.frag" ) );
     LUMEN_EXPECT( LoadedBloomExtract, LoadShader( "BloomExtract.frag" ) );
@@ -208,75 +132,72 @@ Lumen::FLuminaPathTracerExtension::Initialize ( RHI::IRHIDevice &InDevice, const
     BloomBlurSource    = std::move( LoadedBloomBlur );
     DisplaySource      = std::move( LoadedDisplay );
 
-    RHI::FRHIShaderDesc VertexDesc;
-    VertexDesc.Stage      = RHI::ERHIShaderStage::Vertex;
-    VertexDesc.Format     = RHI::ERHIShaderFormat::Source;
+    FRenderShaderDesc VertexDesc;
+    VertexDesc.Stage      = ERenderShaderStage::Vertex;
+    VertexDesc.Format     = ERenderShaderFormat::Source;
     VertexDesc.EntryPoint = "main";
     VertexDesc.Bytecode   = TSpan<const Byte>( reinterpret_cast<const Byte *>( VertexSource.data() ), VertexSource.size() );
-    LUMEN_EXPECT( CreatedVertexShader, Device->CreateShader( VertexDesc ) );
-    VertexShader.Emplace( CreatedVertexShader );
+    LUMEN_EXPECT( CreatedVertexShader, Host->CreateShader( VertexDesc ) );
+    VertexShader = CreatedVertexShader;
 
-    RHI::FRHISamplerDesc SamplerDesc;
-    SamplerDesc.MinFilter = RHI::ERHISamplerFilter::Nearest;
-    SamplerDesc.MagFilter = RHI::ERHISamplerFilter::Nearest;
-    SamplerDesc.MipFilter = RHI::ERHISamplerFilter::Nearest;
-    SamplerDesc.AddressU  = RHI::ERHISamplerAddressMode::ClampToEdge;
-    SamplerDesc.AddressV  = RHI::ERHISamplerAddressMode::ClampToEdge;
-    SamplerDesc.AddressW  = RHI::ERHISamplerAddressMode::ClampToEdge;
-    LUMEN_EXPECT( CreatedNearestSampler, Device->CreateSampler( SamplerDesc ) );
-    NearestSampler = CreatedNearestSampler;
-    SamplerDesc.MinFilter = RHI::ERHISamplerFilter::Linear;
-    SamplerDesc.MagFilter = RHI::ERHISamplerFilter::Linear;
-    SamplerDesc.MipFilter = RHI::ERHISamplerFilter::Linear;
-    LUMEN_EXPECT( CreatedLinearSampler, Device->CreateSampler( SamplerDesc ) );
+    FRenderSamplerDesc SamplerDesc;
+    SamplerDesc.MinFilter = ERenderFilter::Nearest;
+    SamplerDesc.MagFilter = ERenderFilter::Nearest;
+    SamplerDesc.MipFilter = ERenderFilter::Nearest;
+    SamplerDesc.AddressU  = ERenderAddressMode::ClampToEdge;
+    SamplerDesc.AddressV  = ERenderAddressMode::ClampToEdge;
+    SamplerDesc.AddressW  = ERenderAddressMode::ClampToEdge;
+    LUMEN_EXPECT( CreatedNearestSampler, Host->CreateSampler( SamplerDesc ) );
+    NearestSampler        = CreatedNearestSampler;
+    SamplerDesc.MinFilter = ERenderFilter::Linear;
+    SamplerDesc.MagFilter = ERenderFilter::Linear;
+    SamplerDesc.MipFilter = ERenderFilter::Linear;
+    LUMEN_EXPECT( CreatedLinearSampler, Host->CreateSampler( SamplerDesc ) );
     LinearSampler = CreatedLinearSampler;
 
-    RHI::FRHIBindingLayoutDesc OneTextureDesc;
-    OneTextureDesc.Entries.push_back( { .Slot   = 0U,
-                                        .Type   = RHI::ERHIBindingType::CombinedTextureSampler,
-                                        .Stages = RHI::ERHIShaderStage::Pixel } );
-    LUMEN_EXPECT( CreatedOneTextureLayout, Device->CreateBindingLayout( OneTextureDesc ) );
-    OneTextureLayout.Emplace( CreatedOneTextureLayout );
-    RHI::FRHIBindingLayoutDesc TwoTextureDesc = OneTextureDesc;
-    TwoTextureDesc.Entries.push_back( { .Slot   = 1U,
-                                        .Type   = RHI::ERHIBindingType::CombinedTextureSampler,
-                                        .Stages = RHI::ERHIShaderStage::Pixel } );
-    LUMEN_EXPECT( CreatedTwoTextureLayout, Device->CreateBindingLayout( TwoTextureDesc ) );
-    TwoTextureLayout.Emplace( CreatedTwoTextureLayout );
+    FRenderBindingLayoutDesc OneTextureDesc;
+    OneTextureDesc.Entries.push_back(
+        { .Slot = 0U, .Type = ERenderBindingType::CombinedTextureSampler, .Stages = ERenderShaderStage::Pixel } );
+    LUMEN_EXPECT( CreatedOneTextureLayout, Host->CreateBindingLayout( OneTextureDesc ) );
+    OneTextureLayout                        = CreatedOneTextureLayout;
+    FRenderBindingLayoutDesc TwoTextureDesc = OneTextureDesc;
+    TwoTextureDesc.Entries.push_back(
+        { .Slot = 1U, .Type = ERenderBindingType::CombinedTextureSampler, .Stages = ERenderShaderStage::Pixel } );
+    LUMEN_EXPECT( CreatedTwoTextureLayout, Host->CreateBindingLayout( TwoTextureDesc ) );
+    TwoTextureLayout = CreatedTwoTextureLayout;
 
-    LUMEN_EXPECT( CreatedPathTrace,
-                  CreatePipeline( PathTraceSource, sizeof( FPathTraceConstants ), *OneTextureLayout, RHI::ERHIFormat::RGBA32Float ) );
-    LUMEN_EXPECT( CreatedBloomExtract,
-                  CreatePipeline( BloomExtractSource, sizeof( FPostProcessConstants ), *OneTextureLayout, RHI::ERHIFormat::RGBA16Float ) );
-    LUMEN_EXPECT( CreatedBloomBlur,
-                  CreatePipeline( BloomBlurSource, sizeof( FPostProcessConstants ), *OneTextureLayout, RHI::ERHIFormat::RGBA16Float ) );
-    LUMEN_EXPECT( CreatedDisplay,
-                  CreatePipeline( DisplaySource, sizeof( FPostProcessConstants ), *TwoTextureLayout, RHI::ERHIFormat::RGBA8Unorm ) );
-    PathTracePipeline.Emplace( CreatedPathTrace );
-    BloomExtractPipeline.Emplace( CreatedBloomExtract );
-    BloomBlurPipeline.Emplace( CreatedBloomBlur );
-    DisplayPipeline.Emplace( CreatedDisplay );
+    LUMEN_EXPECT( CreatedPathTrace, CreatePipeline( *Host, PathTraceSource, sizeof( FPathTraceConstants ), OneTextureLayout,
+                                                    ERenderFormat::RGBA32Float ) );
+    LUMEN_EXPECT( CreatedBloomExtract, CreatePipeline( *Host, BloomExtractSource, sizeof( FPostProcessConstants ),
+                                                       OneTextureLayout, ERenderFormat::RGBA16Float ) );
+    LUMEN_EXPECT( CreatedBloomBlur, CreatePipeline( *Host, BloomBlurSource, sizeof( FPostProcessConstants ), OneTextureLayout,
+                                                    ERenderFormat::RGBA16Float ) );
+    LUMEN_EXPECT( CreatedDisplay, CreatePipeline( *Host, DisplaySource, sizeof( FPostProcessConstants ), TwoTextureLayout,
+                                                  ERenderFormat::RGBA8Unorm ) );
+    PathTracePipeline    = CreatedPathTrace;
+    BloomExtractPipeline = CreatedBloomExtract;
+    BloomBlurPipeline    = CreatedBloomBlur;
+    DisplayPipeline      = CreatedDisplay;
 
-    RHI::FRHIRenderingAttachment ColorAttachment{};
-    ColorAttachment.LoadOp = RHI::ERHIRenderingLoadOp::DontCare;
-    RenderingDesc.ColorAttachments.push_back( ColorAttachment );
-    GraphBuilder.Emplace( FRenderGraphCapacities{ .PassCount          = 7U,
-                                                  .ResourceCount      = 5U,
-                                                  .ReadCountPerPass   = 2U,
-                                                  .WriteCountPerPass  = 1U,
-                                                  .DependencyCountPerPass = 7U,
-                                                  .TransitionCount    = 64U } );
-    TransitionRecords.reserve( 64U );
+    FrameBuilder = Host->CreateFrameBuilder( FRenderFrameCapacities{ .PassCount              = 7U,
+                                                                     .ResourceCount          = 5U,
+                                                                     .ReadCountPerPass       = 2U,
+                                                                     .WriteCountPerPass      = 1U,
+                                                                     .DependencyCountPerPass = 7U,
+                                                                     .TransitionCount        = 64U } );
+    if ( not FrameBuilder.IsValid() )
+    {
+        return Lumen::MakeUnexpected( LuminaError( "Lumina could not create its frame builder." ) );
+    }
     return CreateFrameResources( ScaleExtent( InExtent ) );
 }
 
-Lumen::RHI::FRHIExpected
-Lumen::FLuminaPathTracerExtension::CreateFrameResources ( const RHI::FRHIExtent3D &InExtent ) noexcept
+Lumen::FRenderExtensionExpected
+Lumen::FLuminaPathTracerExtension::CreateFrameResources ( const FRenderExtent3D &InExtent ) noexcept
 {
     AccumulationExtent = InExtent;
-    BloomExtent        = { InExtent.Width / 4U > 0U ? InExtent.Width / 4U : 1U,
-                           InExtent.Height / 4U > 0U ? InExtent.Height / 4U : 1U,
-                           1U };
+    BloomExtent = { InExtent.Width / 4U > 0U ? InExtent.Width / 4U : 1U, InExtent.Height / 4U > 0U ? InExtent.Height / 4U : 1U,
+                    1U };
 
     AccumulationTextures.clear();
     AccumulationViews.clear();
@@ -295,54 +216,57 @@ Lumen::FLuminaPathTracerExtension::CreateFrameResources ( const RHI::FRHIExtent3
 
     for ( UInt32 Index = 0U; Index < 2U; ++Index )
     {
-        LUMEN_EXPECT( AccumulationTexture, CreateTexture( *Device, AccumulationExtent, RHI::ERHIFormat::RGBA32Float ) );
-        LUMEN_EXPECT( AccumulationView, CreateView( *Device, AccumulationTexture ) );
+        LUMEN_EXPECT( AccumulationTexture,
+                      Host->CreateTexture( { .Extent = AccumulationExtent, .Format = ERenderFormat::RGBA32Float } ) );
+        LUMEN_EXPECT( AccumulationView, Host->CreateTextureView( AccumulationTexture ) );
         AccumulationTextures.push_back( AccumulationTexture );
         AccumulationViews.push_back( AccumulationView );
 
-        LUMEN_EXPECT( BloomTexture, CreateTexture( *Device, BloomExtent, RHI::ERHIFormat::RGBA16Float ) );
-        LUMEN_EXPECT( BloomView, CreateView( *Device, BloomTexture ) );
+        LUMEN_EXPECT( BloomTexture, Host->CreateTexture( { .Extent = BloomExtent, .Format = ERenderFormat::RGBA16Float } ) );
+        LUMEN_EXPECT( BloomView, Host->CreateTextureView( BloomTexture ) );
         BloomTextures.push_back( BloomTexture );
         BloomViews.push_back( BloomView );
 
-        LUMEN_EXPECT( PathTraceBinding, Device->CreateBindingSet( *OneTextureLayout ) );
-        LUMEN_TRY_EXPECT_ERROR( WriteOneTexture( *PathTraceBinding, AccumulationView, NearestSampler ) );
+        LUMEN_EXPECT( PathTraceBinding, Host->CreateBindingSet( OneTextureLayout ) );
+        const FRenderBindingWrite PathTraceWrite{ .Slot = 0U, .View = AccumulationView, .Sampler = NearestSampler };
+        LUMEN_EXPECT( PathTraceWriteResult,
+                      Host->WriteBindingSet( PathTraceBinding, TSpan<const FRenderBindingWrite>( &PathTraceWrite, 1U ) ) );
         PathTraceBindings.push_back( PathTraceBinding );
 
-        LUMEN_EXPECT( BloomExtractBinding, Device->CreateBindingSet( *OneTextureLayout ) );
-        LUMEN_TRY_EXPECT_ERROR( WriteOneTexture( *BloomExtractBinding, AccumulationView, NearestSampler ) );
+        LUMEN_EXPECT( BloomExtractBinding, Host->CreateBindingSet( OneTextureLayout ) );
+        const FRenderBindingWrite BloomExtractWrite{ .Slot = 0U, .View = AccumulationView, .Sampler = NearestSampler };
+        LUMEN_EXPECT( BloomExtractWriteResult,
+                      Host->WriteBindingSet( BloomExtractBinding, TSpan<const FRenderBindingWrite>( &BloomExtractWrite, 1U ) ) );
         BloomExtractBindings.push_back( BloomExtractBinding );
 
-        LUMEN_EXPECT( DisplayBinding, Device->CreateBindingSet( *TwoTextureLayout ) );
+        LUMEN_EXPECT( DisplayBinding, Host->CreateBindingSet( TwoTextureLayout ) );
+        const FRenderBindingWrite DisplayWrites[] = {
+            { .Slot = 0U, .View = AccumulationView, .Sampler = NearestSampler },
+            { .Slot = 1U, .View = BloomViews[0], .Sampler = LinearSampler },
+        };
+        LUMEN_EXPECT( DisplayWrite, Host->WriteBindingSet( DisplayBinding, DisplayWrites ) );
         DisplayBindings.push_back( DisplayBinding );
     }
 
-    LUMEN_EXPECT( CreatedBlurHorizontal, Device->CreateBindingSet( *OneTextureLayout ) );
-    LUMEN_TRY_EXPECT_ERROR( WriteOneTexture( *CreatedBlurHorizontal, BloomViews[0], LinearSampler ) );
-    BlurHorizontalBinding.Emplace( CreatedBlurHorizontal );
-    LUMEN_EXPECT( CreatedBlurVertical, Device->CreateBindingSet( *OneTextureLayout ) );
-    LUMEN_TRY_EXPECT_ERROR( WriteOneTexture( *CreatedBlurVertical, BloomViews[1], LinearSampler ) );
-    BlurVerticalBinding.Emplace( CreatedBlurVertical );
+    LUMEN_EXPECT( CreatedBlurHorizontal, Host->CreateBindingSet( OneTextureLayout ) );
+    const FRenderBindingWrite BlurHorizontalWrite{ .Slot = 0U, .View = BloomViews[0], .Sampler = LinearSampler };
+    LUMEN_EXPECT( BlurHorizontalWriteResult,
+                  Host->WriteBindingSet( CreatedBlurHorizontal, TSpan<const FRenderBindingWrite>( &BlurHorizontalWrite, 1U ) ) );
+    BlurHorizontalBinding = CreatedBlurHorizontal;
+    LUMEN_EXPECT( CreatedBlurVertical, Host->CreateBindingSet( OneTextureLayout ) );
+    const FRenderBindingWrite BlurVerticalWrite{ .Slot = 0U, .View = BloomViews[1], .Sampler = LinearSampler };
+    LUMEN_EXPECT( BlurVerticalWriteResult,
+                  Host->WriteBindingSet( CreatedBlurVertical, TSpan<const FRenderBindingWrite>( &BlurVerticalWrite, 1U ) ) );
+    BlurVerticalBinding = CreatedBlurVertical;
 
-    for ( UInt32 Index = 0U; Index < 2U; ++Index )
-    {
-        const RHI::FRHIBindingWrite DisplayWrites[] = {
-            { .Slot = 0U, .Resource = RHI::FRHICombinedTextureSamplerBinding{ .View = AccumulationViews[Index], .Sampler = NearestSampler } },
-            { .Slot = 1U, .Resource = RHI::FRHICombinedTextureSamplerBinding{ .View = BloomViews[0], .Sampler = LinearSampler } },
-        };
-        LUMEN_TRY_EXPECT_ERROR( DisplayBindings[Index]->Write( DisplayWrites ) );
-    }
-
-    AccumulationStates.fill( RHI::ERHIResourceState::Common );
-    BloomStates.fill( RHI::ERHIResourceState::Common );
     SampleCount = 0ULL;
     PingPong    = 0U;
     return {};
 }
 
-Lumen::RHI::FRHIExpected Lumen::FLuminaPathTracerExtension::Resize ( const RHI::FRHIExtent3D &InExtent ) noexcept
+Lumen::FRenderExtensionExpected Lumen::FLuminaPathTracerExtension::Resize ( const FRenderExtent3D &InExtent ) noexcept
 {
-    const RHI::FRHIExtent3D Scaled = ScaleExtent( InExtent );
+    const FRenderExtent3D Scaled = ScaleExtent( InExtent );
     if ( Scaled != AccumulationExtent )
     {
         LUMEN_TRY_EXPECT_ERROR( CreateFrameResources( Scaled ) );
@@ -352,52 +276,12 @@ Lumen::RHI::FRHIExpected Lumen::FLuminaPathTracerExtension::Resize ( const RHI::
     return {};
 }
 
-Lumen::RHI::FRHIExpected
-Lumen::FLuminaPathTracerExtension::RecordTransitions ( const FRenderGraphContext &InGraph,
-                                                       RHI::IRHICommandList &InCommandList,
-                                                       const UInt32 InPassOrdinal,
-                                                       const ERenderTransitionRecordPoint InPoint ) noexcept
-{
-    for ( const FTransitionRecord &Record : TransitionRecords )
-    {
-        if ( Record.PassOrdinal != InPassOrdinal or Record.Point != InPoint )
-        {
-            continue;
-        }
-        LUMEN_EXPECT( Transition, GraphValue( InGraph.ResolveTransition( Record.TransitionIndex ) ) );
-        LUMEN_TRY_EXPECT_ERROR( InCommandList.Transition( TSpan<const RHI::FRHITransition>( &Transition, 1U ) ) );
-    }
-    return {};
-}
-
-Lumen::RHI::FRHIExpected
-Lumen::FLuminaPathTracerExtension::RecordDraw ( const FRenderGraphContext &InGraph,
-                                                RHI::IRHICommandList &InCommandList,
-                                                const UInt32 InPassOrdinal,
-                                                TSharedRef<RHI::IRHIPipeline> InPipeline,
-                                                TSharedRef<RHI::IRHIBindingSet> InBindingSet,
-                                                TSharedRef<RHI::IRHITextureView> InTargetView,
-                                                const RHI::FRHIExtent3D &InTargetExtent,
-                                                const TSpan<const Byte> InConstants ) noexcept
-{
-    LUMEN_TRY_EXPECT_ERROR( RecordTransitions( InGraph, InCommandList, InPassOrdinal, ERenderTransitionRecordPoint::BeforePass ) );
-    RenderingDesc.Area = RHI::FRHIRect2D{ 0, 0, InTargetExtent.Width, InTargetExtent.Height };
-    RenderingDesc.ColorAttachments[0].View = InTargetView;
-    LUMEN_TRY_EXPECT_ERROR( InCommandList.BeginRendering( RenderingDesc ) );
-    LUMEN_TRY_EXPECT_ERROR( InCommandList.SetPipeline( InPipeline ) );
-    LUMEN_TRY_EXPECT_ERROR( InCommandList.SetBindingSet( 0U, InBindingSet ) );
-    LUMEN_TRY_EXPECT_ERROR( InCommandList.SetInlineConstants( RHI::ERHIShaderStage::Pixel, 0U, InConstants ) );
-    LUMEN_TRY_EXPECT_ERROR( InCommandList.Draw( { .VertexCount = 3U } ) );
-    LUMEN_TRY_EXPECT_ERROR( InCommandList.EndRendering() );
-    return RecordTransitions( InGraph, InCommandList, InPassOrdinal, ERenderTransitionRecordPoint::AfterPass );
-}
-
-Lumen::RHI::FRHIExpected
+Lumen::FRenderExtensionExpected
 Lumen::FLuminaPathTracerExtension::Record ( const FRenderFrameExtensionContext &InContext ) noexcept
 {
-    if ( Device == nullptr or not GraphBuilder or AccumulationTextures.size() != 2U )
+    if ( Host == nullptr or not FrameBuilder.IsValid() or AccumulationTextures.size() != 2U )
     {
-        return MakeUnexpected( LuminaError( RHI::ERHIErrorCondition::Command, "Lumina frame resources are not initialized." ) );
+        return Lumen::MakeUnexpected( LuminaError( "Lumina frame resources are not initialized." ) );
     }
 
     const FRenderCameraRecord *ActiveCamera = nullptr;
@@ -423,136 +307,112 @@ Lumen::FLuminaPathTracerExtension::Record ( const FRenderFrameExtensionContext &
     }
     if ( CameraTransform == nullptr )
     {
-        return MakeUnexpected( LuminaError( RHI::ERHIErrorCondition::Command, "The active Lumina camera has no transform." ) );
+        return Lumen::MakeUnexpected( LuminaError( "The active Lumina camera has no transform." ) );
     }
 
     const Maths::FMat4x4f &WorldTransform = CameraTransform->WorldTransform;
     const Maths::FVec3f CameraPosition( WorldTransform[3].X, WorldTransform[3].Y, WorldTransform[3].Z );
 
-    /**
-     * INFO: LookAt stores R = Up x Forward in column 0, while PathTrace.frag builds rays with
-     *       Forward + Right * ndc.x + Up * ndc.y. That shader basis is left-handed, so Right is -R.
-     */
+    /** INFO: The shader basis is left-handed, so Right is the negation of the LookAt rig's column 0. */
     const Maths::FVec3f Forward( WorldTransform[2].X, WorldTransform[2].Y, WorldTransform[2].Z );
     const Maths::FVec3f Up( WorldTransform[1].X, WorldTransform[1].Y, WorldTransform[1].Z );
     const Maths::FVec3f Right( -WorldTransform[0].X, -WorldTransform[0].Y, -WorldTransform[0].Z );
 
-    /** INFO: Perspective stores +/- 1 / tan(fov / 2) in [1][1]; the magnitude is what the shader needs. */
+    /** INFO: Perspective stores +/- 1 / tan(fov / 2) in [1][1]; only the magnitude is needed. */
     const Float32 ProjectionScale = ActiveCamera->Projection[1].Data[1];
     const Float32 TanHalfFov      = ProjectionScale != 0.0F ? 1.0F / Maths::Abs( ProjectionScale ) : 1.0F;
 
-    /** INFO: A rotation-only look-at or a FOV change must restart accumulation just like a translation does. */
-    if ( not bHasCamera or CameraPosition != LastCameraPosition or Forward != LastCameraForward or
-         TanHalfFov != LastTanHalfFov )
+    /** INFO: A rotation-only look-at or a FOV change restarts accumulation exactly like a translation. */
+    if ( not bHasCamera or CameraPosition != LastCameraPosition or Forward != LastCameraForward or TanHalfFov != LastTanHalfFov )
     {
         SampleCount = 0ULL;
         PingPong    = 0U;
     }
-    if ( not bHasCamera )
-    {
-        LUMEN_LOG_INFO( LogLumina, "Initial path-traced camera position: ({}, {}, {}).", CameraPosition.X, CameraPosition.Y,
-                        CameraPosition.Z );
-    }
-    bHasCamera         = true;
-    LastCameraPosition = CameraPosition;
-    LastCameraForward  = Forward;
-    LastTanHalfFov     = TanHalfFov;
-    PendingWriteIndex  = 1U - PingPong;
-    const UInt32 ReadIndex  = PingPong;
-    const UInt32 WriteIndex = PendingWriteIndex;
+    bHasCamera                           = true;
+    LastCameraPosition                   = CameraPosition;
+    LastCameraForward                    = Forward;
+    LastTanHalfFov                       = TanHalfFov;
+    const UInt32 ReadIndex               = PingPong;
+    const UInt32 WriteIndex              = 1U - PingPong;
     InContext.Status.ExtensionFrameCount = SampleCount;
     const FPathTraceConstants PathConstants{
-        .ResolutionFrame = Maths::FVec4f( static_cast<Float32>( AccumulationExtent.Width ),
-                                          static_cast<Float32>( AccumulationExtent.Height ),
-                                          static_cast<Float32>( SampleCount ), 0.0F ),
-        .CameraPosition  = Maths::FVec4f( CameraPosition.X, CameraPosition.Y, CameraPosition.Z, 0.0F ),
-        .CameraForward   = Maths::FVec4f( Forward.X, Forward.Y, Forward.Z, 0.0F ),
-        .CameraRight     = Maths::FVec4f( Right.X, Right.Y, Right.Z, 0.0F ),
-        .CameraUp        = Maths::FVec4f( Up.X, Up.Y, Up.Z, 0.0F ),
-        .CameraParams    = Maths::FVec4f( TanHalfFov, 0.0F, 0.0F, 0.0F ),
+        .ResolutionFrame =
+            Maths::FVec4f( static_cast<Float32>( AccumulationExtent.Width ), static_cast<Float32>( AccumulationExtent.Height ),
+                           static_cast<Float32>( SampleCount ), 0.0F ),
+        .CameraPosition = Maths::FVec4f( CameraPosition.X, CameraPosition.Y, CameraPosition.Z, 0.0F ),
+        .CameraForward  = Maths::FVec4f( Forward.X, Forward.Y, Forward.Z, 0.0F ),
+        .CameraRight    = Maths::FVec4f( Right.X, Right.Y, Right.Z, 0.0F ),
+        .CameraUp       = Maths::FVec4f( Up.X, Up.Y, Up.Z, 0.0F ),
+        .CameraParams   = Maths::FVec4f( TanHalfFov, 0.0F, 0.0F, 0.0F ),
     };
-    const FPostProcessConstants NextSampleConstants{ .Values = Maths::FVec4f( static_cast<Float32>( SampleCount + 1ULL ),
-                                                                             0.0F, 0.0F, 0.0F ) };
+    const FPostProcessConstants NextSampleConstants{
+        .Values = Maths::FVec4f( static_cast<Float32>( SampleCount + 1ULL ), 0.0F, 0.0F, 0.0F ) };
 
-    GraphBuilder->Reset();
-    const auto Import = [this] ( TSharedRef<RHI::IRHITexture> InTexture, const RHI::ERHIResourceState InState,
-                                 const RHI::ERHIResourceState InFinalState ) noexcept
+    FrameBuilder->Reset();
+    const auto Import = [this] ( const FRenderTextureRef &InTexture ) noexcept
     {
-        return GraphValue( GraphBuilder->Import( InTexture, { .InitialState = InState,
-                                                              .FinalState   = InFinalState,
-                                                              .InitialQueue = RHI::ERHIQueueType::Graphics,
-                                                              .FinalQueue   = RHI::ERHIQueueType::Graphics } ) );
+        return FrameBuilder->Import( InTexture );
     };
-    LUMEN_EXPECT( AccumReadResource, Import( AccumulationTextures[ReadIndex], AccumulationStates[ReadIndex],
-                                             RHI::ERHIResourceState::ShaderResource ) );
-    LUMEN_EXPECT( AccumWriteResource, Import( AccumulationTextures[WriteIndex], AccumulationStates[WriteIndex],
-                                              RHI::ERHIResourceState::ShaderResource ) );
-    LUMEN_EXPECT( Bloom0Resource, Import( BloomTextures[0], BloomStates[0], RHI::ERHIResourceState::ShaderResource ) );
-    LUMEN_EXPECT( Bloom1Resource, Import( BloomTextures[1], BloomStates[1], RHI::ERHIResourceState::ShaderResource ) );
-    const RHI::ERHIResourceState TargetState = InContext.TargetTexture->GetInitialState();
-    const RHI::ERHIResourceState FinalTargetState =
-        TargetState == RHI::ERHIResourceState::Present ? RHI::ERHIResourceState::Present : RHI::ERHIResourceState::Common;
-    LUMEN_EXPECT( TargetResource, Import( InContext.TargetTexture, TargetState, FinalTargetState ) );
+    LUMEN_EXPECT( AccumReadResource, Import( AccumulationTextures[ReadIndex] ) );
+    LUMEN_EXPECT( AccumWriteResource, Import( AccumulationTextures[WriteIndex] ) );
+    LUMEN_EXPECT( Bloom0Resource, Import( BloomTextures[0] ) );
+    LUMEN_EXPECT( Bloom1Resource, Import( BloomTextures[1] ) );
+    LUMEN_TRY_EXPECT_ERROR( GraphError( FrameBuilder->SetTarget( InContext.TargetTexture ) ) );
+    LUMEN_EXPECT( TargetResource, Import( InContext.TargetTexture ) );
 
-    TArray<FRenderPassHandle, 7U> Passes{};
-    for ( FRenderPassHandle &Pass : Passes )
+    TArray<FRenderFramePassHandle, 7U> Passes{};
+    for ( FRenderFramePassHandle &Pass : Passes )
     {
-        LUMEN_EXPECT( CreatedPass, GraphValue( GraphBuilder->AddPass( { .bHasSideEffects = true } ) ) );
+        LUMEN_EXPECT( CreatedPass, FrameBuilder->AddPass( true ) );
         Pass = CreatedPass;
     }
-    LUMEN_TRY_EXPECT_ERROR( GraphError( GraphBuilder->Read( Passes[0], AccumReadResource, RHI::ERHIResourceState::ShaderResource ) ) );
-    LUMEN_TRY_EXPECT_ERROR( GraphError( GraphBuilder->Write( Passes[0], AccumWriteResource, RHI::ERHIResourceState::RenderTarget ) ) );
-    LUMEN_TRY_EXPECT_ERROR( GraphError( GraphBuilder->Read( Passes[1], AccumWriteResource, RHI::ERHIResourceState::ShaderResource ) ) );
-    LUMEN_TRY_EXPECT_ERROR( GraphError( GraphBuilder->Write( Passes[1], Bloom0Resource, RHI::ERHIResourceState::RenderTarget ) ) );
+    LUMEN_TRY_EXPECT_ERROR( GraphError( FrameBuilder->Read( Passes[0], AccumReadResource ) ) );
+    LUMEN_TRY_EXPECT_ERROR( GraphError( FrameBuilder->Write( Passes[0], AccumWriteResource ) ) );
+    LUMEN_TRY_EXPECT_ERROR( GraphError( FrameBuilder->Read( Passes[1], AccumWriteResource ) ) );
+    LUMEN_TRY_EXPECT_ERROR( GraphError( FrameBuilder->Write( Passes[1], Bloom0Resource ) ) );
     for ( UInt32 BlurPass = 0U; BlurPass < 4U; ++BlurPass )
     {
         const Bool bHorizontal = ( BlurPass % 2U ) == 0U;
-        LUMEN_TRY_EXPECT_ERROR( GraphError( GraphBuilder->Read( Passes[2U + BlurPass],
-                                                                bHorizontal ? Bloom0Resource : Bloom1Resource,
-                                                                RHI::ERHIResourceState::ShaderResource ) ) );
-        LUMEN_TRY_EXPECT_ERROR( GraphError( GraphBuilder->Write( Passes[2U + BlurPass],
-                                                                 bHorizontal ? Bloom1Resource : Bloom0Resource,
-                                                                 RHI::ERHIResourceState::RenderTarget ) ) );
+        LUMEN_TRY_EXPECT_ERROR(
+            GraphError( FrameBuilder->Read( Passes[2U + BlurPass], bHorizontal ? Bloom0Resource : Bloom1Resource ) ) );
+        LUMEN_TRY_EXPECT_ERROR(
+            GraphError( FrameBuilder->Write( Passes[2U + BlurPass], bHorizontal ? Bloom1Resource : Bloom0Resource ) ) );
     }
-    LUMEN_TRY_EXPECT_ERROR( GraphError( GraphBuilder->Read( Passes[6], AccumWriteResource, RHI::ERHIResourceState::ShaderResource ) ) );
-    LUMEN_TRY_EXPECT_ERROR( GraphError( GraphBuilder->Read( Passes[6], Bloom0Resource, RHI::ERHIResourceState::ShaderResource ) ) );
-    LUMEN_TRY_EXPECT_ERROR( GraphError( GraphBuilder->Write( Passes[6], TargetResource, RHI::ERHIResourceState::RenderTarget ) ) );
+    LUMEN_TRY_EXPECT_ERROR( GraphError( FrameBuilder->Read( Passes[6], AccumWriteResource ) ) );
+    LUMEN_TRY_EXPECT_ERROR( GraphError( FrameBuilder->Read( Passes[6], Bloom0Resource ) ) );
+    LUMEN_TRY_EXPECT_ERROR( GraphError( FrameBuilder->Write( Passes[6], TargetResource ) ) );
 
-    LUMEN_EXPECT( Compiled, GraphValue( std::move( *GraphBuilder ).Compile() ) );
-    TransitionRecords.clear();
-    const TSpan<const FRenderTransition> Transitions = Compiled.GetTransitions();
-    for ( USize Index = 0U; Index < Transitions.size(); ++Index )
+    TUniquePtr<IRenderCompiledFrame> Compiled = FrameBuilder->Compile();
+    if ( not Compiled.IsValid() )
     {
-        TransitionRecords.push_back( { .TransitionIndex = Index,
-                                       .PassOrdinal     = Transitions[Index].RecordPassOrdinal,
-                                       .Point           = Transitions[Index].RecordPoint } );
+        return Lumen::MakeUnexpected( LuminaError( "Lumina render graph compilation failed." ) );
     }
-    FRenderGraphContext Graph( std::move( Compiled ) );
 
     for ( UInt32 PassOrdinal = 0U; PassOrdinal < 7U; ++PassOrdinal )
     {
-        RHI::FRHIExpected Recorded{};
+        FRenderExtensionExpected Recorded{};
         switch ( PassOrdinal )
         {
         case 0U:
-            Recorded = RecordDraw( Graph, InContext.CommandList, PassOrdinal, *PathTracePipeline, PathTraceBindings[ReadIndex],
-                                   AccumulationViews[WriteIndex], AccumulationExtent,
-                                   TSpan<const Byte>( reinterpret_cast<const Byte *>( &PathConstants ), sizeof( PathConstants ) ) );
+            Recorded = Compiled->RecordPass(
+                InContext.Encoder, PassOrdinal, PathTracePipeline, PathTraceBindings[ReadIndex], AccumulationViews[WriteIndex],
+                AccumulationExtent,
+                TSpan<const Byte>( reinterpret_cast<const Byte *>( &PathConstants ), sizeof( PathConstants ) ) );
             break;
         case 1U:
-            Recorded = RecordDraw( Graph, InContext.CommandList, PassOrdinal, *BloomExtractPipeline,
-                                   BloomExtractBindings[WriteIndex], BloomViews[0], BloomExtent,
-                                   TSpan<const Byte>( reinterpret_cast<const Byte *>( &NextSampleConstants ),
-                                                      sizeof( NextSampleConstants ) ) );
+            Recorded = Compiled->RecordPass(
+                InContext.Encoder, PassOrdinal, BloomExtractPipeline, BloomExtractBindings[WriteIndex], BloomViews[0],
+                BloomExtent,
+                TSpan<const Byte>( reinterpret_cast<const Byte *>( &NextSampleConstants ), sizeof( NextSampleConstants ) ) );
             break;
         case 2U:
         case 4U:
         {
             const Float32 Scale = PassOrdinal == 2U ? 1.0F : 2.2F;
             const FPostProcessConstants Constants{ .Values = Maths::FVec4f( Scale, 0.0F, 0.0F, 0.0F ) };
-            Recorded = RecordDraw( Graph, InContext.CommandList, PassOrdinal, *BloomBlurPipeline, *BlurHorizontalBinding,
-                                   BloomViews[1], BloomExtent,
-                                   TSpan<const Byte>( reinterpret_cast<const Byte *>( &Constants ), sizeof( Constants ) ) );
+            Recorded = Compiled->RecordPass(
+                InContext.Encoder, PassOrdinal, BloomBlurPipeline, BlurHorizontalBinding, BloomViews[1], BloomExtent,
+                TSpan<const Byte>( reinterpret_cast<const Byte *>( &Constants ), sizeof( Constants ) ) );
             break;
         }
         case 3U:
@@ -560,20 +420,20 @@ Lumen::FLuminaPathTracerExtension::Record ( const FRenderFrameExtensionContext &
         {
             const Float32 Scale = PassOrdinal == 3U ? 1.0F : 2.2F;
             const FPostProcessConstants Constants{ .Values = Maths::FVec4f( 0.0F, Scale, 0.0F, 0.0F ) };
-            Recorded = RecordDraw( Graph, InContext.CommandList, PassOrdinal, *BloomBlurPipeline, *BlurVerticalBinding,
-                                   BloomViews[0], BloomExtent,
-                                   TSpan<const Byte>( reinterpret_cast<const Byte *>( &Constants ), sizeof( Constants ) ) );
+            Recorded = Compiled->RecordPass(
+                InContext.Encoder, PassOrdinal, BloomBlurPipeline, BlurVerticalBinding, BloomViews[0], BloomExtent,
+                TSpan<const Byte>( reinterpret_cast<const Byte *>( &Constants ), sizeof( Constants ) ) );
             break;
         }
         case 6U:
         {
-            const FPostProcessConstants Constants{ .Values = Maths::FVec4f( static_cast<Float32>( SampleCount + 1ULL ),
-                                                                          static_cast<Float32>( InContext.Extent.Width ),
-                                                                          static_cast<Float32>( InContext.Extent.Height ),
-                                                                          0.0F ) };
-            Recorded = RecordDraw( Graph, InContext.CommandList, PassOrdinal, *DisplayPipeline, DisplayBindings[WriteIndex],
-                                   InContext.TargetView, InContext.Extent,
-                                   TSpan<const Byte>( reinterpret_cast<const Byte *>( &Constants ), sizeof( Constants ) ) );
+            const FPostProcessConstants Constants{ .Values =
+                                                       Maths::FVec4f( static_cast<Float32>( SampleCount + 1ULL ),
+                                                                      static_cast<Float32>( InContext.Extent.Width ),
+                                                                      static_cast<Float32>( InContext.Extent.Height ), 0.0F ) };
+            Recorded = Compiled->RecordPass(
+                InContext.Encoder, PassOrdinal, DisplayPipeline, DisplayBindings[WriteIndex], InContext.TargetView,
+                InContext.Extent, TSpan<const Byte>( reinterpret_cast<const Byte *>( &Constants ), sizeof( Constants ) ) );
             break;
         }
         default:
@@ -585,18 +445,13 @@ Lumen::FLuminaPathTracerExtension::Record ( const FRenderFrameExtensionContext &
         }
         ++InContext.Status.DrawCallCount;
     }
-
-    PendingAccumulationStates.fill( RHI::ERHIResourceState::ShaderResource );
-    PendingBloomStates.fill( RHI::ERHIResourceState::ShaderResource );
     return {};
 }
 
 void Lumen::FLuminaPathTracerExtension::Commit ( const UInt64 LUMEN_UNUSED InTimelineValue,
                                                  FRenderFrameStatus &InOutStatus ) noexcept
 {
-    AccumulationStates = PendingAccumulationStates;
-    BloomStates        = PendingBloomStates;
-    PingPong           = PendingWriteIndex;
+    PingPong = 1U - PingPong;
     ++SampleCount;
     InOutStatus.ExtensionFrameCount = SampleCount;
 }

@@ -42,6 +42,12 @@ to `.agents/`; an explicit `.agents/` prefix is equally valid.
 A module is compiled only if listed in `ModuleNames` (`Source/meson.build`) and
 has a `meson.build` in its `Source/` directory.
 
+**Private dependencies:** `ModuleDefinition` accepts a `PrivateDepends` key.
+It is compiled/linked into the module's target and its tests/benchmarks, but is
+absent from the `declare_dependency()` consumed by clients. `Renderer` uses it
+for `RHI`/`RHIOpenGL`; `Launch` and clients must never declare or include a
+backend.
+
 ## Fast facts (always apply)
 
 - Three build trees exist and **all three must compile at the end of every

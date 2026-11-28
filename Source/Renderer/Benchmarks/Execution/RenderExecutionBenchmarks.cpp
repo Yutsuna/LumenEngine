@@ -3,6 +3,7 @@
  * @brief Steady-state enqueue and Null clear-frame CPU costs; no GPU timing is reported.
  */
 
+#include <Backend/StartWithTestDevice.hpp>
 #include <Execution/Renderer.hpp>
 
 #include <World/World.hpp>
@@ -85,17 +86,18 @@ namespace
         FWorld World( MakeWorldDesc() );
         FRenderer Renderer;
         const FRendererDesc Desc{
-            .Device          = *Device,
             .SnapshotStream  = &World.GetRenderSnapshotStream(),
             .Extent          = { Extent, Extent, 1U },
+            .Surface         = {},
+            .Backend         = {},
             .CommandCapacity = 64ULL,
-            .Swapchain       = {},
             .Shaders         = {},
             .ProxyCapacity   = 256ULL,
             .AssetCapacity   = 64ULL,
             .Readback        = {},
+            .Feature         = {},
         };
-        LUMEN_ASSERT( Renderer.Start( Desc ).HasValue() );
+        LUMEN_ASSERT( StartWithTestDevice( Renderer, *Device, Desc ).HasValue() );
 
         State.SetItemsPerIteration( 1ULL );
         UInt64 FrameIndex = 0ULL;

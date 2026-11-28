@@ -81,6 +81,13 @@ meson test -C Build
 Without direnv, prefix each one:
 `.\Windows\Setup.ps1 -Command "meson compile -C Build"`.
 
+Example executables are self-contained: a post-build `custom_target`
+(`Meson/MesonStageRuntimeDlls.py`) copies the engine DLLs next to
+`Build*/Examples/LuminaExample.exe`, so running an example needs no PATH entry
+beyond the UCRT64 bin. Test and benchmark binaries still live beside their
+targets in `Build*/Source/Meson/` and resolve the DLLs through the
+`Build*/Source/Meson/Private` directory added by `.envrc`.
+
 `Scripts/BuildMeson.ps1` reconfigures all three build trees in parallel but
 calls a bare `meson`: it is only safe **from an activated shell**. Never run it
 from a plain PowerShell where global tools could win.

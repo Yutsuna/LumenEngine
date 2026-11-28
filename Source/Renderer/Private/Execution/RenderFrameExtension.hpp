@@ -8,7 +8,6 @@
 #include <Memory/SharedPtr.hpp>
 #include <RHI/Types/RHIError.hpp>
 #include <RHI/Types/RHIExtent.hpp>
-#include <RendererExport.hpp>
 #include <Rendering/RenderSnapshotView.hpp>
 #include <Templates/Expected.hpp>
 
@@ -41,7 +40,7 @@ struct FRenderFrameExtensionContext
  * @class IRenderFrameExtension
  * @brief Replaces the renderer's built-in clear/forward record with custom portable RHI passes.
  */
-class RENDERER_EXPORT IRenderFrameExtension
+class IRenderFrameExtension
 {
 public:
 

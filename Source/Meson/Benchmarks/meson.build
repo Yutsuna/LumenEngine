@@ -1,7 +1,9 @@
 #{
 # Source/Meson/Benchmarks/meson.build
 # Discovers and registers each module's benchmark suite.
-# Reads  : ModuleDefinitions, GlobalModules, PublicIncludes, ALL_WARNINGS
+# Reads  : ModuleDefinitions, GlobalModules, PublicIncludes, ALL_WARNINGS,
+#          PythonInterpreter, SourceGlobber,
+#          ModuleDefinition.get('Depends'), ModuleDefinition.get('PrivateDepends')
 # Writes : (nothing; only registers `benchmark()` targets)
 #}
 
@@ -12,7 +14,7 @@ endif
 foreach ModuleDefinition : ModuleDefinitions
     ModuleName = ModuleDefinition.get('Name')
     ModuleSourceDirRel = ModuleDefinition.get('SourceDirRel')
-    ModuleDependencies = ModuleDefinition.get('Depends', [])
+    ModuleDependencies = ModuleDefinition.get('Depends', []) + ModuleDefinition.get('PrivateDepends', [])
 
     ModulePath = SourceRoot / ModuleSourceDirRel
     PrivatePath = ModulePath / ModuleDefinition.get('Private', 'Private')
@@ -21,17 +23,7 @@ foreach ModuleDefinition : ModuleDefinitions
     BenchmarkSources = []
 
     if FileSystem.is_dir(BenchmarksPath)
-        FindBenchmarkResult = run_command( 'python3', '-c',
-'''
-import sys
-from pathlib import Path
-for p in Path(sys.argv[1]).rglob("*"):
-    if p.suffix in (".c", ".cpp"):
-        print(p.as_posix())
-''',
-            BenchmarksPath,
-            check : false,
-        )
+        FindBenchmarkResult = run_command(PythonInterpreter, SourceGlobber, BenchmarksPath, check : false)
         if FindBenchmarkResult.returncode() != 0
             error(
                 'Could not list benchmarks for module @0@: @1@'

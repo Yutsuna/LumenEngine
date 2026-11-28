@@ -317,3 +317,16 @@ rendering DTOs only). Release build only — see `skills/write-benchmarks.md`.
   tombstone for a bound dormant actor, destruction of unassigned actors, refusal
   on a full partition journal, conflict counters, 3 seeds × 32 runs × 1/2/4
   workers, skipped publications, two isolated worlds and cross-cell detach.
+
+## Camera source of truth
+
+- `Public/Camera/{CameraTypes,CameraRegistry,CameraActor}.hpp` plus
+  `Private/Camera/` implement a data-oriented camera component column: bounded,
+  pre-reserved, indexed by `ActorID`, mutex-protected and allocation-free on
+  mutation. `ACameraActor` is a thin message adapter (`SetPose`, `SetLookAt`,
+  `SetParams`, `SetActive`) with no orbit policy.
+- `World` owns the registry (`TryAdd/TryRemoveCameraComponent`,
+  `GetCameraRegistry`); `PublishRenderSnapshot()` reads only that registry and
+  `FWorldRenderContent::Cameras` no longer exists. Camera records are the single
+  source of truth for renderers and clients; do not reintroduce camera records
+  authored by clients in `FWorldRenderContent`.

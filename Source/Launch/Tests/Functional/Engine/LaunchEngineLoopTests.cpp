@@ -7,10 +7,13 @@
 
 #include <CLI/CommandLine.hpp>
 #include <Engine/LaunchEngineModule.hpp>
+#include <HAL/PlatformSignal.hpp>
 #include <HAL/PlatformTime.hpp>
 #include <Memory/UniquePtr.hpp>
 #include <Templates/Vector.hpp>
 #include <Tests/UnitTest.hpp>
+
+#include <csignal>
 
 namespace Lumen
 {
@@ -115,7 +118,7 @@ namespace
         LUMEN_CHECK_HAS_VALUE( Result );
 
         /** INFO: Registered platform modules gate themselves off via IsEnabled when headless. */
-        LUMEN_CHECK_EQ( Result->Modules.Num(), 0ULL );
+        LUMEN_CHECK_EQ( Result->Modules.Num(), 1ULL );
     }
 
     LUMEN_TEST( FLaunchEngineLoop_Run, RespectsMaxFrames )
@@ -200,6 +203,39 @@ namespace
         Launch::FLaunchEngineLoop::RequestExit();
 
         const auto RunResult = Launch::FLaunchEngineLoop::Run( std::move( *InitResult ) );
+
+        LUMEN_CHECK_HAS_VALUE( RunResult );
+        LUMEN_CHECK_EQ( RunResult->FrameCount, 0ULL );
+        LUMEN_CHECK_TRUE( RunResult->bInterrupted );
+    }
+
+    LUMEN_TEST( FLaunchEngineLoop_Run, DispatchesPendingOSSignals )
+    {
+        struct FSignalCleanup
+        {
+            ~FSignalCleanup () noexcept
+            {
+                HAL::FPlatformSignal::Reset();
+                Launch::FLaunchEngineLoop::ResetExitRequest();
+            }
+        } Cleanup;
+
+        HAL::FPlatformSignal::Bind( HAL::ESystemSignal::Interrupt, [] ( HAL::ESystemSignal::Type ) noexcept
+        {
+            Launch::FLaunchEngineLoop::RequestExit();
+        } );
+
+        /** INFO: raw raise only records the pending bit; the loop must dispatch it on the game thread. */
+        std::raise( static_cast<Int32>( HAL::ESystemSignal::Interrupt ) );
+
+        Launch::FInitState State;
+        State.Config.bHeadless    = true;
+        State.Config.MaxFrameTime = 0.1;
+        State.Config.MaxFPS       = 0.0;
+
+        Launch::FLaunchEngineLoop::ResetExitRequest();
+
+        const auto RunResult = Launch::FLaunchEngineLoop::Run( std::move( State ) );
 
         LUMEN_CHECK_HAS_VALUE( RunResult );
         LUMEN_CHECK_EQ( RunResult->FrameCount, 0ULL );

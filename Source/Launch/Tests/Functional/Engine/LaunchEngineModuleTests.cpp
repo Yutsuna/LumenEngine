@@ -126,7 +126,8 @@ namespace
         const auto Started = Stack.StartAll( Config );
 
         LUMEN_CHECK_HAS_VALUE( Started );
-        LUMEN_CHECK_EQ( Stack.Num(), 0ULL );
+        /** INFO: The headless renderer module is always present; only window/application services are absent. */
+        LUMEN_CHECK_EQ( Stack.Num(), 1ULL );
         LUMEN_CHECK_TRUE( Stack.FindService<Launch::FLaunchApplicationModule>() == nullptr );
     }
 

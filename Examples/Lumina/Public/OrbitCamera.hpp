@@ -12,9 +12,9 @@ namespace Lumen
 /** @struct FOrbitCameraState @brief Yaw, pitch, distance and fixed orbit target. */
 struct FOrbitCameraState
 {
-    Float32 Yaw      = 0.45F;
-    Float32 Pitch    = 0.22F;
-    Float32 Distance = 7.2F;
+    Float32 Yaw          = 0.45F;
+    Float32 Pitch        = 0.22F;
+    Float32 Distance     = 7.2F;
     Maths::FVec3f Target = Maths::FVec3f( 0.0F, 1.05F, 0.0F );
 };
 

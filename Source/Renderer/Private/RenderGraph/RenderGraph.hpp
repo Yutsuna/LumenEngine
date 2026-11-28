@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <RendererExport.hpp>
-
 #include <RHI/Memory/RHITransientBatch.hpp>
 #include <RenderGraph/RenderGraphTypes.hpp>
 
@@ -21,7 +19,7 @@ class FCompiledRenderGraph;
  * @brief Move-only arenas shared by the builder and the consuming compilation.
  * @details Instances are created and mutated through FRenderGraphBuilder.
  */
-class RENDERER_EXPORT FRenderGraph final
+class FRenderGraph final
 {
 public:
 

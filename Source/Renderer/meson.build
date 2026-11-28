@@ -11,7 +11,8 @@ ModuleDefinition = {
     'Public' : 'Public',
     'Tests' : 'Tests',
     'Benchmarks' : 'Benchmarks',
-    'Depends' : ['Core', 'Maths', 'RHI', 'Scene'],
+    'Depends' : ['Core', 'Maths', 'Scene'],
+    'PrivateDepends' : ['RHI', 'RHIOpenGL'],
     'ExtraTestSources' : RHINullTestSupportSources,
     'ExtraTestIncludeDirectories' : [ RHIConformanceIncludeDirectories, RHIPrivateIncludeDirectories ],
 

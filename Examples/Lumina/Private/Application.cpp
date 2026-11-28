@@ -1,13 +1,12 @@
 /**
  * @file Application.cpp
- * @brief Implements Lumina startup, native presentation and the per-frame world/render handoff.
+ * @brief Implements Lumina startup, camera world and the per-frame render handoff.
  */
 
 #include "Templates/Expected.hpp"
 #include <Application.hpp>
 
 #include <Camera/CameraActor.hpp>
-#include <Execution/Renderer.hpp>
 #include <Generic/GenericWindow.hpp>
 #include <LogLumina.hpp>
 #include <MessageHandler.hpp>
@@ -15,75 +14,68 @@
 #include <OrbitCamera.hpp>
 #include <PathTracerExtension.hpp>
 
-#include <Engine/Modules/LaunchSurfaceBridge.hpp>
-#include <RHIOpenGL/RHIOpenGLModule.hpp>
+#include <Engine/Modules/LaunchApplicationModule.hpp>
+#include <Engine/Modules/LaunchRendererModule.hpp>
+#include <Engine/Modules/LaunchWindowModule.hpp>
 
-#include <RHI/Device/IRHIDevice.hpp>
-#include <RHI/Module/IRHIModule.hpp>
-#include <RHI/Presentation/IRHISwapchain.hpp>
-#include <RHI/Presentation/RHISwapchainDesc.hpp>
 #include <World/World.hpp>
 
 #include <Maths/Macros.hpp>
 
 #include <charconv>
 
+namespace Lumen
+{
+
 namespace
 {
 
-[[nodiscard]] Lumen::TUnexpected<Lumen::Launch::FLaunchError>
-LuminaFailure ( const Lumen::FStringView InMessage ) noexcept
-{
-    return Lumen::Launch::LaunchFailure( Lumen::Launch::ELaunchStage::Init,
-                                         Lumen::Launch::ELaunchErrorCode::ModuleCreationFailed, InMessage );
-}
-
-void LogRHIFailure ( const Lumen::FStringView InOperation, const Lumen::RHI::FRHIError &InError ) noexcept
-{
-    LUMEN_LOG_ERROR( Lumen::LogLumina, "{}: {}", InOperation, InError.Message );
-}
+    inline TUnexpected<Launch::FLaunchError> LuminaFailure ( const FStringView InMessage ) noexcept
+    {
+        return Launch::LaunchFailure( Launch::ELaunchStage::Init, Launch::ELaunchErrorCode::ModuleCreationFailed, InMessage );
+    }
 
 } // namespace
 
-LUMEN_REGISTER_MODULE( Lumen::FLuminaApplication )
-const Lumen::FLogCategory Lumen::LogLumina{ "Lumina" };
+LUMEN_REGISTER_MODULE( FLuminaApplication )
+const FLogCategory LogLumina{ "Lumina" };
 
-Lumen::FLuminaApplication::FLuminaApplication () noexcept = default;
-Lumen::FLuminaApplication::~FLuminaApplication () noexcept = default;
+FLuminaApplication::FLuminaApplication () noexcept  = default;
+FLuminaApplication::~FLuminaApplication () noexcept = default;
 
-Lumen::Launch::TLaunchResult<Lumen::TUniquePtr<Lumen::FLuminaApplication>>
-Lumen::FLuminaApplication::Create ( const Launch::TModuleContext<FLuminaApplication> &InContext ) noexcept
+Launch::TLaunchResult<TUniquePtr<FLuminaApplication>>
+FLuminaApplication::Create ( const Launch::TModuleContext<FLuminaApplication> &InContext ) noexcept
 {
     TUniquePtr<FLuminaApplication> Application = MakeUnique<FLuminaApplication>();
-
-    LUMEN_TRY_EXPECT_ERROR(Application->Initialize( InContext ));
+    LUMEN_TRY_EXPECT_ERROR( Application->Initialize( InContext ) );
     return Application;
 }
 
-Lumen::Launch::TLaunchResult<void>
-Lumen::FLuminaApplication::Initialize ( const Launch::TModuleContext<FLuminaApplication> &InContext ) noexcept
+Launch::TLaunchResult<void>
+FLuminaApplication::Initialize ( const Launch::TModuleContext<FLuminaApplication> &InContext ) noexcept
 {
-    bHeadless = InContext.GetConfig().bHeadless;
+    bHeadless                                     = InContext.GetConfig().bHeadless;
+    Launch::FLaunchRendererModule &RendererModule = InContext.Get<Launch::FLaunchRendererModule>();
     if ( not bHeadless )
     {
         Launch::FLaunchWindowModule *const WindowModule = InContext.Find<Launch::FLaunchWindowModule>();
         if ( WindowModule == nullptr or not WindowModule->GetWindow().IsValid() )
         {
-            return LuminaFailure( "Lumina requires a native OpenGL window outside headless mode" );
+            return LuminaFailure( "Lumina requires a native window outside headless mode" );
         }
         Window = WindowModule->GetWindow();
     }
 
     IngressJournal.Reserve( FWorldIngressJournal::DefaultCapacity );
     World = MakeUnique<FWorld>( FWorldDesc{
-        .WorkerCount            = 1U,
-        .MaxFixedStepsPerTick   = 8U,
-        .MaxActors              = 1ULL,
+        .WorkerCount             = 1U,
+        .MaxFixedStepsPerTick    = 8U,
+        .MaxActors               = 1ULL,
         .DeferredCommandCapacity = 16ULL,
-        .ActorOutboxCapacity    = 4ULL,
-        .EmissionCapacity       = 16ULL,
-        .FixedDeltaTime         = InContext.GetConfig().FixedStep,
-        .RenderCapacities       = { .TransformCapacity = 1ULL, .CameraCapacity = 1ULL },
+        .ActorOutboxCapacity     = 4ULL,
+        .EmissionCapacity        = 16ULL,
+        .FixedDeltaTime          = InContext.GetConfig().FixedStep,
+        .RenderCapacities        = { .TransformCapacity = 1ULL, .CameraCapacity = 1ULL },
     } );
     World->SetIngressJournal( &IngressJournal );
 
@@ -102,20 +94,19 @@ Lumen::FLuminaApplication::Initialize ( const Launch::TModuleContext<FLuminaAppl
     const FOrbitCameraBasis InitialBasis = ComputeOrbitCamera( InitialState );
     const FCameraComponentDesc CameraDesc{
         .View       = Maths::FMat4x4f::LookAt( InitialBasis.Position, InitialState.Target, InitialBasis.Up ),
-        .Projection = Maths::FMat4x4f::Perspective( LuminaCameraFieldOfViewDegrees * Maths::DegToRad<Float32>,
-                                                   InitialAspect, 0.1F, 1000.0F ),
+        .Projection = Maths::FMat4x4f::Perspective( LuminaCameraFieldOfViewDegrees * Maths::DegToRad<Float32>, InitialAspect,
+                                                    0.1F, 1000.0F ),
         .NearPlane  = 0.1F,
         .FarPlane   = 1000.0F,
         .Flags      = ERenderCameraFlags::Active,
     };
 
-    auto SpawnedCamera =
-        World->TrySpawnActor<ACameraActor>( World->GetSpatialRegistry(), World->GetCameraRegistry() );
+    auto SpawnedCamera = World->TrySpawnActor<ACameraActor>( World->GetSpatialRegistry(), World->GetCameraRegistry() );
     if ( not SpawnedCamera )
     {
         return LuminaFailure( "Lumina could not spawn its generic camera actor" );
     }
-    CameraActor = *SpawnedCamera;
+    CameraActor = ( *SpawnedCamera ).Get();
     Camera      = CameraActor->GetId();
     if ( not World->GetSpatialRegistry().TryRegisterSpatialEntity( Camera ) )
     {
@@ -126,9 +117,8 @@ Lumen::FLuminaApplication::Initialize ( const Launch::TModuleContext<FLuminaAppl
         return LuminaFailure( "Lumina could not register its camera component" );
     }
 
-    const FCameraLookAtPayload InitialLookAt{ .Eye    = InitialBasis.Position,
-                                              .Target = InitialState.Target,
-                                              .Up     = InitialBasis.Up };
+    const FCameraLookAtPayload InitialLookAt{
+        .Eye = InitialBasis.Position, .Target = InitialState.Target, .Up = InitialBasis.Up };
     CameraActor->Receive(
         FMessage::Make( static_cast<UInt32>( EEngineMessage::CameraSetLookAt ), InvalidActorID, InitialLookAt ) );
     if ( not World->PublishRenderSnapshot() )
@@ -136,114 +126,15 @@ Lumen::FLuminaApplication::Initialize ( const Launch::TModuleContext<FLuminaAppl
         return LuminaFailure( "Lumina could not publish its initial camera snapshot" );
     }
 
-    const RHI::FRHIExtent3D Extent{ static_cast<UInt32>( InitialSize.X ), static_cast<UInt32>( InitialSize.Y ), 1U };
-    TOptional<FNativeWindowHandles> NativeHandles;
-    TOptional<RHIOpenGL::FOpenGLNativeWindowDesc> NativeWindow;
-    if ( Window.IsValid() )
-    {
-        NativeHandles = Window->GetNativeHandles();
-        if ( not NativeHandles )
-        {
-            return LuminaFailure( "Lumina could not query native OpenGL window handles" );
-        }
-        NativeWindow = Launch::MakeOpenGLNativeWindowDesc( *NativeHandles, Extent );
-        if ( not NativeWindow )
-        {
-            return LuminaFailure( "Lumina native window handles are not supported by OpenGL" );
-        }
-    }
-
-    const auto ModuleResult = NativeWindow ? RHIOpenGL::CreateRHIOpenGLModule( *NativeWindow )
-                                           : RHIOpenGL::CreateRHIOpenGLModule();
-    if ( not ModuleResult )
-    {
-        LogRHIFailure( "OpenGL module creation failed", ModuleResult.Error() );
-        return LuminaFailure( "Lumina could not initialize the OpenGL RHI module" );
-    }
-    RHIModule = *ModuleResult;
-
-    auto Adapters = RHIModule->EnumerateAdapters();
-    if ( not Adapters or Adapters->empty() )
-    {
-        if ( not Adapters )
-        {
-            LogRHIFailure( "OpenGL adapter enumeration failed", Adapters.Error() );
-        }
-        return LuminaFailure( "Lumina found no OpenGL adapter" );
-    }
-    const RHI::FRHIAdapterInfo *SelectedAdapter = nullptr;
-    for ( const RHI::FRHIAdapterInfo &Adapter : *Adapters )
-    {
-        if ( SelectedAdapter == nullptr or
-             ( SelectedAdapter->Type == RHI::ERHIAdapterType::Software and Adapter.Type != RHI::ERHIAdapterType::Software ) )
-        {
-            SelectedAdapter = &Adapter;
-        }
-    }
-
-    RHI::FRHIDeviceDesc DeviceDesc;
-    DeviceDesc.AdapterId.Emplace( SelectedAdapter->AdapterId );
-    DeviceDesc.RequiredCapabilities.Features = RHI::ERHICapabilityFlags::DynamicRendering |
-                                               RHI::ERHICapabilityFlags::TimelineSemaphores;
-    if ( Window.IsValid() )
-    {
-        DeviceDesc.RequiredCapabilities.Features |= RHI::ERHICapabilityFlags::Presentation;
-    }
-    auto DeviceResult = RHIModule->CreateDevice( DeviceDesc );
-    if ( not DeviceResult )
-    {
-        LogRHIFailure( "OpenGL device creation failed", DeviceResult.Error() );
-        return LuminaFailure( "Lumina could not create its OpenGL device" );
-    }
-    Device = *DeviceResult;
-
-    if ( Window.IsValid() )
-    {
-        auto BridgeResult = Launch::CreateSurfaceBridge( *NativeHandles, Extent );
-        if ( not BridgeResult )
-        {
-            LogRHIFailure( "OpenGL surface creation failed", BridgeResult.Error() );
-            return LuminaFailure( "Lumina could not create its native OpenGL surface" );
-        }
-        SurfaceBridge = *BridgeResult;
-
-        RHI::FRHISwapchainDesc SwapchainDesc;
-        SwapchainDesc.Surface = {
-            .Type              = RHI::ERHISurfaceType::Window,
-            .NativeWindow      = NativeHandles->NativeWindow,
-            .NativeDisplay     = NativeHandles->NativeDisplay,
-            .bRequiresDisplay  = NativeHandles->NativeDisplay != 0U,
-            .Bridge            = SurfaceBridge,
-            .InitialExtent     = Extent,
-        };
-        SwapchainDesc.Format     = RHI::ERHIFormat::RGBA8Unorm;
-        SwapchainDesc.Extent     = Extent;
-        SwapchainDesc.ImageCount = 3U;
-        auto SwapchainResult     = Device->CreateSwapchain( SwapchainDesc );
-        if ( not SwapchainResult )
-        {
-            LogRHIFailure( "OpenGL swapchain creation failed", SwapchainResult.Error() );
-            return LuminaFailure( "Lumina could not create its OpenGL swapchain" );
-        }
-        Swapchain = *SwapchainResult;
-    }
-
-    Renderer = MakeUnique<FRenderer>();
-    TSharedPtr<IRenderFrameExtension> FrameExtension =
-        MakeShared<FLuminaPathTracerExtension>( SelectedAdapter->Type == RHI::ERHIAdapterType::Software );
-    const FRendererDesc RendererDesc{
-        .Device         = Device,
+    const FRenderExtent3D Extent{ .Width=static_cast<UInt32>( InitialSize.X ), .Height=static_cast<UInt32>( InitialSize.Y ), .Depth=1U };
+    const Launch::FRenderSessionDesc SessionDesc{
         .SnapshotStream = &World->GetRenderSnapshotStream(),
         .Extent         = Extent,
-        .CommandCapacity = 8ULL,
-        .Swapchain      = Swapchain,
-        .Shaders        = {},
-        .ProxyCapacity  = 1ULL,
-        .AssetCapacity  = 1ULL,
+        .Feature        = MakeShared<FLuminaPathTracerExtension>(),
         .Readback       = { .Capacity = bHeadless ? static_cast<UInt64>( Extent.Width ) * Extent.Height * 4ULL : 0ULL },
-        .FrameExtension = FrameExtension,
     };
-    if ( not Renderer->Start( RendererDesc ) )
+    Session.Emplace( RendererModule, SessionDesc );
+    if ( not Session->IsActive() )
     {
         return LuminaFailure( "Lumina could not start its path-tracing renderer" );
     }
@@ -255,23 +146,22 @@ Lumen::FLuminaApplication::Initialize ( const Launch::TModuleContext<FLuminaAppl
         {
             return LuminaFailure( "Lumina lost its application dependency during startup" );
         }
-        MessageHandlerGuard =
-            InstallLuminaMessageHandler( *ApplicationModule, *World, IngressJournal, Camera, *Renderer );
+        MessageHandlerGuard = InstallLuminaMessageHandler( *ApplicationModule, *World, IngressJournal, Camera );
     }
 
-    LUMEN_LOG_INFO( LogLumina, "Lumina path tracer started on '{}'.", SelectedAdapter->Name );
+    LUMEN_LOG_INFO( LogLumina, "Lumina path tracer started on '{}'.", RendererModule.GetDeviceDescription() );
     UpdateWindowTitle( 0ULL );
     return {};
 }
 
-Lumen::Launch::EModuleTraits Lumen::FLuminaApplication::GetTraits () const noexcept
+Launch::EModuleTraits FLuminaApplication::GetTraits () const noexcept
 {
     return Launch::EModuleTraits::Tick;
 }
 
-void Lumen::FLuminaApplication::Tick ( const Float64 InDeltaSeconds, const Float64 LUMEN_UNUSED InAlpha ) noexcept
+void FLuminaApplication::Tick ( const Float64 InDeltaSeconds, const Float64 LUMEN_UNUSED InAlpha ) noexcept
 {
-    if ( not World.IsValid() or not Renderer.IsValid() )
+    if ( not World.IsValid() or not Session.HasValue() )
     {
         return;
     }
@@ -283,33 +173,22 @@ void Lumen::FLuminaApplication::Tick ( const Float64 InDeltaSeconds, const Float
         return;
     }
 
-    /**
-     * INFO: Camera messages always target `WorldFrame + 1`, so a successful tick has applied every
-     *       retained record. Clear the log to keep a continuous input stream bounded; the world
-     *       observes the generation bump and restarts its cursor on the next tick.
-     */
     IngressJournal.Clear();
-
-    const auto Requested = Renderer->RequestRender( Ticked->FrameIndex );
-    if ( not Requested and Requested.Error() != ERendererError::QueueFull )
-    {
-        LUMEN_LOG_WARNING( LogLumina, "The Lumina renderer rejected a frame request." );
-    }
-
-    Renderer->SwapStatusBuffers();
-    UpdateWindowTitle( Renderer->GetStatus().ExtensionFrameCount );
+    Session->RequestRender( Ticked->FrameIndex );
+    Session->SwapStatusBuffers();
+    UpdateWindowTitle( Session->GetStatus().ExtensionFrameCount );
 }
 
-void Lumen::FLuminaApplication::UpdateWindowTitle ( const UInt64 InSampleCount ) noexcept
+void FLuminaApplication::UpdateWindowTitle ( const UInt64 InSampleCount ) noexcept
 {
     if ( not Window.IsValid() or InSampleCount == LastTitleSampleCount )
     {
         return;
     }
 
-    AnsiChar Title[96] = "Lumina — Path Tracer OpenGL | Samples: ";
-    constexpr USize PrefixSize = sizeof( "Lumina — Path Tracer OpenGL | Samples: " ) - 1ULL;
-    const auto Converted = std::to_chars( Title + PrefixSize, Title + sizeof( Title ) - 1ULL, InSampleCount );
+    AnsiChar Title[96]         = "Lumina — Path Tracer | Samples: ";
+    constexpr USize PrefixSize = sizeof( "Lumina — Path Tracer | Samples: " ) - 1ULL;
+    const auto Converted       = std::to_chars( Title + PrefixSize, Title + sizeof( Title ) - 1ULL, InSampleCount );
     if ( Converted.ec != std::errc{} )
     {
         return;
@@ -318,3 +197,5 @@ void Lumen::FLuminaApplication::UpdateWindowTitle ( const UInt64 InSampleCount )
     LastTitleSampleCount = InSampleCount;
     Window->SetWindowTitle( Title );
 }
+
+} // namespace Lumen

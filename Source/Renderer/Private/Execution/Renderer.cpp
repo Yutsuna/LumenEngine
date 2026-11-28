@@ -5,6 +5,12 @@
 
 #include <Execution/Renderer.hpp>
 
+#include <Backend/RenderBackendSelection.hpp>
+#include <Backend/RenderFeatureHost.hpp>
+#include <Backend/StartWithTestDevice.hpp>
+#include <Frame/RenderAssetRegistry.hpp>
+#include <RHI/Module/IRHIModule.hpp>
+
 #include <Logging/Logger.hpp>
 #include <Rendering/RenderSnapshotStream.hpp>
 #include <Rendering/RenderSnapshotView.hpp>
@@ -71,6 +77,21 @@ LUMEN_LOG_DEFINE_CATEGORY( LogRenderer, "Renderer" );
     }
 }
 
+/** @brief Maps a neutral shader format to the private RHI format. */
+[[nodiscard]] Lumen::RHI::ERHIShaderFormat ToRHIShaderFormat ( const Lumen::ERenderShaderFormat InFormat ) noexcept
+{
+    switch ( InFormat )
+    {
+    case Lumen::ERenderShaderFormat::Source:
+        return Lumen::RHI::ERHIShaderFormat::Source;
+    case Lumen::ERenderShaderFormat::Bytecode:
+        return Lumen::RHI::ERHIShaderFormat::PortableBytecode;
+    case Lumen::ERenderShaderFormat::Null:
+    default:
+        return Lumen::RHI::ERHIShaderFormat::Null;
+    }
+}
+
 /** @brief Records the compiled barriers at their declared point relative to the single forward pass. */
 [[nodiscard]] Lumen::Bool RecordGraphTransitions ( const Lumen::FRenderGraphContext &InContext,
                                                    Lumen::TSpan<const Lumen::ERenderTransitionRecordPoint> InRecordPoints,
@@ -100,41 +121,142 @@ LUMEN_LOG_DEFINE_CATEGORY( LogRenderer, "Renderer" );
 
 } // namespace
 
-Lumen::FRenderer::FRenderer () noexcept : Proxies( 256ULL ), Assets( 64ULL )
+/*
+ * Private renderer state: no RHI declaration appears in Renderer/Public.
+ */
+struct Lumen::FRendererState final
+{
+    FRendererState ( Lumen::FRenderer &InOwner ) noexcept;
+
+    [[nodiscard]] TExpected<void, ERendererError> Start ( const FRendererDesc &InDesc ) noexcept;
+    [[nodiscard]] TExpected<void, ERendererError> RequestRender ( UInt64 InFrameIndex ) noexcept;
+    [[nodiscard]] TExpected<void, ERendererError> RequestResize ( const RHI::FRHIExtent3D &InExtent ) noexcept;
+    void RequestShutdown () noexcept;
+    void Join () noexcept;
+    [[nodiscard]] Bool IsRunning () const noexcept;
+
+    [[nodiscard]] const FString &GetDeviceName () const noexcept;
+    [[nodiscard]] TExpected<void, ERendererError> RegisterGeometry ( const FRenderGeometryAssetDesc &InDesc ) noexcept;
+    [[nodiscard]] TOptional<TSpan<const Byte>> GetReadbackData () const noexcept;
+    void SwapStatusBuffers () noexcept;
+    [[nodiscard]] const FRenderFrameStatus &GetStatus () const noexcept;
+    void HandleRenderCommand ( const FRenderCommand &InCommand, FRenderFrameStatus &InOutStatus ) noexcept;
+
+private:
+
+    struct FPendingGeometry
+    {
+        FRenderAssetId Id;
+        TVector<Maths::FVec3f> Positions;
+        TVector<UInt32> Indices;
+    };
+
+    [[nodiscard]] TExpected<void, ERendererError> CreateResources () noexcept;
+    [[nodiscard]] TExpected<void, ERendererError> CreateForwardResources () noexcept;
+    [[nodiscard]] TExpected<void, ERendererError> CreatePresentationResources () noexcept;
+    [[nodiscard]] Bool RecreateSwapchainViews ( FRenderFrameStatus *InOutStatus = nullptr ) noexcept;
+    void RenderLatest ( const FRenderFrameRequest &InFrame, FRenderFrameStatus &InOutStatus ) noexcept;
+    void ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderFrameStatus &InOutStatus ) noexcept;
+    [[nodiscard]] Bool RecordForwardPass ( const FRenderSnapshotView &InView,
+                                           RHI::IRHICommandList &InCommandList,
+                                           FRenderFrameStatus &InOutStatus ) noexcept;
+    [[nodiscard]] Bool AcquireTarget ( FRenderFrameStatus &InOutStatus ) noexcept;
+    void PresentTarget ( FRenderFrameStatus &InOutStatus ) noexcept;
+    void UpdateReadback ( FRenderFrameStatus &InOutStatus ) noexcept;
+
+private:
+
+    friend struct FRendererInternalAccess;
+
+    Lumen::FRenderer &Owner;
+    TOptional<TSharedRef<RHI::IRHIDevice>> InjectedDevice;
+    TSharedPtr<RHI::IRHISwapchain> InjectedSwapchain;
+    TSharedPtr<RHI::IRHIModule> RHIModule;
+    TSharedPtr<RHI::IRHIDevice> Device;
+    TSharedPtr<FRenderFeatureHost> FeatureHost;
+    FRenderSnapshotStream *SnapshotStream = nullptr;
+    RHI::FRHIExtent3D Extent{ 64U, 64U, 1U };
+    TSharedPtr<RHI::IRHISwapchain> Swapchain;
+    FRenderShaderSet Shaders;
+    USize ProxyCapacity = 256ULL;
+    USize AssetCapacity = 64ULL;
+    FRenderFrameReadbackDesc ReadbackDesc;
+    TSharedPtr<IRenderFeature> Feature;
+
+    TVector<FPendingGeometry> PendingGeometry;
+    FRenderProxyRegistry Proxies;
+    FRenderAssetRegistry Assets;
+
+    TOptional<TSharedRef<RHI::IRHIQueue>> Queue;
+    TOptional<TSharedRef<RHI::IRHICommandAllocator>> Allocator;
+    TOptional<TSharedRef<RHI::IRHICommandList>> CommandList;
+    TOptional<TSharedRef<RHI::IRHITexture>> TargetTexture;
+    TOptional<TSharedRef<RHI::IRHITextureView>> TargetView;
+    TOptional<TSharedRef<RHI::IRHISemaphore>> Timeline;
+    TOptional<TSharedRef<RHI::IRHISemaphore>> RenderComplete;
+    TOptional<TSharedRef<RHI::IRHIReadbackAllocator>> ReadbackAllocator;
+    TOptional<RHI::FRHIAllocation> ReadbackAllocation;
+    TOptional<TSpan<const Byte>> ReadbackData;
+    TVector<TSharedRef<RHI::IRHITextureView>> SwapchainViews;
+
+    TSharedPtr<RHI::IRHIPipelineLayout> PipelineLayout;
+    TOptional<TSharedRef<RHI::IRHIPipeline>> Pipeline;
+    TOptional<TSharedRef<RHI::IRHITexture>> AcquiredTarget;
+    TOptional<FRenderGraphBuilder> GraphBuilder;
+    TOptional<FCompiledRenderGraph> CompiledGraph;
+
+    RHI::FRHIRenderingDesc RenderingDesc{};
+    RHI::FRHIAcquiredImage AcquiredImage;
+    Bool bHasAcquiredImage   = false;
+    Bool bForwardEnabled     = false;
+    Bool bPresentation       = false;
+    Bool bReadbackEnabled    = false;
+    UInt64 NextTimelineValue = 0ULL;
+    Bool bFirstFrame         = true;
+
+    FRenderExecutor Executor;
+};
+
+Lumen::FRendererState::FRendererState ( Lumen::FRenderer &InOwner ) noexcept
+    : Owner( InOwner ), Proxies( 256ULL ), Assets( 64ULL )
 {
 }
 
-Lumen::FRenderer::~FRenderer () noexcept
-{
-    RequestShutdown();
-    Join();
-}
-
-Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::Start ( const FRendererDesc &InDesc ) noexcept
+Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRendererState::Start ( const FRendererDesc &InDesc ) noexcept
 {
     if ( Executor.IsRunning() )
     {
         return MakeUnexpected( ERendererError::AlreadyRunning );
     }
-    if ( not InDesc.Device.IsValid() or InDesc.SnapshotStream == nullptr or not InDesc.Extent.IsValid() or
-         InDesc.CommandCapacity == 0ULL or InDesc.ProxyCapacity == 0ULL or InDesc.AssetCapacity == 0ULL )
+    if ( InDesc.SnapshotStream == nullptr or not InDesc.Extent.IsValid() or InDesc.CommandCapacity == 0ULL or
+         InDesc.ProxyCapacity == 0ULL or InDesc.AssetCapacity == 0ULL )
     {
         return MakeUnexpected( ERendererError::InvalidDesc );
     }
-    if ( not InDesc.Device->GetCapabilities().Supports( RHI::ERHICapabilityFlags::DynamicRendering ) )
+
+    const RHI::FRHIExtent3D RHIExtent{ InDesc.Extent.Width, InDesc.Extent.Height, InDesc.Extent.Depth };
+    auto BackendResult = SelectRenderBackend( InDesc, RHIExtent, InjectedDevice );
+    if ( not BackendResult ) [[unlikely]]
+    {
+        return MakeUnexpected( BackendResult.Error() );
+    }
+    FSelectedRenderBackend Selected = std::move( *BackendResult );
+    if ( not( *Selected.Device )->GetCapabilities().Supports( RHI::ERHICapabilityFlags::DynamicRendering ) )
     {
         return MakeUnexpected( ERendererError::CapabilityUnsupported );
     }
 
-    Device         = InDesc.Device;
+    RHIModule      = Selected.Module;
+    Device         = *Selected.Device;
     SnapshotStream = InDesc.SnapshotStream;
-    Extent         = InDesc.Extent;
-    Swapchain      = InDesc.Swapchain;
+    Extent         = RHIExtent;
+    Swapchain      = InjectedSwapchain.IsValid() ? InjectedSwapchain : Selected.Swapchain;
     Shaders        = InDesc.Shaders;
     ProxyCapacity  = InDesc.ProxyCapacity;
     AssetCapacity  = InDesc.AssetCapacity;
     ReadbackDesc   = InDesc.Readback;
-    FrameExtension = InDesc.FrameExtension;
+    Feature        = InDesc.Feature;
+    FeatureHost    = MakeShared<FRenderFeatureHost>( *Selected.Device, Selected.bSoftwareAdapter, Selected.AdapterName );
 
     Proxies = FRenderProxyRegistry( ProxyCapacity );
     Assets  = FRenderAssetRegistry( AssetCapacity );
@@ -143,7 +265,7 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::Start ( const FR
     LUMEN_EXPECT( _, CreateResources() );
 
     const TExpected<void, ERenderExecutorError> Started =
-        Executor.Start( FRenderExecutorDesc{ .CommandCapacity = InDesc.CommandCapacity }, *this );
+        Executor.Start( FRenderExecutorDesc{ .CommandCapacity = InDesc.CommandCapacity }, Owner );
     if ( not Started ) [[unlikely]]
     {
         return MakeUnexpected( ToRendererError( Started.Error() ) );
@@ -152,7 +274,7 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::Start ( const FR
     return {};
 }
 
-Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::RequestRender ( const UInt64 InFrameIndex ) noexcept
+Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRendererState::RequestRender ( const UInt64 InFrameIndex ) noexcept
 {
     if ( not Executor.IsRunning() or SnapshotStream == nullptr )
     {
@@ -169,14 +291,15 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::RequestRender ( 
     return {};
 }
 
-Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::RequestResize ( const RHI::FRHIExtent3D &InExtent ) noexcept
+Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRendererState::RequestResize ( const RHI::FRHIExtent3D &InExtent ) noexcept
 {
     if ( not Executor.IsRunning() or not InExtent.IsValid() )
     {
         return MakeUnexpected( ERendererError::NotRunning );
     }
 
-    const TExpected<void, ERenderExecutorError> Result = Executor.Enqueue( FRenderCommand::MakeResize( InExtent ) );
+    const TExpected<void, ERenderExecutorError> Result =
+        Executor.Enqueue( FRenderCommand::MakeResize( { InExtent.Width, InExtent.Height, InExtent.Depth } ) );
     if ( not Result ) [[unlikely]]
     {
         return MakeUnexpected( ToRendererError( Result.Error() ) );
@@ -184,7 +307,7 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::RequestResize ( 
     return {};
 }
 
-void Lumen::FRenderer::RequestShutdown () noexcept
+void Lumen::FRendererState::RequestShutdown () noexcept
 {
     if ( Executor.IsRunning() )
     {
@@ -195,18 +318,18 @@ void Lumen::FRenderer::RequestShutdown () noexcept
     Executor.RequestStop();
 }
 
-void Lumen::FRenderer::Join () noexcept
+void Lumen::FRendererState::Join () noexcept
 {
     Executor.Join();
 }
 
-Lumen::Bool Lumen::FRenderer::IsRunning () const noexcept
+Lumen::Bool Lumen::FRendererState::IsRunning () const noexcept
 {
     return Executor.IsRunning();
 }
 
 Lumen::TExpected<void, Lumen::ERendererError>
-Lumen::FRenderer::RegisterGeometry ( const FRenderGeometryAssetDesc &InDesc ) noexcept
+Lumen::FRendererState::RegisterGeometry ( const FRenderGeometryAssetDesc &InDesc ) noexcept
 {
     if ( Executor.IsRunning() )
     {
@@ -226,22 +349,28 @@ Lumen::FRenderer::RegisterGeometry ( const FRenderGeometryAssetDesc &InDesc ) no
     return {};
 }
 
-Lumen::TOptional<Lumen::TSpan<const Lumen::Byte>> Lumen::FRenderer::GetReadbackData () const noexcept
+Lumen::TOptional<Lumen::TSpan<const Lumen::Byte>> Lumen::FRendererState::GetReadbackData () const noexcept
 {
     return ReadbackData;
 }
 
-void Lumen::FRenderer::SwapStatusBuffers () noexcept
+void Lumen::FRendererState::SwapStatusBuffers () noexcept
 {
     Executor.SwapStatusBuffers();
 }
 
-const Lumen::FRenderFrameStatus &Lumen::FRenderer::GetStatus () const noexcept
+const Lumen::FRenderFrameStatus &Lumen::FRendererState::GetStatus () const noexcept
 {
     return Executor.GetStatus();
 }
 
-void Lumen::FRenderer::HandleRenderCommand ( const FRenderCommand &InCommand, FRenderFrameStatus &InOutStatus ) noexcept
+const Lumen::FString &Lumen::FRendererState::GetDeviceName () const noexcept
+{
+    static const FString Empty;
+    return FeatureHost.IsValid() ? FeatureHost->GetCapabilities().DeviceName : Empty;
+}
+
+void Lumen::FRendererState::HandleRenderCommand ( const FRenderCommand &InCommand, FRenderFrameStatus &InOutStatus ) noexcept
 {
     switch ( InCommand.Type )
     {
@@ -249,7 +378,7 @@ void Lumen::FRenderer::HandleRenderCommand ( const FRenderCommand &InCommand, FR
         RenderLatest( InCommand.Frame, InOutStatus );
         break;
     case ERenderCommandType::Resize:
-        ApplyResize( InCommand.Extent, InOutStatus );
+        ApplyResize( { InCommand.Extent.Width, InCommand.Extent.Height, InCommand.Extent.Depth }, InOutStatus );
         break;
     case ERenderCommandType::RecreateDevice:
         InOutStatus.Result = ERenderFrameResult::InvalidState;
@@ -266,7 +395,7 @@ void Lumen::FRenderer::HandleRenderCommand ( const FRenderCommand &InCommand, FR
     }
 }
 
-Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreateResources () noexcept
+Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRendererState::CreateResources () noexcept
 {
     const TExpected<TSharedRef<RHI::IRHIQueue>, RHI::FRHIError> QueueResult =
         Device->GetQueue( RHI::ERHIQueueType::Graphics, 0U );
@@ -382,14 +511,14 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreateResources 
     /** INFO: Asset uploads are control-time submissions on this queue; the frame timeline must continue past them. */
     NextTimelineValue = Queue->Get()->GetCompletedValue().Value;
     bFirstFrame       = true;
-    if ( FrameExtension.IsValid() and not FrameExtension->Initialize( *Device, Extent ) )
+    if ( Feature.IsValid() and not Feature->Initialize( *FeatureHost, { Extent.Width, Extent.Height, Extent.Depth } ) )
     {
         return MakeUnexpected( ERendererError::RHICreationFailed );
     }
     return {};
 }
 
-Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreateForwardResources () noexcept
+Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRendererState::CreateForwardResources () noexcept
 {
     if ( Shaders.InlineConstantBytes < 128U )
     {
@@ -398,7 +527,7 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreateForwardRes
 
     RHI::FRHIShaderDesc VertexDesc;
     VertexDesc.Stage                          = RHI::ERHIShaderStage::Vertex;
-    VertexDesc.Format                         = Shaders.Format;
+    VertexDesc.Format                         = ToRHIShaderFormat( Shaders.Format );
     VertexDesc.EntryPoint                     = Shaders.VertexEntryPoint;
     VertexDesc.Bytecode                       = TSpan<const Byte>( Shaders.VertexBytecode.data(), Shaders.VertexBytecode.size() );
     VertexDesc.Reflection.InlineConstantBytes = Shaders.InlineConstantBytes;
@@ -410,7 +539,7 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreateForwardRes
 
     RHI::FRHIShaderDesc PixelDesc;
     PixelDesc.Stage                          = RHI::ERHIShaderStage::Pixel;
-    PixelDesc.Format                         = Shaders.Format;
+    PixelDesc.Format                         = ToRHIShaderFormat( Shaders.Format );
     PixelDesc.EntryPoint                     = Shaders.PixelEntryPoint;
     PixelDesc.Bytecode                       = TSpan<const Byte>( Shaders.PixelBytecode.data(), Shaders.PixelBytecode.size() );
     PixelDesc.Reflection.InlineConstantBytes = Shaders.InlineConstantBytes;
@@ -455,7 +584,7 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreateForwardRes
     return {};
 }
 
-Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreatePresentationResources () noexcept
+Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRendererState::CreatePresentationResources () noexcept
 {
     const auto RenderCompleteResult = Device->CreateSemaphore( { .Type = RHI::ERHISemaphoreType::Binary, .DebugName = {} } );
     if ( not RenderCompleteResult ) [[unlikely]]
@@ -473,7 +602,7 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreatePresentati
     return {};
 }
 
-Lumen::Bool Lumen::FRenderer::RecreateSwapchainViews ( FRenderFrameStatus *InOutStatus ) noexcept
+Lumen::Bool Lumen::FRendererState::RecreateSwapchainViews ( FRenderFrameStatus *InOutStatus ) noexcept
 {
     TVector<TSharedRef<RHI::IRHITextureView>> Replacement;
     Replacement.reserve( Swapchain->GetImageCount() );
@@ -505,7 +634,7 @@ Lumen::Bool Lumen::FRenderer::RecreateSwapchainViews ( FRenderFrameStatus *InOut
     return true;
 }
 
-Lumen::Bool Lumen::FRenderer::AcquireTarget ( FRenderFrameStatus &InOutStatus ) noexcept
+Lumen::Bool Lumen::FRendererState::AcquireTarget ( FRenderFrameStatus &InOutStatus ) noexcept
 {
     if ( not bPresentation )
     {
@@ -555,7 +684,7 @@ Lumen::Bool Lumen::FRenderer::AcquireTarget ( FRenderFrameStatus &InOutStatus ) 
     return true;
 }
 
-void Lumen::FRenderer::PresentTarget ( FRenderFrameStatus &InOutStatus ) noexcept
+void Lumen::FRendererState::PresentTarget ( FRenderFrameStatus &InOutStatus ) noexcept
 {
     if ( not bHasAcquiredImage )
     {
@@ -580,7 +709,7 @@ void Lumen::FRenderer::PresentTarget ( FRenderFrameStatus &InOutStatus ) noexcep
     bHasAcquiredImage = false;
 }
 
-void Lumen::FRenderer::UpdateReadback ( FRenderFrameStatus &InOutStatus ) noexcept
+void Lumen::FRendererState::UpdateReadback ( FRenderFrameStatus &InOutStatus ) noexcept
 {
     if ( not bReadbackEnabled or not ReadbackAllocator or not ReadbackAllocation )
     {
@@ -600,9 +729,9 @@ void Lumen::FRenderer::UpdateReadback ( FRenderFrameStatus &InOutStatus ) noexce
     }
 }
 
-Lumen::Bool Lumen::FRenderer::RecordForwardPass ( const FRenderSnapshotView &InView,
-                                                  RHI::IRHICommandList &InCommandList,
-                                                  FRenderFrameStatus &InOutStatus ) noexcept
+Lumen::Bool Lumen::FRendererState::RecordForwardPass ( const FRenderSnapshotView &InView,
+                                                       RHI::IRHICommandList &InCommandList,
+                                                       FRenderFrameStatus &InOutStatus ) noexcept
 {
     if ( not bForwardEnabled )
     {
@@ -735,7 +864,7 @@ Lumen::Bool Lumen::FRenderer::RecordForwardPass ( const FRenderSnapshotView &InV
     return true;
 }
 
-void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRenderFrameStatus &InOutStatus ) noexcept
+void Lumen::FRendererState::RenderLatest ( const FRenderFrameRequest &InFrame, FRenderFrameStatus &InOutStatus ) noexcept
 {
     InOutStatus.LastRequestedFrame           = InFrame.FrameIndex;
     const RHI::ERHIDeviceStatus DeviceStatus = Device->GetStatus();
@@ -818,21 +947,26 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
         return;
     }
 
-    if ( FrameExtension.IsValid() )
+    if ( Feature.IsValid() )
     {
         const TSharedRef<RHI::IRHITexture> Target = bPresentation ? *AcquiredTarget : *TargetTexture;
         const TSharedRef<RHI::IRHITextureView> FrameTargetView =
             bPresentation ? SwapchainViews[AcquiredImage.ImageIndex] : *TargetView;
+        const TPair<FRenderTextureRef, FRenderTextureViewRef> Wrapped =
+            FeatureHost->WrapExternalTexture( Target, FrameTargetView );
+        FRenderPassEncoderAdapter Encoder( CommandListRef );
         const FRenderFrameExtensionContext ExtensionContext{ .Snapshot      = View,
-                                                             .CommandList   = CommandListRef,
-                                                             .TargetTexture = Target,
-                                                             .TargetView    = FrameTargetView,
-                                                             .Extent        = Extent,
+                                                             .Host          = *FeatureHost,
+                                                             .Encoder       = Encoder,
+                                                             .TargetTexture = Wrapped.first,
+                                                             .TargetView    = Wrapped.second,
+                                                             .Extent        = { Extent.Width, Extent.Height, Extent.Depth },
                                                              .Status        = InOutStatus };
-        const RHI::FRHIExpected Recorded = FrameExtension->Record( ExtensionContext );
+        const FRenderExtensionExpected Recorded = Feature->Record( ExtensionContext );
         if ( not Recorded )
         {
             LUMEN_LOG_ERROR( LogRenderer, "Frame extension record failed: {}", Recorded.Error().Message );
+            FeatureHost->DiscardStates();
             InOutStatus.Result = ERenderFrameResult::RHIError;
             return;
         }
@@ -865,6 +999,7 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
                                                        .Layer         = 0U,
                                                        .Aspect        = RHI::ERHIFormatAspect::Color } ) )
         {
+            FeatureHost->DiscardStates();
             InOutStatus.Result = ERenderFrameResult::RHIError;
             return;
         }
@@ -872,6 +1007,7 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
 
     if ( not CommandListRef.End().HasValue() )
     {
+        FeatureHost->DiscardStates();
         InOutStatus.Result = ERenderFrameResult::RHIError;
         return;
     }
@@ -892,6 +1028,7 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
     Submit.Completion = { CompletionValue };
     if ( not QueueRef.Submit( Submit ).HasValue() )
     {
+        FeatureHost->DiscardStates();
         InOutStatus.Result = ERenderFrameResult::RHIError;
         return;
     }
@@ -899,9 +1036,10 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
     NextTimelineValue                 = CompletionValue;
     InOutStatus.LastSubmittedTimeline = CompletionValue;
     bFirstFrame                       = false;
-    if ( FrameExtension.IsValid() )
+    if ( Feature.IsValid() )
     {
-        FrameExtension->Commit( CompletionValue, InOutStatus );
+        Feature->Commit( CompletionValue, InOutStatus );
+        FeatureHost->CommitStates();
     }
 
     if ( QueueRef.Wait( { CompletionValue }, 0.0 ).HasValue() )
@@ -920,7 +1058,7 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
     }
 }
 
-void Lumen::FRenderer::ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderFrameStatus &InOutStatus ) noexcept
+void Lumen::FRendererState::ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderFrameStatus &InOutStatus ) noexcept
 {
     if ( InExtent == Extent )
     {
@@ -995,8 +1133,112 @@ void Lumen::FRenderer::ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderF
     TargetView.Emplace( *ViewResult );
     RenderingDesc.Area                     = RHI::FRHIRect2D{ 0, 0, Extent.Width, Extent.Height };
     RenderingDesc.ColorAttachments[0].View = *TargetView;
-    if ( FrameExtension.IsValid() and not FrameExtension->Resize( Extent ) )
+    if ( Feature.IsValid() and not Feature->Resize( { Extent.Width, Extent.Height, Extent.Depth } ) )
     {
         InOutStatus.Result = ERenderFrameResult::RHIError;
     }
+}
+
+struct Lumen::FRendererInternalAccess final
+{
+    [[nodiscard]] static FRendererState &Get ( FRenderer &InRenderer ) noexcept;
+    static void SetInjectedDevice ( FRenderer &InRenderer,
+                                    TSharedRef<RHI::IRHIDevice> InDevice,
+                                    TSharedPtr<RHI::IRHISwapchain> InSwapchain ) noexcept;
+};
+
+/*
+ * Public facade: every call forwards to the private state.
+ */
+Lumen::FRenderer::FRenderer () noexcept : State( MakeUnique<FRendererState>( *this ) )
+{
+}
+
+Lumen::FRenderer::~FRenderer () noexcept
+{
+    RequestShutdown();
+    Join();
+}
+
+Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::Start ( const FRendererDesc &InDesc ) noexcept
+{
+    return State->Start( InDesc );
+}
+
+Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::RequestRender ( const UInt64 InFrameIndex ) noexcept
+{
+    return State->RequestRender( InFrameIndex );
+}
+
+Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::RequestResize ( const FRenderExtent3D &InExtent ) noexcept
+{
+    return State->RequestResize( { InExtent.Width, InExtent.Height, InExtent.Depth } );
+}
+
+void Lumen::FRenderer::RequestShutdown () noexcept
+{
+    State->RequestShutdown();
+}
+
+void Lumen::FRenderer::Join () noexcept
+{
+    State->Join();
+}
+
+Lumen::Bool Lumen::FRenderer::IsRunning () const noexcept
+{
+    return State->IsRunning();
+}
+
+const Lumen::FString &Lumen::FRenderer::GetDeviceName () const noexcept
+{
+    return State->GetDeviceName();
+}
+
+Lumen::TExpected<void, Lumen::ERendererError>
+Lumen::FRenderer::RegisterGeometry ( const FRenderGeometryAssetDesc &InDesc ) noexcept
+{
+    return State->RegisterGeometry( InDesc );
+}
+
+Lumen::TOptional<Lumen::TSpan<const Lumen::Byte>> Lumen::FRenderer::GetReadbackData () const noexcept
+{
+    return State->GetReadbackData();
+}
+
+void Lumen::FRenderer::SwapStatusBuffers () noexcept
+{
+    State->SwapStatusBuffers();
+}
+
+const Lumen::FRenderFrameStatus &Lumen::FRenderer::GetStatus () const noexcept
+{
+    return State->GetStatus();
+}
+
+void Lumen::FRenderer::HandleRenderCommand ( const FRenderCommand &InCommand, FRenderFrameStatus &InOutStatus ) noexcept
+{
+    State->HandleRenderCommand( InCommand, InOutStatus );
+}
+
+Lumen::FRendererState &Lumen::FRendererInternalAccess::Get ( FRenderer &InRenderer ) noexcept
+{
+    return *InRenderer.State;
+}
+
+void Lumen::FRendererInternalAccess::SetInjectedDevice ( FRenderer &InRenderer,
+                                                         TSharedRef<RHI::IRHIDevice> InDevice,
+                                                         TSharedPtr<RHI::IRHISwapchain> InSwapchain ) noexcept
+{
+    InRenderer.State->InjectedDevice.Emplace( InDevice );
+    InRenderer.State->InjectedSwapchain = InSwapchain;
+}
+
+Lumen::TExpected<void, Lumen::ERendererError> Lumen::StartWithTestDevice ( FRenderer &InRenderer,
+                                                                           TSharedRef<RHI::IRHIDevice> InDevice,
+                                                                           const FRendererDesc &InDesc,
+                                                                           TSharedPtr<RHI::IRHISwapchain> InSwapchain ) noexcept
+{
+    FRendererInternalAccess::SetInjectedDevice( InRenderer, InDevice, InSwapchain );
+    return InRenderer.Start( InDesc );
 }

@@ -37,9 +37,15 @@ endif
 FileSystem = import('fs')
 OSName = host_machine.system()
 
+PythonInterpreter = find_program('python3')
+SourceGlobber = files(meson.project_source_root() / 'Meson' / 'MesonRGlobSourceFiles.py')
+
 GlobalModules = {}
 GlobalTestModules = {}
 PublicIncludes = {}
+
+# Shared-library targets to stage next to Windows executables (no PATH needed).
+RuntimeLibraries = []
 
 SourceRoot = meson.project_source_root() / 'Source'
 

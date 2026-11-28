@@ -2,11 +2,14 @@
 # Examples/meson.build
 # Builds external examples after the engine modules exist.
 #
-# Reads  : ALL_WARNINGS, FileSystem, GlobalModules, PublicIncludes
+# Reads  : ALL_WARNINGS, FileSystem, OSName, RuntimeLibraries, GlobalModules, PublicIncludes,
+#          PythonInterpreter, SourceGlobber
 #}
 
 ExamplesRoot = meson.current_source_dir()
 ExampleNames = [ 'Lumina' ]
+
+RuntimeStager = files(meson.project_source_root() / 'Meson' / 'MesonStageRuntimeDlls.py')
 
 foreach ExampleName : ExampleNames
     ExampleDirRel = ExampleName
@@ -26,17 +29,7 @@ foreach ExampleName : ExampleNames
     ExampleSources = []
 
     if FileSystem.is_dir(ExamplePrivatePath)
-        FindResult = run_command( 'python3', '-c',
-'''
-import sys
-from pathlib import Path
-for p in Path(sys.argv[1]).rglob("*"):
-    if p.suffix in (".c", ".cpp"):
-        print(p.as_posix())
-''',
-            ExamplePrivatePath,
-            check : false,
-        )
+        FindResult = run_command(PythonInterpreter, SourceGlobber, ExamplePrivatePath, check : false)
         if FindResult.returncode() != 0
             error(
                 'Could not list sources for example @0@: @1@'
@@ -72,7 +65,7 @@ for p in Path(sys.argv[1]).rglob("*"):
         ExampleIncludeDirectories += PublicIncludes.get(DependencyName, [])
     endforeach
 
-    executable(
+    ExampleTarget = executable(
         ExampleName + 'Example', ExampleSources,
         include_directories : ExampleIncludeDirectories,
         dependencies : ExampleDependencies,
@@ -80,4 +73,17 @@ for p in Path(sys.argv[1]).rglob("*"):
         c_args : ALL_WARNINGS,
         install : true,
     )
+
+    # Windows has no RUNPATH: the loader finds DLLs in the executable's own
+    # directory, so stage them there instead of relying on a PATH variable.
+    if OSName == 'windows' and RuntimeLibraries.length() > 0
+        custom_target(
+            ExampleName + 'RuntimeDlls',
+            input : RuntimeLibraries,
+            output : ExampleName + 'Example.runtime.stamp',
+            command : [PythonInterpreter, RuntimeStager, '@OUTPUT@', '@INPUT@'],
+            build_by_default : true,
+            depends : ExampleTarget,
+        )
+    endif
 endforeach

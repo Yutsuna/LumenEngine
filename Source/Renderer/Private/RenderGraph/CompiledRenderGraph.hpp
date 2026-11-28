@@ -5,8 +5,6 @@
 
 #pragma once
 
-#include <RendererExport.hpp>
-
 #include <Memory/Span.hpp>
 #include <RenderGraph/RenderGraph.hpp>
 
@@ -18,7 +16,7 @@ namespace Lumen
  * @details Execution positions index ExecutionOrder; segment pass ranges are half-open
  *          positions in that same array. No native or backend object is created here.
  */
-class RENDERER_EXPORT FCompiledRenderGraph final
+class FCompiledRenderGraph final
 {
 public:
 

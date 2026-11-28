@@ -2,9 +2,11 @@
 # Source/Meson/Private/meson.build
 # Builds each module's target from its Private/ sources.
 #
-# Reads  : ModuleDefinitions, PublicIncludes, GlobalModules, ALL_WARNINGS,
+# Reads  : ModuleDefinitions, PublicIncludes, GlobalModules, ALL_WARNINGS, OSName,
+#          PythonInterpreter, SourceGlobber,
+#          ModuleDefinition.get('Depends'), ModuleDefinition.get('PrivateDepends'),
 #          ModuleDefinition.get('TestsExcludeFiles')
-# Writes : GlobalModules, GlobalTestModules
+# Writes : GlobalModules, GlobalTestModules, RuntimeLibraries
 #}
 
 foreach ModuleDefinition : ModuleDefinitions
@@ -29,17 +31,7 @@ foreach ModuleDefinition : ModuleDefinitions
     PrivateSources = []
 
     if FileSystem.is_dir(PrivatePath)
-        FindResult = run_command( 'python3', '-c',
-'''
-import sys
-from pathlib import Path
-for p in Path(sys.argv[1]).rglob("*"):
-    if p.suffix in (".c", ".cpp"):
-        print(p.as_posix())
-''',
-            PrivatePath,
-            check : false,
-        )
+        FindResult = run_command(PythonInterpreter, SourceGlobber, PrivatePath, check : false)
         if FindResult.returncode() != 0
             error(
                 'Could not list sources for module @0@: @1@'
@@ -94,6 +86,7 @@ for p in Path(sys.argv[1]).rglob("*"):
     endif
 
     ResolvedDependencies = []
+    ResolvedPrivateDependencies = []
 
     foreach DependencyName : ModuleDependencies
         if not GlobalModules.has_key(DependencyName)
@@ -105,7 +98,22 @@ for p in Path(sys.argv[1]).rglob("*"):
         ResolvedDependencies += GlobalModules.get(DependencyName)
     endforeach
 
+    # Private dependencies are compiled and linked into this module's target but are
+    # deliberately absent from the dependency exported to consumers.
+    foreach DependencyName : ModuleDefinition.get('PrivateDepends', [])
+        if not GlobalModules.has_key(DependencyName)
+            error(
+                'Module @0@ privately depends on @1@ which is not built yet or not found.'
+                .format(ModuleName, DependencyName)
+            )
+        endif
+        ResolvedPrivateDependencies += GlobalModules.get(DependencyName)
+    endforeach
+
+    TargetDependencies = ResolvedDependencies + ResolvedPrivateDependencies
+
     ResolvedDependencies += ModuleDefinition.get('ExternalDeps', [])
+    TargetDependencies += ModuleDefinition.get('ExternalDeps', [])
 
     CompileArguments = ALL_WARNINGS
 
@@ -136,7 +144,7 @@ for p in Path(sys.argv[1]).rglob("*"):
             ModuleLibrary = static_library(
                 ModuleName + 'Lib', LibrarySources,
                 include_directories : IncludeDirectories,
-                dependencies : ResolvedDependencies,
+                dependencies : TargetDependencies,
                 cpp_args : CompileArguments,
                 c_args : CompileArguments,
                 install : false,
@@ -145,7 +153,7 @@ for p in Path(sys.argv[1]).rglob("*"):
             ModuleTarget = executable(
                 ModuleName, MainSources,
                 include_directories : IncludeDirectories,
-                dependencies : ResolvedDependencies,
+                dependencies : TargetDependencies,
                 link_with : ModuleLibrary,
                 cpp_args : CompileArguments,
                 c_args : CompileArguments,
@@ -160,7 +168,7 @@ for p in Path(sys.argv[1]).rglob("*"):
             ModuleTarget = executable(
                 ModuleName, MainSources,
                 include_directories : IncludeDirectories,
-                dependencies : ResolvedDependencies,
+                dependencies : TargetDependencies,
                 cpp_args : CompileArguments,
                 c_args : CompileArguments,
                 install : true,
@@ -186,10 +194,14 @@ for p in Path(sys.argv[1]).rglob("*"):
         PublicIncludeDirectories += ExportIncludeDirectories
         BuildDefines = ['-D' + ModuleName.to_upper() + '_BUILD_SHARED']
 
+        # On Windows the loader looks in the executable's directory first. Installing
+        # the DLLs next to the executables removes any PATH requirement.
+        SharedLibraryInstallDir = OSName == 'windows' ? get_option('bindir') : []
+
         ModuleImplementation = static_library(
             ModuleName + 'Implementation', PrivateSources,
             include_directories : IncludeDirectories,
-            dependencies : ResolvedDependencies,
+            dependencies : TargetDependencies,
             cpp_args : CompileArguments + BuildDefines,
             c_args : CompileArguments + BuildDefines,
             pic : true,
@@ -199,11 +211,17 @@ for p in Path(sys.argv[1]).rglob("*"):
             ModuleName,
             link_whole : ModuleImplementation,
             include_directories : IncludeDirectories,
-            dependencies : ResolvedDependencies,
+            dependencies : TargetDependencies,
             cpp_args : CompileArguments + BuildDefines,
             c_args : CompileArguments + BuildDefines,
             install : true,
+            install_dir : SharedLibraryInstallDir,
         )
+
+        if OSName == 'windows'
+            RuntimeLibraries += [ModuleTarget]
+        endif
+
         ModuleDependency = declare_dependency(
             include_directories : PublicIncludeDirectories,
             link_with : ModuleTarget,
@@ -212,14 +230,14 @@ for p in Path(sys.argv[1]).rglob("*"):
         ModuleTestDependency = declare_dependency(
             include_directories : PublicIncludeDirectories,
             link_whole : ModuleImplementation,
-            dependencies : ResolvedDependencies,
+            dependencies : TargetDependencies,
         )
 
         if HasTestExclusions
             ModuleTestImplementation = static_library(
                 ModuleName + 'TestImplementation', TestPrivateSources,
                 include_directories : IncludeDirectories,
-                dependencies : ResolvedDependencies,
+                dependencies : TargetDependencies,
                 cpp_args : CompileArguments + BuildDefines,
                 c_args : CompileArguments + BuildDefines,
                 pic : true,
@@ -228,7 +246,7 @@ for p in Path(sys.argv[1]).rglob("*"):
             ModuleTestDependency = declare_dependency(
                 include_directories : PublicIncludeDirectories,
                 link_whole : ModuleTestImplementation,
-                dependencies : ResolvedDependencies,
+                dependencies : TargetDependencies,
             )
         endif
 
@@ -236,7 +254,7 @@ for p in Path(sys.argv[1]).rglob("*"):
         ModuleTarget = static_library(
             ModuleName, PrivateSources,
             include_directories : IncludeDirectories,
-            dependencies : ResolvedDependencies,
+            dependencies : TargetDependencies,
             cpp_args : CompileArguments,
             c_args : CompileArguments,
             install : true,
