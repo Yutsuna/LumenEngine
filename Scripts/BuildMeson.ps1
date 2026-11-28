@@ -1,9 +1,9 @@
-# BuildMeson.ps1
-# Script d'invocation parallèle de Meson sous Windows
-
 $NATIVE_FILE = "Meson/Native.ini"
 
-function InvokeMeson {
+$RepoRoot = (Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+
+function InvokeMeson
+{
     param (
         [string]$BuildDir,
         [string]$BuildType,
@@ -21,27 +21,18 @@ function InvokeMeson {
         "--native-file=$NATIVE_FILE"
     )
 
-    if ($Sanitize -ne "") {
+    if ($Sanitize -ne "")
+    {
         $MesonArgs += "-Db_sanitize=$Sanitize"
     }
 
-    # Création d'un fichier temporaire pour stderr (requis par PowerShell)
-    $TempErrorLog = [System.IO.Path]::GetTempFileName()
+    $StartInfo = [System.Diagnostics.ProcessStartInfo]::new()
+    $StartInfo.FileName        = 'meson'
+    $StartInfo.Arguments       = ( $MesonArgs | ForEach-Object { '"' + ( $_ -replace '"', '\"' ) + '"' } ) -join ' '
+    $StartInfo.UseShellExecute = $false
+    $StartInfo.WorkingDirectory = $RepoRoot
 
-    # Lancement en arrière-plan avec redirections séparées
-    $process = Start-Process -FilePath "meson" -ArgumentList $MesonArgs -NoNewWindow -PassThru -RedirectStandardOutput NUL -RedirectStandardError $TempErrorLog
-
-    # Nettoyage asynchrone du fichier temporaire une fois le processus terminé
-    $process | ForEach-Object {
-        $proc = $_
-        Register-ObjectEvent -InputObject $proc -EventName Exited -Action {
-            Remove-Item $TempErrorLog -ErrorAction SilentlyContinue
-            Unregister-Event -SourceIdentifier $Event.SourceIdentifier
-        } | Out-Null
-    }
-
-
-    return $process
+    return [System.Diagnostics.Process]::Start( $StartInfo )
 }
 
 $Processes = @()
@@ -51,9 +42,11 @@ $Processes += InvokeMeson "Build-TSAN"    "debug"   "thread"
 $Processes += InvokeMeson "Build-Release" "release" ""
 
 $Status = 0
-foreach ($proc in $Processes) {
-    $proc.WaitForExit()
-    if ($proc.ExitCode -ne 0) {
+foreach ($Process in $Processes)
+{
+    $Process.WaitForExit()
+    if ($Process.ExitCode -ne 0)
+    {
         $Status = 1
     }
 }
