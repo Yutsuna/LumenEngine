@@ -1174,8 +1174,8 @@ void Lumen::FWorld::DetachExternalChildrenOfCell ( const FWorldCellId InCellId )
     {
         return;
     }
-    PartitionScratch.clear();
-    const TSpan<ActorID> Registered( PartitionScratch.data(), PartitionScratch.capacity() );
+    PartitionScratch.resize( PartitionScratch.capacity() );
+    const TSpan<ActorID> Registered( PartitionScratch.data(), PartitionScratch.size() );
     const USize Count = Hierarchy.GetRegisteredActorIds( Registered );
     /** INFO: Working nodes are authoritative even before the next publication; only external children are detached. */
     for ( USize Index = 0ULL; Index < Count; ++Index )
@@ -1202,8 +1202,8 @@ void Lumen::FWorld::DetachExternalChildrenOfCell ( const FWorldCellId InCellId )
 
 void Lumen::FWorld::SetCellActorRouting ( const FWorldCellId InCellId, const Bool bInRoutable ) noexcept
 {
-    PartitionScratch.clear();
-    const TSpan<ActorID> Candidates( PartitionScratch.data(), PartitionScratch.capacity() );
+    PartitionScratch.resize( PartitionScratch.capacity() );
+    const TSpan<ActorID> Candidates( PartitionScratch.data(), PartitionScratch.size() );
     const USize Count = Partition->GetCellActors( InCellId, Candidates );
     for ( USize Index = 0ULL; Index < Count; ++Index )
     {
