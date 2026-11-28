@@ -18,6 +18,7 @@ namespace
     class FRecordingMessageHandler final : public FGenericApplicationMessageHandler
     {
     public:
+
         void OnMouseMove ( const Int32 InX, const Int32 InY ) noexcept override
         {
             MouseX = InX;
@@ -71,7 +72,7 @@ namespace
         const TSharedRef<FGenericWindowDescription> Description = MakeShared<FGenericWindowDescription>();
         Description->bIsVisible                                 = false;
         Description->GraphicsApi                                = EWindowGraphicsApi::OpenGL;
-        const TSharedRef<FGenericWindow> Window = Application.MakeWindow();
+        const TSharedRef<FGenericWindow> Window                 = Application.MakeWindow();
         Application.InitializeWindow( Window, Description, nullptr, false );
         if ( StaticCastSharedRef<FLinuxWindow>( Window )->GetOSWindowHandle() == nullptr )
         {
@@ -81,27 +82,27 @@ namespace
         }
 
         SDL_Event Event{};
-        Event.type          = SDL_EVENT_MOUSE_MOTION;
+        Event.type            = SDL_EVENT_MOUSE_MOTION;
         Event.motion.windowID = StaticCastSharedRef<FLinuxWindow>( Window )->GetOSWindowID();
-        Event.motion.x      = 17.0F;
-        Event.motion.y      = 29.0F;
+        Event.motion.x        = 17.0F;
+        Event.motion.y        = 29.0F;
         Application.AddPendingEvent( Event );
         LUMEN_CHECK_EQ( Handler->MouseX, 17 );
         LUMEN_CHECK_EQ( Handler->MouseY, 29 );
 
-        Event                = SDL_Event{};
-        Event.type           = SDL_EVENT_MOUSE_BUTTON_DOWN;
+        Event                 = SDL_Event{};
+        Event.type            = SDL_EVENT_MOUSE_BUTTON_DOWN;
         Event.button.windowID = StaticCastSharedRef<FLinuxWindow>( Window )->GetOSWindowID();
-        Event.button.button  = SDL_BUTTON_LEFT;
-        Event.button.clicks  = 2U;
+        Event.button.button   = SDL_BUTTON_LEFT;
+        Event.button.clicks   = 2U;
         Application.AddPendingEvent( Event );
         LUMEN_CHECK_EQ( Handler->DoubleClickCount, 1 );
         LUMEN_CHECK_EQ( Handler->DoubleClickButton, EMouseButton::Left );
 
-        Event               = SDL_Event{};
-        Event.type          = SDL_EVENT_MOUSE_WHEEL;
+        Event                = SDL_Event{};
+        Event.type           = SDL_EVENT_MOUSE_WHEEL;
         Event.wheel.windowID = StaticCastSharedRef<FLinuxWindow>( Window )->GetOSWindowID();
-        Event.wheel.y       = -1.0F;
+        Event.wheel.y        = -1.0F;
         Application.AddPendingEvent( Event );
         LUMEN_CHECK_EQ( Handler->WheelDelta, -100 );
 
