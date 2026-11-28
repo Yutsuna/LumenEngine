@@ -2,7 +2,8 @@
 # Source/Meson/Private/meson.build
 # Builds each module's target from its Private/ sources.
 #
-# Reads  : ModuleDefinitions, PublicIncludes, GlobalModules, ALL_WARNINGS
+# Reads  : ModuleDefinitions, PublicIncludes, GlobalModules, ALL_WARNINGS,
+#          ModuleDefinition.get('TestsExcludeFiles')
 # Writes : GlobalModules, GlobalTestModules
 #}
 
@@ -38,6 +39,45 @@ foreach ModuleDefinition : ModuleDefinitions
                 PrivateSources += files(FilePath)
             endif
         endforeach
+    endif
+
+    TestsExcludeFiles = ModuleDefinition.get('TestsExcludeFiles', [])
+    HasTestExclusions = TestsExcludeFiles.length() > 0
+    ExcludedPrivateFiles = []
+    TestPrivateSources = PrivateSources
+
+    if HasTestExclusions and ModuleType != 'SharedLibrary'
+        error(
+            'Module @0@: TestsExcludeFiles is only supported by SharedLibrary modules.'
+            .format(ModuleName)
+        )
+    endif
+
+    if HasTestExclusions
+        foreach ExcludedFileName : TestsExcludeFiles
+            ExcludedFilePath = PrivatePath / ExcludedFileName
+            if not FileSystem.is_file(ExcludedFilePath)
+                error(
+                    'Module @0@ tests exclude @1@, which does not exist.'
+                    .format(ModuleName, ExcludedFilePath)
+                )
+            endif
+            ExcludedPrivateFiles += files(ExcludedFilePath)
+        endforeach
+
+        TestPrivateSources = []
+        foreach SourcePath : PrivateSources
+            if not ExcludedPrivateFiles.contains(SourcePath)
+                TestPrivateSources += SourcePath
+            endif
+        endforeach
+
+        if TestPrivateSources.length() == 0
+            error(
+                'Module @0@: TestsExcludeFiles removes every private source.'
+                .format(ModuleName)
+            )
+        endif
     endif
 
     ResolvedDependencies = []
@@ -161,6 +201,23 @@ foreach ModuleDefinition : ModuleDefinitions
             link_whole : ModuleImplementation,
             dependencies : ResolvedDependencies,
         )
+
+        if HasTestExclusions
+            ModuleTestImplementation = static_library(
+                ModuleName + 'TestImplementation', TestPrivateSources,
+                include_directories : IncludeDirectories,
+                dependencies : ResolvedDependencies,
+                cpp_args : CompileArguments + BuildDefines,
+                c_args : CompileArguments + BuildDefines,
+                pic : true,
+                install : false,
+            )
+            ModuleTestDependency = declare_dependency(
+                include_directories : PublicIncludeDirectories,
+                link_whole : ModuleTestImplementation,
+                dependencies : ResolvedDependencies,
+            )
+        endif
 
     elif ModuleType == 'StaticLibrary'
         ModuleTarget = static_library(
