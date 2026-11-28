@@ -9,15 +9,15 @@ ModuleNames = [
     'Core',
     'Maths',
     'RHI',
+    # Backends are built before Renderer: Renderer links them as private dependencies
+    # and selects one at startup. No backend is propagated to Renderer's consumers.
+    'RHIOpenGL',
 ]
 
 ModuleNames += [
     'Scene',
     'Renderer',
     'AppCore',
-    # RHIOpenGL must be built before Launch: Launch's public surface bridge header
-    # exposes RHIOpenGL::FOpenGLNativeWindowDesc and depends on that module.
-    'RHIOpenGL',
     'Launch'
     #'RHIVulkan',
 ]

@@ -2,7 +2,8 @@
 # Source/Meson/Tests/meson.build
 # Discovers and registers each module's test suite.
 #
-# Reads  : ModuleDefinitions, GlobalModules, GlobalTestModules, PublicIncludes, ALL_WARNINGS
+# Reads  : ModuleDefinitions, GlobalModules, GlobalTestModules, PublicIncludes, ALL_WARNINGS,
+#          PythonInterpreter, SourceGlobber
 # Writes : (nothing; only registers `test()` targets)
 #}
 
@@ -21,17 +22,7 @@ foreach ModuleDefinition : ModuleDefinitions
     TestSources = []
 
     if FileSystem.is_dir(TestsPath)
-        FindTestResult = run_command( 'python3', '-c',
-'''
-import sys
-from pathlib import Path
-for p in Path(sys.argv[1]).rglob("*"):
-    if p.suffix in (".c", ".cpp"):
-        print(p.as_posix())
-''',
-            TestsPath,
-            check : false,
-        )
+        FindTestResult = run_command(PythonInterpreter, SourceGlobber, TestsPath, check : false)
         if FindTestResult.returncode() != 0
             error(
                 'Could not list tests for module @0@: @1@'
