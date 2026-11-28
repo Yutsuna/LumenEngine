@@ -23,7 +23,7 @@ namespace Lumen
 namespace EEngineMessage
 {
 
-    enum SCENE_EXPORT Type : UInt8
+    enum Type : UInt8
     {
         /** Sent every frame to tick the actor. Payload: FTickPayload */
         Tick = 100,

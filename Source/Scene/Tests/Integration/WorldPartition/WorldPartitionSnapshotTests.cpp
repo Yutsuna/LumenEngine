@@ -38,10 +38,10 @@ namespace
         Desc.WorldId           = InWorldId;
         Desc.PartitionConfig   = FWorldPartitionConfig{ .MaxCells = 8ULL, .MaxAssignedActors = 8ULL, .MaxJournalRecords = 32ULL };
         Desc.RenderCapacities  = FRenderSnapshotCapacities{
-             .TransformCapacity = 16ULL,
-             .MeshCapacity      = 16ULL,
-             .CameraCapacity    = 16ULL,
-             .LightCapacity     = 16ULL,
+            .TransformCapacity = 16ULL,
+            .MeshCapacity      = 16ULL,
+            .CameraCapacity    = 16ULL,
+            .LightCapacity     = 16ULL,
         };
         return Desc;
     }
@@ -329,9 +329,9 @@ LUMEN_INTEGRATION_TEST( FWorldPartitionReplication, DormantActorHasNoReplication
     ReplicationConfig.MaxActors          = 4ULL;
     ReplicationConfig.MaxRecordsPerFrame = ReplicationConfig.MaxActors * MaxReplicationRecordsPerActor;
     ReplicationConfig.MaxPayloadBytes    = ( ReplicationConfig.MaxRecordsPerFrame * MaxReplicationRecordBytes ) +
-                                        ReplicationFrameHeaderBytes + ReplicationFrameChecksumBytes;
-    Desc.ReplicationConfig = ReplicationConfig;
-    Desc.ReplicationRole   = EActorRole::Authority;
+                                           ReplicationFrameHeaderBytes + ReplicationFrameChecksumBytes;
+    Desc.ReplicationConfig               = ReplicationConfig;
+    Desc.ReplicationRole                 = EActorRole::Authority;
 
     FWorld World( Desc );
     const TSharedRef<AActor> Active  = SpawnProbe( World );
@@ -389,9 +389,9 @@ LUMEN_INTEGRATION_TEST( FWorldPartitionReplication, ConflictingAuthorityLabelHas
     ReplicationConfig.MaxActors          = 4ULL;
     ReplicationConfig.MaxRecordsPerFrame = ReplicationConfig.MaxActors * MaxReplicationRecordsPerActor;
     ReplicationConfig.MaxPayloadBytes    = ( ReplicationConfig.MaxRecordsPerFrame * MaxReplicationRecordBytes ) +
-                                        ReplicationFrameHeaderBytes + ReplicationFrameChecksumBytes;
-    Desc.ReplicationConfig = ReplicationConfig;
-    Desc.ReplicationRole   = EActorRole::Authority;
+                                           ReplicationFrameHeaderBytes + ReplicationFrameChecksumBytes;
+    Desc.ReplicationConfig               = ReplicationConfig;
+    Desc.ReplicationRole                 = EActorRole::Authority;
 
     FWorld World( Desc );
     const TSharedRef<AActor> First  = SpawnProbe( World );
