@@ -72,6 +72,7 @@ exactly `ModuleDefinition`; `Source/meson.build:33` copies it and injects
 | `Public` | `Public:12` only | Public include dir exposed through `PublicIncludes` | `'Public'` | `Core:11` |
 | `Tests` | `Tests:19,47` | Test source dir + custom-main detection | `'Tests'` | `RHI:53` |
 | `Benchmarks` | `Benchmarks:19,47` | Benchmark source dir + custom-main detection | `'Benchmarks'` | `Scene:13` |
+| `PrivateDepends` | `Private:13,45-53`; `Tests:18,46`; `Benchmarks:18,46` | Compiled/linked into the module and its tests/benchmarks, but excluded from `declare_dependency()` — clients cannot see the dep | `[]` | `Renderer:14` `['RHI','RHIOpenGL']` |
 | `Depends` | `Private:13,45-53`; `Benchmarks:15,68` | Internal module deps resolved from `GlobalModules`; missing dep → `error()` at `Private:47-51`; also guards benchmark Core auto-link | `[]` | `RHI:54` `['Core','Maths']` |
 | `ExternalDeps` | `Private:55` | Appended to `ResolvedDependencies` (pkg-config / `dependency()` objects) | `[]` | `AppCore:9,20` (`sdl3`, `required : true`); `RHIOpenGL:10-15,25`; `RHIVulkan:7-11,21` |
 | `ExtraTestSources` | `Tests:36` | Adds `files()` objects to discovered test sources | `[]` | `RHIOpenGL:27-43`; `Renderer:15` |
@@ -95,6 +96,7 @@ Globals the machinery supplies, not definition keys:
 | `PublicIncludes` | `Meson:42`, filled `Public:22` | `Private:18`, `Tests:52`, `Benchmarks:52` |
 | `GlobalModules` | `Meson:40`, filled `Private:185` | `Private:46,52`; `Benchmarks:63,67,69` |
 | `GlobalTestModules` | `Meson:41`, filled `Private:186` | `Tests:60`; `Benchmarks:61-62` |
+| `RuntimeLibraries` | `Meson:45`, filled `Private:231` | `Examples:89-98` — Windows DLL staging next to each example executable |
 
 `ALL_WARNINGS` is the single source of warning flags (`-Werror`,
 `-Wconversion`, `-Wsign-conversion`, `-Wold-style-cast`, `-Wshadow`,
@@ -163,6 +165,14 @@ All target construction is in `Source/Meson/Private/meson.build`.
   exporting new symbols (`:151-160`; `rules/testing.md:34-38`).
 - `ExportTemplate.hpp.inl:10-11` also has a `_USE_SHARED` / dllimport branch,
   but no code in this repo defines `_USE_SHARED`.
+- On Windows (`OSName == 'windows'`) the wrapper is installed to `bindir` so
+  the DLL sits next to the executable, and is appended to `RuntimeLibraries`
+  (`Private:208,227,231`). `Examples:89-98` consumes that list in a
+  `custom_target` that runs `Meson/MesonStageRuntimeDlls.py` to copy the DLLs into
+  each example's build directory — the PE loader searches the executable's
+  directory first, so no PATH entry is needed to run an example. On other
+  hosts both behaviours are disabled; tests still use the normal library
+  search path.
 - Example: `Core:8`.
 
 ### `StaticLibrary` (`Private:162-175`)
@@ -282,6 +292,9 @@ Any other string triggers `error('Unknown module type: …')` (`Private:177-178`
 4. **Add a benchmark-only dependency**: use `ExtraBenchmarkDependencies` or
    `ExtraBenchmarkIncludeDirectories` (`Benchmarks:58,65`); do not pollute
    `Depends`, which also feeds the production target.
+5. **Hide a dependency from clients**: use `PrivateDepends` (e.g. `Renderer`'s
+   `RHI`/`RHIOpenGL`) — it feeds the module and its tests, never
+   `declare_dependency()`.
 5. **Change a module's `Type`**: edit only its `meson.build` `Type` key, then
    check consumers of the module's `declare_dependency()` — switching to/from
    `SharedLibrary` changes symbol visibility and export-header generation.

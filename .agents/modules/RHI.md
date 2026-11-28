@@ -325,3 +325,17 @@ types and presentation results are supplied or gated by the conformance factory,
 so every backend must validate them independently. Fuzz determinism holds for the
 recorded seed values and is not a collision-freedom proof. Inline and template
 implementations live in neighboring `Inline/` directories.
+
+## Relationship to Renderer
+
+- `RHI` remains the only device abstraction, but it is a **private** dependency
+  of `Renderer` (`PrivateDepends` in `Source/Renderer/meson.build`). RHI headers
+  must not be included from `Renderer/Public`, `Launch/Public` or any client.
+- Backend discovery, adapter preference, device/swapchain creation and error
+  translation into neutral `FRenderExtensionError` live in
+  `Renderer/Private/Backend`. Production Renderer code never exposes `FRHIError`
+  across its public API.
+- The Null backend still lives under `RHI/Tests`; Renderer tests and benchmarks
+  link `RHINullTestSupportSources` and reach it through the private
+  `StartWithTestDevice` hook.
+
