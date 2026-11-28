@@ -4,7 +4,9 @@ description: Configure and compile the release build used for benchmarks
 
 # build-release
 
-Run inside the Nix devshell (direnv / `nix develop`).
+Run inside the active local toolchain: direnv loads it via `.envrc` (Nix
+devshell on Linux/macOS, MSYS2 UCRT64 on Windows). On Windows without direnv,
+prefix commands with `.\Windows\Setup.ps1 -Command "…"`.
 
 If `Build-Release/` does not exist yet:
 

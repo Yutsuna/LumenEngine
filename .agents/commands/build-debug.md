@@ -4,7 +4,9 @@ description: Configure and compile the debug build with ASan/UBSan sanitizers
 
 # build-debug
 
-Run inside the Nix devshell (direnv / `nix develop`).
+Run inside the active local toolchain: direnv loads it via `.envrc` (Nix
+devshell on Linux/macOS, MSYS2 UCRT64 on Windows). On Windows without direnv,
+prefix commands with `.\Windows\Setup.ps1 -Command "…"`.
 
 If `Build/` exists and is already configured:
 

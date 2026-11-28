@@ -37,9 +37,11 @@ Nix/shell.nix        — mkShell wrapping deps with dev env hooks
   so runtime libs resolve without `nix build`.
 - `VK_LAYER_PATH` points at the validation layers.
 - Linux-only: `NIX_CFLAGS_LINK="-fuse-ld=mold"`.
-- `.envrc` does `use flake .#default --accept-flake-config` + `PATH_add
-  result/bin` — **after** a successful `nix build`, the freshly built
-  binaries are available on PATH immediately.
+- On Linux/macOS, `.envrc` does `use flake .#default --accept-flake-config` +
+  `PATH_add result/bin` — **after** a successful `nix build`, the freshly built
+  binaries are available on PATH immediately. `.envrc` is OS-aware: its Windows
+  branch activates the repo-local MSYS2 UCRT64 instead
+  (`skills/windows-workflow.md`). The Nix commands here are Linux/macOS-only.
 
 ## package.nix details agents must respect
 
@@ -55,7 +57,7 @@ Nix/shell.nix        — mkShell wrapping deps with dev env hooks
 ## Commands
 
 ```sh
-nix develop                      # enter the devshell (direnv does it automatically)
+nix develop                      # enter the devshell (direnv does it automatically on Linux/macOS)
 nix build                        # build packages.default → ./result symlink
 nix flake show                   # inspect outputs
 meson test -C Build   # CI-style, non-interactive

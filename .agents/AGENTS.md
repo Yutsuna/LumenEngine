@@ -1,7 +1,9 @@
 # Lumen — Agent Instruction Index
 
 Lumen is a C++26 rendering engine (Epic Games / Unreal-style coding standard)
-built with **Meson** inside a **Nix flake** devshell. Code is organised as one
+built with **Meson** inside a **repository-local toolchain**: a Nix flake
+devshell on Linux/macOS, a portable MSYS2 UCRT64 under `.win-env/` on Windows.
+`.envrc` activates the right one for the host OS. Code is organised as one
 module per directory under `Source/`.
 
 ## Read on demand
@@ -21,7 +23,7 @@ to `.agents/`; an explicit `.agents/` prefix is equally valid.
 | `modules/<Module>.md` | working in `Source/<Module>/` (status, links, inventory) |
 | `agents/` | agent definitions — `reviewer` orchestrator + `reviewer-safety`/`reviewer-norme` subagents, `documentation` auditor of the `.agents/` corpus, and `test-writer` for unit-test authoring (definitions in `agents/*.md`) |
 | `commands/` | ready-made recipes: `build-debug`, `build-release`, `test`, `review`, `new-module` |
-| `skills/` | procedural guides: `core-abstractions`, `debug-sanitizer`, `write-benchmarks`, `nix-workflow`, `meson-build-customization` (declarative Meson mechanics: `ModuleDefinition` keys, target types) |
+| `skills/` | procedural guides: `core-abstractions`, `debug-sanitizer`, `write-benchmarks`, `nix-workflow`, `windows-workflow`, `meson-build-customization` (declarative Meson mechanics: `ModuleDefinition` keys, target types) |
 
 ## Modules
 
@@ -50,8 +52,10 @@ has a `meson.build` in its `Source/` directory.
 - `.agents/` is the canonical agent-documentation directory. `.kimi-code` and
   `.opencode` are symbolic links to it: never edit files through those paths;
   all agent-documentation changes must be made directly under `.agents/`.
-- All commands run inside the Nix devshell (`.envrc`/`direnv`), e.g.
-  `meson compile -C Build`. The root `.gitignore` covers `Build/` and
+- All commands run inside the active local toolchain (direnv loads it via
+  `.envrc`: Nix devshell on Linux/macOS, MSYS2 UCRT64 on Windows; CI uses
+  `nix develop` explicitly), e.g. `meson compile -C Build`. Never rely on
+  globally installed compilers or build tools. The root `.gitignore` covers `Build/` and
   `Build-Release/` only: `Build-TSAN/` is not listed there, but its own
   `Build-TSAN/.gitignore` (`*`) ignores it, so it does not appear in `git status`.
 - Prefer the Lumen Core library over `std` (threads, locks, stop tokens,

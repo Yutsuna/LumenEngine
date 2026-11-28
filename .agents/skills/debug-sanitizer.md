@@ -28,9 +28,10 @@ Build a clean sanitized debug tree and reproduce (commands detail in
      `Int32/UInt32/USize` typedefs; unsigned wrap is not "fine", fix the range.
    - data race (TSan needs a separate build `-Db_sanitize=thread`): actor
      state must not be shared; only mailbox messages cross actors (`modules/Scene.md`).
-5. If sanitizer stacks don't explain it, valgrind is installed in the
+5. If sanitizer stacks don't explain it, valgrind is installed in the Linux
    devshell (`nix develop`): `valgrind --tool=memcheck
-   Build/Source/Meson/Private/Launch` (or the test binary). Slower but no rebuild.
+   Build/Source/Meson/Private/Launch` (or the test binary). Slower but no
+   rebuild. It is not in the Windows MSYS2 package set — use ASan/UBSan there.
 6. Remember: fixes follow `rules/core-first.md`,
    `rules/coding-style.md` (noexcept everywhere, Lumen error handling).
 

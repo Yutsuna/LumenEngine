@@ -4,8 +4,9 @@ description: Compile and run the Lumen test suites (all, one module, or one bina
 
 # test
 
-Inside the Nix devshell. Debug build is enough for tests; sanitizers pair
-well with them (see `build-debug`).
+Inside the active local toolchain (direnv via `.envrc`: Nix devshell on
+Linux/macOS, MSYS2 UCRT64 on Windows). Debug build is enough for tests;
+sanitizers pair well with them (see `build-debug`).
 
 ```sh
 meson compile -C Build && meson test -C Build          # everything
