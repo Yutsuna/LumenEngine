@@ -5,9 +5,12 @@
 
 #include <Execution/Renderer.hpp>
 
+#include <HAL/PlatformTime.hpp>
+
 #include <Device/RHIConformanceDeviceFactory.hpp>
 #include <RHI/Commands/IRHICommandList.hpp>
 #include <RHI/Device/IRHIDevice.hpp>
+#include <Rendering/RenderSnapshotStream.hpp>
 #include <Rendering/SceneExtractor.hpp>
 #include <Tests/UnitTest.hpp>
 
@@ -20,7 +23,7 @@ namespace
     class FFrameExtensionProbe final : public IRenderFrameExtension
     {
     public:
-        RHI::FRHIExpected Initialize ( RHI::IRHIDevice &LUMEN_UNUSED InDevice,
+        RHI::FRHIExpected Initialize ( RHI::IRHIDevice LUMEN_UNUSED &InDevice,
                                        const RHI::FRHIExtent3D &InExtent ) noexcept override
         {
             ++InitializeCount;
@@ -75,16 +78,33 @@ namespace
         return InExtractor.Publish( { .WorldId = 91001ULL, .FrameIndex = 1ULL } ).HasValue();
     }
 
-    void RequestFrame ( FRenderer &InRenderer ) noexcept
+    void RequestFrame ( FRenderer &InRenderer )
     {
-        for ( UInt32 Attempt = 0U; Attempt < 100000U; ++Attempt )
+        const Float64 Deadline = HAL::FPlatformTime::Seconds() + 2.0;
+        while ( HAL::FPlatformTime::Seconds() < Deadline )
         {
             if ( InRenderer.RequestRender( 1ULL ) )
             {
                 return;
             }
+            HAL::FPlatformTime::Sleep( 0.001 );
         }
         LUMEN_CHECK_MSG( false, "The extension frame was never accepted" );
+    }
+
+    void WaitForRecordFailure ( FRenderer &InRenderer )
+    {
+        const Float64 Deadline = HAL::FPlatformTime::Seconds() + 2.0;
+        while ( HAL::FPlatformTime::Seconds() < Deadline )
+        {
+            InRenderer.SwapStatusBuffers();
+            if ( InRenderer.GetStatus().Result == ERenderFrameResult::RHIError )
+            {
+                return;
+            }
+            HAL::FPlatformTime::Sleep( 0.001 );
+        }
+        LUMEN_CHECK_MSG( false, "The extension record failure was never reported" );
     }
 
     LUMEN_INTEGRATION_TEST( FFrameExtension_Null, RecordsResizesAndCommitsAfterSubmission )
@@ -110,7 +130,7 @@ namespace
                                   .ProxyCapacity   = 1ULL,
                                   .AssetCapacity   = 1ULL,
                                   .Readback        = {},
-                                  .FrameExtension  = Extension };
+                                  .FrameExtension  = StaticCastSharedPtr<IRenderFrameExtension>( Extension ) };
         LUMEN_CHECK_HAS_VALUE( Renderer.Start( Desc ) );
         RequestFrame( Renderer );
         LUMEN_CHECK_HAS_VALUE( Renderer.RequestResize( { 32U, 16U, 1U } ) );
@@ -153,16 +173,17 @@ namespace
                                   .ProxyCapacity   = 1ULL,
                                   .AssetCapacity   = 1ULL,
                                   .Readback        = {},
-                                  .FrameExtension  = Extension };
+                                  .FrameExtension  = StaticCastSharedPtr<IRenderFrameExtension>( Extension ) };
         LUMEN_CHECK_HAS_VALUE( Renderer.Start( Desc ) );
         RequestFrame( Renderer );
+        /** INFO: Shutdown publishes its own terminal result, so observe the record failure first. */
+        WaitForRecordFailure( Renderer );
+        LUMEN_CHECK_EQ( Renderer.GetStatus().Result, ERenderFrameResult::RHIError );
         Renderer.RequestShutdown();
         Renderer.Join();
-        Renderer.SwapStatusBuffers();
 
         LUMEN_CHECK_EQ( Extension->RecordCount, 1ULL );
         LUMEN_CHECK_EQ( Extension->CommitCount, 0ULL );
-        LUMEN_CHECK_EQ( Renderer.GetStatus().Result, ERenderFrameResult::RHIError );
     }
 
 } // namespace
