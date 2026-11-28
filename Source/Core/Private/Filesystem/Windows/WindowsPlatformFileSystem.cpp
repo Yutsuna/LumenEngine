@@ -29,6 +29,12 @@ extern "C"
     #include <windows.h>
 }
 
+/** windows.h defines these as A/W aliases, which collide with the IFileSystem virtual methods. */
+    #undef DeleteFile
+    #undef CreateDirectory
+    #undef CopyFile
+    #undef MoveFile
+
 /**
  * Private
  */
@@ -196,7 +202,9 @@ namespace Filesystem
                 return -1;
             }
 
-            LARGE_INTEGER Zero{ 0 }, Result;
+            LARGE_INTEGER Zero;
+            Zero.QuadPart = 0;
+            LARGE_INTEGER Result;
             if ( not ::SetFilePointerEx( FileHandle, Zero, &Result, FILE_CURRENT ) )
             {
                 return -1;
@@ -537,18 +545,19 @@ namespace Filesystem
             ::FindClose( Handle );
             return {};
         }
+    } // namespace Internal
 
-        /**
-         * Public
-         */
+    /**
+     * Public
+     */
 
-        IFileSystem &GetDefaultFileSystem () noexcept
-        {
-            static FPlatformFileSystem Instance;
-            return Instance;
-        }
+    IFileSystem &GetDefaultFileSystem () noexcept
+    {
+        static FPlatformFileSystem Instance;
+        return Instance;
+    }
 
-    } // namespace Filesystem
+} // namespace Filesystem
 
 } // namespace Lumen
 

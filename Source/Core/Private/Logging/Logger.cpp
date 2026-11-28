@@ -46,7 +46,7 @@ namespace
 #if defined( LUMEN_PLATFORM_WINDOWS )
         while ( Size > 0 )
         {
-            const UInt8 Chunk   = Size > 0x40000000u ? 0x40000000u : static_cast<UInt8>( Size );
+            const UInt32 Chunk  = Size > 0x40000000u ? 0x40000000u : static_cast<UInt32>( Size );
             const Int32 Written = ::_write( 1, Data, Chunk );
 
             if ( Written <= 0 )
