@@ -57,7 +57,7 @@ constexpr Lumen::Thread::Internal::FBufferFlag::Type Lumen::Thread::Internal::FB
  */
 
 template <typename BufferType>
-Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer()
+Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer ()
     : OwnedBuffers( Lumen::MakeUnique<BufferType[]>( 3 ) ),
       //.
       Buffers( OwnedBuffers.Get() ),
@@ -68,7 +68,7 @@ Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer()
 }
 
 template <typename BufferType>
-Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer( const BufferType &InData )
+Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer ( const BufferType &InData )
     : OwnedBuffers( Lumen::MakeUnique<BufferType[]>( 3 ) ),
       /**
        *
@@ -83,7 +83,7 @@ Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer( const BufferType &InDat
 }
 
 template <typename BufferType>
-Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer( BufferType ( &InBuffers )[3] )
+Lumen::Thread::TTripleBuffer<BufferType>::TTripleBuffer ( BufferType ( &InBuffers )[3] )
     : Buffers( &InBuffers[0] ),
       /**
        *

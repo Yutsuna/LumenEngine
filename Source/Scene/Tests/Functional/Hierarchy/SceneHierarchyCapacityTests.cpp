@@ -8,10 +8,10 @@
 #include <Actor/ActorTypes.hpp>
 
 #include <AllocationTracking.hpp>
+#include <Templates/Array.hpp>
 #include <Templates/Vector.hpp>
 #include <Tests/UnitTest.hpp>
 
-#include <array>
 #include <bit>
 
 namespace Lumen
@@ -37,7 +37,7 @@ namespace
                 Digest *= 1099511628211ULL;
             }
 
-            const std::array<UInt32, 16ULL> Words = std::bit_cast<std::array<UInt32, 16ULL>>( Record.WorldTransform );
+            const TArray<UInt32, 16ULL> Words = std::bit_cast<TArray<UInt32, 16ULL>>( Record.WorldTransform );
             for ( const UInt32 Word : Words )
             {
                 for ( USize ByteIndex = 0ULL; ByteIndex < 4ULL; ++ByteIndex )

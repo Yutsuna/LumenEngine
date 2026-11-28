@@ -23,6 +23,7 @@ namespace
     class FFrameExtensionProbe final : public IRenderFrameExtension
     {
     public:
+
         RHI::FRHIExpected Initialize ( RHI::IRHIDevice LUMEN_UNUSED &InDevice,
                                        const RHI::FRHIExtent3D &InExtent ) noexcept override
         {
@@ -60,7 +61,7 @@ namespace
         void Commit ( const UInt64 InTimelineValue, FRenderFrameStatus &InOutStatus ) noexcept override
         {
             ++CommitCount;
-            LastTimeline                 = InTimelineValue;
+            LastTimeline                    = InTimelineValue;
             InOutStatus.ExtensionFrameCount = CommitCount;
         }
 

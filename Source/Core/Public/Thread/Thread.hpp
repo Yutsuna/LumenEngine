@@ -53,6 +53,8 @@ public:
     /** @brief Requests stop and joins the current thread before taking ownership of InOther. */
     FThread &operator=( FThread &&InOther ) noexcept;
 
+public:
+
     /** @brief Joins the thread and releases its stop state, leaving this FThread empty. */
     void Join () noexcept;
 

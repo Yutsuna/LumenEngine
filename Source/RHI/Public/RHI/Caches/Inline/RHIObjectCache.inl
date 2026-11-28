@@ -12,8 +12,8 @@
  */
 
 template <typename KeyType, typename ValueType, typename HashType>
-Lumen::RHI::TRHIObjectCache<KeyType, ValueType, HashType>::TRHIObjectCache( const USize InMaxEntries,
-                                                                            const ERHICacheEvictionPolicy InPolicy ) noexcept
+Lumen::RHI::TRHIObjectCache<KeyType, ValueType, HashType>::TRHIObjectCache ( const USize InMaxEntries,
+                                                                             const ERHICacheEvictionPolicy InPolicy ) noexcept
     : MaxEntries( InMaxEntries == 0U ? 1U : InMaxEntries ), Policy( InPolicy )
 {
     /* */

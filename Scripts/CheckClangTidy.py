@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import json
+import os
 import shlex
+import subprocess
 import tempfile
 from argparse import ArgumentParser, Namespace
 from pathlib import Path
@@ -17,6 +19,10 @@ from Library import (
     SourceCheck,
     SourceTree,
 )
+
+# clang parses the `command` field with the host platform's quoting rules: POSIX single quotes produced by
+# shlex.join are not quotes for clang on Windows, which then mistakes the compiler for an input file.
+_JOIN_COMMAND = subprocess.list2cmdline if os.name == "nt" else shlex.join
 
 
 class CheckClangTidy( SourceCheck ):
@@ -63,7 +69,7 @@ class CheckClangTidy( SourceCheck ):
             if "arguments" in record:
                 record["arguments"] = cls._sanitize(record["arguments"])
             else:
-                record["command"] = shlex.join(cls._sanitize(shlex.split(record.get("command", ""))))
+                record["command"] = _JOIN_COMMAND(cls._sanitize(shlex.split(record.get("command", ""))))
 
         (destination / CompilationDatabase.FILE_NAME).write_text(json.dumps(records), encoding="utf-8")
 

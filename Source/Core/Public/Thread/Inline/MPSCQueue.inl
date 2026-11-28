@@ -174,7 +174,7 @@ template <typename Type> Lumen::Bool Lumen::Thread::TMPSCQueue<Type>::IsEmpty ()
     return Head == nullptr or Head->Next.load( std::memory_order_acquire ) == nullptr;
 }
 
-template <typename Type> typename Lumen::Thread::TMPSCQueue<Type>::FNode *Lumen::Thread::TMPSCQueue<Type>::AcquireNode () noexcept
+template <typename Type> Lumen::Thread::TMPSCQueue<Type>::FNode *Lumen::Thread::TMPSCQueue<Type>::AcquireNode () noexcept
 {
     USize Position  = FreeDequeuePosition.load( std::memory_order_relaxed );
     FFreeCell *Cell = nullptr;

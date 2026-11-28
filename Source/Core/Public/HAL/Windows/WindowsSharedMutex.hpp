@@ -28,6 +28,11 @@ extern "C"
     #include <windows.h>
 }
 
+/* winbase.h defines CreateSemaphore as CreateSemaphoreA/W, which collides with
+ * IRHIDevice::CreateSemaphore and its overrides. No Core HAL code calls the Win32
+ * function, so drop the legacy macro before any engine declaration. */
+    #undef CreateSemaphore
+
 namespace Lumen
 {
 

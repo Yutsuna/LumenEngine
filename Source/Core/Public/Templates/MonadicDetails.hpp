@@ -23,6 +23,7 @@ namespace Lumen
  */
 struct FEmplaceTag
 {
+    /* */
 };
 
 namespace Concepts
@@ -97,7 +98,7 @@ namespace MonadicInternal
 
     /** @brief Reference passed to Inspect callbacks; degrades to nullptr_t for void value types so constraints stay well-formed.
      */
-    template <class Self> using TInspectRef = typename Internal::TInspectRefImpl<Self>::Type;
+    template <class Self> using TInspectRef = Internal::TInspectRefImpl<Self>::Type;
 
     template <class MonadicType>
     inline constexpr Bool bNothrowHas = []
@@ -222,7 +223,7 @@ namespace MonadicInternal
         };
     } // namespace Internal
 
-    template <class Self, class Func> using TBindOut = typename Internal::TBindOutImpl<Self, Func>::Type;
+    template <class Self, class Func> using TBindOut = Internal::TBindOutImpl<Self, Func>::Type;
 
     /** @brief OrElse : f() or f(Error()) if the host has an error. */
     template <class Self, class Func>

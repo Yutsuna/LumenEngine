@@ -33,7 +33,7 @@ Lumen::HAL::Internal::FWindowsSleepTimer::~FWindowsSleepTimer () noexcept
 
 Lumen::Float64 Lumen::HAL::Internal::QuerySecondsPerTick () noexcept
 {
-    static const Float64 Value = [] () noexcept
+    static const Float64 Value = [] noexcept
     {
         LARGE_INTEGER Frequency{};
         ::QueryPerformanceFrequency( &Frequency );
@@ -69,7 +69,7 @@ Lumen::UInt64 Lumen::HAL::FWindowsTime::NowNanoseconds () noexcept
     ::GetSystemTimePreciseAsFileTime( &FileTime );
 
     const UInt64 Intervals =
-        ( static_cast<UInt64>( FileTime.dwHighDateTime ) << 32 ) | static_cast<UInt64>( FileTime.dwLowDateTime );
+        ( static_cast<UInt64>( FileTime.dwHighDateTime ) << 32U ) | static_cast<UInt64>( FileTime.dwLowDateTime );
     return ( Intervals - UnixEpochOffset ) * 100ULL;
 }
 

@@ -157,7 +157,7 @@ const Lumen::RHIOpenGL::FGLDispatchTable &Lumen::RHIOpenGL::FOpenGLContext::GetD
     return Dispatch;
 }
 
-Lumen::RHIOpenGL::FEGLPlatformContext &Lumen::RHIOpenGL::FOpenGLContext::GetNativeContext () noexcept
+Lumen::RHIOpenGL::IOpenGLPlatformContext &Lumen::RHIOpenGL::FOpenGLContext::GetNativeContext () noexcept
 {
     return NativeContext;
 }

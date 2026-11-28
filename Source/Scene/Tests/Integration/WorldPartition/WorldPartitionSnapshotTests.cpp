@@ -11,6 +11,7 @@
 #include <Actor/Actor.hpp>
 #include <Actor/ActorMessage.hpp>
 #include <Actor/ActorTypes.hpp>
+#include <Camera/CameraTypes.hpp>
 #include <Hierarchy/SceneHierarchy.hpp>
 #include <Rendering/RenderRecords.hpp>
 #include <Rendering/RenderSnapshotView.hpp>
@@ -38,10 +39,10 @@ namespace
         Desc.WorldId           = InWorldId;
         Desc.PartitionConfig   = FWorldPartitionConfig{ .MaxCells = 8ULL, .MaxAssignedActors = 8ULL, .MaxJournalRecords = 32ULL };
         Desc.RenderCapacities  = FRenderSnapshotCapacities{
-             .TransformCapacity = 16ULL,
-             .MeshCapacity      = 16ULL,
-             .CameraCapacity    = 16ULL,
-             .LightCapacity     = 16ULL,
+            .TransformCapacity = 16ULL,
+            .MeshCapacity      = 16ULL,
+            .CameraCapacity    = 16ULL,
+            .LightCapacity     = 16ULL,
         };
         return Desc;
     }
@@ -97,7 +98,7 @@ namespace
         LUMEN_CHECK_HAS_VALUE( InWorld.TryRegisterHierarchyActor( Id ) );
     }
 
-    void AddRenderContent ( FWorld &InWorld, const ActorID InActorId ) noexcept
+    void AddRenderContent ( FWorld &InWorld, const ActorID InActorId )
     {
         const FRenderProxyId Proxy{ InActorId };
         InWorld.GetRenderContent().Meshes.emplace_back( FRenderMeshRecord{
@@ -105,7 +106,7 @@ namespace
             .MeshAssetId     = FRenderAssetId{ 700000ULL + InActorId },
             .MaterialAssetId = FRenderAssetId{ 800000ULL + InActorId },
         } );
-        InWorld.GetRenderContent().Cameras.emplace_back( FRenderCameraRecord{ .ProxyId = Proxy } );
+        LUMEN_CHECK_HAS_VALUE( InWorld.TryAddCameraComponent( InActorId, FCameraComponentDesc{} ) );
         InWorld.GetRenderContent().Lights.emplace_back(
             FRenderLightRecord{ .ProxyId = Proxy, .Position = Maths::FVec3f{ 0.0F } } );
     }
@@ -329,9 +330,9 @@ LUMEN_INTEGRATION_TEST( FWorldPartitionReplication, DormantActorHasNoReplication
     ReplicationConfig.MaxActors          = 4ULL;
     ReplicationConfig.MaxRecordsPerFrame = ReplicationConfig.MaxActors * MaxReplicationRecordsPerActor;
     ReplicationConfig.MaxPayloadBytes    = ( ReplicationConfig.MaxRecordsPerFrame * MaxReplicationRecordBytes ) +
-                                        ReplicationFrameHeaderBytes + ReplicationFrameChecksumBytes;
-    Desc.ReplicationConfig = ReplicationConfig;
-    Desc.ReplicationRole   = EActorRole::Authority;
+                                           ReplicationFrameHeaderBytes + ReplicationFrameChecksumBytes;
+    Desc.ReplicationConfig               = ReplicationConfig;
+    Desc.ReplicationRole                 = EActorRole::Authority;
 
     FWorld World( Desc );
     const TSharedRef<AActor> Active  = SpawnProbe( World );
@@ -389,9 +390,9 @@ LUMEN_INTEGRATION_TEST( FWorldPartitionReplication, ConflictingAuthorityLabelHas
     ReplicationConfig.MaxActors          = 4ULL;
     ReplicationConfig.MaxRecordsPerFrame = ReplicationConfig.MaxActors * MaxReplicationRecordsPerActor;
     ReplicationConfig.MaxPayloadBytes    = ( ReplicationConfig.MaxRecordsPerFrame * MaxReplicationRecordBytes ) +
-                                        ReplicationFrameHeaderBytes + ReplicationFrameChecksumBytes;
-    Desc.ReplicationConfig = ReplicationConfig;
-    Desc.ReplicationRole   = EActorRole::Authority;
+                                           ReplicationFrameHeaderBytes + ReplicationFrameChecksumBytes;
+    Desc.ReplicationConfig               = ReplicationConfig;
+    Desc.ReplicationRole                 = EActorRole::Authority;
 
     FWorld World( Desc );
     const TSharedRef<AActor> First  = SpawnProbe( World );

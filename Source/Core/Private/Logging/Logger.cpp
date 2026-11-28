@@ -25,6 +25,8 @@ extern "C"
 
 #include <Logging/Logger.hpp>
 
+#include <Meta/Reflection.hpp>
+
 #include <HAL/LockGuard.hpp>
 #include <HAL/PlatformSignal.hpp>
 #include <HAL/PlatformTime.hpp>
@@ -33,6 +35,10 @@ extern "C"
 
 namespace Lumen
 {
+
+/**
+ * Private
+ */
 
 namespace
 {
@@ -46,7 +52,7 @@ namespace
 #if defined( LUMEN_PLATFORM_WINDOWS )
         while ( Size > 0 )
         {
-            const UInt8 Chunk   = Size > 0x40000000u ? 0x40000000u : static_cast<UInt8>( Size );
+            const UInt32 Chunk  = Size > 0x40000000U ? 0x40000000U : static_cast<UInt32>( Size );
             const Int32 Written = ::_write( 1, Data, Chunk );
 
             if ( Written <= 0 )
@@ -95,10 +101,10 @@ namespace
         #define ENABLE_VIRTUAL_TERMINAL_PROCESSING 0x0004
     #endif
 
-        const HANDLE Handle = ::GetStdHandle( STD_OUTPUT_HANDLE );
-        DWORD Mode          = 0;
+        HANDLE Handle = ::GetStdHandle( STD_OUTPUT_HANDLE );
+        DWORD Mode    = 0;
 
-        if ( Handle != nullptr and Handle != INVALID_HANDLE_VALUE and ::GetConsoleMode( Handle, &Mode ) )
+        if ( Handle != nullptr and Handle != INVALID_HANDLE_VALUE and ::GetConsoleMode( Handle, &Mode ) != 0 )
         {
             ::SetConsoleMode( Handle, Mode | ENABLE_VIRTUAL_TERMINAL_PROCESSING );
         }
@@ -106,7 +112,37 @@ namespace
         return true;
     }
 
+    /**
+     * @brief ANSI color for a verbosity level. Kept local to the logger: it is a console
+     *        presentation detail, not metadata about the ELogVerbosity enum itself.
+     */
+    [[nodiscard]] constexpr const AnsiChar *ColorForVerbosity ( const ELogVerbosity::Type InVerbosity ) noexcept
+    {
+        switch ( InVerbosity )
+        {
+        case ELogVerbosity::Fatal:
+        case ELogVerbosity::Error:
+            return "\033[31m";
+        case ELogVerbosity::Warning:
+            return "\033[33m";
+        case ELogVerbosity::Display:
+            return "\033[37m";
+        case ELogVerbosity::Info:
+            return "\033[90m";
+        case ELogVerbosity::Verbose:
+            return "\033[34m";
+        case ELogVerbosity::VeryVerbose:
+            return "\033[36m";
+        default:
+            return "\033[0m";
+        }
+    }
+
 } // namespace
+
+/**
+ * Public
+ */
 
 FLogger &FLogger::GetInstance () noexcept
 {
@@ -171,10 +207,12 @@ void FLogger::Shutdown () noexcept
 
 void FLogger::EnqueueLogMessage ( const FLogCategory &Category, const ELogVerbosity::Type Verbosity, FString &&Message )
 {
-    FLogMessage LogMessage{ .Category  = Category,
-                            .Verbosity = Verbosity,
-                            .Message   = std::move( Message ),
-                            .Timestamp = HAL::FPlatformTime::Seconds() };
+    FLogMessage LogMessage{
+        .Category  = Category,
+        .Verbosity = Verbosity,
+        .Message   = std::move( Message ),
+        .Timestamp = HAL::FPlatformTime::Seconds(),
+    };
 
     if ( Verbosity == ELogVerbosity::Fatal )
     {
@@ -248,8 +286,8 @@ void FLogger::CoutMessage ( const FLogMessage &LogMessage ) const noexcept
     /** @brief Runs once, needed on Windows consoles; trivially true elsewhere. */
     [[maybe_unused]] static const Bool bAnsiEscapeCodesReady = EnableAnsiEscapeCodes();
 
-    const AnsiChar *const VerbosityColor  = ELogVerbosity::ToColor( LogMessage.Verbosity );
-    const AnsiChar *const VerbosityString = ELogVerbosity::ToString( LogMessage.Verbosity );
+    const AnsiChar *const VerbosityColor = ColorForVerbosity( LogMessage.Verbosity );
+    const FStringView VerbosityString    = Meta::EnumName( LogMessage.Verbosity );
 
     try
     {

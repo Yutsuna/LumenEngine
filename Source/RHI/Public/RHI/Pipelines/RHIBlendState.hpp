@@ -39,7 +39,6 @@ namespace RHI
         ReverseSubtract,
         Min,
         Max
-
     };
     /**
      * @struct FRHIBlendAttachmentState

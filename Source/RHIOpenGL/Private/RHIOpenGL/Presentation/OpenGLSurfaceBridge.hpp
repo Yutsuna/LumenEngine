@@ -21,6 +21,7 @@ namespace RHIOpenGL
     class FOpenGLSurfaceBridge final : public RHI::IRHISurfaceBridge
     {
     public:
+
         explicit FOpenGLSurfaceBridge ( const FOpenGLNativeWindowDesc &InDesc ) noexcept;
 
         void AttachContext ( TSharedRef<FOpenGLContext> InContext ) noexcept;
@@ -30,11 +31,13 @@ namespace RHIOpenGL
         CreateNativeSurface ( UPtr InBackendHandle ) noexcept override;
         void DestroyNativeSurface ( const RHI::FRHINativeSurface &InSurface ) noexcept override;
         [[nodiscard]] RHI::FRHIExpected MakeCurrent ( const RHI::FRHINativeSurface &InSurface ) noexcept override;
-        [[nodiscard]] RHI::FRHIExpected Present ( const RHI::FRHINativeSurface &InSurface, Int32 InSwapInterval ) noexcept override;
+        [[nodiscard]] RHI::FRHIExpected Present ( const RHI::FRHINativeSurface &InSurface,
+                                                  Int32 InSwapInterval ) noexcept override;
         [[nodiscard]] TExpected<RHI::FRHIExtent3D, RHI::FRHIError> GetExtent () const noexcept override;
         [[nodiscard]] TOptional<UPtr> ResolveProcedure ( FStringView InName ) noexcept override;
 
     private:
+
         FOpenGLNativeWindowDesc Desc;
         TSharedPtr<FOpenGLContext> Context;
         TAtomic<UInt32> Width;

@@ -20,7 +20,7 @@ namespace EAppCoreError
     enum class Type : UInt8
     {
         None = 0,
-        WindowCreationFailed
+        WindowCreationFailed,
     };
 
 } // namespace EAppCoreError

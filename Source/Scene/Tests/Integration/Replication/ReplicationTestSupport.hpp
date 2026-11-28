@@ -28,10 +28,10 @@ namespace ReplicationTests
     [[nodiscard]] inline FReplicationConfig MakeConfig ( const USize InCount ) noexcept
     {
         FReplicationConfig Config;
-        Config.MaxActors          = InCount;
-        Config.MaxRecordsPerFrame = InCount * MaxReplicationRecordsPerActor;
-        Config.MaxPayloadBytes    = ( InCount * MaxReplicationRecordsPerActor * MaxReplicationRecordBytes ) +
-                                 ReplicationFrameHeaderBytes + ReplicationFrameChecksumBytes;
+        Config.MaxActors                 = InCount;
+        Config.MaxRecordsPerFrame        = InCount * MaxReplicationRecordsPerActor;
+        Config.MaxPayloadBytes           = ( InCount * MaxReplicationRecordsPerActor * MaxReplicationRecordBytes ) +
+                                           ReplicationFrameHeaderBytes + ReplicationFrameChecksumBytes;
         Config.ResendWindow              = 8ULL;
         Config.MaxBufferedFrames         = 4ULL;
         Config.MaxPendingControlRecords  = 32ULL;

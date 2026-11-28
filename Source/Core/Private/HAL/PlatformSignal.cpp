@@ -13,7 +13,7 @@
 #include <bit>
 #include <csignal>
 
-#if not defined( LUMEN_PLATFROM_WINDOWS )
+#if not defined( LUMEN_PLATFORM_WINDOWS )
     #include <signal.h> /** NOLINT(modernize-deprecated-headers, hicpp-deprecated-headers) */
 #endif
 
@@ -62,7 +62,7 @@ void InstallSignalAction ( const Lumen::Int32 InOSCode, void ( *InHandler )( Lum
 /** @brief Installs InHandler as the OS-level handler of InOSCode. */
 void InstallOSHandler ( const Lumen::Int32 InOSCode, const FOSHandler InHandler ) noexcept
 {
-#if defined( LUMEN_PLATFROM_WINDOWS )
+#if defined( LUMEN_PLATFORM_WINDOWS )
     static_cast<void>( std::signal( InOSCode, InHandler ) );
 
 #elif defined( LUMEN_PLATFORM_UNIX )
@@ -75,7 +75,7 @@ void InstallOSHandler ( const Lumen::Int32 InOSCode, const FOSHandler InHandler 
 /** @brief Restores the default OS behaviour of InOSCode. */
 void RestoreDefaultOSHandler ( const Lumen::Int32 InOSCode ) noexcept
 {
-#if defined( LUMEN_PLATFROM_WINDOWS )
+#if defined( LUMEN_PLATFORM_WINDOWS )
     static_cast<void>( std::signal( InOSCode, SIG_DFL ) );
 
 #elif defined( LUMEN_PLATFORM_UNIX )
@@ -182,7 +182,7 @@ void Lumen::HAL::FPlatformSignal::Reset ()
 
 void Lumen::HAL::FPlatformSignal::HandleOSSignal ( const Int32 InSignal )
 {
-#if defined( LUMEN_PLATFROM_WINDOWS )
+#if defined( LUMEN_PLATFORM_WINDOWS )
     /**
      * INFO: The CRT may reset the handler to SIG_DFL before calling it: re-arm so the next occurrence is caught too.
      */

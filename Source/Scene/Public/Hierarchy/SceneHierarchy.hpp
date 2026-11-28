@@ -184,7 +184,8 @@ private:
     struct FNode;
 
     [[nodiscard]] USize LowerBound ( ActorID InActorId ) const noexcept;
-    [[nodiscard]] USize FindNodeIndex ( ActorID InActorId ) const noexcept;
+    /** @brief Returns the sorted-slot index of InActorId, or an empty optional when absent. */
+    [[nodiscard]] TOptional<USize> FindNodeIndex ( ActorID InActorId ) const noexcept;
 
     void LinkNode ( FNode &InNode ) noexcept;
     void UnlinkNode ( FNode &InNode ) noexcept;

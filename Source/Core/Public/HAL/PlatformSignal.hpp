@@ -27,22 +27,26 @@ namespace HAL
      */
     namespace ESystemSignal
     {
-        enum CORE_EXPORT Type : UInt8
+        enum Type : UInt8
         {
             None      = 0,
             Interrupt = SIGINT,
             Terminate = SIGTERM,
             Abort     = SIGABRT,
-#if defined( _WIN32 )
+
+#if defined( LUMEN_PLATFORM_WINDOWS )
             Break = SIGBREAK,
-#elif defined( __unix__ ) or defined( __APPLE__ )
+
+#elif defined( LUMEN_PLATFORM_UNIX )
             Hangup = SIGHUP,
             User1  = SIGUSR1,
             User2  = SIGUSR2,
+
 #else
     #error "Signal.hpp: unsupported platform"
-#endif
+#endif /* NOLINT */
         };
+
     } // namespace ESystemSignal
 
     /**

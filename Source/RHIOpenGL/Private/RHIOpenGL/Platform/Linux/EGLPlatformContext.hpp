@@ -5,11 +5,15 @@
 
 #pragma once
 
-#include <Core/CoreTypes.hpp>
-#include <Core/NonCopyable.hpp>
+#include <Core/CoreDefinitions.hpp>
 
-#include <RHIOpenGL/Platform/IOpenGLPlatformContext.hpp>
-#include <RHIOpenGL/RHIOpenGLSurfaceBridge.hpp>
+#if not defined( LUMEN_PLATFORM_WINDOWS )
+
+    #include <Core/CoreTypes.hpp>
+    #include <Core/NonCopyable.hpp>
+
+    #include <RHIOpenGL/Platform/IOpenGLPlatformContext.hpp>
+    #include <RHIOpenGL/RHIOpenGLSurfaceBridge.hpp>
 
 namespace Lumen
 {
@@ -29,16 +33,16 @@ namespace RHIOpenGL
         ~FEGLPlatformContext () noexcept override;
 
         [[nodiscard]] TExpected<void, RHI::FRHIError> Initialize ( Bool bEnableDebug ) noexcept override;
-        [[nodiscard]] TExpected<void, RHI::FRHIError>
-        Initialize ( Bool bEnableDebug, const FOpenGLNativeWindowDesc *InNativeWindow ) noexcept;
+        [[nodiscard]] TExpected<void, RHI::FRHIError> Initialize ( Bool bEnableDebug,
+                                                                   const FOpenGLNativeWindowDesc *InNativeWindow ) noexcept;
         [[nodiscard]] TExpected<void, RHI::FRHIError> MakeCurrent () noexcept override;
         [[nodiscard]] TOptional<UPtr> ResolveProcedure ( FStringView InName ) const noexcept override;
 
         /** @brief Creates a native window surface on the current EGL display and config. */
-        [[nodiscard]] TExpected<EGLSurface, RHI::FRHIError> CreateWindowSurface () noexcept;
-        void DestroyWindowSurface ( EGLSurface InSurface ) noexcept;
-        [[nodiscard]] TExpected<void, RHI::FRHIError> MakeSurfaceCurrent ( EGLSurface InSurface ) noexcept;
-        [[nodiscard]] TExpected<void, RHI::FRHIError> SwapBuffers ( EGLSurface InSurface, Int32 InSwapInterval ) noexcept;
+        [[nodiscard]] TExpected<UPtr, RHI::FRHIError> CreateWindowSurface () noexcept override;
+        void DestroyWindowSurface ( UPtr InSurface ) noexcept override;
+        [[nodiscard]] TExpected<void, RHI::FRHIError> MakeSurfaceCurrent ( UPtr InSurface ) noexcept override;
+        [[nodiscard]] TExpected<void, RHI::FRHIError> SwapBuffers ( UPtr InSurface, Int32 InSwapInterval ) noexcept override;
 
         void Shutdown () noexcept override;
 
@@ -91,3 +95,5 @@ namespace RHIOpenGL
 } // namespace RHIOpenGL
 
 } // namespace Lumen
+
+#endif

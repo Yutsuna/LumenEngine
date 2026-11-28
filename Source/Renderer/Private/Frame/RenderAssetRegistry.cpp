@@ -120,16 +120,16 @@ CreateGeometryAsset ( Lumen::RHI::IRHIDevice &InDevice,
     std::memcpy( Staging.MappedData.data() + static_cast<Lumen::USize>( InVertexBytes ), InDesc.Indices.data(),
                  static_cast<Lumen::USize>( InIndexBytes ) );
 
-    const Lumen::RHI::FRHIBufferDesc VertexDesc{ .Size  = InVertexBytes,
-                                                 .Usage = Lumen::RHI::ERHIResourceUsage::VertexBuffer |
-                                                          Lumen::RHI::ERHIResourceUsage::CopySource |
-                                                          Lumen::RHI::ERHIResourceUsage::CopyDestination,
+    const Lumen::RHI::FRHIBufferDesc VertexDesc{ .Size         = InVertexBytes,
+                                                 .Usage        = Lumen::RHI::ERHIResourceUsage::VertexBuffer |
+                                                                 Lumen::RHI::ERHIResourceUsage::CopySource |
+                                                                 Lumen::RHI::ERHIResourceUsage::CopyDestination,
                                                  .MemoryClass  = Lumen::RHI::ERHIMemoryClass::DeviceLocal,
                                                  .InitialState = Lumen::RHI::ERHIResourceState::Common };
-    const Lumen::RHI::FRHIBufferDesc IndexDesc{ .Size  = InIndexBytes,
-                                                .Usage = Lumen::RHI::ERHIResourceUsage::IndexBuffer |
-                                                         Lumen::RHI::ERHIResourceUsage::CopySource |
-                                                         Lumen::RHI::ERHIResourceUsage::CopyDestination,
+    const Lumen::RHI::FRHIBufferDesc IndexDesc{ .Size         = InIndexBytes,
+                                                .Usage        = Lumen::RHI::ERHIResourceUsage::IndexBuffer |
+                                                                Lumen::RHI::ERHIResourceUsage::CopySource |
+                                                                Lumen::RHI::ERHIResourceUsage::CopyDestination,
                                                 .MemoryClass  = Lumen::RHI::ERHIMemoryClass::DeviceLocal,
                                                 .InitialState = Lumen::RHI::ERHIResourceState::Common };
 

@@ -9,7 +9,7 @@
 
 #if defined( LUMEN_PLATFORM_WINDOWS )
     #include <HAL/Windows/WindowsMutex.hpp>
-    #include <HAL/Windows/WindowsRecursiveMutex.hpp>
+    #include <HAL/Windows/WindowsRecursiveSharedMutex.hpp>
     #include <HAL/Windows/WindowsSharedMutex.hpp>
     #include <HAL/Windows/WindowsSpinLockMutex.hpp>
 

@@ -5,6 +5,10 @@
 
 #include <Tests/UnitTestAssertionFailure.hpp>
 
+/**
+ * Public
+ */
+
 Lumen::Tests::FUnitTestAssertionFailure::FUnitTestAssertionFailure ( FString InMessage,
                                                                      const std::source_location &InLocation ) noexcept
     : Message( std::move( InMessage ) ), Location( InLocation )

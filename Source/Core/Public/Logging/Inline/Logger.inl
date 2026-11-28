@@ -26,10 +26,12 @@ void Lumen::FLogger::TLog ( const FLogCategory &Category,
 
         if ( not bAsync )
         {
-            CoutMessage( { .Category  = Category,
-                           .Verbosity = Verbosity,
-                           .Message   = std::move( FormattedMessage ),
-                           .Timestamp = HAL::FPlatformTime::Seconds() } );
+            CoutMessage( {
+                .Category  = Category,
+                .Verbosity = Verbosity,
+                .Message   = std::move( FormattedMessage ),
+                .Timestamp = HAL::FPlatformTime::Seconds(),
+            } );
             return;
         }
         EnqueueLogMessage( Category, Verbosity, std::move( FormattedMessage ) );

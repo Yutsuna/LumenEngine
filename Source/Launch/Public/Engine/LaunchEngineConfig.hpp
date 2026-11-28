@@ -29,7 +29,7 @@ namespace Launch
         Float64 MaxFrameTime = HAL::FPlatformTime::MaxTickRate;
 
         /** @brief Frame-rate cap, 0 = uncapped (`-fps=`). */
-        Float64 MaxFPS = 0.0;
+        Float64 MaxFPS = 60.0;
 
         /** @brief Stop after N frames, 0 = run until an exit is requested (`-maxframes=`). Handy for CI and benchmarks. */
         UInt64 MaxFrames = 0;

@@ -28,10 +28,10 @@ namespace
         Desc.HierarchyCapacity = InCount;
         Desc.WorldId           = 99003ULL;
         Desc.RenderCapacities  = FRenderSnapshotCapacities{
-             .TransformCapacity = InCount,
-             .MeshCapacity      = 0ULL,
-             .CameraCapacity    = 0ULL,
-             .LightCapacity     = 0ULL,
+            .TransformCapacity = InCount,
+            .MeshCapacity      = 0ULL,
+            .CameraCapacity    = 0ULL,
+            .LightCapacity     = 0ULL,
         };
         return Desc;
     }

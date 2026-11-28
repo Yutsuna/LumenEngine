@@ -10,7 +10,7 @@
 #include <utility>
 
 template <typename ObjectType>
-Lumen::RHI::TRHIObjectPool<ObjectType>::TRHIObjectPool( const UInt32 InCapacity ) noexcept
+Lumen::RHI::TRHIObjectPool<ObjectType>::TRHIObjectPool ( const UInt32 InCapacity ) noexcept
     : Objects( MakeUnique<FSlot[]>( InCapacity ) ), Slots( InCapacity )
 {
     /* */

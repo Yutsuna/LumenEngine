@@ -32,8 +32,8 @@ Lumen::RHIOpenGL::FOpenGLTextureView::Create ( TSharedRef<FOpenGLDeviceContext> 
 
     const RHI::FRHITextureDesc &ParentDesc = ( *Parent )->GetDesc();
     const Bool bFullRange                  = InDesc.Range.BaseMip == 0U and InDesc.Range.MipCount == ParentDesc.MipCount and
-                            InDesc.Range.BaseLayer == 0U and InDesc.Range.LayerCount == ParentDesc.LayerCount and
-                            ( InDesc.Format == RHI::ERHIFormat::Unknown or InDesc.Format == ParentDesc.Format );
+                                             InDesc.Range.BaseLayer == 0U and InDesc.Range.LayerCount == ParentDesc.LayerCount and
+                                             ( InDesc.Format == RHI::ERHIFormat::Unknown or InDesc.Format == ParentDesc.Format );
     if ( bFullRange )
     {
         return View;
@@ -82,7 +82,7 @@ Lumen::RHIOpenGL::FOpenGLTextureView::Create ( TSharedRef<FOpenGLDeviceContext> 
             return;
         }
         Dispatch.TextureView( NativeView, ViewTarget, SourceTexture, InternalFormat, InDesc.Range.BaseMip, InDesc.Range.MipCount,
-                               InDesc.Range.BaseLayer, InDesc.Range.LayerCount );
+                              InDesc.Range.BaseLayer, InDesc.Range.LayerCount );
         NativeError = Dispatch.GetError();
     } );
     LUMEN_TRY_EXPECT_ERROR( Created );

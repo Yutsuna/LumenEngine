@@ -22,7 +22,7 @@ constexpr Lumen::Float64 TimerUnitsPerSecond = 1.0e7;
 constexpr Lumen::Float64 MillisecondsPerSecond = 1.0e3;
 
 /** Max duration in seconds as DWORD */
-constexpr Lumen::Float64 MaxSecondsForSleep = static_cast<Lumen::Float64>( DWORD_MAX ) / MillisecondsPerSecond;
+constexpr Lumen::Float64 MaxSecondsForSleep = static_cast<Lumen::Float64>( MAXDWORD ) / MillisecondsPerSecond;
 } // namespace
 
 /**

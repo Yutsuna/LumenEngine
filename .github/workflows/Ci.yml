@@ -14,10 +14,10 @@ concurrency:
 
 jobs:
   build-and-test:
-    name: Build & Test
+    name: Build Linux
     runs-on: ubuntu-latest
 
-    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
 
     permissions:
       id-token: write
@@ -27,10 +27,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          ref: ${{ github.event.workflow_run.head_sha }}
-
-      - name: Checkout repository
-        uses: actions/checkout@v4
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
 
       - name: Install Nix (Determinate)
         uses: DeterminateSystems/determinate-nix-action@v3
@@ -43,3 +40,28 @@ jobs:
 
       - name: Meson tests
         run: nix develop --command meson test -C Build
+
+  build-windows:
+    name: Build Windows
+    runs-on: windows-latest
+
+    if: ${{ github.event_name == 'push' || github.event.workflow_run.conclusion == 'success' }}
+
+    permissions:
+      id-token: write
+      contents: read
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.workflow_run.head_sha || github.sha }}
+
+      - name: Meson setup
+        run: .\Windows\Setup.ps1 -Command "meson setup Build"
+
+      - name: Meson Build
+        run: .\Windows\Setup.ps1 -Command "meson compile -C Build"
+
+      - name: Meson tests
+        run: .\Windows\Setup.ps1 -Command "meson test -C Build"

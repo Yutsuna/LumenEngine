@@ -29,7 +29,6 @@ namespace RHI
         Invert,
         IncrementWrap,
         DecrementWrap
-
     };
 
     /**

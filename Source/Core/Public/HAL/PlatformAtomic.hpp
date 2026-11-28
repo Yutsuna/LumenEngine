@@ -17,7 +17,7 @@ namespace HAL
     /**
      * @brief Yields the CPU to allow other threads to execute
      */
-    LUMEN_FORCE_INLINE void CORE_EXPORT CpuRelax () noexcept
+    LUMEN_FORCE_INLINE void CpuRelax () noexcept
     {
 #if defined( LUMEN_ARCH_X64 )
         __builtin_ia32_pause();

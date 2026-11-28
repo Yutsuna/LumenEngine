@@ -8,6 +8,7 @@
 
 #include <Actor/Actor.hpp>
 #include <Algo/Sort.hpp>
+#include <Camera/CameraTypes.hpp>
 #include <Rendering/RenderSnapshotStream.hpp>
 #include <Templates/Vector.hpp>
 #include <Tests/UnitTest.hpp>
@@ -87,8 +88,8 @@ namespace
             .Flags           = ERenderMeshFlags::Visible | ERenderMeshFlags::CastsShadow,
         };
         World.GetRenderContent().Meshes.emplace_back( Mesh );
-        World.GetRenderContent().Cameras.emplace_back(
-            FRenderCameraRecord{ .ProxyId = FRenderProxyId{ First->GetId() }, .Flags = ERenderCameraFlags::Active } );
+        LUMEN_CHECK_HAS_VALUE(
+            World.TryAddCameraComponent( First->GetId(), FCameraComponentDesc{ .Flags = ERenderCameraFlags::Active } ) );
         World.GetRenderContent().Lights.emplace_back(
             FRenderLightRecord{ .ProxyId = FRenderProxyId{ Third->GetId() }, .Intensity = 3.0F, .Position = {} } );
 

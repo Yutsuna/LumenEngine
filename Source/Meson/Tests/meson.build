@@ -21,12 +21,25 @@ foreach ModuleDefinition : ModuleDefinitions
     TestSources = []
 
     if FileSystem.is_dir(TestsPath)
-        FindTestResult = run_command(
-            'find', TestsPath,
-            '-type', 'f', '(', '-name', '*.cpp', '-o', '-name', '*.c', ')',
+        FindTestResult = run_command( 'python3', '-c',
+'''
+import sys
+from pathlib import Path
+for p in Path(sys.argv[1]).rglob("*"):
+    if p.suffix in (".c", ".cpp"):
+        print(p.as_posix())
+''',
+            TestsPath,
             check : false,
         )
+        if FindTestResult.returncode() != 0
+            error(
+                'Could not list tests for module @0@: @1@'
+                .format(ModuleName, FindTestResult.stderr().strip())
+            )
+        endif
         foreach FilePath : FindTestResult.stdout().strip().split('\n')
+            FilePath = FilePath.strip()
             if FilePath != ''
                 TestSources += files(FilePath)
             endif

@@ -98,6 +98,7 @@ Lumen::FWorld::FWorld () noexcept : FWorld( FWorldDesc{} )
 
 Lumen::FWorld::FWorld ( const FWorldDesc &InDesc ) noexcept
     : Desc( InDesc ), Registry( FSpatialRegistryCapacities{ .EntityCapacity = InDesc.MaxActors } ),
+      CameraRegistry( InDesc.RenderCapacities.CameraCapacity ),
       Executor( MakeUnique<FWorldExecutor>( InDesc.WorkerCount, InDesc.MaxActors ) ),
       RenderSnapshotStream( InDesc.RenderCapacities ), RenderExtractor( RenderSnapshotStream ),
       WorldId( InDesc.WorldId != 0ULL ? InDesc.WorldId : GNextWorldId.fetch_add( 1ULL, std::memory_order_relaxed ) )
@@ -115,7 +116,6 @@ Lumen::FWorld::FWorld ( const FWorldDesc &InDesc ) noexcept
     RenderTransforms.reserve( Desc.RenderCapacities.TransformCapacity );
     RenderMeshes.reserve( Desc.RenderCapacities.MeshCapacity );
     RenderContent.Meshes.reserve( Desc.RenderCapacities.MeshCapacity );
-    RenderContent.Cameras.reserve( Desc.RenderCapacities.CameraCapacity );
     RenderContent.Lights.reserve( Desc.RenderCapacities.LightCapacity );
     RenderCameras.reserve( Desc.RenderCapacities.CameraCapacity );
     RenderLights.reserve( Desc.RenderCapacities.LightCapacity );
@@ -721,6 +721,27 @@ Lumen::FSpatialRegistry &Lumen::FWorld::GetSpatialRegistry () noexcept
     return Registry;
 }
 
+Lumen::FCameraComponentRegistry &Lumen::FWorld::GetCameraRegistry () noexcept
+{
+    return CameraRegistry;
+}
+
+Lumen::TExpected<void, Lumen::ECameraComponentError>
+Lumen::FWorld::TryAddCameraComponent ( const ActorID InActorId, const FCameraComponentDesc &InDesc ) noexcept
+{
+    const TMap<ActorID, TSharedPtr<AActor>>::const_iterator It = Actors.find( InActorId );
+    if ( It == Actors.end() or It->second->GetLifecycle() == EActorLifecycle::PendingKill )
+    {
+        return MakeUnexpected( ECameraComponentError::UnknownActor );
+    }
+    return CameraRegistry.TryRegister( InActorId, InDesc );
+}
+
+Lumen::TExpected<void, Lumen::ECameraComponentError> Lumen::FWorld::TryRemoveCameraComponent ( const ActorID InActorId ) noexcept
+{
+    return CameraRegistry.TryUnregister( InActorId );
+}
+
 Lumen::FSceneHierarchy &Lumen::FWorld::GetHierarchy () noexcept
 {
     return Hierarchy;
@@ -846,21 +867,14 @@ Lumen::TExpected<Lumen::FRenderSnapshotHeader, Lumen::FRenderSnapshotError> Lume
             ++VisibleEntityCount;
         }
     }
-    USize VisibleMeshCount   = 0ULL;
-    USize VisibleCameraCount = 0ULL;
-    USize VisibleLightCount  = 0ULL;
+    USize VisibleMeshCount  = 0ULL;
+    const USize CameraCount = CameraRegistry.GetCount();
+    USize VisibleLightCount = 0ULL;
     for ( const FRenderMeshRecord &Mesh : RenderContent.Meshes )
     {
         if ( not IsRenderProxyDormant( Mesh.ProxyId ) )
         {
             ++VisibleMeshCount;
-        }
-    }
-    for ( const FRenderCameraRecord &Camera : RenderContent.Cameras )
-    {
-        if ( not IsRenderProxyDormant( Camera.ProxyId ) )
-        {
-            ++VisibleCameraCount;
         }
     }
     for ( const FRenderLightRecord &Light : RenderContent.Lights )
@@ -881,9 +895,9 @@ Lumen::TExpected<Lumen::FRenderSnapshotHeader, Lumen::FRenderSnapshotError> Lume
     {
         return Fail( MakeCapacityError( ERenderSnapshotRecordType::Mesh, VisibleMeshCount, Capacities.MeshCapacity ) );
     }
-    if ( VisibleCameraCount > Capacities.CameraCapacity ) [[unlikely]]
+    if ( CameraCount > Capacities.CameraCapacity ) [[unlikely]]
     {
-        return Fail( MakeCapacityError( ERenderSnapshotRecordType::Camera, VisibleCameraCount, Capacities.CameraCapacity ) );
+        return Fail( MakeCapacityError( ERenderSnapshotRecordType::Camera, CameraCount, Capacities.CameraCapacity ) );
     }
     if ( VisibleLightCount > Capacities.LightCapacity ) [[unlikely]]
     {
@@ -929,13 +943,17 @@ Lumen::TExpected<Lumen::FRenderSnapshotHeader, Lumen::FRenderSnapshotError> Lume
     }
 
     RenderCameras.clear();
-    for ( const FRenderCameraRecord &Camera : RenderContent.Cameras )
+    CameraRegistry.CollectRecords( RenderCameras );
+    USize VisibleCameraIndex = 0ULL;
+    for ( const FRenderCameraRecord &Camera : RenderCameras )
     {
-        if ( not IsRenderProxyDormant( Camera.ProxyId ) )
+        if ( IsRenderProxyDormant( Camera.ProxyId ) )
         {
-            RenderCameras.push_back( Camera );
+            continue;
         }
+        RenderCameras[VisibleCameraIndex++] = Camera;
     }
+    RenderCameras.resize( VisibleCameraIndex );
     RenderLights.clear();
     for ( const FRenderLightRecord &Light : RenderContent.Lights )
     {
@@ -1078,6 +1096,7 @@ Lumen::TExpected<void, Lumen::EActorDestroyError> Lumen::FWorld::DestroyActorImp
 
     Actor->MarkPendingKill();
     Registry.UnregisterSpatialEntity( InId );
+    static_cast<void>( CameraRegistry.TryUnregister( InId ) );
     if ( IsPartitionEnabled() )
     {
         static_cast<void>( Partition->TryUnassignActor( InId ) );
@@ -1174,8 +1193,8 @@ void Lumen::FWorld::DetachExternalChildrenOfCell ( const FWorldCellId InCellId )
     {
         return;
     }
-    PartitionScratch.clear();
-    const TSpan<ActorID> Registered( PartitionScratch.data(), PartitionScratch.capacity() );
+    PartitionScratch.resize( PartitionScratch.capacity() );
+    const TSpan<ActorID> Registered( PartitionScratch.data(), PartitionScratch.size() );
     const USize Count = Hierarchy.GetRegisteredActorIds( Registered );
     /** INFO: Working nodes are authoritative even before the next publication; only external children are detached. */
     for ( USize Index = 0ULL; Index < Count; ++Index )
@@ -1202,8 +1221,8 @@ void Lumen::FWorld::DetachExternalChildrenOfCell ( const FWorldCellId InCellId )
 
 void Lumen::FWorld::SetCellActorRouting ( const FWorldCellId InCellId, const Bool bInRoutable ) noexcept
 {
-    PartitionScratch.clear();
-    const TSpan<ActorID> Candidates( PartitionScratch.data(), PartitionScratch.capacity() );
+    PartitionScratch.resize( PartitionScratch.capacity() );
+    const TSpan<ActorID> Candidates( PartitionScratch.data(), PartitionScratch.size() );
     const USize Count = Partition->GetCellActors( InCellId, Candidates );
     for ( USize Index = 0ULL; Index < Count; ++Index )
     {
@@ -1426,6 +1445,7 @@ void Lumen::FWorld::ShutdownActors () noexcept
     Algo::ForEach( ActiveActors, [&] ( const TSharedPtr<AActor> &Actor ) noexcept -> void
     {
         Registry.UnregisterSpatialEntity( Actor->GetId() );
+        static_cast<void>( CameraRegistry.TryUnregister( Actor->GetId() ) );
         Actor->MarkPendingKill();
         Actor->EndPlay();
     } );

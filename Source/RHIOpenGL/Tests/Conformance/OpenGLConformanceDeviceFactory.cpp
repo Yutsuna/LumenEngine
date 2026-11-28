@@ -3,6 +3,20 @@
  * @brief Implements the OpenGL conformance device factory.
  */
 
+// Include windows.h before IRHIDevice is declared and then drop the Win32
+// CreateSemaphore macro; otherwise backend override declarations in
+// OpenGLDevice.hpp get rewritten to CreateSemaphoreA and fail to override.
+#if defined( _WIN32 )
+    #ifndef WIN32_LEAN_AND_MEAN
+        #define WIN32_LEAN_AND_MEAN
+    #endif
+    #ifndef NOMINMAX
+        #define NOMINMAX
+    #endif
+    #include <windows.h>
+    #undef CreateSemaphore
+#endif
+
 #include "Conformance/OpenGLConformanceDeviceFactory.hpp"
 
 #include <RHI/Device/RHIBackendCast.hpp>

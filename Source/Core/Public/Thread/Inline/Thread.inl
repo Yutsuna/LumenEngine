@@ -24,12 +24,12 @@ namespace Internal
      * @class TThreadData
      * @brief Holds the data for a thread, including the callable and arguments.
      */
-    template <typename TFunction, typename... TArgs> class TThreadData final
+    template <typename TFunction, typename... TArgs> class TThreadData final /** NOLINT */
     {
     public:
 
         template <typename TForwardedFunction, typename... TForwardedArgs>
-        explicit TThreadData( FStopToken InStopToken, TForwardedFunction &&InFunction, TForwardedArgs &&...InArgs ) noexcept
+        explicit TThreadData ( FStopToken InStopToken, TForwardedFunction &&InFunction, TForwardedArgs &&...InArgs ) noexcept
             : StopToken( std::move( InStopToken ) ), Function( std::forward<TForwardedFunction>( InFunction ) ),
               Arguments( std::forward<TForwardedArgs>( InArgs )... )
         {

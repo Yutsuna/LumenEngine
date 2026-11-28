@@ -1,36 +1,72 @@
 /**
  * @file MessageHandler.hpp
- * @brief Handles incoming messages from the Engine.
+ * @brief Translates native application events into journaled camera messages.
  */
-
 #pragma once
 
 #include <Generic/GenericApplicationMessageHandler.hpp>
-
-#include <Memory/SharedPtr.hpp>
+#include <OrbitCamera.hpp>
+#include <World/WorldIngressJournal.hpp>
 
 namespace Lumen
 {
 
-/**
- * @class FLuminaMessageHandler
- * @brief Decorates the engine message handler with game-level behaviour.
- * @note Pure adapter: it depends on the engine handler contract, never on the module that installs it.
- */
+class FRenderer;
+class FWorld;
+
+namespace Launch
+{
+    class FLaunchApplicationModule;
+    class FScopedMessageHandler;
+} // namespace Launch
+
+/** @class FLuminaMessageHandler @brief Decorates the engine handler with path-tracer controls and resize requests. */
 class FLuminaMessageHandler final : public FGenericApplicationMessageHandler
 {
 public:
-
-    explicit FLuminaMessageHandler ( TSharedPtr<FGenericApplicationMessageHandler> InNextHandler ) noexcept;
-
-public:
+    FLuminaMessageHandler ( TSharedPtr<FGenericApplicationMessageHandler> InNextHandler,
+                            FWorld &InWorld,
+                            FWorldIngressJournal &InJournal,
+                            ActorID InCamera,
+                            FRenderer &InRenderer ) noexcept;
 
     void OnRequestExit () noexcept override;
     void OnQuit () noexcept override;
+    void OnOSPaint ( const TSharedRef<FGenericWindow> &InWindow ) noexcept override;
+    void OnWindowMoved ( const TSharedRef<FGenericWindow> &InWindow ) noexcept override;
+    void OnWindowResized ( const TSharedRef<FGenericWindow> &InWindow ) noexcept override;
+    void OnWindowActivationChanged ( const TSharedRef<FGenericWindow> &InWindow ) noexcept override;
+    void OnMouseDown ( EMouseButton::Type InMouseButton ) noexcept override;
+    void OnMouseUp ( EMouseButton::Type InMouseButton ) noexcept override;
+    void OnMouseDoubleClick ( EMouseButton::Type InMouseButton ) noexcept override;
+    void OnMouseMove ( Int32 InX, Int32 InY ) noexcept override;
+    void OnMouseWheel ( Int32 InDelta ) noexcept override;
+    void OnKeyDown ( EKeys::Type InKey, Bool bIsRepeated ) noexcept override;
+    void OnKeyUp ( EKeys::Type InKey, Bool bIsRepeated ) noexcept override;
 
 private:
+    void SendCameraMessage ( const FMessage &InMessage ) noexcept;
+    void PublishCameraPose () noexcept;
+    void PublishCameraParams ( Float32 InAspectRatio ) noexcept;
+    void ResetCamera () noexcept;
 
+private:
     TSharedPtr<FGenericApplicationMessageHandler> NextHandler;
+    FWorld *World                         = nullptr;
+    FWorldIngressJournal *Journal         = nullptr;
+    ActorID Camera                        = InvalidActorID;
+    FRenderer *Renderer                   = nullptr;
+    Int32 LastX                           = 0;
+    Int32 LastY                           = 0;
+    Bool bDragging                        = false;
+    FOrbitCameraState State;
 };
+
+[[nodiscard]] Launch::FScopedMessageHandler
+InstallLuminaMessageHandler ( Launch::FLaunchApplicationModule &InApplicationModule,
+                              FWorld &InWorld,
+                              FWorldIngressJournal &InJournal,
+                              ActorID InCamera,
+                              FRenderer &InRenderer ) noexcept;
 
 } // namespace Lumen

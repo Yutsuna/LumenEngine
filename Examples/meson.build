@@ -25,13 +25,26 @@ foreach ExampleName : ExampleNames
 
     ExampleSources = []
 
-    if FileSystem.is_dir(ExampleDirRel / ExamplePrivateDirectory)
-        FindResult = run_command(
-            'find', ExamplePrivatePath,
-            '-type', 'f', '(', '-name', '*.cpp', '-o', '-name', '*.c', ')',
+    if FileSystem.is_dir(ExamplePrivatePath)
+        FindResult = run_command( 'python3', '-c',
+'''
+import sys
+from pathlib import Path
+for p in Path(sys.argv[1]).rglob("*"):
+    if p.suffix in (".c", ".cpp"):
+        print(p.as_posix())
+''',
+            ExamplePrivatePath,
             check : false,
         )
+        if FindResult.returncode() != 0
+            error(
+                'Could not list sources for example @0@: @1@'
+                .format(ExampleName, FindResult.stderr().strip())
+            )
+        endif
         foreach FilePath : FindResult.stdout().strip().split('\n')
+            FilePath = FilePath.strip()
             if FilePath != ''
                 ExampleSources += files(FilePath)
             endif
@@ -43,6 +56,10 @@ foreach ExampleName : ExampleNames
         include_directories(ExampleDirRel / ExamplePrivateDirectory),
     ]
     ExampleDependencies = []
+    ExampleCppArgs = ALL_WARNINGS
+    if ExampleName == 'Lumina'
+        ExampleCppArgs += '-DLUMINA_SHADER_INSTALL_DIR="' + (get_option('prefix') / LuminaShaderInstallDir) + '"'
+    endif
 
     foreach DependencyName : ExampleDefinition.get('Depends', [])
         if not GlobalModules.has_key(DependencyName)
@@ -59,7 +76,7 @@ foreach ExampleName : ExampleNames
         ExampleName + 'Example', ExampleSources,
         include_directories : ExampleIncludeDirectories,
         dependencies : ExampleDependencies,
-        cpp_args : ALL_WARNINGS,
+        cpp_args : ExampleCppArgs,
         c_args : ALL_WARNINGS,
         install : true,
     )

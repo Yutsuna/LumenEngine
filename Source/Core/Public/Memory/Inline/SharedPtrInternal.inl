@@ -32,7 +32,7 @@ namespace Internal
 
     template <typename Type>
     template <typename... Arguments>
-    TIntrusiveReferenceController<Type>::TIntrusiveReferenceController( Arguments &&...InArgs ) noexcept
+    TIntrusiveReferenceController<Type>::TIntrusiveReferenceController ( Arguments &&...InArgs ) noexcept
     {
         new ( Storage ) Type( std::forward<Arguments>( InArgs )... );
     }
@@ -57,7 +57,7 @@ namespace Internal
      */
 
     template <typename Type>
-    TDefaultReferenceController<Type>::TDefaultReferenceController( Type *InObject ) noexcept : Object( InObject )
+    TDefaultReferenceController<Type>::TDefaultReferenceController ( Type *InObject ) noexcept : Object( InObject )
     {
         /** Empty */
     }
@@ -75,7 +75,7 @@ namespace Internal
     /**
      * TRawPtrProxy
      */
-    template <typename Type> TRawPtrProxy<Type>::TRawPtrProxy( Type *InObject ) noexcept : Object( InObject )
+    template <typename Type> TRawPtrProxy<Type>::TRawPtrProxy ( Type *InObject ) noexcept : Object( InObject )
     {
         /** Empty */
     }

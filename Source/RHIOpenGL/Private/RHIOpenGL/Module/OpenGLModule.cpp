@@ -8,7 +8,7 @@
 #include <RHIOpenGL/Device/OpenGLCapabilityProbe.hpp>
 #include <RHIOpenGL/Device/OpenGLDevice.hpp>
 #include <RHIOpenGL/Loader/GLLoader.hpp>
-#include <RHIOpenGL/Platform/Linux/EGLPlatformContext.hpp>
+#include <RHIOpenGL/Platform/PlatformContext.hpp>
 
 #include <RHI/Device/RHIBackendSupport.hpp>
 #include <RHI/Module/RHIAdapterInfo.hpp>
@@ -80,7 +80,7 @@ Lumen::RHI::FRHIApiVersion Lumen::RHIOpenGL::FOpenGLModule::GetApiVersion () con
 Lumen::TExpected<Lumen::TVector<Lumen::RHI::FRHIAdapterInfo>, Lumen::RHI::FRHIError>
 Lumen::RHIOpenGL::FOpenGLModule::EnumerateAdapters () const noexcept
 {
-    FEGLPlatformContext Probe;
+    FPlatformContext Probe;
     LUMEN_TRY_EXPECT_ERROR( Probe.Initialize( false, NativeWindow ? &*NativeWindow : nullptr ) );
 
     FGLDispatchTable Dispatch;

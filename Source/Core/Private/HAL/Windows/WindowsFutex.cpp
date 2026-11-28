@@ -26,6 +26,8 @@ extern "C"
 
     #include <HAL/Windows/WindowsFutex.hpp>
 
+    #include <cmath>
+
 /**
  * Windows
  */

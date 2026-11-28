@@ -108,7 +108,7 @@ namespace
     {
         const TVector<Int32> Values = MakeRange( { 7, 8, 9 } );
         const Bool Result           = Algo::AnyOf( Values, [] ( const Int32 V ) noexcept
-                  {
+        {
             return V == 7;
         } );
 
@@ -119,7 +119,7 @@ namespace
     {
         const TVector<Int32> Values = MakeRange( { 4, 8, 15, 16, 23, 42 } );
         const Bool Result           = Algo::AnyOf( Values, [] ( const Int32 V ) noexcept
-                  {
+        {
             return V == 15;
         } );
 
@@ -130,7 +130,7 @@ namespace
     {
         const TVector<Int32> Values = MakeRange( { 4, 8, 15 } );
         const Bool Result           = Algo::AnyOf( Values, [] ( const Int32 V ) noexcept
-                  {
+        {
             return V == 15;
         } );
 
@@ -165,7 +165,7 @@ namespace
     {
         const TVector<Int32> Values = MakeRange( { 7, 7, 7 } );
         const Bool Result           = Algo::AnyOf( Values, [] ( const Int32 V ) noexcept
-                  {
+        {
             return V == 7;
         } );
 
@@ -295,7 +295,7 @@ namespace
     {
         const TVector<Int32> Values = MakeRange( { 2, 4, 7 } );
         const Bool Result           = Algo::AnyOf( Values, [] ( const Int32 V ) noexcept
-                  {
+        {
             return V % 2;
         } );
 
@@ -345,7 +345,7 @@ namespace
     {
         TVector<Int32> Values = MakeRange( { 1, 2, 3 } );
         const Bool Result     = Algo::AnyOf( Values, [] ( Int32 &V ) noexcept
-            {
+        {
             V += 10;
             return V == 12;
         } );

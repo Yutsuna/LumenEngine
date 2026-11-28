@@ -2,14 +2,25 @@
 
 ## Commands
 
-All commands run in the Nix devshell (`.envrc`/`direnv` wires it
-automatically). CI invokes each one explicitly through `nix develop`
+All commands run inside the active **repository-local** toolchain; `.envrc`
+wires it automatically via direnv. Linux/macOS use the Nix devshell, Windows
+uses the portable MSYS2 UCRT64 under `.win-env/` (see
+`skills/windows-workflow.md`). CI invokes Nix explicitly
 (`.github/workflows/Ci.yml`):
 
 ```sh
 nix develop --command meson setup Build     # first configure; Build/ is gitignored
 nix develop --command meson compile -C Build
 nix develop --command meson test -C Build
+```
+
+On Windows, either rely on direnv auto-load or prefix each command with the
+setup script so no global tool can be picked up:
+
+```powershell
+.\Windows\Setup.ps1 -Command "meson setup Build"
+.\Windows\Setup.ps1 -Command "meson compile -C Build"
+.\Windows\Setup.ps1 -Command "meson test -C Build"
 ```
 
 **Three build trees — compile ALL of them at the end of every task:**
@@ -47,6 +58,10 @@ buildtype, and sanitizer flags), so no tree is left stale:
 Scripts/BuildMeson.bash
 ```
 
+`Scripts/BuildMeson.ps1` is the Windows equivalent. Both scripts call a bare
+`meson` from `PATH`, so run them only from an activated local environment
+(direnv or a `Windows/Setup.ps1` dev shell), never from a plain shell.
+
 The script runs `meson setup ... --reconfigure` for `Build`, `Build-Release`,
 and `Build-TSAN` in parallel. Only fall back to a manual reconfigure (e.g.
 `meson setup Build --reconfigure`) when you intentionally want to touch a
@@ -60,7 +75,11 @@ once, then use the script for later reconfigures.
   project-wide (`meson.build`). Meson >= 1.10. The GCC 16 pin lives in the
   Nix layer (`gcc16` in `Nix/deps.nix`, `gcc16Stdenv` in `Nix/package.nix`);
   `Meson/Native.ini` wraps those compilers with `ccache` (`ccache gcc` /
-  `ccache g++`).
+  `ccache g++`). Do not assume that pin applies on Windows.
+- Windows toolchain: MSYS2 UCRT64 GCC/packages from
+  `Windows/LumenDeps/Private/Deps.ps1`, installed into gitignored `.win-env/`
+  by `Windows/Setup.ps1`. Its env variables are mirrored by the Windows branch
+  of `.envrc`; keep the two in sync.
 - clangd cannot parse reflection code; `.clangd` strips `-freflection` for
   tooling. Don't "fix" that config by adding it back.
 - `meson.options`: `enable_testing`, `enable_benchmarking` (default true),
@@ -70,7 +89,7 @@ once, then use the script for later reconfigures.
 - The project default is `b_ndebug=if-release`: `LUMEN_ASSERT` traps in Debug
   and compiles out in Release. Keep Debug assertion-enabled when testing
   preconditions.
-- Nix devshell (`Nix/shell.nix`, `Nix/deps.nix`): GCC, Meson, Ninja, SDL3,
+- Nix devshell (Linux/macOS; `Nix/shell.nix`, `Nix/deps.nix`): GCC, Meson, Ninja, SDL3,
   Vulkan loader/headers, clang-tools, shaderc, spirv-tools and spirv-cross;
   exports `LD_LIBRARY_PATH`, sets `VK_LAYER_PATH` to validation layers, links
   with `mold`. Shader tooling is available there; no shader generation target

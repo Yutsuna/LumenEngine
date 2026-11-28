@@ -463,7 +463,7 @@ namespace
         TExpected<Int32, EMonadicTestError> Expected( 42 );
         Int32 CallCount = 0;
         auto Result     = std::move( Expected )
-                          .OrElse( [&CallCount] ( const EMonadicTestError ) noexcept
+                              .OrElse( [&CallCount] ( const EMonadicTestError ) noexcept
         {
             ++CallCount;
             return TExpected<Int32, EMonadicTestError>( 0 );
@@ -517,7 +517,7 @@ namespace
         TOptional<Int32> Optional( 42 );
         Int32 CallCount = 0;
         auto Result     = std::move( Optional )
-                          .OrElse( [&CallCount] () noexcept
+                              .OrElse( [&CallCount] () noexcept
         {
             ++CallCount;
             return TOptional<Int32>( 0 );

@@ -10,6 +10,9 @@
 #include <Rendering/RenderSnapshotView.hpp>
 #include <Rendering/SceneExtractor.hpp>
 
+#include <Concepts/ConstructibleFrom.hpp>
+#include <Concepts/ConvertibleTo.hpp>
+#include <Concepts/SameAs.hpp>
 #include <Tests/UnitTest.hpp>
 
 #include <type_traits>
@@ -36,17 +39,17 @@ namespace
     static_assert( std::is_standard_layout_v<FRenderCameraRecord> );
     static_assert( std::is_standard_layout_v<FRenderLightRecord> );
 
-    static_assert( not std::is_convertible_v<UInt64, FRenderProxyId> );
-    static_assert( not std::is_convertible_v<UInt64, FRenderAssetId> );
-    static_assert( not std::is_convertible_v<FRenderProxyId, UInt64> );
-    static_assert( not std::is_convertible_v<FRenderAssetId, UInt64> );
-    static_assert( not std::is_constructible_v<FRenderProxyId, FRenderAssetId> );
-    static_assert( not std::is_constructible_v<FRenderAssetId, FRenderProxyId> );
+    static_assert( not Concepts::CConvertibleTo<UInt64, FRenderProxyId> );
+    static_assert( not Concepts::CConvertibleTo<UInt64, FRenderAssetId> );
+    static_assert( not Concepts::CConvertibleTo<FRenderProxyId, UInt64> );
+    static_assert( not Concepts::CConvertibleTo<FRenderAssetId, UInt64> );
+    static_assert( not Concepts::CConstructibleFrom<FRenderProxyId, FRenderAssetId> );
+    static_assert( not Concepts::CConstructibleFrom<FRenderAssetId, FRenderProxyId> );
 
-    static_assert( std::is_same_v<decltype( FRenderSnapshotView::Transforms ), TSpan<const FRenderTransformRecord>> );
-    static_assert( std::is_same_v<decltype( FRenderSnapshotView::Meshes ), TSpan<const FRenderMeshRecord>> );
-    static_assert( std::is_same_v<decltype( FRenderSnapshotView::Cameras ), TSpan<const FRenderCameraRecord>> );
-    static_assert( std::is_same_v<decltype( FRenderSnapshotView::Lights ), TSpan<const FRenderLightRecord>> );
+    static_assert( Concepts::CSameAs<decltype( FRenderSnapshotView::Transforms ), TSpan<const FRenderTransformRecord>> );
+    static_assert( Concepts::CSameAs<decltype( FRenderSnapshotView::Meshes ), TSpan<const FRenderMeshRecord>> );
+    static_assert( Concepts::CSameAs<decltype( FRenderSnapshotView::Cameras ), TSpan<const FRenderCameraRecord>> );
+    static_assert( Concepts::CSameAs<decltype( FRenderSnapshotView::Lights ), TSpan<const FRenderLightRecord>> );
 
     static_assert( not std::is_copy_constructible_v<FRenderSnapshotStorage> );
     static_assert( not std::is_copy_assignable_v<FRenderSnapshotStorage> );

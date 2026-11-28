@@ -9,48 +9,51 @@
 #include <HAL/PlatformTime.hpp>
 #include <Tests/UnitTest.hpp>
 
-#include <type_traits>
-
 namespace Lumen
 {
 
-/**
- * Public
- */
-
-LUMEN_TEST( FLaunchEngineConfig_Traits, IsTriviallyCopyable )
+namespace
 {
-    static_assert( ::Lumen::Concepts::CTriviallyCopyable<Launch::FLaunchEngineConfig> );
-    LUMEN_CHECK_TRUE( ::Lumen::Concepts::CTriviallyCopyable<Launch::FLaunchEngineConfig> );
-}
 
-LUMEN_TEST( FLaunchEngineConfig_Defaults, AreCoherent )
-{
-    const Launch::FLaunchEngineConfig Defaults;
+    /**
+     * Public
+     */
 
-    LUMEN_CHECK_EQ( Defaults.FixedStep, HAL::FPlatformTime::DefaultTickRate );
-    LUMEN_CHECK_EQ( Defaults.MaxFrameTime, HAL::FPlatformTime::MaxTickRate );
-    LUMEN_CHECK_EQ( Defaults.MaxFPS, 0.0 );
-    LUMEN_CHECK_EQ( Defaults.MaxFrames, 0ULL );
-    LUMEN_CHECK_FALSE( Defaults.bHeadless );
-}
+    LUMEN_TEST( FLaunchEngineConfig_Traits, IsTriviallyCopyable )
+    {
+        static_assert( ::Lumen::Concepts::CTriviallyCopyable<Launch::FLaunchEngineConfig> );
+        LUMEN_CHECK_TRUE( ::Lumen::Concepts::CTriviallyCopyable<Launch::FLaunchEngineConfig> );
+    }
 
-LUMEN_TEST( FLaunchEngineConfig_Copy, PreservesValues )
-{
-    Launch::FLaunchEngineConfig Config;
-    Config.FixedStep    = 0.01;
-    Config.MaxFrameTime = 0.1;
-    Config.MaxFPS       = 30.0;
-    Config.MaxFrames    = 100ULL;
-    Config.bHeadless    = true;
+    LUMEN_TEST( FLaunchEngineConfig_Defaults, AreCoherent )
+    {
+        const Launch::FLaunchEngineConfig Defaults;
 
-    const Launch::FLaunchEngineConfig Copy = Config;
+        LUMEN_CHECK_EQ( Defaults.FixedStep, HAL::FPlatformTime::DefaultTickRate );
+        LUMEN_CHECK_EQ( Defaults.MaxFrameTime, HAL::FPlatformTime::MaxTickRate );
+        LUMEN_CHECK_EQ( Defaults.MaxFPS, 60.0 );
+        LUMEN_CHECK_EQ( Defaults.MaxFrames, 0ULL );
+        LUMEN_CHECK_FALSE( Defaults.bHeadless );
+    }
 
-    LUMEN_CHECK_EQ( Copy.FixedStep, 0.01 );
-    LUMEN_CHECK_EQ( Copy.MaxFrameTime, 0.1 );
-    LUMEN_CHECK_EQ( Copy.MaxFPS, 30.0 );
-    LUMEN_CHECK_EQ( Copy.MaxFrames, 100ULL );
-    LUMEN_CHECK_TRUE( Copy.bHeadless );
-}
+    LUMEN_TEST( FLaunchEngineConfig_Copy, PreservesValues )
+    {
+        Launch::FLaunchEngineConfig Config;
+        Config.FixedStep    = 0.01;
+        Config.MaxFrameTime = 0.1;
+        Config.MaxFPS       = 30.0;
+        Config.MaxFrames    = 100ULL;
+        Config.bHeadless    = true;
+
+        const Launch::FLaunchEngineConfig Copy = Config;
+
+        LUMEN_CHECK_EQ( Copy.FixedStep, 0.01 );
+        LUMEN_CHECK_EQ( Copy.MaxFrameTime, 0.1 );
+        LUMEN_CHECK_EQ( Copy.MaxFPS, 30.0 );
+        LUMEN_CHECK_EQ( Copy.MaxFrames, 100ULL );
+        LUMEN_CHECK_TRUE( Copy.bHeadless );
+    }
+
+} // namespace
 
 } // namespace Lumen

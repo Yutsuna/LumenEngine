@@ -7,10 +7,10 @@
 
 #include <Actor/ActorTypes.hpp>
 
+#include <Templates/Array.hpp>
 #include <Templates/Vector.hpp>
 #include <Tests/UnitTest.hpp>
 
-#include <array>
 #include <bit>
 
 namespace Lumen
@@ -24,9 +24,9 @@ namespace
         return MakeActorId( InSlot, 1U );
     }
 
-    [[nodiscard]] std::array<UInt32, 16ULL> MatrixBits ( const Maths::FMat4x4f &InMatrix ) noexcept
+    [[nodiscard]] TArray<UInt32, 16ULL> MatrixBits ( const Maths::FMat4x4f &InMatrix ) noexcept
     {
-        return std::bit_cast<std::array<UInt32, 16ULL>>( InMatrix );
+        return std::bit_cast<TArray<UInt32, 16ULL>>( InMatrix );
     }
 
     LUMEN_TEST( FSceneHierarchy, InitializeRejectsInvalidCapacityAndDoubleInitialization )
@@ -99,7 +99,7 @@ namespace
 
         const TOptional<ActorID> RootParentBefore    = Hierarchy.GetParentId( Root );
         const TOptional<Maths::FMat4x4f> WorldBefore = Hierarchy.GetWorldTransform( Root );
-        const std::array<UInt32, 16ULL> BitsBefore   = MatrixBits( WorldBefore.ValueOr( Maths::FMat4x4f::Identity() ) );
+        const TArray<UInt32, 16ULL> BitsBefore       = MatrixBits( WorldBefore.ValueOr( Maths::FMat4x4f::Identity() ) );
 
         const TExpected<void, ESceneHierarchyError> Cycle = Hierarchy.Attach( Root, GrandChild );
         LUMEN_CHECK_HAS_ERROR( Cycle );

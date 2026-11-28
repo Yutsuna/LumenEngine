@@ -10,10 +10,10 @@
 #include <Actor/ActorTypes.hpp>
 #include <Hierarchy/SceneHierarchy.hpp>
 
+#include <Templates/Array.hpp>
 #include <Templates/Vector.hpp>
 #include <Tests/UnitTest.hpp>
 
-#include <array>
 #include <bit>
 
 namespace Lumen
@@ -111,7 +111,7 @@ namespace
             Digest ^= static_cast<UInt64>( Index );
             Digest *= 1099511628211ULL;
 
-            const std::array<UInt32, 16ULL> Words = std::bit_cast<std::array<UInt32, 16ULL>>( Records[Index].WorldTransform );
+            const TArray<UInt32, 16ULL> Words = std::bit_cast<TArray<UInt32, 16ULL>>( Records[Index].WorldTransform );
             for ( const UInt32 Word : Words )
             {
                 Digest ^= static_cast<UInt64>( Word );

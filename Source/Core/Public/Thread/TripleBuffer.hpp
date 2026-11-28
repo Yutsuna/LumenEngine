@@ -58,7 +58,7 @@ namespace Thread
                 InitialDirty = Initial | Dirty,
 
                 /** All bits used by the packed state. */
-                ValidMask = ReaderMask | WriterMask | TempMask | Dirty
+                ValidMask = ReaderMask | WriterMask | TempMask | Dirty, /* NOLINT */
             };
 
             static constexpr Type GetReaderIndex ( Type Flags ) noexcept;

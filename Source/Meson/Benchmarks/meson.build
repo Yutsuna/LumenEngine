@@ -21,12 +21,25 @@ foreach ModuleDefinition : ModuleDefinitions
     BenchmarkSources = []
 
     if FileSystem.is_dir(BenchmarksPath)
-        FindBenchmarkResult = run_command(
-            'find', BenchmarksPath,
-            '-type', 'f', '(', '-name', '*.cpp', '-o', '-name', '*.c', ')',
+        FindBenchmarkResult = run_command( 'python3', '-c',
+'''
+import sys
+from pathlib import Path
+for p in Path(sys.argv[1]).rglob("*"):
+    if p.suffix in (".c", ".cpp"):
+        print(p.as_posix())
+''',
+            BenchmarksPath,
             check : false,
         )
+        if FindBenchmarkResult.returncode() != 0
+            error(
+                'Could not list benchmarks for module @0@: @1@'
+                .format(ModuleName, FindBenchmarkResult.stderr().strip())
+            )
+        endif
         foreach FilePath : FindBenchmarkResult.stdout().strip().split('\n')
+            FilePath = FilePath.strip()
             if FilePath != ''
                 BenchmarkSources += files(FilePath)
             endif

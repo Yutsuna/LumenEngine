@@ -9,6 +9,16 @@
 #include <RHI/Synchronization/RHIDeferredReleaseQueue.hpp>
 #include <Tests/UnitTest.hpp>
 
+/**
+ * INFO: windows.h (pulled in by RHIDeferredReleaseQueue.hpp on Windows) defines
+ *       CreateSemaphore as a macro for CreateSemaphoreA/W, which would otherwise
+ *       rewrite the IRHIDevice member call below. This translation unit does not use
+ *       the Win32 function, so drop the macro after the includes.
+ */
+#if defined( CreateSemaphore )
+    #undef CreateSemaphore
+#endif
+
 namespace Lumen
 {
 

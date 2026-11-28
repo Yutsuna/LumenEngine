@@ -64,7 +64,7 @@ static_assert( Concepts::CTriviallyCopyable<FPersistentActorId> );
  * @enum EActorRole
  * @brief Replication authority semantics; Standalone keeps historical world behaviour.
  */
-enum class SCENE_EXPORT EActorRole : UInt8
+enum class EActorRole : UInt8
 {
     Standalone,
     Authority,
@@ -75,7 +75,7 @@ enum class SCENE_EXPORT EActorRole : UInt8
  * @enum EReplicationDirection
  * @brief Independent sequence space of a frame; acks always name their direction.
  */
-enum class SCENE_EXPORT EReplicationDirection : UInt8
+enum class EReplicationDirection : UInt8
 {
     StateToReplica,
     InputToAuthority,
@@ -85,7 +85,7 @@ enum class SCENE_EXPORT EReplicationDirection : UInt8
  * @enum EReplicationChannel
  * @brief Reliable is acked/baselined; Unreliable is fire-and-forget with old-sequence rejection.
  */
-enum class SCENE_EXPORT EReplicationChannel : UInt8
+enum class EReplicationChannel : UInt8
 {
     Reliable,
     Unreliable,
@@ -95,7 +95,7 @@ enum class SCENE_EXPORT EReplicationChannel : UInt8
  * @enum EActorReplicationKind
  * @brief Kind of one fixed-size state or control record.
  */
-enum class SCENE_EXPORT EActorReplicationKind : UInt8
+enum class EActorReplicationKind : UInt8
 {
     Spawn      = 0U,
     Destroy    = 1U,
@@ -113,7 +113,7 @@ enum class SCENE_EXPORT EActorReplicationKind : UInt8
  * @details Alive must stay rank zero so a spawn precedes other fields of the same actor.
  *          Ranks 4..15 are reserved for later M9 extensions, 16..31 for world partition.
  */
-enum class SCENE_EXPORT EActorReplicationProperty : UInt8
+enum class EActorReplicationProperty : UInt8
 {
     Alive            = 0U,
     LocalTransform   = 1U,
@@ -133,7 +133,7 @@ static_assert( static_cast<UInt8>( EActorReplicationProperty::Count ) <= 16U );
  * @enum EReplicationControlKind
  * @brief Idempotent control payload carried by unsequenced reliable control frames.
  */
-enum class SCENE_EXPORT EReplicationControlKind : UInt8
+enum class EReplicationControlKind : UInt8
 {
     Ack             = 0U,
     Nack            = 1U,
@@ -159,7 +159,7 @@ static_assert( Concepts::CTriviallyCopyable<FReplicationControlPayload> );
  * @enum EReplicationError
  * @brief Structured replication failures; no exception ever escapes a replication operation.
  */
-enum class SCENE_EXPORT EReplicationError : UInt8
+enum class EReplicationError : UInt8
 {
     None                = 0U,
     NotInitialized      = 1U,

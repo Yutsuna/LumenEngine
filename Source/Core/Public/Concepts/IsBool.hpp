@@ -20,7 +20,7 @@ namespace Internal
     struct TTrueType
     {
         static constexpr Bool Value = true;
-        constexpr operator Bool () const noexcept
+        explicit constexpr operator Bool () const noexcept
         {
             return true;
         }
@@ -33,7 +33,7 @@ namespace Internal
     struct TFalseType
     {
         static constexpr Bool Value = false;
-        constexpr operator Bool () const noexcept
+        explicit constexpr operator Bool () const noexcept
         {
             return false;
         }
@@ -41,29 +41,39 @@ namespace Internal
 
     template <class TObject> struct TIsBool : TFalseType
     {
+        /* */
     };
 
     template <> struct TIsBool<Bool> : TTrueType
     {
+        /* */
     };
+
     template <> struct TIsBool<const Bool> : TTrueType
     {
+        /* */
     };
+
     template <> struct TIsBool<volatile Bool> : TTrueType
     {
+        /* */
     };
+
     template <> struct TIsBool<const volatile Bool> : TTrueType
     {
+        /* */
     };
 
     template <class TObject> inline constexpr Bool TIsBoolV = TIsBool<TObject>::Value;
 
     template <Bool Value> struct TBooleanConstant : TFalseType
     {
+        /* */
     };
 
     template <> struct TBooleanConstant<true> : TTrueType
     {
+        /* */
     };
 
     template <Bool Value> inline constexpr Bool TBooleanConstantV = TBooleanConstant<Value>::Value;

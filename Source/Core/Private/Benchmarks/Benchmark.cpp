@@ -35,14 +35,17 @@ namespace Benchmarks
             USize StarP = NoStar;
             USize StarT = 0;
 
+            const AnsiChar *const PatternData = Pattern.data();
+            const AnsiChar *const TextData    = Text.data();
+
             while ( T < Text.size() )
             {
-                if ( P < Pattern.size() and ( Pattern[P] == '?' or Pattern[P] == Text[T] ) )
+                if ( P < Pattern.size() and ( PatternData[P] == '?' or PatternData[P] == TextData[T] ) )
                 {
                     ++P;
                     ++T;
                 }
-                else if ( P < Pattern.size() and Pattern[P] == '*' )
+                else if ( P < Pattern.size() and PatternData[P] == '*' )
                 {
                     StarP = P++;
                     StarT = T;
@@ -58,7 +61,7 @@ namespace Benchmarks
                 }
             }
 
-            while ( P < Pattern.size() and Pattern[P] == '*' )
+            while ( P < Pattern.size() and PatternData[P] == '*' )
             {
                 ++P;
             }
@@ -77,7 +80,7 @@ namespace Benchmarks
             {
                 return WildcardMatch( InFilter, Suite ) or WildcardMatch( InFilter, FullName );
             }
-            return FullName.find( InFilter ) != FString::npos;
+            return FullName.contains( InFilter );
         }
 
         struct FMeasurement
@@ -215,11 +218,12 @@ namespace Benchmarks
 
         Algo::Sort( Samples );
 
-        const USize Count = Samples.size();
-        Stats.Min         = Samples.front();
-        Stats.Max         = Samples.back();
-        Stats.Median      = ( Count % 2 == 1 ) ? Samples[Count / 2] : ( Samples[( Count / 2 ) - 1] + Samples[Count / 2] ) * 0.5;
-        Stats.Mean        = std::accumulate( Samples.begin(), Samples.end(), 0.0 ) / static_cast<Float64>( Count );
+        const USize Count       = Samples.size();
+        const auto MiddleSample = Samples.begin() + static_cast<ISize>( Count / 2U );
+        Stats.Min               = Samples.front();
+        Stats.Max               = Samples.back();
+        Stats.Median            = ( Count % 2U == 1U ) ? *MiddleSample : ( *( MiddleSample - 1 ) + *MiddleSample ) * 0.5;
+        Stats.Mean              = std::accumulate( Samples.begin(), Samples.end(), 0.0 ) / static_cast<Float64>( Count );
 
         if ( Count > 1 )
         {

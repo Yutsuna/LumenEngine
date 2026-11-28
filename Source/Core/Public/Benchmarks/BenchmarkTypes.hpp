@@ -17,7 +17,7 @@
 
 #include <source_location>
 
-#if defined( __OPTIMIZE__ ) || ( defined( LUMEN_COMPILER_MSVC ) && !defined( _DEBUG ) )
+#if defined( __OPTIMIZE__ ) or ( defined( LUMEN_COMPILER_MSVC ) && !defined( _DEBUG ) )
     #define LUMEN_BENCHMARK_OPTIMIZED_BUILD 1
 #else
     #define LUMEN_BENCHMARK_OPTIMIZED_BUILD 0
@@ -39,12 +39,12 @@ namespace Benchmarks
      * @enum EBenchmarkKind
      * @brief The scale of a benchmark.
      */
-    enum class CORE_EXPORT EBenchmarkKind : UInt8
+    enum class EBenchmarkKind : UInt8
     {
         /** Fast code (function, loop, container). Iterations are auto-calibrated. */
         Micro,
         /** Heavy code (asset load, level build, full frame). One iteration per sample. */
-        Macro
+        Macro,
     };
 
     /**

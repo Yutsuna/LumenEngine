@@ -42,8 +42,7 @@ Lumen::RHIOpenGL::FOpenGLSwapchain::Create ( TSharedRef<FOpenGLDeviceContext> In
         static_cast<TSharedRef<FOpenGLDeviceContext> &&>( InContext ), InDesc, InCapabilities, InId );
     if ( InDesc.Surface.Type == RHI::ERHISurfaceType::Window and InDesc.Surface.Bridge )
     {
-        if ( FOpenGLSurfaceBridge *const NativeBridge =
-                 dynamic_cast<FOpenGLSurfaceBridge *>( InDesc.Surface.Bridge.Get() ) )
+        if ( FOpenGLSurfaceBridge *const NativeBridge = dynamic_cast<FOpenGLSurfaceBridge *>( InDesc.Surface.Bridge.Get() ) )
         {
             NativeBridge->AttachContext( Swapchain->Context->GetExecutor() );
         }
@@ -323,8 +322,7 @@ Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLSwapchain::RebuildImages () no
     return {};
 }
 
-Lumen::RHI::FRHIExpected
-Lumen::RHIOpenGL::FOpenGLSwapchain::PresentToBridge ( RHI::IRHITexture &InImage ) noexcept
+Lumen::RHI::FRHIExpected Lumen::RHIOpenGL::FOpenGLSwapchain::PresentToBridge ( RHI::IRHITexture &InImage ) noexcept
 {
     if ( Desc.Surface.Type != RHI::ERHISurfaceType::Window or not Desc.Surface.Bridge or not NativeSurface )
     {
@@ -352,42 +350,41 @@ Lumen::RHIOpenGL::FOpenGLSwapchain::PresentToBridge ( RHI::IRHITexture &InImage 
         RHI::FRHIExpected Result{};
         LUMEN_TRY_EXPECT_ERROR(
             Context->GetExecutor()->ExecuteOnGLThread( [this, &Dispatch, Texture, Width, Height, &Result] () noexcept
+        {
+            ( void )Dispatch.GetError();
+            if ( PresentationFramebuffer == 0U )
             {
-                ( void )Dispatch.GetError();
-                if ( PresentationFramebuffer == 0U )
-                {
-                    Dispatch.CreateFramebuffers( 1, &PresentationFramebuffer );
-                }
-                if ( PresentationFramebuffer == 0U )
-                {
-                    Result = TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Presentation,
-                                                                     "Unable to create the OpenGL presentation framebuffer." ) );
-                    return;
-                }
+                Dispatch.CreateFramebuffers( 1, &PresentationFramebuffer );
+            }
+            if ( PresentationFramebuffer == 0U )
+            {
+                Result = TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Presentation,
+                                                                  "Unable to create the OpenGL presentation framebuffer." ) );
+                return;
+            }
 
-                Dispatch.NamedFramebufferTexture( PresentationFramebuffer, GlColorAttachment0, Texture, 0 );
-                Dispatch.NamedFramebufferReadBuffer( PresentationFramebuffer, GlColorAttachment0 );
-                if ( Dispatch.CheckNamedFramebufferStatus( PresentationFramebuffer, GlReadFramebuffer ) != GlFramebufferComplete )
-                {
-                    Result = TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Presentation,
-                                                                     "The OpenGL presentation framebuffer is incomplete." ) );
-                    return;
-                }
+            Dispatch.NamedFramebufferTexture( PresentationFramebuffer, GlColorAttachment0, Texture, 0 );
+            Dispatch.NamedFramebufferReadBuffer( PresentationFramebuffer, GlColorAttachment0 );
+            if ( Dispatch.CheckNamedFramebufferStatus( PresentationFramebuffer, GlReadFramebuffer ) != GlFramebufferComplete )
+            {
+                Result = TUnexpected( RHI::MakeRHIBackendFailure( RHI::ERHIErrorCondition::Presentation,
+                                                                  "The OpenGL presentation framebuffer is incomplete." ) );
+                return;
+            }
 
-                Dispatch.Disable( GlFramebufferSrgb );
-                Dispatch.BindFramebuffer( GlReadFramebuffer, PresentationFramebuffer );
-                Dispatch.BindFramebuffer( GlDrawFramebuffer, 0U );
-                Dispatch.BlitFramebuffer( 0, 0, Width, Height, 0, 0, Width, Height, GlColorBufferBit, GlNearest );
-                Dispatch.BindFramebuffer( GlReadFramebuffer, 0U );
-                Dispatch.BindFramebuffer( GlDrawFramebuffer, 0U );
-                const GLenum Error = Dispatch.GetError();
-                if ( Error != GlNoError )
-                {
-                    Result = TUnexpected( RHI::MakeRHIBackendFailure(
-                        RHI::ERHIErrorCondition::Presentation,
-                        "OpenGL failed to blit the acquired image to the native window." ) );
-                }
-            } ) );
+            Dispatch.Disable( GlFramebufferSrgb );
+            Dispatch.BindFramebuffer( GlReadFramebuffer, PresentationFramebuffer );
+            Dispatch.BindFramebuffer( GlDrawFramebuffer, 0U );
+            Dispatch.BlitFramebuffer( 0, 0, Width, Height, 0, 0, Width, Height, GlColorBufferBit, GlNearest );
+            Dispatch.BindFramebuffer( GlReadFramebuffer, 0U );
+            Dispatch.BindFramebuffer( GlDrawFramebuffer, 0U );
+            const GLenum Error = Dispatch.GetError();
+            if ( Error != GlNoError )
+            {
+                Result = TUnexpected( RHI::MakeRHIBackendFailure(
+                    RHI::ERHIErrorCondition::Presentation, "OpenGL failed to blit the acquired image to the native window." ) );
+            }
+        } ) );
         if ( not Result )
         {
             ( void )Context->GetExecutor()->ExecuteOnGLThread( [this] () noexcept

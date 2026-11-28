@@ -26,7 +26,6 @@ namespace RHI
         StorageTexture,
         Sampler,
         CombinedTextureSampler
-
     };
     /**
      * @struct FRHIShaderBindingReflection

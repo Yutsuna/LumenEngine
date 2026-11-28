@@ -287,7 +287,7 @@ Lumen::TExpected<void, Lumen::ERendererError> Lumen::FRenderer::CreateResources 
     }
 
     RHI::ERHIResourceUsage TargetUsage = RHI::ERHIResourceUsage::RenderTarget;
-    bReadbackEnabled                   = ReadbackDesc.Capacity > 0ULL and not Swapchain.IsValid() and
+    bReadbackEnabled = ReadbackDesc.Capacity > 0ULL and not Swapchain.IsValid() and
                        ReadbackDesc.Capacity >= static_cast<UInt64>( Extent.Width ) * static_cast<UInt64>( Extent.Height ) * 4ULL;
     if ( bReadbackEnabled )
     {
@@ -561,7 +561,8 @@ void Lumen::FRenderer::PresentTarget ( FRenderFrameStatus &InOutStatus ) noexcep
     {
         return;
     }
-    const RHI::FRHIExpected Presented = Swapchain->Present( **Queue, AcquiredImage, bPresentation ? RenderComplete->Get() : nullptr );
+    const RHI::FRHIExpected Presented =
+        Swapchain->Present( **Queue, AcquiredImage, bPresentation ? RenderComplete->Get() : nullptr );
     if ( not Presented )
     {
         InOutStatus.Result = Presented.Error().Code == RHI::ERHIErrorCode::OutOfDate ? ERenderFrameResult::SwapchainOutOfDate
@@ -819,7 +820,7 @@ void Lumen::FRenderer::RenderLatest ( const FRenderFrameRequest &InFrame, FRende
 
     if ( FrameExtension.IsValid() )
     {
-        const TSharedRef<RHI::IRHITexture> Target         = bPresentation ? *AcquiredTarget : *TargetTexture;
+        const TSharedRef<RHI::IRHITexture> Target = bPresentation ? *AcquiredTarget : *TargetTexture;
         const TSharedRef<RHI::IRHITextureView> FrameTargetView =
             bPresentation ? SwapchainViews[AcquiredImage.ImageIndex] : *TargetView;
         const FRenderFrameExtensionContext ExtensionContext{ .Snapshot      = View,
@@ -928,7 +929,7 @@ void Lumen::FRenderer::ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderF
 
     if ( not bFirstFrame )
     {
-        if ( not ( **Queue ).Wait( { NextTimelineValue }, 1.0 ).HasValue() )
+        if ( not( **Queue ).Wait( { NextTimelineValue }, 1.0 ).HasValue() )
         {
             InOutStatus.Result = ERenderFrameResult::RHIError;
             return;
@@ -943,7 +944,7 @@ void Lumen::FRenderer::ApplyResize ( const RHI::FRHIExtent3D &InExtent, FRenderF
             UpdateReadback( InOutStatus );
         }
         if ( InOutStatus.Result == ERenderFrameResult::RHIError or
-             not ( **Allocator ).Reset( ( **Queue ).GetCompletedValue() ).HasValue() )
+             not( **Allocator ).Reset( ( **Queue ).GetCompletedValue() ).HasValue() )
         {
             InOutStatus.Result = ERenderFrameResult::RHIError;
             return;

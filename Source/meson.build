@@ -11,18 +11,15 @@ ModuleNames = [
     'RHI',
 ]
 
-if host_machine.system() == 'linux'
-    ModuleNames += [ 'RHIOpenGL' ]
-endif
-
 ModuleNames += [
     'Scene',
     'Renderer',
     'AppCore',
-    'Launch',
-    # TODO: add validators before including Vulkan:
-    # if the OS has Vulkan support, include it
-    'RHIVulkan',
+    # RHIOpenGL must be built before Launch: Launch's public surface bridge header
+    # exposes RHIOpenGL::FOpenGLNativeWindowDesc and depends on that module.
+    'RHIOpenGL',
+    'Launch'
+    #'RHIVulkan',
 ]
 
 ModuleDefinitions = []

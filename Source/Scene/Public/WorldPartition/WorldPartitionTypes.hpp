@@ -43,14 +43,14 @@ inline constexpr SCENE_EXPORT FWorldCellId InvalidWorldCellId{};
 static_assert( Concepts::CTriviallyCopyable<FWorldCellId> );
 
 /** @enum EWorldCellState @brief Logical streaming state of one cell. */
-enum class SCENE_EXPORT EWorldCellState : UInt8
+enum class EWorldCellState : UInt8
 {
     Unloaded,
     Loaded,
 };
 
 /** @enum EPartitionCommandKind @brief Journaled partition mutations in canonical order. */
-enum class SCENE_EXPORT EPartitionCommandKind : UInt8
+enum class EPartitionCommandKind : UInt8
 {
     AssignActor   = 0U,
     UnassignActor = 1U,
@@ -59,7 +59,7 @@ enum class SCENE_EXPORT EPartitionCommandKind : UInt8
 };
 
 /** @enum EWorldPartitionError @brief Structured, non-throwing partition failures. */
-enum class SCENE_EXPORT EWorldPartitionError : UInt8
+enum class EWorldPartitionError : UInt8
 {
     None                 = 0U,
     WorldClosed          = 1U,

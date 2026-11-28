@@ -13,12 +13,12 @@
  * TLockGuard
  */
 
-template <class TMutexType> Lumen::HAL::TLockGuard<TMutexType>::TLockGuard( TMutexType &InMutex ) noexcept : Mutex( InMutex )
+template <class TMutexType> Lumen::HAL::TLockGuard<TMutexType>::TLockGuard ( TMutexType &InMutex ) noexcept : Mutex( InMutex )
 {
     Mutex.Lock();
 }
 
-template <class TMutexType> Lumen::HAL::TLockGuard<TMutexType>::TLockGuard::~TLockGuard() noexcept
+template <class TMutexType> Lumen::HAL::TLockGuard<TMutexType>::TLockGuard::~TLockGuard () noexcept
 {
     Mutex.Unlock();
 }
@@ -27,12 +27,12 @@ template <class TMutexType> Lumen::HAL::TLockGuard<TMutexType>::TLockGuard::~TLo
  * TSharedLock
  */
 
-template <class TMutexType> Lumen::HAL::TSharedLock<TMutexType>::TSharedLock( TMutexType &InMutex ) noexcept : Mutex( InMutex )
+template <class TMutexType> Lumen::HAL::TSharedLock<TMutexType>::TSharedLock ( TMutexType &InMutex ) noexcept : Mutex( InMutex )
 {
     Mutex.LockShared();
 }
 
-template <class TMutexType> Lumen::HAL::TSharedLock<TMutexType>::TSharedLock::~TSharedLock() noexcept
+template <class TMutexType> Lumen::HAL::TSharedLock<TMutexType>::TSharedLock::~TSharedLock () noexcept
 {
     Mutex.UnlockShared();
 }
@@ -41,39 +41,39 @@ template <class TMutexType> Lumen::HAL::TSharedLock<TMutexType>::TSharedLock::~T
  * TUniqueLock
  */
 
-template <class TMutexType> Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TMutexType &InMutex ) noexcept : Mutex( &InMutex )
+template <class TMutexType> Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock ( TMutexType &InMutex ) noexcept : Mutex( &InMutex )
 {
     Lock();
 }
 
 template <class TMutexType>
-Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TMutexType &InMutex, FDeferLock LUMEN_UNUSED InTag ) noexcept
+Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock ( TMutexType &InMutex, FDeferLock LUMEN_UNUSED InTag ) noexcept
     : Mutex( &InMutex )
 {
     /** Empty */
 }
 
 template <class TMutexType>
-Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TMutexType &InMutex, FTryToLock LUMEN_UNUSED InTag ) noexcept
+Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock ( TMutexType &InMutex, FTryToLock LUMEN_UNUSED InTag ) noexcept
     : Mutex( &InMutex )
 {
     static_cast<void>( TryLock() );
 }
 
 template <class TMutexType>
-Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TMutexType &InMutex, FAdoptLock LUMEN_UNUSED InTag ) noexcept
+Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock ( TMutexType &InMutex, FAdoptLock LUMEN_UNUSED InTag ) noexcept
     : Mutex( &InMutex ), bIsLocked( true )
 {
     /** Empty */
 }
 
-template <class TMutexType> Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock::~TUniqueLock() noexcept
+template <class TMutexType> Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock::~TUniqueLock () noexcept
 {
     Unlock();
 }
 
 template <class TMutexType>
-Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock( TUniqueLock<TMutexType> &&InOther ) noexcept
+Lumen::HAL::TUniqueLock<TMutexType>::TUniqueLock ( TUniqueLock<TMutexType> &&InOther ) noexcept
     : Mutex( std::exchange( InOther.Mutex, nullptr ) ), bIsLocked( std::exchange( InOther.bIsLocked, false ) )
 {
     /** Empty */

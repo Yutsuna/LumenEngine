@@ -30,6 +30,11 @@ extern "C"
     #include <windows.h>
 }
 
+/* winbase.h defines CreateSemaphore as CreateSemaphoreA/W, which collides with
+ * IRHIDevice::CreateSemaphore and its overrides. No Core HAL code calls the Win32
+ * function, so drop the legacy macro before any engine declaration. */
+    #undef CreateSemaphore
+
 namespace Lumen
 {
 
@@ -50,18 +55,18 @@ namespace HAL
 
     public:
 
-        void Lock () noexcept;
-        void Unlock () noexcept;
+        LUMEN_FORCE_INLINE void Lock () noexcept;
+        LUMEN_FORCE_INLINE void Unlock () noexcept;
 
-        [[nodiscard]] Bool IsLocked () const noexcept;
-        [[nodiscard]] Bool TryLock () noexcept;
+        [[nodiscard]] LUMEN_FORCE_INLINE Bool IsLocked () const noexcept;
+        [[nodiscard]] LUMEN_FORCE_INLINE Bool TryLock () noexcept;
 
     private:
 
         /** @brief Number of CpuRelax() iterations before the waiter starts yielding its time slice. */
         static constexpr UInt32 GMaxRelaxSpins = 64U;
 
-        std::atomic_flag Flag{};
+        FAtomicFlag Flag;
     };
 
 } // namespace HAL

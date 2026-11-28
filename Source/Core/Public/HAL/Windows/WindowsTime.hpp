@@ -93,4 +93,6 @@ namespace HAL
 
 } // namespace Lumen
 
+    #include "Inline/WindowsTime.inl"
+
 #endif

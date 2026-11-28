@@ -24,7 +24,7 @@ namespace Lumen
 namespace Internal
 {
 
-    template <typename TCallback> class TCallbackNode final : public FCallbackNode
+    template <typename TCallback> class TCallbackNode final : public FCallbackNode /** NOLINT */
     {
     public:
 

@@ -7,9 +7,14 @@
 
 #include <utility>
 
+/**
+ * Public
+ */
+
 Lumen::FThread::FThread ( FThread &&InOther ) noexcept
     : StopSource( std::move( InOther.StopSource ) ), Thread( std::move( InOther.Thread ) )
 {
+    /* */
 }
 
 Lumen::FThread::~FThread () noexcept
